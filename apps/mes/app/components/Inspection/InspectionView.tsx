@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   BottomSheet,
@@ -51,6 +56,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { useUser } from "~/hooks";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   Inspection as InspectionRow,
   InspectionSample,
@@ -96,6 +102,10 @@ type DrawingBalloonRow = {
   pageNumber: number;
   xCoordinate: number;
   yCoordinate: number;
+  regionX: number;
+  regionY: number;
+  regionWidth: number;
+  regionHeight: number;
 };
 
 type WorkType = "Setup" | "Labor" | "Machine";
@@ -115,6 +125,10 @@ type InspectionViewProps = {
   samples: InspectionSample[];
   features: InspectionSamplingPlan[];
   measurements: InspectionMeasurement[];
+  // Active gauges, and the ones most recently recorded at this operation's
+  // work center, newest first.
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
@@ -144,6 +158,8 @@ export function InspectionView({
   samples,
   features,
   measurements,
+  gauges,
+  recentGaugeIds,
   balloons,
   documentName,
   pdfUrl,
@@ -536,6 +552,10 @@ export function InspectionView({
         pageNumber: b.pageNumber,
         xCoordinate: b.xCoordinate,
         yCoordinate: b.yCoordinate,
+        regionX: b.regionX,
+        regionY: b.regionY,
+        regionWidth: b.regionWidth,
+        regionHeight: b.regionHeight,
         label: labelByFeatureId.get(b.inspectionFeatureId) ?? ""
       }));
   }, [balloons, liveFeatures]);
@@ -776,7 +796,7 @@ export function InspectionView({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                aria-label={t`Drag to resize drawing and features`}
+                aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
                 className={cn(
                   "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80",
@@ -802,7 +822,7 @@ export function InspectionView({
             >
               <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
                 <span className="truncate text-sm font-medium text-foreground">
-                  {t`Features`}
+                  {t`Characteristics`}
                 </span>
                 <IconButton
                   type="button"
@@ -810,8 +830,8 @@ export function InspectionView({
                   aria-expanded={gridExpanded}
                   aria-label={
                     gridExpanded
-                      ? t`Collapse features table`
-                      : t`Expand features table`
+                      ? t`Collapse characteristics table`
+                      : t`Expand characteristics table`
                   }
                   icon={
                     gridExpanded ? (
@@ -830,6 +850,8 @@ export function InspectionView({
                 features={features}
                 samples={samples}
                 measurements={measurements}
+                gauges={gauges}
+                recentGaugeIds={recentGaugeIds}
                 maxSampleSize={maxSampleSize}
                 lotSize={inspection.lotSize}
                 lotAcceptanceNumber={inspection.acceptanceNumber}
@@ -851,6 +873,8 @@ export function InspectionView({
               features={features}
               samples={samples}
               measurements={measurements}
+              gauges={gauges}
+              recentGaugeIds={recentGaugeIds}
               maxSampleSize={maxSampleSize}
               lotSize={inspection.lotSize}
               lotAcceptanceNumber={inspection.acceptanceNumber}
@@ -1330,6 +1354,7 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
+        disabled={fetcher.state !== "idle"}
         type="submit"
         aria-label={active ? "Pause timer" : "Start timer"}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4"

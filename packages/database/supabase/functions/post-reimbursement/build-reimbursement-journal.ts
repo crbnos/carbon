@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure construction of the GL journal for posting an employee reimbursement.
 // No DB, no I/O, no clock — so it is unit-testable with `deno test`. The
 // posting transaction resolves the account classes, the payable control

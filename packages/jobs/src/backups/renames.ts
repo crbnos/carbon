@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Tenant-scoped tables that have been RENAMED or DROPPED, so an older backup
  * naming them can still be read. A migration that renames or drops a

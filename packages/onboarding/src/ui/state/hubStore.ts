@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The hub store — a SERVER-DRIVEN distribution layer, not a client state owner.
 //
 // The React Router loader is the single source of truth. Each render the provider

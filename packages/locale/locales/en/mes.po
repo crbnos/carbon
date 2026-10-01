@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inactive)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "All"
 msgid "All clear"
 msgstr "All clear"
 
+msgid "All gauges"
+msgstr "All gauges"
+
 msgid "All jobs"
 msgstr "All jobs"
 
@@ -268,6 +274,12 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Characteristic"
+msgstr "Characteristic"
+
+msgid "Characteristics"
+msgstr "Characteristics"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -282,6 +294,9 @@ msgstr "Clear"
 
 msgid "Clear Filters"
 msgstr "Clear Filters"
+
+msgid "Clear gauge"
+msgstr "Clear gauge"
 
 msgid "Clear Search"
 msgstr "Clear Search"
@@ -301,8 +316,8 @@ msgstr "Clocked in since <0/>"
 msgid "Close"
 msgstr "Close"
 
-msgid "Collapse features table"
-msgstr "Collapse features table"
+msgid "Collapse characteristics table"
+msgstr "Collapse characteristics table"
 
 msgid "Collapse panel"
 msgstr "Collapse panel"
@@ -354,9 +369,6 @@ msgstr "Completing"
 msgid "Connecting"
 msgstr "Connecting"
 
-msgid "Console"
-msgstr "Console"
-
 msgid "Console Mode"
 msgstr "Console Mode"
 
@@ -368,6 +380,15 @@ msgstr "Consumed expired"
 
 msgid "Continue"
 msgstr "Continue"
+
+msgid "Copied!"
+msgstr "Copied!"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Copy to clipboard"
+msgstr "Copy to clipboard"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "Draft"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Drag and drop a file here, or click to select a file"
 
-msgid "Drag to resize drawing and features"
-msgstr "Drag to resize drawing and features"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Drag to resize drawing and characteristics"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "Every job in the batch follows these steps. Record a step for all of the
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 
-msgid "Expand features table"
-msgstr "Expand features table"
+msgid "Expand characteristics table"
+msgstr "Expand characteristics table"
 
 msgid "Expand panel"
 msgstr "Expand panel"
@@ -566,8 +587,8 @@ msgstr "Expiring first"
 msgid "Failed"
 msgstr "Failed"
 
-msgid "Failed features"
-msgstr "Failed features"
+msgid "Failed characteristics"
+msgstr "Failed characteristics"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
@@ -583,6 +604,9 @@ msgstr "Failed to fetch active operations"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Failed to fetch storageUnits"
+
+msgid "Failed to record gauge"
+msgstr "Failed to record gauge"
 
 msgid "Failed to save measurement"
 msgstr "Failed to save measurement"
@@ -600,12 +624,6 @@ msgstr "Failed to upload file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
-
-msgid "Feature"
-msgstr "Feature"
-
-msgid "Features"
-msgstr "Features"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -647,6 +665,12 @@ msgstr "Fix the highlighted quantities before completing."
 
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
+
+msgid "Gauge"
+msgstr "Gauge"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Gauge for characteristic {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "General"
@@ -962,6 +986,9 @@ msgstr "No dispatches assigned to you"
 msgid "No files"
 msgstr "No files"
 
+msgid "No gauges found."
+msgstr "No gauges found."
+
 msgid "No Impact"
 msgstr "No Impact"
 
@@ -1129,6 +1156,9 @@ msgstr "Optional"
 msgid "or"
 msgstr "or"
 
+msgid "Out of calibration"
+msgstr "Out of calibration"
+
 msgid "Output lot"
 msgstr "Output lot"
 
@@ -1279,6 +1309,9 @@ msgstr "Reason for rework"
 msgid "Recent"
 msgstr "Recent"
 
+msgid "Recently used"
+msgstr "Recently used"
+
 msgid "Record"
 msgstr "Record"
 
@@ -1410,8 +1443,14 @@ msgstr "Scrapping the selected serial"
 msgid "Search"
 msgstr "Search"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Search {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Search by job or item ID"
+
+msgid "Search gauges..."
+msgstr "Search gauges..."
 
 msgid "Search operators..."
 msgstr "Search operators..."
@@ -1446,6 +1485,9 @@ msgstr "Select an item..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Select Batch {0}"
+
+msgid "Select gauge"
+msgstr "Select gauge"
 
 msgid "Select Printer"
 msgstr "Select Printer"
@@ -1730,6 +1772,9 @@ msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unknown gauge"
+msgstr "Unknown gauge"
 
 msgid "Unlock"
 msgstr "Unlock"

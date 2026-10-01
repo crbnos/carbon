@@ -97,7 +97,7 @@ setWorkflowDispatch((name, context, args) =>
 ```
 
 `callOperation` is the Carbon API's canonical entry point (the same one MCP
-`call_tool` and the in-app agent use) — it runs the operation through the real
+`call_tool` uses) — it runs the operation through the real
 oRPC procedure. `authKind: "session"` marks the workflow engine as an
 already-authorized in-process caller, so the per-operation API-key scope gate
 does not apply; the owner-scoped client's RLS still does. `WorkflowDispatch` is

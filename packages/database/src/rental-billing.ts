@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Rental invoice generation — shared by the ERP "Generate invoices" action and
 // the daily Inngest job, so a human and the scheduler bill exactly the same
 // periods. Posting stays with post-sales-invoice: this only drafts invoices.

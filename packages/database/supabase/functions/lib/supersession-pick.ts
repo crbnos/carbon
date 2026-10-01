@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Single source of truth for the supersession swap — should a component be
 // replaced by its successor — shared by the MRP engine (planning / demand) and
 // the get-method edge function (job creation) so the two can never disagree.

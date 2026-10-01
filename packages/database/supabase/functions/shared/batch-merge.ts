@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure record builders for merging N same-item tracked entities into ONE new
 // entity — the deliberate lot merge behind batch-completion outputs ("2 lots of
 // the same item — merge into one?"). The inverse shape of buildBatchSplitRecords

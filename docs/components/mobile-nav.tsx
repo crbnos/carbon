@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 /**
@@ -28,6 +33,7 @@ const NAV = [
   { key: "reference", label: "Reference", href: "/docs" },
   { key: "guides", label: "Guides", href: "/guides/order" },
   { key: "api", label: "API", href: "/api" },
+  { key: "changelog", label: "Changelog", href: "/changelog" },
 ] as const;
 
 type Active = (typeof NAV)[number]["key"];

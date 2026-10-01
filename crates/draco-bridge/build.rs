@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// Resolve the draco install prefix: `DRACO_PREFIX` env when set, else the
 /// per-target default (Homebrew `opt` on macOS, distro `/usr` on Linux). The
 /// Dockerfile builds static draco and sets `DRACO_PREFIX` explicitly.

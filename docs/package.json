@@ -12,7 +12,8 @@
     "lint": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "typecheck": "node scripts/generate-api-docs.mjs && fumadocs-mdx && tsc --noEmit"
+    "typecheck": "node scripts/generate-api-docs.mjs && fumadocs-mdx && tsc --noEmit",
+    "generate:changelog-thumbnails": "node scripts/generate-changelog-thumbnail.mjs"
   },
   "dependencies": {
     "@carbon/content": "workspace:*",

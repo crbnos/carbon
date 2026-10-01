@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Hierarchical parent-storage-unit picker — drill-down + breadcrumb + search.
 // Local to the Storage Unit form: the only place a *non-leaf* unit is the
 // target (choosing where a unit sits in the tree). Everywhere else picks a

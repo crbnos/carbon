@@ -105,6 +105,14 @@ Each balloon feature carries:
 
 Balloons anchor to a region of a specific PDF page (normalized 0–1 coordinates, so they stay put at any zoom) and each balloon can carry a step **type** from the same `procedureStepType` set, so a ballooned characteristic can be a Measurement, a Checkbox, and so on. Carbon can also auto-detect balloons from the drawing and turn detected regions into features. Because a balloon, its geometry, and its inspection feature must be created together or not at all, saves go through a single atomic RPC (`saveInspectionDocumentAtomic`) rather than separate writes.
 
+Inspection plans live under **Quality → Inspection → Inspection Plans**. The editor has no Save button: each change saves itself a moment after you stop editing, and the toolbar shows **Saving…**, **Saved**, or **Could not save**.
+
+### Gauges
+
+A characteristic can name the [gauge](/docs/reference/calibration) type it must be measured with, in the plan editor's **Gauge Type** column. Leave it empty to allow any gauge.
+
+When an inspection runs, each characteristic has a **Gauge** cell. The list offers only Active gauges, of the required type when one is set, with the gauges recently used at the same work center first; all receipts share one list. The gauge is recorded once per lot and characteristic, with the time it was recorded. An out-of-calibration gauge is flagged but can still be recorded, and a gauge retired later still shows on the lots it measured.
+
 ## Related
 
 <Cards>

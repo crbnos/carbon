@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   IconButton,
@@ -51,6 +56,7 @@ export function AgentPanel() {
     error,
     isStreaming,
     send,
+    retry,
     stop,
     loadThread,
     newThread,
@@ -140,6 +146,7 @@ export function AgentPanel() {
               threadId={threadId}
               error={error}
               isStreaming={isStreaming}
+              onRetry={retry}
             />
           </StickToBottom.Content>
           <ScrollToBottomButton />

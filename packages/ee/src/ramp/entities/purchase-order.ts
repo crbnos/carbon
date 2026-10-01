@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Carbon purchase order → Ramp purchase order.
  *
@@ -27,6 +32,7 @@ import {
 import { buildRampIdempotencyKey, RampApiError } from "../lib/client";
 import {
   prepareRampPurchaseOrderBatch,
+  prepareRampVendorResolution,
   type RampPurchaseOrderBatch,
   resolveOrCreateRampSpendVendor
 } from "../lib/spend";
@@ -131,7 +137,12 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
       [...orders.keys()],
       [...orders.values()]
         .filter((order) => !isSettledPurchaseOrderStatus(order.status))
-        .map((order) => order.supplier)
+        .map((order) => order.supplier),
+      // When another system holds Ramp's accounting seat, link each vendor to
+      // that system's accounting vendor — see `linkAccountingVendor`.
+      {
+        accountingIntegration: this.rampProvider.codingIdentityIntegrationId
+      }
     );
 
     return orders;
@@ -177,7 +188,16 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
           this.ramp,
           local.supplier,
           this.companyId,
-          this.batch
+          this.batch ??
+            (await prepareRampVendorResolution(
+              this.mappingService,
+              this.ramp,
+              [local.supplier],
+              {
+                accountingIntegration:
+                  this.rampProvider.codingIdentityIntegrationId
+              }
+            ))
         )) ?? undefined);
 
     return {

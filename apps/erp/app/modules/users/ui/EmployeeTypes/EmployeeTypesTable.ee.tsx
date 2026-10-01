@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";

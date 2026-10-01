@@ -34,8 +34,9 @@ unless they start with `apps/` or `packages/`.
 │ ⚙    │ ╰────────────────────────────────────────────────────────────────╯ │
 └──────┴──────────────────────────────────────────────────────────────────┘
 ```
-- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`
-  (icon rail, hover-expands, pushes content). Modules are registered in `hooks/useModules.tsx`
+- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`,
+  built on the shared `NavRail` from `@carbon/react` (the same rail MES uses): icon rail that
+  expands on mouse hover or when pinned with ⌘B, and pushes content. Modules are registered in `hooks/useModules.tsx`
   (`{ key, permission, name, to, icon }`, Lucide icons, Settings pinned bottom).
 - Topbar: breadcrumbs (from route `handle`), global ✎ Create menu
   (`components/Layout/Topbar/CreateMenu.tsx`), notifications, avatar.
@@ -229,7 +230,7 @@ menu (add new document types to `CreateMenu.tsx`). Both link to the same `path.t
 ## 14. Responsive
 
 One JS breakpoint: `useIsMobile` = `< 768px`. ERP is desktop-first:
-- < md: rail hidden → hamburger drawer; module sub-nav → "Submodules" drawer; Explorer and
+- < md: rail hidden → the same `NavRail` items in a left drawer, opened by the Topbar hamburger; module sub-nav → "Submodules" drawer; Explorer and
   Properties become overlay drawers that close on navigation; breadcrumbs hidden.
 - 768–1023px: Properties starts collapsed.
 - Form grids collapse to one column (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).

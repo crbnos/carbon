@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(निष्क्रिय)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "सभी"
 msgid "All clear"
 msgstr "सब कुछ स्पष्ट"
 
+msgid "All gauges"
+msgstr "सभी गेज"
+
 msgid "All jobs"
 msgstr "सभी जॉब"
 
@@ -268,6 +274,12 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
+msgid "Characteristic"
+msgstr "विशेषता"
+
+msgid "Characteristics"
+msgstr "विशेषताएं"
+
 msgid "Chat"
 msgstr "चैट"
 
@@ -282,6 +294,9 @@ msgstr "साफ़ करें"
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
+
+msgid "Clear gauge"
+msgstr "गेज साफ़ करें"
 
 msgid "Clear Search"
 msgstr "खोज साफ़ करें"
@@ -301,8 +316,8 @@ msgstr "<0/> से घड़ी चालू है"
 msgid "Close"
 msgstr "बंद करें"
 
-msgid "Collapse features table"
-msgstr "फीचर्स टेबल को संक्षिप्त करें"
+msgid "Collapse characteristics table"
+msgstr "विशेषताएं तालिका संपीड़ित करें"
 
 msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
@@ -354,9 +369,6 @@ msgstr "पूर्ण हो रहा है"
 msgid "Connecting"
 msgstr "जुड़ रहा है"
 
-msgid "Console"
-msgstr "कंसोल"
-
 msgid "Console Mode"
 msgstr "कंसोल मोड"
 
@@ -368,6 +380,15 @@ msgstr "खपत की गई समाप्त"
 
 msgid "Continue"
 msgstr "जारी रखें"
+
+msgid "Copied!"
+msgstr "कॉपी हो गया!"
+
+msgid "Copy"
+msgstr "कॉपी करें"
+
+msgid "Copy to clipboard"
+msgstr "क्लिपबोर्ड पर कॉपी करें"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "ड्राफ्ट"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "यहाँ एक फ़ाइल को ड्रैग और ड्रॉप करें, या फ़ाइल चुनने के लिए क्लिक करें"
 
-msgid "Drag to resize drawing and features"
-msgstr "ड्राइंग और फीचर्स को रिसाइज़ करने के लिए ड्रैग करें"
+msgid "Drag to resize drawing and characteristics"
+msgstr "ड्राइंग और विशेषताओं को पुनः आकार देने के लिए खींचें"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "बैच में हर जॉब इन चरणों का प�
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "प्रत्येक इकाई का निर्णय है: {passes} उत्तीर्ण और {fails} असफल। लॉट बंद हो जाता है जब प्रत्येक इकाई को अपने परिणाम के अनुसार भेजा जाता है।"
 
-msgid "Expand features table"
-msgstr "फीचर्स टेबल को विस्तृत करें"
+msgid "Expand characteristics table"
+msgstr "विशेषताएं तालिका विस्तृत करें"
 
 msgid "Expand panel"
 msgstr "पैनल विस्तार करें"
@@ -566,8 +587,8 @@ msgstr "पहले समाप्त होने वाले"
 msgid "Failed"
 msgstr "विफल"
 
-msgid "Failed features"
-msgstr "विफल सुविधाएँ"
+msgid "Failed characteristics"
+msgstr "विफल विशेषताएं"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "इन्वेंटरी समायोजन पूरा करने में विफल"
@@ -583,6 +604,9 @@ msgstr "चल रहे ऑपरेशन प्राप्त करने �
 
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnits को प्राप्त करने में विफल"
+
+msgid "Failed to record gauge"
+msgstr "गेज रिकॉर्ड करने में विफल"
 
 msgid "Failed to save measurement"
 msgstr "माप को सहेजने में विफल"
@@ -600,12 +624,6 @@ msgstr "फाइल अपलोड करने में विफल: {0}"
 
 msgid "Failed to upload image"
 msgstr "इमेज अपलोड करने में विफल"
-
-msgid "Feature"
-msgstr "सुविधा"
-
-msgid "Features"
-msgstr "विशेषताएं"
 
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
@@ -647,6 +665,12 @@ msgstr "पूर्ण करने से पहले हाइलाइट �
 
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
+
+msgid "Gauge"
+msgstr "गेज"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "विशेषता {characteristicLabel} के लिए गेज: {currentGauge}"
 
 msgid "General"
 msgstr "सामान्य"
@@ -962,6 +986,9 @@ msgstr "आपको कोई असाइन किया गया रखर�
 msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
 
+msgid "No gauges found."
+msgstr "कोई गेज नहीं मिला।"
+
 msgid "No Impact"
 msgstr "कोई प्रभाव नहीं"
 
@@ -1129,6 +1156,9 @@ msgstr "वैकल्पिक"
 msgid "or"
 msgstr "या"
 
+msgid "Out of calibration"
+msgstr "अंशांकन से बाहर"
+
 msgid "Output lot"
 msgstr "आउटपुट लॉट"
 
@@ -1279,6 +1309,9 @@ msgstr "पुनः कार्य का कारण"
 msgid "Recent"
 msgstr "हाल ही में"
 
+msgid "Recently used"
+msgstr "हाल ही में उपयोग किया गया"
+
 msgid "Record"
 msgstr "रिकॉर्ड"
 
@@ -1410,8 +1443,14 @@ msgstr "चयनित सीरीयल को स्क्रैप कि�
 msgid "Search"
 msgstr "खोजें"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} खोजें..."
+
 msgid "Search by job or item ID"
 msgstr "जॉब या आइटम आईडी से खोजें"
+
+msgid "Search gauges..."
+msgstr "गेज खोजें..."
 
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
@@ -1446,6 +1485,9 @@ msgstr "एक आइटम चुनें..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "बैच {0} चुनें"
+
+msgid "Select gauge"
+msgstr "गेज का चयन करें"
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"
@@ -1730,6 +1772,9 @@ msgstr "अजारी सीरीज़/बैच सामग्री"
 
 msgid "Unknown"
 msgstr "अज्ञात"
+
+msgid "Unknown gauge"
+msgstr "अज्ञात गेज"
 
 msgid "Unlock"
 msgstr "अनलॉक"

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Bare specifier on purpose: Deno resolves it through the deno.json import map
 // (like kysely), and the node-side @carbon/database build — which reaches this
 // file via shared/get-next-sequence.ts — resolves it from node_modules.

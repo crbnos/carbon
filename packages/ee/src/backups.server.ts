@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { IS_LOCAL_DEV } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireEntitlement } from "./entitlements.server";

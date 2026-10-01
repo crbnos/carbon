@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Point-in-mesh containment via ray casting. Used by embedded-pair and
 //! fastener-joint detection, which vote on an aggregate fraction, so per-point
 //! robustness matters more than the exact backend. A single ray in a

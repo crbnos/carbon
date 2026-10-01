@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@tiptap/react";
 
 export {
@@ -239,6 +244,15 @@ import {
 } from "./ModalDrawer";
 import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
+import {
+  NavRail,
+  NavRailBrand,
+  NavRailDivider,
+  NavRailGroup,
+  NavRailItem,
+  NavRailLink,
+  navRailItemClasses
+} from "./NavRail";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -546,6 +560,13 @@ export {
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
+  NavRail,
+  NavRailBrand,
+  NavRailDivider,
+  NavRailGroup,
+  NavRailItem,
+  NavRailLink,
+  navRailItemClasses,
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,

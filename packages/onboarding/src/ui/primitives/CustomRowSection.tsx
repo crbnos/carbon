@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The "Added for this customer" block, config-driven by the collection registry.
 // It reads its own rows + canEdit from the store and wires Add straight to the
 // registry's `newPayload`, so a surface just declares a render body for one row:

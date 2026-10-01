@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Stress/quality harness: plan every STEP file given (files or a directory),
 //! score plan QUALITY — the new bar is "minimize manual intervention", i.e.
 //! flagged/escape parts — not byte-parity with the Python planner (which the

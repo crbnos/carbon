@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Concurrency correctness + scaling probe for the full convert path. Each of N
 //! threads runs convert_step in a loop and hashes the ENTIRE output (glb bytes +
 //! graph json). If concurrent reads corrupt anything — e.g. the OCCT 7.9.3

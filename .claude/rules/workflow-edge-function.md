@@ -66,9 +66,14 @@ verify_jwt = true                              # JWT required (the common case)
 ## 3. Function skeleton
 
 Real imports (note: `serve` from deno.land std, **default** `z` import, lib paths
-relative to the function dir):
+relative to the function dir; the AGPL license header comes first — the fixer
+`pnpm --filter @carbon/checks license-headers` writes it):
 
 ```typescript
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import z from "npm:zod@^4.5.4";
 import { corsHeaders } from "../lib/headers.ts";
@@ -224,6 +229,7 @@ don't run a deploy manually; merging to `main` is what ships it.
 ## Checklist
 
 - [ ] `pnpm db:function:new <name>` (file at `functions/<name>/index.ts`)
+- [ ] AGPL SPDX license header at the top of every new file (`pnpm --filter @carbon/checks license-headers`)
 - [ ] `[functions.<name>]` added to `config.toml` (`enabled`, `verify_jwt`) — for
       the settings and for discoverability, NOT because it gates the deploy
 - [ ] CORS `OPTIONS` short-circuit returning `corsHeaders`

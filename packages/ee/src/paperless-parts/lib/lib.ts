@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -13,7 +18,7 @@ import {
   textToTiptap
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import type {
@@ -165,9 +170,9 @@ async function determineMaterialSubstance(
       .map((s) => `${s.id}: ${s.name}`)
       .join("\n");
 
-    const { object } = await generateObject({
+    const { output: object } = await generateText({
       model: openai(openAiCategorizationModel),
-      schema: substanceSchema,
+      output: Output.object({ schema: substanceSchema }),
       prompt: `
       Based on the following material information, determine the best matching material substance from the available options.
       
@@ -437,9 +442,9 @@ async function determineMaterialProperties(
   const { grades, dimensions, finishes, types, forms, substance } =
     materialProperties;
 
-  const { object } = await generateObject({
+  const { output: object } = await generateText({
     model: openai(openAiCategorizationModel),
-    schema: materialPropertiesSchema,
+    output: Output.object({ schema: materialPropertiesSchema }),
     prompt: `
     Based on the following material information, determine the best matching material properties from the available options.
 

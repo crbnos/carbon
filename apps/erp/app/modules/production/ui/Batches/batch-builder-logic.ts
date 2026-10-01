@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure logic behind the batch builder: signatures, per-candidate value sets,
 // duration math, and suggestion scoring. No JSX and no lingui, so vitest can
 // import it directly (the ERP barrels drag lingui macros vitest cannot

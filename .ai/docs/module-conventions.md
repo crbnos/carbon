@@ -22,6 +22,7 @@ modules/{module}/
 - **Module files**: match folder name (`purchasing.service.ts`, `purchasing.models.ts`)
 - **React components**: PascalCase filenames in `ui/` (`PurchaseOrderForm.tsx`)
 - **Barrel exports**: `index.ts` re-exports everything; import from module root (`~/modules/sales`), not deep files
+- **License header**: every new file starts with its SPDX header — AGPL, or commercial for `.ee.` files (e.g. `ui/ApprovalRuleForm.ee.tsx`). Run `pnpm --filter @carbon/checks license-headers` rather than typing it.
 
 ### Required Files
 

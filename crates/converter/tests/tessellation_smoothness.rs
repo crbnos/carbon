@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Circles must tessellate smoothly — the old defaults (angular 0.5 rad,
 //! absolute linear 0.1 mm) gave every circle a blocky ~13 segments, and even
 //! fewer on small parts. The bridge now scales linear deflection to each

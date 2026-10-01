@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! STEP → BinXCAF (`.xbf`) → build_tree must yield the SAME assembly tree as
 //! STEP → build_tree: identical nodeIds, geometry hashes, volumes, and
 //! component count. The xbf is the compacted retained-raw form; if it drifted

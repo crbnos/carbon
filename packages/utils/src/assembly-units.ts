@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Component-name similarity for BOM auto-matching ("Match BOM" — pairing a CAD
  * geometry group with a BOM item by name, see `autoMatchAssemblyComponents`).

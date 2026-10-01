@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inaktiv)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "Alle"
 msgid "All clear"
 msgstr "Alles klar"
 
+msgid "All gauges"
+msgstr "Alle Prüfmittel"
+
 msgid "All jobs"
 msgstr "Alle Fertigungsaufträge"
 
@@ -268,6 +274,12 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Karten"
 
+msgid "Characteristic"
+msgstr "Merkmal"
+
+msgid "Characteristics"
+msgstr "Merkmale"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -282,6 +294,9 @@ msgstr "Löschen"
 
 msgid "Clear Filters"
 msgstr "Filter zurücksetzen"
+
+msgid "Clear gauge"
+msgstr "Prüfmittel leeren"
 
 msgid "Clear Search"
 msgstr "Suche löschen"
@@ -301,8 +316,8 @@ msgstr "Eingecheckt seit <0/>"
 msgid "Close"
 msgstr "Schließen"
 
-msgid "Collapse features table"
-msgstr "Merkmalstabelle ausblenden"
+msgid "Collapse characteristics table"
+msgstr "Merkmalstabelle einklappen"
 
 msgid "Collapse panel"
 msgstr "Bereich reduzieren"
@@ -354,9 +369,6 @@ msgstr "Abschluss läuft"
 msgid "Connecting"
 msgstr "Verbindung wird hergestellt"
 
-msgid "Console"
-msgstr "Konsole"
-
 msgid "Console Mode"
 msgstr "Konsolenmodus"
 
@@ -368,6 +380,15 @@ msgstr "Verbrauchte abgelaufen"
 
 msgid "Continue"
 msgstr "Weiter"
+
+msgid "Copied!"
+msgstr "Kopiert!"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Copy to clipboard"
+msgstr "In die Zwischenablage kopieren"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "Entwurf"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Datei hierher ziehen oder klicken, um eine Datei auszuwählen"
 
-msgid "Drag to resize drawing and features"
-msgstr "Zeichnung und Funktionen durch Ziehen vergrößern/verkleinern"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Zum Ändern der Größe von Zeichnung und Merkmalen ziehen"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "Jeder Fertigungsauftrag im Los folgt diesen Schritten. Zeichnen Sie eine
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Jede Einheit hat ein Urteil: {passes} bestanden und {fails} fehlgeschlagen. Das Los wird geschlossen, wobei jede Einheit zu ihrem eigenen Ergebnis weitergeleitet wird."
 
-msgid "Expand features table"
-msgstr "Funktionstabelle erweitern"
+msgid "Expand characteristics table"
+msgstr "Merkmalstabelle ausklappen"
 
 msgid "Expand panel"
 msgstr "Bereich erweitern"
@@ -566,8 +587,8 @@ msgstr "Verfällt zuerst"
 msgid "Failed"
 msgstr "Fehlgeschlagen"
 
-msgid "Failed features"
-msgstr "Fehlgeschlagene Funktionen"
+msgid "Failed characteristics"
+msgstr "Fehlgeschlagene Merkmale"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Bestandskorrektur konnte nicht abgeschlossen werden"
@@ -583,6 +604,9 @@ msgstr "Aktive Arbeitsgänge konnten nicht abgerufen werden"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Fehler beim Abrufen von Lagerbereichen"
+
+msgid "Failed to record gauge"
+msgstr "Prüfmittel konnte nicht aufgezeichnet werden"
 
 msgid "Failed to save measurement"
 msgstr "Messung konnte nicht gespeichert werden"
@@ -600,12 +624,6 @@ msgstr "Fehler beim Hochladen der Datei: {0}"
 
 msgid "Failed to upload image"
 msgstr "Fehler beim Hochladen des Bildes"
-
-msgid "Feature"
-msgstr "Funktion"
-
-msgid "Features"
-msgstr "Merkmale"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dateigröße überschreitet das Limit von 10 MB"
@@ -647,6 +665,12 @@ msgstr "Korrigieren Sie die markierten Mengen vor dem Fertigstellen."
 
 msgid "Forgot to Clock Out?"
 msgstr "Ausstempeln vergessen?"
+
+msgid "Gauge"
+msgstr "Prüfmittel"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Prüfmittel für Merkmal {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "Allgemein"
@@ -962,6 +986,9 @@ msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 msgid "No files"
 msgstr "Keine Dateien"
 
+msgid "No gauges found."
+msgstr "Keine Prüfmittel gefunden."
+
 msgid "No Impact"
 msgstr "Keine Auswirkung"
 
@@ -1129,6 +1156,9 @@ msgstr "Optional"
 msgid "or"
 msgstr "oder"
 
+msgid "Out of calibration"
+msgstr "Außerhalb der Kalibrierung"
+
 msgid "Output lot"
 msgstr "Ausgabe-Charge"
 
@@ -1279,6 +1309,9 @@ msgstr "Grund für Nacharbeit"
 msgid "Recent"
 msgstr "Zuletzt"
 
+msgid "Recently used"
+msgstr "Zuletzt verwendet"
+
 msgid "Record"
 msgstr "Erfassen"
 
@@ -1410,8 +1443,14 @@ msgstr "Ausgewählte Seriennummer wird verschrottet"
 msgid "Search"
 msgstr "Suchen"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Suchen {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Nach Job oder Artikel-ID suchen"
+
+msgid "Search gauges..."
+msgstr "Prüfmittel suchen..."
 
 msgid "Search operators..."
 msgstr "Werker suchen..."
@@ -1446,6 +1485,9 @@ msgstr "Artikel auswählen..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Charge {0} auswählen"
+
+msgid "Select gauge"
+msgstr "Prüfmittel auswählen"
 
 msgid "Select Printer"
 msgstr "Drucker auswählen"
@@ -1730,6 +1772,9 @@ msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"
 
 msgid "Unknown"
 msgstr "Unbekannt"
+
+msgid "Unknown gauge"
+msgstr "Unbekanntes Prüfmittel"
 
 msgid "Unlock"
 msgstr "Entsperren"

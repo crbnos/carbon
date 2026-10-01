@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Temp probe: compare the tessellation of same-named leaves between two CAD
 //! files (STEP vs xbf). Prints per-node vertex-delta stats to characterize the
 //! drift. Usage:

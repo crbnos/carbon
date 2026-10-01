@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import "server-only";
 import type { AdvancedIndex } from "fumadocs-core/search/server";
 import { apiModules } from "@/lib/api-data";
@@ -7,7 +12,7 @@ import {
   glossaryEntries,
   termSlug,
 } from "@carbon/content/glossary";
-import { guideSource, source } from "@/lib/source";
+import { changelogSource, guideSource, source } from "@/lib/source";
 import { operationLabel, toolModules } from "@/lib/tools-data";
 
 const GLOSSARY_URL = "/docs/glossary";
@@ -175,6 +180,8 @@ export function buildSearchIndexes(): AdvancedIndex[] {
     ...mdxIndexes(otherDocs, "docs", "Reference"),
     ...(glossaryPage ? [glossaryIndex(glossaryPage)] : []),
     ...mdxIndexes(guideSource.getPages(), "guide", "Guide"),
+    // No pill of its own; entries show under All.
+    ...mdxIndexes(changelogSource.getPages(), "changelog", "Changelog"),
     ...resourceIndexes(),
     ...toolIndexes(),
   ];

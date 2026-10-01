@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // call_tool result formatting for the MCP surface ONLY — the HTTP API, the
 // in-app agent, and the workflow dispatcher consume callOperation's structured
 // data untouched. Everything here trades bytes for nothing an agent needs:

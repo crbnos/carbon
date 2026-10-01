@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
+  getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
@@ -22,6 +28,7 @@ import {
 import {
   getInspection,
   getInspectionDocumentWithBalloons,
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getIssueTypesList
@@ -137,7 +144,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     events,
     quantities,
     linkedQuantities,
-    document
+    document,
+    gauges,
+    recentGauges
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
@@ -161,7 +170,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           serviceRole,
           inspection.inspectionDocumentId
         )
-      : Promise.resolve(null)
+      : Promise.resolve(null),
+    getInspectionGauges(serviceRole, companyId, lot.data.id),
+    getRecentInspectionGauges(getDatabaseClient(), {
+      inspectionId: lot.data.id,
+      companyId
+    })
   ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
@@ -195,6 +209,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     samples,
     features: features.data ?? [],
     measurements: measurements.data ?? [],
+    gauges: gauges.data ?? [],
+    recentGaugeIds: recentGauges.data ?? [],
     issueTypes: issueTypes.data ?? [],
     trackedEntities: trackedEntities.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,

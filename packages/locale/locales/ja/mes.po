@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(無効)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "すべて"
 msgid "All clear"
 msgstr "異常なし"
 
+msgid "All gauges"
+msgstr "全測定器"
+
 msgid "All jobs"
 msgstr "すべての製造指図"
 
@@ -268,6 +274,12 @@ msgstr "Carbonロゴ"
 msgid "Cards"
 msgstr "カード"
 
+msgid "Characteristic"
+msgstr "特性"
+
+msgid "Characteristics"
+msgstr "特性"
+
 msgid "Chat"
 msgstr "チャット"
 
@@ -282,6 +294,9 @@ msgstr "クリア"
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
+
+msgid "Clear gauge"
+msgstr "測定器をクリア"
 
 msgid "Clear Search"
 msgstr "検索をクリア"
@@ -301,8 +316,8 @@ msgstr "<0/>からクロックイン中"
 msgid "Close"
 msgstr "閉じる"
 
-msgid "Collapse features table"
-msgstr "機能テーブルを折りたたむ"
+msgid "Collapse characteristics table"
+msgstr "特性テーブルを折りたたむ"
 
 msgid "Collapse panel"
 msgstr "パネルを折りたたむ"
@@ -354,9 +369,6 @@ msgstr "完了処理中"
 msgid "Connecting"
 msgstr "接続中"
 
-msgid "Console"
-msgstr "コンソール"
-
 msgid "Console Mode"
 msgstr "コンソールモード"
 
@@ -368,6 +380,15 @@ msgstr "消費期限切れ"
 
 msgid "Continue"
 msgstr "続行"
+
+msgid "Copied!"
+msgstr "コピーしました！"
+
+msgid "Copy"
+msgstr "コピー"
+
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "下書き"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "ファイルをここにドラッグ＆ドロップするか、クリックしてファイルを選択してください"
 
-msgid "Drag to resize drawing and features"
-msgstr "描画と機能をリサイズするためにドラッグします"
+msgid "Drag to resize drawing and characteristics"
+msgstr "ドラッグして図面と特性のサイズを変更"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "バッチ内のすべての製造指図がこれらのステップに従
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "すべてのユニットに判定があります: {passes}件が合格し、{fails}件が不合格です。ロットは各ユニットが独自の結果にルーティングされて終了します。"
 
-msgid "Expand features table"
-msgstr "機能テーブルを展開"
+msgid "Expand characteristics table"
+msgstr "特性テーブルを展開"
 
 msgid "Expand panel"
 msgstr "パネルを展開"
@@ -566,8 +587,8 @@ msgstr "最初に期限切れ"
 msgid "Failed"
 msgstr "失敗"
 
-msgid "Failed features"
-msgstr "失敗した機能"
+msgid "Failed characteristics"
+msgstr "不合格特性"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
@@ -583,6 +604,9 @@ msgstr "アクティブな工程の取得に失敗しました"
 
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnitsの取得に失敗しました"
+
+msgid "Failed to record gauge"
+msgstr "測定器の記録に失敗しました"
 
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
@@ -600,12 +624,6 @@ msgstr "ファイルのアップロードに失敗しました: {0}"
 
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
-
-msgid "Feature"
-msgstr "機能"
-
-msgid "Features"
-msgstr "機能"
 
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
@@ -647,6 +665,12 @@ msgstr "完了する前に、ハイライトされた数量を修正してくだ
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
+
+msgid "Gauge"
+msgstr "測定器"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "特性 {characteristicLabel} の測定器: {currentGauge}"
 
 msgid "General"
 msgstr "一般"
@@ -962,6 +986,9 @@ msgstr "あなたに割り当てられた保全指示はありません。"
 msgid "No files"
 msgstr "ファイルなし"
 
+msgid "No gauges found."
+msgstr "測定器が見つかりません。"
+
 msgid "No Impact"
 msgstr "影響なし"
 
@@ -1129,6 +1156,9 @@ msgstr "オプション"
 msgid "or"
 msgstr "または"
 
+msgid "Out of calibration"
+msgstr "校正対象外"
+
 msgid "Output lot"
 msgstr "出力ロット"
 
@@ -1279,6 +1309,9 @@ msgstr "手直しの理由"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recently used"
+msgstr "最近使用した"
+
 msgid "Record"
 msgstr "記録"
 
@@ -1410,8 +1443,14 @@ msgstr "選択したシリアルをスクラップ中"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} を検索..."
+
 msgid "Search by job or item ID"
 msgstr "ジョブまたはアイテムIDで検索"
+
+msgid "Search gauges..."
+msgstr "測定器を検索..."
 
 msgid "Search operators..."
 msgstr "作業者を検索..."
@@ -1446,6 +1485,9 @@ msgstr "品目を選択..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "バッチ {0} を選択"
+
+msgid "Select gauge"
+msgstr "測定器を選択"
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
@@ -1730,6 +1772,9 @@ msgstr "未払出のシリアル/バッチ材料"
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unknown gauge"
+msgstr "不明な測定器"
 
 msgid "Unlock"
 msgstr "ロック解除"

@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(비활성)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "전체"
 msgid "All clear"
 msgstr "모두 정상"
 
+msgid "All gauges"
+msgstr "모든 계측기"
+
 msgid "All jobs"
 msgstr "모든 작업 지시"
 
@@ -268,6 +274,12 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Characteristic"
+msgstr "특성"
+
+msgid "Characteristics"
+msgstr "특성"
+
 msgid "Chat"
 msgstr "채팅"
 
@@ -282,6 +294,9 @@ msgstr "지우기"
 
 msgid "Clear Filters"
 msgstr "필터 지우기"
+
+msgid "Clear gauge"
+msgstr "계측기 해제"
 
 msgid "Clear Search"
 msgstr "검색 지우기"
@@ -301,8 +316,8 @@ msgstr "<0/>부터 근무 중"
 msgid "Close"
 msgstr "닫기"
 
-msgid "Collapse features table"
-msgstr "기능 테이블 축소"
+msgid "Collapse characteristics table"
+msgstr "특성 표 축소"
 
 msgid "Collapse panel"
 msgstr "패널 축소"
@@ -354,9 +369,6 @@ msgstr "완료 처리 중"
 msgid "Connecting"
 msgstr "연결 중"
 
-msgid "Console"
-msgstr "콘솔"
-
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
@@ -368,6 +380,15 @@ msgstr "소모됨 만료됨"
 
 msgid "Continue"
 msgstr "계속"
+
+msgid "Copied!"
+msgstr "복사되었습니다!"
+
+msgid "Copy"
+msgstr "복사"
+
+msgid "Copy to clipboard"
+msgstr "클립보드에 복사"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "초안"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
 
-msgid "Drag to resize drawing and features"
-msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
+msgid "Drag to resize drawing and characteristics"
+msgstr "드래그하여 도면 및 특성 크기 조정"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모�
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "각 개는 판정을 가집니다: {passes}개 통과하고 {fails}개 불합격합니다. 로트는 각 개가 자신의 결과로 배정되면서 마감됩니다."
 
-msgid "Expand features table"
-msgstr "기능 테이블 확장"
+msgid "Expand characteristics table"
+msgstr "특성 표 확대"
 
 msgid "Expand panel"
 msgstr "패널 확대"
@@ -566,8 +587,8 @@ msgstr "먼저 만료되는 순"
 msgid "Failed"
 msgstr "실패"
 
-msgid "Failed features"
-msgstr "실패한 기능"
+msgid "Failed characteristics"
+msgstr "부적합 특성"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
@@ -583,6 +604,9 @@ msgstr "진행 중인 공정작업을 불러오지 못했습니다"
 
 msgid "Failed to fetch storageUnits"
 msgstr "저장 단위를 불러오지 못했습니다"
+
+msgid "Failed to record gauge"
+msgstr "계측기 기록 실패"
 
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
@@ -600,12 +624,6 @@ msgstr "파일을 업로드하지 못했습니다: {0}"
 
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
-
-msgid "Feature"
-msgstr "기능"
-
-msgid "Features"
-msgstr "기능"
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -647,6 +665,12 @@ msgstr "완료하기 전에 강조된 수량을 수정하세요."
 
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
+
+msgid "Gauge"
+msgstr "계측기"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "특성 {characteristicLabel}에 대한 계측기: {currentGauge}"
 
 msgid "General"
 msgstr "일반"
@@ -962,6 +986,9 @@ msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 msgid "No files"
 msgstr "파일 없음"
 
+msgid "No gauges found."
+msgstr "계측기가 없습니다."
+
 msgid "No Impact"
 msgstr "영향 없음"
 
@@ -1129,6 +1156,9 @@ msgstr "선택 사항"
 msgid "or"
 msgstr "또는"
 
+msgid "Out of calibration"
+msgstr "교정 기한 만료"
+
 msgid "Output lot"
 msgstr "출력 로트"
 
@@ -1279,6 +1309,9 @@ msgstr "재작업 사유"
 msgid "Recent"
 msgstr "최근"
 
+msgid "Recently used"
+msgstr "최근 사용"
+
 msgid "Record"
 msgstr "기록"
 
@@ -1410,8 +1443,14 @@ msgstr "선택한 일련번호 폐기"
 msgid "Search"
 msgstr "검색"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} 검색..."
+
 msgid "Search by job or item ID"
 msgstr "작업 또는 품목 ID로 검색"
+
+msgid "Search gauges..."
+msgstr "계측기 검색..."
 
 msgid "Search operators..."
 msgstr "작업자 검색..."
@@ -1446,6 +1485,9 @@ msgstr "품목을 선택하세요..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "배치 {0} 선택"
+
+msgid "Select gauge"
+msgstr "계측기 선택"
 
 msgid "Select Printer"
 msgstr "프린터 선택"
@@ -1730,6 +1772,9 @@ msgstr "출고되지 않은 일련번호/배치 자재"
 
 msgid "Unknown"
 msgstr "알 수 없음"
+
+msgid "Unknown gauge"
+msgstr "알 수 없는 계측기"
 
 msgid "Unlock"
 msgstr "잠금 해제"

@@ -15,7 +15,7 @@
 
   <p>
     <a href="https://app.carbon.ms"><strong>Start free</strong></a> ·
-    <a href="https://docs.carbon.ms/docs/platform/self-hosting"><strong>Self-host</strong></a> ·
+    <a href="https://carbon.ms/self-hosted"><strong>Self-host</strong></a> ·
     <a href="https://docs.carbon.ms"><strong>Docs</strong></a> ·
     <a href="https://docs.carbon.ms/api-reference"><strong>API</strong></a> ·
     <a href="https://docs.carbon.ms/mcp"><strong>MCP</strong></a> ·

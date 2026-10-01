@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Content-addressed result cache for `/convert`. Conversion is a deterministic
 //! function of (STEP bytes, deflection, code version), so the same model
 //! re-requested (re-plan, re-motion, multiple viewers) skips OCCT tessellation

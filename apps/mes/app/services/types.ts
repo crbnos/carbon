@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type {
@@ -16,6 +21,7 @@ import type {
   getTrackedInputs
 } from "./operations.service";
 import type {
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getIssueTypesList
@@ -124,6 +130,10 @@ export type InspectionSample =
 
 export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
+>[number];
+
+export type InspectionGauge = NonNullable<
+  Awaited<ReturnType<typeof getInspectionGauges>>["data"]
 >[number];
 
 export type InspectionMeasurement = NonNullable<

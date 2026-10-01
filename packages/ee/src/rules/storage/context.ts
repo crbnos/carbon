@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Pure RuleContext assembly for storage-rules evaluation. Deliberately
 // side-effect-free (no auth/env/DB imports) so the registry↔code-path contract
 // can be unit-tested without booting the server environment. `server.ts` owns

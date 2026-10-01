@@ -62,6 +62,7 @@
     "generate:types": "tsx scripts/generate-db-types.ts",
     "generate:workflow-catalog": "tsx scripts/generate-workflow-catalog.ts && pnpm exec biome check --write packages/ee/src/workflows/catalog/",
     "install-skills": "bash .ai/scripts/install-skills.sh",
+    "license:headers": "pnpm --filter @carbon/checks license-headers --",
     "lingui:check": "pnpm run lingui:extract && pnpm run lingui:compile",
     "lingui:clean": "node ./scripts/strip-po-headers.mjs",
     "lingui:compile": "lingui compile --namespace es",
@@ -116,7 +117,6 @@
       "supabase"
     ],
     "patchedDependencies": {
-      "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
       "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"

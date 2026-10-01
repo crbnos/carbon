@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Rental invoice line posting — which accounts a Rental line's revenue lands
 // on, and which schedule rows it writes or consumes. Pure: post-sales-invoice
 // loads the facts, builds the journal lines through buildSalesPostingLines

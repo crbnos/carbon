@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Post-plan support-polygon stability check. Purely diagnostic and additive:
 //! for each part, in final placement order, does its center of mass project
 //! inside the convex hull of the contact points from ALREADY-PLACED parts that

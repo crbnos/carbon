@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Неактивный)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "Все"
 msgid "All clear"
 msgstr "Все в порядке"
 
+msgid "All gauges"
+msgstr "Все средства измерения"
+
 msgid "All jobs"
 msgstr "Все производственные заказы"
 
@@ -268,6 +274,12 @@ msgstr "Логотип Carbon"
 msgid "Cards"
 msgstr "Карточки"
 
+msgid "Characteristic"
+msgstr "Характеристика"
+
+msgid "Characteristics"
+msgstr "Характеристики"
+
 msgid "Chat"
 msgstr "Чат"
 
@@ -282,6 +294,9 @@ msgstr "Очистить"
 
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
+
+msgid "Clear gauge"
+msgstr "Очистить средство измерения"
 
 msgid "Clear Search"
 msgstr "Очистить поиск"
@@ -301,8 +316,8 @@ msgstr "Отметился в системе с <0/>"
 msgid "Close"
 msgstr "Закрыть"
 
-msgid "Collapse features table"
-msgstr "Свернуть таблицу функций"
+msgid "Collapse characteristics table"
+msgstr "Свернуть таблицу характеристик"
 
 msgid "Collapse panel"
 msgstr "Свернуть панель"
@@ -354,9 +369,6 @@ msgstr "Завершение"
 msgid "Connecting"
 msgstr "Подключение"
 
-msgid "Console"
-msgstr "Консоль"
-
 msgid "Console Mode"
 msgstr "Режим консоли"
 
@@ -368,6 +380,15 @@ msgstr "Израсходовано - истек срок"
 
 msgid "Continue"
 msgstr "Продолжить"
+
+msgid "Copied!"
+msgstr "Скопировано!"
+
+msgid "Copy"
+msgstr "Копировать"
+
+msgid "Copy to clipboard"
+msgstr "Копировать в буфер обмена"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +487,8 @@ msgstr "Черновик"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Перетащите файл сюда или нажмите для выбора файла"
 
-msgid "Drag to resize drawing and features"
-msgstr "Перетащите, чтобы изменить размер чертежа и функций"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Перетащите для изменения размера рисунка и характеристик"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -544,8 +565,8 @@ msgstr "Каждый производственный заказ в серии �
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Каждая единица имеет результат: {passes} пройдено и {fails} отклонено. Партия закрывается с распределением каждой единицы по её результату."
 
-msgid "Expand features table"
-msgstr "Развернуть таблицу функций"
+msgid "Expand characteristics table"
+msgstr "Развернуть таблицу характеристик"
 
 msgid "Expand panel"
 msgstr "Развернуть панель"
@@ -566,8 +587,8 @@ msgstr "Истекает первым"
 msgid "Failed"
 msgstr "Не пройдено"
 
-msgid "Failed features"
-msgstr "Неудачные функции"
+msgid "Failed characteristics"
+msgstr "Не прошедшие проверку характеристики"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Не удалось выполнить корректировку запасов"
@@ -583,6 +604,9 @@ msgstr "Не удалось загрузить активные операции
 
 msgid "Failed to fetch storageUnits"
 msgstr "Не удалось получить единицы хранения"
+
+msgid "Failed to record gauge"
+msgstr "Не удалось записать средство измерения"
 
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
@@ -600,12 +624,6 @@ msgstr "Не удалось загрузить файл: {0}"
 
 msgid "Failed to upload image"
 msgstr "Не удалось загрузить изображение"
-
-msgid "Feature"
-msgstr "Функция"
-
-msgid "Features"
-msgstr "Характеристики"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
@@ -647,6 +665,12 @@ msgstr "Исправьте выделенные количества перед 
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
+
+msgid "Gauge"
+msgstr "Средство измерения"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Средство измерения для характеристики {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "Общие"
@@ -962,6 +986,9 @@ msgstr "Вам не назначены никакие заявки на техо
 msgid "No files"
 msgstr "Нет файлов"
 
+msgid "No gauges found."
+msgstr "Средства измерения не найдены."
+
 msgid "No Impact"
 msgstr "Без влияния"
 
@@ -1129,6 +1156,9 @@ msgstr "Опционально"
 msgid "or"
 msgstr "или"
 
+msgid "Out of calibration"
+msgstr "Вне калибровки"
+
 msgid "Output lot"
 msgstr "Партия выпуска"
 
@@ -1279,6 +1309,9 @@ msgstr "Причина доработки"
 msgid "Recent"
 msgstr "Недавние"
 
+msgid "Recently used"
+msgstr "Недавно использованные"
+
 msgid "Record"
 msgstr "Записать"
 
@@ -1410,8 +1443,14 @@ msgstr "Списание выбранного серийного номера"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Поиск {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Поиск по номеру работы или товара"
+
+msgid "Search gauges..."
+msgstr "Поиск средств измерения..."
 
 msgid "Search operators..."
 msgstr "Поиск операторов..."
@@ -1446,6 +1485,9 @@ msgstr "Выберите номенклатуру..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Выберите партию {0}"
+
+msgid "Select gauge"
+msgstr "Выбрать средство измерения"
 
 msgid "Select Printer"
 msgstr "Выберите принтер"
@@ -1730,6 +1772,9 @@ msgstr "Невыданные серийные/партионные матери�
 
 msgid "Unknown"
 msgstr "Неизвестно"
+
+msgid "Unknown gauge"
+msgstr "Неизвестное средство измерения"
 
 msgid "Unlock"
 msgstr "Разблокировать"

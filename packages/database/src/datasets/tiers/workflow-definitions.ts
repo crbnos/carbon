@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Every dataset's starter workflows (shape: `types/workflows.ts`). Split out from the tier that
 // writes them so `@carbon/workflows` can import it and assert every definition still passes
 // `validateDefinition` — the cycle blocks that check from running on this side.

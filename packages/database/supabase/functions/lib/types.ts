@@ -5580,6 +5580,30 @@ export type Database = {
           }
         ]
       }
+      changelogDispatch: {
+        Row: {
+          description: string | null
+          dispatchedAt: string
+          emailsSent: number
+          guid: string
+          title: string | null
+        }
+        Insert: {
+          description?: string | null
+          dispatchedAt?: string
+          emailsSent?: number
+          guid: string
+          title?: string | null
+        }
+        Update: {
+          description?: string | null
+          dispatchedAt?: string
+          emailsSent?: number
+          guid?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
       changeOrder: {
         Row: {
           approvalRequirements: string[] | null
@@ -20228,6 +20252,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string | null
+          gaugeTypeId: string | null
           id: string
           inspectionDocumentId: string
           label: string
@@ -20257,6 +20282,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description?: string | null
+          gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId: string
           label: string
@@ -20286,6 +20312,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string | null
+          gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId?: string
           label?: string
@@ -20387,6 +20414,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inspectionDocuments"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inspectionFeature_gaugeTypeId_fkey"
+            columns: ["gaugeTypeId"]
+            isOneToOne: false
+            referencedRelation: "gaugeType"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inspectionFeature_updatedBy_fkey"
@@ -21061,6 +21095,8 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          gaugeId: string | null
+          gaugeRecordedAt: string | null
           id: string
           inspectionFeatureId: string
           inspectionId: string
@@ -21075,6 +21111,8 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          gaugeId?: string | null
+          gaugeRecordedAt?: string | null
           id?: string
           inspectionFeatureId: string
           inspectionId: string
@@ -21089,6 +21127,8 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          gaugeId?: string | null
+          gaugeRecordedAt?: string | null
           id?: string
           inspectionFeatureId?: string
           inspectionId?: string
@@ -21209,6 +21249,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionSamplingPlan_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionSamplingPlan_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauges"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -86702,6 +86756,42 @@ export type Database = {
       get_company_id_from_foreign_key: {
         Args: { foreign_key: string; tbl: string }
         Returns: string
+      }
+      get_completion_jobs: {
+        Args: {
+          company_id: string
+          location_id: string
+          search?: string
+          through_date?: string
+          time_zone: string
+        }
+        Returns: {
+          completionDate: string
+          customerId: string
+          customerName: string
+          customerReference: string
+          dropShipment: boolean
+          dueDate: string
+          id: string
+          itemName: string
+          itemReadableIdWithRevision: string
+          itemType: Database["public"]["Enums"]["itemType"]
+          jobId: string
+          jobOperations: Json
+          productionQuantity: number
+          projectedCompletionAt: string
+          promisedDate: string
+          quantityComplete: number
+          salesOrderId: string
+          salesOrderReadableId: string
+          shippingMethod: string
+          shipToCity: string
+          shipToCountryCode: string
+          shipToName: string
+          shipToState: string
+          status: Database["public"]["Enums"]["jobStatus"]
+          thumbnailPath: string
+        }[]
       }
       get_consumable_details: {
         Args: { item_id: string }

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Server-only DB helpers for the Implementation Hub. Each takes the supabase
 // client as its first arg and returns the raw { data, error } (does not throw),
 // matching Carbon's service convention. The enrollment + structural writes are

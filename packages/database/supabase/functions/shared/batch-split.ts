@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure record builders for the batch split/merge convention. Consumed from Deno
 // edge functions AND node-side app code (ERP quality-disposition), so it must
 // not touch lib/database.ts or any Deno API — its only dependency is the

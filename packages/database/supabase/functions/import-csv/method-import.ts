@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Method (BOM/BOP) importer — backs the `bom`, `operations`, and `partWithMethod`
 // CSV imports. One row-type-multiplexed engine (ADR-0002): a single file carries
 // PART/BOM/BOP/STEP/TOOL/PARAM rows, each non-PART row naming its parent part
