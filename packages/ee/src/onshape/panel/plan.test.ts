@@ -1267,3 +1267,44 @@ describe("changeNoticeDescriptionJson", () => {
     });
   });
 });
+
+describe("buildAssemblyPlan Show Assembly only", () => {
+  it("proposes a sub-assembly Onshape shows as one unit as bought, with no BOM", () => {
+    const plan = buildAssemblyPlan({
+      documentId: "d",
+      wv: "w",
+      wvId: "w1",
+      elementId: "e",
+      root: {
+        partNumber: "WB-100",
+        name: "Workbench",
+        description: null,
+        revision: null
+      },
+      nodes: [
+        node({
+          index: "1",
+          partNumber: "ASM-009",
+          name: "Foot assembly",
+          purchased: true,
+          shownAsUnit: true
+        })
+      ],
+      items: [],
+      methodByItemId: new Map(),
+      mappedLinesByMethodId: new Map(),
+      manualLinesByMethodId: new Map(),
+      options
+    });
+    expect(plan.items[0]).toMatchObject({
+      partNumber: "ASM-009",
+      shownAsUnit: true,
+      isAssembly: false,
+      proposed: {
+        replenishmentSystem: "Buy",
+        defaultMethodType: "Pull from Inventory"
+      }
+    });
+    expect(plan.methods.map((m) => m.parentPartNumber)).toEqual(["WB-100"]);
+  });
+});

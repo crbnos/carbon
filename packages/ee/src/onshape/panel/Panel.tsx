@@ -70,7 +70,8 @@ import {
   describeMethod,
   indexFieldErrors,
   normalizeWarnings,
-  patchPartStatuses
+  patchPartStatuses,
+  replenishmentMismatches
 } from "./review";
 import {
   clearPanelSessionToken,
@@ -3022,6 +3023,11 @@ function AssemblyReviewSection({
         (item) => `${item.partNumber}: ${textChangeLine(item.changes ?? [])}`
       )
   ];
+  const buyOrMake = replenishmentMismatches(
+    plan,
+    review.edits,
+    review.excluded
+  );
   const keptManual = writtenMethods.flatMap((method) =>
     [
       ...method.keeps,
@@ -3090,6 +3096,18 @@ function AssemblyReviewSection({
             Nothing live changes until someone releases them in Carbon.
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {buyOrMake.length > 0 ? (
+        <CappedWarningList
+          title={(n) =>
+            n === 1
+              ? "1 item's Buy or Make doesn't match Onshape"
+              : `${n} items' Buy or Make doesn't match Onshape`
+          }
+          description="Carbon decides Buy or Make for an item it already has. Change Replenishment on the item below, or the sub-assembly's Subassembly BOM behavior in Onshape."
+          lines={buyOrMake}
+        />
       ) : null}
 
       {textChanges.length > 0 ? (
@@ -3198,7 +3216,11 @@ function AssemblyReviewSection({
                 <p className="truncate text-xs text-muted-foreground">
                   {item.partNumber}
                   {item.revision ? ` · Rev ${item.revision}` : ""}
-                  {item.purchased ? " · purchased" : ""}
+                  {item.shownAsUnit
+                    ? " · purchased (Show Assembly only)"
+                    : item.purchased
+                      ? " · purchased"
+                      : ""}
                   {item.isAssembly ? " · assembly" : ""}
                 </p>
               </div>

@@ -131,3 +131,32 @@ describe("parseBomTree", () => {
     ).toEqual([]);
   });
 });
+
+describe("parseBomTree Subassembly BOM behavior", () => {
+  const headers = [...H, { id: "h-sbb", name: "Subassembly BOM behavior" }];
+  const withBehavior = (item: string, pn: string, behavior: string) => {
+    const r = row(item, pn, 1);
+    return {
+      ...r,
+      headerIdToValue: { ...r.headerIdToValue, "h-sbb": behavior }
+    };
+  };
+
+  it("treats a sub-assembly Onshape shows as one unit as bought", () => {
+    const { lines } = parseBomTree({
+      headers,
+      rows: [
+        withBehavior("1", "ASM-009", "Show Assembly only"),
+        withBehavior("2", "ASM-008", "Show Assembly and components"),
+        withBehavior("3", "PAD-005", "N/A")
+      ]
+    });
+    expect(
+      lines.map((line) => [line.partNumber, line.purchased, line.shownAsUnit])
+    ).toEqual([
+      ["ASM-009", true, true],
+      ["ASM-008", false, undefined],
+      ["PAD-005", false, undefined]
+    ]);
+  });
+});

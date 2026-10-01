@@ -211,7 +211,14 @@ method is not released).
 - `proposeItem` takes the company's push defaults from `parsePushDefaults`
   (`panel/preferences.ts`, fail-soft to `DEFAULT_PUSH_DEFAULTS`). A null unit
   resolves from the company's list at plan time. A purchased BOM row is always
-  Buy.
+  Buy. `parseBomTree` marks a row purchased when its "Purchasing Level" says
+  Purchased (not a standard Onshape column) or its "Subassembly BOM behavior"
+  is Show Assembly only (`shownAsUnit`): Onshape then lists the sub-assembly
+  with no components, so it is created Buy with no BOM. Buy/Make is seeded at
+  create only; for an existing item Carbon decides, and the assembly review's
+  `replenishmentMismatches` (`panel/review.ts`) lists a Buy item the push
+  writes a BOM into and a Make item Onshape shows as one unit, re-evaluated
+  as the row's Replenishment select changes.
 - APPLY re-resolves items by readableId before creating. Parts adopt via
   `pickAdoptTarget` (a Part at the same revision, else any Part — never a
   Material/Tool sharing the number). Revisions compare the way

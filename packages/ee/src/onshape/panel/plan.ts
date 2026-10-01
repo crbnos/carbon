@@ -802,6 +802,11 @@ export type AssemblyPlanItem = {
   /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
   purchased: boolean;
+  /**
+   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so it
+   * is treated as bought and the push writes no BOM for it.
+   */
+  shownAsUnit?: true;
 };
 
 export type AssemblyPlanMethodStatus =
@@ -1144,7 +1149,8 @@ export function buildAssemblyPlan({
             options
           ),
       isAssembly: node.children.length > 0,
-      purchased: node.purchased
+      purchased: node.purchased,
+      ...(node.shownAsUnit ? { shownAsUnit: true as const } : {})
     });
   }
 
