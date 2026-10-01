@@ -684,7 +684,10 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
-/** @mcp upsert */
+/**
+ * @mcp upsert
+ * @mcp key documentSection id
+ */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {

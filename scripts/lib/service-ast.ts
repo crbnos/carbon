@@ -521,13 +521,14 @@ export function branchesOnKeyPresence(
 /**
  * Whether sending `id` is what separates an update from an insert, read off the
  * payload parameter's TYPE: every member of its union that requires `updatedBy`
- * (the update shape) has an `id`, and no other member REQUIRES one. Then a call
- * with an `id` can only mean "update this record" and a call without one can
- * only mean "create".
+ * (the update shape) has an `id`, and no other member has an `id` AT ALL. Then
+ * "an id was sent" is not a guess about intent — the service's own signature
+ * says a create carries none.
  *
- * False when both shapes require an `id` (a part's `id` is its part number on
- * create and its item id on update) or neither has one (a pick method is keyed
- * by item and location) — there the payload cannot say which it is.
+ * False when a create may carry an `id` too, required or optional (a part's
+ * `id` is its part number on create; a document section may be created under a
+ * chosen id), or when neither shape has one (a pick method is keyed by item
+ * and location). There an `id` proves nothing and the row has to be looked up.
  */
 export function idDistinguishesUpdate(
   fn: ServiceFunctionNode,
@@ -548,10 +549,7 @@ export function idDistinguishesUpdate(
 
     return (
       updates.every((m) => m.getProperty("id") !== undefined) &&
-      creates.every((m) => {
-        const id = m.getProperty("id");
-        return id === undefined || id.hasFlags(SymbolFlags.Optional);
-      })
+      creates.every((m) => m.getProperty("id") === undefined)
     );
   }
   return false;

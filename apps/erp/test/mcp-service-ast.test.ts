@@ -263,6 +263,15 @@ describe("the upsert rule", () => {
     ) {}
 
     /** @mcp upsert */
+    export async function idOptionalOnCreate(
+      client: any,
+      row: { id?: string; name: string } & (
+        | { createdBy: string }
+        | { updatedBy: string }
+      )
+    ) {}
+
+    /** @mcp upsert */
     export async function idBothWays(
       client: any,
       row:
@@ -310,6 +319,15 @@ describe("the upsert rule", () => {
     expect(upsertRule(fns.byId!, schema("id", "name"))).toEqual({
       keys: ["id"]
     });
+  });
+
+  // A create that MAY carry an id makes "an id was sent" ambiguous: it could be
+  // a new record under a chosen id. Only a create shape with no id field at all
+  // lets the id decide.
+  it("does not let id decide when a create may carry one too", () => {
+    expect(() =>
+      upsertRule(fns.idOptionalOnCreate!, schema("id", "name"))
+    ).toThrow(/cannot say whether it creates or updates/);
   });
 
   it("refuses an upsert whose payload cannot say, until a key is declared", () => {
