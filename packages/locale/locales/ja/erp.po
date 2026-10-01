@@ -6251,10 +6251,10 @@ msgid "Description of Issue"
 msgstr "問題の説明"
 
 msgid "Detach"
-msgstr ""
+msgstr "リンク解除"
 
 msgid "Detach to edit them in Carbon."
-msgstr ""
+msgstr "Carbonで編集するにはリンクを解除してください。"
 
 msgid "Detail"
 msgstr "詳細"
@@ -10094,7 +10094,7 @@ msgid "Last Name"
 msgstr "姓"
 
 msgid "Last pushed {lastPushed}."
-msgstr ""
+msgstr "最終プッシュ: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "前四半期"
@@ -10314,7 +10314,7 @@ msgid "Link to sales order line"
 msgstr "受注明細へのリンク"
 
 msgid "Linked"
-msgstr ""
+msgstr "リンク済み"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -11262,7 +11262,7 @@ msgid "Name an internal project owner with decision authority"
 msgstr "意思決定権を持つ社内プロジェクト責任者を指定する"
 
 msgid "Name and description are managed in Onshape."
-msgstr ""
+msgstr "名前と説明はOnshapeで管理されています。"
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名前はハブ全体でそれらのロールが参照されている場所に入力されます。"
@@ -12714,7 +12714,7 @@ msgid "Open in MES"
 msgstr "MESで開く"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Onshapeで開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
