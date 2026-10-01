@@ -58,9 +58,13 @@ export function ImplementationData({
   const promise = useImplementationPromise();
   const last = useResolved(promise, null);
   if (!promise) return null;
+  const fallback = <>{last ? children(last) : null}</>;
   return (
-    <Suspense fallback={last ? children(last) : null}>
-      <Await resolve={promise}>{children}</Await>
+    <Suspense fallback={fallback}>
+      {/* Without errorElement a rejected stream reaches the route error boundary. */}
+      <Await resolve={promise} errorElement={fallback}>
+        {children}
+      </Await>
     </Suspense>
   );
 }
