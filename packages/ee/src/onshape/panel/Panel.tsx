@@ -358,8 +358,7 @@ function partOutcome(result: PartApplyResult): PartRowOutcome {
 /** The section-level summary of a part push, in the shape the others use. */
 function partsOutcomeText(
   results: PartApplyResult[],
-  rows: Array<{ partId: string; partNumber: string | null }>,
-  warnings: string[]
+  rows: Array<{ partId: string; partNumber: string | null }>
 ): PushOutcome {
   const label = (r: PartApplyResult) =>
     rows.find((row) => row.partId === r.partId)?.partNumber ??
@@ -382,8 +381,7 @@ function partsOutcomeText(
       .map((r) => `${label(r)}: ${r.message ?? "skipped"}`),
     errors: results
       .filter((r) => r.action === "error")
-      .map((r) => `${label(r)}: ${r.message ?? "failed"}`),
-    warnings
+      .map((r) => `${label(r)}: ${r.message ?? "failed"}`)
   };
 }
 
@@ -396,11 +394,6 @@ type PushOutcome = {
   text: string;
   skipped: string[];
   errors: string[];
-  /**
-   * Went through, but something about it needs checking — e.g. a value that
-   * landed in a List custom field whose option could not be added.
-   */
-  warnings?: string[];
   /**
    * Things that went through but the user has to know about — a released
    * method superseded by a Draft version, which takes effect only once
@@ -494,23 +487,6 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
           <AlertDescription>
             <ul className="list-disc space-y-1 pl-4">
               {outcome.skipped.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {(outcome.warnings ?? []).length > 0 ? (
-        <Alert variant="warning">
-          <LuTriangleAlert />
-          <AlertTitle>
-            {(outcome.warnings ?? []).length === 1
-              ? "1 thing to check"
-              : `${(outcome.warnings ?? []).length} things to check`}
-          </AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc space-y-1 pl-4">
-              {(outcome.warnings ?? []).map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -740,7 +716,7 @@ export function OnshapePanel({
   const [pushOutcome, setPushOutcome] = useState<
     Record<string, PartRowOutcome>
   >({});
-  /** The part push's section-level result: counts, problems, warnings. */
+  /** The part push's section-level result: counts and problems. */
   const [partsOutcome, setPartsOutcome] = useState<PushOutcome | null>(null);
 
   const [tab, setTab] = useState<PanelTab>("push");
@@ -1185,7 +1161,7 @@ export function OnshapePanel({
           null
         );
         const body = (await response.json()) as
-          | { results: PartApplyResult[]; warnings?: string[] }
+          | { results: PartApplyResult[] }
           | { summary: AssemblyPushSummary | ReleasePushSummary }
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
@@ -1213,14 +1189,7 @@ export function OnshapePanel({
               results.map((r) => [r.partId, partOutcome(r)])
             )
           }));
-          // The route computes `warnings` and says they must NOT be silent.
-          setPartsOutcome(
-            partsOutcomeText(
-              results,
-              current.plan.rows,
-              "warnings" in body ? (body.warnings ?? []) : []
-            )
-          );
+          setPartsOutcome(partsOutcomeText(results, current.plan.rows));
           setParts((prev) =>
             prev.status === "ready"
               ? {
@@ -3451,7 +3420,7 @@ function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
     return (
       <Status
         color="red"
-        tooltip="Carbon already has an item with this part number that isn't linked to this Onshape part. Pushing uses that item."
+        tooltip="Carbon already has an item with this part number, not linked to this one in Onshape. Pushing uses that item."
       >
         Conflict
       </Status>
