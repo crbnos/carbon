@@ -122,6 +122,13 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
+**Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
+the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) turns server tracing on,
+`OTEL_EXPORTER_OTLP_HEADERS` carries the backend's auth, and
+`OTEL_SERVICE_NAME` / `OTEL_TRACES_SAMPLER` / `OTEL_TRACES_SAMPLER_ARG` tune it.
+Unset = no tracing. See `packages/logger/AGENTS.md` → Tracing.
+
 **Deployment** — `VERCEL_URL` (required at module load; value unused off-Vercel,
 set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
 `MES_URL` drive `getAppUrl()` / `getMESUrl()`.

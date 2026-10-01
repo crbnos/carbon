@@ -10,7 +10,8 @@ import {
   type RouterContextProvider
 } from "react-router";
 import { getRequestContext } from "./context.server";
-import { isSensitiveKey, REDACTED } from "./redaction";
+import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
+import { annotateRequestSpan } from "./tracing.server";
 
 // Re-exported from the existing entry point rather than adding a new package
 // export subpath: Vite resolves a package's `exports` map once at dev-server
@@ -48,23 +49,6 @@ const BODY_LOG_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * pulled into the log path.
  */
 const BODY_LOG_MAX_BYTES = 8 * 1024;
-
-/**
- * Mask sensitive query-param values (`?code=…`, `?token=…`, …) while keeping the
- * rest of the query string readable. Returns "" for a bodyless query.
- */
-function redactSearch(search: string): string {
-  if (!search || search === "?") return "";
-  const params = new URLSearchParams(search);
-  let changed = false;
-  for (const key of params.keys()) {
-    if (isSensitiveKey(key)) {
-      params.set(key, REDACTED);
-      changed = true;
-    }
-  }
-  return changed ? `?${params.toString()}` : search;
-}
 
 /**
  * Recursively mask values whose key matches a sensitive-field pattern (the same
@@ -175,6 +159,10 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
 
   const response = await withContext({ requestId }, async () => {
     const res = await next();
+    annotateRequestSpan({
+      "http.response.status_code": res.status,
+      "carbon.request_id": requestId
+    });
     // Debug-level so it is visible in dev but filtered by the prod `info`
     // default — the pipeline is observable with zero migrated call sites.
     // Rendered as a Morgan "dev"-style colored line in dev (see

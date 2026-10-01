@@ -10,12 +10,20 @@ import {
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
+import { createTracing } from "@carbon/logger/tracing.server";
+import { waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
+
+export const instrumentations = createTracing({
+  serviceName: "carbon-erp",
+  // Vercel can suspend the instance once the response is sent.
+  afterRequest: process.env.VERCEL ? (flush) => waitUntil(flush()) : undefined
+});
 scheduleInngestSelfSync();
 
 const log = getLogger("erp");
