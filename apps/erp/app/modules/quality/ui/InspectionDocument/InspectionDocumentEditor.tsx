@@ -880,6 +880,23 @@ function mapFeatureRowFromRecords(
   };
 }
 
+// Features saved together share one createdAt (the save RPC runs in a single
+// transaction), so createdAt alone leaves their order to the heap, and an
+// UPDATE moves the edited row to the end. Break the tie by balloon label, the
+// order the inspection grid shows them in.
+function compareFeatureRecords(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>
+) {
+  return (
+    String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")) ||
+    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
+      numeric: true
+    }) ||
+    String(a.id).localeCompare(String(b.id))
+  );
+}
+
 function buildFeatureRowsFromLoader(
   features: Array<Record<string, unknown>>,
   balloons: Array<Record<string, unknown>>
@@ -887,14 +904,16 @@ function buildFeatureRowsFromLoader(
   const balloonByFeatureId = new Map(
     balloons.map((b) => [String(b.inspectionFeatureId), b])
   );
-  return features.map((f) =>
-    mapFeatureRowFromRecords(
-      f,
-      f.balloonId != null
-        ? balloons.find((b) => String(b.id) === String(f.balloonId))
-        : balloonByFeatureId.get(String(f.id))
-    )
-  );
+  return [...features]
+    .sort(compareFeatureRecords)
+    .map((f) =>
+      mapFeatureRowFromRecords(
+        f,
+        f.balloonId != null
+          ? balloons.find((b) => String(b.id) === String(f.balloonId))
+          : balloonByFeatureId.get(String(f.id))
+      )
+    );
 }
 
 export default function InspectionDocumentEditor({
