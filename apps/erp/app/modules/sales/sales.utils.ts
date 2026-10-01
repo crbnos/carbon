@@ -303,6 +303,69 @@ export function applyPriceRules(
   return { finalPrice, appendedTrace };
 }
 
+// Engine order of the trace steps: overrides, configuration prices, the
+// winning discount, markups, then the floor. An unknown step sorts with the
+// floor, after every rule.
+const PRICE_TRACE_STEP_ORDER: Record<string, number> = {
+  "Base Price": 0,
+  Override: 1,
+  "Type Override": 1,
+  "All Override": 1,
+  Configuration: 2,
+  Discount: 3,
+  Markup: 4,
+  "Final Price": 6
+};
+
+const isPriceRuleStep = (step: PriceTraceStep) =>
+  step.step !== "Base Price" && step.step !== "Final Price";
+
+/** Whether an override or pricing rule changed the price in this trace. */
+export function hasPriceRuleSteps(
+  trace: PriceTraceStep[] | null | undefined
+): boolean {
+  return (trace ?? []).some(isPriceRuleStep);
+}
+
+export type PriceTraceMatrixRow = {
+  key: string;
+  // The step as first seen — names the row.
+  step: PriceTraceStep;
+  byQuantity: Record<number, PriceTraceStep>;
+};
+
+/**
+ * Lines the price traces of several quantity breaks up as one table: a row
+ * per distinct step, in engine order, holding that step for every quantity it
+ * applied to. A rule that only matches some quantities (a quantity range, an
+ * override break) is one row with gaps, not a row per quantity.
+ */
+export function buildPriceTraceMatrix(
+  traces: { quantity: number; trace: PriceTraceStep[] | null | undefined }[]
+): PriceTraceMatrixRow[] {
+  const rows: PriceTraceMatrixRow[] = [];
+  for (const { quantity, trace } of traces) {
+    // Search forward only, so a step repeated within one trace gets its own
+    // row instead of overwriting the first.
+    let cursor = 0;
+    for (const step of trace ?? []) {
+      const key = `${step.step}|${step.ruleId ?? ""}|${step.source}`;
+      const index = rows.findIndex((row, i) => i >= cursor && row.key === key);
+      if (index >= 0) {
+        rows[index].byQuantity[quantity] = step;
+        cursor = index + 1;
+      } else {
+        rows.splice(cursor, 0, { key, step, byQuantity: { [quantity]: step } });
+        cursor += 1;
+      }
+    }
+  }
+  const order = (row: PriceTraceMatrixRow) =>
+    PRICE_TRACE_STEP_ORDER[row.step.step] ?? 5;
+  // Array.prototype.sort is stable: rows of one kind keep their trace order.
+  return rows.sort((a, b) => order(a) - order(b));
+}
+
 type Configuration = Record<string, unknown>;
 
 function stableStringify(value: unknown): string {
@@ -385,4 +448,42 @@ export function configuredQuoteBasePrice({
     return null;
   }
   return unitSalePrice;
+}
+
+export type QuoteLinePriceBasis = "salePrice" | "costPlus" | "supplierPrice";
+
+/**
+ * Where a system-priced quote line row starts before the pricing rules run —
+ * the read-side mirror of the row builders and `recalculateQuoteLinePrices`,
+ * used to explain a price rather than set one. A Make to Order line is
+ * cost-plus unless `configuredQuoteBasePrice` prices it from the part's sale
+ * price; a Pull from Inventory line starts from the sale price and a Purchase
+ * to Order line from the supplier price, until someone applies a markup — a
+ * row with markups was repriced cost-plus by the grid.
+ */
+export function quoteLinePriceBasis({
+  methodType,
+  configuration,
+  unitSalePrice,
+  categoryMarkups,
+  defaultMarkups
+}: {
+  methodType: string | null | undefined;
+  configuration: unknown;
+  unitSalePrice: number | null | undefined;
+  categoryMarkups: CategoryMarkups | null | undefined;
+  defaultMarkups: CategoryMarkups;
+}): QuoteLinePriceBasis {
+  if (methodType === "Make to Order") {
+    return configuredQuoteBasePrice({
+      configuration,
+      unitSalePrice,
+      categoryMarkups,
+      defaultMarkups
+    }) === null
+      ? "costPlus"
+      : "salePrice";
+  }
+  if (Object.keys(categoryMarkups ?? {}).length > 0) return "costPlus";
+  return methodType === "Purchase to Order" ? "supplierPrice" : "salePrice";
 }

@@ -67,6 +67,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `applyPriceRules` — applies matched discount/markup rules to a starting price
 - `resolvePrice` — full price resolution: base → overrides → rules → final
 - `resolvePriceList` — batch price list for a customer/type with quantity preview
+- `getQuoteLinePriceTraces` (`sales.server.ts`) — read-only: reruns `resolvePrice` for every quantity break of a quote line and returns the traces (`api+/sales.quote-line-price-trace.ts` → `QuotePriceTraceModal`, the calculator button on the pricing grid's Unit Price row). The starting price per row comes from `quoteLinePriceBasis` (`sales.utils.ts`)
 - `closeSalesOrder` / `releaseSalesOrder` / `finalizeQuote` — status transitions
 - `getQuote` / `getQuoteLines` / `getQuoteLinePrices` / `getQuoteMaterials` / `getQuoteOperations` — quote reads
 - `getSalesOrder(s)` / `getSalesOrderLines` / `getExternalSalesOrderLines` — order reads

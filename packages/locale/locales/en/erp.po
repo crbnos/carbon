@@ -741,6 +741,9 @@ msgstr "A managed cloud-hosted version of Carbon"
 msgid "A managed version with all the advanced features"
 msgstr "A managed version with all the advanced features"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "A manual price was entered directly, so the pricing rules are not applied to it."
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A material is a physical item used to make a part that can be used across multiple jobs"
 
@@ -890,6 +893,9 @@ msgstr "A quote's salesperson changes"
 
 msgid "A quote's status changes"
 msgstr "A quote's status changes"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "A readable Customer ID appears on lists, forms and dropdowns."
@@ -3374,6 +3380,9 @@ msgstr "Calculated finished-good expiry"
 msgid "Calculating best case…"
 msgstr "Calculating best case…"
 
+msgid "Calculating prices…"
+msgstr "Calculating prices…"
+
 msgid "Calculation Method"
 msgstr "Calculation Method"
 
@@ -4759,6 +4768,9 @@ msgstr "Could not build PDF. Try again."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Could not dissolve {0}: {1} — production already recorded"
+
+msgid "Could not explain these prices"
+msgstr "Could not explain these prices"
 
 msgid "Could not predict lead time"
 msgstr "Could not predict lead time"
@@ -8171,6 +8183,9 @@ msgstr "Filter"
 msgid "Filter by…"
 msgstr "Filter by…"
 
+msgid "Final Price"
+msgstr "Final Price"
+
 msgid "Finalize"
 msgstr "Finalize"
 
@@ -8927,6 +8942,12 @@ msgstr "How the resolved price was calculated."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "How the unit price for each quantity was calculated."
+
+msgid "How these prices were calculated"
+msgstr "How these prices were calculated"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
@@ -14251,6 +14272,10 @@ msgstr "Quote to cash"
 
 msgid "Quote Type"
 msgstr "Quote Type"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "Quoted at {0}"
 
 msgid "Quoted Date"
 msgstr "Quoted Date"

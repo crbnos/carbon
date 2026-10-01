@@ -107,6 +107,8 @@ Resolution runs when the item or quantity changes on a line and fills in the uni
 
 The same engine prices both surfaces. On a **quote line** it runs during cost rollup and re-price. On a **sales order line** the line form calls the same resolution as you pick an item or change the quantity, filling the unit price and storing the trace. Both line types carry the resolved price and its provenance, so a price traces back to the exact override and rule that produced it.
 
+To see how a price was reached, click the calculator icon beside the unit price. On a sales order line it opens the trace stored with the line. On a quote line it appears in the **Unit Price** row of the pricing grid whenever an override or rule applies, and lays every quantity break side by side, recalculated against the rules as they stand now. A price you typed is marked **Manual**, since rules aren't applied to it.
+
 There's no separate "price list" document in Carbon — the price list is simply the set of overrides scoped to a customer or customer type, and the resolution is computed in the application, not in the database.
 
 ## Related

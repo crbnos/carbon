@@ -741,6 +741,9 @@ msgstr "관리형 클라우드 호스팅 Carbon 버전"
 msgid "A managed version with all the advanced features"
 msgstr "모든 고급 기능이 포함된 관리되는 버전"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "수동으로 입력된 가격이므로 가격 규칙이 적용되지 않습니다."
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "자재는 부품을 만드는 데 사용되는 물리적 품목으로 여러 작업 지시에서 사용할 수 있습니다."
 
@@ -890,6 +893,9 @@ msgstr "견적의 영업담당자가 변경되었습니다"
 
 msgid "A quote's status changes"
 msgstr "견적의 상태가 변경되었습니다"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "가격 규칙이나 라인의 원가가 설정된 후 변경되면 인용된 가격과 최종 가격이 달라집니다."
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "읽을 수 있는 고객 ID가 목록, 양식 및 드롭다운에 표시됩니다."
@@ -3374,6 +3380,9 @@ msgstr "계산된 완성품 유통기한"
 msgid "Calculating best case…"
 msgstr "최선의 경우 계산 중…"
 
+msgid "Calculating prices…"
+msgstr "가격 계산 중…"
+
 msgid "Calculation Method"
 msgstr "계산 방법"
 
@@ -4759,6 +4768,9 @@ msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록됨"
+
+msgid "Could not explain these prices"
+msgstr "이 가격들을 설명할 수 없습니다."
 
 msgid "Could not predict lead time"
 msgstr "리드타임을 예측할 수 없습니다"
@@ -8171,6 +8183,9 @@ msgstr "필터"
 msgid "Filter by…"
 msgstr "필터링…"
 
+msgid "Final Price"
+msgstr "최종 가격"
+
 msgid "Finalize"
 msgstr "확정"
 
@@ -8927,6 +8942,12 @@ msgstr "확정된 가격이 계산된 방식입니다."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검사, 로트 비율, 또는 AQL(Z1.4 / ISO 2859-1). 각 모드는 아래에 고유한 파라미터 필드를 표시합니다."
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "각 수량별 단가가 어떻게 계산되었는지"
+
+msgid "How these prices were calculated"
+msgstr "이 가격들이 어떻게 계산되었는지"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 계측기의 사용 방식 — 보통 검사(정기 점검) 또는 표준기(다른 계측기 교정)."
@@ -14251,6 +14272,10 @@ msgstr "견적서에서 수금까지"
 
 msgid "Quote Type"
 msgstr "견적 유형"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "{0}에 인용됨"
 
 msgid "Quoted Date"
 msgstr "견적일"

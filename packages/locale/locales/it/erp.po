@@ -741,6 +741,9 @@ msgstr "Una versione gestita ospitata nel cloud di Carbon"
 msgid "A managed version with all the advanced features"
 msgstr "Una versione gestita con tutte le funzioni avanzate"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "Un prezzo manuale è stato inserito direttamente, quindi le regole di prezzo non vengono applicate."
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un materiale è un articolo fisico utilizzato per realizzare un componente che può essere utilizzato su più ordini di produzione"
 
@@ -890,6 +893,9 @@ msgstr "Il venditore del preventivo cambia"
 
 msgid "A quote's status changes"
 msgstr "Lo stato del preventivo cambia"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "Un prezzo preventivato differisce dal prezzo finale quando le regole di prezzo o i costi della riga sono cambiati dopo che è stato impostato."
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "Un ID cliente leggibile appare negli elenchi, nei moduli e nei menu a discesa."
@@ -3374,6 +3380,9 @@ msgstr "Scadenza del prodotto finito calcolata"
 msgid "Calculating best case…"
 msgstr "Calcolo caso migliore…"
 
+msgid "Calculating prices…"
+msgstr "Calcolo dei prezzi…"
+
 msgid "Calculation Method"
 msgstr "Metodo di Calcolo"
 
@@ -4759,6 +4768,9 @@ msgstr "Impossibile creare il PDF. Riprova."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Impossibile dissolvere {0}: {1} — produzione già registrata"
+
+msgid "Could not explain these prices"
+msgstr "Impossibile spiegare questi prezzi"
 
 msgid "Could not predict lead time"
 msgstr "Impossibile prevedere il lead time"
@@ -8171,6 +8183,9 @@ msgstr "Filtro"
 msgid "Filter by…"
 msgstr "Filtra per…"
 
+msgid "Final Price"
+msgstr "Prezzo finale"
+
 msgid "Finalize"
 msgstr "Finalizza"
 
@@ -8927,6 +8942,12 @@ msgstr "Come è stato calcolato il prezzo risolto."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Come viene decisa la dimensione del campione — Ispeziona Tutto, Ispeziona i Primi N, Percentuale del Lotto o AQL (Z1.4 / ISO 2859-1). Ogni modalità rivela i suoi campi di parametri di seguito."
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "Come è stato calcolato il prezzo unitario per ogni quantità."
+
+msgid "How these prices were calculated"
+msgstr "Come sono stati calcolati questi prezzi"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Come viene utilizzato questo strumento di misurazione: Standard (controlli regolari) o Master (calibra altri strumenti)."
@@ -14251,6 +14272,10 @@ msgstr "Dalla offerta al pagamento"
 
 msgid "Quote Type"
 msgstr "Tipo di Preventivo"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "Preventivato a {0}"
 
 msgid "Quoted Date"
 msgstr "Data Quotata"

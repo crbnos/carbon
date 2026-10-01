@@ -741,6 +741,9 @@ msgstr "Carbon'ın yönetilen bulut barındırılan sürümü"
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "El ile girilen bir fiyat doğrudan kullanıldığından, fiyatlandırma kuralları buna uygulanmamaktadır."
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Malzeme, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
 
@@ -890,6 +893,9 @@ msgstr "Teklifin satış temsilcisi değişti"
 
 msgid "A quote's status changes"
 msgstr "Teklifin durumu değişti"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "Teklif fiyatı, fiyatlandırma kuralları veya satır maliyetleri ayarlandıktan sonra değiştiğinde nihai fiyattan farklı olur."
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "Okunabilir bir Müşteri ID'si listeler, formlar ve açılır listelerde görünür."
@@ -3374,6 +3380,9 @@ msgstr "Hesaplanan bitmiş ürün son kullanma tarihi"
 msgid "Calculating best case…"
 msgstr "En iyi durum hesaplanıyor…"
 
+msgid "Calculating prices…"
+msgstr "Fiyatlar hesaplanıyor…"
+
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
 
@@ -4759,6 +4768,9 @@ msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
+
+msgid "Could not explain these prices"
+msgstr "Bu fiyatlar açıklanamadı"
 
 msgid "Could not predict lead time"
 msgstr "Tedarik süresi tahmin edilemedi"
@@ -8171,6 +8183,9 @@ msgstr "Filtre"
 msgid "Filter by…"
 msgstr "Filtrele…"
 
+msgid "Final Price"
+msgstr "Nihai Fiyat"
+
 msgid "Finalize"
 msgstr "Onayla"
 
@@ -8927,6 +8942,12 @@ msgstr "Çözülen fiyatın nasıl hesaplandığı."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele, İlk N'yi İncele, Lot'un Yüzdesi veya AQL (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "Her bir miktar için birim fiyatın nasıl hesaplandığı."
+
+msgid "How these prices were calculated"
+msgstr "Bu fiyatların nasıl hesaplandığı"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu ölçüm aletinin nasıl kullanıldığı — Normal (düzenli kontroller) veya Mastar (diğer ölçüm aletlerini kalibre eder)."
@@ -14251,6 +14272,10 @@ msgstr "Tekliften nakit"
 
 msgid "Quote Type"
 msgstr "Teklif Türü"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "Teklif edilen: {0}"
 
 msgid "Quoted Date"
 msgstr "Teklif Tarihi"

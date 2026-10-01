@@ -125,6 +125,13 @@ export type PriceTraceStep = {
   label?: string;
 };
 
+// How the pricing rules price one quantity break of a quote line. `trace` is
+// null when the row's starting price could not be determined.
+export type QuoteLinePriceTrace = {
+  quantity: number;
+  trace: PriceTraceStep[] | null;
+};
+
 export type PricingRule = NonNullable<
   Awaited<ReturnType<typeof getPricingRules>>["data"]
 >[number];

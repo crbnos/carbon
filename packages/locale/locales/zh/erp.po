@@ -741,6 +741,9 @@ msgstr "Carbon 的托管云版本"
 msgid "A managed version with all the advanced features"
 msgstr "具有所有高级功能的托管版本"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "已直接输入手动价格，定价规则不适用。"
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "原材料是用于制造零件的物质物品，可跨多个工单使用。"
 
@@ -890,6 +893,9 @@ msgstr "报价单的销售人员已更改"
 
 msgid "A quote's status changes"
 msgstr "报价单的状态已更改"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "当定价规则或行的成本在设置后发生变化时，报价价格与最终价格不同。"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "可读的客户ID出现在列表、表单和下拉列表中。"
@@ -3374,6 +3380,9 @@ msgstr "计算成品有效期"
 msgid "Calculating best case…"
 msgstr "正在计算最佳情况…"
 
+msgid "Calculating prices…"
+msgstr "正在计算价格…"
+
 msgid "Calculation Method"
 msgstr "计算方法"
 
@@ -4759,6 +4768,9 @@ msgstr "无法生成 PDF。请重试。"
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "无法解散 {0}: {1} — 生产已记录"
+
+msgid "Could not explain these prices"
+msgstr "无法解释这些价格"
 
 msgid "Could not predict lead time"
 msgstr "无法预测提前期"
@@ -8171,6 +8183,9 @@ msgstr "筛选"
 msgid "Filter by…"
 msgstr "按…筛选"
 
+msgid "Final Price"
+msgstr "最终价格"
+
 msgid "Finalize"
 msgstr "完成"
 
@@ -8927,6 +8942,12 @@ msgstr "已解决价格的计算方式。"
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "样本量如何确定——检验全部、检验前N个、批次百分比或AQL（Z1.4 / ISO 2859-1）。每种模式显示其自身的参数字段。"
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "如何计算每个数量的单价。"
+
+msgid "How these prices were calculated"
+msgstr "这些价格是如何计算的"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "此量具的用途——正常检验（定期检查）或标准器（校准其他量具）。"
@@ -14251,6 +14272,10 @@ msgstr "从报价单到现金"
 
 msgid "Quote Type"
 msgstr "报价类型"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "报价于 {0}"
 
 msgid "Quoted Date"
 msgstr "报价日期"

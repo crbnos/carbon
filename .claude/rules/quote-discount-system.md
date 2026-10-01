@@ -117,7 +117,22 @@ it.
 - `pricingRuleValidator` in `sales.models.ts`; Percentage `amount` must be ≤ 1.
 - UI: `ui/Quotes/QuoteLinePricing.tsx` (per-quantity discount/markup editing) and
   the `ui/Pricing/` folder (`PricingRuleForm`, `PricingRulesTable`, `PriceOverrideForm`,
-  `PriceTracePopover`).
+  `PriceTraceModal`).
+- **Price trace UI.** `PriceTraceModal` (calculator icon → modal) shows ONE stored
+  trace: the sales order line's `priceTrace` and a price-list row's. A quote line
+  stores no trace per quantity break, so `QuotePriceTraceModal`
+  (`ui/Quotes/`, the calculator button on the grid's Unit Price row) recomputes
+  them: it POSTs `api/sales/quote-line-price-trace` →
+  `getQuoteLinePriceTraces` (`sales.server.ts`), which reruns `resolvePrice` per
+  break from the base `quoteLinePriceBasis` (`sales.utils.ts`) picks — the
+  read-side mirror of the row builders: cost-plus (the grid's rollup, sent in
+  the request), the part's sale price, or the supplier price. It reflects the
+  rules as they stand NOW, so the modal shows "Quoted at …" where the stored
+  price differs, and a manual price's column carries no trace.
+  `buildPriceTraceMatrix` lines the traces up as one table, a row per step and
+  a column per quantity. The button only renders when an override or rule
+  applies to a non-manual break; the grid loads the traces once per line for
+  that (rule matching never depends on the price).
 - Every path that turns a cost rollup into a quote line price runs it through
   `resolvePrice` as `existingBasePrice` with the line's `configuration`: the server
   builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and

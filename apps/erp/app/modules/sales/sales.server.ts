@@ -8,8 +8,18 @@ import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import type { Violation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getCompanySettings } from "~/modules/settings";
+import { lookupBuyPriceFromMap } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
+import { resolvePrice } from "./sales.service";
+import {
+  asConfiguration,
+  getEffectiveDefaultMarkups,
+  type QuoteLinePriceBasis,
+  quoteLinePriceBasis
+} from "./sales.utils";
+import type { QuoteLinePriceTrace } from "./types";
 
 const logger = getLogger("erp", "sales-server");
 
@@ -241,6 +251,158 @@ export async function saveQuoteLineWithPrices(args: {
         .execute();
     }
   });
+}
+
+const PRICE_BASIS_SOURCE: Record<QuoteLinePriceBasis, string> = {
+  salePrice: "Item Unit Sale Price",
+  costPlus: "Cost Plus Markup",
+  supplierPrice: "Supplier Price"
+};
+
+/**
+ * Explains each quantity break of a quote line: the price it starts from and
+ * every override and pricing rule applied on top. Read-only — the same
+ * `resolvePrice` pipeline that prices the line (the row builders,
+ * `recalculateQuoteLinePrices`, the grid's markup edits), run again for its
+ * trace, so it reflects the rules as they stand now.
+ *
+ * Every row is traced, a manual one included: the trace says what the rules
+ * make of that quantity, and the caller knows which prices were typed instead.
+ * `rollupPrices` is the cost-plus price per quantity as the pricing grid
+ * computes it; it is only used for a row that is priced cost-plus.
+ */
+export async function getQuoteLinePriceTraces(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  rollupPrices: Record<number, number>
+): Promise<{
+  data: QuoteLinePriceTrace[] | null;
+  error: { message: string } | null;
+}> {
+  // quoteId and quoteLineId come from the request: the line must belong to
+  // this quote AND this company before any price row is read.
+  const [line, quote, prices, settings] = await Promise.all([
+    client
+      .from("quoteLine")
+      .select("itemId, methodType, configuration")
+      .eq("id", quoteLineId)
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("quote")
+      .select("customerId")
+      .eq("id", quoteId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("quoteLinePrice")
+      .select("quantity, categoryMarkups")
+      .eq("quoteLineId", quoteLineId)
+      .eq("companyId", companyId)
+      .order("quantity"),
+    client
+      .from("companySettings")
+      .select("quoteLineCategoryMarkups")
+      .eq("id", companyId)
+      .maybeSingle()
+  ]);
+
+  const error = line.error ?? quote.error ?? prices.error ?? settings.error;
+  if (error) return { data: null, error };
+  if (!line.data || !quote.data) {
+    return { data: null, error: { message: "Quote line not found" } };
+  }
+
+  const rows = prices.data ?? [];
+  const itemId = line.data.itemId;
+  // Without an item there are no rules to run.
+  if (!itemId || rows.length === 0) return { data: [], error: null };
+
+  const methodType = line.data.methodType;
+  const configuration = asConfiguration(line.data.configuration);
+  const customerId = quote.data.customerId ?? undefined;
+
+  // Settings stores fractions (0.5 = 50%); price rows store whole percents.
+  const defaultMarkups: Record<string, number> = {};
+  for (const [key, value] of Object.entries(
+    (settings.data?.quoteLineCategoryMarkups as Record<string, number>) ?? {}
+  )) {
+    defaultMarkups[key] = value * 100;
+  }
+  const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
+
+  // Only a configured Make to Order line can start from the sale price here;
+  // every other sale-price row lets resolvePrice read it.
+  let unitSalePrice: number | null = null;
+  if (configuration && methodType === "Make to Order") {
+    const salePrice = await client
+      .from("itemUnitSalePrice")
+      .select("unitSalePrice")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (salePrice.error) return { data: null, error: salePrice.error };
+    unitSalePrice = salePrice.data?.unitSalePrice ?? null;
+  }
+
+  const bases = rows.map((row) =>
+    quoteLinePriceBasis({
+      methodType,
+      configuration,
+      unitSalePrice,
+      categoryMarkups: row.categoryMarkups as Record<string, number> | null,
+      defaultMarkups: effectiveDefaults
+    })
+  );
+  const supplierPrices = bases.includes("supplierPrice")
+    ? await getSupplierPriceBreaksForItems(client, [itemId])
+    : {};
+
+  const data = await Promise.all(
+    rows.map(async (row, index): Promise<QuoteLinePriceTrace> => {
+      const basis = bases[index];
+      let existingBasePrice: number | undefined;
+      if (basis === "costPlus") {
+        existingBasePrice = rollupPrices[row.quantity];
+        // The caller did not cost this quantity, so its starting price is
+        // unknown — say nothing rather than explain a different price.
+        if (existingBasePrice === undefined) {
+          return { quantity: row.quantity, trace: null };
+        }
+      } else if (basis === "supplierPrice") {
+        existingBasePrice = lookupBuyPriceFromMap(
+          itemId,
+          row.quantity,
+          supplierPrices,
+          0
+        );
+      } else if (unitSalePrice !== null) {
+        existingBasePrice = unitSalePrice;
+      }
+
+      const { trace } = await resolvePrice(client, companyId, {
+        itemId,
+        quantity: row.quantity,
+        customerId,
+        existingBasePrice,
+        ...(configuration ? { configuration } : {})
+      });
+      return {
+        quantity: row.quantity,
+        // resolvePrice names every starting price after the item's sale price.
+        trace: trace.map((step) =>
+          step.step === "Base Price"
+            ? { ...step, source: PRICE_BASIS_SOURCE[basis] }
+            : step
+        )
+      };
+    })
+  );
+
+  return { data, error: null };
 }
 
 // ---------------------------------------------------------------------------

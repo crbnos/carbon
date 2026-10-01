@@ -741,6 +741,9 @@ msgstr "Управляемая облачная версия Carbon"
 msgid "A managed version with all the advanced features"
 msgstr "Управляемая версия со всеми расширенными возможностями"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "Цена введена вручную, поэтому к ней не применяются правила ценообразования."
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический элемент, применяемый при изготовлении деталей и используемый в нескольких производственных заказах"
 
@@ -890,6 +893,9 @@ msgstr "Продавец предложения меняется"
 
 msgid "A quote's status changes"
 msgstr "Статус предложения меняется"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "Цена предложения отличается от финальной цены, если после её установления изменились правила ценообразования или себестоимость строки."
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "Читаемый идентификатор покупателя отображается в списках, формах и раскрывающихся списках."
@@ -3374,6 +3380,9 @@ msgstr "Рассчитанный срок годности готовой про
 msgid "Calculating best case…"
 msgstr "Расчет лучшего случая…"
 
+msgid "Calculating prices…"
+msgstr "Расчёт цен…"
+
 msgid "Calculation Method"
 msgstr "Метод расчета"
 
@@ -4759,6 +4768,9 @@ msgstr "Не удалось создать PDF. Попробуйте еще ра
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Не удалось растворить {0}: {1} — производство уже записано"
+
+msgid "Could not explain these prices"
+msgstr "Не удалось объяснить эти цены"
 
 msgid "Could not predict lead time"
 msgstr "Не удалось предсказать срок поставки"
@@ -8171,6 +8183,9 @@ msgstr "Фильтровать"
 msgid "Filter by…"
 msgstr "Фильтровать по…"
 
+msgid "Final Price"
+msgstr "Финальная цена"
+
 msgid "Finalize"
 msgstr "Завершить"
 
@@ -8927,6 +8942,12 @@ msgstr "Как была рассчитана окончательная цена
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Как определяется объем выборки — проверить все, проверить первые N, процент партии или AQL (Z1.4 / ISO 2859-1). Каждый режим показывает свои собственные поля параметров ниже."
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "Как была рассчитана цена за единицу для каждого количества."
+
+msgid "How these prices were calculated"
+msgstr "Как были рассчитаны эти цены"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Как используется это средство измерения — Нормальный (регулярные проверки) или Эталон (калибрует другие средства измерения)."
@@ -14251,6 +14272,10 @@ msgstr "От коммерческого предложения к продаже
 
 msgid "Quote Type"
 msgstr "Тип предложения"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "Цена предложения {0}"
 
 msgid "Quoted Date"
 msgstr "Дата предложения"

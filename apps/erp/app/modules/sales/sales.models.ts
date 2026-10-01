@@ -1119,6 +1119,14 @@ export const quoteLeadTimeValidator = z.object({
     .nullable()
 });
 
+// Quote line price trace — a JSON body. `rollupPrices` is the cost-plus price
+// per quantity as the pricing grid computes it (unit cost × category markups).
+export const quoteLinePriceTraceValidator = z.object({
+  quoteId: z.string().min(1),
+  quoteLineId: z.string().min(1),
+  rollupPrices: z.record(z.string(), z.number().nonnegative())
+});
+
 // Sales Order Locked Status
 export const SALES_ORDER_LOCKED_STATUSES = [
   "To Ship and Invoice",

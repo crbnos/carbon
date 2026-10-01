@@ -741,6 +741,9 @@ msgstr "Carbonのマネージド クラウド ホスト版"
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えた管理版"
 
+msgid "A manual price was entered directly, so the pricing rules are not applied to it."
+msgstr "価格を手動で直接入力したため、価格設定ルールは適用されません。"
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は部品を製造するために使用される物理的品目で、複数の製造指図にわたって使用できます"
 
@@ -890,6 +893,9 @@ msgstr "見積の営業担当者が変更される"
 
 msgid "A quote's status changes"
 msgstr "見積のステータスが変更される"
+
+msgid "A quoted price differs from the final price when the pricing rules or the line's costs changed after it was set."
+msgstr "見積価格が最終価格と異なるのは、見積設定後に価格設定ルールまたは明細の原価が変更された場合です。"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
 msgstr "読みやすい得意先IDがリスト、フォーム、ドロップダウンに表示されます。"
@@ -3374,6 +3380,9 @@ msgstr "完成品の計算使用期限"
 msgid "Calculating best case…"
 msgstr "最良ケースを計算中…"
 
+msgid "Calculating prices…"
+msgstr "価格を計算しています…"
+
 msgid "Calculation Method"
 msgstr "計算方法"
 
@@ -4759,6 +4768,9 @@ msgstr "PDFを作成できませんでした。もう一度お試しください
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}を解除できません: {1} — 生産がすでに記録されています"
+
+msgid "Could not explain these prices"
+msgstr "これらの価格を説明できませんでした"
 
 msgid "Could not predict lead time"
 msgstr "リードタイムを予測できませんでした"
@@ -8171,6 +8183,9 @@ msgstr "絞り込み"
 msgid "Filter by…"
 msgstr "絞り込み…"
 
+msgid "Final Price"
+msgstr "最終価格"
+
 msgid "Finalize"
 msgstr "確定"
 
@@ -8927,6 +8942,12 @@ msgstr "解決された価格がどのように計算されたかを示します
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "サンプルサイズがどのように決定されるか—すべてを検査、最初のNを検査、ロットのパーセンテージまたはAQL（Z1.4 / ISO 2859-1）。各モードは下記の独自のパラメータフィールドを表示します。"
+
+msgid "How the unit price for each quantity was calculated."
+msgstr "各数量の単価がどのように計算されたか"
+
+msgid "How these prices were calculated"
+msgstr "これらの価格がどのように計算されたか"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "この測定器の使用方法 — なみ検査(通常のチェック)または標準器(他の測定器を校正)"
@@ -14251,6 +14272,10 @@ msgstr "見積から現金へ"
 
 msgid "Quote Type"
 msgstr "見積タイプ"
+
+#. placeholder {0}: format(quoted)
+msgid "Quoted at {0}"
+msgstr "{0}で見積もられました"
 
 msgid "Quoted Date"
 msgstr "見積日"

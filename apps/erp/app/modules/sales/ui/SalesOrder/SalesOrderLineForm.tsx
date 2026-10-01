@@ -91,7 +91,7 @@ import type {
   SalesOrder,
   SalesOrderLineType
 } from "../../types";
-import { PriceTracePopover } from "../Pricing/PriceTracePopover";
+import { PriceTraceModal } from "../Pricing/PriceTraceModal";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -705,7 +705,7 @@ const SalesOrderLineForm = ({
                                     <Trans>Unit Price</Trans>
                                   </LabelWithHelp>
                                 </span>
-                                <PriceTracePopover
+                                <PriceTraceModal
                                   trace={itemData.priceTrace}
                                   currencyCode={baseCurrency}
                                 />

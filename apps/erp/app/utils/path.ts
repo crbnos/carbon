@@ -273,6 +273,7 @@ export const path = {
       salesCustomerOverride: `${api}/sales/customer-override`,
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrders: `${api}/sales/orders`,
+      salesQuoteLinePriceTrace: `${api}/sales/quote-line-price-trace`,
       salesResolvePrice: `${api}/sales/resolve-price`,
       salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
       schedule: (locationId?: string) =>

@@ -41,6 +41,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  LuCalculator,
   LuCalendarClock,
   LuChevronDown,
   LuChevronRight,
@@ -67,7 +68,7 @@ import {
   quoteLineAdditionalChargesValidator,
   quoteLineCategoryMarkupsValidator
 } from "../../sales.models";
-import { asConfiguration } from "../../sales.utils";
+import { asConfiguration, hasPriceRuleSteps } from "../../sales.utils";
 import type {
   Costs,
   Quotation,
@@ -75,6 +76,9 @@ import type {
   QuotationPrice
 } from "../../types";
 import QuoteLeadTimeModal from "./QuoteLeadTimeModal";
+import QuotePriceTraceModal, {
+  fetchQuoteLinePriceTraces
+} from "./QuotePriceTraceModal";
 
 const logger = getLogger("erp", "sales", "quote-line-pricing");
 
@@ -416,6 +420,61 @@ const QuoteLinePricing = ({
       }
     },
     [line.itemId, line.configuration, customerId, lineId, unitPricePrecision]
+  );
+
+  // The cost-plus price of each quantity at its current markups — where a
+  // cost-plus row starts before the pricing rules run.
+  const rollupPricesByQuantity: Record<number, number> = {};
+  quantities.forEach((quantity, index) => {
+    const rollupPrice = computeUnitPriceFromMarkups(
+      costsByQuantity[index],
+      categoryMarkupsByQuantity[quantity] ?? {}
+    );
+    if (Number.isFinite(rollupPrice) && rollupPrice >= 0) {
+      rollupPricesByQuantity[quantity] = rollupPrice;
+    }
+  });
+
+  // The quantities an override or pricing rule applies to. Which rules match
+  // depends on the item, customer, quantity and configuration — never on the
+  // price — so this is loaded once per line rather than after every edit.
+  const [quantitiesWithPriceRules, setQuantitiesWithPriceRules] = useState<
+    number[]
+  >([]);
+  const [priceTraceModalOpen, setPriceTraceModalOpen] = useState(false);
+  const priceRulesKey = JSON.stringify([
+    line.itemId,
+    customerId,
+    quantities,
+    line.configuration
+  ]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: priceRulesKey stands for everything rule matching reads; the rollup prices only set the starting price
+  useEffect(() => {
+    if (!isEmployee || !line.itemId) {
+      setQuantitiesWithPriceRules([]);
+      return;
+    }
+    let stale = false;
+    fetchQuoteLinePriceTraces({
+      quoteId,
+      quoteLineId: lineId,
+      rollupPrices: rollupPricesByQuantity
+    }).then((traces) => {
+      if (stale) return;
+      setQuantitiesWithPriceRules(
+        (traces ?? [])
+          .filter(({ trace }) => hasPriceRuleSteps(trace))
+          .map(({ quantity }) => quantity)
+      );
+    });
+    return () => {
+      stale = true;
+    };
+  }, [isEmployee, quoteId, lineId, priceRulesKey]);
+
+  // A manual price was typed, so no rule had a part in it.
+  const hasPriceRules = quantitiesWithPriceRules.some(
+    (quantity) => editableFields.prices[quantity]?.priceSource !== "manual"
   );
 
   const onRecalculate = async (markup: number) => {
@@ -1087,6 +1146,15 @@ const QuoteLinePricing = ({
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
                   <span>Unit Price</span>
+                  {hasPriceRules && (
+                    <IconButton
+                      aria-label={t`How these prices were calculated`}
+                      icon={<LuCalculator />}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPriceTraceModalOpen(true)}
+                    />
+                  )}
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
@@ -1524,6 +1592,18 @@ const QuoteLinePricing = ({
           isEditable={isEditable}
           onApply={onUpdateLeadTimes}
           onClose={() => setLeadTimeModalOpen(false)}
+        />
+      )}
+      {priceTraceModalOpen && (
+        <QuotePriceTraceModal
+          quoteId={quoteId}
+          lineId={lineId}
+          quantities={quantities}
+          prices={editableFields.prices}
+          rollupPrices={rollupPricesByQuantity}
+          currencyCode={baseCurrency}
+          unitPricePrecision={unitPricePrecision}
+          onClose={() => setPriceTraceModalOpen(false)}
         />
       )}
     </Card>

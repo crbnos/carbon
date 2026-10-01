@@ -5,16 +5,19 @@
 import { describe, expect, it } from "vitest";
 import {
   applyPriceRules,
+  buildPriceTraceMatrix,
   configurationSurcharge,
   configuredQuoteBasePrice,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
+  hasPriceRuleSteps,
+  quoteLinePriceBasis,
   reconcileQuantityBreaks,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
   toMatchedRule
 } from "./sales.utils";
-import type { MatchedRule } from "./types";
+import type { MatchedRule, PriceTraceStep } from "./types";
 
 describe("resolvePreservedQuoteLinePriceFields", () => {
   const stored = {
@@ -509,5 +512,145 @@ describe("configuredQuoteBasePrice", () => {
         defaultMarkups: {}
       })
     ).toBeNull();
+  });
+});
+
+describe("quoteLinePriceBasis", () => {
+  const defaults = { materialCost: 20, laborCost: 30 };
+  const base = {
+    configuration: null,
+    unitSalePrice: null,
+    categoryMarkups: null,
+    defaultMarkups: defaults
+  };
+
+  it("prices a Make to Order line cost-plus", () => {
+    expect(quoteLinePriceBasis({ ...base, methodType: "Make to Order" })).toBe(
+      "costPlus"
+    );
+  });
+
+  it("starts a configured Make to Order line from its sale price", () => {
+    const configured = {
+      ...base,
+      methodType: "Make to Order",
+      configuration: { orbit_regime: "LEO" },
+      unitSalePrice: 1800000
+    };
+    expect(quoteLinePriceBasis(configured)).toBe("salePrice");
+    // Markups someone chose keep the row cost-plus.
+    expect(
+      quoteLinePriceBasis({
+        ...configured,
+        categoryMarkups: { materialCost: 45 }
+      })
+    ).toBe("costPlus");
+  });
+
+  it("starts a Pull from Inventory line from the sale price", () => {
+    expect(
+      quoteLinePriceBasis({ ...base, methodType: "Pull from Inventory" })
+    ).toBe("salePrice");
+  });
+
+  it("starts a Purchase to Order line from the supplier price", () => {
+    expect(
+      quoteLinePriceBasis({ ...base, methodType: "Purchase to Order" })
+    ).toBe("supplierPrice");
+  });
+
+  it("treats a bought or pulled row with markups as cost-plus", () => {
+    for (const methodType of ["Pull from Inventory", "Purchase to Order"]) {
+      expect(
+        quoteLinePriceBasis({
+          ...base,
+          methodType,
+          categoryMarkups: { materialCost: 10 }
+        })
+      ).toBe("costPlus");
+    }
+  });
+});
+
+describe("price trace matrix", () => {
+  const basePrice = (amount: number): PriceTraceStep => ({
+    step: "Base Price",
+    source: "Cost Plus Markup",
+    amount
+  });
+  const finalPrice = (amount: number): PriceTraceStep => ({
+    step: "Final Price",
+    source: "Resolved",
+    amount
+  });
+  const discount = (amount: number): PriceTraceStep => ({
+    step: "Discount",
+    source: "Rule: Volume",
+    amount,
+    adjustment: -1,
+    ruleId: "rule-volume"
+  });
+  const markup = (amount: number): PriceTraceStep => ({
+    step: "Markup",
+    source: "Rule: Export",
+    amount,
+    adjustment: 2,
+    ruleId: "rule-export"
+  });
+
+  it("detects a trace an override or rule changed", () => {
+    expect(hasPriceRuleSteps(null)).toBe(false);
+    expect(hasPriceRuleSteps([basePrice(10), finalPrice(10)])).toBe(false);
+    expect(hasPriceRuleSteps([basePrice(10), discount(9), finalPrice(9)])).toBe(
+      true
+    );
+  });
+
+  it("gives a rule that skips a quantity one row with a gap", () => {
+    const rows = buildPriceTraceMatrix([
+      { quantity: 1, trace: [basePrice(10), markup(12), finalPrice(12)] },
+      {
+        quantity: 100,
+        trace: [basePrice(8), discount(7), markup(9), finalPrice(9)]
+      }
+    ]);
+
+    // Engine order, even though quantity 1 never saw the discount.
+    expect(rows.map((row) => row.step.step)).toEqual([
+      "Base Price",
+      "Discount",
+      "Markup",
+      "Final Price"
+    ]);
+    const discountRow = rows[1];
+    expect(discountRow.byQuantity[1]).toBeUndefined();
+    expect(discountRow.byQuantity[100]?.amount).toBe(7);
+    expect(rows[2].byQuantity[1]?.amount).toBe(12);
+    expect(rows[2].byQuantity[100]?.amount).toBe(9);
+    expect(rows[3].byQuantity).toEqual({
+      1: finalPrice(12),
+      100: finalPrice(9)
+    });
+  });
+
+  it("keeps a step repeated within one trace as two rows", () => {
+    const rows = buildPriceTraceMatrix([
+      {
+        quantity: 5,
+        trace: [basePrice(10), markup(12), markup(14), finalPrice(14)]
+      }
+    ]);
+    expect(rows.map((row) => row.byQuantity[5]?.amount)).toEqual([
+      10, 12, 14, 14
+    ]);
+  });
+
+  it("skips a quantity with no trace", () => {
+    const rows = buildPriceTraceMatrix([
+      { quantity: 1, trace: null },
+      { quantity: 10, trace: [basePrice(10), finalPrice(10)] }
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].byQuantity[1]).toBeUndefined();
   });
 });

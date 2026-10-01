@@ -50,7 +50,7 @@ import type { PriceListRow } from "~/modules/sales";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
 import { PriceListScopeEmpty } from "./PriceListScopeEmpty";
-import { PriceTracePopover } from "./PriceTracePopover";
+import { PriceTraceModal } from "./PriceTraceModal";
 import { type ScopeOption, ScopePicker } from "./ScopePicker";
 
 type PriceListTableProps = {
@@ -210,7 +210,7 @@ const PriceListTable = memo(
                     <TooltipContent>This price is overridden.</TooltipContent>
                   </Tooltip>
                 )}
-                <PriceTracePopover
+                <PriceTraceModal
                   trace={row.original.trace}
                   currencyCode={baseCurrency}
                 />
