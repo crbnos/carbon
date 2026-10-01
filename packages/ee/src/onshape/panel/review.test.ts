@@ -113,6 +113,7 @@ const method = (
     }
   ],
   replaces: [],
+  takesOver: [],
   keeps: [],
   ...over
 });
@@ -539,6 +540,25 @@ describe("describeMethod", () => {
       text: "ASM-001 · Draft: 2 added, 1 replaced, 2 manual kept",
       tone: "normal"
     });
+  });
+
+  it("counts manual lines taken over, and an excluded part's as kept", () => {
+    const m = method({
+      status: "draft",
+      parentItemId: "item-asm",
+      takesOver: [
+        { readableId: "TOP-001", quantity: 2, onshapeQuantity: 1 },
+        { readableId: "HDW-010", quantity: 8, onshapeQuantity: 8 }
+      ],
+      keeps: [{ readableId: "MAN-1", quantity: 1 }]
+    });
+    expect(describeMethod(m, new Set())).toEqual({
+      text: "ASM-001 · Draft: 2 added, 0 replaced, 2 manual taken over, 1 manual kept",
+      tone: "normal"
+    });
+    expect(describeMethod(m, new Set(["HDW-010"])).text).toBe(
+      "ASM-001 · Draft: 1 added, 0 replaced, 1 manual taken over, 2 manual kept"
+    );
   });
 
   it("labels a new method and subtracts excluded children", () => {

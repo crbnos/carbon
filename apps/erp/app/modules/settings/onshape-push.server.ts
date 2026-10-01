@@ -156,3 +156,68 @@ export async function insertOwnedMethodLines(
     };
   }
 }
+
+/**
+ * Take over a line someone added by hand: set the columns Onshape owns and
+ * write its ownership row, together. Only `quantity`, `order`, the child
+ * method pointer and the item change; the line's operation, scrap, tags and
+ * kit stay Carbon's. Returns the new mapping id.
+ */
+export async function claimManualMethodLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    lineId: string;
+    update: {
+      itemId: string;
+      quantity: number;
+      order: number;
+      materialMakeMethodId: string | null;
+    };
+    metadata: Record<string, unknown>;
+  }
+): Promise<
+  { mappingId: string; error: null } | { mappingId: null; error: string }
+> {
+  const { companyId, userId, lineId } = args;
+  const now = datetime.timestamp();
+  try {
+    const mappingId = await db.transaction().execute(async (trx) => {
+      const updated = await trx
+        .updateTable("methodMaterial")
+        .set({ ...args.update, updatedBy: userId, updatedAt: now })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .returning("id")
+        .executeTakeFirst();
+      if (!updated) throw new Error("the line no longer exists");
+      const mapping = await trx
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: "methodMaterial",
+          entityId: lineId,
+          integration: ONSHAPE_V2_INTEGRATION_ID,
+          metadata: args.metadata as Json,
+          lastSyncedAt: now,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return mapping.id;
+    });
+    return { mappingId, error: null };
+  } catch (error) {
+    logger.error("Failed to take over a BOM line for Onshape", {
+      companyId,
+      lineId,
+      error
+    });
+    return {
+      mappingId: null,
+      error: error instanceof Error ? error.message : "line takeover failed"
+    };
+  }
+}

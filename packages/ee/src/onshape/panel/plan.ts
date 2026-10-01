@@ -163,6 +163,42 @@ export function pickLatestRow<
 }
 
 /**
+ * Which hand-added lines a push takes over. Each Onshape line first pairs with
+ * a line an earlier push wrote for the same part number, then with a manual
+ * one, in line order — the pairing apply makes. Manual lines left unpaired are
+ * kept as they are.
+ */
+export function pairManualLines(
+  writes: Array<{ partNumber: string; quantity: number }>,
+  owned: PlanLine[],
+  manual: PlanLine[]
+): {
+  takesOver: Array<PlanLine & { onshapeQuantity: number }>;
+  keeps: PlanLine[];
+} {
+  const ownedLeft = new Map<string, number>();
+  for (const line of owned) {
+    ownedLeft.set(line.readableId, (ownedLeft.get(line.readableId) ?? 0) + 1);
+  }
+  const manualLeft = [...manual];
+  const takesOver: Array<PlanLine & { onshapeQuantity: number }> = [];
+  for (const write of writes) {
+    const owns = ownedLeft.get(write.partNumber) ?? 0;
+    if (owns > 0) {
+      ownedLeft.set(write.partNumber, owns - 1);
+      continue;
+    }
+    const index = manualLeft.findIndex(
+      (line) => line.readableId === write.partNumber
+    );
+    if (index === -1) continue;
+    const [line] = manualLeft.splice(index, 1);
+    if (line) takesOver.push({ ...line, onshapeQuantity: write.quantity });
+  }
+  return { takesOver, keeps: manualLeft };
+}
+
+/**
  * Which existing row an assembly push reuses when several share a part number:
  * the latest Part, else the latest row that can be a BOM line, else the latest
  * row (which the plan then reports as unusable). Item numbers are unique per
@@ -752,7 +788,13 @@ export type AssemblyPlanMethod = {
   }>;
   /** Existing Onshape-origin lines a previous push wrote. */
   replaces: PlanLine[];
-  /** Existing lines no push wrote (manual): left untouched. */
+  /**
+   * Lines added by hand for a part number Onshape's BOM also lists. The push
+   * takes each over (Onshape's quantity, Carbon's operation and scrap kept)
+   * instead of writing a second line for the same part beside it.
+   */
+  takesOver: Array<PlanLine & { onshapeQuantity: number }>;
+  /** Lines added by hand for parts Onshape doesn't list: left untouched. */
   keeps: PlanLine[];
 };
 
@@ -1035,28 +1077,31 @@ export function buildAssemblyPlan({
         ? reusableDraftByItemId.get(parentItemId)
         : undefined;
     const linesMethodId = reusedDraft?.id ?? method?.id;
+    const writes = children
+      .filter((child) => !!child.partNumber && !unusable.has(child.partNumber))
+      .map((child) => ({
+        index: child.index,
+        partNumber: child.partNumber as string,
+        name: child.name,
+        quantity: child.quantity,
+        purchased: child.purchased
+      }));
+    const replaces = linesMethodId
+      ? (mappedLinesByMethodId.get(linesMethodId) ?? [])
+      : [];
+    const manual = linesMethodId
+      ? (manualLinesByMethodId.get(linesMethodId) ?? [])
+      : [];
+    const { takesOver, keeps } = pairManualLines(writes, replaces, manual);
     methods.push({
       parentPartNumber,
       parentItemId,
       status,
       ...(reusedDraft ? { reusedDraftVersion: reusedDraft.version } : {}),
-      writes: children
-        .filter(
-          (child) => !!child.partNumber && !unusable.has(child.partNumber)
-        )
-        .map((child) => ({
-          index: child.index,
-          partNumber: child.partNumber as string,
-          name: child.name,
-          quantity: child.quantity,
-          purchased: child.purchased
-        })),
-      replaces: linesMethodId
-        ? (mappedLinesByMethodId.get(linesMethodId) ?? [])
-        : [],
-      keeps: linesMethodId
-        ? (manualLinesByMethodId.get(linesMethodId) ?? [])
-        : []
+      writes,
+      replaces,
+      takesOver,
+      keeps
     });
     for (const child of children) {
       if (child.partNumber && child.children.length > 0) {

@@ -419,9 +419,13 @@ export function describeMethod(
   const added = method.writes.filter(
     (line) => !excluded.has(line.partNumber)
   ).length;
+  const takenOver = method.takesOver.filter(
+    (line) => !excluded.has(line.readableId)
+  ).length;
   const counts =
     `${added} added, ${method.replaces.length} replaced, ` +
-    `${method.keeps.length} manual kept`;
+    (takenOver > 0 ? `${takenOver} manual taken over, ` : "") +
+    `${method.keeps.length + method.takesOver.length - takenOver} manual kept`;
   // A released method is not skipped: the push writes a Draft version of it
   // (see `ensureDraftMakeMethod`) — the one an earlier push made, or a new one.
   if (method.status === "active") {

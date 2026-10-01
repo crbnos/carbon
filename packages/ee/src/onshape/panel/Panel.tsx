@@ -312,6 +312,8 @@ type AssemblyPushSummary = {
   linesWritten: number;
   /** Lines already correct; absent on a response from before they were counted. */
   linesUnchanged?: number;
+  /** Lines added by hand that now follow Onshape. */
+  linesTakenOver?: number;
   methodsTouched: number;
   /** Released methods this push superseded with a Draft version. */
   draftVersionsCreated?: string[];
@@ -419,14 +421,21 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
     `${plural(s.itemsCreated, "item")} created, ${s.itemsReused} reused, ` +
     `${lines} across ${plural(s.methodsTouched, "method")}`;
   const drafts = s.draftVersionsCreated ?? [];
+  const takenOver = s.linesTakenOver ?? 0;
   return {
     text,
     skipped: s.skipped,
     errors: s.errors,
-    notes:
-      drafts.length > 0
+    notes: [
+      ...(drafts.length > 0
         ? [`New Draft version, not yet live: ${drafts.join(", ")}`]
-        : []
+        : []),
+      ...(takenOver > 0
+        ? [
+            `${plural(takenOver, "line")} added by hand in Carbon now ${takenOver === 1 ? "follows" : "follow"} Onshape`
+          ]
+        : [])
+    ]
   };
 }
 
@@ -2953,10 +2962,34 @@ function AssemblyReviewSection({
   const newDrafts = drafts.filter(
     (method) => method.reusedDraftVersion == null
   ).length;
-  // Lines someone added by hand in Carbon survive a push, so that BOM will
-  // not match Onshape afterwards. Always zero on a first push.
-  const keepsManual = plan.methods.filter(
-    (method) => method.status !== "missing" && method.keeps.length > 0
+  // Lines added by hand in Carbon: one for a part Onshape also lists is taken
+  // over (its quantity follows Onshape, its operation and scrap stay); one for
+  // a part Onshape doesn't list stays, so that BOM won't match Onshape.
+  // An excluded part's line is not taken over, so it stays.
+  const writtenMethods = plan.methods.filter(
+    (method) =>
+      method.status !== "missing" &&
+      !review.excluded.has(method.parentPartNumber)
+  );
+  const takenOver = writtenMethods.flatMap((method) =>
+    method.takesOver
+      .filter((line) => !review.excluded.has(line.readableId))
+      .map(
+        (line) =>
+          `${method.parentPartNumber}: ${line.readableId} ×${line.quantity}` +
+          (line.quantity === line.onshapeQuantity
+            ? ", quantity unchanged"
+            : ` → ×${line.onshapeQuantity}`)
+      )
+  );
+  const keptManual = writtenMethods.flatMap((method) =>
+    [
+      ...method.keeps,
+      ...method.takesOver.filter((line) => review.excluded.has(line.readableId))
+    ].map(
+      (line) =>
+        `${method.parentPartNumber}: ${line.readableId} ×${line.quantity}`
+    )
   );
 
   return (
@@ -3019,19 +3052,28 @@ function AssemblyReviewSection({
         </Alert>
       ) : null}
 
-      {keepsManual.length > 0 ? (
-        <Alert variant="warning">
-          <LuTriangleAlert />
-          <AlertTitle>
-            {keepsManual.length === 1
-              ? "1 BOM keeps lines added by hand in Carbon"
-              : `${keepsManual.length} BOMs keep lines added by hand in Carbon`}
-          </AlertTitle>
-          <AlertDescription>
-            {keepsManual.map((method) => method.parentPartNumber).join(", ")}{" "}
-            won't match Onshape after this push.
-          </AlertDescription>
-        </Alert>
+      {takenOver.length > 0 ? (
+        <CappedWarningList
+          title={(n) =>
+            n === 1
+              ? "1 line added by hand in Carbon will follow Onshape"
+              : `${n} lines added by hand in Carbon will follow Onshape`
+          }
+          description="Onshape's BOM lists these parts too, so the push updates each line to Onshape's quantity instead of adding a second one. Its operation and scrap stay, and later pushes keep it in step with Onshape."
+          lines={takenOver}
+        />
+      ) : null}
+
+      {keptManual.length > 0 ? (
+        <CappedWarningList
+          title={(n) =>
+            n === 1
+              ? "1 line added by hand in Carbon stays"
+              : `${n} lines added by hand in Carbon stay`
+          }
+          description="Onshape's BOM doesn't list these parts, so the push leaves them and these BOMs won't match Onshape."
+          lines={keptManual}
+        />
       ) : null}
 
       {plan.depth === "top" && plan.deeper ? (

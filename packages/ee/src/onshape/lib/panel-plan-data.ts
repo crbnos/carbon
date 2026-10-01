@@ -175,6 +175,20 @@ export type MappedLineRow = {
   materialMakeMethodId: string | null;
 };
 
+/**
+ * A line nothing pushed, as it stands in Carbon. A push takes one over when
+ * Onshape's BOM lists the same part number: it is updated in place and gains
+ * an ownership row, rather than getting an Onshape copy beside it.
+ */
+export type ManualLineRow = {
+  lineId: string;
+  itemId: string;
+  readableId: string;
+  quantity: number | null;
+  order: number | null;
+  materialMakeMethodId: string | null;
+};
+
 export type MethodLineOwnership = {
   /** Lines a previous Onshape push wrote, per method id. */
   mapped: Map<string, PlanLine[]>;
@@ -188,6 +202,8 @@ export type MethodLineOwnership = {
    * kit, the line's own custom fields).
    */
   mappedRows: Map<string, MappedLineRow[]>;
+  /** The manual rows apply can take over, per method id, in line order. */
+  manualRows: Map<string, ManualLineRow[]>;
 };
 
 /**
@@ -207,7 +223,8 @@ export async function loadMethodLineOwnership(
   const result: MethodLineOwnership = {
     mapped: new Map(),
     manual: new Map(),
-    mappedRows: new Map()
+    mappedRows: new Map(),
+    manualRows: new Map()
   };
   if (ids.length === 0) return result;
 
@@ -275,7 +292,11 @@ export async function loadMethodLineOwnership(
     }
   };
 
-  for (const line of lines.data ?? []) {
+  // Line order, so plan and apply pair a part number's lines the same way.
+  const ordered = [...(lines.data ?? [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
+  for (const line of ordered) {
     const methodId = line.makeMethodId;
     if (!methodId) continue;
     const planLine: PlanLine = {
@@ -295,6 +316,14 @@ export async function loadMethodLineOwnership(
       });
     } else {
       append(result.manual, methodId, planLine);
+      append(result.manualRows, methodId, {
+        lineId: line.id,
+        itemId: line.itemId,
+        readableId: planLine.readableId,
+        quantity: line.quantity,
+        order: line.order,
+        materialMakeMethodId: line.materialMakeMethodId
+      });
     }
   }
   return result;
