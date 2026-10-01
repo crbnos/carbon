@@ -24,9 +24,8 @@ import {
  * because forms submit them, but publishing them in the manifest would invite a
  * caller to set `companyId`.
  *
- * Shared with the textual parser in `service-metadata.ts`: a validator resolved
- * natively and the same one resolved textually must strip the same set, so this is
- * the single copy.
+ * Shared with `service-metadata.ts`, which strips the same set from a service's
+ * own parameter list, so this is the single copy.
  *
  * `eliminationClient` is a second Supabase client for consolidation reads. Left out
  * of this set it becomes a required field no caller can express.
@@ -55,7 +54,7 @@ export interface ValidatorRegistry {
   /**
    * The converted schema for `validatorName`, looked up in `mod` and then in
    * `shared` (cross-module validators). Null when unknown or unconvertible — the
-   * caller must fall back to textual parsing.
+   * caller reports it `unresolved` and the generator refuses to write.
    */
   getSchema(mod: string, validatorName: string): JsonSchema | null;
   /** Values of an exported `as const` string array, for `(typeof X)[number]` params. */
@@ -113,8 +112,8 @@ function isConstStringArray(value: unknown): value is string[] {
 /**
  * Load every module's models file and convert its validators. Never throws: a module
  * that fails to load, or a validator that fails to convert, is recorded in `stats`
- * and simply absent from the lookup, so the generator falls back to textual parsing
- * for exactly those and nothing else.
+ * and simply absent from the lookup; the generator reports each one and refuses to
+ * write a manifest until it loads.
  */
 export async function buildValidatorRegistry(
   modules: readonly string[]
@@ -171,9 +170,9 @@ export async function buildValidatorRegistry(
         null;
       // Hand out a COPY. One validator backs many operations (supplierValidator
       // backs both insertSupplier and upsertSupplier), and downstream steps mutate
-      // the schema in place — `addOperationArg` writes `_operation` onto it. Sharing
-      // the object leaked that required argument onto sibling operations that never
-      // take it.
+      // the schema in place — `describeUpsertKeys` annotates the key fields. Sharing
+      // the object leaked one operation's edits onto sibling operations that never
+      // made them.
       return found ? (structuredClone(found) as JsonSchema) : null;
     },
     getConstArray(mod, exportName) {

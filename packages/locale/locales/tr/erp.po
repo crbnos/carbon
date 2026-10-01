@@ -8418,7 +8418,7 @@ msgid "From"
 msgstr "Başlangıç"
 
 #. placeholder {0}: formatDate(startDate)
-#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+#. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "{0} tarihinden itibaren"
 
@@ -8831,6 +8831,9 @@ msgstr "Hesap numarasını gizle"
 msgid "Hide Again"
 msgstr "Tekrar Gizle"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Ham verileri gizle"
 
@@ -9001,6 +9004,9 @@ msgstr "Çözülen fiyatın nasıl hesaplandığı."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele, İlk N'yi İncele, Lot'un Yüzdesi veya AQL (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu ölçüm aletinin nasıl kullanıldığı — Normal (düzenli kontroller) veya Mastar (diğer ölçüm aletlerini kalibre eder)."
@@ -12050,6 +12056,9 @@ msgstr "Seçilen miktar için fiyatlandırma yok"
 msgid "No pricing options found"
 msgstr "Fiyatlandırma seçeneği bulunamadı"
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
 
@@ -13753,6 +13762,9 @@ msgstr "Fiyat Listeleri"
 msgid "Price override"
 msgstr "Fiyat geçersiz kılma"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "Fiyatlar"
 
@@ -14288,6 +14300,10 @@ msgstr "Miktarlar"
 
 msgid "Quantity"
 msgstr "Miktar"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Gelecek miktar — açık satın alma siparişlerinde ve üretim (üretme) siparişlerinde."
@@ -15072,6 +15088,13 @@ msgstr "Raporlama boyutu"
 
 msgid "Reports"
 msgstr "Raporlar"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
@@ -16837,6 +16860,9 @@ msgstr "Kullanılabilir parti numaralarını göster"
 
 msgid "Show available tracking numbers"
 msgstr "Kullanılabilir izleme numaralarını göster"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
@@ -19059,6 +19085,9 @@ msgstr "Bu PIN bir daha gösterilmeyecek. Kaybolduysa, operatörler listesinden 
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"

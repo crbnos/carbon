@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261001022635",
+  "schemaVersion": "20261001125824",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-01T22:44:34.058Z",
+  "exportedAt": "2026-10-01T22:57:30.960Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -550,9 +550,9 @@
       "name": "customerStatus",
       "rows": 0,
       "columns": [
+        "createdAt",
         "updatedAt",
         "customFields",
-        "createdAt",
         "name",
         "companyId",
         "createdBy",
@@ -970,12 +970,12 @@
       "columns": [
         "createdAt",
         "updatedAt",
+        "id",
+        "companyId",
         "fieldKey",
         "value",
         "createdBy",
-        "updatedBy",
-        "id",
-        "companyId"
+        "updatedBy"
       ]
     },
     {
@@ -1020,6 +1020,7 @@
         "expiresAt",
         "createdAt",
         "updatedAt",
+        "updatedBy",
         "id",
         "companyId",
         "type",
@@ -1031,8 +1032,7 @@
         "complianceContact",
         "ipAddress",
         "userAgent",
-        "createdBy",
-        "updatedBy"
+        "createdBy"
       ]
     },
     {
@@ -1265,11 +1265,11 @@
         "periodEnd",
         "unitsProduced",
         "createdAt",
-        "updatedBy",
         "id",
         "fixedAssetId",
         "companyId",
-        "createdBy"
+        "createdBy",
+        "updatedBy"
       ]
     },
     {
@@ -3304,11 +3304,11 @@
       "name": "trackedEntity",
       "rows": 0,
       "columns": [
+        "quantity",
+        "status",
         "attributes",
         "createdAt",
         "expirationDate",
-        "quantity",
-        "status",
         "id",
         "sourceDocument",
         "sourceDocumentId",
@@ -4122,8 +4122,8 @@
       "name": "customerShipping",
       "rows": 0,
       "columns": [
-        "incoterm",
         "updatedAt",
+        "incoterm",
         "customerId",
         "shippingCustomerId",
         "shippingCustomerLocationId",
@@ -4585,8 +4585,6 @@
       "name": "quoteLine",
       "rows": 0,
       "columns": [
-        "priceTrace",
-        "sortOrder",
         "quoteRevisionId",
         "status",
         "methodType",
@@ -4599,6 +4597,8 @@
         "unitPricePrecision",
         "externalNotes",
         "configuration",
+        "priceTrace",
+        "sortOrder",
         "id",
         "quoteId",
         "estimatorId",
@@ -4631,6 +4631,7 @@
         "exchangeRate",
         "shippingCost",
         "categoryMarkups",
+        "priceTrace",
         "quoteId",
         "quoteLineId",
         "createdBy",
@@ -6040,6 +6041,9 @@
         "externalNotes",
         "createdAt",
         "updatedAt",
+        "updatedBy",
+        "tags",
+        "createdBy",
         "id",
         "invoiceId",
         "customerId",
@@ -6053,10 +6057,7 @@
         "opportunityId",
         "shipmentId",
         "assignee",
-        "companyId",
-        "tags",
-        "createdBy",
-        "updatedBy"
+        "companyId"
       ]
     },
     {
@@ -6130,6 +6131,8 @@
         "createdAt",
         "updatedAt",
         "customFields",
+        "createdBy",
+        "updatedBy",
         "id",
         "salesReturnOrderId",
         "itemId",
@@ -6138,9 +6141,7 @@
         "salesOrderLineId",
         "shipmentLineId",
         "salesInvoiceLineId",
-        "companyId",
-        "createdBy",
-        "updatedBy"
+        "companyId"
       ]
     },
     {
@@ -6275,11 +6276,6 @@
         "createdAt",
         "updatedAt",
         "customFields",
-        "id",
-        "companyId",
-        "supplierId",
-        "name",
-        "accountHolderName",
         "bankName",
         "bankAddress",
         "countryCode",
@@ -6290,7 +6286,12 @@
         "notes",
         "createdBy",
         "updatedBy",
-        "tags"
+        "tags",
+        "id",
+        "companyId",
+        "supplierId",
+        "name",
+        "accountHolderName"
       ]
     },
     {

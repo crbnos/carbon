@@ -28,6 +28,7 @@ import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Training } from "~/modules/resources";
+import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import TrainingStatus from "./TrainingStatus";
 
@@ -42,6 +43,10 @@ const TrainingHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
+  // Live title from the editor's locked title block, so the header updates as
+  // the user types (before the loader revalidates).
+  const liveTitle = useDocumentStore((s) => s.liveTitle);
+  const displayName = liveTitle ?? routeData?.training?.name ?? "";
   const deleteDisclosure = useDisclosure();
 
   const publishFetcher = useFetcher<{}>();
@@ -71,11 +76,11 @@ const TrainingHeader = () => {
             variant="ghost"
           />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.training?.name}</span>
+            <span>{displayName}</span>
             {/* @ts-expect-error TS2322 */}
             <TrainingStatus status={routeData?.training?.status} />
           </Heading>
-          <Copy text={routeData?.training?.name ?? ""} />
+          <Copy text={displayName} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton

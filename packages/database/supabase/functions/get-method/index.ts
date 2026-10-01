@@ -7199,8 +7199,10 @@ serve(async (req: Request) => {
                       l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
-                    // stays protected on the new quote/revision.
+                    // stays protected on the new quote/revision, and the
+                    // trace that explains it.
                     priceSource: l.priceSource ?? "system",
+                    priceTrace: toJson(l.priceTrace),
                     createdBy: userId,
                   }))
                 )

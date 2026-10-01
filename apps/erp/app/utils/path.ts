@@ -1992,6 +1992,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteLineOrder: (quoteId: string) =>
       generatePath(`${x}/quote/${quoteId}/line-order`),
+    quoteLinePriceTrace: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/price-trace`),
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
     quoteLineUpdatePrecision: (quoteId: string, lineId: string) =>

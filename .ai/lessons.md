@@ -2648,6 +2648,71 @@ tiebreak (a label, a sort order, then the id). Never rely on insertion order sur
 **Applies to:** any list ordered by `createdAt` whose rows are written together — RPCs,
 Kysely transactions, `insertInto(...).values([...])`, seeds.
 
+## `scripts/one-off/` is executed in production
+
+**Context:** A codemod that added `@mcp` tags to service files was saved as
+`scripts/one-off/tag-mcp-exposure.ts` — "a script run once".
+
+**Problem:** That folder is a registry, not a scratch area. `ci/src/migrations.ts` runs
+every `.ts` file in it against every workspace database on the next deploy and records it
+in `scriptRun`. A source-rewriting codemod there would have been executed by the deploy
+workflow.
+
+**Rule:** `scripts/one-off/` is only for one-time DATA migrations (see its README). A
+codemod is run locally and deleted, or lives in `scripts/` if it is worth keeping.
+
+**Applies to:** anything added under `scripts/one-off/`.
+
+## A lookup table keyed by source text must be a `Map`
+
+**Context:** The MCP generator decided "is this call a database write" with
+`WRITES[memberName]` over an object literal.
+
+**Problem:** `memberName` comes from the code being analysed, so `x.toString()` looked up
+`WRITES["toString"]`, found `Object.prototype.toString`, and counted as a write. Five read
+tools silently left the manifest until the digest diff showed them missing.
+
+**Rule:** When the key is arbitrary input (an identifier from parsed source, a column name,
+a user string), use a `Map`/`Set` or `Object.hasOwn`, never `obj[key]` truthiness. And diff
+the generated manifest against the previous one before trusting a generator change.
+
+**Applies to:** `scripts/lib/service-ast.ts`, and any analyser or dispatcher that indexes a
+record by a name it did not choose.
+
+## A JS array bound for a jsonb column must be stringified on the Kysely path
+
+**Context:** `quoteLinePrice.priceTrace` (a `PriceTraceStep[]`) is written both through
+supabase-js (PostgREST) and through Kysely (`rewriteQuoteLinePrices`,
+`saveQuoteLineWithPrices`, `get-method`).
+
+**Problem:** node-postgres and deno-postgres serialise a parameter by its JS type, not the
+column's: an object becomes JSON, but an array becomes a Postgres array literal (`{a,b}`),
+which a jsonb column rejects. supabase-js sends JSON either way, so the same row "works" on
+one path and fails on the other — and typecheck sees nothing, since `Json` admits arrays.
+
+**Rule:** On a Kysely write, `JSON.stringify` any jsonb value that can be an array (or a bare
+string). In Deno use `toJson` / `toJsonColumns` (`functions/lib/json.ts`).
+
+**Applies to:** every `insertInto` / `updateTable` that sets a jsonb column — `priceTrace`,
+`configuration`, notes, `customFields`, any copied row spread from a supabase-js read.
+
+## Demo datasets state percentages the way people write them; the tier converts
+
+**Context:** `PricingRuleSpec.amount` is documented and validated as percent points
+(0–100], but tier 02 inserted it into `pricingRule.amount` unchanged.
+
+**Problem:** the pricing engine multiplies by a fraction (`price × amount`), so every demo
+"5% discount" was a 500% discount and drove prices to the ≥ 0 floor. It surfaced only when
+the price trace showed the step — the validator checked the dataset's own convention, not
+the column's.
+
+**Rule:** When a dataset field and the column it lands in use different units, convert in
+the tier at the insert, next to a comment naming both units — and check any new percent
+field against how the engine reads the column, not against the dataset type.
+
+**Applies to:** `packages/database/src/datasets/tiers/*` — `pricingRule.amount`, and any
+other fraction-valued column (`discountPercent`, `taxPercent`, rates).
+
 ## Single fetch re-runs every matched loader on every navigation
 
 **Context:** A click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`)
@@ -2692,8 +2757,58 @@ or any `items-start`/`inline-*`/`w-fit` parent without an explicit width. When m
 component to a new host, check what the OLD host was giving it for free: width, padding
 offsets (`pl-[52px]` lined the block up under a grid row and means nothing in a drawer) and
 column widths sized for a different pane. A layout built for one host usually wants its own
-variant in the next (`PlanningActionTable` for the drawer), sharing only the behaviour.
+variant in the next (the drawer now has its own `OpenOrdersGrid`), sharing only the
+behaviour.
 
 **Applies to:** `apps/erp/app/modules/production/ui/Planning/PlanningActionLines.tsx`
-(`PlanningActionLines` vs `PlanningActionTable`), and any `@container` component rendered
+(`PlanningActionLines` vs `PlanningOrderGrids.tsx`), and any `@container` component rendered
 through `VStack`/`HStack` (`packages/react/src/VStack.tsx` is `items-start`).
+
+## A cached generator's inputs are everything it executes, not everything it parses
+
+**Context:** The MCP manifest generator was made a cached Turborepo task with `inputs`
+listing the service, models and `types.ts` files it parses.
+
+**Problem:** It also EXECUTES every `*.models.ts` to convert the zod validators, so the
+schemas depend on whatever those files import: `sales.utils.ts`, `accounting.utils.ts`,
+`samplingStandards`, `@carbon/utils`. A change to one of those was a cache hit; turbo
+restored the old manifest (and the old committed digest) over the working tree, and the
+build bundled it. Uncached, this could not happen.
+
+**Rule:** Before caching a task, list what it loads and runs, not only what it reads on
+purpose, and pin that list with a test against the task's real imports. If the true set
+cannot be named, leave the task uncached.
+
+**Applies to:** `//#generate:mcp` in `turbo.json` (pinned by
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts`), and any task given `inputs`.
+
+## A key looked up "anywhere in the payload" finds the wrong one
+
+**Context:** The API dispatcher decides whether an upsert creates or updates from the
+record's `id`. It looked for `id` at the top level and then inside any nested object, to
+support `{ job: { id } }`.
+
+**Problem:** `{ name: "x", customFields: { id: "z" } }` matched the nested `id`, so a
+create was stamped as an update and went down the service's update branch.
+
+**Rule:** Read a record's key only where the record can be: the body itself or the wrapper
+named by the service's payload parameter. A search that descends into arbitrary objects
+will eventually match user data.
+
+**Applies to:** `resolveUpsertOperation` / `recordField` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`.
+
+## A git merge can move a doc comment onto a different function
+
+**Context:** Every API tool is declared by an `@mcp` line in its function's doc comment.
+Main inserted a new function directly under an existing doc block.
+
+**Problem:** The merge was clean, but the doc block (and its `@mcp` line) now sat above
+the NEW function, and the function it described had none. That function silently stopped
+being a tool. Nothing fails: an untagged export is simply not exposed.
+
+**Rule:** After merging into a branch that touches service files, regenerate the manifest
+and diff the tool NAMES against the pre-merge list. A name that disappears is a displaced
+tag until proven otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.

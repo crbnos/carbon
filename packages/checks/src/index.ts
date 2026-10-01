@@ -19,6 +19,7 @@ export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits"
 export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
+export { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
 export { noNumericPrecision } from "./conformance/no-numeric-precision";
 export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 export { noRawRounding } from "./conformance/no-raw-rounding";
@@ -54,6 +55,7 @@ export {
   scanModules,
   TS_CHECKS
 } from "./run";
+export { loadDbTableColumns } from "./sources/db-columns";
 export { loadEdgeFunctions } from "./sources/edge-functions";
 export {
   listLicenseCandidates,

@@ -106,7 +106,8 @@ import { DATABASE_ERROR_MESSAGES } from "./database-errors";
 import {
   type DispatchResult,
   dispatchOperation,
-  enrichWithAuthContext
+  enrichWithAuthContext,
+  resolveUpsertOperation
 } from "./dispatch.server";
 import { openApiHandler } from "./handler.server";
 import {
@@ -406,18 +407,44 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     );
   });
 
-  it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
+  // No caller has to say whether an upsert creates or updates. accounting_upsertAccount
+  // takes an optional id, so sending one IS the answer.
+  it("f. no _operation, no id: a create — createdBy stamped, updatedBy not", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
-      {
-        account: { name: "x" }
-      }
+      { account: { name: "x" } }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload).toMatchObject({ name: "x", createdBy: "u1" });
+    expect("updatedBy" in payload).toBe(false);
+  });
+
+  it("f2. no _operation, id sent (flat or wrapped): an update — updatedBy stamped, createdBy not", async () => {
+    for (const args of [
+      { account: { id: "a1", name: "x" } },
+      { id: "a1", name: "x" }
+    ]) {
+      const r = await runDispatch(
+        "accounting_upsertAccount",
+        spies.upsertAccount,
+        args
+      );
+      const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+      expect(payload).toMatchObject({ id: "a1", updatedBy: "u1" });
+      expect("createdBy" in payload).toBe(false);
+    }
+  });
+
+  it("f3. an _operation that is neither create nor update is refused", async () => {
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      { _operation: "replace", account: { name: "x" } }
     );
     expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'accounting_upsertAccount requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+      'accounting_upsertAccount: _operation must be "create" or "update" when it is sent. It can be left out.'
     );
   });
 
@@ -744,18 +771,136 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       id: "jm1"
     });
   });
+});
 
-  it("q. an inverted-discriminator tool requires _operation, same as the createdBy convention", async () => {
-    const r = await runDispatch(
-      "production_upsertJobMaterial",
-      spies.upsertJobMaterial,
-      { jobId: "j1", itemId: "i1" }
+// Where the payload cannot say (the id is required either way, or there is none),
+// the manifest names the row to look for and the answer is whether it exists. The
+// rules are the REAL ones from the generated manifest; only the database is stood in.
+describe("upserts decided by whether the record exists", () => {
+  const rule = (name: string) => {
+    const upsert = operationsByName.get(name)?.upsert;
+    if (!upsert) throw new Error(`${name} has no upsert rule`);
+    return upsert;
+  };
+  // The service's payload parameter — the only object a key may be wrapped in.
+  const PARAMS = ["record"];
+  const database = (rows: Record<string, Record<string, unknown>[]>) => {
+    const asked: [string, Record<string, unknown>][] = [];
+    const rowExists = async (
+      table: string,
+      filter: Record<string, unknown>
+    ) => {
+      asked.push([table, filter]);
+      return (rows[table] ?? []).some((row) =>
+        Object.entries(filter).every(([column, value]) => row[column] === value)
+      );
+    };
+    return { asked, rowExists };
+  };
+
+  it("q. a job material with a client-chosen id: created when new, updated once it exists", async () => {
+    const upsert = rule("production_upsertJobMaterial");
+    const args = { id: "jm1", jobId: "j1", quantity: 2 };
+
+    const empty = database({});
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, empty.rowExists)
+    ).toBe("create");
+    expect(empty.asked).toEqual([["jobMaterial", { id: "jm1" }]]);
+
+    const stored = database({ jobMaterial: [{ id: "jm1" }] });
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, stored.rowExists)
+    ).toBe("update");
+  });
+
+  it("r. a part is found by its item id OR its part number", async () => {
+    const upsert = rule("items_upsertPart");
+    const items = { item: [{ id: "item_1", readableId: "PN-100" }] };
+
+    for (const id of ["item_1", "PN-100"]) {
+      const db = database(items);
+      expect(
+        await resolveUpsertOperation(upsert, { id }, PARAMS, db.rowExists)
+      ).toBe("update");
+    }
+    const db = database(items);
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { id: "PN-200" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+    expect(db.asked).toEqual([
+      ["item", { id: "PN-200" }],
+      ["item", { readableId: "PN-200" }]
+    ]);
+  });
+
+  it("s. a composite key: every column is matched, and a missing one means create without asking", async () => {
+    const upsert = rule("items_upsertPickMethod");
+    const db = database({
+      pickMethod: [{ itemId: "i1", locationId: "l1" }]
+    });
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l1" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("update");
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l2" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+
+    const untouched = database({});
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1" },
+        PARAMS,
+        untouched.rowExists
+      )
+    ).toBe("create");
+    expect(untouched.asked).toEqual([]);
+  });
+
+  it("u. the key is the RECORD's: an id inside some other nested object is not it", async () => {
+    const byId = { keys: ["id"] };
+    const never = database({}).rowExists;
+    const resolve = (args: Record<string, unknown>) =>
+      resolveUpsertOperation(byId, args, PARAMS, never);
+
+    // A create whose custom fields happen to hold an `id` used to be sent down
+    // the update branch.
+    expect(await resolve({ name: "x", customFields: { id: "z" } })).toBe(
+      "create"
     );
-    expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
-    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'production_upsertJobMaterial requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+    // The record's own id, flat or inside its wrapper, still means update.
+    expect(await resolve({ id: "a1", name: "x" })).toBe("update");
+    expect(await resolve({ record: { id: "a1", name: "x" } })).toBe("update");
+    // A lone unnamed wrapper is unwrapped, as the dispatcher does.
+    expect(await resolve({ guessed: { id: "a1" } })).toBe("update");
+    expect(await resolve({ record: { name: "x" }, other: { id: "z" } })).toBe(
+      "create"
     );
+  });
+
+  it("t. no operation publishes _operation, and every branching upsert has a rule", () => {
+    for (const meta of operationsByName.values()) {
+      expect(JSON.stringify(meta.schema)).not.toContain("_operation");
+    }
+    expect(
+      [...operationsByName.values()].filter((meta) => meta.upsert).length
+    ).toBeGreaterThan(80);
   });
 });
 

@@ -1767,6 +1767,31 @@ export function items(ctx: ValidationCtx): void {
         fail(`${where}: list parameter "${parameter.key}" has no listOptions`);
       }
     }
+    // Each price must name a value the configurator can produce, or it never
+    // applies (configurationSurcharge in sales.utils.ts).
+    const parameterByKey = new Map(cfg.parameters.map((p) => [p.key, p]));
+    for (const price of cfg.prices ?? []) {
+      const priceWhere = `${where} price "${price.key}${price.value === undefined ? "" : `=${price.value}`}"`;
+      const parameter = parameterByKey.get(price.key);
+      if (!parameter) {
+        fail(`${priceWhere}: unknown parameter`);
+        continue;
+      }
+      if (!Number.isFinite(price.amount) || price.amount === 0) {
+        fail(`${priceWhere}: amount must be a non-zero number`);
+      }
+      const valueOk =
+        parameter.dataType === "numeric"
+          ? price.value === undefined
+          : parameter.dataType === "boolean"
+            ? price.value === "true"
+            : (parameter.listOptions ?? []).includes(price.value ?? "");
+      if (!valueOk) {
+        fail(
+          `${priceWhere}: not a value of ${parameter.dataType} parameter "${parameter.key}"`
+        );
+      }
+    }
   }
 
   const revisionByItem = new Map(

@@ -876,6 +876,13 @@ export const CONFIGURATION: ConfigurationSpec = {
       field: "laborTime",
       code: 'return params.orbit_regime === "GTO" ? 96 : 72;'
     }
+  ],
+  prices: [
+    { key: "payload_mass_kg", amount: 100 },
+    { key: "orbit_regime", value: "LEO", amount: 2000 },
+    { key: "orbit_regime", value: "SSO", amount: 3000 },
+    { key: "orbit_regime", value: "GTO", amount: 4000 },
+    { key: "propulsion_module", value: "true", amount: 1000 }
   ]
 };
 

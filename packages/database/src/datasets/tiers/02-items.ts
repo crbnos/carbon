@@ -395,7 +395,11 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       name: spec.name,
       ruleType: spec.ruleType,
       amountType: spec.amountType,
-      amount: spec.amount,
+      // The dataset states a percentage in points (5 = 5%); the pricing
+      // engine multiplies by a fraction (price × amount), as the rule form
+      // stores it.
+      amount:
+        spec.amountType === "Percentage" ? spec.amount / 100 : spec.amount,
       priority: spec.priority,
       customerIds: spec.customer
         ? [need(ctx.refs.customers, spec.customer, "customer")]
@@ -460,6 +464,28 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       field: `${rule.field}:${row.id}`,
       code: rule.code,
       updatedBy: ctx.userId
+    });
+  }
+  // The shape normalizePricingRule (sales.service.ts) gives a Configuration
+  // rule: one item, Fixed 0, the prices carrying the parameter's label so the
+  // price trace can name it.
+  if (cfg.prices?.length) {
+    const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
+    await insertRow(ctx, "pricingRule", {
+      name: `${cfg.item} Configuration`,
+      ruleType: "Configuration",
+      amountType: "Fixed",
+      amount: 0,
+      priority: 0,
+      itemIds: [cfgItem.id],
+      configurationPrices: JSON.stringify(
+        cfg.prices.map((price) => ({
+          key: price.key,
+          value: price.value ?? null,
+          amount: price.amount,
+          label: labelByKey.get(price.key)
+        }))
+      )
     });
   }
 

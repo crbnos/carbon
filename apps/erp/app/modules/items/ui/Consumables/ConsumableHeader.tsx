@@ -24,6 +24,7 @@ import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
 import type { Consumable } from "../../types";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
@@ -47,17 +48,18 @@ const ConsumableHeader = () => {
 
   const routeData = useRouteData<{
     consumableSummary: Consumable;
-    supersession: {
+    supersession: Promise<{
       supersessionMode:
         | "Consume First"
         | "Prefer New"
         | "Stock Only"
         | "No Stock";
-    } | null;
+    } | null>;
   }>(path.to.consumable(itemId));
 
+  const supersession = useResolved(routeData?.supersession, null);
   const lifecycleStatus = getItemLifecycleStatus(
-    routeData?.supersession?.supersessionMode
+    supersession?.supersessionMode
   );
 
   return (

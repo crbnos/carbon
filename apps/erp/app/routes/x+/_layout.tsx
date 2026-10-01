@@ -77,6 +77,7 @@ import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
+  employeeCompaniesOf,
   getCompanies,
   getCompanyIntegrations,
   getCompanySettings,
@@ -191,7 +192,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Parallelize all requests
   const [
     companies,
-    employeeCompaniesResult,
     stripeCustomer,
     plan,
     customFields,
@@ -207,7 +207,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
-    getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
     getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
@@ -252,7 +251,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request, reason);
   }
 
-  const employeeCompanies = employeeCompaniesResult.data ?? [];
+  // Derived from the read above. A failed read falls back to its own query, so
+  // a multi-company user still reaches the picker rather than onboarding.
+  const employeeCompanies = companies.data
+    ? employeeCompaniesOf(companies.data)
+    : ((await getEmployeeCompanies(client, userId)).data ?? []);
   const hasMultipleCompanies = employeeCompanies.length > 1;
 
   // Send multi-company users to the picker, preserving where they were headed.

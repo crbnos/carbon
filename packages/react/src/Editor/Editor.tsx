@@ -55,6 +55,8 @@ interface MentionConfig {
 
 interface EditorProp {
   className?: string;
+  /** Focus the editor when it mounts. */
+  autoFocus?: boolean;
   initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
   onUpload?: (file: File) => Promise<string>;
@@ -106,6 +108,7 @@ const defaultOnUpload = async (file: File) => {
 
 const Editor = ({
   className,
+  autoFocus,
   initialValue,
   onChange,
   onUpload,
@@ -270,6 +273,7 @@ const Editor = ({
           initialContent: initialContentRef.current
         })}
         extensions={extensions}
+        autofocus={autoFocus}
         editorProps={{
           handleDOMEvents: {
             keydown: (_view, event) => handleCommandNavigation(event)

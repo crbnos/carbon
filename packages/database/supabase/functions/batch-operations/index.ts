@@ -147,7 +147,10 @@ async function loadMemberOutputs(
     .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
     .where("companyId", "=", companyId)
     .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+    // Deterministic among tied `createdAt` (bulk-minted serials).
     .orderBy("createdAt", "asc")
+    .orderBy("readableId", "asc")
+    .orderBy("id", "asc")
     .execute();
   const entityByMakeMethod = new Map<string, string>();
   for (const e of entities) {

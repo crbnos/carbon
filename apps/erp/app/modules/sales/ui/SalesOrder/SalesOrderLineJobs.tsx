@@ -229,7 +229,7 @@ export function SalesOrderLineJobs({
                     label={t`Job ID`}
                     table="job"
                   />
-                  <Location name="locationId" label={t`Location`} />
+                  <Location autoFocus name="locationId" label={t`Location`} />
                   <NumberControlled
                     name="quantity"
                     label={t`Quantity`}

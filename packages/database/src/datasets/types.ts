@@ -382,7 +382,8 @@ export type PricingRuleSpec = {
   name: string;
   ruleType: "Discount" | "Markup";
   amountType: "Percentage" | "Fixed";
-  /** Percent (0–100] for Percentage; a per-unit amount for Fixed. */
+  /** Percent (0–100] for Percentage — tier 02 stores it as the fraction the
+   *  pricing engine expects; a per-unit amount for Fixed. */
   amount: number;
   customer?: string;
   customerType?: string;
@@ -408,11 +409,23 @@ export type ConfigurationRuleSpec = {
   code: string;
 };
 
+/** A surcharge one parameter adds to the configured item's price. `value` is
+ *  the list option, or "true" for a boolean; omitted, the amount is per unit
+ *  of a numeric parameter's value. */
+export type ConfigurationPriceSpec = {
+  key: string;
+  value?: string;
+  amount: number;
+};
+
 export type ConfigurationSpec = {
   item: string;
   group: string;
   parameters: ConfigurationParameterSpec[];
   rules: ConfigurationRuleSpec[];
+  /** Seeded as the item's Configuration pricing rule ("<item> Configuration"),
+   *  so quotes and orders of a configured line price the chosen options. */
+  prices?: ConfigurationPriceSpec[];
 };
 
 export type RuleOperator =

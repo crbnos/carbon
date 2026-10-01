@@ -292,6 +292,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       )}
 
                       <Item
+                        autoFocus={!isEditing}
                         name="itemId"
                         label={i18n._(itemTypeLabel(type))}
                         type={type}
