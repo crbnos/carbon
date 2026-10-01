@@ -80,7 +80,8 @@ import {
   employeeCompaniesOf,
   getCompanies,
   getCompanyIntegrations,
-  getCompanySettings
+  getCompanySettings,
+  getEmployeeCompanies
 } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import { getSavedViews } from "~/modules/shared/shared.service";
@@ -250,7 +251,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request, reason);
   }
 
-  const employeeCompanies = employeeCompaniesOf(companies.data ?? []);
+  // Derived from the read above. A failed read falls back to its own query, so
+  // a multi-company user still reaches the picker rather than onboarding.
+  const employeeCompanies = companies.data
+    ? employeeCompaniesOf(companies.data)
+    : ((await getEmployeeCompanies(client, userId)).data ?? []);
   const hasMultipleCompanies = employeeCompanies.length > 1;
 
   // Send multi-company users to the picker, preserving where they were headed.
