@@ -6108,10 +6108,10 @@ msgid "Description of Issue"
 msgstr "Descrizione del Problema"
 
 msgid "Detach"
-msgstr ""
+msgstr "Scollega"
 
 msgid "Detach to edit them in Carbon."
-msgstr ""
+msgstr "Scollega per modificarli in Carbon."
 
 msgid "Detail"
 msgstr "Dettagli"
@@ -9905,7 +9905,7 @@ msgid "Last Name"
 msgstr "Cognome"
 
 msgid "Last pushed {lastPushed}."
-msgstr ""
+msgstr "Ultimo invio {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "Ultimo Trimestre"
@@ -10131,7 +10131,7 @@ msgid "Link to sales order line"
 msgstr "Collega alla riga dell'ordine di vendita"
 
 msgid "Linked"
-msgstr ""
+msgstr "Collegato"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -11048,7 +11048,7 @@ msgid "Name an internal project owner with decision authority"
 msgstr "Nomina un responsabile interno del progetto con autorità decisionale"
 
 msgid "Name and description are managed in Onshape."
-msgstr ""
+msgstr "Il nome e la descrizione sono gestiti in Onshape."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "I nomi vengono compilati ovunque questi ruoli siano referenziati in tutto l'hub."
@@ -12461,7 +12461,7 @@ msgid "Open in MES"
 msgstr "Apri in MES"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Apri in Onshape"
 
 msgid "Open Issues"
 msgstr "Problemi Aperti"

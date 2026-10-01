@@ -6108,10 +6108,10 @@ msgid "Description of Issue"
 msgstr "이슈 설명"
 
 msgid "Detach"
-msgstr ""
+msgstr "분리"
 
 msgid "Detach to edit them in Carbon."
-msgstr ""
+msgstr "Carbon에서 편집하려면 분리하세요."
 
 msgid "Detail"
 msgstr "상세"
@@ -9905,7 +9905,7 @@ msgid "Last Name"
 msgstr "성"
 
 msgid "Last pushed {lastPushed}."
-msgstr ""
+msgstr "마지막 푸시: {lastPushed}."
 
 msgid "Last Quarter"
 msgstr "지난 분기"
@@ -10131,7 +10131,7 @@ msgid "Link to sales order line"
 msgstr "수주 라인으로 링크"
 
 msgid "Linked"
-msgstr ""
+msgstr "연결됨"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -11048,7 +11048,7 @@ msgid "Name an internal project owner with decision authority"
 msgstr "결정 권한이 있는 내부 프로젝트 책임자를 지정하십시오."
 
 msgid "Name and description are managed in Onshape."
-msgstr ""
+msgstr "이름과 설명은 Onshape에서 관리됩니다."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "허브 전체에서 해당 역할이 참조되는 곳마다 이름이 자동으로 채워집니다."
@@ -12461,7 +12461,7 @@ msgid "Open in MES"
 msgstr "MES에서 열기"
 
 msgid "Open in Onshape"
-msgstr ""
+msgstr "Onshape에서 열기"
 
 msgid "Open Issues"
 msgstr "미결 이슈"
