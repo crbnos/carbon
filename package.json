@@ -16,7 +16,7 @@
     "npm-run-all": "catalog:",
     "rimraf": "catalog:",
     "supabase": "catalog:",
-    "ts-morph": "22.0.0",
+    "ts-morph": "28.0.0",
     "tsx": "catalog:",
     "turbo": "2.9.6",
     "typescript": "catalog:",

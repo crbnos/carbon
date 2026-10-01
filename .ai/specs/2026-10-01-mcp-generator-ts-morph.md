@@ -1,6 +1,6 @@
 # MCP generator: replace hand-rolled TypeScript parsing with ts-morph
 
-> Status: in progress — Phase 1 and the structural half of Phase 2 implemented; Phase 0, 2b, 2c and 3 open
+> Status: in progress — Phase 1, the structural half of Phase 2 and the ts-morph bump implemented; the rest of Phase 0 (scripts/ typecheck and lint coverage), 2b, 2c and 3 open
 > Author: Sidwebworks
 > Date: 2026-10-01
 
@@ -349,6 +349,10 @@ All resolved with the user on 2026-10-01 before this spec was written.
 
 ## Changelog
 
+- 2026-10-02: `ts-morph` bumped 22.0.0 → 28.0.0 (the Phase 0 bump, on its own
+  commit). Its bundled TypeScript goes from 5.4.2 to 6.0.2. Digest verdict:
+  byte-identical, so no schema, response or classification moved. Uncached
+  generation is about 5s slower (~25s from ~20s); a cache hit is unaffected.
 - 2026-10-02: The name stopped deciding anything. Every exposed function now
   declares `@mcp <verb> [destructive]` (`read`, `create`, `update`, `upsert`,
   `delete`, `action`), and classification, permission actions and audit fields
