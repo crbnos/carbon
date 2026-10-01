@@ -349,6 +349,18 @@ All resolved with the user on 2026-10-01 before this spec was written.
 
 ## Changelog
 
+- 2026-10-02: The name stopped deciding anything. Every exposed function now
+  declares `@mcp <verb> [destructive]` (`read`, `create`, `update`, `upsert`,
+  `delete`, `action`), and classification, permission actions and audit fields
+  come from that verb (`MCP_VERBS` in `mcp-exposure.ts`). `inferClassification`,
+  `permissionActionsFor`, `computeInjectAuth` and the `INJECT_AUTH_OVERRIDES` /
+  `PERMISSION_OVERRIDES` tables are gone; the two override tables became
+  `@mcp audit` / `@mcp permission` tags on the functions. Reads are opt-in too: an
+  untagged export is not a tool. All 1476 tags were written from the manifest of
+  the day and the regenerated digest is byte-identical, so no tool changed. This
+  supersedes 2a (structural classification): there is no inferred classification
+  left to make structural, only a declared one checked against the body.
+  `_operation` was removed in the same pass (`upsert` rule + `@mcp key`).
 - 2026-10-01: Phase 1 and Phase 2 (scans + 2a) implemented in
   `scripts/lib/service-ast.ts`. One ts-morph project is shared with
   `response-schema.ts`; discovery, parameters, doc tags and every body question

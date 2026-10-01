@@ -42,8 +42,7 @@ export async function generateToolMetadata(): Promise<void> {
 
   const auditDrops: { toolName: string; table: string; dropped: string[] }[] =
     [];
-  const untagged: { toolName: string; classification: string }[] = [];
-  const declared: { toolName: string; from: string; to: string }[] = [];
+  const untagged: string[] = [];
   const skippedModules: { module: string; functionCount: number }[] = [];
 
   const { tools: allTools, registryStats, responseStats, resolutions } =
@@ -51,10 +50,7 @@ export async function generateToolMetadata(): Promise<void> {
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
       onAuditColumnsDropped: (toolName, table, dropped) =>
         auditDrops.push({ toolName, table, dropped }),
-      onUntagged: (toolName, classification) =>
-        untagged.push({ toolName, classification }),
-      onClassificationDeclared: (toolName, from, to) =>
-        declared.push({ toolName, from, to }),
+      onUntagged: (toolName) => untagged.push(toolName),
       onModuleSkipped: (module, functionCount) =>
         skippedModules.push({ module, functionCount }),
     });
@@ -112,37 +108,25 @@ export async function generateToolMetadata(): Promise<void> {
   console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
   console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
 
-  // Exposure. A data-changing function reaches the API because it carries
-  // `@mcp`, not because it is exported — see mcp-exposure.ts for why.
+  // Exposure. A function reaches the API because its doc comment declares
+  // `@mcp <verb>`, not because it is exported — see mcp-exposure.ts.
   if (skippedModules.length > 0) {
     console.log(
       `\n  Modules not on MCP_MODULE_ALLOWLIST: ${skippedModules.map((m) => `${m.module} (${m.functionCount} fns)`).join(", ")}`
     );
   }
-  if (declared.length > 0) {
-    console.log(
-      `\n  Classification declared on the tag (overrides what the body and name imply): ${declared.length}`
-    );
-    for (const d of declared) {
-      console.log(`      ${d.toolName}: ${d.from} → ${d.to}`);
-    }
-  }
   if (untagged.length > 0) {
-    const byClass = untagged.reduce<Record<string, number>>((acc, u) => {
-      acc[u.classification] = (acc[u.classification] ?? 0) + 1;
-      return acc;
-    }, {});
     console.log(
-      `\n  Not exposed (no ${"@mcp"} tag): ${untagged.length} — ${Object.entries(byClass).map(([c, n]) => `${n} ${c}`).join(", ")}`
+      `\n  Exported but not exposed (no @mcp tag): ${untagged.length}`
     );
   }
 
-  // Audit-column provenance. The name-verb rule claims createdBy/updatedBy for
-  // every upsert*/insert*, and dispatch stamps them onto the payload OBJECT — so
-  // a service that spreads its argument into the write would send a column the
-  // table does not have (PGRST204). Each drop below is that rule being corrected
-  // against the generated types; a drop that looks wrong means the table really
-  // does have the column, or the tool needs an INJECT_AUTH_OVERRIDES entry.
+  // Audit-column provenance. A `create`/`update`/`upsert` tool is handed
+  // createdBy/updatedBy, and dispatch stamps them onto the payload OBJECT — so a
+  // service that spreads its argument into the write would send a column the
+  // table does not have (PGRST204). Each drop below is the verb's set being
+  // corrected against the generated types; a drop that looks wrong means the
+  // table really does have the column, or the tool needs an `@mcp audit` line.
   if (auditDrops.length > 0) {
     console.log(
       `\n  Audit columns dropped (absent from the tool's table): ${auditDrops.length}`

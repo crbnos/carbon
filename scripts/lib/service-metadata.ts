@@ -30,11 +30,12 @@ import type {
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
-  MCP_DECLARED_CLASSIFICATIONS,
+  MCP_DESTRUCTIVE,
   MCP_EXPOSURE_TAG,
   MCP_MODULE_ALLOWLIST,
-  MCP_TAG_REQUIRED_FOR,
-  MCP_UPSERT_KEY_TAG
+  MCP_SETTINGS,
+  MCP_VERBS,
+  type McpVerb
 } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
 import {
   buildResponseSchemaIndex,
@@ -109,49 +110,6 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
   inventory_updateWarehouseTransfer: "Update an existing warehouse transfer",
 };
 
-// Per-tool overrides of the auto-computed injectAuth set, for INTENT the schema
-// cannot express. An override wins outright — nothing below is checked against
-// the real columns.
-//
-// A table that simply HAS NO createdBy/updatedBy column needs no entry:
-// `withoutAbsentAuditColumns` derives that from the generated types, which is
-// why account_upsertNotificationPreference and the four lean material lookups
-// (dimension, finish, grade, type) no longer appear here.
-//
-// The two ledger entries are the opposite case — the column EXISTS (schema
-// uniformity, migration 20260701143512) but by convention must stay NULL: an
-// "edit" is a new offsetting row, never an in-place mutation, and a stamped
-// updatedBy would destroy the "untouched since creation" guarantee. Both
-// insert([data]) where data is the spread of their injected args:
-//   - inventory_insertManualInventoryAdjustment → itemLedger
-//   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
-const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
-  inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
-  accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
-  // Both operations replace settlement rows in a transaction. Their verbs do
-  // not imply INSERT to the name-based rule, but the service requires the
-  // authenticated creator for every replacement row.
-  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
-  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
-  // Both read the caller's group-scoped currency with the payload's
-  // companyGroupId and write a memo, so it must come from the auth context —
-  // a caller-supplied group would resolve another group's currency rows.
-  purchasing_createPurchaseReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
-  sales_createSalesReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
-};
-
 // service-module → permission-module. `items` operations are gated by the `parts`
 // permission; `account` and `shared` gate only on a valid key of the company (no
 // module permission), so they map to null. Every other module is identity.
@@ -159,19 +117,6 @@ const PERMISSION_MODULE_MAP: Record<string, string | null> = {
   items: "parts",
   account: null,
   shared: null,
-};
-
-// Per-tool permission overrides, for operations whose route gates on a DIFFERENT
-// module than their service module (spot-checked against the real routes). Keep
-// this hand-curated list small and grounded — each entry needs a verified route.
-const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
-  // API-key management is an admin capability: the list loader
-  // (x+/settings+/api-keys.tsx) gates on { update: "users" }, not "settings" —
-  // deriving "settings" would let a settings-scoped key read the key family.
-  // The WRITES (upsert/delete) moved to @carbon/ee/api-keys.server behind
-  // requireEntitlement, so they are no longer scanned as MCP tools; only the
-  // read remains here.
-  settings_getApiKeys: { module: "users", actions: ["update"] },
 };
 
 // ---------------------------------------------------------------------------
@@ -832,95 +777,158 @@ function resolveTypeAlias(
 // Classification, auth & permission
 // ---------------------------------------------------------------------------
 
-const READ_NAME =
-  /^(get|list|fetch|search|find|count|check|is|has|compute)(?![a-z])/;
+const AUTH_FIELDS: readonly AuthField[] = [
+  "companyId",
+  "companyGroupId",
+  "createdBy",
+  "updatedBy",
+  "userId"
+];
+const PERMISSION_ACTIONS: readonly PermissionAction[] = [
+  "view",
+  "create",
+  "update",
+  "delete"
+];
 
-/**
- * What a function is, from what its body DOES. The name only breaks the tie the
- * body cannot: a function with no database write of its own is a READ when it
- * is named like one, and a WRITE otherwise — an `issueMaterial` or `postReceipt`
- * that hands the work to an edge function or RPC writes nothing here.
- *
- * The name used to come first, so a `get*` was a READ whatever it did:
- * `accounting_getOrCreateAccountingPeriod` inserts a period and was published
- * as a read, gated on `accounting:view`, with no `@mcp` opt-in required. The
- * `(?![a-z])` boundary keeps `issueMaterial` ("is" + lowercase) out of the
- * read names while `isBlocked` / `getJob` stay in.
- *
- * A row delete makes it DESTRUCTIVE even under an `upsert`/`update` name — a
- * delete-then-reinsert rewrite silently drops whatever the caller left out.
- *
- * ponytail: intra-procedural. A write reached through a helper, an RPC or an
- * edge function is invisible here; such a function is named for what it does or
- * declares itself with `@mcp write|destructive`.
- */
-function inferClassification(fn: ServiceFunction): Classification {
-  const writes = dbWrites(fn.node);
-  if (/^delete/.test(fn.name) || writes.some((w) => w.kind === "delete")) {
-    return "DESTRUCTIVE";
-  }
-  if (writes.length > 0) return "WRITE";
-  return READ_NAME.test(fn.name) ? "READ" : "WRITE";
+type McpSetting = keyof typeof MCP_SETTINGS;
+
+/** Every `@mcp …` line on a function: its first word, and the rest. */
+function mcpLines(fn: ServiceFunction): { word: string; rest: string }[] {
+  return fn.tags
+    .filter((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)
+    .map((tag) => {
+      const [word = "", ...rest] = tag.comment.split(/\s+/);
+      return { word, rest: rest.join(" ") };
+    });
 }
 
-/** The `@mcp` tag on a function, if it carries one. */
-function exposureTag(fn: ServiceFunction) {
-  const tags = fn.tags.filter((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG);
-  // Two tags is two answers to "what is this": `@mcp` + `@mcp destructive`
-  // read as a plain write or a destructive one depending on which came first.
-  if (tags.length > 1) {
+/** What follows `@mcp <setting>` on each such line. */
+function settingLines(fn: ServiceFunction, setting: McpSetting): string[] {
+  return mcpLines(fn)
+    .filter((line) => line.word === MCP_SETTINGS[setting])
+    .map((line) => line.rest);
+}
+
+/** A setting that may be given once. Twice is two answers to one question,
+ *  read differently depending on which came first. */
+function singleSetting(
+  fn: ServiceFunction,
+  setting: McpSetting
+): string | undefined {
+  const lines = settingLines(fn, setting);
+  if (lines.length > 1) {
     throw new Error(
-      `${fn.toolName} carries ${tags.length} ${MCP_EXPOSURE_TAG} tags. Keep one.`
+      `${fn.toolName} has ${lines.length} \`${MCP_EXPOSURE_TAG} ${setting}\` lines. Keep one.`
     );
   }
-  return tags[0];
+  return lines[0];
 }
 
-/** `@mcp read|write|destructive` — the first word after the tag. */
-function declaredClassification(fn: ServiceFunction): Classification | null {
-  const word = exposureTag(fn)?.comment.split(/\s+/)[0]?.toLowerCase();
-  return word && word in MCP_DECLARED_CLASSIFICATIONS
-    ? MCP_DECLARED_CLASSIFICATIONS[
-        word as keyof typeof MCP_DECLARED_CLASSIFICATIONS
-      ]
-    : null;
+export interface Declaration {
+  verb: McpVerb;
+  destructive: boolean;
+}
+
+/**
+ * What the function declares itself to be: `@mcp <verb> [destructive]`.
+ * Undefined when it carries no `@mcp` line — then it is simply not a tool.
+ * Anything else the generator needs follows from the verb (`MCP_VERBS`); the
+ * function's NAME is never consulted.
+ *
+ * The declaration is checked against what the body does, in the direction that
+ * matters: `read` on a body that writes, or a write whose body deletes rows
+ * without `destructive`, fails generation. The reverse cannot be checked — a
+ * body with no write of its own may hand the work to a helper, an RPC or an
+ * edge function — which is exactly why it has to be declared.
+ */
+export function declarationOf(fn: ServiceFunction): Declaration | undefined {
+  const lines = mcpLines(fn);
+  if (lines.length === 0) return undefined;
+
+  const settings: readonly string[] = Object.values(MCP_SETTINGS);
+  const verbs = lines.filter((line) => !settings.includes(line.word));
+  if (verbs.length !== 1) {
+    throw new Error(
+      `${fn.toolName} must declare exactly one \`${MCP_EXPOSURE_TAG} <verb>\` line; it has ${verbs.length}.`
+    );
+  }
+  const { word, rest } = verbs[0];
+  if (!Object.hasOwn(MCP_VERBS, word)) {
+    throw new Error(
+      `${fn.toolName}: \`${MCP_EXPOSURE_TAG} ${word}\` is not a verb. Use one of ${Object.keys(MCP_VERBS).join(", ")}.`
+    );
+  }
+  const verb = word as McpVerb;
+  const destructive = rest.split(/\s+/)[0] === MCP_DESTRUCTIVE;
+
+  const writes = dbWrites(fn.node);
+  if (verb === "read") {
+    if (destructive) {
+      throw new Error(`${fn.toolName}: a read cannot be ${MCP_DESTRUCTIVE}.`);
+    }
+    if (writes.length > 0) {
+      throw new Error(
+        `${fn.toolName} declares \`${MCP_EXPOSURE_TAG} read\` but its body writes to ${writes[0]?.table ?? "the database"}. Declare the verb it really is.`
+      );
+    }
+  } else if (
+    verb !== "delete" &&
+    !destructive &&
+    writes.some((w) => w.kind === "delete")
+  ) {
+    throw new Error(
+      `${fn.toolName} declares \`${MCP_EXPOSURE_TAG} ${verb}\` but its body deletes rows. Declare \`${MCP_EXPOSURE_TAG} ${verb} ${MCP_DESTRUCTIVE}\`.`
+    );
+  }
+  return { verb, destructive };
+}
+
+/** `@mcp audit a, b` → the fields to stamp, companyId always among them. */
+function declaredAudit(fn: ServiceFunction): AuthField[] | undefined {
+  const line = singleSetting(fn, "audit");
+  if (line === undefined) return undefined;
+  const fields = line
+    .split(",")
+    .map((field) => field.trim())
+    .filter(Boolean);
+  for (const field of fields) {
+    if (!AUTH_FIELDS.includes(field as AuthField)) {
+      throw new Error(
+        `${fn.toolName}: \`${MCP_EXPOSURE_TAG} audit\` names "${field}". Use ${AUTH_FIELDS.join(", ")}.`
+      );
+    }
+  }
+  return [...new Set<AuthField>(["companyId", ...(fields as AuthField[])])];
+}
+
+/** `@mcp permission module:action+action` → the permission to gate on. */
+function declaredPermission(fn: ServiceFunction): ToolPermission | undefined {
+  const line = singleSetting(fn, "permission");
+  if (line === undefined) return undefined;
+  const [module = "", actionList = ""] = line.split(/\s+/)[0].split(":");
+  const actions = actionList.split("+").filter(Boolean);
+  if (
+    !module ||
+    actions.length === 0 ||
+    actions.some(
+      (action) => !PERMISSION_ACTIONS.includes(action as PermissionAction)
+    )
+  ) {
+    throw new Error(
+      `${fn.toolName}: \`${MCP_EXPOSURE_TAG} permission\` must read <module>:<action>[+<action>] with actions from ${PERMISSION_ACTIONS.join(", ")}.`
+    );
+  }
+  return { module, actions: actions as PermissionAction[] };
 }
 
 /** The keys an upsert branches on to pick insert vs update. */
 const OPERATION_FIELDS = ["createdBy", "updatedBy"] as const;
 
-function computeInjectAuth(
-  funcName: string,
-  classification: Classification
-): AuthField[] {
-  const lower = funcName.toLowerCase();
-  // Only READ tools take no audit fields. A DESTRUCTIVE label is just a caller
-  // hint — a delete-then-reinsert `upsert*` still inserts rows and needs its
-  // createdBy/updatedBy, so audit injection is keyed off the name verb, not the
-  // classification. A genuine `delete*` matches neither verb group and falls
-  // through to companyId-only.
-  if (classification === "READ") {
-    return ["companyId"];
-  }
-  if (
-    /^(upsert|create|insert|add|new|copy|duplicate|generate)/.test(lower)
-  ) {
-    return ["companyId", "createdBy", "updatedBy"];
-  }
-  if (
-    /^(update|modify|set|change|edit|approve|reject|finalize|toggle|move|reorder|recalculate|sync|favorite|unfavorite|send|release|close|convert|run)/.test(
-      lower
-    )
-  ) {
-    return ["companyId", "updatedBy"];
-  }
-  return ["companyId"];
-}
-
 /**
  * Drop `createdBy` / `updatedBy` when the function's ONE table has no such
- * column. `computeInjectAuth` decides from the name verb alone, and
- * `enrichWithAuthContext` stamps the fields onto the payload OBJECT — so a
+ * column. The verb says which audit fields a tool is handed, and
+ * `enrichWithAuthContext` stamps them onto the payload OBJECT — so a
  * service that spreads its argument into the write (`insert([row])`,
  * `update(sanitize(row))`) sends a nonexistent column to PostgREST and the call
  * fails with PGRST204. The HTML form routes build the row from their validator
@@ -964,39 +972,6 @@ export function withPayloadUserId(
   return declaresUserId ? [...fields, "userId"] : fields;
 }
 
-// The permission an API-key caller must hold. `module` follows the service→permission
-// map; `actions` are derived from the operation verb, mirroring `computeInjectAuth`'s
-// verb groups but split into CRUD actions. An unmatched write verb (issue/post/ship/
-// complete/...) requires `update` — the conservative mutation gate.
-function derivePermission(
-  toolName: string,
-  mod: string,
-  funcName: string,
-  classification: Classification
-): ToolPermission {
-  if (PERMISSION_OVERRIDES[toolName]) return PERMISSION_OVERRIDES[toolName];
-
-  const permModule =
-    mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod;
-
-  return { module: permModule, actions: permissionActionsFor(funcName, classification) };
-}
-
-function permissionActionsFor(
-  funcName: string,
-  classification: Classification
-): PermissionAction[] {
-  if (classification === "READ") return ["view"];
-  const lower = funcName.toLowerCase();
-  if (/^upsert/.test(lower)) return ["create", "update"];
-  if (/^delete/.test(lower)) return ["delete"];
-  if (/^(insert|create|add|new|copy|duplicate|generate)/.test(lower))
-    return ["create"];
-  // Everything else that writes — the explicit update group plus unmatched
-  // mutation verbs (issue/post/ship/receive/complete/...) — gates on update.
-  return ["update"];
-}
-
 /**
  * Delete `pattern` wherever a sibling `format` is present, recursively. zod
  * v4's email conversion emits BOTH — `format: "email"` plus a ~200-character
@@ -1023,9 +998,9 @@ function stripRedundantPatterns(node: unknown): void {
  * audit field. Never the caller's job: the answer is either in the payload or
  * in the database.
  *
- *  - `@upsertKey <table> <column>[=<field>], …` on the function — look the row
+ *  - `@mcp key <table> <column>[=<field>], …` on the function — look the row
  *    up, `column` compared with the payload's `field` (same name by default).
- *    Several tags are alternatives: a part's `id` may be its item id or its
+ *    Several lines are alternatives: a part's `id` may be its item id or its
  *    part number.
  *  - otherwise the parameter's type must make `id` decisive (sent = update).
  *
@@ -1036,11 +1011,11 @@ function upsertRule(
   fn: ServiceFunction,
   schema: Record<string, unknown>
 ): NonNullable<ManifestEntry["upsert"]> {
-  const tags = fn.tags.filter((tag) => `@${tag.name}` === MCP_UPSERT_KEY_TAG);
-  if (tags.length === 0) {
+  const keyLines = settingLines(fn, "key");
+  if (keyLines.length === 0) {
     if (idDistinguishesUpdate(fn.node, CONTEXT_PARAMS)) return { keys: ["id"] };
     throw new Error(
-      `${fn.toolName} branches on createdBy/updatedBy, but its payload cannot say whether it creates or updates: \`id\` is required (or absent) in both shapes. Declare the row it updates: \`${MCP_UPSERT_KEY_TAG} <table> <column>[, <column>]\`.`
+      `${fn.toolName} branches on createdBy/updatedBy, but its payload cannot say whether it creates or updates: \`id\` is required (or absent) in both shapes. Declare the row it updates: \`${MCP_EXPOSURE_TAG} key <table> <column>[, <column>]\`.`
     );
   }
 
@@ -1056,12 +1031,12 @@ function upsertRule(
       (property) => property?.properties && field in property.properties
     );
   const fail = (message: string): never => {
-    throw new Error(`${fn.toolName}: ${MCP_UPSERT_KEY_TAG} ${message}`);
+    throw new Error(`${fn.toolName}: \`${MCP_EXPOSURE_TAG} key\` ${message}`);
   };
 
-  // Each tag is one row to look for; several tags are alternatives.
-  const lookups = tags.map((tag) => {
-    const [table = "", ...rest] = tag.comment.split(/\s+/);
+  // Each line is one row to look for; several lines are alternatives.
+  const lookups = keyLines.map((line) => {
+    const [table = "", ...rest] = line.split(/\s+/);
     const columns = getDbTableTypeFields(table, "Row")?.map((c) => c.name);
     if (!columns) {
       return fail(
@@ -1429,19 +1404,13 @@ export interface BuildOptions {
    * absent, which keeps this function sync and self-contained.
    */
   ast?: ServiceAst;
-  /** A data-changing function with no `@mcp` tag, so it is not exposed. */
-  onUntagged?: (toolName: string, classification: Classification) => void;
-  /** A `@mcp <kind>` declaration that overrode what the body and name imply. */
-  onClassificationDeclared?: (
-    toolName: string,
-    inferred: Classification,
-    declared: Classification
-  ) => void;
+  /** An exported function with no `@mcp` tag, so it is not a tool. */
+  onUntagged?: (toolName: string) => void;
   /** A module absent from `MCP_MODULE_ALLOWLIST`, so none of it is exposed. */
   onModuleSkipped?: (module: string, functionCount: number) => void;
   /**
-   * Reported whenever the name-derived auth set claimed an audit column the
-   * tool's table does not have. Surfaced by the generator so a wrong drop is
+   * Reported whenever the verb's audit fields include a column the tool's
+   * table does not have. Surfaced by the generator so a wrong drop is
    * visible in the run output, not only in the digest diff.
    */
   onAuditColumnsDropped?: (
@@ -1489,34 +1458,16 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const { toolName } = func;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
-      // A declared `@mcp read|write|destructive` wins over the inferred
-      // classification — the same rule descriptions already follow, code
-      // closest wins. It is VERIFIED against the body, so a declaration cannot
-      // quietly downgrade a real write into a read (which would relax its
-      // permission from create/update to view and drop its audit injection).
-      const inferred = inferClassification(func);
-      const declared = declaredClassification(func);
-      const writes = dbWrites(func.node);
-      if (declared === "READ" && writes.length > 0) {
-        throw new Error(
-          `${toolName} declares \`${MCP_EXPOSURE_TAG} read\` but its body performs a write. A read cannot write: fix the tag or the function.`
-        );
-      }
-      if (declared === "WRITE" && writes.some((w) => w.kind === "delete")) {
-        throw new Error(
-          `${toolName} declares \`${MCP_EXPOSURE_TAG} write\` but its body deletes. Declare it \`${MCP_EXPOSURE_TAG} destructive\`.`
-        );
-      }
-      const classification = declared ?? inferred;
-      if (declared && declared !== inferred) {
-        opts.onClassificationDeclared?.(toolName, inferred, declared);
-      }
-      // Opt-IN for anything that changes data. A function reaches the API
-      // because someone tagged it, not because it happens to be exported.
-      if (MCP_TAG_REQUIRED_FOR.includes(classification) && !exposureTag(func)) {
-        opts.onUntagged?.(toolName, classification);
+      // A function is a tool because it says so, and it says what kind.
+      const declared = declarationOf(func);
+      if (!declared) {
+        opts.onUntagged?.(toolName);
         continue;
       }
+      const verb = MCP_VERBS[declared.verb];
+      const classification: Classification = declared.destructive
+        ? "DESTRUCTIVE"
+        : verb.classification;
       // The dispatcher fills one positional argument per parameter from a JSON
       // object; a variadic tail has no such slot.
       const rest = func.params.find((p) => p.rest);
@@ -1525,14 +1476,13 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
           `${toolName} takes a rest parameter (...${rest.name}), which the API cannot express. Give it an array parameter, or add it to MCP_BLOCKED_TOOL_NAMES.`
         );
       }
-      // An explicit override states INTENT and wins outright (the ledger
-      // entries keep `updatedBy` NULL even though the column exists); only the
-      // name-derived set is checked against the real schema.
-      const override = INJECT_AUTH_OVERRIDES[toolName];
+      // A declared `@mcp audit` states INTENT and wins outright (a ledger row
+      // keeps `updatedBy` NULL even though the column exists); only the verb's
+      // own set is checked against the real schema.
       const injectAuth = withPayloadUserId(
-        override ||
+        declaredAudit(func) ??
           withoutAbsentAuditColumns(
-            computeInjectAuth(func.name, classification),
+            ["companyId", ...verb.audit],
             func,
             (table, dropped) =>
               opts.onAuditColumnsDropped?.(toolName, table, dropped)
@@ -1546,12 +1496,10 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         DESCRIPTION_OVERRIDES[toolName] ||
         generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
-      const permission = derivePermission(
-        toolName,
-        mod,
-        func.name,
-        classification
-      );
+      const permission: ToolPermission = declaredPermission(func) ?? {
+        module: mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod,
+        actions: [...verb.actions]
+      };
       const { schema, paramCount } = buildToolSchema(func, {
         module: mod,
         validators: opts.validators,

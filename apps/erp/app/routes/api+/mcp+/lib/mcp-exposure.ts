@@ -3,20 +3,31 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Which service functions may become MCP / v1-API tools.
+ * How a service function becomes an MCP / v1-API tool: it SAYS so, in its doc
+ * comment. Nothing about a tool is read off the function's name.
  *
- * Exposure used to be opt-OUT: every exported function of a `*.service.ts`
- * became a tool, and `MCP_BLOCKED_TOOL_NAMES` took them back one at a time.
- * That list reached 18 entries against a surface of 1557 tools — 1% — and its
- * own comments record the pattern: `sales_insertSalesOrderLines` was blocked
- * because it "has no in-app caller … and writes lines without the sales-rule
- * evaluation the route action performs", `production_triggerJobSchedule`
- * because the gate every ERP route applies lives in the route, not the
- * function. Those are incidents, found after the fact, in a surface where 211
- * tools had no in-app caller at all and 103 of those were WRITE or DESTRUCTIVE.
+ * ```ts
+ * /**
+ *  * Creates or updates a customer.
+ *  * @mcp upsert
+ *  *\/
+ * export async function upsertCustomer(…)
+ * ```
  *
- * So a function that CHANGES data is now opt-IN.
+ * The published name is still `{module}_{functionName}`; everything else — what
+ * the tool is, which permission it needs, which audit fields it is handed — is
+ * declared.
+ *
+ * It used to be inferred. Every exported function was a tool, and its name
+ * decided the rest: `get*` was a read whatever it did (two that inserted rows
+ * were published on `view`), `upsert*` meant "stamp createdBy and updatedBy"
+ * whether or not the table had them (`items_upsertItemCustomerPart` failed
+ * every call with PGRST204), and a read named `diffMethod` demanded `update`.
+ * Blocking tools one at a time reached 18 entries against 1557 tools while 211
+ * tools had no in-app caller at all.
  */
+
+import type { AuthField, Classification, PermissionAction } from "@carbon/api";
 
 /**
  * Modules whose functions may be exposed at all. A module absent here exposes
@@ -42,55 +53,102 @@ export const MCP_MODULE_ALLOWLIST: readonly string[] = [
 ];
 
 /**
- * The JSDoc tag that opts a data-CHANGING function in. The generator reads it
- * off the declaration's parsed doc tags (`scripts/lib/service-ast.ts`), never
- * off the comment's text, so prose that mentions "@mcp" does not count.
+ * The one tag. Every line a function says about itself as a tool starts with
+ * it, in lowercase:
  *
- * Required for WRITE and DESTRUCTIVE only. READs stay opt-out: they are 802 of
- * the 1557 tools, they are bounded by the caller's own RLS and module
- * permission, and no entry on the blocked list is a plain read — every incident
- * has been a write or an orchestration primitive. Requiring the tag on reads
- * would mean tagging 800 functions to reduce no risk.
+ * ```
+ * @mcp <verb> [destructive]      required — no such line, not a tool
+ * @mcp permission <module>:<action>[+<action>]
+ * @mcp audit <field>[, <field>]
+ * @mcp key <table> <column>[=<field>][, …]
+ * ```
+ *
+ * Free text after a declaration is a note for the reader
+ * (`@mcp upsert destructive — it delegates to …`).
  */
 export const MCP_EXPOSURE_TAG = "@mcp";
 
-/** Classifications that require {@link MCP_EXPOSURE_TAG} to be exposed. */
-export const MCP_TAG_REQUIRED_FOR: readonly string[] = ["WRITE", "DESTRUCTIVE"];
+/**
+ * The verbs, and what each one means for the tool. This table is the whole
+ * contract: the generator copies these values and never looks at a name.
+ *
+ * `audit` is what the dispatcher stamps onto the payload besides `companyId`.
+ * A field the function's one table has no column for is still dropped, and a
+ * payload that declares its own `userId` still gets it — both are read from
+ * the schema and the signature, not guessed.
+ *
+ * `action` is a state change that is not a row edit — lock a period, complete
+ * an operation, finalize a quote. It needs `update` and is handed no audit
+ * fields; the service or the function it calls records who did it.
+ */
+export const MCP_VERBS = {
+  read: { classification: "READ", actions: ["view"], audit: [] },
+  create: {
+    classification: "WRITE",
+    actions: ["create"],
+    audit: ["createdBy", "updatedBy"]
+  },
+  update: {
+    classification: "WRITE",
+    actions: ["update"],
+    audit: ["updatedBy"]
+  },
+  upsert: {
+    classification: "WRITE",
+    actions: ["create", "update"],
+    audit: ["createdBy", "updatedBy"]
+  },
+  delete: { classification: "DESTRUCTIVE", actions: ["delete"], audit: [] },
+  action: { classification: "WRITE", actions: ["update"], audit: [] }
+} as const satisfies Record<
+  string,
+  {
+    classification: Classification;
+    actions: readonly PermissionAction[];
+    audit: readonly AuthField[];
+  }
+>;
+
+export type McpVerb = keyof typeof MCP_VERBS;
 
 /**
- * The tag may also DECLARE the classification — `@mcp read`, `@mcp write`,
- * `@mcp destructive` — which wins over what the generator infers.
- *
- * Classification is not cosmetic. It drives the permission actions a caller
- * must hold (READ → view), the injected auth fields (READ → companyId only),
- * and whether the function needs the tag at all. A read inferred WRITE
- * over-demands permission: `items_diffMethod` diffs two methods and would ask
- * for `parts:update`, locking out an API key scoped to `view`.
- *
- * A declaration is verified against the function's body and a contradiction
- * fails generation, so it cannot quietly downgrade a real write.
+ * The word after the verb for a write that can REMOVE data the caller did not
+ * name — a delete-then-reinsert upsert drops whatever was left out of the
+ * payload. It only changes how the tool is labelled to a client; permission
+ * and audit fields stay the verb's. The generator refuses a write whose body
+ * deletes rows without it, and refuses `read` on a body that writes at all.
  */
-export const MCP_DECLARED_CLASSIFICATIONS = {
-  read: "READ",
-  write: "WRITE",
-  destructive: "DESTRUCTIVE"
+export const MCP_DESTRUCTIVE = "destructive";
+
+/**
+ * The words that start an `@mcp` line which is a SETTING rather than the verb.
+ *
+ * `permission <module>:<action>[+<action>]` — only when the tool gates on
+ * something other than its own module and its verb's action. `getApiKeys`
+ * lives in settings but is an admin capability: its route gates on
+ * `users:update`, so a settings-scoped key must not read the key list.
+ *
+ * `audit <field>[, <field>]` — only when the verb's audit fields are wrong for
+ * INTENT the schema cannot express, and stated in full (plus `companyId`, which
+ * is always stamped). A ledger insert takes `createdBy` alone: the `updatedBy`
+ * column exists, but a ledger row is never edited and a stamped `updatedBy`
+ * would break its "untouched since creation" guarantee.
+ *
+ * `key <table> <column>[=<field>][, …]` — the row an upsert UPDATES when it
+ * already exists, for a service whose payload cannot say whether it is creating
+ * or updating. Most upserts take an optional `id`: sent means update, omitted
+ * means create, and the generator reads that off the parameter's type. A few
+ * cannot be read that way — a part's `id` is its part number on create and its
+ * item id (or part number) on update; a pick method has no id at all, only an
+ * item and a location. For those the dispatcher looks the row up, scoped to the
+ * caller's company, and updates when it is there. `column` is compared with the
+ * payload field of the same name unless `=<field>` names another, and several
+ * `key` lines are alternatives. These tools used to demand a
+ * `_operation: "create" | "update"` argument, which made every caller state
+ * something the server could find out.
+ */
+export const MCP_SETTINGS = {
+  permission: "permission",
+  audit: "audit",
+  key: "key"
 } as const;
-
-/**
- * `@upsertKey <table> <column>[=<field>][, …]` — the row an upsert UPDATES when
- * it already exists, for a service whose payload cannot say whether it is
- * creating or updating.
- *
- * Most upserts take an optional `id`: sent means update, omitted means create,
- * and the generator reads that off the parameter's type. A few cannot be read
- * that way — a part's `id` is its part number on create and its item id (or
- * part number) on update; a pick method has no id at all, only an item and a
- * location. For those the dispatcher looks the row up, scoped to the caller's
- * company, and updates when it is there. `column` is compared with the payload
- * field of the same name unless `=<field>` names another, and several tags are
- * alternatives.
- *
- * These tools used to demand a `_operation: "create" | "update"` argument,
- * which made every caller state something the server could find out.
- */
-export const MCP_UPSERT_KEY_TAG = "@upsertKey";

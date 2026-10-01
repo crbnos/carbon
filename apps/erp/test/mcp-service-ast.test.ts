@@ -11,6 +11,7 @@ import {
   namedTables,
   paginates
 } from "../../../scripts/lib/service-ast";
+import { declarationOf } from "../../../scripts/lib/service-metadata";
 
 // The generator's questions about a service function, asked of real source
 // through the real compiler — no fixtures on disk, nothing stubbed.
@@ -148,3 +149,104 @@ describe("what a body does", () => {
     ).toBe(false);
   });
 });
+
+// A tool is what its doc comment declares. The declaration is checked against
+// the body in the one direction that can be checked.
+describe("the @mcp declaration", () => {
+  const fns = parse(`
+    export async function untagged(client: any) {}
+
+    /** @mcp read */
+    export async function lookupPrice(client: any) {
+      return client.from("price").select("*");
+    }
+
+    /**
+     * Rewrites the prices for a line.
+     * @mcp upsert destructive — replaces every row for the line
+     */
+    export async function upsertPrices(client: any) {
+      await client.from("price").delete().eq("lineId", "x");
+      return client.from("price").insert([]);
+    }
+
+    /** @mcp action */
+    export async function lockPeriod(client: any) {
+      return client.rpc("lock_period");
+    }
+
+    /** @mcp read */
+    export async function getOrCreatePeriod(client: any) {
+      return client.from("period").insert({});
+    }
+
+    /** @mcp upsert */
+    export async function upsertSteps(client: any) {
+      await client.from("step").delete().eq("id", "x");
+    }
+
+    /** @mcp fetch */
+    export async function getThing(client: any) {}
+
+    /**
+     * @mcp update
+     * @mcp delete
+     */
+    export async function twice(client: any) {}
+
+    /**
+     * @mcp update
+     * @mcp audit createdBy
+     * @mcp permission users:update
+     */
+    export async function withSettings(client: any) {}
+
+    /** @mcp audit createdBy */
+    export async function settingOnly(client: any) {}
+  `);
+  const declare = (name: string) => declarationOf(fns[name]!);
+
+  it("is undefined without a tag — the function is simply not a tool", () => {
+    expect(declare("untagged")).toBeUndefined();
+  });
+
+  it("reads the verb and the destructive modifier, whatever the function is called", () => {
+    expect(declare("lookupPrice")).toEqual({ verb: "read", destructive: false });
+    expect(declare("upsertPrices")).toEqual({
+      verb: "upsert",
+      destructive: true
+    });
+    expect(declare("lockPeriod")).toEqual({
+      verb: "action",
+      destructive: false
+    });
+  });
+
+  it("refuses a read whose body writes", () => {
+    expect(() => declare("getOrCreatePeriod")).toThrow(
+      /declares `@mcp read` but its body writes to period/
+    );
+  });
+
+  it("refuses a write whose body deletes rows without saying destructive", () => {
+    expect(() => declare("upsertSteps")).toThrow(
+      /Declare `@mcp upsert destructive`/
+    );
+  });
+
+  it("tells a setting line from the verb line", () => {
+    expect(declare("withSettings")).toEqual({
+      verb: "update",
+      destructive: false
+    });
+    expect(() => declare("settingOnly")).toThrow(/it has 0/);
+  });
+
+  it("refuses a verb outside the vocabulary, and two declarations", () => {
+    expect(() => declare("getThing")).toThrow(/`@mcp fetch` is not a verb/);
+    expect(() => declare("twice")).toThrow(
+      /must declare exactly one `@mcp <verb>` line; it has 2/
+    );
+  });
+});
+
