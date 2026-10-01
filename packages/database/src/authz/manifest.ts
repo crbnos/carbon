@@ -763,6 +763,11 @@ export const manifest = {
   }),
   itemPlanning: company("parts", { read: "parts_view", delete: false }),
   itemPostingGroup: company("accounting", { read: "accounting_view" }),
+  itemPostingGroupResponsibility: company("settings", {
+    create: "settings_update",
+    update: "settings_update",
+    delete: "settings_update"
+  }),
   itemReplenishment: company("parts", { read: "parts_view" }),
   itemSerialSequence: company("settings"),
   itemShelfLife: company("parts", { read: "parts_view" }),
@@ -1046,6 +1051,11 @@ export const manifest = {
   }),
   pickMethod: company("parts", { read: "parts_view", delete: false }),
   plan: policies({ select: authenticated }),
+  planningAction: company("production", {
+    create: anyOf("purchasing_update", "production_update"),
+    update: anyOf("purchasing_update", "production_update"),
+    delete: anyOf("purchasing_update", "production_update")
+  }),
   pricingRule: company("sales"),
   printerRoute: company("printing", { read: "printing_view" }),
   printJob: company("printing", { read: "printing_view" }),

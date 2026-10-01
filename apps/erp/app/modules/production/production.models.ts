@@ -68,6 +68,39 @@ export const jobStatus = [
   "Due Today" // deprecated
 ] as const;
 
+export const planningActionType = [
+  "Order",
+  "Make",
+  "Expedite",
+  "Defer",
+  "Cancel",
+  "Increase",
+  "Decrease"
+] as const;
+
+export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
+
+// Pure (no lingui / JSX) so the ERP vitest suite can import it directly — the
+// models barrel drags the glossary's lingui macros, which vitest does not
+// transform (see apps/erp/test/job-complete-logic.test.ts).
+export {
+  PLANNING_ACTIONS_COLUMN,
+  PLANNING_ACTIONS_SCOPE_MINE,
+  PLANNING_ACTIONS_SCOPE_PARAM,
+  resolvePlanningActionScope
+} from "./ui/Planning/planning-action-scope";
+
+export const planningActionDismissValidator = z.object({
+  ids: z
+    .array(z.string().min(1))
+    .min(1, { message: "Select at least one action" })
+});
+
+export const planningActionAssignValidator = z.object({
+  id: z.string().min(1, { message: "Action is required" }),
+  assignee: zfd.text(z.string().optional())
+});
+
 export const JOB_LOCKED_STATUSES = [
   "Completed",
   "Closed",

@@ -6042,6 +6042,177 @@ export default {
         tags: ["trainings"]
       }
     },
+    "/itemPostingGroupResponsibility": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.itemPostingGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemPostingGroupResponsibility"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemPostingGroupResponsibility"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemPostingGroupResponsibility"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemPostingGroupResponsibility"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.itemPostingGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemPostingGroupResponsibility"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.itemPostingGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPostingGroupResponsibility.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.itemPostingGroupResponsibility"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemPostingGroupResponsibility"]
+      }
+    },
     "/companyUsage": {
       get: {
         parameters: [
@@ -25294,6 +25465,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.requiresStaffing"
           },
           {
+            $ref: "#/parameters/rowFilter.location.responsibleEmployee"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -25413,6 +25587,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.requiresStaffing"
           },
           {
+            $ref: "#/parameters/rowFilter.location.responsibleEmployee"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -25484,6 +25661,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.requiresStaffing"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.responsibleEmployee"
           },
           {
             $ref: "#/parameters/body.location"
@@ -42502,6 +42682,321 @@ export default {
           }
         },
         tags: ["document"]
+      }
+    },
+    "/planningAction": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningAction.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.periodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.isASAP"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.requiresManualAction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.policyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.triggerValues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assigneeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/planningAction"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["planningAction"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.planningAction"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["planningAction"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningAction.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.periodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.isASAP"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.requiresManualAction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.policyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.triggerValues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assigneeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["planningAction"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.planningAction.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.periodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.suggestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.isASAP"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.purchaseOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.requiresManualAction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.policyName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.triggerValues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.assigneeOverridden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
+            $ref: "#/parameters/body.planningAction"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["planningAction"]
       }
     },
     "/supplierQuoteLines": {
@@ -75451,6 +75946,12 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumReserveQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -75573,6 +76074,12 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumReserveQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -75647,6 +76154,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumReserveQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -83050,6 +83563,9 @@ export default {
             $ref: "#/parameters/rowFilter.openSalesOrderLines.quantityToSend"
           },
           {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.quantityToConsume"
+          },
+          {
             $ref: "#/parameters/rowFilter.openSalesOrderLines.salesOrderLineType"
           },
           {
@@ -88888,6 +89404,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandProjection.id"
           },
           {
+            $ref: "#/parameters/rowFilter.demandProjection.consumedQuantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -88986,6 +89505,9 @@ export default {
             $ref: "#/parameters/rowFilter.demandProjection.id"
           },
           {
+            $ref: "#/parameters/rowFilter.demandProjection.consumedQuantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -89036,6 +89558,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandProjection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandProjection.consumedQuantity"
           },
           {
             $ref: "#/parameters/body.demandProjection"
@@ -92629,6 +93154,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -92639,6 +93176,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/select"
@@ -92847,6 +93387,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -92857,6 +93409,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -93019,6 +93574,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultResponsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.rescheduleToleranceDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionBackwardPeriods"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.forecastConsumptionForwardPeriods"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
@@ -93029,6 +93596,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -99339,6 +99909,67 @@ export default {
         tags: ["(rpc) sync_check_method_material_self_reference"]
       }
     },
+    "/rpc/get_purchasing_planning_grid": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                action_assignee: {
+                  format: "text",
+                  type: "string"
+                },
+                action_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_purchasing_planning_grid"]
+      }
+    },
     "/rpc/sync_update_job_material_make_method_item_id": {
       post: {
         parameters: [
@@ -101952,6 +102583,67 @@ export default {
           }
         },
         tags: ["(rpc) sync_check_job_material_self_reference"]
+      }
+    },
+    "/rpc/get_production_planning_grid": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                action_assignee: {
+                  format: "text",
+                  type: "string"
+                },
+                action_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_production_planning_grid"]
       }
     },
     "/rpc/xid_encode": {
@@ -109531,6 +110223,66 @@ export default {
         },
         grantsAbilityName: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    itemPostingGroupResponsibility: {
+      required: [
+        "id",
+        "companyId",
+        "locationId",
+        "itemPostingGroupId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pgr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        itemPostingGroupId: {
+          format: "text",
+          type: "string"
+        },
+        responsibleEmployee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -118775,6 +119527,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        responsibleEmployee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -126938,6 +127696,162 @@ export default {
         },
         sourceDocumentId: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    planningAction: {
+      required: [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "periodId",
+        "type",
+        "status",
+        "suggestedQuantity",
+        "suggestedDate",
+        "isASAP",
+        "requiresManualAction",
+        "assigneeOverridden",
+        "createdBy",
+        "createdAt",
+        "horizonDate"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pla'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        periodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `period.id`.<fk table='period' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        type: {
+          enum: [
+            "Order",
+            "Make",
+            "Expedite",
+            "Defer",
+            "Cancel",
+            "Increase",
+            "Decrease"
+          ],
+          format: 'public."planningActionType"',
+          type: "string"
+        },
+        status: {
+          default: "Open",
+          enum: ["Open", "Dismissed", "Actioned"],
+          format: 'public."planningActionStatus"',
+          type: "string"
+        },
+        suggestedQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        suggestedDate: {
+          format: "date",
+          type: "string"
+        },
+        isASAP: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        purchaseOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrderLine.id`.<fk table='purchaseOrderLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        requiresManualAction: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        policyName: {
+          format: "text",
+          type: "string"
+        },
+        reason: {
+          format: "text",
+          type: "string"
+        },
+        triggerValues: {
+          format: "jsonb"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assigneeOverridden: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        horizonDate: {
+          format: "date",
+          type: "string"
+        },
+        latestOrderDate: {
+          format: "date",
           type: "string"
         }
       },
@@ -142575,6 +143489,16 @@ export default {
           default: 0,
           format: "numeric",
           type: "number"
+        },
+        responsibleEmployee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        planningHorizonDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -146181,6 +147105,10 @@ export default {
           format: "numeric",
           type: "number"
         },
+        quantityToConsume: {
+          format: "numeric",
+          type: "number"
+        },
         salesOrderLineType: {
           enum: [
             "Comment",
@@ -149188,7 +150116,8 @@ export default {
         "createdAt",
         "updatedAt",
         "updatedBy",
-        "id"
+        "id",
+        "consumedQuantity"
       ],
       properties: {
         itemId: {
@@ -149258,6 +150187,11 @@ export default {
           default: "public.id()",
           format: "text",
           type: "string"
+        },
+        consumedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -150727,6 +151661,9 @@ export default {
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "rescheduleToleranceDays",
+        "forecastConsumptionBackwardPeriods",
+        "forecastConsumptionForwardPeriods",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
@@ -150999,6 +151936,27 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        defaultResponsibleEmployee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        rescheduleToleranceDays: {
+          default: 7,
+          format: "integer",
+          type: "integer"
+        },
+        forecastConsumptionBackwardPeriods: {
+          default: 4,
+          format: "integer",
+          type: "integer"
+        },
+        forecastConsumptionForwardPeriods: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
         includeOperationsOnTraveler: {
           default: true,
           format: "boolean",
@@ -151022,6 +151980,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        defaultPlanningHorizonDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -154676,6 +155638,69 @@ export default {
     },
     "rowFilter.trainings.grantsAbilityName": {
       name: "grantsAbilityName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.itemPostingGroupResponsibility": {
+      name: "itemPostingGroupResponsibility",
+      description: "itemPostingGroupResponsibility",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemPostingGroupResponsibility"
+      }
+    },
+    "rowFilter.itemPostingGroupResponsibility.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.itemPostingGroupId": {
+      name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.responsibleEmployee": {
+      name: "responsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPostingGroupResponsibility.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -165027,6 +166052,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.location.responsibleEmployee": {
+      name: "responsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.kanbans": {
       name: "kanbans",
       description: "kanbans",
@@ -174113,6 +175144,165 @@ export default {
     },
     "rowFilter.document.sourceDocumentId": {
       name: "sourceDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.planningAction": {
+      name: "planningAction",
+      description: "planningAction",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/planningAction"
+      }
+    },
+    "rowFilter.planningAction.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.periodId": {
+      name: "periodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.suggestedQuantity": {
+      name: "suggestedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.suggestedDate": {
+      name: "suggestedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.isASAP": {
+      name: "isASAP",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.purchaseOrderLineId": {
+      name: "purchaseOrderLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.requiresManualAction": {
+      name: "requiresManualAction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.policyName": {
+      name: "policyName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.triggerValues": {
+      name: "triggerValues",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.assigneeOverridden": {
+      name: "assigneeOverridden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.horizonDate": {
+      name: "horizonDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.latestOrderDate": {
+      name: "latestOrderDate",
       required: false,
       in: "query",
       type: "string"
@@ -191545,6 +192735,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemPlanning.responsibleEmployee": {
+      name: "responsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPlanning.planningHorizonDays": {
+      name: "planningHorizonDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.nonConformanceTrackedEntity": {
       name: "nonConformanceTrackedEntity",
       description: "nonConformanceTrackedEntity",
@@ -195596,6 +196798,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.openSalesOrderLines.quantityToConsume": {
+      name: "quantityToConsume",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.openSalesOrderLines.salesOrderLineType": {
       name: "salesOrderLineType",
       required: false,
@@ -199026,6 +200234,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.demandProjection.consumedQuantity": {
+      name: "consumedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.pickingListLineTrackedEntity": {
       name: "pickingListLineTrackedEntity",
       description: "pickingListLineTrackedEntity",
@@ -200874,6 +202088,30 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.defaultResponsibleEmployee": {
+      name: "defaultResponsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.rescheduleToleranceDays": {
+      name: "rescheduleToleranceDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.forecastConsumptionBackwardPeriods": {
+      name: "forecastConsumptionBackwardPeriods",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.forecastConsumptionForwardPeriods": {
+      name: "forecastConsumptionForwardPeriods",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.includeOperationsOnTraveler": {
       name: "includeOperationsOnTraveler",
       required: false,
@@ -200898,6 +202136,12 @@ export default {
     },
     "rowFilter.companySettings.showBomExplorerReadableId": {
       name: "showBomExplorerReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.defaultPlanningHorizonDays": {
+      name: "defaultPlanningHorizonDays",
       required: false,
       in: "query",
       type: "string"

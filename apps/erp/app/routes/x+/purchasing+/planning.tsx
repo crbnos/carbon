@@ -13,6 +13,11 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import {
+  getPlanningActions,
+  PLANNING_ACTIONS_SCOPE_PARAM,
+  resolvePlanningActionScope
+} from "~/modules/production";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import { getPurchasingPlanning } from "~/modules/purchasing";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
@@ -61,6 +66,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
+  // The grid's Actions-column filter and "Assigned to me" scope are not RPC
+  // columns: they go to the RPC as arguments, which keeps the items with a
+  // matching OPEN action inside each item's planning horizon.
+  const { gridFilters, actionTypes, actionAssignee } =
+    resolvePlanningActionScope({
+      filters,
+      scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
+      userId
+    });
+
   const items = await getPurchasingPlanning(
     client,
     locationId,
@@ -71,7 +86,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       limit,
       offset,
       sorts,
-      filters
+      filters: gridFilters,
+      asOf: locationToday.toString(),
+      actionTypes,
+      actionAssignee
     }
   );
 
@@ -82,9 +100,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // The persisted MRP action worklist for the rows on THIS page. Every action
+  // is loaded, whatever its date: the grid hides the ones beyond each row's
+  // time fence, and a planner can widen one row's fence without a reload.
+  const planningActions = await getPlanningActions(client, {
+    companyId,
+    locationId,
+    kind: "Buy",
+    itemIds: (items.data ?? []).map((item) => item.id)
+  });
+
   return {
     items: (items.data ?? []) as PurchasingPlanningItem[],
     count: items.count ?? 0,
+    planningActions: planningActions.data ?? [],
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -94,7 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingPlanningRoute() {
-  const { items, count, locationId, periods } = useLoaderData<typeof loader>();
+  const { items, count, locationId, periods, planningActions, locationToday } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -110,6 +140,8 @@ export default function PurchasingPlanningRoute() {
             count={count}
             locationId={locationId}
             periods={periods}
+            planningActions={planningActions}
+            locationToday={locationToday}
           />
         </ResizablePanel>
         <Outlet />

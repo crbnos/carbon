@@ -5,7 +5,6 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
-  DatePicker,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -14,52 +13,81 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  IconButton,
-  NumberDecrementStepper,
-  NumberField,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputGroup,
-  NumberInputStepper,
   Separator,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
-  useMount,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { memo, useCallback, useEffect, useMemo } from "react";
-import {
-  LuBlocks,
-  LuCalendar,
-  LuChevronDown,
-  LuChevronUp,
-  LuCirclePlay,
-  LuExternalLink,
-  LuPlus,
-  LuStar,
-  LuTrash2
-} from "react-icons/lu";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { LuCalendarRange, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { useRouteData } from "~/hooks";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { ProductionOrder } from "~/modules/production";
+import type { PlanningAction, ProductionOrder } from "~/modules/production";
+import type { jobStatus } from "~/modules/production/production.models";
+import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
+import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
+import type {
+  OpenOrderField,
+  OpenOrderRow
+} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import {
+  actionForOrder,
+  OpenOrdersGrid,
+  SuggestedOrdersGrid
+} from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
 import { JobStatus } from "../Jobs";
 
+/** An existing job in the planned-order shape the chart reads. */
+type OpenProductionOrder = ProductionOrder & { existingId: string };
+
+type Period = { id: string; startDate: string; endDate: string };
+
+/** The planning period a date falls in: the first for a missing or past date,
+ *  the last for one beyond the planning window. */
+function periodIdFor(periods: Period[], date: string | null | undefined) {
+  if (!date || date < periods[0].startDate) return periods[0].id;
+  return (
+    periods.find((p) => date >= p.startDate && date <= p.endDate)?.id ??
+    periods[periods.length - 1].id
+  );
+}
+
+/** Planning may still change a job that has not been released to the floor. */
+function isJobEditable(status: string | null | undefined) {
+  return status === "Draft" || status === "Planned";
+}
+
 type ProductionPlanningOrderDrawerProps = {
   row: ProductionPlanningItem;
   orders: ProductionOrder[];
+  /** Suggested orders required AFTER the row's time fence. The drawer opens
+   *  without them; one button extends the fence to take them in. */
+  beyondFenceOrders: ProductionOrder[];
+  /** The row's time fence (ISO date), or null when it has none. */
+  timeFenceDate: string | null;
+  /** True when the fence was moved on screen, away from the saved horizon. */
+  isTimeFenceOverridden: boolean;
+  /** Move this row's fence without leaving the drawer — the same on-screen
+   *  override as the grid's Time Fence cell. `null` returns to the saved
+   *  horizon. The suggested orders re-split around the new date. */
+  onTimeFenceChange: (date: string | null) => void;
+  /** The item's change actions on existing jobs, inside the fence. Each one is
+   *  shown on the row of the job it targets. */
+  actions: PlanningAction[];
+  /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
+  actionHandlers: PlanningActionHandlers;
   setOrders: (item: ProductionPlanningItem, orders: ProductionOrder[]) => void;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
@@ -71,6 +99,12 @@ export const ProductionPlanningOrderDrawer = memo(
   ({
     row,
     orders,
+    beyondFenceOrders,
+    timeFenceDate,
+    isTimeFenceOverridden,
+    onTimeFenceChange,
+    actions,
+    actionHandlers,
     setOrders,
     locationId,
     periods,
@@ -79,6 +113,10 @@ export const ProductionPlanningOrderDrawer = memo(
   }: ProductionPlanningOrderDrawerProps) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { t } = useLingui();
+    const { locale } = useLocale();
+    const fenceLabel = timeFenceDate
+      ? formatDate(timeFenceDate, undefined, locale)
+      : null;
     // Planned-order defaults are business dates on the plant's calendar — use
     // the loader's location-today, not the planner's browser zone.
     const planningData = useRouteData<{ locationToday?: string }>(
@@ -88,79 +126,203 @@ export const ProductionPlanningOrderDrawer = memo(
       planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const { carbon } = useCarbon();
 
-    // Memoize getExistingOrders callback
-    const getExistingOrders = useCallback(async () => {
+    // ── Open jobs: the item's existing make-to-stock jobs ───────────────────
+    // Held here, not in the grid's draft list: a cell edit on one of these is
+    // SAVED (onSaveOpenJob), where a suggested job is a draft until Make is
+    // pressed. `null` while loading, an Error when the read failed.
+    //
+    // Released jobs (Ready / In Progress / Paused) are listed too, read-only:
+    // MRP raises actions on them, and an action needs its job's row to sit on.
+    const [openJobs, setOpenJobs] = useState<
+      OpenProductionOrder[] | null | Error
+    >(null);
+
+    // Re-read when the item's actions change: applying one rewrites its job.
+    const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
+    useEffect(() => {
       if (!carbon || !row.id) return;
+      let isCurrent = true;
 
-      const { data: existingOrderData } = await carbon
-        ?.from("job")
-        .select("*")
-        .eq("itemId", row.id)
-        .is("salesOrderId", null)
-        .is("salesOrderLineId", null)
-        .in("status", ["Draft", "Planned"]);
-
-      if (existingOrderData) {
-        const existingOrders: ProductionOrder[] = existingOrderData
-          .filter(
-            (order) =>
-              !orders.some((existing) => existing.existingId === order.id)
+      (async () => {
+        const jobs = await carbon
+          .from("job")
+          .select(
+            "id, jobId, status, quantity, startDate, dueDate, deadlineType"
           )
-          .map((order) => {
-            // If no due date or due date is before first period, use first period
-            if (
-              !order.dueDate ||
-              parseDate(order.dueDate) < parseDate(periods[0].startDate)
-            ) {
-              return {
-                existingId: order.id,
-                existingReadableId: order.jobId,
-                existingQuantity: order.status === "Draft" ? 0 : order.quantity,
-                existingStatus: order.status,
-                startDate: order.startDate ?? null,
-                dueDate: order.dueDate ?? null,
-                quantity: order.quantity,
-                isASAP: order.deadlineType === "ASAP",
-                periodId: periods[0].id
-              };
-            }
+          .eq("itemId", row.id)
+          .is("salesOrderId", null)
+          .is("salesOrderLineId", null)
+          .in("status", ["Draft", "Planned", "Ready", "In Progress", "Paused"]);
+        if (!isCurrent) return;
+        if (jobs.error) {
+          setOpenJobs(new Error(jobs.error.message));
+          return;
+        }
 
-            // Find matching period based on due date
-            const period = periods.find((p) => {
-              const dueDate = parseDate(order.dueDate!);
-              const startDate = parseDate(p.startDate);
-              const endDate = parseDate(p.endDate);
-              return dueDate >= startDate && dueDate <= endDate;
-            });
-
-            // If no matching period found (date is after last period), use last period
-            return {
-              existingId: order.id,
-              existingReadableId: order.jobId,
-              existingQuantity: order.status === "Draft" ? 0 : order.quantity,
-              existingStatus: order.status,
-              startDate: order.startDate ?? null,
-              dueDate: order.dueDate ?? null,
-              quantity: order.quantity,
-              isASAP: order.deadlineType === "ASAP",
-              periodId: period?.id ?? periods[periods.length - 1].id
-            };
-          });
-
-        setOrders(
-          row,
-          [...orders, ...existingOrders].sort((a, b) => {
-            return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
-          })
+        setOpenJobs(
+          (jobs.data ?? [])
+            .map(
+              (job): OpenProductionOrder => ({
+                existingId: job.id,
+                existingReadableId: job.jobId,
+                // a Draft job is not supply yet, so all of it is new to the chart
+                existingQuantity: job.status === "Draft" ? 0 : job.quantity,
+                existingStatus: job.status,
+                startDate: job.startDate ?? null,
+                dueDate: job.dueDate ?? null,
+                quantity: job.quantity,
+                isASAP: job.deadlineType === "ASAP",
+                periodId: periodIdFor(periods, job.dueDate)
+              })
+            )
+            .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
         );
-      }
-    }, [carbon, orders, row, setOrders, periods]);
+      })();
 
-    useMount(() => {
-      if (row.id) {
-        getExistingOrders();
+      return () => {
+        isCurrent = false;
+      };
+    }, [carbon, row.id, actionsKey]);
+
+    const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
+      if (!Array.isArray(openJobs)) return openJobs;
+
+      const rows: OpenOrderRow[] = openJobs.map((job) => {
+        const action = actionForOrder(
+          actions,
+          (a) => a.jobId === job.existingId
+        );
+        return {
+          id: job.existingId,
+          documentPath: path.to.job(job.existingId),
+          readableId: job.existingReadableId ?? "",
+          status: job.existingStatus ?? null,
+          quantity: job.quantity,
+          dueDate: job.dueDate ?? null,
+          isEditable: isJobEditable(job.existingStatus),
+          action,
+          suggestedQuantity: action ? Number(action.suggestedQuantity) : null
+        };
+      });
+
+      // An action whose job is not in the list still has to be shown — a
+      // suggestion that silently drops out of the drawer reads as "nothing to
+      // do". It gets a read-only row built from the action itself.
+      for (const action of actions) {
+        if (rows.some((r) => r.action?.id === action.id)) continue;
+        rows.push({
+          id: action.id,
+          documentPath: action.jobId ? path.to.job(action.jobId) : null,
+          readableId: action.jobReadableId ?? "—",
+          status: action.jobStatus ?? null,
+          quantity: null,
+          dueDate: null,
+          isEditable: false,
+          action,
+          suggestedQuantity: Number(action.suggestedQuantity)
+        });
       }
-    });
+
+      return rows;
+    }, [openJobs, actions]);
+
+    const onOpenJobsChange = useCallback((rows: OpenOrderRow[]) => {
+      setOpenJobs((previous) =>
+        Array.isArray(previous)
+          ? previous.map((job) => {
+              const updated = rows.find((r) => r.id === job.existingId);
+              return updated && updated.quantity !== null
+                ? {
+                    ...job,
+                    quantity: updated.quantity,
+                    dueDate: updated.dueDate
+                  }
+                : job;
+            })
+          : previous
+      );
+    }, []);
+
+    // One cell, one field, one request. The route re-reads the job under the
+    // company and refuses one that has been released, so a stale row here
+    // cannot edit a job on the floor.
+    const onSaveOpenJob = useCallback(
+      async (
+        openRow: OpenOrderRow,
+        field: OpenOrderField,
+        value: number | string
+      ) => {
+        try {
+          const response = await fetch(path.to.bulkUpdateProductionPlanning, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "updateJob",
+              locationId,
+              job: { id: openRow.id, field, value }
+            })
+          });
+          const result = (await response.json().catch(() => null)) as {
+            success?: boolean;
+            message?: string;
+          } | null;
+          if (response.ok && result?.success) return true;
+          toast.error(result?.message ?? t`Failed to update job`);
+          return false;
+        } catch {
+          toast.error(t`Failed to update job`);
+          return false;
+        }
+      },
+      [locationId, t]
+    );
+
+    const renderOpenJobStatus = useCallback(
+      (status: string) => (
+        <JobStatus iconOnly status={status as (typeof jobStatus)[number]} />
+      ),
+      []
+    );
+
+    // What the chart overlays as planned supply: the draft jobs, plus the jobs
+    // a planner can still change so an edit shows before MRP runs again.
+    const chartOrders = useMemo<ProductionOrder[]>(
+      () => [
+        ...orders,
+        ...(Array.isArray(openJobs)
+          ? openJobs.filter((job) => isJobEditable(job.existingStatus))
+          : [])
+      ],
+      [orders, openJobs]
+    );
+
+    const onSuggestedOrdersChange = useCallback(
+      (next: ProductionOrder[]) => setOrders(row, next),
+      [row, setOrders]
+    );
+
+    // "N More After <fence>": move this row's fence out to the last suggested
+    // order, rather than copying those orders into the list. The fence is the
+    // one piece of state — the order list, the Action table below, and the
+    // grid row's chips and quantity all follow it, so the pulled-in orders and
+    // their Order actions appear together and stay in step.
+    const lastBeyondFenceDate = useMemo(
+      () =>
+        beyondFenceOrders.reduce<string | null>(
+          (latest, order) =>
+            order.dueDate && (!latest || order.dueDate > latest)
+              ? order.dueDate
+              : latest,
+          null
+        ),
+      [beyondFenceOrders]
+    );
+
+    const onIncludeBeyondFence = useCallback(() => {
+      if (lastBeyondFenceDate) onTimeFenceChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onTimeFenceChange]);
 
     // Memoize handlers
     const onAddOrder = useCallback(() => {
@@ -177,16 +339,6 @@ export const ProductionPlanningOrderDrawer = memo(
         setOrders(row, [...orders, newOrder]);
       }
     }, [row, orders, setOrders, periods, locationToday]);
-
-    const onRemoveOrder = useCallback(
-      (index: number) => {
-        if (row.id) {
-          const newOrders = orders.filter((_, i) => i !== index);
-          setOrders(row, newOrders);
-        }
-      },
-      [row, orders, setOrders]
-    );
 
     const onSubmit = useCallback(
       (id: string, orders: ProductionOrder[]) => {
@@ -236,21 +388,6 @@ export const ProductionPlanningOrderDrawer = memo(
       [fetcher, locationId, periods]
     );
 
-    // Memoize order update handler
-    const handleOrderUpdate = useCallback(
-      (index: number, updates: Partial<ProductionOrder>) => {
-        if (row.id) {
-          const newOrders = [...orders];
-          newOrders[index] = {
-            ...orders[index],
-            ...updates
-          };
-          setOrders(row, newOrders);
-        }
-      },
-      [row, orders, setOrders]
-    );
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
       if (fetcher.data?.success === false && fetcher?.data?.message) {
@@ -288,6 +425,18 @@ export const ProductionPlanningOrderDrawer = memo(
                     <Trans>Reorder Policy:</Trans>
                   </span>
                   <ItemReorderPolicy reorderingPolicy={row.reorderingPolicy} />
+                </HStack>
+                <HStack className="justify-between w-full">
+                  <span className="text-muted-foreground">
+                    <Trans>Time Fence:</Trans>
+                  </span>
+                  <div className="flex-none">
+                    <TimeFenceCell
+                      fenceDate={timeFenceDate}
+                      isOverridden={isTimeFenceOverridden}
+                      onChange={onTimeFenceChange}
+                    />
+                  </div>
                 </HStack>
                 <Separator />
                 {row.reorderingPolicy === "Maximum Quantity" && (
@@ -369,136 +518,62 @@ export const ProductionPlanningOrderDrawer = memo(
                 )}
               </VStack>
 
-              <TableBase full>
-                <Thead>
-                  <Th>
-                    <div className="flex items-center gap-2">
-                      <LuCirclePlay />
-                      <span>
-                        <Trans>Job</Trans>
-                      </span>
-                    </div>
-                  </Th>
-                  <Th>
-                    <div className="flex items-center gap-2 text-left">
-                      <LuStar />
-                      <span>
-                        <Trans>Status</Trans>
-                      </span>
-                    </div>
-                  </Th>
-                  <Th>
-                    <div className="flex items-center gap-2 text-right">
-                      <LuBlocks />
-                      <span>
-                        <Trans>Quantity</Trans>
-                      </span>
-                    </div>
-                  </Th>
-                  <Th>
-                    <div className="flex items-center gap-2">
-                      <LuCalendar />
-                      <span>
-                        <Trans>Due Date</Trans>
-                      </span>
-                    </div>
-                  </Th>
-                  <Th className="w-[50px]"></Th>
-                </Thead>
-                <Tbody>
-                  {orders.map((order, index) => (
-                    <Tr key={index}>
-                      <Td className="group-hover:bg-inherit justify-between whitespace-nowrap">
-                        {order.existingReadableId && order.existingId ? (
-                          <Link to={path.to.job(order.existingId)}>
-                            {order.existingReadableId}
-                          </Link>
-                        ) : (
-                          "New Job"
-                        )}
-                      </Td>
-                      <Td className="flex flex-row items-center gap-1 group-hover:bg-inherit">
-                        <JobStatus status={order.existingStatus as "Draft"} />
-                      </Td>
-                      <Td className="text-right group-hover:bg-inherit">
-                        <NumberField
-                          value={order.quantity}
-                          onBlur={(e) => {
-                            const datePickerInput = e.target
-                              .closest("tr")
-                              ?.querySelector(
-                                '[role="textbox"]'
-                              ) as HTMLElement;
-                            if (datePickerInput) {
-                              datePickerInput.focus();
-                            }
-                          }}
-                          onChange={(value) => {
-                            if (value) {
-                              handleOrderUpdate(index, { quantity: value });
-                            }
-                          }}
-                        >
-                          <NumberInputGroup className="relative group-hover:bg-inherit">
-                            <NumberInput />
-                            <NumberInputStepper>
-                              <NumberIncrementStepper>
-                                <LuChevronUp size="1em" strokeWidth="3" />
-                              </NumberIncrementStepper>
-                              <NumberDecrementStepper>
-                                <LuChevronDown size="1em" strokeWidth="3" />
-                              </NumberDecrementStepper>
-                            </NumberInputStepper>
-                          </NumberInputGroup>
-                        </NumberField>
-                      </Td>
-                      <Td className="text-right group-hover:bg-inherit">
-                        <HStack className="justify-end">
-                          <DatePicker
-                            value={
-                              order.dueDate ? parseDate(order.dueDate) : null
-                            }
-                            onChange={(date) => {
-                              handleOrderUpdate(index, {
-                                dueDate: date ? date.toString() : null
-                              });
-                            }}
-                          />
-                        </HStack>
-                      </Td>
-                      <Td className="group-hover:bg-inherit">
-                        <IconButton
-                          aria-label={t`Remove order`}
+              <SuggestedOrdersGrid<ProductionOrder>
+                title={<Trans>Suggested Jobs</Trans>}
+                titleAction={
+                  lastBeyondFenceDate &&
+                  timeFenceDate && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
                           variant="ghost"
                           size="sm"
-                          isDisabled={!!order.existingId}
-                          onClick={() => onRemoveOrder(index)}
-                          icon={<LuTrash2 className="text-destructive" />}
-                        />
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </TableBase>
+                          leftIcon={<LuCalendarRange />}
+                          onClick={onIncludeBeyondFence}
+                        >
+                          <Plural
+                            value={beyondFenceOrders.length}
+                            one={`# More After ${fenceLabel}`}
+                            other={`# More After ${fenceLabel}`}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <Trans>
+                          Suggested orders required after this item's time
+                          fence. Extend the fence to include them.
+                        </Trans>
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                }
+                orders={orders}
+                leadTime={row.leadTime ?? 0}
+                todayIso={locationToday}
+                quantityHeader={t`Quantity`}
+                orderByHeader={t`Start By`}
+                onChange={onSuggestedOrdersChange}
+                onAdd={onAddOrder}
+              />
 
-              <div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-4"
-                  leftIcon={<LuPlus />}
-                  onClick={onAddOrder}
-                >
-                  Add Order
-                </Button>
-              </div>
+              <OpenOrdersGrid
+                title={<Trans>Open Jobs</Trans>}
+                documentHeader={t`Job`}
+                quantityHeader={t`Qty`}
+                rows={openJobRows}
+                renderStatusIcon={renderOpenJobStatus}
+                onSave={onSaveOpenJob}
+                onRowsChange={onOpenJobsChange}
+                {...actionHandlers}
+              />
 
               <ItemPlanningChart
                 compact
                 itemId={row.id}
                 locationId={locationId}
                 safetyStock={row.demandAccumulationSafetyStock}
-                plannedOrders={orders}
+                timeFenceDate={timeFenceDate}
+                plannedOrders={chartOrders}
               />
             </div>
           </DrawerBody>
@@ -509,8 +584,8 @@ export const ProductionPlanningOrderDrawer = memo(
             <Button
               variant="primary"
               onClick={() => onSubmit(row.id, orders)}
-              disabled={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
+              disabled={fetcher.state !== "idle" || orders.length === 0}
+              isDisabled={fetcher.state !== "idle" || orders.length === 0}
               isLoading={fetcher.state !== "idle"}
             >
               Make
@@ -525,9 +600,22 @@ export const ProductionPlanningOrderDrawer = memo(
         fetcher.state,
         onClose,
         onAddOrder,
-        onRemoveOrder,
         onSubmit,
-        handleOrderUpdate,
+        onSuggestedOrdersChange,
+        lastBeyondFenceDate,
+        beyondFenceOrders,
+        onIncludeBeyondFence,
+        openJobRows,
+        renderOpenJobStatus,
+        onSaveOpenJob,
+        onOpenJobsChange,
+        actionHandlers,
+        chartOrders,
+        locationToday,
+        timeFenceDate,
+        isTimeFenceOverridden,
+        onTimeFenceChange,
+        fenceLabel,
         t
       ]
     );

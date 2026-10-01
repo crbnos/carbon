@@ -5,7 +5,6 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
-  DatePicker,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -14,13 +13,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  IconButton,
-  NumberDecrementStepper,
-  NumberField,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputGroup,
-  NumberInputStepper,
   Separator,
   Table as TableBase,
   Tabs,
@@ -31,27 +23,24 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   toast,
   useDisclosure,
-  useMount,
   VStack
 } from "@carbon/react";
+import { formatDate, RoundingMode, round } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { memo, useCallback, useEffect, useState } from "react";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LuBlocks,
-  LuCalendar,
-  LuChevronDown,
-  LuChevronUp,
+  LuCalendarRange,
   LuCircleCheck,
-  LuCirclePlay,
   LuCirclePlus,
-  LuExternalLink,
-  LuPlus,
-  LuStar,
-  LuTrash2
+  LuExternalLink
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
@@ -62,16 +51,67 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
+import type { PlanningAction } from "~/modules/production";
+import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
+import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
+import type {
+  OpenOrderField,
+  OpenOrderRow
+} from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import {
+  actionForOrder,
+  OpenOrdersGrid,
+  SuggestedOrdersGrid
+} from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
-import type { PlannedOrder } from "../../purchasing.models";
+import type {
+  PlannedOrder,
+  purchaseOrderStatusType
+} from "../../purchasing.models";
+import { isPurchaseOrderLocked } from "../../purchasing.models";
 import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingStatus } from "../PurchaseOrder";
+
+/** An existing PO line in the planned-order shape the chart reads, plus the
+ *  factor between its purchase units and inventory units. */
+type OpenPurchaseOrder = PlannedOrder & {
+  existingLineId: string;
+  conversionFactor: number;
+};
+
+type Period = { id: string; startDate: string; endDate: string };
+
+/** The planning period a date falls in: the first for a missing or past date,
+ *  the last for one beyond the planning window. */
+function periodIdFor(periods: Period[], date: string | null | undefined) {
+  if (!date || date < periods[0].startDate) return periods[0].id;
+  return (
+    periods.find((p) => date >= p.startDate && date <= p.endDate)?.id ??
+    periods[periods.length - 1].id
+  );
+}
 
 type PurchasingPlanningOrderDrawerProps = {
   isOpen: boolean;
   locationId: string;
   orders: PlannedOrder[];
+  /** Suggested orders required AFTER the row's time fence. The drawer opens
+   *  without them; one button extends the fence to take them in. */
+  beyondFenceOrders: PlannedOrder[];
+  /** The row's time fence (ISO date), or null when it has none. */
+  timeFenceDate: string | null;
+  /** True when the fence was moved on screen, away from the saved horizon. */
+  isTimeFenceOverridden: boolean;
+  /** Move this row's fence without leaving the drawer — the same on-screen
+   *  override as the grid's Time Fence cell. `null` returns to the saved
+   *  horizon. The suggested orders re-split around the new date. */
+  onTimeFenceChange: (date: string | null) => void;
+  /** The item's change actions on existing orders, inside the fence. Each one
+   *  is shown on the row of the order it targets. */
+  actions: PlanningAction[];
+  /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
+  actionHandlers: PlanningActionHandlers;
   periods: { id: string; startDate: string; endDate: string }[];
   selectedItem: PurchasingPlanningItem;
   selectedSupplier: string;
@@ -86,6 +126,12 @@ export const PurchasingPlanningOrderDrawer = memo(
     selectedItem,
     setSelectedItem,
     orders,
+    beyondFenceOrders,
+    timeFenceDate,
+    isTimeFenceOverridden,
+    onTimeFenceChange,
+    actions,
+    actionHandlers,
     setOrders,
     locationId,
     periods,
@@ -95,6 +141,10 @@ export const PurchasingPlanningOrderDrawer = memo(
     onSupplierChange
   }: PurchasingPlanningOrderDrawerProps) => {
     const { t } = useLingui();
+    const { locale } = useLocale();
+    const fenceLabel = timeFenceDate
+      ? formatDate(timeFenceDate, undefined, locale)
+      : null;
     // Planned-order defaults are business dates on the plant's calendar — use
     // the loader's location-today, not the planner's browser zone.
     const planningData = useRouteData<{ locationToday?: string }>(
@@ -110,98 +160,257 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     const [activeTab, setActiveTab] = useState("ordering");
 
-    const getExistingOrders = useCallback(async () => {
-      if (!carbon || !selectedItem.id) return;
+    // ── Open orders: the item's existing PO lines ───────────────────────────
+    // Held here, not in the grid's draft list: a cell edit on one of these is
+    // SAVED (onSaveOpenOrder), where a suggested order is a draft until Order
+    // is pressed. `null` while loading, an Error when the read failed.
+    const [openOrders, setOpenOrders] = useState<
+      OpenPurchaseOrder[] | null | Error
+    >(null);
 
-      const { data: existingOrderData } = await carbon
-        ?.from("openPurchaseOrderLines")
-        .select("*")
-        .eq("itemId", selectedItem.id)
-        .in("status", [
-          "To Review",
-          "Needs Approval",
-          "Planned",
-          "To Receive",
-          "To Receive and Invoice",
-          "To Invoice"
-        ]);
+    // Re-read when the item's actions change: applying one rewrites its line.
+    const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
 
-      if (existingOrderData) {
-        const existingOrders: PlannedOrder[] = existingOrderData
-          .filter(
-            (order) =>
-              !orders.some((existing) => existing.existingLineId === order.id)
-          )
-          .map((order) => {
-            const dueDate = order.dueDate;
-
-            if (
-              !dueDate ||
-              parseDate(dueDate) < parseDate(periods[0].startDate)
-            ) {
-              return {
-                existingId: order.purchaseOrderId ?? undefined,
-                existingLineId: order.id ?? undefined,
-                existingReadableId: order.purchaseOrderReadableId ?? undefined,
-                existingQuantity:
-                  order.status === "Draft"
-                    ? 0
-                    : (order?.quantityToReceive ?? 0),
-                existingStatus: order.status ?? undefined,
-                startDate: order.orderDate ?? null,
-                dueDate: null,
-                quantity: order.quantityToReceive ?? 0,
-                periodId: periods[0].id,
-                supplierId: order.supplierId ?? undefined
-              };
-            }
-
-            const period = periods.find((p) => {
-              const d = parseDate(dueDate!);
-              const startDate = parseDate(p.startDate);
-              const endDate = parseDate(p.endDate);
-              return d >= startDate && d <= endDate;
-            });
-
-            return {
-              existingId: order.purchaseOrderId ?? undefined,
-              existingLineId: order.id ?? undefined,
-              existingReadableId: order.purchaseOrderReadableId ?? undefined,
-              existingQuantity:
-                order.status === "Draft" ? 0 : (order?.quantityToReceive ?? 0),
-              existingStatus: order.status ?? undefined,
-              startDate: order.orderDate ?? null,
-              dueDate: dueDate ?? null,
-              quantity: order.quantityToReceive ?? 0,
-              isASAP: false,
-              periodId: period?.id ?? periods[periods.length - 1].id,
-              supplierId: order.supplierId ?? undefined
-            };
-          });
-
-        // Backend now handles grouping items by supplier into single POs
-        // So we just need to merge the existing orders with current orders
-        setOrders(
-          selectedItem,
-          [...orders, ...existingOrders].sort((a, b) => {
-            return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
-          })
-        );
-      }
-    }, [carbon, selectedItem, orders, periods, setOrders]);
-
-    useMount(async () => {
-      if (selectedItem.id) {
-        getExistingOrders();
-      }
-    });
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+    // biome-ignore lint/correctness/useExhaustiveDependencies: actionsKey stands in for `actions`; periods are fixed for the page
     useEffect(() => {
-      if (selectedItem.id) {
-        getExistingOrders();
+      if (!carbon || !selectedItem.id) return;
+      let isCurrent = true;
+
+      (async () => {
+        const lines = await carbon
+          .from("openPurchaseOrderLines")
+          .select("*")
+          .eq("itemId", selectedItem.id)
+          .in("status", [
+            "To Review",
+            "Needs Approval",
+            "Planned",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Invoice"
+          ]);
+        if (!isCurrent) return;
+        if (lines.error) {
+          setOpenOrders(new Error(lines.error.message));
+          return;
+        }
+
+        // The view reports the quantity in INVENTORY units; the cell edits the
+        // line's own purchase quantity, so read that and its factor too.
+        const lineIds = (lines.data ?? []).flatMap((line) =>
+          line.id ? [line.id] : []
+        );
+        const details =
+          lineIds.length > 0
+            ? await carbon
+                .from("purchaseOrderLine")
+                .select(
+                  "id, purchaseQuantity, quantityToReceive, conversionFactor"
+                )
+                .in("id", lineIds)
+            : { data: [], error: null };
+        if (!isCurrent) return;
+        if (details.error) {
+          setOpenOrders(new Error(details.error.message));
+          return;
+        }
+        const detailById = new Map(
+          (details.data ?? []).map((detail) => [detail.id, detail])
+        );
+
+        setOpenOrders(
+          (lines.data ?? [])
+            .flatMap((line): OpenPurchaseOrder[] => {
+              if (!line.id) return [];
+              const detail = detailById.get(line.id);
+              const isLocked = isPurchaseOrderLocked(line.status);
+              return [
+                {
+                  existingId: line.purchaseOrderId ?? undefined,
+                  existingLineId: line.id,
+                  existingReadableId: line.purchaseOrderReadableId ?? undefined,
+                  // inventory units, as the chart's supply rows are
+                  existingQuantity:
+                    line.status === "Draft" ? 0 : (line.quantityToReceive ?? 0),
+                  existingStatus: line.status ?? undefined,
+                  startDate: line.orderDate ?? null,
+                  dueDate: line.dueDate ?? null,
+                  // purchase units: what is still to come on a sent line, the
+                  // ordered quantity on one that can still be changed
+                  quantity: Number(
+                    (isLocked
+                      ? detail?.quantityToReceive
+                      : detail?.purchaseQuantity) ?? 0
+                  ),
+                  periodId: periodIdFor(periods, line.dueDate),
+                  supplierId: line.supplierId ?? undefined,
+                  conversionFactor: Number(detail?.conversionFactor ?? 1) || 1
+                }
+              ];
+            })
+            .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
+        );
+      })();
+
+      return () => {
+        isCurrent = false;
+      };
+    }, [carbon, selectedItem.id, actionsKey]);
+
+    const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
+      if (!Array.isArray(openOrders)) return openOrders;
+
+      const rows: OpenOrderRow[] = openOrders.map((order) => {
+        const action = actionForOrder(
+          actions,
+          (a) => a.purchaseOrderLineId === order.existingLineId
+        );
+        return {
+          id: order.existingLineId,
+          documentPath: order.existingId
+            ? path.to.purchaseOrder(order.existingId)
+            : null,
+          readableId: order.existingReadableId ?? "",
+          status: order.existingStatus ?? null,
+          quantity: order.quantity,
+          dueDate: order.dueDate ?? null,
+          isEditable: !isPurchaseOrderLocked(order.existingStatus),
+          action,
+          // the action's quantity is in inventory units; the row is in
+          // purchase units, rounded up to whole units as Apply does
+          suggestedQuantity: action
+            ? round(
+                Number(action.suggestedQuantity) / order.conversionFactor,
+                0,
+                RoundingMode.Up
+              )
+            : null
+        };
+      });
+
+      // An action whose order is not in the list still has to be shown — a
+      // suggestion that silently drops out of the drawer reads as "nothing to
+      // do". It gets a read-only row built from the action itself.
+      for (const action of actions) {
+        if (rows.some((row) => row.action?.id === action.id)) continue;
+        rows.push({
+          id: action.id,
+          documentPath: action.purchaseOrderId
+            ? path.to.purchaseOrder(action.purchaseOrderId)
+            : null,
+          readableId: action.purchaseOrderReadableId ?? "—",
+          status: action.purchaseOrderStatus ?? null,
+          quantity: null,
+          dueDate: null,
+          isEditable: false,
+          action,
+          suggestedQuantity: Number(action.suggestedQuantity)
+        });
       }
-    }, [selectedSupplier]);
+
+      return rows;
+    }, [openOrders, actions]);
+
+    const onOpenOrdersChange = useCallback((rows: OpenOrderRow[]) => {
+      setOpenOrders((previous) =>
+        Array.isArray(previous)
+          ? previous.map((order) => {
+              const row = rows.find((r) => r.id === order.existingLineId);
+              return row && row.quantity !== null
+                ? { ...order, quantity: row.quantity, dueDate: row.dueDate }
+                : order;
+            })
+          : previous
+      );
+    }, []);
+
+    // One cell, one field, one request. The route re-reads the line under the
+    // company and refuses a PO that has been sent, so a stale row here cannot
+    // edit a committed order.
+    const onSaveOpenOrder = useCallback(
+      async (
+        row: OpenOrderRow,
+        field: OpenOrderField,
+        value: number | string
+      ) => {
+        try {
+          const response = await fetch(path.to.bulkUpdatePurchasingPlanning, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "updateLine",
+              locationId,
+              line: { id: row.id, field, value }
+            })
+          });
+          const result = (await response.json().catch(() => null)) as {
+            success?: boolean;
+            message?: string;
+          } | null;
+          if (response.ok && result?.success) return true;
+          toast.error(
+            result?.message ?? t`Failed to update purchase order line`
+          );
+          return false;
+        } catch {
+          toast.error(t`Failed to update purchase order line`);
+          return false;
+        }
+      },
+      [locationId, t]
+    );
+
+    const renderOpenOrderStatus = useCallback(
+      (status: string) => (
+        <PurchasingStatus
+          iconOnly
+          status={status as (typeof purchaseOrderStatusType)[number]}
+        />
+      ),
+      []
+    );
+
+    // What the chart overlays as planned supply: the draft orders, plus the
+    // open orders so an edit to one shows before MRP runs again. The chart
+    // reads existing orders in inventory units (see mergePlannedOrders).
+    const chartOrders = useMemo<PlannedOrder[]>(
+      () => [
+        ...orders,
+        ...(Array.isArray(openOrders)
+          ? openOrders.map(({ conversionFactor, ...order }) => ({
+              ...order,
+              quantity: order.quantity * conversionFactor
+            }))
+          : [])
+      ],
+      [orders, openOrders]
+    );
+
+    // "N More After <fence>": move this row's fence out to the last suggested
+    // order, rather than copying those orders into the list. The fence is the
+    // one piece of state — the order list, the Action table below, and the
+    // grid row's chips and quantity all follow it, so the pulled-in orders and
+    // their Order actions appear together and stay in step.
+    const lastBeyondFenceDate = useMemo(
+      () =>
+        beyondFenceOrders.reduce<string | null>(
+          (latest, order) =>
+            order.dueDate && (!latest || order.dueDate > latest)
+              ? order.dueDate
+              : latest,
+          null
+        ),
+      [beyondFenceOrders]
+    );
+
+    const onIncludeBeyondFence = useCallback(() => {
+      if (lastBeyondFenceDate) onTimeFenceChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onTimeFenceChange]);
+
+    const onSuggestedOrdersChange = useCallback(
+      (next: PlannedOrder[]) => setOrders(selectedItem, next),
+      [selectedItem, setOrders]
+    );
 
     const onAddOrder = useCallback(() => {
       if (selectedItem.id) {
@@ -233,16 +442,6 @@ export const PurchasingPlanningOrderDrawer = memo(
         setOrders(selectedItem, [...orders, newOrder]);
       }
     }, [selectedItem, orders, setOrders, periods, selectedSupplier]);
-
-    const onRemoveOrder = useCallback(
-      (index: number) => {
-        if (selectedItem.id) {
-          const newOrders = orders.filter((_, i) => i !== index);
-          setOrders(selectedItem, newOrders);
-        }
-      },
-      [selectedItem, orders, setOrders]
-    );
 
     const onSubmit = useCallback(
       (id: string, orders: PlannedOrder[]) => {
@@ -305,20 +504,6 @@ export const PurchasingPlanningOrderDrawer = memo(
         });
       },
       [fetcher, locationId, periods, selectedSupplier]
-    );
-
-    const onOrderUpdate = useCallback(
-      (index: number, updates: Partial<PlannedOrder>) => {
-        if (selectedItem.id) {
-          const newOrders = [...orders];
-          newOrders[index] = {
-            ...orders[index],
-            ...updates
-          };
-          setOrders(selectedItem, newOrders);
-        }
-      },
-      [selectedItem, orders, setOrders]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -548,6 +733,18 @@ export const PurchasingPlanningOrderDrawer = memo(
                         reorderingPolicy={selectedItem.reorderingPolicy}
                       />
                     </HStack>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        <Trans>Time Fence:</Trans>
+                      </span>
+                      <div className="flex-none">
+                        <TimeFenceCell
+                          fenceDate={timeFenceDate}
+                          isOverridden={isTimeFenceOverridden}
+                          onChange={onTimeFenceChange}
+                        />
+                      </div>
+                    </HStack>
                     <Separator />
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
@@ -672,161 +869,62 @@ export const PurchasingPlanningOrderDrawer = memo(
                     )}
                   </VStack>
 
-                  <TableBase full>
-                    <Thead>
-                      <Tr>
-                        <Th>
-                          <div className="flex items-center gap-2">
-                            <LuCirclePlay />
-                            <span>
-                              <Trans>PO</Trans>
-                            </span>
-                          </div>
-                        </Th>
-                        <Th>
-                          <div className="flex items-center gap-2 text-left">
-                            <LuStar />
-                            <span>
-                              <Trans>Status</Trans>
-                            </span>
-                          </div>
-                        </Th>
-                        <Th>
-                          <div className="flex items-center gap-2 text-right">
-                            <LuBlocks />
-                            <span>
-                              <Trans>Purchase Qty</Trans>
-                            </span>
-                          </div>
-                        </Th>
-                        <Th>
-                          <div className="flex items-center gap-2">
-                            <LuCalendar />
-                            <span>
-                              <Trans>Due Date</Trans>
-                            </span>
-                          </div>
-                        </Th>
-                        <Th className="w-[50px]"></Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {orders.map((order, index) => {
-                        // Lock the row when (a) the selected supplier differs
-                        // from the order's supplier, or (b) the existing PO
-                        // line is past the Planned stage (already shipped /
-                        // being received / being invoiced). Once committed
-                        // to the supplier, mutating quantity or due date
-                        // would desync the receiving workflow.
-                        const isPostPlannedExisting =
-                          !!order.existingLineId &&
-                          order.existingStatus !== "Draft" &&
-                          order.existingStatus !== "Planned";
-                        const isDisabled =
-                          (selectedSupplier !== order.supplierId &&
-                            !!order.existingId) ||
-                          isPostPlannedExisting;
-
-                        return (
-                          <Tr key={index}>
-                            <Td className="group-hover:bg-inherit justify-between">
-                              {order.existingReadableId && order.existingId ? (
-                                <Link
-                                  to={path.to.purchaseOrder(order.existingId)}
-                                >
-                                  {order.existingReadableId}
-                                </Link>
-                              ) : (
-                                t`New PO`
-                              )}
-                            </Td>
-                            <Td className="flex flex-row items-center gap-1 group-hover:bg-inherit">
-                              {/* @ts-expect-error - status is a string because we have a general type for purchase orders and purchaseOrderLines */}
-                              <PurchasingStatus status={order.existingStatus} />
-                            </Td>
-                            <Td className="text-right group-hover:bg-inherit">
-                              <NumberField
-                                value={
-                                  isDisabled
-                                    ? order.existingQuantity
-                                    : order.quantity
-                                }
-                                isDisabled={isDisabled}
-                                onChange={(value) => {
-                                  if (value) {
-                                    onOrderUpdate(index, {
-                                      quantity: value
-                                    });
-                                  }
-                                }}
-                              >
-                                <NumberInputGroup className="relative group-hover:bg-inherit">
-                                  <NumberInput />
-                                  <NumberInputStepper>
-                                    <NumberIncrementStepper>
-                                      <LuChevronUp size="1em" strokeWidth="3" />
-                                    </NumberIncrementStepper>
-                                    <NumberDecrementStepper>
-                                      <LuChevronDown
-                                        size="1em"
-                                        strokeWidth="3"
-                                      />
-                                    </NumberDecrementStepper>
-                                  </NumberInputStepper>
-                                </NumberInputGroup>
-                              </NumberField>
-                            </Td>
-                            <Td className="text-right group-hover:bg-inherit">
-                              <HStack className="justify-end">
-                                <DatePicker
-                                  value={
-                                    order.dueDate
-                                      ? parseDate(order.dueDate)
-                                      : null
-                                  }
-                                  isDisabled={isDisabled}
-                                  onChange={(date) => {
-                                    onOrderUpdate(index, {
-                                      dueDate: date ? date.toString() : null
-                                    });
-                                  }}
-                                />
-                              </HStack>
-                            </Td>
-                            <Td className="group-hover:bg-inherit">
-                              <IconButton
-                                aria-label={t`Remove order`}
-                                variant="ghost"
-                                size="sm"
-                                isDisabled={!!order.existingId}
-                                onClick={() => onRemoveOrder(index)}
-                                icon={<LuTrash2 className="text-destructive" />}
+                  <SuggestedOrdersGrid<PlannedOrder>
+                    title={<Trans>Suggested Orders</Trans>}
+                    titleAction={
+                      lastBeyondFenceDate &&
+                      timeFenceDate && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<LuCalendarRange />}
+                              onClick={onIncludeBeyondFence}
+                            >
+                              <Plural
+                                value={beyondFenceOrders.length}
+                                one={`# More After ${fenceLabel}`}
+                                other={`# More After ${fenceLabel}`}
                               />
-                            </Td>
-                          </Tr>
-                        );
-                      })}
-                    </Tbody>
-                  </TableBase>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <Trans>
+                              Suggested orders required after this item's time
+                              fence. Extend the fence to include them.
+                            </Trans>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    }
+                    orders={orders}
+                    leadTime={selectedItem.leadTime ?? 0}
+                    todayIso={locationToday}
+                    quantityHeader={t`Purchase Qty`}
+                    orderByHeader={t`Order By`}
+                    onChange={onSuggestedOrdersChange}
+                    onAdd={onAddOrder}
+                  />
 
-                  <div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-4"
-                      leftIcon={<LuPlus />}
-                      onClick={onAddOrder}
-                    >
-                      Add Order
-                    </Button>
-                  </div>
+                  <OpenOrdersGrid
+                    title={<Trans>Open Orders</Trans>}
+                    documentHeader={t`PO`}
+                    quantityHeader={t`Qty`}
+                    rows={openOrderRows}
+                    renderStatusIcon={renderOpenOrderStatus}
+                    onSave={onSaveOpenOrder}
+                    onRowsChange={onOpenOrdersChange}
+                    {...actionHandlers}
+                  />
 
                   <ItemPlanningChart
                     compact
                     itemId={selectedItem.id}
                     locationId={locationId}
                     safetyStock={selectedItem.demandAccumulationSafetyStock}
-                    plannedOrders={orders}
+                    timeFenceDate={timeFenceDate}
+                    plannedOrders={chartOrders}
                     conversionFactor={
                       (selectedItem.suppliers as SupplierPart[])?.find(
                         (s) => s.supplierId === selectedSupplier
@@ -851,8 +949,8 @@ export const PurchasingPlanningOrderDrawer = memo(
                   }
                   onSubmit(selectedItem.id, orders);
                 }}
-                disabled={fetcher.state !== "idle"}
-                isDisabled={fetcher.state !== "idle"}
+                disabled={fetcher.state !== "idle" || orders.length === 0}
+                isDisabled={fetcher.state !== "idle" || orders.length === 0}
                 isLoading={fetcher.state !== "idle"}
               >
                 <Trans>Order</Trans>

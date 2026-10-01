@@ -40,6 +40,14 @@ interface GridProps<T extends object> {
   defaultColumnOrder?: string[];
   defaultColumnVisibility?: Record<string, boolean>;
   editableComponents?: Record<string, EditableTableCellComponent<T>>;
+  /**
+   * Lock individual rows: a row this returns `false` for renders its editable
+   * columns as plain, non-editable cells (no ring, no pencil, no editor), the
+   * same as every cell does under `canEdit={false}`. For lists that mix rows a
+   * user may still change with rows a status has locked. Defaults to every
+   * row being editable.
+   */
+  isRowEditable?: (row: T) => boolean;
 
   withNewRow?: boolean;
   withSimpleSorting?: boolean;
@@ -54,6 +62,7 @@ const Grid = <T extends object>({
   contained = true,
   data,
   editableComponents,
+  isRowEditable,
   defaultColumnOrder,
   defaultColumnVisibility,
   withSimpleSorting = true,
@@ -170,13 +179,24 @@ const Grid = <T extends object>({
     [table, editableComponents]
   );
 
+  // A cell is editable when its column has an editor AND its row is not locked.
+  const isCellEditable = useCallback(
+    (rowIndex: number, column: number) => {
+      if (!isColumnEditable(column)) return false;
+      if (!isRowEditable) return true;
+      const row = table.getRowModel().rows[rowIndex];
+      return row ? isRowEditable(row.original) : false;
+    },
+    [isColumnEditable, isRowEditable, table]
+  );
+
   const onCellClick = useCallback(
     (row: number, column: number) => {
       // ignore row select checkbox column
       if (column === -1) return;
       // Editable cells enter edit mode on a single click (the editable input
       // then auto-focuses and selects its text), instead of select-then-click.
-      if (isColumnEditable(column)) {
+      if (isCellEditable(row, column)) {
         onSelectedCellChange({ row, column });
         setIsEditing(true);
         return;
@@ -184,7 +204,7 @@ const Grid = <T extends object>({
       setIsEditing(false);
       onSelectedCellChange({ row, column });
     },
-    [isColumnEditable, onSelectedCellChange]
+    [isCellEditable, onSelectedCellChange]
   );
 
   const onCellUpdate = useCallback(
@@ -271,7 +291,7 @@ const Grid = <T extends object>({
           !isEditing &&
           code === "Enter" &&
           !shiftKey &&
-          isColumnEditable(selectedCell.column)
+          isCellEditable(selectedCell.row, selectedCell.column)
         ) {
           setIsEditing(true);
           return;
@@ -302,7 +322,7 @@ const Grid = <T extends object>({
         // continues naturally. Otherwise (Enter) drop out of edit mode.
         if (isEditing) {
           const carryEdit = Boolean(
-            canEdit && code === "Tab" && isColumnEditable(x1)
+            canEdit && code === "Tab" && isCellEditable(y1, x1)
           );
           setIsEditing(carryEdit);
         }
@@ -322,12 +342,12 @@ const Grid = <T extends object>({
         !["ShiftLeft", "ShiftRight"].includes(code) &&
         !isEditing &&
         selectedCell &&
-        isColumnEditable(selectedCell.column)
+        isCellEditable(selectedCell.row, selectedCell.column)
       ) {
         setIsEditing(true);
       }
     },
-    [canEdit, isColumnEditable, isEditing, selectedCell, table]
+    [canEdit, isCellEditable, isEditing, selectedCell, table]
   );
 
   // reset the selected cell when the table data changes
@@ -396,7 +416,11 @@ const Grid = <T extends object>({
               return (
                 <Row
                   key={row.id}
-                  editableComponents={canEdit ? editableComponents : {}}
+                  editableComponents={
+                    canEdit && (isRowEditable?.(row.original) ?? true)
+                      ? editableComponents
+                      : {}
+                  }
                   isEditing={isEditing}
                   selectedCell={selectedCell}
                   row={row}

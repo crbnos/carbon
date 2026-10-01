@@ -44,7 +44,14 @@ const Row = <T extends object>({
     <Tr
       key={row.id}
       ref={rowRef}
-      className={cn(rowIsClickable && "cursor-pointer")}
+      // A line between body rows. The header row already draws the line under
+      // itself and the "New" row the one above it, so the first row adds none
+      // and nothing doubles up. Cells have always had their right border; the
+      // rows had no separator at all, which read as one tall cell per column.
+      className={cn(
+        "border-t border-border first:border-t-0",
+        rowIsClickable && "cursor-pointer"
+      )}
     >
       {row.getVisibleCells().map((cell, columnIndex) => {
         const isSelected =

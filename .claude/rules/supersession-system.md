@@ -1,7 +1,7 @@
 paths:
   - "packages/database/supabase/functions/lib/supersession-pick.ts"
   - "packages/database/supabase/functions/get-method/**"
-  - "packages/database/supabase/functions/mrp/**"
+  - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
 
@@ -37,7 +37,7 @@ Do not assume one rule. Each answers something different, deliberately.
 
 | Consumer | Source | Question |
 |---|---|---|
-| **MRP** (`mrp/index.ts`) | live, every run | what should we BUY? |
+| **MRP** (`runMrp`, `@carbon/planning` — `packages/planning/src/mrp/mrp.ts`) | live, every run | what should we replenish (buy or make), and how should existing supply change? |
 | **Job creation** (`get-method`) | live at creation, then **frozen** | what does this job consume? (a `Consume First` predecessor with stock at the job's location keeps its Pull from Inventory lines, bought or made — the item-level `withoutStockedConsumeFirst` filter in `loadSupersessionRedirect` is provisional and `settleConsumeFirstLines` applies the per-line whole-assembly rule after insert. A made predecessor's **Make to Order** line follows the same rule by becoming a Pull from Inventory line on the predecessor when its stock covers at least one whole assembly — a Make to Order line is built in the job and never consumes stock, so pulling it is the only way the old sub-assemblies get used; with no whole assembly in stock it swaps to the successor's method and is built) |
 | **Picking** (`inventory/supersession-pick.ts`) | live, at pick time | what do we pull off the shelf? |
 

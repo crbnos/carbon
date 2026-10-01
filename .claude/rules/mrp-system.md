@@ -83,9 +83,27 @@ Phase-7 write) and throws on failure.
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
      forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
    - **Inputs (demand)**: views `openSalesOrderLines`, `openJobMaterialLines`,
-     plus the user-entered `demandProjection` for forecast netting. Don't conflate it
-     with the output: MRP **consumes `demandProjection`** (user-entered) and **writes
+     plus the user-entered `demandProjection`. Don't conflate it with the
+     output: MRP reads `demandProjection` (user-entered) and **writes
      `demandForecast`** (rebuilt each run — see Outputs below).
+   - **Forecast consumption** (`forecast-consumption.ts`, wired in Phase 4):
+     actual demand consumes the projections for the same (item, location) —
+     own weekly bucket first, then backward
+     `companySettings.forecastConsumptionBackwardPeriods` (default 4) then
+     forward `forecastConsumptionForwardPeriods` (default 1) buckets. Only the
+     unconsumed remainder enters gross demand/contributors; SO lines consume at
+     `openSalesOrderLines.quantityToConsume` (PRE-job-dedup, so an MTO line
+     covered by its job still consumes) while demand still uses the deduped
+     `quantityToSend`; job materials consume at `quantityToIssue`. Runs BEFORE
+     the Phase-4.5 supersession redirect on purpose (read paths don't redirect
+     either). Phase 7 persists `demandProjection.consumedQuantity` (batched
+     `UPDATE … FROM (VALUES …)`, an UPDATE never an upsert) and every read
+     path nets with `GREATEST("forecastQuantity" - "consumedQuantity", 0)`:
+     both planning RPCs, `generatePlanningActions`' union,
+     `get_inventory_quantities`, and `getItemDemand`. Regenerative: nothing to
+     un-consume — cancelled orders/edited forecasts re-net on the next run.
+     Unit tests: `forecast-consumption.test.ts`. Spec:
+     `.ai/specs/2026-09-11-demand-forecast-consumption.md`.
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
    - **Inputs (on-hand)**: the `itemStockQuantities` table (trigger-maintained,
      `20260812002454`) — an indexed per-company read, replacing the old full
@@ -122,6 +140,7 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | Table | PK | Key cols | Notes |
 |-------|----|----|-------|
 | `period` | `id` | `startDate`, `endDate`, `periodType` | enum `'Week'\|'Day'\|'Month'`; no companyId (uniform RLS) |
+| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20260911150012`), never user-edited |
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs), not by MRP |
@@ -141,8 +160,10 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 
 ## Planning split functions
 
-Latest definition: `20260324120000_planning-quantity-to-order.sql` (supersedes the
-old `20251205000037_include-reorder-quantity-in-planning.sql`).
+Latest definition of BOTH: `20260911150012_demand-forecast-consumption.sql`
+(supersedes `20260715195226` for production, `20260831190142` for purchasing).
+Their `demand_data` CTEs read the projection arm net of consumption
+(`GREATEST("forecastQuantity" - "consumedQuantity", 0)`).
 
 - `get_purchasing_planning(company_id, location_id, periods[])` — items where
   `replenishmentSystem != 'Make'` (includes "Buy" and "Buy and Make"),
@@ -174,14 +195,15 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 
 - `openSalesOrderLines` — `salesOrderLineType != 'Service'`, status IN
   `('To Ship','To Ship and Invoice')`. Newest def:
-  `20260710051147_mto-sales-lines-drive-demand.sql`. Make to Order lines ARE
-  included (they were excluded before that migration), but their
-  `quantityToSend` is netted down by the remaining output
+  `20260911150012_demand-forecast-consumption.sql`. Make to Order lines ARE
+  included, but their `quantityToSend` is netted down by the remaining output
   (`quantity − quantityReceivedToInventory − quantityShipped`) of live jobs
   linked via `job.salesOrderLineId` (statuses Planned/Ready/In Progress/Paused —
   the same set as `openJobMaterialLines`, so each unit is counted exactly once:
   SO line while unjobbed, job materials once a job is released, inventory once
-  produced). Draft/Cancelled jobs do not suppress line demand.
+  produced). Draft/Cancelled jobs do not suppress line demand. The view also
+  exposes `quantityToConsume` — the PRE-job-dedup open quantity, used only by
+  forecast consumption (a job-covered MTO line still consumes forecast).
 - `openJobMaterialLines` — job status IN `('Planned','Ready','In Progress','Paused')`,
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
@@ -198,9 +220,141 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 - Purchasing: `apps/erp/app/routes/x+/purchasing+/planning.tsx`
   (`view: "purchasing"`) + `PurchasingPlanningTable` under
   `apps/erp/app/modules/purchasing/ui/Planning/`.
+- **Weeks are one column, not 48.** Both grids render the per-period projection
+  (`week1`…`weekN`) as a single **Stock Availability** strip
+  (`modules/production/ui/Planning/PlanningWeekStrip.tsx`): a small column
+  chart on a zero line — stock above it in a neutral tone, a shortfall hanging
+  below it in red, a tick on the line for an exact zero, nothing when MRP wrote
+  no projection. Red is the only hue, so a healthy row stays quiet and sign is
+  carried by direction as well as colour (it replaced a flat red / grey / green
+  strip that said nothing about depth and turned a short row into a wall of
+  colour). Each row is scaled to its OWN range (`planningWeekGeometry`,
+  `planning-week-geometry.ts`, unit-tested): heights compare along a row, not
+  between rows. One tooltip per row follows the hovered week (the shared
+  `TooltipContent` takes an `anchor` for this) and shows the week label, its
+  date range and the projected quantity; the hovered week is marked by an
+  overlay band that is cleared on `pointerleave` — it used to stay on the last
+  week touched. The per-week numbers stay in the CSV as
+  `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
+- **Latest Order Date** (both grids, after Qty to Order): the last day the
+  row's NEXT planned order can be placed and still arrive on time — the date
+  the supply is required less the item's lead time. It is the `startDate` of
+  the earliest planned order from `getNextPlannedOrder`
+  (`items/ui/Item/ItemReorderPolicy.tsx`), which reads the same cached
+  `calculateOrders` sizing the order drawer uses, so grid and drawer cannot
+  disagree. Red once the day has passed (the order's `isASAP`); "-" when
+  nothing needs ordering. The tooltip shows the required date and lead time;
+  the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
 - Both have a "Recalculate" button (`mrpFetcher.Form` POST to
   `path.to.api.mrp(locationId)`) tooltip: *"MRP runs automatically every 3 hours,
   but you can run it manually here."*
+- **Planning actions (the MRP worklist, spec §P1.7) live INSIDE each grid**, not
+  in a separate list. Both routes load the location's persisted `planningAction`
+  rows (`getPlanningActions`, Buy/Make by kind) and pass them to the grid, which
+  renders an **Actions** column (one ICON chip per open type with a count and
+  the type name in a tooltip, the ASAP flag, a muted dismissed chip; always one
+  line so busy rows are no taller than the rest; static type filter) and an
+  **expandable row** (`renderExpandedRow`/`canExpandRow`, gated to items with
+  actions) listing the item's actions as child lines — type, target PO/job
+  hyperlink, quantity, `DateTime` (red when past), reason, assignee — each with
+  ONE button: **Apply** (open change action on an uncommitted target), **Review
+  on PO/Job** (`requiresManualAction`), or **Order…/Make…** (opens the grid's
+  order drawer; Order/Make rows are fulfilled by the existing Order button, never
+  applied as a change). A per-line ⋯ holds Assign to Me and Dismiss/Reopen. The
+  bulk menu gains **Apply Suggested Changes** (every applyable action on the
+  selected items, ONE batched request). Shared UI:
+  `modules/production/ui/Planning/PlanningActionLines.tsx`; every mutation posts
+  to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
+  The Actions column filter (`filter=planningActions:eq:<type>`) and the
+  `headerActions` **Assigned to me** switch (`?actions=mine`) are not grid RPC
+  columns: the loader strips them with `resolvePlanningActionScope`
+  (`ui/Planning/planning-action-scope.ts`, pure, unit-tested) and passes them to
+  the grid RPC as ARGUMENTS (`action_types`, `action_assignee`), which keeps the
+  items with a matching OPEN action inside the item's planning horizon. The
+  loader then reads the actions for the rows ON THE PAGE (`getPlanningActions`
+  with `itemIds`, paged). An earlier version loaded the location's first 500
+  actions and resolved item ids from them — it silently dropped items past the
+  cap and could not see the horizon.
+- **Planning horizon (time fence).** `itemPlanning.planningHorizonDays` (per
+  item + location, Part → Planning) else `companySettings.defaultPlanningHorizonDays`
+  (Settings → Planning) else none. **0 means "no fence"** at either level
+  (`NULLIF(COALESCE(item, company), 0)` in the grid RPCs): an item's 0 is how it
+  opts out of a company default, which an empty field would inherit. It is not
+  "zero days" — that put the fence on today and hid nearly everything. It is a READ-TIME LENS, never an engine input:
+  `generatePlanningActions` writes actions for the whole window and stamps each
+  with `horizonDate` — the earlier of the target order's current date and the
+  suggested date, so a Defer counts from where its order sits today and an
+  Expedite from when it is needed — and the grids surface only rows with
+  `horizonDate <= today + days`. That is what lets a planner move ONE row's
+  fence in the **Time Fence** column (`useTimeFenceOverrides`, page state, gone
+  on reload, never written to the item) without an MRP run. Named
+  `planningHorizonDays` on purpose: `planningTimeFenceDays` is reserved by the
+  MRP v2 spec for the auto-firm fence, a different concept.
+  - The fence comparison exists twice and must stay one inclusive `<=` on ISO
+    dates: in SQL (`get_*_planning_grid`, the saved horizon, for the Actions
+    filter) and in `ui/Planning/planning-fence.ts` (on screen, override
+    included; unit-tested). Sort and filter therefore use the SAVED horizon —
+    an on-screen override changes what a row shows, not which rows match.
+  - Inside the fence: the Actions chips, the expanded row, **Apply Suggested
+    Changes**, the row's Order/Make quantity, and a bulk **Order Parts /
+    Create Jobs** on rows never opened in the drawer. The drawer opens on the
+    suggested orders REQUIRED on or before the fence. A "N More After <date>"
+    button EXTENDS the row's fence to the last suggested order rather than
+    copying rows in — the fence is the one piece of state, so the order list
+    and the grid row follow together. The drawer marks the fence on the chart
+    and carries the same Time Fence control as the grid cell.
+  - Moving a row's fence DROPS that item's entry in the grid's `ordersMap`
+    (`onFenceChange`): the drawer's draft list is kept per item once opened,
+    and a stale one would neither show the newly included orders nor offer
+    them. That discards manual edits to the draft, by design.
+- **The order drawer is two tables with two save models**
+  (`ui/Planning/PlanningOrderGrids.tsx`, both on the shared `Grid`), because a
+  row that does not exist yet cannot autosave:
+  - **Suggested Orders / Suggested Jobs** (`SuggestedOrdersGrid`) — a DRAFT.
+    Quantity and due date are click-to-edit; the edits live in the planning
+    grid's `ordersMap` and nothing is written until Order / Make. The Order By
+    / Start By column is derived (due date less lead time).
+  - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs.
+    A cell edit SAVES that one field (optimistic, reverted with a toast on
+    failure) through `planning.update`'s `updateLine` / `updateJob` action,
+    which re-reads the record under the company and applies the same
+    commitment gate as Apply: a PO past Planned, or a job past Planned, returns
+    409 and is never edited from planning. Locked rows render as plain cells
+    (`Grid isRowEditable`). Each row carries the planning action that targets
+    it — type, suggested value, reason, Apply / Review — so there is no
+    separate action table. Released jobs (Ready / In Progress / Paused) are
+    listed read-only for that reason: an action needs its job's row to sit on.
+    An action whose order is not in the list still gets a read-only row.
+  - **The order's status is an icon, not a column.** `Status iconOnly`
+    (`@carbon/react`, passed through `PurchasingStatus` / `JobStatus`) renders
+    the status colour and icon in front of the PO / job number, with the name
+    in its tooltip — it says why a row is Review rather than Apply without
+    adding row height or a column the drawer has no width for. The drawer
+    takes it from the open line / job (`OpenOrdersGrid renderStatusIcon`); the
+    grid's expanded row (`PlanningActionLines`) and the drawer's read-only
+    fallback rows take it from the action, which `getPlanningActions` enriches
+    with `purchaseOrderStatus` / `jobStatus` in the lookups it already makes.
+  - Purchasing quantities are in PURCHASE units (the line's
+    `purchaseQuantity`; the open-lines view reports inventory units), and an
+    action's suggested quantity is converted and rounded up as Apply does. The
+    chart still receives existing orders in inventory units.
+  - A manual edit does NOT resolve the suggestion on that row: the action stays
+    until the next MRP run re-evaluates the order.
+  The earlier single list mixed both: an edit to an existing order sat unsaved
+  until Order was pressed and was dropped by Close.
+- **Grid RPCs are wrappers.** `get_purchasing_planning_grid` /
+  `get_production_planning_grid` (`20260930233016_planning-horizon.sql`) select
+  `p.*` from the base RPC and add `itemPostingGroupId` (**Item Group** column +
+  filter), `planningHorizonDays`, `timeFenceDate`, `firstNegativeDate` (**1st
+  Negative On Hand**: the start of the first week whose projection is below
+  zero — weekly, because MRP buckets by week) and `latestOrderDate` (the MIN of
+  the item's open new-supply actions, which makes **Latest Order Date**
+  sortable; the cell still shows the live sizing, equal to it as of the last
+  run). The base RPCs stay the one definition of the projection and are what
+  `generatePlanningActions` reads. Adding a column to a base RPC means
+  re-creating its wrapper with the same column — it fails loudly (return type
+  mismatch) until then. Generated types mark every RPC column non-null; the new
+  ones are not (`PlanningGridColumns` in `production/types.ts`).
 - **Create planned orders** — `planning.update.tsx` in each module:
   - production (`create: "production"`, role `employee`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then

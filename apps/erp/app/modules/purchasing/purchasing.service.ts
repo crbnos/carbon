@@ -566,14 +566,31 @@ export async function getPurchasingPlanning(
   periods: string[],
   args: GenericQueryFilters & {
     search: string | null;
+    /** Today on the location's calendar (ISO date): the day each item's
+     *  planning horizon is counted from. */
+    asOf: string;
+    /** Keep only items with an OPEN planning action of one of these types
+     *  inside the item's planning horizon (the grid's Actions filter). */
+    actionTypes?: string[];
+    /** Keep only items with such an action assigned to this user ("Assigned
+     *  to me"). Combined with `actionTypes` on the SAME action. */
+    actionAssignee?: string;
   }
 ) {
+  // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
+  // item group, the planning horizon / time fence date, the first week the
+  // projection goes negative and the latest order date — and it evaluates the
+  // action filter in the database, so it is complete at any volume and paging
+  // stays correct.
   let query = client.rpc(
-    "get_purchasing_planning",
+    "get_purchasing_planning_grid",
     {
       location_id: locationId,
       company_id: companyId,
-      periods
+      periods,
+      as_of: args.asOf,
+      action_types: args.actionTypes,
+      action_assignee: args.actionAssignee
     },
     {
       count: LIST_COUNT
@@ -3221,6 +3238,37 @@ export async function getDefaultAttachmentsForPO(
       path: `${prefix}/${f.name}`
     }));
   });
+}
+
+/**
+ * Apply a planning-action schedule/quantity change to an UNCOMMITTED PO line
+ * (parent status Draft/Planned — the caller gates on isPurchaseOrderLocked).
+ * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
+ * units via the line's conversionFactor.
+ */
+export async function updatePurchaseOrderLineSchedule(
+  client: SupabaseClient<Database>,
+  args: {
+    lineId: string;
+    companyId: string;
+    userId: string;
+    requiredDate?: string;
+    purchaseQuantity?: number;
+  }
+) {
+  return client
+    .from("purchaseOrderLine")
+    .update({
+      ...(args.requiredDate !== undefined
+        ? { requiredDate: args.requiredDate }
+        : {}),
+      ...(args.purchaseQuantity !== undefined
+        ? { purchaseQuantity: args.purchaseQuantity }
+        : {}),
+      updatedBy: args.userId
+    })
+    .eq("id", args.lineId)
+    .eq("companyId", args.companyId);
 }
 
 // ─── Purchase Return Orders (Supplier Returns) ───
