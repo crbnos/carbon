@@ -325,6 +325,12 @@ describe("ownedCustomFieldsDiffer", () => {
     expect(ownedCustomFieldsDiffer({}, [field(null)])).toBe(false);
   });
 
+  it("treats a blank field saved by the item form as empty", () => {
+    expect(ownedCustomFieldsDiffer({ "cf-title": "" }, [field(null)])).toBe(
+      false
+    );
+  });
+
   it("ignores fields the push does not own", () => {
     expect(ownedCustomFieldsDiffer({}, [field("x", "default")])).toBe(false);
   });
@@ -347,6 +353,7 @@ describe("withoutNoOpClears", () => {
   it("drops an owned clear when Carbon holds no value", () => {
     expect(withoutNoOpClears({}, [field(null)])).toEqual([]);
     expect(withoutNoOpClears({ "cf-title": null }, [field(null)])).toEqual([]);
+    expect(withoutNoOpClears({ "cf-title": "" }, [field(null)])).toEqual([]);
     expect(withoutNoOpClears(null, [field(null)])).toEqual([]);
   });
 
