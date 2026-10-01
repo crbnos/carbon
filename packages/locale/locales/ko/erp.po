@@ -6253,6 +6253,9 @@ msgstr "이슈 설명"
 msgid "Detach"
 msgstr "분리"
 
+msgid "Detach from Onshape?"
+msgstr "Onshape에서 분리하시겠습니까?"
+
 msgid "Detach to edit them in Carbon."
 msgstr "Carbon에서 편집하려면 분리하세요."
 
@@ -11263,6 +11266,9 @@ msgstr "결정 권한이 있는 내부 프로젝트 책임자를 지정하십시
 
 msgid "Name and description are managed in Onshape."
 msgstr "이름과 설명은 Onshape에서 관리됩니다."
+
+msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "이름과 설명이 Carbon에서 편집 가능해지고 더 이상 Onshape를 따르지 않습니다. Onshape에서 이 부품을 다시 푸시하면 다시 연결됩니다."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "허브 전체에서 해당 역할이 참조되는 곳마다 이름이 자동으로 채워집니다."

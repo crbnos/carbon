@@ -6253,6 +6253,9 @@ msgstr "समस्या का विवरण"
 msgid "Detach"
 msgstr "अलग करें"
 
+msgid "Detach from Onshape?"
+msgstr "Onshape से अलग करें?"
+
 msgid "Detach to edit them in Carbon."
 msgstr "Carbon में संपादित करने के लिए इन्हें अलग करें।"
 
@@ -11263,6 +11266,9 @@ msgstr "निर्णय लेने के अधिकार के सा�
 
 msgid "Name and description are managed in Onshape."
 msgstr "नाम और विवरण Onshape में प्रबंधित किए जाते हैं।"
+
+msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "नाम और विवरण Carbon में संपादन योग्य हो जाते हैं और Onshape का अनुसरण करना बंद करते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह वापस लिंक हो जाता है।"
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "नाम हब भर में जहां भी उन भूमिकाओं का संदर्भ दिया जाता है वहां भरे जाते हैं।"

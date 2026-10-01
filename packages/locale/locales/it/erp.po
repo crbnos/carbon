@@ -6253,6 +6253,9 @@ msgstr "Descrizione del Problema"
 msgid "Detach"
 msgstr "Scollega"
 
+msgid "Detach from Onshape?"
+msgstr "Scollega da Onshape?"
+
 msgid "Detach to edit them in Carbon."
 msgstr "Scollega per modificarli in Carbon."
 
@@ -11263,6 +11266,9 @@ msgstr "Nomina un responsabile interno del progetto con autorità decisionale"
 
 msgid "Name and description are managed in Onshape."
 msgstr "Il nome e la descrizione sono gestiti in Onshape."
+
+msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Nome e descrizione diventano modificabili in Carbon e smettono di seguire Onshape. Se effettui il push di questo componente da Onshape di nuovo, verrà ricollegato."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "I nomi vengono compilati ovunque questi ruoli siano referenziati in tutto l'hub."

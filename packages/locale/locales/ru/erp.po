@@ -6253,6 +6253,9 @@ msgstr "Описание проблемы"
 msgid "Detach"
 msgstr "Отключить"
 
+msgid "Detach from Onshape?"
+msgstr "Отключить от Onshape?"
+
 msgid "Detach to edit them in Carbon."
 msgstr "Отключите, чтобы изменить их в Carbon."
 
@@ -11263,6 +11266,9 @@ msgstr "Назначьте внутреннего ответственного �
 
 msgid "Name and description are managed in Onshape."
 msgstr "Имя и описание управляются в Onshape."
+
+msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Имя и описание станут редактируемыми в Carbon и перестанут синхронизироваться с Onshape. Если отправить эту деталь из Onshape еще раз, она будет связана обратно."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Имена заполняются везде, где эти роли упоминаются в хабе."
