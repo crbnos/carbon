@@ -17,6 +17,8 @@
  * Everything here is pure so the plan a user reviewed is the plan that runs.
  */
 
+import { parseDate } from "@internationalized/date";
+
 /** One property on an Onshape object, as the metadata API returns it. */
 export type OnshapePropertyValue = {
   propertyId: string;
@@ -223,16 +225,15 @@ export function coerceOnshapeValue(
         string,
         string
       ];
-      const asDate = new Date(`${year}-${month}-${day}T00:00:00Z`);
-      if (
-        Number.isNaN(asDate.getTime()) ||
-        asDate.getUTCFullYear() !== Number(year) ||
-        asDate.getUTCMonth() + 1 !== Number(month) ||
-        asDate.getUTCDate() !== Number(day)
-      ) {
+      // `parseDate` refuses a day the month does not have.
+      try {
+        return {
+          ok: true,
+          value: parseDate(`${year}-${month}-${day}`).toString()
+        };
+      } catch {
         return { ok: false, reason: `"${text}" is not a date` };
       }
-      return { ok: true, value: `${year}-${month}-${day}` };
     }
     case CUSTOM_FIELD_DATA_TYPES.numeric: {
       if (typeof value === "number" && Number.isFinite(value)) {

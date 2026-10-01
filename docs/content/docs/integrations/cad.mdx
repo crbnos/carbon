@@ -217,23 +217,25 @@ Switching views costs no Onshape read; both are built from the same status data.
 Every push is two steps. Pressing **Push** shows a review of exactly what Carbon
 would do — nothing is written yet:
 
-- items that will be **created**, with the values they will get. Name, description,
-  Buy/Make, default method, tracking type and unit of measure are editable here; the
-  item ID and revision come from Onshape and are not. The starting values come from
-  the company's push defaults (below).
+- items that will be **created**, with the values they will get. Short and long
+  description, Buy/Make, default method, tracking type and unit of measure are
+  editable here; the item ID and revision come from Onshape and are not. The starting
+  values come from the company's push defaults (below).
 - items that will be **linked** to an existing Carbon item by part number, or
-  **updated** because Onshape changed, showing which Onshape-owned fields will be
-  overwritten. These take no edits — Onshape owns them.
+  **updated** because Onshape changed, showing the short and long descriptions and
+  custom fields Onshape will overwrite. Their Buy/Make, default method and tracking
+  type stay editable; the descriptions do not, because Onshape owns them.
 - for an assembly, each make method with the lines it gains, the lines a previous
-  push wrote that will be replaced, and the lines you added by hand that are kept.
+  push wrote that will be replaced, the lines you added by hand that the push takes
+  over, and the ones it keeps.
 - for a release, every revision that will be created and the release options
   (below).
 
 Untick a part, or a BOM item that would be created, to leave it out. **Push to
 Carbon** applies the review as shown; **Cancel** writes nothing. A review is held
-for 15 minutes and then has to be opened again. Editable values apply only when an
-item is created; after that the item's fields are owned by Onshape as described
-below.
+for 15 minutes and then has to be opened again. An edit to an existing item's
+Buy/Make, default method or tracking type is written with the push; the item's
+short and long descriptions stay Onshape's, as described below.
 
 ### Push a part
 
@@ -242,17 +244,32 @@ ID, plus name, description, revision, the 3D model and a thumbnail. Pushing agai
 after a change updates the item; pushing an unchanged part does nothing. Parts need a
 part number set in Onshape first.
 
-Fields that Onshape owns — item ID, name, description, revision, thumbnail, model —
-can't be edited in Carbon while the item is linked. The item page shows an
-**Onshape card** with the link, **Open in Onshape**, and **Detach** to release the
-fields back to Carbon. The card resolves a link made by either integration.
+Onshape owns a linked item's **Short Description** and **Long Description**: they
+can't be edited in Carbon while the item is linked, and every push writes Onshape's
+values. The item page shows an **Onshape card** with the link, **Open in Onshape**,
+and **Detach** to make them editable in Carbon again. The card shows links made by
+the panel (**Onshape V2**) only.
 
 ### Push an assembly
 
 Pushes the assembly and its whole bill of materials: every item in the BOM is
 created if missing, and the BOM lands on the assembly's make methods —
 sub-assemblies included. Pushes are a diff, not a rebuild: lines a previous push
-wrote are replaced, and lines you added by hand in Carbon are left alone.
+wrote are replaced. A line you added by hand in Carbon for a part Onshape's BOM also
+lists is taken over — its quantity follows Onshape, its operation and scrap stay —
+and a hand-added line for a part Onshape doesn't list is left alone.
+
+Items in the BOM that are not yet linked to an Onshape part are linked to theirs, and
+every item linked to its BOM row takes Onshape's short and long descriptions. Only
+values Onshape has are written, so an empty Name or Description cell never blanks
+Carbon's text. An item already linked to a different Onshape part keeps that link.
+
+**Buy or Make.** A new item is created as Buy when Onshape marks it bought: a
+sub-assembly whose **Subassembly BOM behavior** is *Show assembly only* (Onshape then
+lists it without components, so it gets no BOM), or a row with no components whose
+*Purchasing Level* column says *Purchased*. Anything else starts as Make. For an item Carbon already
+has, Buy or Make stays Carbon's, and the review warns when the two disagree: a Buy
+item that would get a BOM, or a Make item Onshape shows as one unit.
 
 **A released make method is never edited.** When an assembly's current method is
 Active, the push takes a new **Draft** version of it and writes there, the same way
