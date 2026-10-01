@@ -3,6 +3,9 @@ paths:
   - "apps/erp/app/modules/quality/ui/Inspections/**"
   - "apps/erp/app/modules/quality/quality.{server,service,models}.ts"
   - "apps/erp/app/routes/x+/inspection+/**"
+  - "apps/erp/app/routes/x+/inspection-document+/**"
+  - "apps/erp/app/routes/x+/quality+/inspection-plans*.tsx"
+  - "apps/erp/app/modules/quality/ui/InspectionDocument/**"
   - "apps/mes/app/components/Inspection/**"
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
@@ -153,13 +156,16 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   Written by `recordInspectionGauge` (`@carbon/database/quality`): closed-lot
   guard, company-scoped gauge, refuses `Inactive` gauges and a gauge whose type
   differs from the feature's `gaugeTypeId`. Out-of-calibration is shown
-  (amber icon / badge) but does NOT block. Routes: ERP `x+/inspection+/$id.gauge.tsx`,
+  (red icon in the cell, calibration status badge in the list) but does NOT block. Routes: ERP `x+/inspection+/$id.gauge.tsx`,
   MES `x+/inspection-lot.$id.gauge.tsx` (`path.to.inspectionGauge`), quiet POSTs
   like the measurement cells.
 - **Picker** — `InspectionGaugePicker` (ERP `ui/Inspections/`, touch-sized copy in
   MES `components/Inspection/`): a button filling the whole Gauge cell opens a
   search + list of Active gauges (the `gauges` view, filtered to the feature's
-  type). "Recently used" comes first — `getRecentInspectionGauges` returns the
+  type). The loader also returns any gauge already recorded on the lot whatever
+  its status, so a gauge retired after use still shows by its readable id
+  ("(Inactive)") — that record is what a calibration recall reads. "Recently
+  used" comes first — `getRecentInspectionGauges` returns the
   gauges most recently recorded at the lot's **station**: a Job Operation lot's
   station is its operation's `workCenterId`; **all receipts are one station**.
   No Gauge column on the no-document "Overall result" row.
@@ -330,8 +336,9 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Server** — the transactional engine lives in **`@carbon/database/quality`**
   (`packages/database/src/quality.ts`; moved 2026-07-26 so ERP and MES run one
   engine). Every function takes a `Kysely<KyselyDatabase>` first param; ERP's
-  `quality.server.ts` is thin wrappers currying `getDatabaseClient()` (names and
-  signatures unchanged — ERP routes/tests untouched). `packages/database/src/sampling.ts`
+  `quality.server.ts` curries `getDatabaseClient()` into those engine calls, and
+  also holds the plan editor's server-only helpers (legacy save-payload
+  translation, the balloon-region vision call). `packages/database/src/sampling.ts`
   re-exports the pure Deno `shared/sampling-engine.ts` node-side (client.ts
   pattern); the engine consumes it, so package + edge share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
@@ -404,6 +411,19 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `20260722040401`) and are now *consumed* by this flow via the item's Receipt-usage
   assignment. The lot references the document **live** — measurement rows store the
   valuation at entry, so later tolerance edits never rewrite recorded results.
+- **The plan editor autosaves** — there is no Save button. A debounced effect posts the
+  whole diff to `x+/inspection-document+/$id.save.tsx` while the editor is quiet (a drag
+  saves when it ends), one save at a time; the toolbar shows Saving… / Saved / Could not
+  save, and leaving the page first flushes the save (`useBlocker`). Rows created in the
+  browser carry `temp-ftr-`/`temp-bln-` ids until the RPC's `featureIdMap` /
+  `balloonAnchorIdMap` come back; edits made while a save is in flight are merged, not
+  overwritten — `mergeSaveResponse` (`ui/InspectionDocument/autosave.ts`, tested) keeps
+  them dirty and re-points them at the persisted ids. A PDF upload goes through the same
+  save. The route skips revalidation after a save (the response carries the rows).
+- **Features saved together share one `createdAt`** (the RPC is one transaction, `NOW()`
+  is fixed), so `ORDER BY "createdAt"` alone returns them in heap order, and an UPDATE
+  moves a row to the end. Anything listing features must break the tie — the editor sorts
+  by `createdAt`, then label (natural), then id, on load only.
 - **Sample status is derived on document-driven lots** — do not add manual sample
   pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and

@@ -791,7 +791,7 @@ export function InspectionView({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                aria-label={t`Drag to resize drawing and features`}
+                aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
                 className={cn(
                   "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80",
@@ -817,7 +817,7 @@ export function InspectionView({
             >
               <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
                 <span className="truncate text-sm font-medium text-foreground">
-                  {t`Features`}
+                  {t`Characteristics`}
                 </span>
                 <IconButton
                   type="button"
@@ -825,8 +825,8 @@ export function InspectionView({
                   aria-expanded={gridExpanded}
                   aria-label={
                     gridExpanded
-                      ? t`Collapse features table`
-                      : t`Expand features table`
+                      ? t`Collapse characteristics table`
+                      : t`Expand characteristics table`
                   }
                   icon={
                     gridExpanded ? (

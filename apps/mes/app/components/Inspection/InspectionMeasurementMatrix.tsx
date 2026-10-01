@@ -1,6 +1,6 @@
 import { cn, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuX } from "react-icons/lu";
 import type {
   InspectionGauge,
@@ -29,6 +29,11 @@ export type MeasurementSaveResult = {
 // inspection document. Its cells write the sample's status directly (via the
 // sample route) rather than a per-feature measurement.
 export const OVERALL_ROW_ID = "__overall__";
+
+// Mirrors RECENT_INSPECTION_GAUGE_LIMIT in packages/database/src/quality.ts
+// (the server's "recently used" cap) — that module is server-only (Kysely), so
+// it cannot be imported into this client component.
+const RECENT_INSPECTION_GAUGE_LIMIT = 10;
 
 type MatrixRow = {
   featureId: string;
@@ -365,8 +370,8 @@ const InspectionMeasurementMatrix = ({
     [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
-  // The gauge recorded per feature, seeded from the plan rows and patched
-  // optimistically on selection; recently used gauges float to the top.
+  // The gauge recorded per feature: the plan rows' value, overridden
+  // optimistically on selection until the loader data agrees with it.
   const [gaugeByFeature, setGaugeByFeature] = useState<
     Record<string, string | null>
   >({});
@@ -374,18 +379,73 @@ const InspectionMeasurementMatrix = ({
   useEffect(() => {
     setRecentGauges(recentGaugeIds);
   }, [recentGaugeIds]);
+  const serverGaugeFor = useCallback(
+    (featureId: string): string | null =>
+      features.find((f) => f.inspectionFeatureId === featureId)?.gaugeId ??
+      null,
+    [features]
+  );
+  const serverGaugeForRef = useRef(serverGaugeFor);
+  serverGaugeForRef.current = serverGaugeFor;
   const gaugeFor = useCallback(
     (featureId: string): string | null =>
       featureId in gaugeByFeature
         ? gaugeByFeature[featureId]
-        : (features.find((f) => f.inspectionFeatureId === featureId)?.gaugeId ??
-          null),
-    [gaugeByFeature, features]
+        : serverGaugeFor(featureId),
+    [gaugeByFeature, serverGaugeFor]
   );
+
+  // Per-feature request bookkeeping, so a request that settles late can never
+  // undo a newer pick: `latest` is the newest request id, `settled` whether
+  // it has answered, `confirmed` the newest request the server accepted.
+  const gaugeRequests = useRef<
+    Record<
+      string,
+      {
+        latest: number;
+        settled: boolean;
+        confirmed?: { id: number; gaugeId: string | null };
+      }
+    >
+  >({});
+
+  // Once the loader data matches a settled pick, drop the override so later
+  // revalidations show the server's value.
+  useEffect(() => {
+    const caughtUp = Object.keys(gaugeByFeature).filter((featureId) => {
+      const request = gaugeRequests.current[featureId];
+      return (
+        (!request || request.settled) &&
+        serverGaugeFor(featureId) === gaugeByFeature[featureId]
+      );
+    });
+    if (caughtUp.length === 0) return;
+    for (const featureId of caughtUp) {
+      const request = gaugeRequests.current[featureId];
+      if (request) {
+        request.confirmed = {
+          id: request.latest,
+          gaugeId: serverGaugeFor(featureId)
+        };
+      }
+    }
+    setGaugeByFeature((prev) => {
+      const next = { ...prev };
+      for (const featureId of caughtUp) delete next[featureId];
+      return next;
+    });
+  }, [gaugeByFeature, serverGaugeFor]);
 
   const persistGauge = useCallback(
     async (featureId: string, gaugeId: string | null) => {
-      const previous = gaugeFor(featureId);
+      const request = gaugeRequests.current[featureId] ?? {
+        latest: 0,
+        settled: true
+      };
+      gaugeRequests.current[featureId] = request;
+      const requestId = request.latest + 1;
+      request.latest = requestId;
+      request.settled = false;
       setGaugeByFeature((prev) => ({ ...prev, [featureId]: gaugeId }));
 
       const formData = new FormData();
@@ -395,24 +455,39 @@ const InspectionMeasurementMatrix = ({
       const response = await fetch(path.to.inspectionGauge(inspectionId), {
         method: "post",
         body: formData
-      });
-      const body = (await response.json().catch(() => null)) as {
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
         error?: { message: string } | null;
       } | null;
+      const ok = !!response?.ok && !!body && !body.error;
 
-      if (!response.ok || !body || body.error) {
-        toast.error(body?.error?.message ?? t`Failed to record gauge`);
-        setGaugeByFeature((prev) => ({ ...prev, [featureId]: previous }));
-        return;
+      if (ok && (!request.confirmed || requestId > request.confirmed.id)) {
+        request.confirmed = { id: requestId, gaugeId };
       }
-      if (gaugeId) {
-        setRecentGauges((prev) => [
-          gaugeId,
-          ...prev.filter((id) => id !== gaugeId)
-        ]);
+      if (requestId === request.latest) request.settled = true;
+
+      if (!ok) {
+        toast.error(body?.error?.message ?? t`Failed to record gauge`);
+      } else if (gaugeId) {
+        setRecentGauges((prev) =>
+          [gaugeId, ...prev.filter((id) => id !== gaugeId)].slice(
+            0,
+            RECENT_INSPECTION_GAUGE_LIMIT
+          )
+        );
+      }
+
+      // Once the newest pick has answered, show what the server last
+      // accepted: that pick if it succeeded, else the newest earlier pick
+      // that did, else the loader's value.
+      if (request.settled) {
+        const shown = request.confirmed
+          ? request.confirmed.gaugeId
+          : serverGaugeForRef.current(featureId);
+        setGaugeByFeature((prev) => ({ ...prev, [featureId]: shown }));
       }
     },
-    [gaugeFor, inspectionId, t]
+    [inspectionId, t]
   );
 
   const columnHeaders = useMemo(
@@ -449,7 +524,7 @@ const InspectionMeasurementMatrix = ({
           <tr>
             <th className="sticky left-0 z-30 min-w-[220px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
               {hasFeatures ? (
-                <span>{t`Feature`}</span>
+                <span>{t`Characteristic`}</span>
               ) : (
                 <span>{t`Result`}</span>
               )}
@@ -523,6 +598,7 @@ const InspectionMeasurementMatrix = ({
                   <td className="h-px border-b border-r border-border p-0 align-middle">
                     <InspectionGaugePicker
                       gauges={gauges}
+                      characteristicLabel={row.label}
                       recentGaugeIds={recentGauges}
                       gaugeTypeId={row.gaugeTypeId}
                       gaugeTypeName={row.gaugeTypeName}

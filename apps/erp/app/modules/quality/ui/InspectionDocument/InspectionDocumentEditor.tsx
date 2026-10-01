@@ -1,5 +1,4 @@
 import { useCarbon } from "@carbon/auth";
-import { closePdf, openPdf } from "@carbon/files/pdf";
 import {
   Button,
   Combobox,
@@ -25,7 +24,6 @@ import {
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { PDFDocument } from "pdf-lib";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Group, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { Document, Page } from "react-pdf";
@@ -33,6 +31,12 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
+import {
+  BALLOON_CALLOUT_STROKE,
+  BALLOON_H_NORM,
+  BALLOON_W_NORM,
+  clippedBalloonToAnchorLine
+} from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuChevronDown,
@@ -47,13 +51,12 @@ import {
   LuMinus,
   LuPlus,
   LuRectangleHorizontal,
-  LuSave,
   LuScan,
   LuSlidersHorizontal,
   LuTrash2,
   LuUpload
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useBlocker, useFetcher, useNavigate } from "react-router";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -68,10 +71,16 @@ import { procedureStepType } from "~/modules/shared/shared.models";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import {
-  BALLOON_H_NORM,
-  BALLOON_W_NORM,
-  clippedBalloonToAnchorLine
-} from "../Inspections/InspectionDrawingPane";
+  AUTOSAVE_DELAY_MS,
+  hasUnsavedRows,
+  isTempBalloonId,
+  isTempFeatureId,
+  mergeSaveResponse
+} from "./autosave";
+import {
+  buildInspectionDocumentPdfWithOverlaysBytes,
+  cropInspectionAnchorToPngBlob
+} from "./drawingRaster";
 import type { SamplingRule } from "./SamplingRuleModal";
 import SamplingRuleModal, { EMPTY_SAMPLING_RULE } from "./SamplingRuleModal";
 
@@ -269,320 +278,6 @@ function cursorForSelectorResizeHandle(
   }
 }
 
-/** Callout / anchor stroke — matches reference (orange border, hollow fill). */
-const CALLOUT_STROKE = "#f97316";
-
-// ─── Anchor crop (vision analysis) ───────────────────────────────────────────
-
-/** Extra resolution for vision / OCR vs on-screen PDF preview. */
-const VISION_RENDER_SCALE = 1.75;
-/** Cap raster width so very large displays do not allocate huge canvases. */
-const MAX_VISION_RASTER_WIDTH_PX = 4096;
-/** Pad crop by this fraction of max(width,height) on each side (percent space). */
-const CROP_PAD_FRAC = 0.1;
-const CROP_PAD_MAX_PCT = 4;
-const CROP_PAD_MIN_PCT = 0.3;
-/** Minimum crop width/height in percent-of-page so tiny boxes stay readable. */
-const CROP_MIN_SIZE_PCT = 2.5;
-
-type InspectionAnchorCropArgs = {
-  pdfBytes: ArrayBuffer;
-  pageNumber: number;
-  /** 0–100, same coordinate system as `SelectorRect` in the inspection editor */
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  /**
-   * Horizontal size in CSS px of one rendered page (matches `react-pdf` `Page` `width={renderedWidth}`).
-   * Viewport scale is derived so raster width matches this value times an internal vision scale (capped).
-   */
-  renderedPageWidthPx: number;
-};
-
-/**
- * Expands the anchor rect with padding, enforces a minimum size, and clamps to the page (0–100 %).
- */
-function prepareVisionCropRect(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): { x: number; y: number; width: number; height: number } {
-  const w0 = Math.max(1e-6, width);
-  const h0 = Math.max(1e-6, height);
-  const mx = Math.max(w0, h0);
-  const pad = Math.min(
-    CROP_PAD_MAX_PCT,
-    Math.max(CROP_PAD_MIN_PCT, CROP_PAD_FRAC * mx)
-  );
-
-  const cx = x + w0 / 2;
-  const cy = y + h0 / 2;
-  let w = w0 + 2 * pad;
-  let h = h0 + 2 * pad;
-
-  w = Math.max(w, CROP_MIN_SIZE_PCT);
-  h = Math.max(h, CROP_MIN_SIZE_PCT);
-
-  w = Math.min(w, 100);
-  h = Math.min(h, 100);
-
-  let nx = cx - w / 2;
-  let ny = cy - h / 2;
-  nx = Math.max(0, Math.min(nx, 100 - w));
-  ny = Math.max(0, Math.min(ny, 100 - h));
-
-  return { x: nx, y: ny, width: w, height: h };
-}
-
-/**
- * Renders one PDF page at higher resolution than the editor preview, then crops the (padded, min-sized) anchor rectangle to PNG.
- */
-async function cropInspectionAnchorToPngBlob(
-  args: InspectionAnchorCropArgs
-): Promise<Blob> {
-  const { pdfBytes, pageNumber, x, y, width, height, renderedPageWidthPx } =
-    args;
-
-  const {
-    x: rx,
-    y: ry,
-    width: rw,
-    height: rh
-  } = prepareVisionCropRect(x, y, width, height);
-
-  const pdf = await openPdf(pdfBytes);
-
-  try {
-    const page = await pdf.getPage(pageNumber);
-    const baseVp = page.getViewport({ scale: 1 });
-    const targetWidth = Math.min(
-      Math.max(1, Math.floor(renderedPageWidthPx * VISION_RENDER_SCALE)),
-      MAX_VISION_RASTER_WIDTH_PX
-    );
-    const scale = targetWidth / baseVp.width;
-    const viewport = page.getViewport({ scale });
-    const cw = Math.max(1, Math.floor(viewport.width));
-    const ch = Math.max(1, Math.floor(viewport.height));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = cw;
-    canvas.height = ch;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Could not get canvas context");
-    }
-
-    const renderTask = page.render({
-      canvas,
-      canvasContext: ctx,
-      viewport
-    });
-    await renderTask.promise;
-
-    const sx = Math.floor((rx / 100) * cw);
-    const sy = Math.floor((ry / 100) * ch);
-    const sw = Math.max(1, Math.floor((rw / 100) * cw));
-    const sh = Math.max(1, Math.floor((rh / 100) * ch));
-
-    const sx2 = Math.max(0, Math.min(sx, cw - 1));
-    const sy2 = Math.max(0, Math.min(sy, ch - 1));
-    const sw2 = Math.max(1, Math.min(sw, cw - sx2));
-    const sh2 = Math.max(1, Math.min(sh, ch - sy2));
-
-    const crop = document.createElement("canvas");
-    crop.width = sw2;
-    crop.height = sh2;
-    const cctx = crop.getContext("2d");
-    if (!cctx) {
-      throw new Error("Could not get crop canvas context");
-    }
-    cctx.drawImage(canvas, sx2, sy2, sw2, sh2, 0, 0, sw2, sh2);
-
-    return await new Promise<Blob>((resolve, reject) => {
-      crop.toBlob((b) => {
-        if (b) resolve(b);
-        else reject(new Error("Canvas toBlob failed"));
-      }, "image/png");
-    });
-  } finally {
-    await closePdf(pdf);
-  }
-}
-
-// ─── PDF export with balloon overlays ────────────────────────────────────────
-
-type ExportFeatureRow = {
-  balloonId: string;
-  balloonAnchorId: string;
-  label: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-type ExportSelectorRect = {
-  id: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-function drawMarkupOnPageCanvas(
-  ctx: CanvasRenderingContext2D,
-  cw: number,
-  ch: number,
-  pageNumber: number,
-  featureRows: ExportFeatureRow[],
-  anchorRects: ExportSelectorRect[]
-) {
-  ctx.save();
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-  for (const s of anchorRects) {
-    if (s.pageNumber !== pageNumber) continue;
-    const sx = (s.x / 100) * cw;
-    const sy = (s.y / 100) * ch;
-    const sw = (s.width / 100) * cw;
-    const sh = (s.height / 100) * ch;
-    ctx.strokeStyle = CALLOUT_STROKE;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(sx, sy, sw, sh);
-  }
-
-  for (const b of featureRows) {
-    if (b.pageNumber !== pageNumber) continue;
-    const bw = (b.width / 100) * cw;
-    const bh = (b.height / 100) * ch;
-    const balloonX = (b.x / 100) * cw;
-    const balloonY = (b.y / 100) * ch;
-    const balloonCenterX = balloonX + bw / 2;
-    const balloonCenterY = balloonY + bh / 2;
-    const radius = Math.max(8, Math.min(bw, bh) / 2);
-    const balloonLabelFontSize = Math.max(
-      14,
-      Math.min(26, Math.round(radius * 1.15))
-    );
-
-    const linkedSelector = anchorRects.find((s) => s.id === b.balloonAnchorId);
-    let linePoints: [number, number, number, number] | null = null;
-    if (linkedSelector) {
-      const sx = (linkedSelector.x / 100) * cw;
-      const sy = (linkedSelector.y / 100) * ch;
-      const sw = (linkedSelector.width / 100) * cw;
-      const sh = (linkedSelector.height / 100) * ch;
-      const anchorX = sx + sw / 2;
-      const anchorY = sy + sh / 2;
-      linePoints = clippedBalloonToAnchorLine(
-        balloonCenterX,
-        balloonCenterY,
-        radius,
-        anchorX,
-        anchorY,
-        { x: sx, y: sy, w: sw, h: sh }
-      );
-    }
-
-    if (linePoints) {
-      ctx.beginPath();
-      ctx.strokeStyle = CALLOUT_STROKE;
-      ctx.lineWidth = 2;
-      ctx.moveTo(linePoints[0], linePoints[1]);
-      ctx.lineTo(linePoints[2], linePoints[3]);
-      ctx.stroke();
-    }
-
-    ctx.beginPath();
-    ctx.arc(balloonCenterX, balloonCenterY, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = CALLOUT_STROKE;
-    ctx.lineWidth = 2;
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.font = `bold ${balloonLabelFontSize}px ui-sans-serif, system-ui, sans-serif`;
-    ctx.fillStyle = CALLOUT_STROKE;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(b.label, balloonCenterX, balloonCenterY);
-  }
-
-  ctx.restore();
-}
-
-/**
- * Rasterizes each PDF page with anchor + balloon markup (matching the Konva overlay) and builds a new PDF.
- */
-async function buildInspectionDocumentPdfWithOverlaysBytes(args: {
-  pdfBytes: ArrayBuffer;
-  featureRows: ExportFeatureRow[];
-  anchorRects: ExportSelectorRect[];
-  /** PDF.js render scale; higher = sharper file */
-  scale?: number;
-}): Promise<Uint8Array> {
-  const scale = args.scale ?? 2;
-  const pdf = await openPdf(args.pdfBytes);
-  const outDoc = await PDFDocument.create();
-
-  try {
-    const numPages = pdf.numPages;
-    for (let pageNum = 1; pageNum <= numPages; pageNum += 1) {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale });
-      const cw = Math.floor(viewport.width);
-      const ch = Math.floor(viewport.height);
-      const canvas = document.createElement("canvas");
-      canvas.width = cw;
-      canvas.height = ch;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Could not get canvas context");
-      }
-
-      const renderTask = page.render({
-        canvas,
-        canvasContext: ctx,
-        viewport
-      });
-      await renderTask.promise;
-
-      drawMarkupOnPageCanvas(
-        ctx,
-        cw,
-        ch,
-        pageNum,
-        args.featureRows,
-        args.anchorRects
-      );
-
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("Canvas toBlob failed"));
-        }, "image/png");
-      });
-      const pngBytes = new Uint8Array(await blob.arrayBuffer());
-      const image = await outDoc.embedPng(pngBytes);
-      const pdfPage = outDoc.addPage([cw, ch]);
-      pdfPage.drawImage(image, {
-        x: 0,
-        y: 0,
-        width: cw,
-        height: ch
-      });
-    }
-
-    return await outDoc.save({ useObjectStreams: true });
-  } finally {
-    await closePdf(pdf);
-  }
-}
 const CALLOUT_TEXT = "#171717";
 
 /**
@@ -731,13 +426,16 @@ function nextBalloonLabel(rows: FeatureRow[]): string {
   return String(max + 1);
 }
 
-function isTempFeatureId(featureId: string) {
-  return featureId.startsWith("temp-ftr-");
-}
-
-function isTempBalloonId(balloonId: string | null) {
-  return balloonId != null && balloonId.startsWith("temp-bln-");
-}
+/** What a save sent, so its response can tell what changed since. */
+type SaveSnapshot = {
+  featureRows: FeatureRow[];
+  anchorRects: SelectorRect[];
+  docSampling: SamplingRule;
+  pdfUrl: string;
+  sentPdfMetrics: boolean;
+  featureDeleteIds: string[];
+  balloonDeleteIds: string[];
+};
 
 function stripBalloonGeometryFromFeatureRows(rows: FeatureRow[]): FeatureRow[] {
   return rows.map((r) =>
@@ -836,7 +534,7 @@ function mapFeatureRowFromRecords(
       ? String(feature.description)
       : "";
   const label = String(feature.label ?? "");
-  const featureName = desc || `Feature ${label}`;
+  const featureName = desc || `Characteristic ${label}`;
   const balloonId =
     balloon != null
       ? String(balloon.id)
@@ -883,13 +581,17 @@ function mapFeatureRowFromRecords(
 // Features saved together share one createdAt (the save RPC runs in a single
 // transaction), so createdAt alone leaves their order to the heap, and an
 // UPDATE moves the edited row to the end. Break the tie by balloon label, the
-// order the inspection grid shows them in.
+// order the inspection grid shows them in. Rows are sorted on load only; a
+// save response keeps the editor's order (mergeSaveResponse), so a row never
+// moves under the cursor.
 function compareFeatureRecords(
   a: Record<string, unknown>,
   b: Record<string, unknown>
 ) {
+  const aCreated = String(a.createdAt ?? "");
+  const bCreated = String(b.createdAt ?? "");
   return (
-    String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")) ||
+    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
     String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
       numeric: true
     }) ||
@@ -965,7 +667,7 @@ export default function InspectionDocumentEditor({
   const companyId = user.company.id;
 
   const [pdfUrl, setPdfUrl] = useState<string>(content?.pdfUrl ?? "");
-  // The document's default sampling rule; persisted with Save alongside the
+  // The document's default sampling rule; autosaved alongside the
   // feature rows. "document" | featureId targets the sampling modal.
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
@@ -1043,14 +745,32 @@ export default function InspectionDocumentEditor({
     null
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
-  /** Only the explicit Save button should show "Diagram saved" — not auto-persist after anchor draw. */
-  const manualSaveToastRef = useRef(false);
   const pdfReplaceToastRef = useRef(false);
-  const pdfReplacePendingMetricsRef = useRef(false);
-  /** Persisted feature ids to hard-delete on next Save. */
+  /** A replaced drawing's page metrics still need saving once it renders. */
+  const [pdfMetricsDirty, setPdfMetricsDirty] = useState(false);
+  /** Persisted feature ids to hard-delete on the next save. */
   const pendingFeatureDeleteIdsRef = useRef(new Set<string>());
-  /** Persisted balloon ids to hard-delete on next Save (unballoon). */
+  /** Persisted balloon ids to hard-delete on the next save (unballoon). */
   const pendingBalloonDeleteIdsRef = useRef(new Set<string>());
+  /** The save in flight; null when none is. */
+  const inFlightSaveRef = useRef<SaveSnapshot | null>(null);
+  /** The save response last merged — the merge effect also runs on edits. */
+  const handledSaveDataRef = useRef<unknown>(null);
+  /** The last autosave that failed — not retried until something changes. */
+  const failedSaveRef = useRef<SaveSnapshot | null>(null);
+  /** temp-ftr-/temp-bln- id → the id the save gave it. Async work started
+   * before a save (the region analysis) still holds the temp id. */
+  const persistedIdRef = useRef(new Map<string, string>());
+  const persistedId = useCallback(
+    (id: string) => persistedIdRef.current.get(id) ?? id,
+    []
+  );
+  const savedSamplingRef = useRef<SamplingRule>(
+    sampling ?? EMPTY_SAMPLING_RULE
+  );
+  const savedPdfUrlRef = useRef(content?.pdfUrl ?? "");
+  /** Whether a save has succeeded yet — the label shows nothing before. */
+  const [hasSaved, setHasSaved] = useState(false);
   const [placingFeatureId, setPlacingFeatureId] = useState<string | null>(null);
 
   const [annotations, setAnnotations] = useState<AnnotationRecord[]>([]);
@@ -1185,44 +905,72 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [pdfFile, pdfUrl]);
 
+  // Merges each save response into the editor's current state. It reads the
+  // current rows, so it also runs on every edit; handledSaveDataRef makes each
+  // response merge exactly once.
   useEffect(() => {
-    if (!pdfReplacePendingMetricsRef.current || !pdfMetrics) return;
-    pdfReplacePendingMetricsRef.current = false;
-    const formData = new FormData();
-    formData.set("pageCount", String(pdfMetrics.pageCount));
-    formData.set("defaultPageWidth", String(pdfMetrics.defaultPageWidth));
-    formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.saveInspectionDocument(diagramId)
-    });
-  }, [diagramId, fetcher, pdfMetrics]);
+    const data = fetcher.data;
+    if (!data || data === handledSaveDataRef.current) return;
+    handledSaveDataRef.current = data;
+    const sent = inFlightSaveRef.current;
+    inFlightSaveRef.current = null;
+    if (!sent) return;
 
-  useEffect(() => {
-    if (fetcher.data?.success === true) {
-      const savedBalloons = fetcher.data.balloons ?? [];
-      setSelectorRects(selectorRectsFromBalloonRecords(savedBalloons));
-      setFeatureRows(
-        buildFeatureRowsFromLoader(fetcher.data.features ?? [], savedBalloons)
-      );
-      pendingFeatureDeleteIdsRef.current.clear();
-      pendingBalloonDeleteIdsRef.current.clear();
-      if (pdfReplaceToastRef.current) {
-        toast.success(
-          t`Drawing replaced. Balloon placements were removed; feature rows are unchanged.`
-        );
-        pdfReplaceToastRef.current = false;
-      } else if (manualSaveToastRef.current) {
-        toast.success(t`Diagram saved`);
-        manualSaveToastRef.current = false;
-      }
-    } else if (fetcher.data?.success === false) {
+    if (!data.success) {
+      failedSaveRef.current = sent;
       pdfReplaceToastRef.current = false;
-      pdfReplacePendingMetricsRef.current = false;
-      manualSaveToastRef.current = false;
-      toast.error(fetcher.data.message ?? t`Failed to save diagram`);
+      toast.error(data.message ?? t`Failed to save inspection plan`);
+      return;
     }
-  }, [fetcher.data, t]);
+
+    const ids = persistedIdRef.current;
+    for (const [tempId, id] of Object.entries({
+      ...data.featureIdMap,
+      ...data.balloonAnchorIdMap
+    })) {
+      ids.set(tempId, id);
+    }
+    const savedBalloons = data.balloons ?? [];
+    const merged = mergeSaveResponse({
+      sentRows: sent.featureRows,
+      sentAnchors: sent.anchorRects,
+      currentRows: featureRows,
+      currentAnchors: anchorRects,
+      savedRows: buildFeatureRowsFromLoader(data.features ?? [], savedBalloons),
+      savedAnchors: selectorRectsFromBalloonRecords(savedBalloons),
+      persistedIds: ids
+    });
+
+    const pendingFeatureDeletes = pendingFeatureDeleteIdsRef.current;
+    const pendingBalloonDeletes = pendingBalloonDeleteIdsRef.current;
+    for (const id of sent.featureDeleteIds) pendingFeatureDeletes.delete(id);
+    for (const id of sent.balloonDeleteIds) pendingBalloonDeletes.delete(id);
+    for (const id of merged.featureDeleteIds) pendingFeatureDeletes.add(id);
+    for (const id of merged.balloonDeleteIds) pendingBalloonDeletes.add(id);
+    savedSamplingRef.current = sent.docSampling;
+    savedPdfUrlRef.current = sent.pdfUrl;
+    failedSaveRef.current = null;
+    if (sent.sentPdfMetrics) setPdfMetricsDirty(false);
+    setFeatureRows(merged.rows);
+    setSelectorRects(merged.anchors);
+
+    const resolve = (id: string | null) =>
+      id == null ? null : (ids.get(id) ?? id);
+    setSelectedBalloonId(resolve);
+    setSelectedSelectorId(resolve);
+    setPlacingFeatureId(resolve);
+    setSamplingTarget((target) =>
+      target === "document" ? target : resolve(target)
+    );
+    setHasSaved(true);
+
+    if (pdfReplaceToastRef.current && sent.pdfUrl === pdfUrl) {
+      pdfReplaceToastRef.current = false;
+      toast.success(
+        t`Drawing replaced. Balloon placements were removed; characteristic rows are unchanged.`
+      );
+    }
+  }, [fetcher.data, featureRows, anchorRects, pdfUrl, t]);
 
   const loadAnnotations = useCallback(async () => {
     setAnnotations([]);
@@ -1521,7 +1269,7 @@ export default function InspectionDocumentEditor({
               y: balloonY,
               width: BALLOON_W_PCT,
               height: BALLOON_H_PCT,
-              featureName: `Feature ${label}`,
+              featureName: `Characteristic ${label}`,
               nominalValue: "",
               tolerancePlus: "",
               toleranceMinus: "",
@@ -1594,9 +1342,11 @@ export default function InspectionDocumentEditor({
                   return;
                 }
                 const a = payload.analysis;
+                // An autosave may have persisted the balloon by now.
+                const balloonId = persistedId(tempBalloonId);
                 setFeatureRows((prev) =>
                   prev.map((r) => {
-                    if (r.balloonId !== tempBalloonId) return r;
+                    if (r.balloonId !== balloonId) return r;
                     const fmt = (n: number | null, fallback: string) =>
                       n != null && Number.isFinite(n) ? String(n) : fallback;
                     const nextNominal = fmt(a.nominal, r.nominalValue);
@@ -1622,7 +1372,7 @@ export default function InspectionDocumentEditor({
                     };
                   })
                 );
-                toast.success(t`Feature values suggested from drawing`);
+                toast.success(t`Characteristic values suggested from drawing`);
               } catch {
                 toast.error(t`Could not analyze cropped region`);
               }
@@ -1668,6 +1418,7 @@ export default function InspectionDocumentEditor({
       annotations,
       persistAnnotationResize,
       placingFeatureId,
+      persistedId,
       t
     ]
   );
@@ -2354,8 +2105,10 @@ export default function InspectionDocumentEditor({
     [drag, dragKind, getRelativePosFromStage, finalizeDragAt]
   );
 
-  const handleSave = useCallback(() => {
-    manualSaveToastRef.current = true;
+  const { submit: submitSave } = fetcher;
+  const saveChanges = useCallback(() => {
+    const featureDeleteIds = [...pendingFeatureDeleteIdsRef.current];
+    const balloonDeleteIds = [...pendingBalloonDeleteIdsRef.current];
     const formData = new FormData();
     formData.set("name", name);
     if (pdfUrl) formData.set("pdfUrl", pdfUrl);
@@ -2410,7 +2163,7 @@ export default function InspectionDocumentEditor({
       JSON.stringify({
         create: featuresCreate,
         update: featuresUpdate,
-        delete: [...pendingFeatureDeleteIdsRef.current]
+        delete: featureDeleteIds
       })
     );
 
@@ -2486,7 +2239,7 @@ export default function InspectionDocumentEditor({
       JSON.stringify({
         create: balloonsCreate,
         update: [...balloonsUpdateById.values()],
-        delete: [...pendingBalloonDeleteIdsRef.current]
+        delete: balloonDeleteIds
       })
     );
 
@@ -2496,7 +2249,16 @@ export default function InspectionDocumentEditor({
       formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
     }
     formData.set("samplingDefault", JSON.stringify(docSampling));
-    fetcher.submit(formData, {
+    inFlightSaveRef.current = {
+      featureRows,
+      anchorRects,
+      docSampling,
+      pdfUrl,
+      sentPdfMetrics: pdfMetrics != null,
+      featureDeleteIds,
+      balloonDeleteIds
+    };
+    submitSave(formData, {
       method: "post",
       action: path.to.saveInspectionDocument(diagramId)
     });
@@ -2508,8 +2270,65 @@ export default function InspectionDocumentEditor({
     featureRows,
     pdfMetrics,
     docSampling,
-    fetcher
+    submitSave
   ]);
+
+  // Every edit saves itself once the editor has been quiet for a moment — a
+  // drag saves when it ends, and one save at a time: an edit made while a save
+  // is in flight is picked up when it returns. Someone without update
+  // permission can still look around, but nothing they change is saved.
+  const canUpdate = permissions.can("update", "quality");
+  const isSaving = fetcher.state !== "idle";
+  const hasUnsavedChanges =
+    canUpdate &&
+    (hasUnsavedRows(featureRows, anchorRects) ||
+      pendingFeatureDeleteIdsRef.current.size > 0 ||
+      pendingBalloonDeleteIdsRef.current.size > 0 ||
+      pdfUrl !== savedPdfUrlRef.current ||
+      (pdfMetricsDirty && pdfMetrics != null) ||
+      JSON.stringify(docSampling) !== JSON.stringify(savedSamplingRef.current));
+  const failedSave = failedSaveRef.current;
+  const saveFailed =
+    failedSave != null &&
+    failedSave.featureRows === featureRows &&
+    failedSave.anchorRects === anchorRects &&
+    failedSave.docSampling === docSampling &&
+    failedSave.pdfUrl === pdfUrl;
+
+  // Leaving with unsaved changes saves them first, then continues; only a
+  // failed save asks.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      (hasUnsavedChanges || isSaving) &&
+      currentLocation.pathname !== nextLocation.pathname
+  );
+  const isLeaving = blocker.state === "blocked";
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || isSaving || uploading || saveFailed) return;
+    if (dragKind !== null) return;
+    const timer = setTimeout(saveChanges, isLeaving ? 0 : AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [
+    hasUnsavedChanges,
+    isSaving,
+    uploading,
+    saveFailed,
+    dragKind,
+    isLeaving,
+    saveChanges
+  ]);
+
+  useEffect(() => {
+    if (isLeaving && !hasUnsavedChanges && !isSaving) blocker.proceed?.();
+  }, [blocker, isLeaving, hasUnsavedChanges, isSaving]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges && !isSaving) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasUnsavedChanges, isSaving]);
 
   const uploadPdfAndSave = useCallback(
     async (file: File, options: { clearBalloons: boolean }) => {
@@ -2535,40 +2354,22 @@ export default function InspectionDocumentEditor({
       setPdfViewPage(1);
       setNumPages(0);
       setPdfMetrics(null);
-
-      const formData = new FormData();
-      formData.set("pdfUrl", nextPdfUrl);
+      // The new URL, the cleared balloons and the new drawing's page metrics
+      // (once it renders) all reach the server through the autosave.
+      setPdfMetricsDirty(true);
 
       if (options.clearBalloons) {
-        const persistedBalloonDeleteIds = featureRows
-          .filter(
-            (r): r is FeatureRow & { balloonId: string } =>
-              r.balloonId != null && !isTempBalloonId(r.balloonId)
-          )
-          .map((r) => r.balloonId);
-
-        formData.set(
-          "balloons",
-          JSON.stringify({
-            create: [],
-            update: [],
-            delete: persistedBalloonDeleteIds
-          })
-        );
-
+        for (const r of featureRows) {
+          if (r.balloonId != null && !isTempBalloonId(r.balloonId)) {
+            pendingBalloonDeleteIdsRef.current.add(r.balloonId);
+          }
+        }
         setSelectorRects([]);
         setFeatureRows((prev) => stripBalloonGeometryFromFeatureRows(prev));
-        pendingBalloonDeleteIdsRef.current.clear();
         pdfReplaceToastRef.current = true;
-        pdfReplacePendingMetricsRef.current = true;
       }
-
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.saveInspectionDocument(diagramId)
-      });
     },
-    [carbon, companyId, diagramId, featureRows, fetcher, t]
+    [carbon, companyId, diagramId, featureRows, t]
   );
 
   const handlePdfUpload = useCallback(
@@ -2643,7 +2444,7 @@ export default function InspectionDocumentEditor({
           y: 0,
           width: BALLOON_W_PCT,
           height: BALLOON_H_PCT,
-          featureName: `Feature ${label}`,
+          featureName: `Characteristic ${label}`,
           nominalValue: "",
           tolerancePlus: "",
           toleranceMinus: "",
@@ -2799,7 +2600,7 @@ export default function InspectionDocumentEditor({
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
     () => [
-      { accessorKey: "label", header: t`Feature`, size: 80 },
+      { accessorKey: "label", header: t`Characteristic`, size: 80 },
       {
         accessorKey: "type",
         header: t`Type`,
@@ -3030,7 +2831,7 @@ export default function InspectionDocumentEditor({
           </ModalHeader>
           <ModalBody>
             <p className="text-sm text-muted-foreground">
-              {t`Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing.`}
+              {t`Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing.`}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -3129,6 +2930,17 @@ export default function InspectionDocumentEditor({
           </DropdownMenu>
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
+          {!canUpdate ? (
+            <span className="text-xs text-muted-foreground">
+              {t`View only — changes are not saved`}
+            </span>
+          ) : saveFailed ? (
+            <span className="text-xs text-destructive">{t`Could not save`}</span>
+          ) : hasUnsavedChanges || isSaving ? (
+            <span className="text-xs text-muted-foreground">{t`Saving…`}</span>
+          ) : hasSaved ? (
+            <span className="text-xs text-muted-foreground">{t`Saved`}</span>
+          ) : null}
           <Button
             variant={placing ? "primary" : "secondary"}
             leftIcon={<LuRectangleHorizontal />}
@@ -3154,13 +2966,6 @@ export default function InspectionDocumentEditor({
             onClick={() => setSamplingTarget("document")}
           >
             {samplingRuleSummary(docSampling) ?? t`Sampling`}
-          </Button>
-          <Button
-            leftIcon={<LuSave />}
-            onClick={handleSave}
-            isDisabled={fetcher.state !== "idle"}
-          >
-            {t`Save`}
           </Button>
           <HStack
             spacing={0}
@@ -3227,6 +3032,29 @@ export default function InspectionDocumentEditor({
           </HStack>
         </HStack>
       </div>
+
+      {isLeaving && saveFailed && (
+        <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t`Unsaved changes`}</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => blocker.reset?.()}>
+                {t`Stay on this page`}
+              </Button>
+              <Button onClick={() => blocker.proceed?.()}>
+                {t`Leave this page`}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
 
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
@@ -3383,7 +3211,7 @@ export default function InspectionDocumentEditor({
                                     y={y}
                                     width={width}
                                     height={height}
-                                    stroke={CALLOUT_STROKE}
+                                    stroke={BALLOON_CALLOUT_STROKE}
                                     strokeWidth={isSelected ? 3 : 2}
                                     fill={
                                       isSelected
@@ -3433,7 +3261,7 @@ export default function InspectionDocumentEditor({
                                           ? "rgba(249,115,22,0.22)"
                                           : "rgba(249,115,22,0.12)"
                                       }
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       strokeWidth={isSelected ? 2.5 : 1.5}
                                       cornerRadius={4}
                                       listening={false}
@@ -3472,7 +3300,7 @@ export default function InspectionDocumentEditor({
                                       width={w}
                                       height={h}
                                       fill="rgba(249,115,22,0.16)"
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       dash={[4, 4]}
                                       strokeWidth={2}
                                       cornerRadius={4}
@@ -3578,7 +3406,7 @@ export default function InspectionDocumentEditor({
                                           linePoints[2] - balloonX,
                                           linePoints[3] - balloonY
                                         ]}
-                                        stroke={CALLOUT_STROKE}
+                                        stroke={BALLOON_CALLOUT_STROKE}
                                         strokeWidth={2}
                                         listening={false}
                                       />
@@ -3594,7 +3422,7 @@ export default function InspectionDocumentEditor({
                                           : "rgba(0,0,0,0)"
                                       }
                                       fillEnabled
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       strokeWidth={isSelected ? 3 : 2}
                                       listening={false}
                                     />
@@ -3607,7 +3435,7 @@ export default function InspectionDocumentEditor({
                                       text={b.label}
                                       align="center"
                                       verticalAlign="middle"
-                                      fill={CALLOUT_STROKE}
+                                      fill={BALLOON_CALLOUT_STROKE}
                                       fontStyle="bold"
                                       fontSize={balloonLabelFontSize}
                                       listening={false}
@@ -3628,7 +3456,7 @@ export default function InspectionDocumentEditor({
                                 stroke={
                                   dragKind === "zoom"
                                     ? "#2563eb"
-                                    : CALLOUT_STROKE
+                                    : BALLOON_CALLOUT_STROKE
                                 }
                                 strokeWidth={2}
                                 fillEnabled={false}
@@ -3853,7 +3681,7 @@ export default function InspectionDocumentEditor({
             <div
               role="separator"
               aria-orientation="horizontal"
-              aria-label={t`Drag to resize diagram and features`}
+              aria-label={t`Drag to resize diagram and characteristics`}
               aria-valuenow={Math.round(pdfPaneHeightPx)}
               className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
                 isResizingPdfFeatures ? "bg-muted" : ""
@@ -3864,7 +3692,7 @@ export default function InspectionDocumentEditor({
             </div>
           ) : null}
 
-          {/* Features table — form fields map to balloon columns; persisted on Save */}
+          {/* Features table — form fields map to balloon columns; autosaved */}
           <div
             className={
               featuresTableExpanded
@@ -3879,7 +3707,7 @@ export default function InspectionDocumentEditor({
           >
             <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 px-2 py-2 pl-3">
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                {t`Features`} ({featureRows.length})
+                {t`Characteristics`} ({featureRows.length})
               </span>
               <HStack spacing={1} className="flex-shrink-0 items-center">
                 <Button
@@ -3889,7 +3717,7 @@ export default function InspectionDocumentEditor({
                   leftIcon={<LuPlus className="h-4 w-4" />}
                   onClick={handleAddFeature}
                 >
-                  {t`Add Feature`}
+                  {t`Add Characteristic`}
                 </Button>
                 <IconButton
                   type="button"
@@ -3898,8 +3726,8 @@ export default function InspectionDocumentEditor({
                   aria-expanded={featuresTableExpanded}
                   aria-label={
                     featuresTableExpanded
-                      ? t`Collapse features table`
-                      : t`Expand features table`
+                      ? t`Collapse characteristics table`
+                      : t`Expand characteristics table`
                   }
                   icon={
                     featuresTableExpanded ? (

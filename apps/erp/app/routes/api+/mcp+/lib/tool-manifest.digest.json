@@ -1039,7 +1039,7 @@
     {"name":"quality_getInspectionDocuments","classification":"READ","paramCount":1,"schema":"75e0e9e0be40","response":"0daf2106401c","injectAuth":"companyId","permission":"quality:view","paginates":true},
     {"name":"quality_getInspectionDocumentsForItem","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"cfa5f1f7b8aa","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionFeatures","classification":"READ","paramCount":1,"schema":"c25fe011e891","response":"1e8d8f002f21","injectAuth":"companyId","permission":"quality:view","paginates":false},
-    {"name":"quality_getInspectionGauges","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"2eeb7b58b37d","injectAuth":"companyId","permission":"quality:view","paginates":false},
+    {"name":"quality_getInspectionGauges","classification":"READ","paramCount":1,"schema":"d88996520fca","response":"d5c3ebb5ddd2","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionMeasurements","classification":"READ","paramCount":1,"schema":"d88996520fca","response":"c6a90b70c17b","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionPlan","classification":"READ","paramCount":1,"schema":"c25fe011e891","response":"83a9b3640e41","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getInspections","classification":"READ","paramCount":5,"schema":"ab64e3131c2d","response":"b942685a303b","injectAuth":"companyId","permission":"quality:view","paginates":true},

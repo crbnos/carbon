@@ -8,7 +8,7 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { Transaction } from "kysely";
+import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
 
 import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
@@ -1076,8 +1076,6 @@ export async function recordInspectionGauge(
     userId: string;
   }
 ): Promise<Result<{ inspectionFeatureId: string; gaugeId: string | null }>> {
-  const nowIso = new Date().toISOString();
-
   try {
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
@@ -1129,9 +1127,9 @@ export async function recordInspectionGauge(
         .updateTable("inspectionSamplingPlan")
         .set({
           gaugeId: args.gaugeId,
-          gaugeRecordedAt: args.gaugeId ? nowIso : null,
+          gaugeRecordedAt: args.gaugeId ? sql<string>`now()` : null,
           updatedBy: args.userId,
-          updatedAt: nowIso
+          updatedAt: sql<string>`now()`
         })
         .where("id", "=", plan.id)
         .execute();
@@ -1163,68 +1161,58 @@ export const RECENT_INSPECTION_GAUGE_LIMIT = 10;
 export async function getRecentInspectionGauges(
   db: Kysely<KyselyDatabase>,
   args: { inspectionId: string; companyId: string }
-): Promise<Result<{ gaugeId: string; lastUsedAt: string }[]>> {
+): Promise<Result<string[]>> {
   try {
-    const inspection = await db
-      .selectFrom("inspection")
-      .select(["sourceDocument", "sourceDocumentLineId"])
-      .where("id", "=", args.inspectionId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (!inspection) return errResult("Inspection not found");
-
-    let query = db
+    // One round trip: `lot` is this inspection, `used` is the inspection the
+    // gauge was recorded on, and each is joined to its operation's work center
+    // (null for a receipt lot).
+    const rows = await db
       .selectFrom("inspectionSamplingPlan")
-      .innerJoin(
-        "inspection",
-        "inspection.id",
-        "inspectionSamplingPlan.inspectionId"
+      .innerJoin("inspection as used", (join) =>
+        join
+          .onRef("used.id", "=", "inspectionSamplingPlan.inspectionId")
+          .onRef("used.companyId", "=", "inspectionSamplingPlan.companyId")
       )
-      .select([
-        "inspectionSamplingPlan.gaugeId",
-        sql<string>`max("inspectionSamplingPlan"."gaugeRecordedAt")`.as(
-          "lastUsedAt"
-        )
-      ])
+      .innerJoin("inspection as lot", (join) =>
+        join
+          .onRef("lot.sourceDocument", "=", "used.sourceDocument")
+          .on("lot.id", "=", args.inspectionId)
+          .on("lot.companyId", "=", args.companyId)
+      )
+      .leftJoin("jobOperation as usedOperation", (join) =>
+        join
+          .onRef("usedOperation.id", "=", "used.sourceDocumentLineId")
+          .onRef("usedOperation.companyId", "=", "used.companyId")
+      )
+      .leftJoin("jobOperation as lotOperation", (join) =>
+        join
+          .onRef("lotOperation.id", "=", "lot.sourceDocumentLineId")
+          .onRef("lotOperation.companyId", "=", "lot.companyId")
+      )
+      .select("inspectionSamplingPlan.gaugeId")
       .where("inspectionSamplingPlan.companyId", "=", args.companyId)
       .where("inspectionSamplingPlan.gaugeId", "is not", null)
       .where("inspectionSamplingPlan.gaugeRecordedAt", "is not", null)
-      .where("inspection.sourceDocument", "=", inspection.sourceDocument);
-
-    if (inspection.sourceDocument === "Job Operation") {
-      if (!inspection.sourceDocumentLineId) return { data: [], error: null };
-      const operation = await db
-        .selectFrom("jobOperation")
-        .select(["workCenterId"])
-        .where("id", "=", inspection.sourceDocumentLineId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
-      if (!operation?.workCenterId) return { data: [], error: null };
-
-      query = query.where(
-        "inspection.sourceDocumentLineId",
-        "in",
-        db
-          .selectFrom("jobOperation")
-          .select("jobOperation.id")
-          .where("jobOperation.workCenterId", "=", operation.workCenterId)
-          .where("jobOperation.companyId", "=", args.companyId)
-      );
-    }
-
-    const rows = await query
+      .where((eb) =>
+        eb.or([
+          eb("lot.sourceDocument", "=", "Receipt"),
+          eb(
+            "usedOperation.workCenterId",
+            "=",
+            eb.ref("lotOperation.workCenterId")
+          )
+        ])
+      )
       .groupBy("inspectionSamplingPlan.gaugeId")
-      .orderBy("lastUsedAt", "desc")
+      .orderBy(
+        (eb) => eb.fn.max("inspectionSamplingPlan.gaugeRecordedAt"),
+        "desc"
+      )
       .limit(RECENT_INSPECTION_GAUGE_LIMIT)
+      .$narrowType<{ gaugeId: NotNull }>()
       .execute();
 
-    return {
-      data: rows.map((row) => ({
-        gaugeId: row.gaugeId as string,
-        lastUsedAt: String(row.lastUsedAt)
-      })),
-      error: null
-    };
+    return { data: rows.map((row) => row.gaugeId), error: null };
   } catch (err) {
     return errResult(
       err instanceof Error ? err.message : "Failed to load recent gauges"

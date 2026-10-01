@@ -9,7 +9,7 @@ import { getCompanyId, inspectionDocumentsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "production"
+    view: "quality"
   });
 
   const { itemId } = params;

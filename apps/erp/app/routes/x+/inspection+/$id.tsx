@@ -98,8 +98,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
-    getInspectionGauges(client, companyId),
-    getRecentInspectionGauges(id, companyId),
+    getInspectionGauges(client, companyId, id),
+    getRecentInspectionGauges({ inspectionId: id, companyId }),
     isReceiptSource && insp.sourceDocumentLineId
       ? getInspectionTrackedEntities(
           client,
@@ -140,7 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     features: (features.data ?? []) as InspectionSamplingPlan[],
     measurements: (measurements.data ?? []) as InspectionMeasurement[],
     gauges: (gauges.data ?? []) as InspectionGauge[],
-    recentGaugeIds: (recentGauges.data ?? []).map((g) => g.gaugeId),
+    recentGaugeIds: recentGauges.data ?? [],
     balloons: ((balloons.data ?? []) as any[]).map((b) => ({
       id: b.id as string,
       inspectionFeatureId: b.inspectionFeatureId as string,

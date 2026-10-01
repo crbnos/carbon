@@ -1,5 +1,5 @@
+import type { Database } from "@carbon/database";
 import {
-  Badge,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -9,8 +9,10 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  Status
 } from "@carbon/react";
+import { GAUGE_CALIBRATION_STATUS_COLOR_MAP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronDown, LuTriangleAlert, LuX } from "react-icons/lu";
@@ -21,11 +23,20 @@ export type GaugeOption = {
   gaugeId: string | null;
   description: string | null;
   gaugeTypeId: string | null;
-  gaugeCalibrationStatusWithDueDate: string | null;
+  gaugeStatus: Database["public"]["Enums"]["gaugeStatus"] | null;
+  gaugeCalibrationStatusWithDueDate:
+    | Database["public"]["Enums"]["gaugeCalibrationStatus"]
+    | null;
 };
 
 type InspectionGaugePickerProps = {
+  // Every Active gauge plus any (possibly retired) gauge recorded on this lot.
+  // Only Active gauges are offered; the rest exist so a recorded gauge still
+  // displays by its readable id.
   gauges: GaugeOption[];
+  // The characteristic's label (balloon number), for the trigger's
+  // accessible name.
+  characteristicLabel: string;
   // Gauge ids most recently recorded at this lot's work center, newest first.
   recentGaugeIds: string[];
   // The feature's required gauge type — when set, only gauges of that type
@@ -46,6 +57,7 @@ const isOutOfCalibration = (gauge: GaugeOption) =>
 // InspectionGaugePicker (MES cannot import ERP app code).
 const InspectionGaugePicker = ({
   gauges,
+  characteristicLabel,
   recentGaugeIds,
   gaugeTypeId,
   gaugeTypeName,
@@ -60,7 +72,10 @@ const InspectionGaugePicker = ({
 
   const { recent, rest } = useMemo(() => {
     const eligible = gauges.filter(
-      (g) => g.id && (!gaugeTypeId || g.gaugeTypeId === gaugeTypeId)
+      (g) =>
+        g.id &&
+        g.gaugeStatus === "Active" &&
+        (!gaugeTypeId || g.gaugeTypeId === gaugeTypeId)
     );
     const byId = new Map(eligible.map((g) => [g.id as string, g]));
     const recent = recentGaugeIds
@@ -74,20 +89,34 @@ const InspectionGaugePicker = ({
   }, [gauges, recentGaugeIds, gaugeTypeId]);
 
   const placeholder = gaugeTypeName ?? t`Select gauge`;
+  const isInactive = selected?.gaugeStatus === "Inactive";
 
   const label = selected ? (
     <span className="flex min-w-0 items-center gap-1.5">
       {isOutOfCalibration(selected) && (
         <LuTriangleAlert
-          className="size-3.5 shrink-0 text-amber-500"
+          role="img"
+          className="size-3.5 shrink-0 text-red-500"
           aria-label={t`Out of calibration`}
         />
       )}
-      <span className="truncate font-mono text-sm">{selected.gaugeId}</span>
+      <span
+        className={cn(
+          "truncate font-mono text-sm",
+          isInactive && "text-muted-foreground"
+        )}
+      >
+        {selected.gaugeId}
+      </span>
+      {isInactive && (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {t`(Inactive)`}
+        </span>
+      )}
     </span>
   ) : value ? (
     <span className="truncate text-xs text-muted-foreground">
-      {t`Inactive gauge`}
+      {t`Unknown gauge`}
     </span>
   ) : (
     <span className="truncate text-sm text-muted-foreground">
@@ -122,9 +151,12 @@ const InspectionGaugePicker = ({
         )}
       </div>
       {isOutOfCalibration(gauge) && (
-        <Badge variant="yellow" className="shrink-0 text-[10px]">
+        <Status
+          color={GAUGE_CALIBRATION_STATUS_COLOR_MAP["Out-of-Calibration"]}
+          className="shrink-0"
+        >
           {t`Out of calibration`}
-        </Badge>
+        </Status>
       )}
       <LuCheck
         className={cn(
@@ -135,11 +167,18 @@ const InspectionGaugePicker = ({
     </CommandItem>
   );
 
+  const currentGauge = selected
+    ? `${selected.gaugeId ?? ""}${isInactive ? ` ${t`(Inactive)`}` : ""}`
+    : value
+      ? t`Unknown gauge`
+      : t`None`;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
+          aria-label={t`Gauge for characteristic ${characteristicLabel}: ${currentGauge}`}
           onClick={(e) => e.stopPropagation()}
           className="flex h-full min-h-12 w-full min-w-[140px] items-center justify-between gap-2 px-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >

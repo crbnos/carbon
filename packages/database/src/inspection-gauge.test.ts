@@ -1,151 +1,438 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import type { Kysely, KyselyDatabase } from "./client.ts";
-import { recordInspectionGauge } from "./quality.ts";
+import { randomUUID } from "node:crypto";
+import type { DatabaseConnection } from "kysely";
+import { CompiledQuery, Kysely, PostgresDialect, PostgresDriver } from "kysely";
+import { Client } from "pg";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import type { KyselyDatabase } from "./client.ts";
+import {
+  getRecentInspectionGauges,
+  RECENT_INSPECTION_GAUGE_LIMIT,
+  recordInspectionGauge
+} from "./quality.ts";
+
+// Runs against the local database, like the authz tests:
+//   SUPABASE_DB_URL=… pnpm --filter @carbon/database test -- inspection-gauge
+//
+// Each test runs inside one transaction that is always rolled back, so it
+// writes nothing. Fixtures are inserted with `session_replication_role =
+// replica` (FKs and triggers off) so a lot needs no job, item or document
+// behind it; the engine's own queries then run on real Postgres, its
+// transaction becoming a savepoint inside the outer one.
+const url = process.env.SUPABASE_DB_URL;
+
+class SavepointDriver extends PostgresDriver {
+  override async beginTransaction(connection: DatabaseConnection) {
+    await connection.executeQuery(CompiledQuery.raw("SAVEPOINT engine"));
+  }
+  override async commitTransaction(connection: DatabaseConnection) {
+    await connection.executeQuery(
+      CompiledQuery.raw("RELEASE SAVEPOINT engine")
+    );
+  }
+  override async rollbackTransaction(connection: DatabaseConnection) {
+    await connection.executeQuery(
+      CompiledQuery.raw("ROLLBACK TO SAVEPOINT engine")
+    );
+  }
+}
 
 type Row = Record<string, unknown>;
 
-// In-memory stand-in for the Kysely transaction — just enough of the builder
-// for recordInspectionGauge. The plan rows carry the joined feature's
-// gaugeTypeId, so innerJoin is a no-op and qualified columns match bare keys.
-let tables: Record<string, Row[]>;
-
-function query(table: string, kind: "select" | "update") {
-  const filters: [string, unknown][] = [];
-  let patch: Row = {};
-  const run = () => {
-    const hit = (tables[table] ?? []).filter((row) =>
-      filters.every(
-        ([column, value]) =>
-          String(row[column.split(".").pop()!]) === String(value)
-      )
-    );
-    if (kind === "update") for (const row of hit) Object.assign(row, patch);
-    return hit;
+describe.skipIf(!url)("inspection gauges against a migrated database", () => {
+  const client = new Client({ connectionString: url });
+  const config = {
+    pool: {
+      connect: async () => Object.assign(client, { release: () => undefined }),
+      end: async () => undefined
+    }
   };
-  const builder: any = {
-    select: () => builder,
-    innerJoin: () => builder,
-    set: (value: Row) => {
-      patch = value;
-      return builder;
-    },
-    where: (column: string, _op: string, value: unknown) => {
-      filters.push([column, value]);
-      return builder;
-    },
-    execute: async () => run(),
-    executeTakeFirst: async () => run()[0]
+  const dialect = new PostgresDialect(config);
+  const db = new Kysely<KyselyDatabase>({
+    dialect: {
+      createAdapter: () => dialect.createAdapter(),
+      createDriver: () => new SavepointDriver(config),
+      createIntrospector: (k) => dialect.createIntrospector(k),
+      createQueryCompiler: () => dialect.createQueryCompiler()
+    }
+  });
+
+  // The tables' ids are globally unique, so every id is unique to this run.
+  const run = randomUUID().slice(0, 8);
+  const id = (name: string) => `t-${run}-${name}`;
+  const companyA = id("company-a");
+  const companyB = id("company-b");
+
+  // The NOT NULL columns each fixture table needs that the tests don't vary.
+  const required = {
+    inspection: (rowId: string): Row => ({
+      inspectionId: rowId,
+      itemId: id("item"),
+      lotSize: 1,
+      samplingStandard: "ANSI_Z1_4",
+      samplingPlanType: "All",
+      sampleSize: 1,
+      acceptanceNumber: 0,
+      rejectionNumber: 1,
+      sourceDocumentId: id("document")
+    }),
+    inspectionSamplingPlan: (): Row => ({
+      sampleSize: 1,
+      acceptanceNumber: 0,
+      rejectionNumber: 1
+    }),
+    inspectionFeature: (rowId: string): Row => ({
+      inspectionDocumentId: id("drawing"),
+      pageNumber: 1,
+      label: rowId
+    }),
+    gauge: (rowId: string): Row => ({ gaugeId: rowId }),
+    jobOperation: (): Row => ({ jobId: id("job"), processId: id("process") })
   };
-  return builder;
-}
 
-const trx = {
-  selectFrom: (table: string) => query(table, "select"),
-  updateTable: (table: string) => query(table, "update")
-};
-const db = {
-  transaction: () => ({
-    execute: async (fn: (t: typeof trx) => unknown) => fn(trx)
-  })
-} as unknown as Kysely<KyselyDatabase>;
+  async function insert(table: keyof typeof required, rows: Row[]) {
+    for (const given of rows) {
+      const row: Row = {
+        ...required[table](String(given.id)),
+        createdBy: "system",
+        ...given
+      };
+      const columns = Object.keys(row);
+      await client.query(
+        `INSERT INTO "${table}" (${columns.map((c) => `"${c}"`).join(", ")})
+         VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})`,
+        Object.values(row)
+      );
+    }
+  }
 
-const record = (gaugeId: string | null) =>
-  recordInspectionGauge(db, {
-    inspectionId: "insp-1",
-    inspectionFeatureId: "ftr-1",
-    gaugeId,
-    companyId: "c-1",
-    userId: "u-1"
+  async function begin() {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL session_replication_role = replica");
+  }
+
+  beforeAll(async () => {
+    await client.connect();
   });
 
-const plan = () => tables.inspectionSamplingPlan[0]!;
-
-beforeEach(() => {
-  tables = {
-    inspection: [{ id: "insp-1", companyId: "c-1", status: "In Progress" }],
-    inspectionSamplingPlan: [
-      {
-        id: "isp-1",
-        inspectionId: "insp-1",
-        inspectionFeatureId: "ftr-1",
-        companyId: "c-1",
-        gaugeTypeId: "gt-caliper",
-        gaugeId: null,
-        gaugeRecordedAt: null
-      }
-    ],
-    gauge: [
-      {
-        id: "g-caliper",
-        companyId: "c-1",
-        gaugeTypeId: "gt-caliper",
-        gaugeStatus: "Active"
-      },
-      {
-        id: "g-mic",
-        companyId: "c-1",
-        gaugeTypeId: "gt-micrometer",
-        gaugeStatus: "Active"
-      },
-      {
-        id: "g-retired",
-        companyId: "c-1",
-        gaugeTypeId: "gt-caliper",
-        gaugeStatus: "Inactive"
-      },
-      {
-        id: "g-other-company",
-        companyId: "c-2",
-        gaugeTypeId: "gt-caliper",
-        gaugeStatus: "Active"
-      }
-    ]
-  };
-});
-
-describe("recordInspectionGauge", () => {
-  it("records a gauge of the feature's required type", async () => {
-    const result = await record("g-caliper");
-    expect(result.error).toBeNull();
-    expect(plan().gaugeId).toBe("g-caliper");
-    expect(plan().gaugeRecordedAt).toEqual(expect.any(String));
-    expect(plan().updatedBy).toBe("u-1");
+  afterEach(async () => {
+    await client.query("ROLLBACK");
   });
 
-  it("refuses a gauge of a different type", async () => {
-    const result = await record("g-mic");
-    expect(result.error?.message).toMatch(/type this feature requires/);
-    expect(plan().gaugeId).toBeNull();
+  afterAll(async () => {
+    await client.end();
   });
 
-  it("accepts any type when the feature names none", async () => {
-    plan().gaugeTypeId = null;
-    const result = await record("g-mic");
-    expect(result.error).toBeNull();
-    expect(plan().gaugeId).toBe("g-mic");
+  // ─── recordInspectionGauge ────────────────────────────────────────────────
+
+  describe("recordInspectionGauge", () => {
+    const lot = id("lot");
+    const plan = id("plan");
+
+    async function seed(status = "In Progress") {
+      await begin();
+      await insert("inspectionFeature", [
+        { id: id("ftr"), companyId: companyA, gaugeTypeId: id("gt-caliper") },
+        { id: id("ftr-any"), companyId: companyA, gaugeTypeId: null }
+      ]);
+      await insert("inspection", [
+        { id: lot, companyId: companyA, status, sourceDocument: "Receipt" },
+        {
+          id: id("lot-b"),
+          companyId: companyB,
+          status: "In Progress",
+          sourceDocument: "Receipt"
+        }
+      ]);
+      await insert("inspectionSamplingPlan", [
+        {
+          id: plan,
+          inspectionId: lot,
+          inspectionFeatureId: id("ftr"),
+          companyId: companyA
+        },
+        {
+          id: id("plan-any"),
+          inspectionId: lot,
+          inspectionFeatureId: id("ftr-any"),
+          companyId: companyA
+        },
+        {
+          id: id("plan-b"),
+          inspectionId: id("lot-b"),
+          inspectionFeatureId: id("ftr"),
+          companyId: companyB
+        }
+      ]);
+      await insert("gauge", [
+        {
+          id: id("caliper"),
+          companyId: companyA,
+          gaugeTypeId: id("gt-caliper")
+        },
+        {
+          id: id("mic"),
+          companyId: companyA,
+          gaugeTypeId: id("gt-micrometer")
+        },
+        {
+          id: id("retired"),
+          companyId: companyA,
+          gaugeTypeId: id("gt-caliper"),
+          gaugeStatus: "Inactive"
+        },
+        {
+          id: id("caliper-b"),
+          companyId: companyB,
+          gaugeTypeId: id("gt-caliper")
+        }
+      ]);
+    }
+
+    const record = (
+      gaugeId: string | null,
+      args: { inspectionId?: string; inspectionFeatureId?: string } = {}
+    ) =>
+      recordInspectionGauge(db, {
+        inspectionId: args.inspectionId ?? lot,
+        inspectionFeatureId: args.inspectionFeatureId ?? id("ftr"),
+        gaugeId,
+        companyId: companyA,
+        userId: "system"
+      });
+
+    // now() is the outer transaction's start, so "stamped by the database"
+    // reads as equal to it.
+    async function planRow(planId = plan) {
+      const { rows } = await client.query(
+        `SELECT "gaugeId",
+                "gaugeRecordedAt" IS NOT NULL AS "recorded",
+                "gaugeRecordedAt" = now() AS "recordedNow",
+                "updatedBy",
+                "updatedAt" = now() AS "updatedNow"
+         FROM "inspectionSamplingPlan" WHERE id = $1`,
+        [planId]
+      );
+      return rows[0];
+    }
+
+    it("records a gauge of the feature's required type, stamped now()", async () => {
+      await seed();
+      const result = await record(id("caliper"));
+      expect(result).toEqual({
+        data: { inspectionFeatureId: id("ftr"), gaugeId: id("caliper") },
+        error: null
+      });
+      expect(await planRow()).toEqual({
+        gaugeId: id("caliper"),
+        recorded: true,
+        recordedNow: true,
+        updatedBy: "system",
+        updatedNow: true
+      });
+    });
+
+    it("refuses a gauge of a different type", async () => {
+      await seed();
+      const result = await record(id("mic"));
+      expect(result.error?.message).toBe(
+        "Gauge is not of the type this feature requires"
+      );
+      expect((await planRow()).gaugeId).toBeNull();
+    });
+
+    it("accepts any type when the feature names none", async () => {
+      await seed();
+      const result = await record(id("mic"), {
+        inspectionFeatureId: id("ftr-any")
+      });
+      expect(result.error).toBeNull();
+      expect((await planRow(id("plan-any"))).gaugeId).toBe(id("mic"));
+    });
+
+    it("refuses an inactive gauge", async () => {
+      await seed();
+      const result = await record(id("retired"));
+      expect(result.error?.message).toBe("Gauge is inactive");
+      expect((await planRow()).gaugeId).toBeNull();
+    });
+
+    it("refuses another company's gauge", async () => {
+      await seed();
+      const result = await record(id("caliper-b"));
+      expect(result.error?.message).toBe("Gauge not found");
+      expect((await planRow()).gaugeId).toBeNull();
+    });
+
+    it("refuses another company's lot", async () => {
+      await seed();
+      const result = await record(id("caliper"), { inspectionId: id("lot-b") });
+      expect(result.error?.message).toBe("Inspection not found");
+      expect((await planRow(id("plan-b"))).gaugeId).toBeNull();
+    });
+
+    it("refuses a plan row that belongs to another company", async () => {
+      await seed();
+      await client.query(
+        `UPDATE "inspectionSamplingPlan" SET "companyId" = $1 WHERE id = $2`,
+        [companyB, plan]
+      );
+      const result = await record(id("caliper"));
+      expect(result.error?.message).toBe("Inspection feature not found");
+      expect((await planRow()).gaugeId).toBeNull();
+    });
+
+    it.each([
+      "Passed",
+      "Failed",
+      "Partial"
+    ])("refuses a %s (closed) lot", async (status) => {
+      await seed(status);
+      const result = await record(id("caliper"));
+      expect(result.error?.message).toBe("Inspection is closed");
+      expect((await planRow()).gaugeId).toBeNull();
+    });
+
+    it("clears the gauge and its recorded time", async () => {
+      await seed();
+      await record(id("caliper"));
+      const result = await record(null);
+      expect(result.error).toBeNull();
+      expect(await planRow()).toMatchObject({ gaugeId: null, recorded: false });
+    });
   });
 
-  it("refuses an inactive gauge", async () => {
-    const result = await record("g-retired");
-    expect(result.error?.message).toBe("Gauge is inactive");
-  });
+  // ─── getRecentInspectionGauges ────────────────────────────────────────────
 
-  it("refuses another company's gauge", async () => {
-    const result = await record("g-other-company");
-    expect(result.error?.message).toBe("Gauge not found");
-  });
+  describe("getRecentInspectionGauges", () => {
+    const lathe = id("wc-lathe");
+    const mill = id("wc-mill");
 
-  it("refuses a closed lot", async () => {
-    tables.inspection[0]!.status = "Passed";
-    const result = await record("g-caliper");
-    expect(result.error?.message).toBe("Inspection is closed");
-  });
+    let planSeq = 0;
+    const used = (
+      inspection: string,
+      gauge: string | null,
+      gaugeRecordedAt: string | null,
+      companyId = companyA
+    ): Row => {
+      planSeq++;
+      return {
+        id: id(`isp-${planSeq}`),
+        inspectionId: id(inspection),
+        inspectionFeatureId: id(`ftr-${planSeq}`),
+        companyId,
+        gaugeId: gauge && id(gauge),
+        gaugeRecordedAt
+      };
+    };
 
-  it("clears the gauge and its recorded time", async () => {
-    await record("g-caliper");
-    const result = await record(null);
-    expect(result.error).toBeNull();
-    expect(plan().gaugeId).toBeNull();
-    expect(plan().gaugeRecordedAt).toBeNull();
+    const lot = (
+      name: string,
+      companyId: string,
+      sourceDocument: "Job Operation" | "Receipt",
+      line: string
+    ): Row => ({
+      id: id(name),
+      companyId,
+      sourceDocument,
+      sourceDocumentLineId: id(line)
+    });
+
+    async function seed() {
+      await begin();
+      await insert("jobOperation", [
+        { id: id("op-lot"), companyId: companyA, workCenterId: lathe },
+        { id: id("op-lathe"), companyId: companyA, workCenterId: lathe },
+        { id: id("op-mill"), companyId: companyA, workCenterId: mill },
+        { id: id("op-nowc"), companyId: companyA, workCenterId: null },
+        // Another company's operations naming the same work center.
+        { id: id("op-b"), companyId: companyB, workCenterId: lathe },
+        { id: id("op-b2"), companyId: companyB, workCenterId: lathe }
+      ]);
+      await insert("inspection", [
+        lot("lot", companyA, "Job Operation", "op-lot"),
+        lot("lathe", companyA, "Job Operation", "op-lathe"),
+        lot("mill", companyA, "Job Operation", "op-mill"),
+        lot("nowc", companyA, "Job Operation", "op-nowc"),
+        lot("receipt-lot", companyA, "Receipt", "rl-1"),
+        lot("receipt", companyA, "Receipt", "rl-2"),
+        lot("lot-b", companyB, "Job Operation", "op-b"),
+        lot("receipt-b", companyB, "Receipt", "rl-3"),
+        // Our lot, on another company's lathe operation.
+        lot("cross-op", companyA, "Job Operation", "op-b2")
+      ]);
+      await insert("inspectionSamplingPlan", [
+        // Same work center: g-old was used first AND last, so it leads only
+        // when ordered by its most recent use.
+        used("lathe", "g-old", "2026-09-01T08:00:00Z"),
+        used("lathe", "g-new", "2026-09-03T08:00:00Z"),
+        used("lot", "g-old", "2026-09-04T08:00:00Z"),
+        used("lathe", null, null),
+        // Other stations.
+        used("mill", "g-mill", "2026-09-05T08:00:00Z"),
+        used("receipt", "g-receipt", "2026-09-06T08:00:00Z"),
+        used("nowc", "g-nowc", "2026-09-02T08:00:00Z"),
+        // Another company's plan row, on its own lathe lot.
+        used("lot-b", "g-b-plan", "2026-09-07T08:00:00Z", companyB),
+        // Our plan row, on another company's lathe lot.
+        used("lot-b", "g-b-lot", "2026-09-08T08:00:00Z"),
+        // Our lot whose operation is another company's lathe operation.
+        used("cross-op", "g-cross-op", "2026-09-09T08:00:00Z")
+      ]);
+    }
+
+    const recent = async (name: string) => {
+      const result = await getRecentInspectionGauges(db, {
+        inspectionId: id(name),
+        companyId: companyA
+      });
+      expect(result.error).toBeNull();
+      return result.data;
+    };
+
+    it("lists a Job Operation lot's work-center gauges, most recent use first", async () => {
+      await seed();
+      expect(await recent("lot")).toEqual([id("g-old"), id("g-new")]);
+    });
+
+    it("treats every receipt lot as one station", async () => {
+      await seed();
+      expect(await recent("receipt-lot")).toEqual([id("g-receipt")]);
+    });
+
+    it("has no history for an operation without a work center", async () => {
+      await seed();
+      expect(await recent("nowc")).toEqual([]);
+    });
+
+    it("has no station for a lot whose operation is another company's", async () => {
+      await seed();
+      expect(await recent("cross-op")).toEqual([]);
+    });
+
+    it("returns nothing for another company's lot", async () => {
+      await seed();
+      expect(await recent("receipt-b")).toEqual([]);
+      expect(await recent("lot-b")).toEqual([]);
+    });
+
+    it("keeps the newest gauges up to the limit", async () => {
+      await seed();
+      const days = Array.from(
+        { length: RECENT_INSPECTION_GAUGE_LIMIT + 2 },
+        (_, i) => 10 + i
+      );
+      await insert(
+        "inspectionSamplingPlan",
+        days.map((day) =>
+          used("receipt", `g-${day}`, `2026-09-${day}T08:00:00Z`)
+        )
+      );
+      expect(await recent("receipt-lot")).toEqual(
+        days
+          .slice(-RECENT_INSPECTION_GAUGE_LIMIT)
+          .reverse()
+          .map((day) => id(`g-${day}`))
+      );
+    });
   });
 });

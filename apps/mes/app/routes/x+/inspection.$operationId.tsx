@@ -166,7 +166,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           inspection.inspectionDocumentId
         )
       : Promise.resolve(null),
-    getInspectionGauges(serviceRole, companyId),
+    getInspectionGauges(serviceRole, companyId, lot.data.id),
     getRecentInspectionGauges(getDatabaseClient(), {
       inspectionId: lot.data.id,
       companyId
@@ -205,7 +205,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     features: features.data ?? [],
     measurements: measurements.data ?? [],
     gauges: gauges.data ?? [],
-    recentGaugeIds: (recentGauges.data ?? []).map((g) => g.gaugeId),
+    recentGaugeIds: recentGauges.data ?? [],
     issueTypes: issueTypes.data ?? [],
     trackedEntities: trackedEntities.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,

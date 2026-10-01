@@ -5,6 +5,7 @@ export * from "./address";
 export * from "./all";
 export * from "./arrays";
 export * from "./assembly-units";
+export * from "./balloons";
 export * from "./bank";
 export * from "./batch-compatibility";
 export * from "./batch-duration";

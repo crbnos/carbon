@@ -2425,20 +2425,39 @@ export async function getInspectionSamplingPlans(
     .eq("companyId", companyId);
 }
 
-// Active gauges the inspection execution view can record against a feature.
-// Inactive gauges are retired and never offered (the engine refuses them too).
+// The gauges an inspection lot's view needs: every Active gauge (the
+// selectable options — Inactive gauges are retired and never offered, the
+// engine refuses them too) plus any gauge already recorded on this lot, even
+// if it has since been retired, so the record keeps showing its readable id.
 export async function getInspectionGauges(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  inspectionId: string
 ) {
-  return client
+  const recorded = await client
+    .from("inspectionSamplingPlan")
+    .select("gaugeId")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .not("gaugeId", "is", null);
+  const recordedIds = [
+    ...new Set((recorded.data ?? []).map((row) => row.gaugeId as string))
+  ];
+
+  const query = client
     .from("gauges")
     .select(
-      "id, gaugeId, description, gaugeTypeId, gaugeCalibrationStatusWithDueDate, nextCalibrationDate"
+      "id, gaugeId, description, gaugeTypeId, gaugeStatus, gaugeCalibrationStatusWithDueDate, nextCalibrationDate"
     )
-    .eq("companyId", companyId)
-    .eq("gaugeStatus", "Active")
-    .order("gaugeId");
+    .eq("companyId", companyId);
+
+  return (
+    recordedIds.length > 0
+      ? query.or(
+          `gaugeStatus.eq.Active,id.in.(${recordedIds.map((id) => `"${id}"`).join(",")})`
+        )
+      : query.eq("gaugeStatus", "Active")
+  ).order("gaugeId");
 }
 
 export async function getInspectionMeasurements(

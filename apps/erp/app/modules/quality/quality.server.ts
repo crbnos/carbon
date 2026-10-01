@@ -74,24 +74,16 @@ export async function changeInspectionDocument(args: {
   return engine.changeInspectionDocument(getDatabaseClient(), args);
 }
 
-export async function recordInspectionGauge(args: {
-  inspectionId: string;
-  inspectionFeatureId: string;
-  gaugeId: string | null;
-  companyId: string;
-  userId: string;
-}) {
+export async function recordInspectionGauge(
+  args: Parameters<typeof engine.recordInspectionGauge>[1]
+) {
   return engine.recordInspectionGauge(getDatabaseClient(), args);
 }
 
 export async function getRecentInspectionGauges(
-  inspectionId: string,
-  companyId: string
+  args: Parameters<typeof engine.getRecentInspectionGauges>[1]
 ) {
-  return engine.getRecentInspectionGauges(getDatabaseClient(), {
-    inspectionId,
-    companyId
-  });
+  return engine.getRecentInspectionGauges(getDatabaseClient(), args);
 }
 
 // ─── Inspection plan save ────────────────────────────────────────────────────

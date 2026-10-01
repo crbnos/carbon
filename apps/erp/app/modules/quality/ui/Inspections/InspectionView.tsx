@@ -614,7 +614,7 @@ const InspectionView = ({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                aria-label={t`Drag to resize drawing and features`}
+                aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
                 className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
                   isResizingSplit ? "bg-muted" : ""
@@ -669,8 +669,8 @@ const InspectionView = ({
                       aria-expanded={gridExpanded}
                       aria-label={
                         gridExpanded
-                          ? t`Collapse features table`
-                          : t`Expand features table`
+                          ? t`Collapse characteristics table`
+                          : t`Expand characteristics table`
                       }
                       icon={
                         gridExpanded ? (
@@ -826,8 +826,8 @@ function DocumentSwitchModal({
           <VStack spacing={2}>
             <p className="text-sm text-muted-foreground">
               <Trans>
-                The lot's per-feature sampling plan will be re-resolved from the
-                selected document.
+                The lot's per-characteristic sampling plan will be re-resolved
+                from the selected document.
               </Trans>
             </p>
             <Select value={documentId} onValueChange={setDocumentId}>

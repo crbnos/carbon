@@ -5,7 +5,10 @@ import { flash } from "@carbon/auth/session.server";
 import { ClientOnly, Spinner } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { lazy, Suspense } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 import {
@@ -36,6 +39,14 @@ export const handle: Handle = {
   },
   module: "quality"
 };
+
+// The editor saves itself, and each save's response already carries the
+// saved rows — reloading the plan after every edit would only slow the next
+// save down.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate
+}) => (formAction?.endsWith("/save") ? false : defaultShouldRevalidate);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -127,6 +138,7 @@ export default function BalloonDetailRoute() {
             }
           >
             <InspectionDocumentEditor
+              key={diagram.id}
               diagramId={diagram.id}
               name={diagram.name}
               partId={diagram.partId}
