@@ -10,4 +10,4 @@
 -- line and cannot describe several quantity breaks; nothing fills it (quote
 -- copies carry it over, always NULL).
 
-ALTER TABLE "quoteLinePrice" ADD COLUMN "priceTrace" JSONB;
+ALTER TABLE "quoteLinePrice" ADD COLUMN IF NOT EXISTS "priceTrace" JSONB;

@@ -584,7 +584,8 @@ const QuoteLinePricing = ({
           priceTrace
         })
         .eq("quoteLineId", lineId)
-        .eq("quantity", quantity);
+        .eq("quantity", quantity)
+        .eq("companyId", company.id);
 
       if (priceUpdate?.error) {
         logger.error("Failed to update quote line pricing", {
@@ -596,6 +597,7 @@ const QuoteLinePricing = ({
     [
       categoryMarkupsByQuantity,
       carbon,
+      company.id,
       lineId,
       costsByQuantity,
       quantities,
@@ -663,7 +665,8 @@ const QuoteLinePricing = ({
             quantity
           })
           .eq("quoteLineId", lineId)
-          .eq("quantity", quantity);
+          .eq("quantity", quantity)
+          .eq("companyId", company.id);
         if (update?.error) {
           logger.error("Failed to update quote line pricing", {
             error: update.error
@@ -693,6 +696,7 @@ const QuoteLinePricing = ({
       exchangeRate,
       userId,
       carbon,
+      company.id,
       t
     ]
   );
@@ -702,9 +706,8 @@ const QuoteLinePricing = ({
   // How each quantity's price was resolved. The stored traces arrive with the
   // prices, so showing the button costs no request; today's calculation (the
   // price-trace route) is loaded when the modal opens and after a reprice —
-  // and once on mount for a line with a system price that has no stored trace
-  // (priced before traces were recorded), since only today's calculation can
-  // tell whether a rule applies to it.
+  // and once on mount when no stored trace shows a rule, since only today's
+  // calculation can tell whether one applies now.
   const [priceTraceModalOpen, setPriceTraceModalOpen] = useState(false);
   const priceTraceFetcher = useFetcher<typeof priceTraceLoader>();
   const repriceFetcher = useFetcher<typeof priceTraceAction>();
@@ -722,18 +725,22 @@ const QuoteLinePricing = ({
   ]);
 
   const storedPrices = Object.values(editableFields.prices);
-  const hasUntracedSystemPrice = storedPrices.some(
-    (price) => price.priceSource !== "manual" && !price.priceTrace
+  const hasStoredAdjustments = storedPrices.some((price) =>
+    hasPriceAdjustments(price.priceTrace as PriceTraceStep[] | null)
   );
+  // No stored trace shows a rule, but a rule may have been added since (or
+  // the price predates traces): only today's calculation can tell, and it is
+  // what reveals the trace button.
+  const needsCurrentTrace =
+    !hasStoredAdjustments &&
+    storedPrices.some((price) => price.priceSource !== "manual");
   useEffect(() => {
-    if (isEmployee && hasUntracedSystemPrice) priceTraceLoad(priceTraceUrl);
-  }, [isEmployee, hasUntracedSystemPrice, priceTraceLoad, priceTraceUrl]);
+    if (isEmployee && needsCurrentTrace) priceTraceLoad(priceTraceUrl);
+  }, [isEmployee, needsCurrentTrace, priceTraceLoad, priceTraceUrl]);
 
   const priceTraces = priceTraceFetcher.data?.traces ?? [];
   const hasPricingRules =
-    storedPrices.some((price) =>
-      hasPriceAdjustments(price.priceTrace as PriceTraceStep[] | null)
-    ) ||
+    hasStoredAdjustments ||
     priceTraces.some(
       (price) =>
         hasPriceAdjustments(price.trace) ||

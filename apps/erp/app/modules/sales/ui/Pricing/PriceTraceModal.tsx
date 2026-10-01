@@ -10,6 +10,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  ModalTrigger,
   Table,
   Tbody,
   Td,
@@ -74,46 +75,39 @@ export function PriceTraceModal({ trace, currencyCode }: PriceTraceModalProps) {
   const steps = Array.isArray(trace) ? trace : [];
   if (steps.length === 0) return null;
 
+  // The button is the dialog's trigger so Radix returns focus to it on close.
   return (
-    <>
+    <Modal open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
-            type="button"
-            aria-label={t`How this price was calculated`}
-            className="text-xxs text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
-            onClick={() => setOpen(true)}
-          >
-            <LuCalculator className="size-3" />
-          </button>
+          <ModalTrigger asChild>
+            <button
+              type="button"
+              aria-label={t`How this price was calculated`}
+              className="text-xxs text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+            >
+              <LuCalculator className="size-3" />
+            </button>
+          </ModalTrigger>
         </TooltipTrigger>
         <TooltipContent>
           <Trans>How this price was calculated</Trans>
         </TooltipContent>
       </Tooltip>
-      {open && (
-        <Modal
-          open
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setOpen(false);
-          }}
-        >
-          <ModalContent size="xxlarge">
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Pricing Trace</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>How the resolved price was calculated.</Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <PriceTraceTable trace={steps} currencyCode={currencyCode} />
-            </ModalBody>
-          </ModalContent>
-        </Modal>
-      )}
-    </>
+      <ModalContent size="xxlarge">
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Pricing Trace</Trans>
+          </ModalTitle>
+          <ModalDescription>
+            <Trans>How the resolved price was calculated.</Trans>
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <PriceTraceTable trace={steps} currencyCode={currencyCode} />
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 }
 
