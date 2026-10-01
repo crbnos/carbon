@@ -340,10 +340,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
     implementation,
-    // Not `changelog`: tabs still on a bundle from before this was streamed
-    // read that key as the entry itself and render the promise as an empty
-    // What's new panel that ignores the dismissal.
-    changelogEntry: changelog,
+    changelog,
     itarCertification: {
       ...itarCertification,
       // Server-decided, never client-inferred: the gate must not be skippable

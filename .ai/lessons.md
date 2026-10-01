@@ -2723,9 +2723,11 @@ reloads the tab. Typecheck and tests cannot see it — both sides are correct in
 commit.
 
 **Rule:** Never change the type or shape of an existing loader key that a mounted component
-reads. Return the new shape under a NEW key (`changelogEntry`) and stop returning the old
-one, so an old bundle reads `undefined` and falls back to its empty state. This matters most
-in the shells (`root.tsx`, `x+/_layout.tsx`), whose loaders every open tab re-runs.
+reads. Return the new shape under a NEW key and stop returning the old one, so an old bundle
+reads `undefined` and falls back to its empty state. This matters most in the shells
+(`root.tsx`, `x+/_layout.tsx`), whose loaders every open tab re-runs. `changelog` itself
+kept its name: a stale tab clears on its next reload, so renaming after the fact buys
+little.
 
 **Applies to:** every loader, most of all `apps/erp/app/routes/x+/_layout.tsx`,
 `apps/mes/app/routes/x+/_layout.tsx` and both `root.tsx` — in particular when moving an

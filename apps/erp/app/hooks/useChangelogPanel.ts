@@ -19,9 +19,9 @@ export function useChangelogPanel(): {
 } {
   const { flags } = useUser();
   const data = useRouteData<{
-    changelogEntry?: Promise<ChangelogPanelEntry | null>;
+    changelog?: Promise<ChangelogPanelEntry | null>;
   }>(path.to.authenticatedRoot);
-  const entry = useResolved(data?.changelogEntry, null);
+  const entry = useResolved(data?.changelog, null);
   const flagKey = entry ? changelogFlagKey(entry.slug) : null;
   const fetcher = useFetcher({ key: "changelog-dismiss" });
 
