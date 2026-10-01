@@ -10,11 +10,15 @@ import {
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
+import { createTracing } from "@carbon/logger/tracing.server";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 
 ensureLoggingConfigured();
+
+// Off unless an OTLP endpoint is configured (OTEL_EXPORTER_OTLP_ENDPOINT).
+export const instrumentations = createTracing({ serviceName: "carbon-mes" });
 
 const log = getLogger("mes");
 
