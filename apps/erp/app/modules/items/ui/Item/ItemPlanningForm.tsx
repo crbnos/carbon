@@ -34,12 +34,15 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  // the DB row carries responsibleEmployee as string | null; the validator
-  // treats it as optional — accept both
+  // the DB row carries responsibleEmployee / planningHorizonDays as nullable;
+  // the validator treats them as optional — accept both
   initialValues: Omit<
     z.infer<typeof itemPlanningValidator>,
-    "responsibleEmployee"
-  > & { responsibleEmployee?: string | null };
+    "responsibleEmployee" | "planningHorizonDays"
+  > & {
+    responsibleEmployee?: string | null;
+    planningHorizonDays?: number | null;
+  };
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
@@ -177,6 +180,13 @@ const ItemPlanningForm = ({
               </>
             )}
             {/* <Boolean name="critical" label={t`Critical`} /> */}
+
+            <Number
+              name="planningHorizonDays"
+              label={t`Planning Horizon (Days)`}
+              minValue={0}
+              helperText={t`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`}
+            />
 
             <Employee
               name="responsibleEmployee"

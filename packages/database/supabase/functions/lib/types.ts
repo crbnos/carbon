@@ -7950,6 +7950,7 @@ export type Database = {
           autoStartOperationTimer: boolean
           consoleEnabled: boolean
           defaultCustomerCc: string[] | null
+          defaultPlanningHorizonDays: number | null
           defaultResponsibleEmployee: string | null
           defaultSupplierCc: string[] | null
           digitalQuoteEnabled: boolean
@@ -8009,6 +8010,7 @@ export type Database = {
           autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
+          defaultPlanningHorizonDays?: number | null
           defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
           digitalQuoteEnabled?: boolean
@@ -8068,6 +8070,7 @@ export type Database = {
           autoStartOperationTimer?: boolean
           consoleEnabled?: boolean
           defaultCustomerCc?: string[] | null
+          defaultPlanningHorizonDays?: number | null
           defaultResponsibleEmployee?: string | null
           defaultSupplierCc?: string[] | null
           digitalQuoteEnabled?: boolean
@@ -22647,6 +22650,7 @@ export type Database = {
           minimumOrderQuantity: number
           minimumReserveQuantity: number
           orderMultiple: number
+          planningHorizonDays: number | null
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint: number
           reorderQuantity: number
@@ -22671,6 +22675,7 @@ export type Database = {
           minimumOrderQuantity?: number
           minimumReserveQuantity?: number
           orderMultiple?: number
+          planningHorizonDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
@@ -22695,6 +22700,7 @@ export type Database = {
           minimumOrderQuantity?: number
           minimumReserveQuantity?: number
           orderMultiple?: number
+          planningHorizonDays?: number | null
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
           reorderQuantity?: number
@@ -40114,10 +40120,12 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          horizonDate: string
           id: string
           isASAP: boolean
           itemId: string
           jobId: string | null
+          latestOrderDate: string | null
           locationId: string
           periodId: string
           policyName: string | null
@@ -40139,10 +40147,12 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          horizonDate: string
           id?: string
           isASAP?: boolean
           itemId: string
           jobId?: string | null
+          latestOrderDate?: string | null
           locationId: string
           periodId: string
           policyName?: string | null
@@ -40164,10 +40174,12 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          horizonDate?: string
           id?: string
           isASAP?: boolean
           itemId?: string
           jobId?: string | null
+          latestOrderDate?: string | null
           locationId?: string
           periodId?: string
           policyName?: string | null
@@ -84853,6 +84865,100 @@ export type Database = {
           week9: number
         }[]
       }
+      get_production_planning_grid: {
+        Args: {
+          action_assignee?: string
+          action_types?: string[]
+          as_of?: string
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          active: boolean
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          firstNegativeDate: string
+          id: string
+          itemPostingGroupId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          latestOrderDate: string
+          leadTime: number
+          lotSize: number
+          manufacturingBlocked: boolean
+          maximumInventoryQuantity: number
+          maximumOrderQuantity: number
+          minimumOrderQuantity: number
+          minimumReserveQuantity: number
+          name: string
+          orderMultiple: number
+          planningHorizonDays: number
+          quantityOnHand: number
+          quantityToOrder: number
+          readableIdWithRevision: string
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          reorderPoint: number
+          reorderQuantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
+          thumbnailPath: string
+          timeFenceDate: string
+          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
+          week1: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week2: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week3: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week4: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week5: number
+          week50: number
+          week51: number
+          week52: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+        }[]
+      }
       get_production_projections: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
@@ -84962,6 +85068,104 @@ export type Database = {
           supersessionMode: string
           suppliers: Json
           thumbnailPath: string
+          type: Database["public"]["Enums"]["itemType"]
+          unitOfMeasureCode: string
+          week1: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week2: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week3: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week4: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week5: number
+          week50: number
+          week51: number
+          week52: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+        }[]
+      }
+      get_purchasing_planning_grid: {
+        Args: {
+          action_assignee?: string
+          action_types?: string[]
+          as_of?: string
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          active: boolean
+          conversionFactor: number
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          firstNegativeDate: string
+          id: string
+          itemPostingGroupId: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          latestOrderDate: string
+          leadTime: number
+          lotSize: number
+          maximumInventoryQuantity: number
+          maximumOrderQuantity: number
+          minimumOrderQuantity: number
+          minimumReserveQuantity: number
+          name: string
+          orderMultiple: number
+          planningHorizonDays: number
+          preferredSupplierId: string
+          purchasingBlocked: boolean
+          purchasingUnitOfMeasureCode: string
+          quantityOnHand: number
+          quantityToOrder: number
+          readableIdWithRevision: string
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          reorderPoint: number
+          reorderQuantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
+          suppliers: Json
+          thumbnailPath: string
+          timeFenceDate: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string
           week1: number

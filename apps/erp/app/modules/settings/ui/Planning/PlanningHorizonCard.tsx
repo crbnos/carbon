@@ -16,19 +16,16 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { forecastConsumptionValidator } from "~/modules/settings";
+import { planningHorizonValidator } from "~/modules/settings";
 
-// The forecast consumption window (weekly buckets). Actual demand that lands
-// in a week whose forecast is used up consumes forecast from up to
-// `backward` weeks earlier, then `forward` weeks later, instead of being
-// double-counted. 0 / 0 restricts netting to the same week.
+// One settings card = one saved concern (archetype F): the company-wide
+// planning horizon (time fence). An item's own horizon on its Planning tab
+// wins; an item with neither has no fence.
 
-export function ForecastConsumptionCard({
-  backwardPeriods,
-  forwardPeriods
+export function PlanningHorizonCard({
+  defaultPlanningHorizonDays
 }: {
-  backwardPeriods: number;
-  forwardPeriods: number;
+  defaultPlanningHorizonDays: number | null;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
@@ -46,39 +43,32 @@ export function ForecastConsumptionCard({
     <Card>
       <ValidatedForm
         method="post"
-        validator={forecastConsumptionValidator}
-        defaultValues={{ backwardPeriods, forwardPeriods }}
+        validator={planningHorizonValidator}
+        defaultValues={{ days: defaultPlanningHorizonDays ?? undefined }}
         fetcher={fetcher}
       >
-        <Hidden name="intent" value="setForecastConsumption" />
+        <Hidden name="intent" value="setPlanningHorizon" />
         <CardHeader>
           <CardTitle>
-            <Trans>Forecast Consumption</Trans>
+            <Trans>Planning Horizon</Trans>
           </CardTitle>
           <CardDescription>
             <Trans>
-              When a sales order or job lands in a week with no remaining
-              forecast, it consumes forecast from nearby weeks instead of being
-              counted on top of it. Set both to 0 to net within the same week
-              only.
+              Material planning shows only the actions and suggested orders due
+              within this many days from today, so far-out needs stay out of the
+              way until they matter. An item's own planning horizon overrides
+              this default.
             </Trans>
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 w-full max-w-[640px]">
+          <div className="flex flex-col gap-8 max-w-[400px]">
             <Number
-              name="backwardPeriods"
-              label={t`Look back (weeks)`}
+              name="days"
+              label={t`Default horizon (days)`}
               minValue={0}
-              maxValue={52}
-              helperText={t`Earlier weeks are consumed first.`}
-            />
-            <Number
-              name="forwardPeriods"
-              label={t`Look ahead (weeks)`}
-              minValue={0}
-              maxValue={52}
-              helperText={t`Later weeks are consumed once earlier ones are used up.`}
+              maxValue={3650}
+              helperText={t`Leave empty, or enter 0, to show everything MRP plans.`}
             />
           </div>
         </CardContent>

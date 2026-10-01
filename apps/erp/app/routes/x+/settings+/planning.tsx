@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +17,9 @@ import {
   forecastConsumptionValidator,
   getCompanySettings,
   getItemPostingGroupResponsibilities,
+  planningHorizonValidator,
   rescheduleToleranceValidator,
+  setDefaultPlanningHorizonDays,
   setDefaultResponsibleEmployee,
   setForecastConsumptionWindow,
   setLocationResponsibleEmployee,
@@ -22,6 +28,7 @@ import {
 } from "~/modules/settings";
 import {
   ForecastConsumptionCard,
+  PlanningHorizonCard,
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
 } from "~/modules/settings/ui/Planning";
@@ -69,6 +76,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultResponsibleEmployee:
       companySettings.data.defaultResponsibleEmployee ?? null,
     rescheduleToleranceDays: companySettings.data.rescheduleToleranceDays ?? 7,
+    defaultPlanningHorizonDays:
+      companySettings.data.defaultPlanningHorizonDays ?? null,
     forecastConsumptionBackwardPeriods:
       companySettings.data.forecastConsumptionBackwardPeriods ?? 4,
     forecastConsumptionForwardPeriods:
@@ -176,6 +185,25 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       return { success: true, message: "Reschedule tolerance updated" };
     }
+    case "setPlanningHorizon": {
+      const validation = await validator(planningHorizonValidator).validate(
+        formData
+      );
+      if (validation.error) {
+        return {
+          success: false,
+          message: "Planning horizon must be a whole number of days"
+        };
+      }
+      const result = await setDefaultPlanningHorizonDays(client, {
+        companyId,
+        days: validation.data.days ?? null
+      });
+      if (result.error) {
+        return { success: false, message: "Failed to update planning horizon" };
+      }
+      return { success: true, message: "Planning horizon updated" };
+    }
     case "setForecastConsumption": {
       const validation = await validator(forecastConsumptionValidator).validate(
         formData
@@ -208,6 +236,7 @@ export default function PlanningSettingsRoute() {
   const {
     defaultResponsibleEmployee,
     rescheduleToleranceDays,
+    defaultPlanningHorizonDays,
     forecastConsumptionBackwardPeriods,
     forecastConsumptionForwardPeriods,
     locations,
@@ -230,6 +259,9 @@ export default function PlanningSettingsRoute() {
         </SettingsSectionHeader>
         <RescheduleToleranceCard
           rescheduleToleranceDays={rescheduleToleranceDays}
+        />
+        <PlanningHorizonCard
+          defaultPlanningHorizonDays={defaultPlanningHorizonDays}
         />
         <ForecastConsumptionCard
           backwardPeriods={forecastConsumptionBackwardPeriods}

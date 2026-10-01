@@ -271,6 +271,11 @@ export const rescheduleToleranceValidator = z.object({
   days: zfd.numeric(z.number().int().min(0).max(365))
 });
 
+// Empty clears the default: items without their own horizon then have no fence.
+export const planningHorizonValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(3650).optional())
+});
+
 export const forecastConsumptionValidator = z.object({
   backwardPeriods: zfd.numeric(z.number().int().min(0).max(52)),
   forwardPeriods: zfd.numeric(z.number().int().min(0).max(52))

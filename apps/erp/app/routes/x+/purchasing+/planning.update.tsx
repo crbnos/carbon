@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
       bypassRls: true
     });
 
-  const { items, action, locationId, planningActionIds, assignee } =
+  const { items, action, locationId, planningActionIds, assignee, line } =
     await request.json();
 
   if (typeof locationId !== "string") {
@@ -758,6 +758,87 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+
+    // ── Save ONE field of ONE existing PO line: the planning drawer's Open
+    // Orders table autosaves a quantity or due date cell here. The line is
+    // re-read under companyId (the client is the service role and the id comes
+    // from the body), and the same commitment gate as Apply holds: a PO that
+    // has been sent is never edited from planning.
+    case "updateLine": {
+      const parsedLine = z
+        .discriminatedUnion("field", [
+          z.object({
+            id: z.string().min(1),
+            field: z.literal("quantity"),
+            value: z.number().positive()
+          }),
+          z.object({
+            id: z.string().min(1),
+            field: z.literal("dueDate"),
+            value: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+          })
+        ])
+        .safeParse(line);
+      if (!parsedLine.success) {
+        return data(
+          {
+            success: false,
+            message:
+              "A purchase order line needs a quantity above zero or a valid date"
+          },
+          { status: 400 }
+        );
+      }
+
+      const target = await client
+        .from("purchaseOrderLine")
+        .select("id, purchaseOrder!inner(id, status)")
+        .eq("id", parsedLine.data.id)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (target.error || !target.data) {
+        return data(
+          { success: false, message: "Purchase order line not found" },
+          { status: 404 }
+        );
+      }
+
+      const targetStatus = target.data.purchaseOrder?.status;
+      if (!targetStatus || isPurchaseOrderLocked(targetStatus)) {
+        return data(
+          {
+            success: false,
+            message:
+              "This purchase order has been sent to the supplier. Change it on the order."
+          },
+          { status: 409 }
+        );
+      }
+
+      const saved = await updatePurchaseOrderLineSchedule(client, {
+        lineId: target.data.id,
+        companyId,
+        userId,
+        ...(parsedLine.data.field === "quantity"
+          ? { purchaseQuantity: parsedLine.data.value }
+          : { requiredDate: parsedLine.data.value })
+      });
+      if (saved.error) {
+        logger.error("Failed to save PO line from planning", {
+          companyId,
+          userId,
+          purchaseOrderLineId: target.data.id,
+          field: parsedLine.data.field,
+          error: saved.error
+        });
+        return data(
+          { success: false, message: "Failed to update purchase order line" },
+          { status: 500 }
+        );
+      }
+
+      return { success: true, message: "Updated purchase order line" };
+    }
 
     // ── Apply a persisted planning action to its target PO line (spec §P1.5).
     // IDOR guard: the request carries ONLY planningActionIds — the type, target

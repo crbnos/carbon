@@ -40,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
     bypassRls: true
   });
 
-  const { items, action, locationId, planningActionIds, assignee } =
+  const { items, action, locationId, planningActionIds, assignee, job } =
     await request.json();
 
   if (typeof locationId !== "string") {
@@ -469,6 +469,100 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+
+    // ── Save ONE field of ONE existing job: the planning drawer's Open Jobs
+    // table autosaves a quantity or due date cell here. The job is re-read
+    // under companyId (the client is the service role and the id comes from
+    // the body), and the same commitment gate as Apply holds: a job released
+    // to the floor is never edited from planning. The writes mirror Apply's —
+    // a new date re-queues the schedule, a new quantity re-derives the job's
+    // requirements.
+    case "updateJob": {
+      const parsedJob = z
+        .discriminatedUnion("field", [
+          z.object({
+            id: z.string().min(1),
+            field: z.literal("quantity"),
+            value: z.number().positive()
+          }),
+          z.object({
+            id: z.string().min(1),
+            field: z.literal("dueDate"),
+            value: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+          })
+        ])
+        .safeParse(job);
+      if (!parsedJob.success) {
+        return data(
+          {
+            success: false,
+            message: "A job needs a quantity above zero or a valid date"
+          },
+          { status: 400 }
+        );
+      }
+
+      const target = await client
+        .from("job")
+        .select("id, status")
+        .eq("id", parsedJob.data.id)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (target.error || !target.data) {
+        return data(
+          { success: false, message: "Job not found" },
+          { status: 404 }
+        );
+      }
+      if (target.data.status !== "Draft" && target.data.status !== "Planned") {
+        return data(
+          {
+            success: false,
+            message:
+              "This job has been released to the floor. Change it on the job."
+          },
+          { status: 409 }
+        );
+      }
+
+      const saved = await updateJob(client, {
+        id: target.data.id,
+        updatedBy: userId,
+        ...(parsedJob.data.field === "quantity"
+          ? { quantity: parsedJob.data.value }
+          : { dueDate: parsedJob.data.value })
+      });
+      if (saved.error) {
+        logger.error("Failed to save job from planning", {
+          companyId,
+          userId,
+          jobId: target.data.id,
+          field: parsedJob.data.field,
+          error: saved.error
+        });
+        return data(
+          { success: false, message: "Failed to update job" },
+          { status: 500 }
+        );
+      }
+
+      if (parsedJob.data.field === "quantity") {
+        await recalculateJobRequirements(client, {
+          id: target.data.id,
+          companyId,
+          userId
+        });
+      } else {
+        await notifyScheduleInputsChanged(
+          companyId,
+          "reorder",
+          "Planning changed a job's due date",
+          target.data.id
+        );
+      }
+
+      return { success: true, message: "Updated job" };
+    }
 
     // ── Apply a persisted planning action to its target job (spec §P1.5).
     // IDOR guard: the request carries ONLY planningActionIds — the type, target

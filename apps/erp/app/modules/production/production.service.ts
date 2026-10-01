@@ -2210,18 +2210,31 @@ export async function getProductionPlanning(
   periods: string[],
   args: GenericQueryFilters & {
     search: string | null;
-    /** Restrict the grid to these items (the Actions column / "Assigned to me"
-     *  quick filter resolve to item ids in the loader). An empty array yields
-     *  no rows — the caller asked for a set nothing matched. */
-    itemIds?: string[];
+    /** Today on the location's calendar (ISO date): the day each item's
+     *  planning horizon is counted from. */
+    asOf: string;
+    /** Keep only items with an OPEN planning action of one of these types
+     *  inside the item's planning horizon (the grid's Actions filter). */
+    actionTypes?: string[];
+    /** Keep only items with such an action assigned to this user ("Assigned
+     *  to me"). Combined with `actionTypes` on the SAME action. */
+    actionAssignee?: string;
   }
 ) {
+  // The grid RPC wraps get_production_planning: same rows and projection, plus the
+  // item group, the planning horizon / time fence date, the first week the
+  // projection goes negative and the latest order date — and it evaluates the
+  // action filter in the database, so it is complete at any volume and paging
+  // stays correct.
   let query = client.rpc(
-    "get_production_planning",
+    "get_production_planning_grid",
     {
       location_id: locationId,
       company_id: companyId,
-      periods
+      periods,
+      as_of: args.asOf,
+      action_types: args.actionTypes,
+      action_assignee: args.actionAssignee
     },
     {
       count: LIST_COUNT
@@ -2232,10 +2245,6 @@ export async function getProductionPlanning(
     query = query.or(
       `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
-  }
-
-  if (args?.itemIds) {
-    query = query.in("id", args.itemIds);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -9876,49 +9885,48 @@ export async function completeOperation(
 // no FKs to item/PO-line/job, so enrichment is flat queries + a JS merge
 // (the items-module G6 pattern), never PostgREST embeds.
 
+/**
+ * The open and dismissed planning actions of the given items at a location —
+ * the rows behind a planning grid PAGE. The grid decides which items are on the
+ * page (its RPC owns the Actions filter); this loads their actions in full, so
+ * there is no cap to fall off the end of.
+ */
 export async function getPlanningActions(
   client: SupabaseClient<Database>,
-  args: GenericQueryFilters & {
+  args: {
     companyId: string;
     locationId: string;
     kind: "Buy" | "Make";
-    search: string | null;
+    itemIds: string[];
   }
 ) {
-  const { companyId, locationId, kind, search, ...filters } = args;
+  const { companyId, locationId, kind, itemIds: pageItemIds } = args;
 
-  let query = client
-    .from("planningAction")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .neq("status", "Actioned");
-
-  // Buy worklist = new purchase suggestions + change actions on PO lines;
-  // Make worklist = new job suggestions + change actions on jobs.
-  query =
-    kind === "Buy"
-      ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-      : query.or("type.eq.Make,jobId.not.is.null");
-
-  if (search) {
-    const matchingItems = await client
-      .from("item")
-      .select("id")
-      .eq("companyId", companyId)
-      .or(`name.ilike.%${search}%,readableIdWithRevision.ilike.%${search}%`);
-    const ids = matchingItems.data?.map((i) => i.id) ?? [];
-    if (ids.length === 0) {
-      return { data: [], count: 0, error: null };
-    }
-    query = query.in("itemId", ids);
+  if (pageItemIds.length === 0) {
+    return { data: [], count: 0, error: null };
   }
 
-  query = setGenericQueryFilters(query, filters, [
-    { column: "suggestedDate", ascending: true }
-  ]);
+  // Paged: a page of busy items can hold more actions than PostgREST's
+  // max_rows, and a bare select would silently drop the tail.
+  const actions = await fetchAllRecords(() => {
+    const query = client
+      .from("planningAction")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .neq("status", "Actioned")
+      .in("itemId", pageItemIds);
 
-  const actions = await query;
+    // Buy worklist = new purchase suggestions + change actions on PO lines;
+    // Make worklist = new job suggestions + change actions on jobs.
+    return (
+      kind === "Buy"
+        ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
+        : query.or("type.eq.Make,jobId.not.is.null")
+    )
+      .order("suggestedDate", { ascending: true })
+      .order("id", { ascending: true });
+  });
   if (actions.error) {
     return { data: null, count: 0, error: actions.error };
   }
@@ -9945,14 +9953,14 @@ export async function getPlanningActions(
     poLineIds.length > 0
       ? client
           .from("purchaseOrderLine")
-          .select("id, purchaseOrderId, purchaseOrder(purchaseOrderId)")
+          .select("id, purchaseOrderId, purchaseOrder(purchaseOrderId, status)")
           .eq("companyId", companyId)
           .in("id", poLineIds)
       : Promise.resolve({ data: [], error: null }),
     jobIds.length > 0
       ? client
           .from("job")
-          .select("id, jobId")
+          .select("id, jobId, status")
           .eq("companyId", companyId)
           .in("id", jobIds)
       : Promise.resolve({ data: [], error: null })
@@ -9986,13 +9994,17 @@ export async function getPlanningActions(
       // the LINE id and would 404 in path.to.purchaseOrder
       purchaseOrderId: poLine?.purchaseOrderId ?? null,
       purchaseOrderReadableId: poLine?.purchaseOrder?.purchaseOrderId ?? null,
-      jobReadableId: job?.jobId ?? null
+      // why the row offers Review instead of Apply: shown as an icon beside
+      // the document number
+      purchaseOrderStatus: poLine?.purchaseOrder?.status ?? null,
+      jobReadableId: job?.jobId ?? null,
+      jobStatus: job?.status ?? null
     };
   });
 
   return {
     data: enriched,
-    count: actions.count ?? enriched.length,
+    count: enriched.length,
     error: null
   };
 }

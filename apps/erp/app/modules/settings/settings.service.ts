@@ -1515,6 +1515,17 @@ export async function setRescheduleToleranceDays(
     .eq("id", args.companyId);
 }
 
+/** The company-wide planning horizon; `null` = no default (no time fence). */
+export async function setDefaultPlanningHorizonDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; days: number | null }
+) {
+  return client
+    .from("companySettings")
+    .update({ defaultPlanningHorizonDays: args.days })
+    .eq("id", args.companyId);
+}
+
 export async function setForecastConsumptionWindow(
   client: SupabaseClient<Database>,
   args: { companyId: string; backwardPeriods: number; forwardPeriods: number }

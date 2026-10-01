@@ -59,6 +59,10 @@ msgstr "{0, plural, one {# 日のスラック} other {# 日のスラック}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 
+#. placeholder {0}: beyondFenceOrders.length
+msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{0, plural, one {{fenceLabel}より後 # 件} other {{fenceLabel}より後 # 件}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
@@ -522,6 +526,9 @@ msgstr "12ヶ月間の期間"
 
 msgid "13+ weeks"
 msgstr "13週間以上"
+
+msgid "1st Negative On Hand"
+msgstr "初回マイナス在庫"
 
 msgid "1Y"
 msgstr "1年"
@@ -3737,7 +3744,7 @@ msgid "Changed By"
 msgstr "変更者"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
-msgstr ""
+msgstr "このビューのみの変更です。品目の計画期間は更新されません。"
 
 msgid "Changelog"
 msgstr "変更ログ"
@@ -4351,7 +4358,7 @@ msgid "Consumable"
 msgstr "消耗品"
 
 msgid "Consumable Cost"
-msgstr ""
+msgstr "消耗品原価"
 
 msgid "Consumable Details"
 msgstr "消耗品の詳細"
@@ -4474,7 +4481,7 @@ msgid "Convert to Quote"
 msgstr "見積に変換"
 
 msgid "Converted Total Price"
-msgstr ""
+msgstr "換算合計価格"
 
 msgid "Converting…"
 msgstr "変換中…"
@@ -5710,7 +5717,7 @@ msgid "Default GL expense account for periodic depreciation runs."
 msgstr "定期的な減価償却実行のデフォルトGL費用勘定科目"
 
 msgid "Default horizon (days)"
-msgstr ""
+msgstr "デフォルト計画期間（日数）"
 
 msgid "Default Method"
 msgstr "デフォルト方法"
@@ -8086,11 +8093,17 @@ msgstr "カウントの更新に失敗しました"
 msgid "Failed to update item cost"
 msgstr "品目の原価を更新できませんでした"
 
+msgid "Failed to update job"
+msgstr "製造指図の更新に失敗しました"
+
 msgid "Failed to update lead times"
 msgstr "リードタイムの更新に失敗しました"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "商談を発注書で更新できませんでした"
+
+msgid "Failed to update purchase order line"
+msgstr "発注書明細の更新に失敗しました"
 
 msgid "Failed to update quote line"
 msgstr "見積明細を更新できませんでした"
@@ -8284,7 +8297,7 @@ msgid "First Operation"
 msgstr "最初の操作"
 
 msgid "First week the projected stock goes below zero"
-msgstr ""
+msgstr "予想在庫が初めてゼロを下回る週"
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "固定資産"
@@ -9243,7 +9256,7 @@ msgid "Included"
 msgstr "含まれています"
 
 msgid "Includes bought and picked parts"
-msgstr ""
+msgstr "購入部品およびピッキング済部品を含みます"
 
 msgid "Includes tax and shipping costs"
 msgstr "税金と送料を含みます"
@@ -9975,10 +9988,10 @@ msgid "Labor & Machine Variance (default)"
 msgstr "労務・機械差異（デフォルト）"
 
 msgid "Labor Costs"
-msgstr ""
+msgstr "労務原価"
 
 msgid "Labor Hours"
-msgstr ""
+msgstr "労務時間"
 
 msgid "Labor rate"
 msgstr "労務単価"
@@ -10113,7 +10126,7 @@ msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
-msgstr ""
+msgstr "空のままにするか、0を入力して、MRPが計画するすべてを表示します。"
 
 msgid "Leave this page"
 msgstr "このページを離れる"
@@ -10467,10 +10480,10 @@ msgid "Machine"
 msgstr "機械"
 
 msgid "Machine Costs"
-msgstr ""
+msgstr "機械原価"
 
 msgid "Machine Hours"
-msgstr ""
+msgstr "機械時間"
 
 msgid "Machine rate"
 msgstr "機械費率"
@@ -10714,10 +10727,10 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "範囲内のすべての日について、その人を休止します。外出中はスケジュール設定されません。"
 
 msgid "Markup by Category"
-msgstr ""
+msgstr "カテゴリ別マークアップ"
 
 msgid "Markup Percent"
-msgstr ""
+msgstr "マークアップ率"
 
 msgid "Master gauge"
 msgstr "標準器"
@@ -10765,7 +10778,7 @@ msgid "Material"
 msgstr "材料"
 
 msgid "Material Cost"
-msgstr ""
+msgstr "材料原価"
 
 msgid "Material Dimension"
 msgstr "材料ディメンション"
@@ -10816,7 +10829,7 @@ msgid "Material Planning"
 msgstr "材料計画"
 
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
-msgstr ""
+msgstr "材料計画は、今日からこの日数以内に期限が到来するアクションと提案注文のみを表示するため、先のニーズは重要になるまで支障が生じません。品目独自の計画期間がこのデフォルトをオーバーライドします。"
 
 msgid "Material Properties"
 msgstr "材料特性"
@@ -11274,7 +11287,7 @@ msgid "Net Income"
 msgstr "純収益"
 
 msgid "Net Unit Price"
-msgstr ""
+msgstr "純単価"
 
 msgid "Never"
 msgstr "なし"
@@ -11461,9 +11474,6 @@ msgstr "新規支払条件"
 
 msgid "New Picking List"
 msgstr "新しいピッキングリスト"
-
-msgid "New PO"
-msgstr "新規PO"
 
 msgid "New Price Override"
 msgstr "新規価格上書き"
@@ -12644,11 +12654,17 @@ msgstr "このビンからの未処理転送を含むオープン製造指図所
 msgid "Open jobs"
 msgstr "オープン製造指図"
 
+msgid "Open Jobs"
+msgstr "オープン製造指図"
+
 msgid "Open menu"
 msgstr "メニューを開く"
 
 msgid "Open navigation"
 msgstr "ナビゲーションを開く"
+
+msgid "Open Orders"
+msgstr "オープン注文"
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先・日数別オープン買掛金"
@@ -12868,6 +12884,9 @@ msgstr "このジョブ用に{0}を発注"
 
 msgid "Order by"
 msgstr "注文日"
+
+msgid "Order By"
+msgstr "順序"
 
 msgid "Order date"
 msgstr "発注日"
@@ -13099,7 +13118,7 @@ msgid "Part Being Replaced"
 msgstr "置き換わる部品"
 
 msgid "Part Cost"
-msgstr ""
+msgstr "部品原価"
 
 msgid "Part Details"
 msgstr "部品詳細"
@@ -13500,13 +13519,19 @@ msgid "Planning"
 msgstr "計画"
 
 msgid "Planning Horizon"
-msgstr ""
+msgstr "計画期間"
+
+msgid "Planning Horizon (Days)"
+msgstr "計画期間（日数）"
 
 msgid "Planning Ownership"
 msgstr "計画所有権"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "計画ラウンドは、この数の整数倍まで補充を提案しました。"
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "計画はこの日数以内に期限が到来するアクションと提案注文のみを表示します。会社のデフォルトを使用する場合は空のままにするか、この品目のすべてを表示する場合は0を入力してください。"
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "計画の発注提案数量の下限。仕入先部品レコードにある仕入先のMOQとは別。"
@@ -13887,7 +13912,7 @@ msgid "Profile"
 msgstr "プロフィール"
 
 msgid "Profit Percent"
-msgstr ""
+msgstr "利益率"
 
 msgid "Progress"
 msgstr "進捗"
@@ -13939,8 +13964,11 @@ msgstr "{0} の週の予測欠品"
 msgid "Projected stock"
 msgstr "予測在庫"
 
+msgid "Projected stock by week"
+msgstr "週別予想在庫"
+
 msgid "Projected stock is already below zero this week"
-msgstr ""
+msgstr "予想在庫は今週既にゼロを下回っています"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14937,7 +14965,7 @@ msgid "Remove station"
 msgstr "ステーションを削除"
 
 msgid "Remove this item"
-msgstr ""
+msgstr "この品目を除去"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "この保管タイプをすべての参照する保管ユニットから除去して削除する。これは元に戻せません。"
@@ -16196,7 +16224,7 @@ msgid "Select an option"
 msgstr "オプションを選択"
 
 msgid "Select at least one item to accept the quote"
-msgstr ""
+msgstr "見積を承諾するには、少なくとも1つの品目を選択してください"
 
 msgid "Select at least one line to convert"
 msgstr "変換する行を少なくとも1つ選択してください"
@@ -16814,7 +16842,7 @@ msgid "Show Customer IDs"
 msgstr "得意先IDを表示"
 
 msgid "Show Details"
-msgstr ""
+msgstr "詳細を表示"
 
 msgid "Show Durations"
 msgstr "期間を表示"
@@ -17150,6 +17178,9 @@ msgstr "開始"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}日間の無料トライアルを開始"
 
+msgid "Start By"
+msgstr "開始予定日"
+
 msgid "Start counting"
 msgstr "カウントを開始"
 
@@ -17475,6 +17506,15 @@ msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
+
+msgid "Suggested Jobs"
+msgstr "提案製造指図"
+
+msgid "Suggested Orders"
+msgstr "提案注文"
+
+msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgstr "この品目のタイムフェンスの後に必要な提案注文があります。それらを含めるためにフェンスを拡張してください。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -18834,6 +18874,9 @@ msgstr "これらの仕訳はまだ下書きであるため、それらの借方
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "これらの工程は複数の仕入先に対応可能な工法を使用しています。各工程について仕入先を選択してください。"
 
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "これらの注文を読み込めませんでした。クローズして再度オープンしてもう一度試してください。"
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
 
@@ -19199,7 +19242,13 @@ msgid "Tightened"
 msgstr "きつい検査"
 
 msgid "Time fence"
-msgstr ""
+msgstr "タイムフェンス"
+
+msgid "Time Fence"
+msgstr "タイムフェンス"
+
+msgid "Time Fence:"
+msgstr "タイムフェンス："
 
 msgid "Time of day"
 msgstr "時間"
@@ -19328,7 +19377,7 @@ msgid "Tool ID"
 msgstr "ツールID"
 
 msgid "Tooling Cost"
-msgstr ""
+msgstr "治具費"
 
 msgid "tools"
 msgstr "ツール"
@@ -19355,7 +19404,7 @@ msgid "Total capitalized cost of the asset (purchase price plus freight, install
 msgstr "資産の総資本化原価（購入価格、運賃、設置、および帳簿価額の一部となるその他のコスト）。"
 
 msgid "Total Direct Cost"
-msgstr ""
+msgstr "直接原価合計"
 
 msgid "Total discount"
 msgstr "合計値引"
@@ -19364,7 +19413,7 @@ msgid "Total Due"
 msgstr "支払うべき合計金額"
 
 msgid "Total Estimated Cost"
-msgstr ""
+msgstr "予定原価合計"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
@@ -19373,22 +19422,22 @@ msgid "Total Hours"
 msgstr "合計時間"
 
 msgid "Total Indirect Cost"
-msgstr ""
+msgstr "間接原価合計"
 
 msgid "Total Material Cost"
-msgstr ""
+msgstr "材料費合計"
 
 msgid "Total Minutes"
 msgstr "合計分"
 
 msgid "Total Outside Cost"
-msgstr ""
+msgstr "外注費合計"
 
 msgid "Total Price"
 msgstr "合計価格"
 
 msgid "Total Profit"
-msgstr ""
+msgstr "利益合計"
 
 msgid "Total quantity"
 msgstr "合計数量"

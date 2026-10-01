@@ -59,6 +59,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 
+#. placeholder {0}: beyondFenceOrders.length
+msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{0, plural, one {# {fenceLabel} 이후 더 많음} other {# {fenceLabel} 이후 더 많음}}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
@@ -522,6 +526,9 @@ msgstr "12개월 기간"
 
 msgid "13+ weeks"
 msgstr "13주 이상"
+
+msgid "1st Negative On Hand"
+msgstr "첫 번째 음수 재고"
 
 msgid "1Y"
 msgstr "1년"
@@ -3737,7 +3744,7 @@ msgid "Changed By"
 msgstr "변경자"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
-msgstr ""
+msgstr "이 보기에서만 변경되었습니다. 품목의 계획 호라이즌은 변경되지 않습니다."
 
 msgid "Changelog"
 msgstr "변경 로그"
@@ -4351,7 +4358,7 @@ msgid "Consumable"
 msgstr "소모품"
 
 msgid "Consumable Cost"
-msgstr ""
+msgstr "소모품 원가"
 
 msgid "Consumable Details"
 msgstr "소모품 세부정보"
@@ -4474,7 +4481,7 @@ msgid "Convert to Quote"
 msgstr "견적으로 전환"
 
 msgid "Converted Total Price"
-msgstr ""
+msgstr "변환된 총 가격"
 
 msgid "Converting…"
 msgstr "변환 중…"
@@ -5710,7 +5717,7 @@ msgid "Default GL expense account for periodic depreciation runs."
 msgstr "정기 감가상각 처리에 대한 기본 총계정원장 비용 계정입니다."
 
 msgid "Default horizon (days)"
-msgstr ""
+msgstr "기본 호라이즌(일)"
 
 msgid "Default Method"
 msgstr "기본 방법"
@@ -8086,11 +8093,17 @@ msgstr "카운트를 업데이트하지 못했습니다"
 msgid "Failed to update item cost"
 msgstr "품목 원가를 업데이트하지 못했습니다"
 
+msgid "Failed to update job"
+msgstr "작업 지시 변경 실패"
+
 msgid "Failed to update lead times"
 msgstr "리드타임 업데이트 실패"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "발주서로 영업 기회 업데이트 실패"
+
+msgid "Failed to update purchase order line"
+msgstr "발주서 라인 변경 실패"
 
 msgid "Failed to update quote line"
 msgstr "견적 라인을 업데이트하지 못했습니다"
@@ -8284,7 +8297,7 @@ msgid "First Operation"
 msgstr "첫 번째 공정작업"
 
 msgid "First week the projected stock goes below zero"
-msgstr ""
+msgstr "예상 재고가 0 이하로 내려가는 첫 주"
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "정규 MACRS 스케줄이 시작되기 전에 적용되는 1차연도 추가 공제입니다."
@@ -9243,7 +9256,7 @@ msgid "Included"
 msgstr "포함됨"
 
 msgid "Includes bought and picked parts"
-msgstr ""
+msgstr "구매하고 피킹 완료한 부품 포함"
 
 msgid "Includes tax and shipping costs"
 msgstr "세금 및 운송비 포함"
@@ -9975,10 +9988,10 @@ msgid "Labor & Machine Variance (default)"
 msgstr "노무 및 기계 차이(기본값)"
 
 msgid "Labor Costs"
-msgstr ""
+msgstr "노무 원가"
 
 msgid "Labor Hours"
-msgstr ""
+msgstr "노무 시간"
 
 msgid "Labor rate"
 msgstr "노무 요금"
@@ -10113,7 +10126,7 @@ msgid "Leave empty for exact match"
 msgstr "정확히 일치시키려면 비워두세요"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
-msgstr ""
+msgstr "MRP가 계획한 모든 것을 표시하려면 공란으로 두거나 0을 입력하세요."
 
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
@@ -10467,10 +10480,10 @@ msgid "Machine"
 msgstr "기계"
 
 msgid "Machine Costs"
-msgstr ""
+msgstr "기계 원가"
 
 msgid "Machine Hours"
-msgstr ""
+msgstr "기계 시간"
 
 msgid "Machine rate"
 msgstr "기계비율"
@@ -10714,10 +10727,10 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 그들은 휴무 중에 스케줄되지 않습니다."
 
 msgid "Markup by Category"
-msgstr ""
+msgstr "카테고리별 마크업"
 
 msgid "Markup Percent"
-msgstr ""
+msgstr "마크업(%)"
 
 msgid "Master gauge"
 msgstr "표준 계측기"
@@ -10765,7 +10778,7 @@ msgid "Material"
 msgstr "자재"
 
 msgid "Material Cost"
-msgstr ""
+msgstr "자재 원가"
 
 msgid "Material Dimension"
 msgstr "자재 차원"
@@ -10816,7 +10829,7 @@ msgid "Material Planning"
 msgstr "물질 계획"
 
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
-msgstr ""
+msgstr "자재 계획은 오늘부터 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시하므로, 먼 미래의 필요는 중요해질 때까지 방해가 되지 않습니다. 품목의 자체 계획 호라이즌이 이 기본값보다 우선합니다."
 
 msgid "Material Properties"
 msgstr "자재 속성"
@@ -11274,7 +11287,7 @@ msgid "Net Income"
 msgstr "순이익"
 
 msgid "Net Unit Price"
-msgstr ""
+msgstr "순 단가"
 
 msgid "Never"
 msgstr "안 함"
@@ -11461,9 +11474,6 @@ msgstr "신규 지불 조건"
 
 msgid "New Picking List"
 msgstr "새 피킹 리스트"
-
-msgid "New PO"
-msgstr "새 구매주문"
 
 msgid "New Price Override"
 msgstr "새 가격 재정의"
@@ -12644,11 +12654,17 @@ msgstr "작업 지시 소요량 더하기 이 빈에서의 미결 이송"
 msgid "Open jobs"
 msgstr "미결 작업 지시"
 
+msgid "Open Jobs"
+msgstr "미결 작업 지시"
+
 msgid "Open menu"
 msgstr "메뉴 열기"
 
 msgid "Open navigation"
 msgstr "탐색 열기"
+
+msgid "Open Orders"
+msgstr "미결 주문"
 
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
@@ -12867,6 +12883,9 @@ msgid "Order {0} for this job"
 msgstr "이 작업의 주문 {0}"
 
 msgid "Order by"
+msgstr "정렬 기준"
+
+msgid "Order By"
 msgstr "정렬 기준"
 
 msgid "Order date"
@@ -13099,7 +13118,7 @@ msgid "Part Being Replaced"
 msgstr "대체될 부품"
 
 msgid "Part Cost"
-msgstr ""
+msgstr "부품 원가"
 
 msgid "Part Details"
 msgstr "품목 세부정보"
@@ -13500,13 +13519,19 @@ msgid "Planning"
 msgstr "계획"
 
 msgid "Planning Horizon"
-msgstr ""
+msgstr "계획 호라이즌"
+
+msgid "Planning Horizon (Days)"
+msgstr "계획 호라이즌(일)"
 
 msgid "Planning Ownership"
 msgstr "계획 소유권"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "계획은 제안된 보충 수량을 이 숫자의 배수로 반올림합니다."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "계획은 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시합니다. 회사 기본값을 사용하려면 공란으로 두거나, 이 품목의 모든 것을 표시하려면 0을 입력하세요."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "계획에서 제안하는 보충 수량의 하한선으로, 공급업체-부품 레코드에 있는 공급업체의 MOQ와는 별개입니다."
@@ -13887,7 +13912,7 @@ msgid "Profile"
 msgstr "프로필"
 
 msgid "Profit Percent"
-msgstr ""
+msgstr "이익(%)"
 
 msgid "Progress"
 msgstr "진행 상황"
@@ -13939,8 +13964,11 @@ msgstr "예상 보유 재고"
 msgid "Projected stock"
 msgstr "예상 재고"
 
+msgid "Projected stock by week"
+msgstr "주별 예상 재고"
+
 msgid "Projected stock is already below zero this week"
-msgstr ""
+msgstr "예상 재고가 이미 이번 주에 0 이하입니다."
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14937,7 +14965,7 @@ msgid "Remove station"
 msgstr "스테이션 제거"
 
 msgid "Remove this item"
-msgstr ""
+msgstr "이 품목 제거"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장소 유형을 모든 참조 보관 단위에서 제거하고 삭제합니다. 이는 실행 취소할 수 없습니다."
@@ -16196,7 +16224,7 @@ msgid "Select an option"
 msgstr "옵션 선택"
 
 msgid "Select at least one item to accept the quote"
-msgstr ""
+msgstr "견적서를 수락하려면 최소 하나의 품목을 선택하세요."
 
 msgid "Select at least one line to convert"
 msgstr "전환할 라인을 하나 이상 선택하세요"
@@ -16814,7 +16842,7 @@ msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
 
 msgid "Show Details"
-msgstr ""
+msgstr "상세 정보 표시"
 
 msgid "Show Durations"
 msgstr "소요 시간 표시"
@@ -17150,6 +17178,9 @@ msgstr "시작"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}일 무료 체험 시작"
 
+msgid "Start By"
+msgstr "시작 기준"
+
 msgid "Start counting"
 msgstr "실사 시작"
 
@@ -17475,6 +17506,15 @@ msgstr "일치 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
+
+msgid "Suggested Jobs"
+msgstr "제안된 작업 지시"
+
+msgid "Suggested Orders"
+msgstr "제안된 주문"
+
+msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgstr "이 품목의 시간 펜스 이후에 필요한 제안된 주문입니다. 펜스를 확장하여 포함하세요."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."
@@ -18834,6 +18874,9 @@ msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "이 공정들은 여러 공급업체에서 처리 가능합니다. 각 공정마다 공급업체를 선택하세요."
 
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "이 주문들을 로드할 수 없습니다. 닫고 다시 열어보세요."
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "이 부품들이 이 부품으로 대체됩니다. 각 규칙은 기존 부품에 설정되어 있으니 규칙을 변경하려면 해당 부품을 열어주세요."
 
@@ -19199,7 +19242,13 @@ msgid "Tightened"
 msgstr "까다로운 검사"
 
 msgid "Time fence"
-msgstr ""
+msgstr "시간 펜스"
+
+msgid "Time Fence"
+msgstr "시간 펜스"
+
+msgid "Time Fence:"
+msgstr "시간 펜스:"
 
 msgid "Time of day"
 msgstr "하루 중 시간"
@@ -19328,7 +19377,7 @@ msgid "Tool ID"
 msgstr "공구 ID"
 
 msgid "Tooling Cost"
-msgstr ""
+msgstr "공구 원가"
 
 msgid "tools"
 msgstr "공구"
@@ -19355,7 +19404,7 @@ msgid "Total capitalized cost of the asset (purchase price plus freight, install
 msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 장부가액에 포함되는 기타 비용을 더한 금액)입니다."
 
 msgid "Total Direct Cost"
-msgstr ""
+msgstr "총 직접 원가"
 
 msgid "Total discount"
 msgstr "총 할인"
@@ -19364,7 +19413,7 @@ msgid "Total Due"
 msgstr "총 미결액"
 
 msgid "Total Estimated Cost"
-msgstr ""
+msgstr "총 예정 원가"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
@@ -19373,22 +19422,22 @@ msgid "Total Hours"
 msgstr "총 시간"
 
 msgid "Total Indirect Cost"
-msgstr ""
+msgstr "총 간접 원가"
 
 msgid "Total Material Cost"
-msgstr ""
+msgstr "총 자재 원가"
 
 msgid "Total Minutes"
 msgstr "총 분"
 
 msgid "Total Outside Cost"
-msgstr ""
+msgstr "총 외주 원가"
 
 msgid "Total Price"
 msgstr "총 가격"
 
 msgid "Total Profit"
-msgstr ""
+msgstr "총 순이익"
 
 msgid "Total quantity"
 msgstr "총 수량"

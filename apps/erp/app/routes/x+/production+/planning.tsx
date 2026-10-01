@@ -66,24 +66,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  // The persisted MRP action worklist — loaded first because the grid's
-  // Actions-column filter and "Assigned to me" scope resolve to item ids
-  // through it (the planning RPC has no such column).
-  const planningActions = await getPlanningActions(client, {
-    companyId,
-    locationId,
-    kind: "Make",
-    search: null,
-    limit: 500,
-    offset: 0
-  });
-
-  const { gridFilters, itemIds } = resolvePlanningActionScope({
-    filters,
-    scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
-    userId,
-    actions: planningActions.data ?? []
-  });
+  // The grid's Actions-column filter and "Assigned to me" scope are not RPC
+  // columns: they go to the RPC as arguments, which keeps the items with a
+  // matching OPEN action inside each item's planning horizon.
+  const { gridFilters, actionTypes, actionAssignee } =
+    resolvePlanningActionScope({
+      filters,
+      scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
+      userId
+    });
 
   const items = await getProductionPlanning(
     client,
@@ -96,7 +87,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       offset,
       sorts,
       filters: gridFilters,
-      itemIds
+      asOf: locationToday.toString(),
+      actionTypes,
+      actionAssignee
     }
   );
 
@@ -106,6 +99,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       await flash(request, error(items.error, "Failed to fetch planning items"))
     );
   }
+
+  // The persisted MRP action worklist for the rows on THIS page. Every action
+  // is loaded, whatever its date: the grid hides the ones beyond each row's
+  // time fence, and a planner can widen one row's fence without a reload.
+  const planningActions = await getPlanningActions(client, {
+    companyId,
+    locationId,
+    kind: "Make",
+    itemIds: (items.data ?? []).map((item) => item.id)
+  });
 
   return {
     items: (items.data ?? []) as ProductionPlanningItem[],
@@ -120,7 +123,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ProductionPlanningRoute() {
-  const { items, count, locationId, periods, planningActions } =
+  const { items, count, locationId, periods, planningActions, locationToday } =
     useLoaderData<typeof loader>();
 
   return (
@@ -138,6 +141,7 @@ export default function ProductionPlanningRoute() {
             locationId={locationId}
             periods={periods}
             planningActions={planningActions}
+            locationToday={locationToday}
           />
         </ResizablePanel>
         <Outlet />

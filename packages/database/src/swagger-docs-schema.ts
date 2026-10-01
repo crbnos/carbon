@@ -42757,6 +42757,12 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -42885,6 +42891,12 @@ export default {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -42965,6 +42977,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.planningAction.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.horizonDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.planningAction.latestOrderDate"
           },
           {
             $ref: "#/parameters/body.planningAction"
@@ -75922,6 +75940,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -76047,6 +76068,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -76124,6 +76148,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.planningHorizonDays"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -93142,6 +93169,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93372,6 +93402,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93554,6 +93587,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -99864,6 +99900,67 @@ export default {
         tags: ["(rpc) sync_check_method_material_self_reference"]
       }
     },
+    "/rpc/get_purchasing_planning_grid": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                action_assignee: {
+                  format: "text",
+                  type: "string"
+                },
+                action_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_purchasing_planning_grid"]
+      }
+    },
     "/rpc/sync_update_job_material_make_method_item_id": {
       post: {
         parameters: [
@@ -102477,6 +102574,67 @@ export default {
           }
         },
         tags: ["(rpc) sync_check_job_material_self_reference"]
+      }
+    },
+    "/rpc/get_production_planning_grid": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                action_assignee: {
+                  format: "text",
+                  type: "string"
+                },
+                action_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                as_of: {
+                  format: "date",
+                  type: "string"
+                },
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_production_planning_grid"]
       }
     },
     "/rpc/xid_encode": {
@@ -127549,7 +127707,8 @@ export default {
         "requiresManualAction",
         "assigneeOverridden",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "horizonDate"
       ],
       properties: {
         id: {
@@ -127676,6 +127835,14 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        horizonDate: {
+          format: "date",
+          type: "string"
+        },
+        latestOrderDate: {
+          format: "date",
           type: "string"
         }
       },
@@ -143316,6 +143483,10 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        planningHorizonDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -151797,6 +151968,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        defaultPlanningHorizonDays: {
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -175108,6 +175283,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.planningAction.horizonDate": {
+      name: "horizonDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.planningAction.latestOrderDate": {
+      name: "latestOrderDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierQuoteLines": {
       name: "supplierQuoteLines",
       description: "supplierQuoteLines",
@@ -192536,6 +192723,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemPlanning.planningHorizonDays": {
+      name: "planningHorizonDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.nonConformanceTrackedEntity": {
       name: "nonConformanceTrackedEntity",
       description: "nonConformanceTrackedEntity",
@@ -201925,6 +202118,12 @@ export default {
     },
     "rowFilter.companySettings.showBomExplorerReadableId": {
       name: "showBomExplorerReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.defaultPlanningHorizonDays": {
+      name: "defaultPlanningHorizonDays",
       required: false,
       in: "query",
       type: "string"

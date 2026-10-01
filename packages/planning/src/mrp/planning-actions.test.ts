@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import type {
   ExistingPlanningAction,
@@ -8,6 +12,7 @@ import {
   daysBetween,
   deriveChangeActions,
   diffPlanningActions,
+  earlierDate,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
   naturalKey
@@ -36,6 +41,14 @@ describe("daysBetween", () => {
     expect(daysBetween("2026-10-12", "2026-10-05")).toBe(7);
     expect(daysBetween("2026-10-05", "2026-10-12")).toBe(-7);
     expect(daysBetween("2026-10-05", "2026-10-05")).toBe(0);
+  });
+});
+
+describe("earlierDate", () => {
+  it("returns the earlier of two ISO dates, either way round", () => {
+    expect(earlierDate("2026-10-05", "2026-10-26")).toBe("2026-10-05");
+    expect(earlierDate("2026-10-26", "2026-10-05")).toBe("2026-10-05");
+    expect(earlierDate("2026-10-05", "2026-10-05")).toBe("2026-10-05");
   });
 });
 
@@ -85,6 +98,9 @@ describe("deriveChangeActions", () => {
       type: "Expedite",
       purchaseOrderLineId: "pol-1",
       suggestedDate: "2026-10-05",
+      // inside a fence from the day it is NEEDED, not the day it lands
+      horizonDate: "2026-10-05",
+      latestOrderDate: null,
       periodId: "p1",
       suggestedQuantity: 10
     });
@@ -133,6 +149,10 @@ describe("deriveChangeActions", () => {
       type: "Defer",
       jobId: "job-1",
       suggestedDate: "2026-10-26",
+      // inside a fence from where the order sits TODAY — deferring it is a
+      // near-term decision even though the requirement is weeks out
+      horizonDate: "2026-10-05",
+      latestOrderDate: null,
       periodId: "p4"
     });
   });
@@ -267,6 +287,8 @@ describe("convertOrdersToIncreases", () => {
     periodId: "p2",
     suggestedQuantity: 5,
     suggestedDate: "2026-10-12",
+    horizonDate: "2026-10-12",
+    latestOrderDate: "2026-10-07",
     isASAP: false,
     purchaseOrderLineId: null,
     jobId: null,
@@ -298,6 +320,27 @@ describe("convertOrdersToIncreases", () => {
     });
   });
 
+  it("an Increase keeps the order-by date and takes the earlier fence date", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [orderCandidate],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-09", // 3 days before the suggestion, inside tolerance
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE
+    });
+    expect(action).toMatchObject({
+      type: "Increase",
+      horizonDate: "2026-10-09",
+      latestOrderDate: "2026-10-07"
+    });
+  });
+
   it("keeps the Order when the open PO already carries a date action (one action per target)", () => {
     const [action] = convertOrdersToIncreases({
       sizingCandidates: [orderCandidate],
@@ -315,6 +358,8 @@ describe("convertOrdersToIncreases", () => {
           periodId: "p1",
           suggestedQuantity: 10,
           suggestedDate: "2026-10-05",
+          horizonDate: "2026-10-05",
+          latestOrderDate: null,
           isASAP: false,
           purchaseOrderLineId: "pol-1",
           jobId: null,
@@ -356,6 +401,8 @@ describe("diffPlanningActions", () => {
     type: "Order",
     suggestedQuantity: 10,
     suggestedDate: "2026-10-05",
+    horizonDate: "2026-10-05",
+    latestOrderDate: "2026-09-30",
     isASAP: false,
     purchaseOrderLineId: null,
     jobId: null,
@@ -376,6 +423,8 @@ describe("diffPlanningActions", () => {
     status: "Open",
     suggestedQuantity: 10,
     suggestedDate: "2026-10-05",
+    horizonDate: "2026-10-05",
+    latestOrderDate: "2026-09-30",
     isASAP: false,
     purchaseOrderLineId: null,
     jobId: null,
@@ -468,6 +517,35 @@ describe("diffPlanningActions", () => {
       toleranceDays: TOLERANCE
     });
     expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
+  it("refreshes the grid-facing dates on an Open row", () => {
+    const diff = diffPlanningActions({
+      existing: [
+        { ...existing, horizonDate: "2026-10-12", latestOrderDate: null }
+      ],
+      candidates: [candidate],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff.updates).toEqual([
+      {
+        id: "pla-1",
+        patch: { horizonDate: "2026-10-05", latestOrderDate: "2026-09-30" }
+      }
+    ]);
+  });
+
+  it("refreshes the grid-facing dates on a Dismissed row WITHOUT reopening it", () => {
+    const diff = diffPlanningActions({
+      existing: [
+        { ...existing, status: "Dismissed", horizonDate: "2026-10-12" }
+      ],
+      candidates: [candidate],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff.updates).toEqual([
+      { id: "pla-1", patch: { horizonDate: "2026-10-05" } }
+    ]);
   });
 
   it("float noise in the candidate quantity is not a material change", () => {

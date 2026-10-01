@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Badge,
   Button,
   Combobox,
   DropdownMenuContent,
@@ -38,13 +39,16 @@ import {
   LuBookMarked,
   LuBox,
   LuCalendarClock,
+  LuCalendarRange,
   LuChartNoAxesColumn,
   LuCircleCheck,
   LuCirclePlay,
   LuClock,
   LuContainer,
+  LuGroup,
   LuListTodo,
-  LuSquareChartGantt
+  LuSquareChartGantt,
+  LuTrendingDown
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import {
@@ -55,6 +59,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -79,16 +84,26 @@ import {
 } from "~/modules/production/ui/Planning/LatestOrderDate";
 import {
   isApplyablePlanningAction,
+  isNewSupplyAction,
   PlanningActionLines,
   PlanningActionsCell,
   planningActionsExportValue,
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
+  FirstNegativeDateCell,
+  TimeFenceCell,
+  useTimeFenceOverrides
+} from "~/modules/production/ui/Planning/PlanningFence";
+import {
   PlanningWeekStrip,
   planningWeekStripSize,
   planningWeekValues
 } from "~/modules/production/ui/Planning/PlanningWeekStrip";
+import {
+  actionsInsideFence,
+  splitOrdersByFence
+} from "~/modules/production/ui/Planning/planning-fence";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems } from "~/stores";
@@ -103,9 +118,12 @@ type PlanningTableProps = {
   count: number;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
-  /** The persisted MRP worklist for this location and kind (spec §P1.7),
-   *  rendered as the Actions column + each item's expanded row. */
+  /** The persisted MRP worklist for the rows on this page (spec §P1.7),
+   *  rendered as the Actions column + each item's expanded row. Every action
+   *  is here whatever its date; the row's time fence decides what shows. */
   planningActions: PlanningAction[];
+  /** Today on the location's calendar (ISO date). */
+  locationToday: string;
 };
 
 const PlanningTable = memo(
@@ -114,7 +132,8 @@ const PlanningTable = memo(
     count,
     locationId,
     periods,
-    planningActions
+    planningActions,
+    locationToday
   }: PlanningTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -123,6 +142,7 @@ const PlanningTable = memo(
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
+    const itemPostingGroups = useItemPostingGroups();
 
     const mrpFetcher = useFetcher<typeof mrpAction>();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
@@ -157,6 +177,26 @@ const PlanningTable = memo(
       }
       return map;
     }, [planningActions]);
+
+    // ── Time fence ───────────────────────────────────────────────────────────
+    // A row surfaces only what falls on or before its fence date (today + the
+    // item's planning horizon). Moving a row's fence here is page state: it
+    // re-filters what is already loaded and never touches the item.
+    const timeFence = useTimeFenceOverrides();
+
+    const visibleActionsByItemId = useMemo(() => {
+      const map = new Map<string, PlanningAction[]>();
+      for (const row of data) {
+        const actions = actionsByItemId.get(row.id);
+        if (!actions) continue;
+        const visible = actionsInsideFence(
+          actions,
+          timeFence.fenceDateFor(row)
+        );
+        if (visible.length > 0) map.set(row.id, visible);
+      }
+      return map;
+    }, [data, actionsByItemId, timeFence]);
 
     // ONE batched request per click: the route derives each row's behaviour
     // from its persisted type, and a fetcher holds a single in-flight submission.
@@ -327,10 +367,16 @@ const PlanningTable = memo(
               // Prefer user-edited orders (from the drawer) when present,
               // otherwise fall back to the auto-computed planned orders so
               // bulk submit works for items the user never opened.
+              // The fallback stops at the row's time fence: a bulk order
+              // raises what is due inside the planning horizon, not the whole
+              // planning window.
               const sourceOrders =
                 ordersMap[row.id!] && ordersMap[row.id!]!.length > 0
                   ? ordersMap[row.id!]!
-                  : (ordersByItemId.get(row.id!) ?? []);
+                  : splitOrdersByFence(
+                      ordersByItemId.get(row.id!) ?? [],
+                      timeFence.fenceDateFor(row)
+                    ).inside;
               const ordersWithPeriods = sourceOrders.map((order) => {
                 const supplierId = suppliersMap[row.id!] ?? order.supplierId;
                 if (
@@ -372,7 +418,31 @@ const PlanningTable = memo(
         });
       },
 
-      [bulkUpdateFetcher, locationId, ordersMap, ordersByItemId, suppliersMap]
+      [
+        bulkUpdateFetcher,
+        locationId,
+        ordersMap,
+        ordersByItemId,
+        suppliersMap,
+        timeFence
+      ]
+    );
+
+    // Moving a row's fence changes which suggested orders its drawer opens on.
+    // The drawer's list is kept per item once opened (planner edits win), so a
+    // stale list would neither show the newly included orders nor offer them —
+    // drop it and let the drawer re-seed from the new split.
+    const setFenceDate = timeFence.setFenceDate;
+    const onFenceChange = useCallback(
+      (itemId: string, date: string | null) => {
+        setFenceDate(itemId, date);
+        setOrdersMap((prev) => {
+          if (!(itemId in prev)) return prev;
+          const { [itemId]: _dropped, ...rest } = prev;
+          return rest;
+        });
+      },
+      [setFenceDate]
     );
 
     const [selectedItem, setSelectedItem] =
@@ -388,6 +458,68 @@ const PlanningTable = memo(
         }
       },
       []
+    );
+
+    // The drawer's own Time Fence control: the same on-screen override as the
+    // grid cell, for the row the drawer is open on.
+    const selectedItemId = selectedItem?.id;
+    const onSelectedFenceChange = useCallback(
+      (date: string | null) => {
+        if (selectedItemId) onFenceChange(selectedItemId, date);
+      },
+      [selectedItemId, onFenceChange]
+    );
+
+    // The drawer's suggested orders, split at the selected row's time fence:
+    // it opens on what is due inside the fence and can pull the rest in.
+    const selectedOrders = useMemo(() => {
+      if (!selectedItem?.id) return { inside: [], beyond: [] };
+      return splitOrdersByFence(
+        getPurchaseOrdersFromPlanning(
+          selectedItem,
+          periods,
+          items,
+          suppliersMap[selectedItem.id]
+        ),
+        timeFence.fenceDateFor(selectedItem)
+      );
+    }, [selectedItem, periods, items, suppliersMap, timeFence]);
+
+    // The drawer's Open Orders table shows the selected row's change actions on existing
+    // orders (Expedite, Defer, …). Order / Make actions are left out — each one
+    // is already a "New" row in the drawer's order list, right above the table.
+    const selectedActions = useMemo(
+      () =>
+        selectedItem?.id
+          ? (visibleActionsByItemId.get(selectedItem.id) ?? []).filter(
+              (action) => !isNewSupplyAction(action)
+            )
+          : [],
+      [selectedItem, visibleActionsByItemId]
+    );
+
+    // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
+    // Assign controls as the expanded row, through the same single fetcher.
+    const userId = user.id;
+    const actionHandlers = useMemo(
+      () => ({
+        currentUserId: userId,
+        canUpdate: canUpdateActions,
+        isBusy: isActionsBusy,
+        onApply: (ids: string[]) =>
+          submitActions({ action: "apply", planningActionIds: ids }),
+        onDismiss: (ids: string[]) =>
+          submitActions({ action: "dismiss", planningActionIds: ids }),
+        onReopen: (ids: string[]) =>
+          submitActions({ action: "reopen", planningActionIds: ids }),
+        onAssignToMe: (ids: string[]) =>
+          submitActions({
+            action: "assign",
+            planningActionIds: ids,
+            assignee: userId
+          })
+      }),
+      [userId, canUpdateActions, isActionsBusy, submitActions]
     );
 
     const [isPending, startTransition] = useTransition();
@@ -483,7 +615,7 @@ const PlanningTable = memo(
           header: t`Actions`,
           cell: ({ row }) => (
             <PlanningActionsCell
-              actions={actionsByItemId.get(row.original.id) ?? []}
+              actions={visibleActionsByItemId.get(row.original.id) ?? []}
             />
           ),
           meta: {
@@ -494,7 +626,9 @@ const PlanningTable = memo(
               options: actionTypeOptions
             },
             exportValue: (row: PurchasingPlanningItem) =>
-              planningActionsExportValue(actionsByItemId.get(row.id) ?? [])
+              planningActionsExportValue(
+                visibleActionsByItemId.get(row.id) ?? []
+              )
           }
         },
         {
@@ -534,6 +668,30 @@ const PlanningTable = memo(
               }))
             },
             icon: <LuContainer />
+          }
+        },
+        {
+          accessorKey: "itemPostingGroupId",
+          header: t`Item Group`,
+          cell: ({ row }) => {
+            const label = itemPostingGroups.find(
+              (group) => group.value === row.original.itemPostingGroupId
+            )?.label;
+            return label ? <Badge variant="secondary">{label}</Badge> : null;
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: itemPostingGroups.map((group) => ({
+                value: group.value,
+                label: <Badge variant="secondary">{group.label}</Badge>
+              }))
+            },
+            icon: <LuGroup />,
+            exportValue: (row: PurchasingPlanningItem) =>
+              itemPostingGroups.find(
+                (group) => group.value === row.itemPostingGroupId
+              )?.label ?? null
           }
         },
         {
@@ -594,6 +752,19 @@ const PlanningTable = memo(
         },
         ...periodColumns,
         {
+          accessorKey: "firstNegativeDate",
+          header: t`1st Negative On Hand`,
+          cell: ({ row }) => (
+            <FirstNegativeDateCell
+              date={row.original.firstNegativeDate}
+              todayIso={locationToday}
+            />
+          ),
+          meta: {
+            icon: <LuTrendingDown />
+          }
+        },
+        {
           accessorKey: "quantityToOrder",
           header: t`Qty to Order`,
           cell: ({ row }) => {
@@ -610,7 +781,10 @@ const PlanningTable = memo(
           }
         },
         {
-          id: "latestOrderDate",
+          // Sorted by the order-by date MRP stored on the item's open
+          // new-supply actions; the cell shows the live sizing the order
+          // drawer uses, which matches it as of the last MRP run.
+          accessorKey: "latestOrderDate",
           header: t`Latest Order Date`,
           cell: ({ row }) => (
             <LatestOrderDateCell
@@ -622,6 +796,22 @@ const PlanningTable = memo(
             icon: <LuCalendarClock />,
             exportValue: (row: PurchasingPlanningItem) =>
               latestOrderDateExportValue(row, periods)
+          }
+        },
+        {
+          accessorKey: "timeFenceDate",
+          header: t`Time Fence`,
+          cell: ({ row }) => (
+            <TimeFenceCell
+              fenceDate={timeFence.fenceDateFor(row.original)}
+              isOverridden={timeFence.isOverridden(row.original)}
+              onChange={(date) => onFenceChange(row.original.id, date)}
+            />
+          ),
+          meta: {
+            icon: <LuCalendarRange />,
+            exportValue: (row: PurchasingPlanningItem) =>
+              timeFence.fenceDateFor(row)
           }
         },
         {
@@ -656,8 +846,12 @@ const PlanningTable = memo(
           id: "Order",
           header: "",
           cell: ({ row }) => {
+            // only what is due inside the row's time fence
             const orders = row.original.id
-              ? (ordersByItemId.get(row.original.id) ?? [])
+              ? splitOrdersByFence(
+                  ordersByItemId.get(row.original.id) ?? [],
+                  timeFence.fenceDateFor(row.original)
+                ).inside
               : [];
             const orderQuantity = orders.reduce(
               (acc, order) =>
@@ -698,16 +892,21 @@ const PlanningTable = memo(
       unitOfMeasures,
       suppliersMap,
       isDisabled,
-      actionsByItemId,
-      actionTypeOptions
+      visibleActionsByItemId,
+      actionTypeOptions,
+      itemPostingGroups,
+      ordersByItemId,
+      timeFence,
+      locationToday
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
     ]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => {
+        // inside each row's time fence only — what the row is showing
         const applyableIds = selectedRows.flatMap((row) =>
-          (actionsByItemId.get(row.id) ?? [])
+          (visibleActionsByItemId.get(row.id) ?? [])
             .filter(isApplyablePlanningAction)
             .map((action) => action.id)
         );
@@ -748,7 +947,7 @@ const PlanningTable = memo(
       [
         bulkUpdateFetcher.state,
         onBulkUpdate,
-        actionsByItemId,
+        visibleActionsByItemId,
         canUpdateActions,
         isActionsBusy,
         submitActions
@@ -757,14 +956,14 @@ const PlanningTable = memo(
 
     const canExpandRow = useCallback(
       (row: PurchasingPlanningItem) =>
-        (actionsByItemId.get(row.id)?.length ?? 0) > 0,
-      [actionsByItemId]
+        (visibleActionsByItemId.get(row.id)?.length ?? 0) > 0,
+      [visibleActionsByItemId]
     );
 
     const renderExpandedRow = useCallback(
       (row: PurchasingPlanningItem) => (
         <PlanningActionLines
-          actions={actionsByItemId.get(row.id) ?? []}
+          actions={visibleActionsByItemId.get(row.id) ?? []}
           currentUserId={user.id}
           canUpdate={canUpdateActions}
           isBusy={isActionsBusy}
@@ -787,7 +986,13 @@ const PlanningTable = memo(
           onOrder={() => setSelectedItem(row)}
         />
       ),
-      [actionsByItemId, user.id, canUpdateActions, isActionsBusy, submitActions]
+      [
+        visibleActionsByItemId,
+        user.id,
+        canUpdateActions,
+        isActionsBusy,
+        submitActions
+      ]
     );
 
     const headerActions = (
@@ -878,15 +1083,15 @@ const PlanningTable = memo(
             selectedSupplier={suppliersMap[selectedItem.id]}
             orders={
               selectedItem.id
-                ? ordersMap[selectedItem.id] ||
-                  getPurchaseOrdersFromPlanning(
-                    selectedItem,
-                    periods,
-                    items,
-                    suppliersMap[selectedItem.id]
-                  )
+                ? ordersMap[selectedItem.id] || selectedOrders.inside
                 : []
             }
+            beyondFenceOrders={selectedOrders.beyond}
+            timeFenceDate={timeFence.fenceDateFor(selectedItem)}
+            isTimeFenceOverridden={timeFence.isOverridden(selectedItem)}
+            onTimeFenceChange={onSelectedFenceChange}
+            actions={selectedActions}
+            actionHandlers={actionHandlers}
             setOrders={setOrders}
             periods={periods}
             isOpen={!!selectedItem}

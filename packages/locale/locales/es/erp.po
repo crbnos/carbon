@@ -59,6 +59,10 @@ msgstr "{0, plural, one {# día de holgura} other {# días de holgura}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# día de atraso} other {# días de atraso}}"
 
+#. placeholder {0}: beyondFenceOrders.length
+msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{0, plural, one {# Más Después de {fenceLabel}} other {# Más Después de {fenceLabel}}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operación no tiene estándares de tiempo} other {# operaciones no tienen estándares de tiempo}}"
@@ -522,6 +526,9 @@ msgstr "12 períodos mensuales"
 
 msgid "13+ weeks"
 msgstr "13+ semanas"
+
+msgid "1st Negative On Hand"
+msgstr "Primer negativo en existencias"
 
 msgid "1Y"
 msgstr "1 año"
@@ -3737,7 +3744,7 @@ msgid "Changed By"
 msgstr "Cambiado por"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
-msgstr ""
+msgstr "Cambió solo para esta vista. El horizonte de planificación del artículo no se actualiza."
 
 msgid "Changelog"
 msgstr "Registro de cambios"
@@ -4351,7 +4358,7 @@ msgid "Consumable"
 msgstr "Consumible"
 
 msgid "Consumable Cost"
-msgstr ""
+msgstr "Costo de Consumible"
 
 msgid "Consumable Details"
 msgstr "Detalles del Consumible"
@@ -4474,7 +4481,7 @@ msgid "Convert to Quote"
 msgstr "Convertir a Cotización"
 
 msgid "Converted Total Price"
-msgstr ""
+msgstr "Precio Total Convertido"
 
 msgid "Converting…"
 msgstr "Convirtiendo…"
@@ -5710,7 +5717,7 @@ msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Cuenta de gasto contable predeterminada para ejecuciones de depreciación periódicas."
 
 msgid "Default horizon (days)"
-msgstr ""
+msgstr "Horizonte predeterminado (días)"
 
 msgid "Default Method"
 msgstr "Método Predeterminado"
@@ -8086,11 +8093,17 @@ msgstr "Error al actualizar el recuento"
 msgid "Failed to update item cost"
 msgstr "Error al actualizar el costo del artículo"
 
+msgid "Failed to update job"
+msgstr "Error al actualizar la orden de trabajo"
+
 msgid "Failed to update lead times"
 msgstr "Error al actualizar los plazos de entrega"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Error al actualizar la oportunidad con la orden de compra"
+
+msgid "Failed to update purchase order line"
+msgstr "Error al actualizar la línea de orden de compra"
 
 msgid "Failed to update quote line"
 msgstr "Error al actualizar la línea de cotización"
@@ -8284,7 +8297,7 @@ msgid "First Operation"
 msgstr "Primera Operación"
 
 msgid "First week the projected stock goes below zero"
-msgstr ""
+msgstr "Primera semana las existencias proyectadas descienden por debajo de cero"
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Activo Fijo"
@@ -9243,7 +9256,7 @@ msgid "Included"
 msgstr "Incluido"
 
 msgid "Includes bought and picked parts"
-msgstr ""
+msgstr "Incluye piezas compradas y preparadas"
 
 msgid "Includes tax and shipping costs"
 msgstr "Incluye impuestos y costos de envío"
@@ -9975,10 +9988,10 @@ msgid "Labor & Machine Variance (default)"
 msgstr "Desviación de mano de obra y máquina (predeterminada)"
 
 msgid "Labor Costs"
-msgstr ""
+msgstr "Costos de Mano de obra"
 
 msgid "Labor Hours"
-msgstr ""
+msgstr "Horas de Mano de obra"
 
 msgid "Labor rate"
 msgstr "Tarifa de mano de obra"
@@ -10113,7 +10126,7 @@ msgid "Leave empty for exact match"
 msgstr "Dejar vacío para coincidencia exacta"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
-msgstr ""
+msgstr "Dejar vacío o ingrese 0 para mostrar todo lo que MRP planifica."
 
 msgid "Leave this page"
 msgstr "Salir de esta página"
@@ -10467,10 +10480,10 @@ msgid "Machine"
 msgstr "Máquina"
 
 msgid "Machine Costs"
-msgstr ""
+msgstr "Costos de Máquina"
 
 msgid "Machine Hours"
-msgstr ""
+msgstr "Horas de Máquina"
 
 msgid "Machine rate"
 msgstr "Tarifa de máquina"
@@ -10714,10 +10727,10 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Marca a la persona como ausente para cada día en el rango. No se programarán mientras estén fuera."
 
 msgid "Markup by Category"
-msgstr ""
+msgstr "Margen por Categoría"
 
 msgid "Markup Percent"
-msgstr ""
+msgstr "Porcentaje de Margen"
 
 msgid "Master gauge"
 msgstr "Instrumento de medición Patrón"
@@ -10765,7 +10778,7 @@ msgid "Material"
 msgstr "Material"
 
 msgid "Material Cost"
-msgstr ""
+msgstr "Costo de Material"
 
 msgid "Material Dimension"
 msgstr "Dimensión de Material"
@@ -10816,7 +10829,7 @@ msgid "Material Planning"
 msgstr "Planificación de materiales"
 
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
-msgstr ""
+msgstr "La planificación de material muestra solo acciones y órdenes sugeridas vencidas dentro de este número de días a partir de hoy, por lo que las necesidades lejanas se mantienen fuera del camino hasta que sean importantes. El horizonte de planificación propio del artículo anula este valor predeterminado."
 
 msgid "Material Properties"
 msgstr "Propiedades del Material"
@@ -11274,7 +11287,7 @@ msgid "Net Income"
 msgstr "Ingreso Neto"
 
 msgid "Net Unit Price"
-msgstr ""
+msgstr "Precio Unitario Neto"
 
 msgid "Never"
 msgstr "Nunca"
@@ -11461,9 +11474,6 @@ msgstr "Nuevas condiciones de pago"
 
 msgid "New Picking List"
 msgstr "Nueva Lista de Picking"
-
-msgid "New PO"
-msgstr "Nuevo PO"
 
 msgid "New Price Override"
 msgstr "Nueva sobrescritura de precio"
@@ -12644,11 +12654,17 @@ msgstr "Demanda de trabajo abierto más transferencias pendientes de este conten
 msgid "Open jobs"
 msgstr "Órdenes de trabajo abiertas"
 
+msgid "Open Jobs"
+msgstr "Órdenes de trabajo Abiertas"
+
 msgid "Open menu"
 msgstr "Abrir menú"
 
 msgid "Open navigation"
 msgstr "Abrir navegación"
+
+msgid "Open Orders"
+msgstr "Órdenes Abiertas"
 
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
@@ -12867,6 +12883,9 @@ msgid "Order {0} for this job"
 msgstr "Pedir {0} para este trabajo"
 
 msgid "Order by"
+msgstr "Ordenar por"
+
+msgid "Order By"
 msgstr "Ordenar por"
 
 msgid "Order date"
@@ -13099,7 +13118,7 @@ msgid "Part Being Replaced"
 msgstr "Pieza siendo reemplazada"
 
 msgid "Part Cost"
-msgstr ""
+msgstr "Costo de Pieza"
 
 msgid "Part Details"
 msgstr "Detalles de la Pieza"
@@ -13500,13 +13519,19 @@ msgid "Planning"
 msgstr "Planificación"
 
 msgid "Planning Horizon"
-msgstr ""
+msgstr "Horizonte de Planificación"
+
+msgid "Planning Horizon (Days)"
+msgstr "Horizonte de Planificación (Días)"
 
 msgid "Planning Ownership"
 msgstr "Responsabilidad de Planificación"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Las rondas de planificación sugirieron reabastecimiento hasta un múltiplo entero de este número."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "La planificación muestra solo acciones y órdenes sugeridas vencidas dentro de este número de días. Dejar vacío para usar el predeterminado de la empresa, o ingrese 0 para mostrar todo para este artículo."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Límite inferior de planificación en una cantidad de reabastecimiento sugerida; distinto del MOQ de un proveedor, que vive en el registro de piezas del proveedor."
@@ -13887,7 +13912,7 @@ msgid "Profile"
 msgstr "Perfil"
 
 msgid "Profit Percent"
-msgstr ""
+msgstr "Porcentaje de Ganancia"
 
 msgid "Progress"
 msgstr "Progreso"
@@ -13939,8 +13964,11 @@ msgstr "Falta de inventario proyectada la semana del {0}"
 msgid "Projected stock"
 msgstr "Stock proyectado"
 
+msgid "Projected stock by week"
+msgstr "Existencias proyectadas por semana"
+
 msgid "Projected stock is already below zero this week"
-msgstr ""
+msgstr "Las existencias proyectadas ya están por debajo de cero esta semana"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14937,7 +14965,7 @@ msgid "Remove station"
 msgstr "Eliminar estación"
 
 msgid "Remove this item"
-msgstr ""
+msgstr "Quitar este artículo"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Quitar este tipo de almacenamiento de todas las unidades de almacenamiento que lo referencian y eliminarlo. No se puede deshacer."
@@ -16196,7 +16224,7 @@ msgid "Select an option"
 msgstr "Selecciona una opción"
 
 msgid "Select at least one item to accept the quote"
-msgstr ""
+msgstr "Seleccionar al menos un artículo para aceptar la cotización"
 
 msgid "Select at least one line to convert"
 msgstr "Seleccione al menos una línea para convertir"
@@ -16814,7 +16842,7 @@ msgid "Show Customer IDs"
 msgstr "Mostrar IDs de Cliente"
 
 msgid "Show Details"
-msgstr ""
+msgstr "Mostrar Detalles"
 
 msgid "Show Durations"
 msgstr "Mostrar duraciones"
@@ -17150,6 +17178,9 @@ msgstr "Iniciar"
 msgid "Start {0} Day Free Trial"
 msgstr "Iniciar prueba gratuita de {0} días"
 
+msgid "Start By"
+msgstr "Comenzar por"
+
 msgid "Start counting"
 msgstr "Iniciar conteo"
 
@@ -17475,6 +17506,15 @@ msgstr "Sugerir Coincidencia"
 
 msgid "Suggest with AI"
 msgstr "Sugerir con IA"
+
+msgid "Suggested Jobs"
+msgstr "Órdenes de trabajo Sugeridas"
+
+msgid "Suggested Orders"
+msgstr "Órdenes Sugeridas"
+
+msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgstr "Órdenes sugeridas requeridas después de la barrera de tiempo del artículo. Extienda la barrera para incluirlas."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Pedidos sugeridos que aún no ha realizado."
@@ -18834,6 +18874,9 @@ msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no e
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "Estas operaciones utilizan un proceso con múltiples proveedores. Elija un proveedor para cada una."
 
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "Estas órdenes no se pudieron cargar. Cierre y reabra para intentar de nuevo."
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Estas piezas están siendo reemplazadas por ésta. Cada regla se establece en la pieza anterior; ábrela para cambiar la regla."
 
@@ -19199,7 +19242,13 @@ msgid "Tightened"
 msgstr "Rigurosa"
 
 msgid "Time fence"
-msgstr ""
+msgstr "Barrera de tiempo"
+
+msgid "Time Fence"
+msgstr "Barrera de Tiempo"
+
+msgid "Time Fence:"
+msgstr "Cerca de Tiempo:"
 
 msgid "Time of day"
 msgstr "Hora del día"
@@ -19328,7 +19377,7 @@ msgid "Tool ID"
 msgstr "ID de herramienta"
 
 msgid "Tooling Cost"
-msgstr ""
+msgstr "Costo de Utillaje"
 
 msgid "tools"
 msgstr "Herramientas"
@@ -19355,7 +19404,7 @@ msgid "Total capitalized cost of the asset (purchase price plus freight, install
 msgstr "Costo total capitalizado del activo (precio de compra más flete, instalación y otros costos que se convierten en parte del valor en libros)."
 
 msgid "Total Direct Cost"
-msgstr ""
+msgstr "Costo Directo Total"
 
 msgid "Total discount"
 msgstr "Descuento total"
@@ -19364,7 +19413,7 @@ msgid "Total Due"
 msgstr "Total Adeudado"
 
 msgid "Total Estimated Cost"
-msgstr ""
+msgstr "Costo Estimado Total"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unidades totales de producción esperadas para depreciación de unidades de producción; el costo se distribuye por unidad producida."
@@ -19373,22 +19422,22 @@ msgid "Total Hours"
 msgstr "Horas totales"
 
 msgid "Total Indirect Cost"
-msgstr ""
+msgstr "Costo Indirecto Total"
 
 msgid "Total Material Cost"
-msgstr ""
+msgstr "Costo de Material Total"
 
 msgid "Total Minutes"
 msgstr "Minutos totales"
 
 msgid "Total Outside Cost"
-msgstr ""
+msgstr "Costo Externo Total"
 
 msgid "Total Price"
 msgstr "Precio Total"
 
 msgid "Total Profit"
-msgstr ""
+msgstr "Utilidad Total"
 
 msgid "Total quantity"
 msgstr "Cantidad total"

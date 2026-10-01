@@ -59,6 +59,10 @@ msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
+#. placeholder {0}: beyondFenceOrders.length
+msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{0, plural, one {# Daha {fenceLabel} Sonrasında} other {# Daha {fenceLabel} Sonrasında}}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
@@ -522,6 +526,9 @@ msgstr "12 aylık dönem"
 
 msgid "13+ weeks"
 msgstr "13+ hafta"
+
+msgid "1st Negative On Hand"
+msgstr "1. Negatif Eldeki"
 
 msgid "1Y"
 msgstr "1Y"
@@ -3737,7 +3744,7 @@ msgid "Changed By"
 msgstr "Değiştiren"
 
 msgid "Changed for this view only. The item's planning horizon is not updated."
-msgstr ""
+msgstr "Bu görünüm için değişti. Stok kartının planlama ufku güncellenmedi."
 
 msgid "Changelog"
 msgstr "Değişiklik Günlüğü"
@@ -4351,7 +4358,7 @@ msgid "Consumable"
 msgstr "Sarf malzemesi"
 
 msgid "Consumable Cost"
-msgstr ""
+msgstr "Sarf Malzemesi Maliyeti"
 
 msgid "Consumable Details"
 msgstr "Sarf malzemesi Ayrıntıları"
@@ -4474,7 +4481,7 @@ msgid "Convert to Quote"
 msgstr "Teklife Dönüştür"
 
 msgid "Converted Total Price"
-msgstr ""
+msgstr "Dönüştürülen Toplam Fiyat"
 
 msgid "Converting…"
 msgstr "Dönüştürülüyor…"
@@ -5710,7 +5717,7 @@ msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Periyodik amortisman çalışmaları için varsayılan muhasebe gideri hesabı"
 
 msgid "Default horizon (days)"
-msgstr ""
+msgstr "Varsayılan ufuk (gün)"
 
 msgid "Default Method"
 msgstr "Varsayılan Yöntem"
@@ -8086,11 +8093,17 @@ msgstr "Sayı güncelleme başarısız"
 msgid "Failed to update item cost"
 msgstr "Ürün maliyeti güncellenemedi"
 
+msgid "Failed to update job"
+msgstr "İş emri güncellenemedi"
+
 msgid "Failed to update lead times"
 msgstr "Tedarik sürelerini güncelleme başarısız oldu"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Satın alma siparişi ile fırsat güncellenemedi"
+
+msgid "Failed to update purchase order line"
+msgstr "Satın alma siparişi satırı güncellenemedi"
 
 msgid "Failed to update quote line"
 msgstr "Teklif satırını güncelleme başarısız oldu"
@@ -8284,7 +8297,7 @@ msgid "First Operation"
 msgstr "İlk İşlem"
 
 msgid "First week the projected stock goes below zero"
-msgstr ""
+msgstr "Projekte edilen stoğun sıfırın altına düştüğü ilk hafta"
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Sabit Kıymet"
@@ -9243,7 +9256,7 @@ msgid "Included"
 msgstr "Dahil"
 
 msgid "Includes bought and picked parts"
-msgstr ""
+msgstr "Satın alınan ve toplanmış parçaları içerir"
 
 msgid "Includes tax and shipping costs"
 msgstr "Vergi ve nakliye bedelini içerir"
@@ -9975,10 +9988,10 @@ msgid "Labor & Machine Variance (default)"
 msgstr "İşçilik ve Makine Sapması (varsayılan)"
 
 msgid "Labor Costs"
-msgstr ""
+msgstr "İşçilik Maliyetleri"
 
 msgid "Labor Hours"
-msgstr ""
+msgstr "İşçilik Saatleri"
 
 msgid "Labor rate"
 msgstr "İşçilik oranı"
@@ -10113,7 +10126,7 @@ msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
-msgstr ""
+msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -10467,10 +10480,10 @@ msgid "Machine"
 msgstr "Makine"
 
 msgid "Machine Costs"
-msgstr ""
+msgstr "Makine Maliyetleri"
 
 msgid "Machine Hours"
-msgstr ""
+msgstr "Makine Saatleri"
 
 msgid "Machine rate"
 msgstr "Makine oranı"
@@ -10714,10 +10727,10 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenmazlar."
 
 msgid "Markup by Category"
-msgstr ""
+msgstr "Kategoriye Göre Marj"
 
 msgid "Markup Percent"
-msgstr ""
+msgstr "Marj Yüzdesi"
 
 msgid "Master gauge"
 msgstr "Mastar ölçüm aleti"
@@ -10765,7 +10778,7 @@ msgid "Material"
 msgstr "Malzeme"
 
 msgid "Material Cost"
-msgstr ""
+msgstr "Malzeme Maliyeti"
 
 msgid "Material Dimension"
 msgstr "Malzeme Boyutu"
@@ -10816,7 +10829,7 @@ msgid "Material Planning"
 msgstr "Malzeme Planlama"
 
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
-msgstr ""
+msgstr "Malzeme planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir; böylece uzak gelecekteki gereksinimler önemli olana kadar yol dışında kalır. Bir stok kartının kendi planlama ufku bu varsayılanı geçersiz kılar."
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
@@ -11274,7 +11287,7 @@ msgid "Net Income"
 msgstr "Net Gelir"
 
 msgid "Net Unit Price"
-msgstr ""
+msgstr "Net Birim Fiyat"
 
 msgid "Never"
 msgstr "Asla"
@@ -11461,9 +11474,6 @@ msgstr "Yeni ödeme koşulu"
 
 msgid "New Picking List"
 msgstr "Yeni Toplama Listesi"
-
-msgid "New PO"
-msgstr "Yeni Sipariş"
 
 msgid "New Price Override"
 msgstr "Yeni Fiyat Geçersiz Kılma"
@@ -12644,11 +12654,17 @@ msgstr "Bu gözden çıkan açık iş emri talebi ve beklemede transferler"
 msgid "Open jobs"
 msgstr "Açık İş emirleri"
 
+msgid "Open Jobs"
+msgstr "Açık İş Emirleri"
+
 msgid "Open menu"
 msgstr "Menüyü aç"
 
 msgid "Open navigation"
 msgstr "Gezinmeyi aç"
+
+msgid "Open Orders"
+msgstr "Açık Siparişler"
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
@@ -12868,6 +12884,9 @@ msgstr "Bu iş için {0} sipariş et"
 
 msgid "Order by"
 msgstr "Sipariş tarihi"
+
+msgid "Order By"
+msgstr "Sırala"
 
 msgid "Order date"
 msgstr "Sipariş tarihi"
@@ -13099,7 +13118,7 @@ msgid "Part Being Replaced"
 msgstr "Yerine Geçilen Parça"
 
 msgid "Part Cost"
-msgstr ""
+msgstr "Parça Maliyeti"
 
 msgid "Part Details"
 msgstr "Parça Detayları"
@@ -13500,13 +13519,19 @@ msgid "Planning"
 msgstr "Planlama"
 
 msgid "Planning Horizon"
-msgstr ""
+msgstr "Planlama Ufku"
+
+msgid "Planning Horizon (Days)"
+msgstr "Planlama Ufku (Gün)"
 
 msgid "Planning Ownership"
 msgstr "Planlama Sahipliği"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Planlama turları, bu sayının tam katı kadar yenileme önermiştir."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "Planlama yalnızca bu kadar gün içinde gerçekleşmesi gereken eylemleri ve önerilen siparişleri gösterir. Şirket varsayılanını kullanmak için boş bırakın, veya bu stok kartının tümünü görmek için 0 girin."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Önerilen yenileme miktarı üzerinde planlamanın alt sınırı; bir tedarikçinin MOQ'sından farklı olan, tedarikçi parçası kaydında bulunan."
@@ -13887,7 +13912,7 @@ msgid "Profile"
 msgstr "Profil"
 
 msgid "Profit Percent"
-msgstr ""
+msgstr "Kar Yüzdesi"
 
 msgid "Progress"
 msgstr "İlerleme"
@@ -13939,8 +13964,11 @@ msgstr "{0} haftası için öngörülen stok tükenmesi"
 msgid "Projected stock"
 msgstr "Tahmini stok"
 
+msgid "Projected stock by week"
+msgstr "Haftalara göre projekte edilen stok"
+
 msgid "Projected stock is already below zero this week"
-msgstr ""
+msgstr "Projekte edilen stok bu hafta zaten sıfırın altında"
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14937,7 +14965,7 @@ msgid "Remove station"
 msgstr "İstasyonu kaldır"
 
 msgid "Remove this item"
-msgstr ""
+msgstr "Bu stok kartını kaldır"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldırır ve siler. Bu geri alınamaz."
@@ -16196,7 +16224,7 @@ msgid "Select an option"
 msgstr "Bir seçenek seçin"
 
 msgid "Select at least one item to accept the quote"
-msgstr ""
+msgstr "Teklifi kabul etmek için en az bir stok kartı seçin"
 
 msgid "Select at least one line to convert"
 msgstr "Dönüştürmek için en az bir satır seçin"
@@ -16814,7 +16842,7 @@ msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
 
 msgid "Show Details"
-msgstr ""
+msgstr "Ayrıntıları Göster"
 
 msgid "Show Durations"
 msgstr "Süreleri Göster"
@@ -17150,6 +17178,9 @@ msgstr "Başlat"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} Gün Ücretsiz Deneme Başlat"
 
+msgid "Start By"
+msgstr "Şundan Başla"
+
 msgid "Start counting"
 msgstr "Saymaya başla"
 
@@ -17475,6 +17506,15 @@ msgstr "Eşleştirme Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
+
+msgid "Suggested Jobs"
+msgstr "Önerilen İş Emirleri"
+
+msgid "Suggested Orders"
+msgstr "Önerilen Siparişler"
+
+msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgstr "Önerilen siparişler bu stok kartının zaman çitinden sonra gereklidir. Çiti genişleterek bunları dahil edin."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
@@ -18834,6 +18874,9 @@ msgstr "Bu Muhasebe fişi girişleri hala Taslak durumundadır, bu nedenle Borç
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "Bu operasyonlar birden fazla tedarikçili bir proses kullanır. Her biri için bir tedarikçi seçin."
 
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "Bu siparişler yüklenemedi. Kapatıp yeniden açarak tekrar deneyin."
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
 
@@ -19199,7 +19242,13 @@ msgid "Tightened"
 msgstr "Sıkılaştırılmış"
 
 msgid "Time fence"
-msgstr ""
+msgstr "Zaman Çiti"
+
+msgid "Time Fence"
+msgstr "Zaman Çiti"
+
+msgid "Time Fence:"
+msgstr "Zaman Çiti:"
 
 msgid "Time of day"
 msgstr "Günün saati"
@@ -19328,7 +19377,7 @@ msgid "Tool ID"
 msgstr "Alet Kimliği"
 
 msgid "Tooling Cost"
-msgstr ""
+msgstr "Takım Maliyeti"
 
 msgid "tools"
 msgstr "Araçlar"
@@ -19355,7 +19404,7 @@ msgid "Total capitalized cost of the asset (purchase price plus freight, install
 msgstr "Varlığın toplam kapitalize edilen maliyeti (satın alma fiyatı artı navlun, kurulum ve defter değerinin parçası haline gelen diğer maliyetler)."
 
 msgid "Total Direct Cost"
-msgstr ""
+msgstr "Toplam Doğrudan Maliyet"
 
 msgid "Total discount"
 msgstr "Toplam iskonto"
@@ -19364,7 +19413,7 @@ msgid "Total Due"
 msgstr "Toplam Borç"
 
 msgid "Total Estimated Cost"
-msgstr ""
+msgstr "Toplam Tahmini Maliyet"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
@@ -19373,22 +19422,22 @@ msgid "Total Hours"
 msgstr "Toplam Saat"
 
 msgid "Total Indirect Cost"
-msgstr ""
+msgstr "Toplam Endirekt Maliyet"
 
 msgid "Total Material Cost"
-msgstr ""
+msgstr "Toplam Malzeme Maliyeti"
 
 msgid "Total Minutes"
 msgstr "Toplam Dakika"
 
 msgid "Total Outside Cost"
-msgstr ""
+msgstr "Toplam Dış Maliyet"
 
 msgid "Total Price"
 msgstr "Toplam Fiyat"
 
 msgid "Total Profit"
-msgstr ""
+msgstr "Toplam Kâr"
 
 msgid "Total quantity"
 msgstr "Toplam Miktar"

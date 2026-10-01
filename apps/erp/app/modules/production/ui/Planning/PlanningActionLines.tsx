@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -29,7 +33,6 @@ import {
   LuEllipsisVertical,
   LuEyeOff,
   LuHammer,
-  LuInfo,
   LuMinus,
   LuPlus,
   LuRotateCcw,
@@ -42,7 +45,9 @@ import { DateTime, EmployeeAvatar, Hyperlink } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
 import type { PlanningAction } from "~/modules/production";
 import type { planningActionType } from "~/modules/production/production.models";
+import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { path } from "~/utils/path";
+import JobStatus from "../Jobs/JobStatus";
 
 // The MRP action worklist (spec §P1.7) rendered INSIDE the planning grid: one
 // persisted planningAction per line, shown in the expanded row of the item it
@@ -257,6 +262,164 @@ function reviewPathFor(action: PlanningAction) {
   return null;
 }
 
+/** Open before dismissed, then by suggested date (YYYY-MM-DD sorts
+ *  chronologically as a string), then by the type order above. */
+function sortPlanningActions(actions: PlanningAction[]) {
+  return [...actions].sort((a, b) => {
+    if (a.status !== b.status) return a.status === "Open" ? -1 : 1;
+    if (a.suggestedDate !== b.suggestedDate)
+      return a.suggestedDate < b.suggestedDate ? -1 : 1;
+    return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+  });
+}
+
+export type PlanningActionHandlers = {
+  currentUserId: string;
+  canUpdate: boolean;
+  isBusy: boolean;
+  onApply: (ids: string[]) => void;
+  onDismiss: (ids: string[]) => void;
+  onReopen: (ids: string[]) => void;
+  onAssignToMe: (ids: string[]) => void;
+};
+
+/** The trailing controls of one action, wherever it is listed: ONE button
+ *  (Apply, Review on the committed order, or Order…/Make… for new supply) and
+ *  the ⋯ menu with Assign to Me and Dismiss / Reopen. */
+export function PlanningActionRowActions({
+  action,
+  currentUserId,
+  canUpdate,
+  isBusy,
+  onApply,
+  onDismiss,
+  onReopen,
+  onAssignToMe,
+  onOrder
+}: PlanningActionHandlers & {
+  action: PlanningAction;
+  /** Opens the order drawer for a new-supply action. A host that lists change
+   *  actions only (the order drawer itself) omits it. */
+  onOrder?: () => void;
+}) {
+  const { t } = useLingui();
+  const isDismissed = action.status === "Dismissed";
+  const reviewPath = action.requiresManualAction ? reviewPathFor(action) : null;
+  const isMine = action.assignee === currentUserId;
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {isDismissed ? (
+        <span className="text-xs text-muted-foreground">
+          <Trans>Dismissed</Trans>
+        </span>
+      ) : reviewPath ? (
+        <Button asChild size="sm" variant="secondary">
+          <Link to={reviewPath}>
+            <Trans>Review</Trans>
+          </Link>
+        </Button>
+      ) : isNewSupplyAction(action) ? (
+        onOrder && (
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={!canUpdate || isBusy}
+            onClick={onOrder}
+          >
+            {action.type === "Make" ? t`Make` : t`Order`}
+          </Button>
+        )
+      ) : (
+        <Button
+          size="sm"
+          variant="secondary"
+          isDisabled={!canUpdate || isBusy}
+          onClick={() => onApply([action.id])}
+        >
+          <Trans>Apply</Trans>
+        </Button>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            aria-label={t`More options`}
+            icon={<LuEllipsisVertical />}
+            isDisabled={!canUpdate}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={isMine || isBusy}
+            onSelect={() => onAssignToMe([action.id])}
+          >
+            <DropdownMenuIcon icon={<LuUserCheck />} />
+            <Trans>Assign to Me</Trans>
+          </DropdownMenuItem>
+          {isDismissed ? (
+            <DropdownMenuItem
+              disabled={isBusy}
+              onSelect={() => onReopen([action.id])}
+            >
+              <DropdownMenuIcon icon={<LuRotateCcw />} />
+              <Trans>Reopen</Trans>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              disabled={isBusy}
+              onSelect={() => onDismiss([action.id])}
+            >
+              <DropdownMenuIcon icon={<LuX />} />
+              <Trans>Dismiss</Trans>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+/**
+ * The action's type badge, with MRP's reason as the badge's own tooltip. A
+ * sentence per row is a column no width comfortably fits, and a separate info
+ * icon beside every badge was a second thing to aim at for the same answer —
+ * so the badge is the hover target. It is focusable, so the reason is
+ * reachable from the keyboard too.
+ */
+export function PlanningActionTypeWithReason({
+  action
+}: {
+  action: PlanningAction;
+}) {
+  const reason = action.reason ?? action.policyName ?? "";
+  const badge = <PlanningActionTypeBadge type={action.type} />;
+
+  if (!reason) return badge;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          // focusable: the tooltip is the only place the reason is shown
+          tabIndex={0}
+          className="inline-flex shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {badge}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[360px] whitespace-normal">
+        {reason}
+        {action.reason && action.policyName && (
+          <div className="text-muted-foreground">{action.policyName}</div>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 type PlanningActionLinesProps = {
   actions: PlanningAction[];
   currentUserId: string;
@@ -283,22 +446,10 @@ export function PlanningActionLines({
   onAssignToMe,
   onOrder
 }: PlanningActionLinesProps) {
-  const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
   const todayIso = today(getLocalTimeZone()).toString();
 
-  const sorted = useMemo(
-    () =>
-      [...actions].sort((a, b) => {
-        // open before dismissed, then by suggested date (YYYY-MM-DD sorts
-        // chronologically as a string), then by the type order above
-        if (a.status !== b.status) return a.status === "Open" ? -1 : 1;
-        if (a.suggestedDate !== b.suggestedDate)
-          return a.suggestedDate < b.suggestedDate ? -1 : 1;
-        return TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
-      }),
-    [actions]
-  );
+  const sorted = useMemo(() => sortPlanningActions(actions), [actions]);
 
   if (sorted.length === 0) return null;
 
@@ -313,15 +464,22 @@ export function PlanningActionLines({
   // grid lives in a half-width resizable pane, so the block is a container:
   // below @4xl the assignee is avatar-only, and narrower than the columns'
   // sum the block scrolls on its own rather than squeezing any column.
+  //
+  // `@container` is inline-size containment: the block has NO intrinsic width,
+  // so it must be stretched by its parent. In a shrink-to-fit parent (a flex
+  // column with `items-start`, e.g. VStack) it collapses to zero and the rows
+  // vanish — hence the explicit `w-full`.
   const cell = "group-hover:bg-inherit";
 
   return (
-    <div className="pl-[52px] pr-2 py-1 @container">
+    <div className="w-full pl-[52px] pr-2 py-1 @container">
       <div className="overflow-x-auto">
         <TableBase full className="table-fixed">
           <colgroup>
             <col className="w-[200px]" />
-            <col className="w-[140px]" />
+            {/* the status icon, the order id and `Hyperlink`'s hover "Open"
+                button */}
+            <col className="w-[264px]" />
             <col className="w-[120px]" />
             <col className="w-[170px]" />
             <col />
@@ -331,14 +489,9 @@ export function PlanningActionLines({
             {sorted.map((action) => {
               const isDismissed = action.status === "Dismissed";
               const isLate = !isDismissed && action.suggestedDate < todayIso;
-              const reviewPath = action.requiresManualAction
-                ? reviewPathFor(action)
-                : null;
               const documentId =
                 action.purchaseOrderReadableId ?? action.jobReadableId ?? null;
               const documentPath = reviewPathFor(action);
-              const isMine = action.assignee === currentUserId;
-              const reason = action.reason ?? action.policyName ?? "";
 
               return (
                 <Tr
@@ -346,33 +499,20 @@ export function PlanningActionLines({
                   className={cn(isDismissed && "text-muted-foreground")}
                 >
                   <Td className={cn(cell, "whitespace-nowrap")}>
-                    <HStack spacing={1}>
-                      <PlanningActionTypeBadge type={action.type} />
-                      {reason && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <IconButton
-                              size="sm"
-                              variant="ghost"
-                              aria-label={t`Reason`}
-                              icon={<LuInfo />}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-[360px] whitespace-normal">
-                            {reason}
-                            {action.reason && action.policyName && (
-                              <div className="text-muted-foreground">
-                                {action.policyName}
-                              </div>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </HStack>
+                    <PlanningActionTypeWithReason action={action} />
                   </Td>
                   <Td className={cn(cell, "overflow-hidden whitespace-nowrap")}>
                     {documentId && documentPath ? (
-                      <Hyperlink to={documentPath}>{documentId}</Hyperlink>
+                      <HStack spacing={2} className="flex-nowrap">
+                        {/* why this row is Review or Apply, without a
+                            status column: the icon, its name on hover */}
+                        <PurchasingStatus
+                          iconOnly
+                          status={action.purchaseOrderStatus}
+                        />
+                        <JobStatus iconOnly status={action.jobStatus} />
+                        <Hyperlink to={documentPath}>{documentId}</Hyperlink>
+                      </HStack>
                     ) : (
                       <span className="text-xs text-muted-foreground">
                         <Trans>New supply</Trans>
@@ -420,75 +560,17 @@ export function PlanningActionLines({
                     )}
                   </Td>
                   <Td className={cell}>
-                    <div className="flex items-center justify-end gap-1">
-                      {isDismissed ? (
-                        <span className="text-xs text-muted-foreground">
-                          <Trans>Dismissed</Trans>
-                        </span>
-                      ) : reviewPath ? (
-                        <Button asChild size="sm" variant="secondary">
-                          <Link to={reviewPath}>
-                            <Trans>Review</Trans>
-                          </Link>
-                        </Button>
-                      ) : isNewSupplyAction(action) ? (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          isDisabled={!canUpdate || isBusy}
-                          onClick={onOrder}
-                        >
-                          {action.type === "Make" ? t`Make` : t`Order`}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          isDisabled={!canUpdate || isBusy}
-                          onClick={() => onApply([action.id])}
-                        >
-                          <Trans>Apply</Trans>
-                        </Button>
-                      )}
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            size="sm"
-                            variant="ghost"
-                            aria-label={t`More options`}
-                            icon={<LuEllipsisVertical />}
-                            isDisabled={!canUpdate}
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            disabled={isMine || isBusy}
-                            onSelect={() => onAssignToMe([action.id])}
-                          >
-                            <DropdownMenuIcon icon={<LuUserCheck />} />
-                            <Trans>Assign to Me</Trans>
-                          </DropdownMenuItem>
-                          {isDismissed ? (
-                            <DropdownMenuItem
-                              disabled={isBusy}
-                              onSelect={() => onReopen([action.id])}
-                            >
-                              <DropdownMenuIcon icon={<LuRotateCcw />} />
-                              <Trans>Reopen</Trans>
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              disabled={isBusy}
-                              onSelect={() => onDismiss([action.id])}
-                            >
-                              <DropdownMenuIcon icon={<LuX />} />
-                              <Trans>Dismiss</Trans>
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    <PlanningActionRowActions
+                      action={action}
+                      currentUserId={currentUserId}
+                      canUpdate={canUpdate}
+                      isBusy={isBusy}
+                      onApply={onApply}
+                      onDismiss={onDismiss}
+                      onReopen={onReopen}
+                      onAssignToMe={onAssignToMe}
+                      onOrder={onOrder}
+                    />
                   </Td>
                 </Tr>
               );

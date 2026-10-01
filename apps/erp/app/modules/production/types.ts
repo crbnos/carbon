@@ -194,9 +194,32 @@ export type Procedure = NonNullable<
   Awaited<ReturnType<typeof getProcedure>>["data"]
 >;
 
-export type ProductionPlanningItem = NonNullable<
-  Awaited<ReturnType<typeof getProductionPlanning>>["data"]
->[number];
+/**
+ * The columns the planning grid RPCs add to the base planning row. Generated
+ * function return types mark every column non-null; these are not — an item
+ * with no group, no planning horizon, no negative week or nothing to order
+ * comes back NULL.
+ */
+export type PlanningGridColumns = {
+  itemPostingGroupId: string | null;
+  /** The item's saved planning horizon in days (item, else company default);
+   *  null when there is none — a saved 0 means "no fence" and reads as null. */
+  planningHorizonDays: number | null;
+  /** Today + the saved horizon; null when the item has no fence. */
+  timeFenceDate: string | null;
+  /** Start of the first week whose projected on-hand is below zero. */
+  firstNegativeDate: string | null;
+  /** Earliest order-by date among the item's open new-supply actions. */
+  latestOrderDate: string | null;
+};
+
+export type ProductionPlanningItem = Omit<
+  NonNullable<
+    Awaited<ReturnType<typeof getProductionPlanning>>["data"]
+  >[number],
+  keyof PlanningGridColumns
+> &
+  PlanningGridColumns;
 
 export type PlanningAction = NonNullable<
   Awaited<ReturnType<typeof getPlanningActions>>["data"]

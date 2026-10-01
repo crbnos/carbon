@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260930150428",
+  "schemaVersion": "20261001022635",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-30T22:57:25.968Z",
+  "exportedAt": "2026-10-01T22:44:34.058Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -419,6 +419,7 @@
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
+        "defaultPlanningHorizonDays",
         "id",
         "digitalQuoteNotificationGroup",
         "rfqReadyNotificationGroup",
@@ -552,12 +553,12 @@
         "updatedAt",
         "customFields",
         "createdAt",
-        "id",
         "name",
         "companyId",
         "createdBy",
         "updatedBy",
-        "tags"
+        "tags",
+        "id"
       ]
     },
     {
@@ -955,12 +956,12 @@
         "kind",
         "createdAt",
         "updatedAt",
-        "createdBy",
-        "updatedBy",
         "id",
         "companyId",
         "itemKey",
-        "value"
+        "value",
+        "createdBy",
+        "updatedBy"
       ]
     },
     {
@@ -969,12 +970,12 @@
       "columns": [
         "createdAt",
         "updatedAt",
-        "id",
-        "companyId",
         "fieldKey",
         "value",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "id",
+        "companyId"
       ]
     },
     {
@@ -1264,11 +1265,11 @@
         "periodEnd",
         "unitsProduced",
         "createdAt",
+        "updatedBy",
         "id",
         "fixedAssetId",
         "companyId",
-        "createdBy",
-        "updatedBy"
+        "createdBy"
       ]
     },
     {
@@ -2966,7 +2967,8 @@
         "toleranceMinus",
         "unit",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "gaugeTypeId"
       ]
     },
     {
@@ -3066,6 +3068,7 @@
         "maximumInventoryQuantity",
         "demandAccumulationSafetyStock",
         "minimumReserveQuantity",
+        "planningHorizonDays",
         "itemId",
         "locationId",
         "companyId",
@@ -3132,13 +3135,13 @@
       "name": "itemUnitSalePrice",
       "rows": 0,
       "columns": [
+        "unitSalePrice",
         "salesBlocked",
         "priceIncludesTax",
         "allowInvoiceDiscount",
         "createdAt",
         "updatedAt",
         "customFields",
-        "unitSalePrice",
         "itemId",
         "currencyCode",
         "salesUnitOfMeasureCode",
@@ -4119,8 +4122,8 @@
       "name": "customerShipping",
       "rows": 0,
       "columns": [
-        "updatedAt",
         "incoterm",
+        "updatedAt",
         "customerId",
         "shippingCustomerId",
         "shippingCustomerLocationId",
@@ -4582,6 +4585,8 @@
       "name": "quoteLine",
       "rows": 0,
       "columns": [
+        "priceTrace",
+        "sortOrder",
         "quoteRevisionId",
         "status",
         "methodType",
@@ -4594,8 +4599,6 @@
         "unitPricePrecision",
         "externalNotes",
         "configuration",
-        "priceTrace",
-        "sortOrder",
         "id",
         "quoteId",
         "estimatorId",
@@ -4829,13 +4832,15 @@
         "rejectionNumber",
         "createdAt",
         "updatedAt",
+        "gaugeRecordedAt",
         "id",
         "inspectionId",
         "inspectionFeatureId",
         "codeLetter",
         "companyId",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "gaugeId"
       ]
     },
     {
@@ -5589,6 +5594,8 @@
         "assigneeOverridden",
         "createdAt",
         "updatedAt",
+        "horizonDate",
+        "latestOrderDate",
         "id",
         "companyId",
         "itemId",

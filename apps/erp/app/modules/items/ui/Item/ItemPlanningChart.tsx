@@ -155,7 +155,8 @@ export const ItemPlanningChart = ({
   locationId,
   plannedOrders = [],
   safetyStock,
-  conversionFactor = 1
+  conversionFactor = 1,
+  timeFenceDate = null
 }: {
   compact?: boolean;
   itemId: string;
@@ -163,6 +164,10 @@ export const ItemPlanningChart = ({
   plannedOrders?: PlannedOrder[];
   safetyStock?: number;
   conversionFactor?: number;
+  /** The planning horizon's cutoff (ISO date). Marked on the chart as a
+   *  vertical line on the week it falls in; omitted when there is no fence or
+   *  it lies outside the charted weeks. */
+  timeFenceDate?: string | null;
 }) => {
   const { t } = useLingui();
   const forecastFetcher = useFetcher<typeof forecastLoader>();
@@ -198,7 +203,8 @@ export const ItemPlanningChart = ({
     const empty = {
       data: [] as ChartDataPoint[],
       stockoutDate: null as string | null,
-      belowSafetyDate: null as string | null
+      belowSafetyDate: null as string | null,
+      timeFenceWeek: null as string | null
     };
     if (
       !forecastFetcher.data?.demand ||
@@ -339,8 +345,23 @@ export const ItemPlanningChart = ({
       return period;
     });
 
-    return { data, stockoutDate, belowSafetyDate };
+    // The charted week the time fence falls in: the last week starting on or
+    // before it. ISO dates order as strings. A fence before the first week or
+    // past the last one has no bar to sit on.
+    let timeFenceWeek: string | null = null;
+    const lastEndDate = periods.reduce(
+      (latest, period) => (period.endDate > latest ? period.endDate : latest),
+      ""
+    );
+    if (timeFenceDate && timeFenceDate <= lastEndDate) {
+      for (const period of data) {
+        if (period.startDate <= timeFenceDate) timeFenceWeek = period.startDate;
+      }
+    }
+
+    return { data, stockoutDate, belowSafetyDate, timeFenceWeek };
   }, [
+    timeFenceDate,
     forecastFetcher.data,
     plannedOrders,
     conversionFactor,
@@ -712,6 +733,23 @@ export const ItemPlanningChart = ({
                         value: t`Safety stock (${numberFormatter.format(safetyStockValue)})`,
                         position: "insideTopLeft",
                         fill: chartColors.safety,
+                        fontSize: 11,
+                        fontWeight: 600
+                      }}
+                    />
+                  )}
+                  {chartData.timeFenceWeek && (
+                    <ReferenceLine
+                      x={chartData.timeFenceWeek}
+                      stroke={chartColors.zero}
+                      strokeDasharray="2 4"
+                      label={{
+                        value: t`Time fence`,
+                        // Recharts mirrors the names on a vertical line:
+                        // "insideTopLeft" is the side AWAY from the y-axis,
+                        // so the label never lands on the tick numbers.
+                        position: "insideTopLeft",
+                        fill: chartColors.zero,
                         fontSize: 11,
                         fontWeight: 600
                       }}

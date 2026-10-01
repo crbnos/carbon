@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Planning action messages (spec §P1) — the persisted, assignable output of an
 // MRP run. One row per suggested action:
 //
@@ -18,6 +22,11 @@
 // suggestion changed materially, vanished Open/Dismissed rows are deleted so a
 // returning need re-surfaces, and Actioned rows are terminal. Failures
 // PROPAGATE to the caller — a run must not report success with stale actions.
+//
+// Actions are generated over the WHOLE planning window. The per-item planning
+// horizon (time fence) is a read-time lens applied by the planning grids, which
+// compare each row's `horizonDate` with today + horizon days — so a planner can
+// widen the fence on screen without a run. Nothing here reads the horizon.
 
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
@@ -53,6 +62,17 @@ export type PlanningActionCandidate = {
   type: PlanningActionType;
   suggestedQuantity: number;
   suggestedDate: string;
+  /**
+   * The date that decides whether this action is inside a planning horizon:
+   * the earlier of the target order's current date and `suggestedDate`. A Defer
+   * counts from where its order sits today, an Expedite from when it is needed.
+   */
+  horizonDate: string;
+  /**
+   * New-supply actions (Order / Make, and the Increase one folds into): the
+   * required date less the item's lead time — the last day to place the order.
+   */
+  latestOrderDate: string | null;
   isASAP: boolean;
   purchaseOrderLineId: string | null;
   jobId: string | null;
@@ -73,6 +93,8 @@ export type ExistingPlanningAction = {
   status: "Open" | "Dismissed";
   suggestedQuantity: number;
   suggestedDate: string;
+  horizonDate: string;
+  latestOrderDate: string | null;
   isASAP: boolean;
   purchaseOrderLineId: string | null;
   jobId: string | null;
@@ -88,6 +110,11 @@ export type ExistingPlanningAction = {
 /** Signed day difference a − b for two ISO calendar dates. */
 export function daysBetween(a: string, b: string): number {
   return parseDate(a).compare(parseDate(b));
+}
+
+/** The earlier of two ISO calendar dates. */
+export function earlierDate(a: string, b: string): string {
+  return daysBetween(a, b) <= 0 ? a : b;
 }
 
 /**
@@ -225,7 +252,8 @@ export function deriveChangeActions(
       requiresManualAction: order.requiresManualAction,
       supplierId: order.supplierId ?? null,
       policyName: null,
-      triggerValues: null
+      triggerValues: null,
+      latestOrderDate: null
     };
 
     if (consumed <= 0) {
@@ -236,6 +264,7 @@ export function deriveChangeActions(
         periodId: period.id,
         suggestedQuantity: order.quantity,
         suggestedDate: order.dueDate,
+        horizonDate: order.dueDate,
         isASAP: false,
         reason: "No remaining requirement for this order"
       });
@@ -252,6 +281,7 @@ export function deriveChangeActions(
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
           suggestedDate: firstNeed.startDate,
+          horizonDate: earlierDate(order.dueDate, firstNeed.startDate),
           isASAP: daysBetween(firstNeed.startDate, todayDate) < 0,
           reason: `Needed ${gap} days earlier than its current date`
         });
@@ -264,6 +294,7 @@ export function deriveChangeActions(
           periodId: firstNeed.periodId,
           suggestedQuantity: order.quantity,
           suggestedDate: firstNeed.startDate,
+          horizonDate: earlierDate(order.dueDate, firstNeed.startDate),
           isASAP: false,
           reason: `Not needed until ${-gap} days after its current date`
         });
@@ -283,6 +314,7 @@ export function deriveChangeActions(
         periodId: period.id,
         suggestedQuantity: required,
         suggestedDate: order.dueDate,
+        horizonDate: order.dueDate,
         isASAP: false,
         reason: `Only ${required} of ${order.quantity} is required`
       });
@@ -334,6 +366,7 @@ export function convertOrdersToIncreases(args: {
       purchaseOrderLineId: match.purchaseOrderLineId ?? null,
       jobId: match.jobId ?? null,
       requiresManualAction: match.requiresManualAction,
+      horizonDate: earlierDate(match.dueDate, candidate.suggestedDate),
       suggestedQuantity: round(match.quantity + candidate.suggestedQuantity),
       reason: `Increase from ${match.quantity} to cover a shortfall of ${round(candidate.suggestedQuantity)}`
     };
@@ -433,12 +466,24 @@ export function diffPlanningActions(args: {
       Math.abs(daysBetween(current.suggestedDate, candidate.suggestedDate)) >
         toleranceDays;
 
+    const patch: Record<string, unknown> = {};
+    // The grid-facing dates track the candidate on every row, dismissed ones
+    // included: keeping them current never re-opens anything.
+    if (current.horizonDate !== candidate.horizonDate) {
+      patch.horizonDate = candidate.horizonDate;
+    }
+    if ((current.latestOrderDate ?? null) !== candidate.latestOrderDate) {
+      patch.latestOrderDate = candidate.latestOrderDate;
+    }
+
     if (current.status === "Dismissed" && !materialChange) {
       // dismissed suppresses a persisting, unchanged need
+      if (Object.keys(patch).length > 0) {
+        updates.push({ id: current.id, patch });
+      }
       continue;
     }
 
-    const patch: Record<string, unknown> = {};
     if (current.status === "Dismissed") patch.status = "Open";
     if (!equals(current.suggestedQuantity, candidate.suggestedQuantity)) {
       patch.suggestedQuantity = candidate.suggestedQuantity;
@@ -767,6 +812,8 @@ export async function generatePlanningActions(
               periodId: firstPeriod.id,
               suggestedQuantity: shortfall,
               suggestedDate: firstPeriod.startDate,
+              horizonDate: firstPeriod.startDate,
+              latestOrderDate: startDate,
               isASAP: daysBetween(startDate, todayDate) < 0,
               purchaseOrderLineId: null,
               jobId: null,
@@ -813,6 +860,8 @@ export async function generatePlanningActions(
           periodId: order.periodId,
           suggestedQuantity: order.quantity,
           suggestedDate: order.dueDate,
+          horizonDate: order.dueDate,
+          latestOrderDate: order.startDate,
           isASAP: order.isASAP,
           purchaseOrderLineId: null,
           jobId: null,
@@ -874,8 +923,18 @@ export async function generatePlanningActions(
         if (current) {
           current.suggestedQuantity += candidate.suggestedQuantity;
           current.isASAP = current.isASAP || candidate.isASAP;
-          if (daysBetween(candidate.suggestedDate, current.suggestedDate) < 0) {
-            current.suggestedDate = candidate.suggestedDate;
+          current.suggestedDate = earlierDate(
+            current.suggestedDate,
+            candidate.suggestedDate
+          );
+          current.horizonDate = earlierDate(
+            current.horizonDate,
+            candidate.horizonDate
+          );
+          if (candidate.latestOrderDate) {
+            current.latestOrderDate = current.latestOrderDate
+              ? earlierDate(current.latestOrderDate, candidate.latestOrderDate)
+              : candidate.latestOrderDate;
           }
         } else {
           aggregated.set(key, { ...candidate });
@@ -916,6 +975,8 @@ export async function generatePlanningActions(
       "status",
       "suggestedQuantity",
       "suggestedDate",
+      "horizonDate",
+      "latestOrderDate",
       "isASAP",
       "purchaseOrderLineId",
       "jobId",
@@ -937,6 +998,10 @@ export async function generatePlanningActions(
     status: row.status as "Open" | "Dismissed",
     suggestedQuantity: Number(row.suggestedQuantity),
     suggestedDate: toIsoDate(row.suggestedDate as unknown as string | Date)!,
+    horizonDate: toIsoDate(row.horizonDate as unknown as string | Date)!,
+    latestOrderDate: row.latestOrderDate
+      ? toIsoDate(row.latestOrderDate as unknown as string | Date)
+      : null,
     triggerValues: row.triggerValues ?? null
   }));
 
@@ -982,6 +1047,8 @@ export async function generatePlanningActions(
             type: candidate.type,
             suggestedQuantity: candidate.suggestedQuantity,
             suggestedDate: candidate.suggestedDate,
+            horizonDate: candidate.horizonDate,
+            latestOrderDate: candidate.latestOrderDate,
             isASAP: candidate.isASAP,
             purchaseOrderLineId: candidate.purchaseOrderLineId,
             jobId: candidate.jobId,

@@ -642,6 +642,11 @@ export const itemPlanningValidator = z
     minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
     orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // The planning horizon (time fence) in days from today: the planning grids
+    // surface only the actions and suggested orders that fall inside it. Empty
+    // = inherit the company default, else no fence; 0 = no fence for this item
+    // even when the company has a default.
+    planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
     responsibleEmployee: zfd.text(z.string().optional())

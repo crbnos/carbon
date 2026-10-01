@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // responsibleEmployee ownership ladder (spec §P1.3): resolve who owns an
 // item+location's planning actions, most-specific first. Drawn as a tree it is
 // company default → location → location-specific item group → item; resolution

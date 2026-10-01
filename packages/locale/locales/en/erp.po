@@ -59,6 +59,10 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
 
+#. placeholder {0}: beyondFenceOrders.length
+msgid "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+msgstr "{0, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
+
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -522,6 +526,9 @@ msgstr "12 monthly periods"
 
 msgid "13+ weeks"
 msgstr "13+ weeks"
+
+msgid "1st Negative On Hand"
+msgstr "1st Negative On Hand"
 
 msgid "1Y"
 msgstr "1Y"
@@ -8086,11 +8093,17 @@ msgstr "Failed to update count"
 msgid "Failed to update item cost"
 msgstr "Failed to update item cost"
 
+msgid "Failed to update job"
+msgstr "Failed to update job"
+
 msgid "Failed to update lead times"
 msgstr "Failed to update lead times"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Failed to update opportunity with purchase order"
+
+msgid "Failed to update purchase order line"
+msgstr "Failed to update purchase order line"
 
 msgid "Failed to update quote line"
 msgstr "Failed to update quote line"
@@ -11462,9 +11475,6 @@ msgstr "New Payment Term"
 msgid "New Picking List"
 msgstr "New Picking List"
 
-msgid "New PO"
-msgstr "New PO"
-
 msgid "New Price Override"
 msgstr "New Price Override"
 
@@ -12644,11 +12654,17 @@ msgstr "Open job demand plus outstanding transfers out of this bin"
 msgid "Open jobs"
 msgstr "Open jobs"
 
+msgid "Open Jobs"
+msgstr "Open Jobs"
+
 msgid "Open menu"
 msgstr "Open menu"
 
 msgid "Open navigation"
 msgstr "Open navigation"
+
+msgid "Open Orders"
+msgstr "Open Orders"
 
 msgid "Open payables by supplier and age"
 msgstr "Open payables by supplier and age"
@@ -12868,6 +12884,9 @@ msgstr "Order {0} for this job"
 
 msgid "Order by"
 msgstr "Order by"
+
+msgid "Order By"
+msgstr "Order By"
 
 msgid "Order date"
 msgstr "Order date"
@@ -13502,11 +13521,17 @@ msgstr "Planning"
 msgid "Planning Horizon"
 msgstr "Planning Horizon"
 
+msgid "Planning Horizon (Days)"
+msgstr "Planning Horizon (Days)"
+
 msgid "Planning Ownership"
 msgstr "Planning Ownership"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Planning rounds suggested replenishment up to a whole multiple of this number."
+
+msgid "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
+msgstr "Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item."
 
 msgid "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
 msgstr "Planning's lower bound on a suggested replenishment quantity; distinct from a supplier's MOQ, which lives on the supplier-part record."
@@ -13938,6 +13963,9 @@ msgstr "Projected on hand"
 
 msgid "Projected stock"
 msgstr "Projected stock"
+
+msgid "Projected stock by week"
+msgstr "Projected stock by week"
 
 msgid "Projected stock is already below zero this week"
 msgstr "Projected stock is already below zero this week"
@@ -17150,6 +17178,9 @@ msgstr "Start"
 msgid "Start {0} Day Free Trial"
 msgstr "Start {0} Day Free Trial"
 
+msgid "Start By"
+msgstr "Start By"
+
 msgid "Start counting"
 msgstr "Start counting"
 
@@ -17475,6 +17506,15 @@ msgstr "Suggest Match"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
+
+msgid "Suggested Jobs"
+msgstr "Suggested Jobs"
+
+msgid "Suggested Orders"
+msgstr "Suggested Orders"
+
+msgid "Suggested orders required after this item's time fence. Extend the fence to include them."
+msgstr "Suggested orders required after this item's time fence. Extend the fence to include them."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
@@ -18834,6 +18874,9 @@ msgstr "These journal entries are still Draft, so their debits and credits aren'
 msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
 msgstr "These operations use a process with multiple suppliers. Choose a supplier for each."
 
+msgid "These orders could not be loaded. Close and reopen to try again."
+msgstr "These orders could not be loaded. Close and reopen to try again."
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 
@@ -19200,6 +19243,12 @@ msgstr "Tightened"
 
 msgid "Time fence"
 msgstr "Time fence"
+
+msgid "Time Fence"
+msgstr "Time Fence"
+
+msgid "Time Fence:"
+msgstr "Time Fence:"
 
 msgid "Time of day"
 msgstr "Time of day"
