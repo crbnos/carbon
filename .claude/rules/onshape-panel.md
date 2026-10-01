@@ -138,8 +138,10 @@ previous push wrote, insert fresh ones. A manual line for a part number Onshape
 also lists is **taken over** (`pairManualLines` in `panel/plan.ts`, applied by
 `claimManualMethodLine`): Onshape's quantity, order and child method, plus an
 ownership row, with its operation and scrap kept, so a hand-built BOM does not
-end up with each shared part twice. Manual lines for parts Onshape doesn't
-list are left untouched. A line
+end up with each shared part twice. Only a line whose `itemType` matches the
+item the write points at is taken over: item numbers are unique per type, so
+a Material sharing a Part's number is a different item and its line is kept.
+Manual lines for parts Onshape doesn't list are left untouched. A line
 already carrying the right component is updated in place, and one whose
 push-owned columns (`quantity`, `order`, `materialMakeMethodId`) already match
 is skipped. New lines and their mapping rows are written together in a Kysely

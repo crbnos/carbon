@@ -184,6 +184,8 @@ export type ManualLineRow = {
   lineId: string;
   itemId: string;
   readableId: string;
+  /** The line's own item type: only a line of the same type is taken over. */
+  itemType: string | null;
   quantity: number | null;
   order: number | null;
   materialMakeMethodId: string | null;
@@ -233,7 +235,7 @@ export async function loadMethodLineOwnership(
       client
         .from("methodMaterial")
         .select(
-          "id, makeMethodId, itemId, quantity, order, materialMakeMethodId"
+          "id, makeMethodId, itemId, itemType, quantity, order, materialMakeMethodId"
         )
         .eq("companyId", companyId)
         .in("makeMethodId", batch)
@@ -315,11 +317,12 @@ export async function loadMethodLineOwnership(
         materialMakeMethodId: line.materialMakeMethodId
       });
     } else {
-      append(result.manual, methodId, planLine);
+      append(result.manual, methodId, { ...planLine, itemType: line.itemType });
       append(result.manualRows, methodId, {
         lineId: line.id,
         itemId: line.itemId,
         readableId: planLine.readableId,
+        itemType: line.itemType,
         quantity: line.quantity,
         order: line.order,
         materialMakeMethodId: line.materialMakeMethodId

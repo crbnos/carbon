@@ -767,7 +767,15 @@ export async function action({ request }: ActionFunctionArgs) {
         continue;
       }
 
-      const claim = manualByReadableId.get(write.partNumber)?.shift();
+      // Same rule as the plan's `pairManualLines`: only a line of the item
+      // type this write points at, since a Material sharing a Part's number
+      // is a different item.
+      const queue = manualByReadableId.get(write.partNumber);
+      const claimIndex =
+        queue?.findIndex((row) => !row.itemType || row.itemType === itemType) ??
+        -1;
+      const claim =
+        queue && claimIndex >= 0 ? queue.splice(claimIndex, 1)[0] : undefined;
       if (claim) {
         // Taken over, not duplicated: the line keeps its id and everything
         // Carbon owns on it, and gains an ownership row.

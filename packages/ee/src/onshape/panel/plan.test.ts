@@ -1167,6 +1167,25 @@ describe("buildAssemblyPlan descriptions", () => {
 });
 
 describe("pairManualLines", () => {
+  it("keeps a manual line for another item type that shares the number", () => {
+    // A Material and a Part can share a number; the Part's write must not
+    // repoint the Material's line.
+    const { takesOver, keeps } = pairManualLines(
+      [{ partNumber: "X-1", quantity: 2, itemType: "Part" }],
+      [],
+      [
+        { readableId: "X-1", quantity: 5, itemType: "Material" },
+        { readableId: "X-1", quantity: 1, itemType: "Part" }
+      ]
+    );
+    expect(takesOver).toEqual([
+      { readableId: "X-1", quantity: 1, itemType: "Part", onshapeQuantity: 2 }
+    ]);
+    expect(keeps).toEqual([
+      { readableId: "X-1", quantity: 5, itemType: "Material" }
+    ]);
+  });
+
   it("takes over a manual line Onshape also lists, after the lines a push owns", () => {
     const { takesOver, keeps } = pairManualLines(
       [

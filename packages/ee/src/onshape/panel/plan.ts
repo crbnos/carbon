@@ -175,11 +175,11 @@ export function pickLatestRow<
 /**
  * Which hand-added lines a push takes over. Each Onshape line first pairs with
  * a line an earlier push wrote for the same part number, then with a manual
- * one, in line order — the pairing apply makes. Manual lines left unpaired are
+ * one of the same item type, in line order — the pairing apply makes. Manual lines left unpaired are
  * kept as they are.
  */
 export function pairManualLines(
-  writes: Array<{ partNumber: string; quantity: number }>,
+  writes: Array<{ partNumber: string; quantity: number; itemType?: string }>,
   owned: PlanLine[],
   manual: PlanLine[]
 ): {
@@ -198,8 +198,12 @@ export function pairManualLines(
       ownedLeft.set(write.partNumber, owns - 1);
       continue;
     }
+    // Item numbers are unique per type: a Material sharing a Part's number
+    // is a different item, so its line is kept, never repointed.
     const index = manualLeft.findIndex(
-      (line) => line.readableId === write.partNumber
+      (line) =>
+        line.readableId === write.partNumber &&
+        (!write.itemType || !line.itemType || line.itemType === write.itemType)
     );
     if (index === -1) continue;
     const [line] = manualLeft.splice(index, 1);
@@ -253,6 +257,8 @@ export type PlanMethodRow = {
 export type PlanLine = {
   readableId: string;
   quantity: number;
+  /** Manual lines only: the line's item type, which a takeover must match. */
+  itemType?: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -1194,7 +1200,20 @@ export function buildAssemblyPlan({
     const manual = linesMethodId
       ? (manualLinesByMethodId.get(linesMethodId) ?? [])
       : [];
-    const { takesOver, keeps } = pairManualLines(writes, replaces, manual);
+    // Each write carries the type of the item it will point at (a new item
+    // is a Part), so a hand-added line for another item sharing the number
+    // is kept rather than taken over.
+    const { takesOver, keeps } = pairManualLines(
+      writes.map((write) => {
+        const existing = itemByReadableId.get(write.partNumber);
+        return {
+          ...write,
+          itemType: existing ? (bomLineItemType(existing) ?? undefined) : "Part"
+        };
+      }),
+      replaces,
+      manual
+    );
     methods.push({
       parentPartNumber,
       parentItemId,
