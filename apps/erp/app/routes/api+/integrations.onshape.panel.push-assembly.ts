@@ -58,9 +58,7 @@ export const config = {
   runtime: "nodejs"
 };
 
-// Edits are validated by mergeItemEdits (enum membership, the company's units,
-// the replenishment/method interlock) so a bad value is a 422 naming the row,
-// not a 400 for the whole payload. Unknown keys are dropped here.
+// Values are validated by mergeItemEdits so a bad one is a 422 naming the row.
 const itemEditSchema = z.object({
   name: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -81,18 +79,12 @@ type PushSummary = {
   itemsCreated: number;
   itemsReused: number;
   linesWritten: number;
-  /** Lines already correct, left untouched — reported so a no-op push says so. */
   linesUnchanged: number;
-  /** Lines added by hand that now follow Onshape (also in `linesWritten`). */
+  /** Manual lines now following Onshape; also counted in `linesWritten`. */
   linesTakenOver: number;
-  /** Reused items whose Short or Long Description now matches Onshape. */
   descriptionsUpdated: number;
   methodsTouched: number;
-  /**
-   * Levels whose released method was superseded by a new Draft version this
-   * push authored into. Reported because the push changed nothing live: a
-   * person still has to release the draft for it to take effect.
-   */
+  /** Levels written into a new Draft; nothing is live until someone releases it. */
   draftVersionsCreated: string[];
   skipped: string[];
   errors: string[];
@@ -109,22 +101,9 @@ type ItemRow = {
 };
 
 /**
- * Apply a reviewed assembly plan (`plan-assembly`) to Carbon.
- *
- * Reads nothing from Onshape: the plan carries the parsed BOM, the root's
- * identity and every proposed item, and it is taken one-shot from the store
- * so a double-click cannot write twice. Part numbers the user excluded are
- * neither created nor written as lines. Existing items are re-resolved by
- * part number right before writing because `upsertPart` reads the new id back
- * by readableId — a second row for a number that appeared since the plan
- * would be wrong, so such a create becomes a reuse.
- *
- * Methods are applied FLAT over `plan.methods`, each level on its own.
- * Status is re-checked here, not trusted from the plan.
- *
- * Mapped custom fields touch the ROOT item only, and List options are synced
- * add-only right before the write. Child items are untouched in v1 — their
- * fields land when their own part studio is pushed.
+ * Apply a reviewed assembly plan (`plan-assembly`) to Carbon without calling Onshape.
+ * Items are re-resolved by part number first: `upsertPart` reads the new id back by
+ * readableId, so a number that appeared since the plan must become a reuse.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -145,9 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const edits = parsed.data.edits as Record<string, ItemEdit>;
   const excluded = new Set(parsed.data.excluded);
 
-  // Peek first: a 422 on the edits must leave the plan in place so the user
-  // can fix a field and apply again; the plan is taken only once the writes
-  // are about to start.
+  // Peek, not take: a 422 on the edits must leave the plan for a retry.
   const stored = await peekPanelPlan(planId, { companyId, userId });
   if (!stored) {
     return data(
@@ -172,7 +149,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Merge edits before any write ---------------------------------------
+  // ---- Merge edits before any write ----
   const creates: Array<{ key: string; proposed: ProposedItem }> = [];
   if (root.action === "create" && root.proposed) {
     creates.push({ key: root.partNumber, proposed: root.proposed });
@@ -196,7 +173,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // One-shot from here: a concurrent apply of the same review finds nothing.
   if (!(await takePanelPlan(planId, { companyId, userId }))) {
     return data(
       { error: "This review has expired — review again" },
@@ -223,7 +199,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Re-resolve, then ensure items --------------------------------------
+  // ---- Re-resolve, then ensure items ----
   const includedItems = plan.items.filter(
     (item) => !excluded.has(item.partNumber)
   );
@@ -250,8 +226,7 @@ export async function action({ request }: ActionFunctionArgs) {
     rowsByReadableId.set(row.readableId, list);
   }
 
-  // Descriptions for a reuse that has to become a create (its row vanished
-  // since the plan) come from the BOM row; the plan's item list has none.
+  // A reuse whose row vanished becomes a create, described from the BOM row.
   const allNodes = flattenNodes(plan.nodes);
   const nodeByPartNumber = new Map<string, OnshapeBomNode>();
   for (const node of allNodes) {
@@ -260,21 +235,14 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Only ensured items enter this map: excluded numbers never do, so lines
-  // and child links skip them without a second check.
   const itemByReadableId = new Map<string, ItemRow>();
   const fallbackUnit = defaultUnitOfMeasureCode(options);
 
-  // The reviewer's manufacturing edits apply to reused items too (a create
-  // gets them through its proposal). Baseline is the plan's current snapshot,
-  // keyed by part number; only what actually changed is written.
   const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
   if (root.current) currentByPartNumber.set(root.partNumber, root.current);
   for (const item of plan.items) {
     if (item.current) currentByPartNumber.set(item.partNumber, item.current);
   }
-  // Short and Long Descriptions the review showed changing to Onshape's, for
-  // items this push links (or that are already linked to their BOM row).
   const textByPartNumber = new Map<
     string,
     { itemId: string | null; text: { name?: string; description?: string } }
@@ -320,9 +288,8 @@ export async function action({ request }: ActionFunctionArgs) {
           `${partNumber}: added to Carbon since the review; reused as is`
         );
       }
-      // A reused item still takes the reviewer's manufacturing edits — they are
-      // Carbon-side, not Onshape-owned — and, when the review showed it, the
-      // descriptions Onshape owns. Both only on the item the review was about.
+      // A reused item still takes the reviewer's manufacturing edits and the
+      // reviewed descriptions, but only on the row the review was about.
       const baseline = currentByPartNumber.get(partNumber);
       const mfg = baseline
         ? mergeExistingItemEdits(baseline, edits[partNumber])
@@ -387,9 +354,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return row;
   };
 
-  // ---- Root custom fields -------------------------------------------------
-  // Mirrors the row pick inside ensureItem, over the same re-resolved rows,
-  // so the values "about to be written" are exact before any write.
+  // ---- Root custom fields (children get theirs from their own part push) ----
+  // Mirrors ensureItem's row pick so the values are known before any write.
   const serviceRole = getCarbonServiceRole();
   const db = getDatabaseClient();
   const rootRows = rowsByReadableId.get(root.partNumber) ?? [];
@@ -432,11 +398,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   summary.assemblyItemId = rootItem.id;
 
-  // A reused root takes only its owned-mode values, merged into the stored
-  // JSON so every field Carbon owns survives. `part` is keyed by readableId
-  // (the parts view joins part.id = item.readableId). Owned fields with no
-  // Onshape value still run: the merge clears them. Nothing is written when
-  // Carbon already holds every value.
+  // `part` is keyed by readableId. Owned fields with no Onshape value still
+  // run, because the merge clears them.
   if (rootWillReuse && rootOwnedFieldIds.size > 0) {
     const currentPart = await client
       .from("part")
@@ -481,8 +444,7 @@ export async function action({ request }: ActionFunctionArgs) {
           name: item.name,
           description: nodeByPartNumber.get(item.partNumber)?.description,
           revision: item.revision,
-          // Sub-assemblies are made even when the BOM row says purchased —
-          // the same call the plan made.
+          // Sub-assemblies are made even when the BOM row says purchased, as in the plan.
           purchased: item.purchased && !item.isAssembly
         },
         options
@@ -490,19 +452,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Apply BOM lines to make methods, one level at a time --------------
+  // ---- Apply BOM lines to make methods, one level at a time ----
   const isAssemblyByPartNumber = new Map(
     plan.items.map((item) => [item.partNumber, item.isAssembly])
   );
 
-  // Parents whose items exist now (created above or reused). Their methods
-  // were created with the item, so the status read has to happen here.
-  //
-  // Sub-assemblies are included even when this push writes no lines for them.
-  // A BOM line points at its child's own make method, and that pointer is what
-  // makes a multi-level structure compose from levels pushed separately — a
-  // `top` push that could not resolve the child's method would write the line
-  // with a null pointer and quietly flatten the tree.
+  // Sub-assemblies are included even without lines this push: a line points at
+  // its child's method, and a null pointer would flatten a `top` push's tree.
   const parentItemIds = [
     ...new Set(
       [
@@ -515,9 +471,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ].filter((id): id is string => !!id)
     )
   ];
-  // A failed read here must stop the line writes: every level would report
-  // "no make method", and a `top` push would write its lines with a null
-  // child-method pointer.
+  // A failed read must stop the writes, or a `top` push writes null child pointers.
   let methodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
   try {
     methodByItemId = await loadActiveMakeMethods(
@@ -536,17 +490,11 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
-  // Resolve the method each level will be written into BEFORE ownership is
-  // read. A released method is never edited in place — Carbon supersedes a
-  // live method with a new Draft version — so the push authors into a draft,
-  // which is what lets a shipped product (whose sub-assemblies are all
-  // released) be pushed at all. Ownership is keyed by
-  // method id, so a draft created after that read would look like it owned no
-  // lines and the push would duplicate every one.
+  // Resolve each level's target method before reading ownership. A released
+  // method is never edited, so the push writes into a Draft, and ownership is
+  // keyed by method id: a Draft made after that read would duplicate every line.
   const targetMethodByItemId = new Map<string, string>();
   const methodErrorByItemId = new Map<string, string>();
-  // One read for every released level: which already has a Draft an earlier
-  // push made from it (`pickReusableDraft`).
   const activeMethodIdByItemId = new Map<string, string>();
   for (const planned of plan.methods) {
     const parentItem = itemByReadableId.get(planned.parentPartNumber);
@@ -603,8 +551,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // A failed read here must stop the line writes: with the existing
-  // Onshape-origin lines unknown, a rewrite would duplicate every one.
+  // A failed read must stop the writes, or every Onshape line is duplicated.
   let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
   try {
     ownership = await loadMethodLineOwnership(client, serviceRole, companyId, [
@@ -628,7 +575,6 @@ export async function action({ request }: ActionFunctionArgs) {
   for (const planned of plan.methods) {
     const parentLabel = planned.parentPartNumber;
     const parentItem = itemByReadableId.get(planned.parentPartNumber);
-    // Excluded, or its create failed (already in errors): nothing to apply.
     if (!parentItem) continue;
 
     const method = methodByItemId.get(parentItem.id);
@@ -644,38 +590,24 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Lines a previous push wrote to this method are RECONCILED, not rebuilt:
-    // one still in the BOM is updated in place, one no longer in it is
-    // deleted, a new component is inserted. A manual line for a part number
-    // Onshape also lists is taken over (the plan's `takesOver`); other manual
-    // lines are untouched.
-    //
-    // The in-place update is the point: delete-and-reinsert would reset the
-    // Carbon-owned columns (`methodOperationId`, `scrapQuantity`, `tags`,
-    // `kit`, the line's own `customFields`) on every push.
-    //
-    // Components pair by item id, FIFO, so a BOM that lists the same component
-    // on two rows keeps both lines and their Carbon-owned data.
+    // Owned lines are reconciled in place, not rebuilt, so Carbon-owned columns
+    // (operation, scrap, tags, kit, customFields) survive. They pair by item id,
+    // FIFO, so a component listed twice keeps both lines.
     const reusableByItemId = new Map<string, MappedLineRow[]>();
     for (const row of ownership.mappedRows.get(methodId) ?? []) {
       const queue = reusableByItemId.get(row.itemId) ?? [];
       queue.push(row);
       reusableByItemId.set(row.itemId, queue);
     }
-    // Manual lines pair by part number, after the owned ones, in line order —
-    // the pairing the plan showed (`pairManualLines`).
+    // Manual lines pair by part number in line order, as `pairManualLines` did.
     const manualByReadableId = new Map<string, ManualLineRow[]>();
     for (const row of ownership.manualRows.get(methodId) ?? []) {
       const queue = manualByReadableId.get(row.readableId) ?? [];
       queue.push(row);
       manualByReadableId.set(row.readableId, queue);
     }
-    // Every mapping row this method should still own when the loop is done —
-    // anything else under this method is an orphan and is cleared at the end.
+    // Mapping rows this method still owns; any other is cleared as an orphan.
     const liveMappingIds: string[] = [];
-    // New lines are collected and written together at the end of the method:
-    // per-line INSERTs cost two round-trips each (the line, then its mapping
-    // row). Updates stay per-line — each carries different values.
     const pendingInserts: Array<{
       row: OwnedMethodLine["row"];
       metadata: Record<string, unknown>;
@@ -689,7 +621,6 @@ export async function action({ request }: ActionFunctionArgs) {
       const childItem = itemByReadableId.get(write.partNumber);
       if (!childItem) continue;
 
-      // A reused Material is a Material line; a Tool cannot be a line.
       const itemType = bomLineItemType(childItem);
       if (!itemType) {
         summary.errors.push(
@@ -709,16 +640,11 @@ export async function action({ request }: ActionFunctionArgs) {
         index: write.index
       };
 
-      // Only the facts Onshape is authoritative for are written — quantity,
-      // BOM order, and the pointer to the child's own method. `methodType` and
-      // `unitOfMeasureCode` are derived from the Carbon item, not from CAD,
-      // so they are set at create and left alone afterwards; everything else
-      // on the row belongs to Carbon and is never touched.
+      // Only quantity, order and the child-method pointer are Onshape's.
+      // `methodType` and `unitOfMeasureCode` come from the item, at create only.
       const reuse = reusableByItemId.get(childItem.id)?.shift();
       if (reuse) {
-        // An unchanged line is left alone: writing it back would stamp
-        // `updatedBy`/`updatedAt` on a row that did not change — which reads,
-        // in the audit trail, as an edit.
+        // Skip unchanged lines so the audit trail does not show an edit.
         const unchanged =
           reuse.quantity === write.quantity &&
           reuse.order === order &&
@@ -744,8 +670,7 @@ export async function action({ request }: ActionFunctionArgs) {
           summary.errors.push(
             `${parentLabel} → ${write.partNumber}: ${updated.error.message}`
           );
-          // The line is still there and still Onshape's: keep its ownership
-          // row, or the next push reads it as manual and adds a second copy.
+          // Keep its ownership row, or the next push reads it as manual.
           liveMappingIds.push(reuse.mappingId);
           order += 1;
           continue;
@@ -771,9 +696,7 @@ export async function action({ request }: ActionFunctionArgs) {
         continue;
       }
 
-      // Same rule as the plan's `pairManualLines`: only a line of the item
-      // type this write points at, since a Material sharing a Part's number
-      // is a different item.
+      // Same item type only: a Material sharing a Part's number is a different item.
       const queue = manualByReadableId.get(write.partNumber);
       const claimIndex =
         queue?.findIndex((row) => !row.itemType || row.itemType === itemType) ??
@@ -781,8 +704,6 @@ export async function action({ request }: ActionFunctionArgs) {
       const claim =
         queue && claimIndex >= 0 ? queue.splice(claimIndex, 1)[0] : undefined;
       if (claim) {
-        // Taken over, not duplicated: the line keeps its id and everything
-        // Carbon owns on it, and gains an ownership row.
         const claimed = await claimManualMethodLine(db, {
           companyId,
           userId,
@@ -848,8 +769,6 @@ export async function action({ request }: ActionFunctionArgs) {
     // Anything still queued is a component the Onshape BOM no longer has.
     const removed = [...reusableByItemId.values()].flat();
     if (removed.length > 0) {
-      // Per batch, not per method: a method whose Onshape lines were all
-      // removed at once can carry more ids than one request line holds.
       for (const batch of chunkFilterValues(removed.map((row) => row.lineId))) {
         const removedLines = await client
           .from("methodMaterial")
@@ -860,8 +779,7 @@ export async function action({ request }: ActionFunctionArgs) {
           summary.errors.push(
             `${parentLabel}: could not remove the lines Onshape no longer lists (${removedLines.error.message})`
           );
-          // Their mapping rows must stay, or the leftover lines become
-          // indistinguishable from manual ones and are preserved forever.
+          // Keep their mapping rows, or the leftover lines look manual and stay forever.
           const failed = new Set(batch);
           for (const row of removed) {
             if (failed.has(row.lineId)) liveMappingIds.push(row.mappingId);
@@ -870,11 +788,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    // Clear this method's Onshape mapping rows that no line answers for any
-    // more: the ones just deleted, plus any whose line was removed in the ERP
-    // between pushes. Which rows are orphaned is decided here rather than by a
-    // `not in` filter: that filter carries every line just written, in the
-    // URL, and a method with a few hundred lines outgrows the request line.
+    // Orphans are found here, not with a `not in` filter, which would put every
+    // live id in the URL and outgrow the request line.
     const methodMappings = await serviceRole
       .from("externalIntegrationMapping")
       .select("id")
@@ -906,7 +821,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Assembly item mapping + child part links --------------------------
+  // ---- Assembly item mapping + child part links ----
   const pushedAt = datetime.timestamp();
   const assemblyExternalId = externalIdForAssembly(
     documentId,
@@ -938,8 +853,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Link child parts to their source part studios when the BOM names them,
-  // without clobbering a link an explicit part push already made.
   const childLinkProblems = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
@@ -948,11 +861,8 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   summary.errors.push(...childLinkProblems);
 
-  // One export per applied plan: a retried apply with the same plan and item
-  // is the same event to Inngest.
-  //
-  // Guarded: every write above has already landed, so a queue failure is a
-  // partial success and reports as one.
+  // The event id dedupes a retried apply. The writes have landed, so a queue
+  // failure is a partial success.
   try {
     await trigger(
       "onshape-panel-sync",
@@ -989,9 +899,8 @@ async function linkChildParts(
     itemByReadableId: Map<string, { id: string; readableId: string }>;
   }
 ) {
-  // Collect every candidate first, then decide with two bulk reads: an item
-  // that already carries any Onshape mapping keeps it (an explicit part push
-  // owns that link), and an externalId already in use is never claimed twice.
+  // An item with any Onshape link keeps it (a part push owns that link), and an
+  // externalId already in use is never claimed twice.
   const candidates: Array<{
     itemId: string;
     externalId: string;
@@ -1002,8 +911,6 @@ async function linkChildParts(
   for (const node of input.nodes) {
     const source = node.itemSource;
     if (!node.partNumber) continue;
-    // Part rows key by partId, sub-assembly rows by their element, and both
-    // by configuration — the same key status and plan read.
     const externalId = externalIdForBomLine(source);
     if (!source || !externalId) continue;
     const item = input.itemByReadableId.get(node.partNumber);
@@ -1018,10 +925,7 @@ async function linkChildParts(
   }
   if (candidates.length === 0) return [];
 
-  /*
-   * One Onshape source claimed by two Carbon items cannot be linked to either
-   * with confidence; it is reported rather than guessed at.
-   */
+  // One Onshape source claimed by two items is reported, not guessed at.
   const itemsByExternalId = new Map<string, Set<string>>();
   for (const candidate of candidates) {
     const items = itemsByExternalId.get(candidate.externalId) ?? new Set();
@@ -1047,9 +951,6 @@ async function linkChildParts(
   );
   if (unambiguous.length === 0) return problems;
 
-  // `externalId` is `documentId:elementId:partId` — 53 to 58 characters, the
-  // longest value the panel ever filters on. Batched on encoded bytes, not on
-  // a count.
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
       unambiguous.map((candidate) => candidate.itemId),
@@ -1074,9 +975,8 @@ async function linkChildParts(
           .in("externalId", batch)
     )
   ]);
-  // These two reads are the guards, not a lookup: a failed read degrading to
-  // an empty set would mean "nothing is linked", and the insert below would
-  // then claim links an explicit part push already owns. Refuse instead.
+  // These reads are guards: treating a failed read as empty would claim links
+  // a part push already owns.
   if (byEntity.error || byExternal.error) {
     return [
       ...problems,
@@ -1121,12 +1021,8 @@ async function linkChildParts(
     }));
   if (rows.length === 0) return problems;
 
-  /*
-   * One insert for the common case. It is all-or-nothing, so when it is
-   * refused the rows go again one at a time, so a single row the database
-   * rejects — a link written by a concurrent push, say — does not leave every
-   * other part unlinked.
-   */
+  // The bulk insert is all-or-nothing, so on refusal retry row by row: one
+  // rejected row (say a concurrent push's link) must not unlink the rest.
   const linked = await client.from("externalIntegrationMapping").insert(rows);
   if (!linked.error) return problems;
 

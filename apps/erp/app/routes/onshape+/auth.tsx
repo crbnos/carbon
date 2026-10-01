@@ -22,22 +22,8 @@ export const config = {
 
 const logger = getLogger("erp", "onshape", "panel-auth");
 
-/**
- * Popup target for the Onshape panel's "Sign in to Carbon".
- *
- * Runs on Carbon's own origin, so the normal session cookie applies: a
- * signed-out user is sent through /login (with redirectTo back here) and lands
- * on this loader once signed in. It mints a panel session and hands the token
- * to the window that opened the popup — same origin only — then closes. The
- * token never appears in a URL.
- *
- * The panel is outside the app shell, so the shell's account gates (enforced
- * MFA enrollment, ITAR attestation) are checked here before minting.
- */
+/** Panel sign-in popup; applies the app shell's MFA and ITAR gates itself. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  // Session policy first: login, the controlled-environment caps, an MFA
-  // challenge. Identity comes from this cookie session alone: it is the one
-  // the panel session is minted from.
   const authSession = await requireAuthSession(request);
   const { companyId, userId } = authSession;
 
@@ -47,8 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return page("The Onshape panel is available to employees only.", 403);
   }
 
-  // A console device session is shared at a workstation; its operator pin-ins
-  // cannot reach the panel, so every write would be stamped with the device.
+  // A console session is a shared device; writes would be stamped with it.
   if (authSession.console) {
     return page(
       "The Onshape panel can't be used from a console session. Sign in to Carbon with your own account.",

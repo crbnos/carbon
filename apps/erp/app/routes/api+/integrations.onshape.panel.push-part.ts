@@ -38,10 +38,8 @@ export const config = {
   runtime: "nodejs"
 };
 
-// Field values stay loose here on purpose: `mergeItemEdits` is the validator
-// (enum whitelist, unit membership, the replenishment↔method interlock) and
-// its verdict comes back as a 422 with per-row field errors, which a strict
-// zod enum would turn into a bare 400. Unknown keys are stripped.
+// Loose on purpose: mergeItemEdits validates and answers 422 with per-row
+// field errors, which a strict zod enum would turn into a bare 400.
 const itemEditSchema = z.object({
   name: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -61,31 +59,13 @@ type ApplyResult = {
   partId: string;
   action: "created" | "adopted" | "updated" | "unchanged" | "skipped" | "error";
   itemId?: string;
-  /** The Carbon item's readableId, so the panel can patch its list. */
   readableId?: string;
   message?: string;
 };
 
 /**
- * Apply a reviewed part plan: create or link the items the user kept, write
- * the mappings, and queue the slow asset export per part.
- *
- * Reads nothing from Onshape — every fact the write needs (part number,
- * revision, microversion, name, description) is in the plan `plan-part`
- * stored. The plan is taken once (GETDEL), so a double-click cannot write
- * twice and a failed apply means "review again".
- *
- * Between plan and apply Carbon can change under the plan, so items are
- * re-resolved by readableId right before writing: a "create" whose part number
- * now has a Part row adopts it instead — `upsertPart` reads the new id back
- * from the `parts` view by readableId, which is the wrong row once another
- * revision of the number exists — and an adopt/update whose target item is
- * gone becomes a create. Adopt and update refresh the Onshape-owned fields
- * from the plan, never from edits, so the owned-field lock on the item page
- * stays true.
- *
- * Each part is written on its own: a failure is reported in its result and
- * the next part still runs.
+ * Apply a reviewed part plan: create or link the kept items, write the
+ * mappings and queue the model export. Makes no Onshape call.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -106,9 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const selected = [...new Set(parsed.data.selected)];
   const edits = parsed.data.edits as Record<string, ItemEdit>;
 
-  // Peek first: a 422 on the edits must leave the plan in place so the user
-  // can fix a field and apply again; the plan is taken only once the writes
-  // are about to start.
+  // Peek, not take: a 422 below must leave the plan in place for a retry.
   const stored = await peekPanelPlan(planId, { companyId, userId });
   if (!stored) {
     return data(
@@ -128,7 +106,6 @@ export async function action({ request }: ActionFunctionArgs) {
     .map((partId) => rowByPartId.get(partId))
     .filter((row): row is PartPlanRow => !!row);
 
-  // ---- Merge edits, before any write --------------------------------------
   const merged = mergeEditsForCreates(
     selectedRows
       .filter((row) => row.action === "create" && row.partNumber)
@@ -152,7 +129,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Re-resolve Carbon, one query per table -----------------------------
+  // Re-resolve: a create whose number now exists adopts it instead, because
+  // upsertPart reads its id back by readableId and can get another revision.
   const partNumbers = [
     ...new Set(
       selectedRows
@@ -215,12 +193,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return target;
   };
 
-  // Owned-mode fields merge into the target part rows' stored JSON. part.id
-  // is the item's readableId (one part row per part number, shared across
-  // revisions), so the candidates are every readableId a selected row can
-  // resolve to. The map is kept current as the loop writes, so a later row
-  // merging into a part this apply just created cannot clobber what the
-  // create wrote.
+  // part.id is the item's readableId, shared across revisions. The map is kept
+  // current as the loop writes, so a later row cannot clobber a create.
   const partCustomFieldsByReadableId = new Map<string, unknown>();
   const ownedReadableIds = [
     ...new Set(
@@ -261,8 +235,6 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Only an unmapped part needs a number; a linked part whose number was
-    // cleared in Onshape is still updated (name, description, model).
     if (row.action === "skip-no-part-number") {
       results.push({
         partId,
@@ -273,10 +245,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (row.action === "unchanged") {
-      // The CAD is unchanged, so nothing about the part is re-synced — but the
-      // reviewer can still have changed a manufacturing field, and that alone
-      // is a real update to the linked item. No mapping re-stamp and no export:
-      // the microversion the last push recorded still stands.
+      // The CAD is unchanged, but a reviewer edit to a manufacturing field is
+      // still a real update. No mapping re-stamp and no export.
       const mfg = row.current
         ? mergeExistingItemEdits(row.current, edits[partId])
         : null;
@@ -330,7 +300,6 @@ export async function action({ request }: ActionFunctionArgs) {
     let readableId: string;
     if (resolved === "create") {
       const item = merged.items.get(row.partId) ?? proposedFor(row, plan);
-      // A create writes every mapped value.
       const fieldValues = planCustomFieldValues(row);
       const created = await upsertPart(client, {
         id: item.readableId,
@@ -358,8 +327,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       itemId = created.data.id as string;
       readableId = item.readableId;
-      // A later selected part with the same number adopts this item rather
-      // than creating a second one.
+      // A later row with the same number adopts this item, not a second create.
       rowsByReadableId.set(readableId, [
         ...(rowsByReadableId.get(readableId) ?? []),
         {
@@ -376,9 +344,6 @@ export async function action({ request }: ActionFunctionArgs) {
     } else {
       itemId = (target as PlanItemRow).id;
       readableId = (target as PlanItemRow).readableId;
-      // The three manufacturing fields are NOT Onshape-owned, so the
-      // reviewer's changes to them ride the same update — only the ones
-      // actually changed.
       const mfg = row.current
         ? mergeExistingItemEdits(row.current, edits[partId])
         : null;
@@ -407,8 +372,6 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         continue;
       }
-      // The merge touches only the owned keys, so everything Carbon owns —
-      // unmapped custom fields — stays.
       const owned = ownedCustomFieldValues(row);
       if (owned) {
         const mergedFields = mergeCustomFieldValues(
@@ -419,7 +382,6 @@ export async function action({ request }: ActionFunctionArgs) {
         const partUpdate = await client
           .from("part")
           .update({
-            // Plain data by construction (string/number/boolean values).
             customFields: mergedFields as Json,
             updatedBy: userId,
             updatedAt: datetime.timestamp()
@@ -438,7 +400,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    // One row per item, one per external part, swapped in one transaction.
     const externalId = externalIdForPart(
       documentId,
       elementId,
@@ -458,8 +419,7 @@ export async function action({ request }: ActionFunctionArgs) {
         configuration,
         wv,
         wvId,
-        // The plan-time microversion: the only "unchanged" signal a later
-        // plan has, so it must be the one the user reviewed, not a newer one.
+        // The reviewed microversion: a later plan's only "unchanged" signal.
         microversionId: row.microversionId,
         partNumber: row.partNumber,
         name: row.name,
@@ -478,14 +438,12 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Only the mapped fields changed; the model the last push exported stands.
     if (row.cadUnchanged && resolved === "update") {
       results.push({ partId, action: "updated", itemId, readableId });
       continue;
     }
 
-    // One event id per plan × item × element: a retried apply of the same
-    // plan cannot queue the export twice.
+    // Deterministic id: a retried apply cannot queue the export twice.
     try {
       await trigger(
         "onshape-panel-sync",
@@ -506,12 +464,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     } catch (error) {
       // Roll the mapping back so the next plan does not read "unchanged" and
-      // skip the export forever. If the rollback itself fails, say so: the
-      // stale mapping makes the next push a no-op.
-      //
-      // By the id this push inserted, not by externalId: a concurrent push of
-      // the same part may already have replaced this row with its own, and
-      // matching on externalId would delete that newer, successful link.
+      // skip the export. Delete by id, not externalId: a concurrent push may
+      // already have replaced this row with its own.
       const rolledBack = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
@@ -552,10 +506,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-/**
- * The item a create writes for a row: the plan's proposal when it has one,
- * else one built from the row (an adopt/update whose target vanished).
- */
+/** The plan's proposal, or one built from the row when the target vanished. */
 function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
   if (row.proposed) return row.proposed;
   return proposeItem(
@@ -569,11 +520,7 @@ function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
   );
 }
 
-/**
- * The Onshape-owned fields an adopt/update refreshes: always the Onshape name
- * and description the plan captured, whatever Carbon holds now — Onshape owns
- * them, and the plan's `changes` list is display only.
- */
+/** Onshape owns name and description; adopt/update takes the plan's values. */
 function ownedFields(row: PartPlanRow): {
   name: string;
   description: string | null;
@@ -595,10 +542,7 @@ function planCustomFieldValues(
   return values;
 }
 
-/**
- * The owned-mode values an adopt/update writes, or null when the row has no
- * owned field — the part row is then left untouched.
- */
+/** Owned-mode values for an adopt/update, or null when the row has none. */
 function ownedCustomFieldValues(row: PartPlanRow): {
   values: Record<string, string | number | boolean | null>;
   fieldIds: Set<string>;
@@ -607,8 +551,7 @@ function ownedCustomFieldValues(row: PartPlanRow): {
   const fieldIds = new Set<string>();
   for (const field of row.customFields ?? []) {
     if (field.mode !== "owned") continue;
-    // A null rides along: mergeCustomFieldValues deletes the key, so a
-    // property emptied in Onshape empties in Carbon.
+    // A null deletes the key, so a value emptied in Onshape empties in Carbon.
     values[field.fieldId] = field.value;
     fieldIds.add(field.fieldId);
   }

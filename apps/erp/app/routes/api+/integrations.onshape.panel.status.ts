@@ -29,13 +29,7 @@ export const config = {
   runtime: "nodejs"
 };
 
-/**
- * Carbon status for the current Onshape element.
- *
- * Part Studio: the part list joined to mappings/items.
- * Assembly: the indented BOM joined to items by part number plus the
- * assembly's own mapping.
- */
+/** Carbon status for the current Onshape element: its parts or its BOM. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -49,9 +43,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const wv = url.searchParams.get("wv");
   const wvId = url.searchParams.get("wvId");
   const elementId = url.searchParams.get("elementId");
-  // The element's configuration as the panel was opened on it. Part of every
-  // identity key, and of the Onshape reads: a configured part's part number
-  // depends on it.
+  // Part of every identity key and Onshape read: a configured part's part
+  // number depends on it.
   const configuration = normalizeConfiguration(
     url.searchParams.get("configuration")
   );
@@ -119,19 +112,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
-    // Without its required columns the tree is empty or unjoinable, and every
-    // line would read "Not in Carbon".
+    // Without its required columns every line would read "Not in Carbon".
     if (missingColumns.length > 0) {
       return data(
         { error: missingBomColumnsMessage(missingColumns) },
         { status: 422 }
       );
     }
-    // The BOM omits the assembly's own row; its identity lives in element
-    // metadata.
+    // The BOM omits the assembly's own row; its identity is in element metadata.
     let rootPartNumber = bomRoot?.partNumber ?? null;
     let rootName = bomRoot?.name ?? null;
-    // Kept non-fatal — the BOM itself read fine.
+    // Non-fatal: the BOM itself read fine.
     let rootIdentityUnavailable = false;
     try {
       const metadata = await onshape.client.getElementMetadata(
@@ -209,10 +200,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     ]);
 
-    /*
-     * `selectInBatches` returns `{ data: [], error }` on a failure, which is
-     * indistinguishable from "no rows".
-     */
+    // selectInBatches returns empty data on failure, so check every error.
     if (lineMappings.error || rootMapping.error || items.error) {
       return data(
         {

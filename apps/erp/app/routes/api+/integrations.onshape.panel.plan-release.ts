@@ -35,21 +35,7 @@ const payloadSchema = z.object({
   releaseId: z.string().min(1)
 });
 
-/**
- * Plan a release push: what pushing one Onshape release would do to Carbon,
- * for the panel to show before anything is written.
- *
- * Every Onshape read the push needs happens here — the document's revisions
- * (one call) and each released assembly's BOM at its released version (one
- * call per assembly) — and the BOM lines ride along in the stored plan, so
- * the apply route never returns to Onshape. Carbon's side is bulk reads:
- * every revision row for the release's part numbers and the BOMs' level-1
- * children, and the active make methods of assemblies already at the
- * released letter.
- *
- * Permissions match the apply route so a user who could not push finds out
- * before editing a review, not after.
- */
+/** Plan a release push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -108,11 +94,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Carbon rows for the release's part numbers, and refused methods ----
-  // Read before any BOM: an assembly already at its released letter whose
-  // make method is released in Carbon refuses its BOM at apply, so its BOM
-  // read would be quota spent on nothing. Ordered by revision so the
-  // builder's fallbacks are deterministic.
+  // Read before any BOM: an assembly whose Carbon method is already released
+  // refuses its BOM at apply, so reading that BOM wastes quota.
   const releasePartNumbers = [
     ...new Set(modelItems.map((item) => item.partNumber))
   ];
@@ -129,16 +112,13 @@ export async function action({ request }: ActionFunctionArgs) {
   if (releaseRows.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // item.revision is nullable; the builder compares it to release letters as
-  // a string and reads a missing one as "0", as plan-assembly does.
+  // A null revision reads as "0", as in plan-assembly.
   const toPlanRow = <T extends { revision: string | null }>(row: T) => ({
     ...row,
     revision: row.revision ?? "0"
   });
   const items: PlanItemRow[] = releaseRows.data.map(toPlanRow);
 
-  // Method status only matters for assemblies already at the released letter
-  // (the reuse case). Parts never consume it.
   const letterAssemblyItemIds = modelItems
     .filter((item) => item.elementType === 1)
     .flatMap((item) =>
@@ -150,8 +130,8 @@ export async function action({ request }: ActionFunctionArgs) {
         .map((row) => row.id)
     );
   const [methods, options] = await Promise.all([
-    // Settled so a failure answers 500 instead of reading as "no method",
-    // which would plan a BOM read — and a BOM write — for a released method.
+    // A failure must answer 500, not read as "no method": that would plan a
+    // BOM write over a released method.
     loadActiveMakeMethods(client, companyId, letterAssemblyItemIds).then(
       (byItemId) => ({ byItemId, error: null }),
       (error: unknown) => ({ byItemId: null, error })
@@ -184,14 +164,9 @@ export async function action({ request }: ActionFunctionArgs) {
       .map((item) => item.elementId)
   );
 
-  // ---- BOMs at the released versions --------------------------------------
-  // One read per released assembly the apply can act on, sequential (a burst
-  // of parallel BOM reads is how Onshape rate limits bite). A BOM that will
-  // not read is a warning on the review, not a failed plan: the rest of the
-  // release still plans, and the assembly is stored with null lines, which
-  // the apply route treats as "leave the method alone" — a transient Onshape
-  // failure at review time can never erase a BOM at apply time. An empty
-  // array is a genuinely empty BOM.
+  // BOMs are read sequentially: parallel bursts hit Onshape rate limits. A
+  // failed read stores null lines, which apply treats as "leave the method
+  // alone"; an empty array is a genuinely empty BOM.
   const bomLinesByElementId: Record<string, OnshapeBomNode[] | null> = {};
   const warnings: string[] = [];
   for (const item of modelItems) {
@@ -211,7 +186,6 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       const { lines, missingColumns } = parseBomTree(bom);
       if (missingColumns.length > 0) {
-        // Unreadable, so treated exactly like a failed read.
         bomLinesByElementId[item.elementId] = null;
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
@@ -231,9 +205,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Carbon rows for the BOMs' level-1 children --------------------------
-  // A purchased child already in Carbon must be reused rather than re-minted;
-  // only the numbers the first read did not cover are fetched.
+  // Look up BOM children so purchased parts already in Carbon are reused.
   const childPartNumbers = [
     ...new Set(
       Object.values(bomLinesByElementId)
@@ -268,8 +240,7 @@ export async function action({ request }: ActionFunctionArgs) {
     options
   });
 
-  // The stored copy carries the BOM lines apply walks; the response does not
-  // (the review shows the plan's items and children, not raw BOM rows).
+  // Only the stored copy carries the BOM lines the apply walks.
   const stored: StoredReleasePlan = { ...plan, bomLinesByElementId };
   const saved = await createPanelPlan({ companyId, userId, plan: stored });
   if (!saved) {
