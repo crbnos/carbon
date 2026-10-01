@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
 // Importing the real items.service graph transitively loads @carbon/content/glossary,
@@ -73,6 +77,14 @@ describe("methodMaterialValidator.storageUnitIds", () => {
     expect(omitted.success && omitted.data.storageUnitIds).toBeUndefined();
   });
 
+  it("rejects a blank or whitespace-only id", () => {
+    for (const id of ["", "   "]) {
+      expect(methodMaterialValidator.safeParse({ ...base, id }).success).toBe(
+        false
+      );
+    }
+  });
+
   it("rejects malformed strings and non-object JSON", () => {
     for (const bad of ["not json", "false", "123", '["a"]']) {
       expect(parse(bad).success).toBe(false);
@@ -145,6 +157,31 @@ describe("upsertMethodMaterial storageUnitIds normalization", () => {
       updatedBy: "u1"
     } as any);
     expect(replaced.captured.update.storageUnitIds).toEqual({ loc1: "su1" });
+  });
+
+  it("refuses a blank or whitespace id on create and update, writing nothing", async () => {
+    // The MCP/API path skips the validator; a blank id used to be inserted as
+    // "", and the next blank create collided with it.
+    for (const id of ["", "   "]) {
+      const created = mockClient();
+      const createResult = await upsertMethodMaterial(created.client, {
+        ...base,
+        id,
+        companyId: "c1",
+        createdBy: "u1"
+      } as any);
+      expect(createResult.error?.message).toBe("Material ID is required");
+      expect(created.captured.insert).toBeUndefined();
+
+      const updated = mockClient();
+      const updateResult = await upsertMethodMaterial(updated.client, {
+        ...base,
+        id,
+        updatedBy: "u1"
+      } as any);
+      expect(updateResult.error?.message).toBe("Material ID is required");
+      expect(updated.captured.update).toBeUndefined();
+    }
   });
 
   it("never spreads a bare string into a character map", async () => {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   getActiveProductionEvents,
@@ -10,12 +14,8 @@ import type {
   getAssemblyInstructions,
   getAssemblyInstructionVersions,
   getAssemblyUnits,
-  getBalloons,
   getFailureMode,
   getFailureModes,
-  getInspectionDocument,
-  getInspectionDocuments,
-  getInspectionFeatures,
   getJob,
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
@@ -313,37 +313,3 @@ export type AssemblyUnit = NonNullable<
 export type AssemblyComponentMapping = NonNullable<
   Awaited<ReturnType<typeof getAssemblyComponentMappings>>["data"]
 >[number];
-
-// --- Inspection Documents -----------------------------------------------
-
-export type InspectionDocument = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
->[number];
-
-export type InspectionDocumentDetail = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocument>>["data"]
->;
-
-export type Balloon = NonNullable<
-  Awaited<ReturnType<typeof getBalloons>>["data"]
->[number];
-
-export type InspectionFeature = NonNullable<
-  Awaited<ReturnType<typeof getInspectionFeatures>>["data"]
->[number];
-
-export type BalloonFeature = {
-  id: string;
-  balloonNumber: number;
-  description: string;
-  nominalValue: number | null;
-  tolerancePlus: number | null;
-  toleranceMinus: number | null;
-  unitOfMeasureCode: string | null;
-};
-
-export type InspectionDocumentContent = {
-  pdfUrl: string | null;
-  drawingNumber: string | null;
-  features: BalloonFeature[];
-};

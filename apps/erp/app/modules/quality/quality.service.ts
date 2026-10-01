@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { storage } from "@carbon/files";
@@ -8,7 +12,7 @@ import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
 const logger = getLogger("erp", "quality");
@@ -20,6 +24,8 @@ import type {
   gaugeRole,
   gaugeTypeValidator,
   gaugeValidator,
+  inspectionDocumentSamplingValidator,
+  inspectionDocumentValidator,
   issueTypeValidator,
   issueValidator,
   issueWorkflowValidator,
@@ -264,7 +270,7 @@ export async function getGauges(
 ) {
   let query = client
     .from("gauges")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -314,7 +320,7 @@ export async function getGaugeCalibrationRecords(
 ) {
   let query = client
     .from("gaugeCalibrationRecords")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -369,7 +375,7 @@ export async function getGaugeTypes(
 ) {
   let query = client
     .from("gaugeType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -403,7 +409,7 @@ export async function getIssues(
 ) {
   let query = client
     .from("issues")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -975,7 +981,7 @@ export async function getIssueTypes(
 ) {
   let query = client
     .from("nonConformanceType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -998,7 +1004,7 @@ export async function getIssueWorkflows(
 ) {
   let query = client
     .from("nonConformanceWorkflow")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -1045,7 +1051,7 @@ export async function getQualityActions(
 ) {
   let query = client
     .from("qualityActions")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1106,7 +1112,7 @@ export async function getQualityDocuments(
   let query = client
     .from("qualityDocuments")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1170,7 +1176,7 @@ export async function getRequiredActions(
 ) {
   let query = client
     .from("nonConformanceRequiredAction")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1218,7 +1224,7 @@ export async function getRisks(
   let query = client
     .from("riskRegisters")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2334,7 +2340,7 @@ export async function getInspections(
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -2417,10 +2423,45 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
+}
+
+// The gauges an inspection lot's view needs: every Active gauge (the
+// selectable options — Inactive gauges are retired and never offered, the
+// engine refuses them too) plus any gauge already recorded on this lot, even
+// if it has since been retired, so the record keeps showing its readable id.
+export async function getInspectionGauges(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  inspectionId: string
+) {
+  const recorded = await client
+    .from("inspectionSamplingPlan")
+    .select("gaugeId")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .not("gaugeId", "is", null);
+  const recordedIds = [
+    ...new Set((recorded.data ?? []).map((row) => row.gaugeId as string))
+  ];
+
+  const query = client
+    .from("gauges")
+    .select(
+      "id, gaugeId, description, gaugeTypeId, gaugeStatus, gaugeCalibrationStatusWithDueDate, nextCalibrationDate"
+    )
+    .eq("companyId", companyId);
+
+  return (
+    recordedIds.length > 0
+      ? query.or(
+          `gaugeStatus.eq.Active,id.in.(${recordedIds.map((id) => `"${id}"`).join(",")})`
+        )
+      : query.eq("gaugeStatus", "Active")
+  ).order("gaugeId");
 }
 
 export async function getInspectionMeasurements(
@@ -2490,5 +2531,560 @@ export async function upsertItemInspectionDocumentAssignment(
     inspectionDocumentId: assignment.inspectionDocumentId,
     companyId: assignment.companyId,
     createdBy: assignment.userId
+  });
+}
+
+// ─── Inspection Documents ─────────────────────────────────────────────────────
+
+function toStoragePath(pdfUrl?: string | null) {
+  if (!pdfUrl) return null;
+  const previewPrefix = "/file/preview/private/";
+  if (pdfUrl.startsWith(previewPrefix)) {
+    return pdfUrl.slice(previewPrefix.length);
+  }
+  return pdfUrl;
+}
+
+function toPreviewUrl(storagePath?: string | null) {
+  if (!storagePath) return null;
+  return storagePath.startsWith("/file/preview/private/")
+    ? storagePath
+    : `/file/preview/private/${storagePath}`;
+}
+
+function fileNameFromPath(storagePath?: string | null) {
+  if (!storagePath) return "drawing.pdf";
+  return storagePath.split("/").at(-1) ?? "drawing.pdf";
+}
+
+function mapInspectionDocument(row: Record<string, unknown>) {
+  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  return {
+    id: String(row.id),
+    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    companyId: String(row.companyId),
+    partId: (row.partId as string | null) ?? null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    content: {
+      drawingNumber,
+      pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
+      annotations: [],
+      features: []
+    },
+    // The document's default sampling rule (feature rule -> document default
+    // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
+    sampling: {
+      samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+      samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+      samplingPercentage:
+        row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+      samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+      samplingInspectionLevel:
+        (row.samplingInspectionLevel as string | null) ?? null,
+      samplingSeverity: (row.samplingSeverity as string | null) ?? null
+    }
+  };
+}
+
+export async function getInspectionDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("inspectionDocuments")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "drawingNumber", ascending: true }
+    ]);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row: Record<string, unknown>) =>
+      mapInspectionDocument(row)
+    ),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export async function getInspectionDocumentsForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocument")
+    .select("id, fileName, drawingNumber, version")
+    .eq("companyId", companyId)
+    .eq("partId", itemId)
+    .order("updatedAt", { ascending: false, nullsFirst: false });
+}
+
+export async function getInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const result = await client
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+
+  return {
+    data: result.data ? mapInspectionDocument(result.data) : null,
+    error: result.error
+  };
+}
+
+/**
+ * When an inspection plan is created without a drawing number, fall back to the
+ * part's readableIdWithRevision. If a plan with that drawing number already
+ * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ */
+async function resolveInspectionDocumentDrawingNumber(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  partId: string
+): Promise<string | null> {
+  const partResult = await client
+    .from("item")
+    .select("readableIdWithRevision")
+    .eq("id", partId)
+    .eq("companyId", companyId)
+    .single();
+
+  const base = partResult.data?.readableIdWithRevision?.trim();
+  if (!base) return null;
+
+  const existingResult = await client
+    .from("inspectionDocument")
+    .select("drawingNumber")
+    .eq("companyId", companyId)
+    .not("drawingNumber", "is", null);
+
+  const taken = new Set(
+    (existingResult.data ?? [])
+      .map((row) => row.drawingNumber)
+      .filter((value): value is string => Boolean(value))
+  );
+
+  if (!taken.has(base)) return base;
+
+  let suffix = 1;
+  while (taken.has(`${base} (${suffix})`)) {
+    suffix += 1;
+  }
+  return `${base} (${suffix})`;
+}
+
+export async function upsertInspectionDocument(
+  client: SupabaseClient<Database>,
+  diagram:
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id?: undefined;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+    | (Omit<z.infer<typeof inspectionDocumentValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        createdBy: string;
+        updatedBy?: string;
+        pageCount?: number;
+        defaultPageWidth?: number;
+        defaultPageHeight?: number;
+      })
+) {
+  const {
+    id,
+    partId,
+    drawingNumber,
+    pdfUrl,
+    pageCount,
+    defaultPageWidth,
+    defaultPageHeight,
+    companyId,
+    createdBy,
+    updatedBy
+  } = diagram;
+
+  const storagePath = toStoragePath(pdfUrl);
+
+  if (id) {
+    if (!companyId) {
+      return {
+        data: null,
+        error: {
+          message: "companyId is required to update inspection plan"
+        }
+      };
+    }
+
+    const existing = await client
+      .from("inspectionDocument")
+      .select("id")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+
+    if (!existing.data) {
+      return {
+        data: null,
+        error: existing.error ?? { message: "Inspection plan not found" }
+      };
+    }
+
+    const updatePayload: Database["public"]["Tables"]["inspectionDocument"]["Update"] =
+      {
+        updatedBy: updatedBy ?? createdBy,
+        updatedAt: datetime.timestamp()
+      };
+    if (drawingNumber !== undefined) {
+      updatePayload.drawingNumber = drawingNumber ?? null;
+    }
+    if (partId !== undefined) {
+      updatePayload.partId = partId;
+    }
+
+    if (storagePath) {
+      updatePayload.storagePath = storagePath;
+      updatePayload.fileName = fileNameFromPath(storagePath);
+    }
+    if (pageCount && pageCount > 0) {
+      updatePayload.pageCount = pageCount;
+    }
+    if (defaultPageWidth && defaultPageWidth > 0) {
+      updatePayload.defaultPageWidth = defaultPageWidth;
+    }
+    if (defaultPageHeight && defaultPageHeight > 0) {
+      updatePayload.defaultPageHeight = defaultPageHeight;
+    }
+
+    return client
+      .from("inspectionDocument")
+      .update(updatePayload)
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+  }
+
+  if (!companyId) {
+    return {
+      data: null,
+      error: { message: "companyId is required to create inspection plan" }
+    };
+  }
+
+  const resolvedDrawingNumber = drawingNumber?.trim()
+    ? drawingNumber.trim()
+    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+
+  return client
+    .from("inspectionDocument")
+    .insert({
+      companyId,
+      partId,
+      drawingNumber: resolvedDrawingNumber ?? null,
+      version: 0,
+      ...(storagePath
+        ? {
+            storagePath,
+            fileName: fileNameFromPath(storagePath),
+            uploadedBy: createdBy
+          }
+        : {}),
+      ...(pageCount && pageCount > 0 ? { pageCount } : {}),
+      ...(defaultPageWidth && defaultPageWidth > 0 ? { defaultPageWidth } : {}),
+      ...(defaultPageHeight && defaultPageHeight > 0
+        ? { defaultPageHeight }
+        : {}),
+      createdBy
+    })
+    .select("id")
+    .single();
+}
+
+export async function deleteInspectionDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const existingResult = await client
+    .from("inspectionDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+
+  if (!existingResult.data) {
+    return {
+      data: null,
+      error: { message: "Inspection plan not found" }
+    };
+  }
+
+  const storagePath =
+    (existingResult.data.storagePath as string | null) ?? null;
+
+  const deleteResult = await client
+    .from("inspectionDocument")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+
+  if (deleteResult.error) {
+    return { data: null, error: deleteResult.error };
+  }
+
+  return {
+    data: { storagePath },
+    error: null
+  };
+}
+
+function mapInspectionFeature(row: Record<string, unknown>) {
+  const balloonIdRaw = row.balloonId ?? row.balloon_id;
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    pageNumber: Number(row.pageNumber),
+    label: String(row.label),
+    description: (row.description as string | null) ?? null,
+    nominalValue: (row.nominalValue as string | null) ?? null,
+    tolerancePlus: (row.tolerancePlus as string | null) ?? null,
+    toleranceMinus: (row.toleranceMinus as string | null) ?? null,
+    unit: (row.unit as string | null) ?? null,
+    type: (row.type as string) ?? "Measurement",
+    // Per-feature sampling rule (NULL = inherit the document default). NUMERIC
+    // columns arrive as strings from PostgREST — coerce, mirroring the document
+    // default rule in mapInspectionDocument.
+    samplingPlanType: (row.samplingPlanType as string | null) ?? null,
+    samplingSampleSize: (row.samplingSampleSize as number | null) ?? null,
+    samplingPercentage:
+      row.samplingPercentage == null ? null : Number(row.samplingPercentage),
+    samplingAql: row.samplingAql == null ? null : Number(row.samplingAql),
+    samplingInspectionLevel:
+      (row.samplingInspectionLevel as string | null) ?? null,
+    samplingSeverity: (row.samplingSeverity as string | null) ?? null,
+    gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    balloonId:
+      typeof balloonIdRaw === "string"
+        ? balloonIdRaw
+        : balloonIdRaw != null
+          ? String(balloonIdRaw)
+          : null,
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null
+  };
+}
+
+function mapBalloon(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    inspectionDocumentId: String(row.inspectionDocumentId),
+    companyId: String(row.companyId),
+    inspectionFeatureId: String(row.inspectionFeatureId),
+    pageNumber: Number(row.pageNumber),
+    regionX: Number(row.regionX),
+    regionY: Number(row.regionY),
+    regionWidth: Number(row.regionWidth),
+    regionHeight: Number(row.regionHeight),
+    xCoordinate: Number(row.xCoordinate),
+    yCoordinate: Number(row.yCoordinate),
+    createdBy: String(row.createdBy),
+    updatedBy: (row.updatedBy as string | null) ?? null,
+    createdAt: String(row.createdAt),
+    updatedAt: (row.updatedAt as string | null) ?? null,
+    balloonAnchorId: String(row.id)
+  };
+}
+
+export async function getInspectionFeatures(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b.id])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) =>
+      mapInspectionFeature({
+        ...row,
+        balloonId: balloonByFeatureId.get(String(row.id)) ?? null
+      })
+    ),
+    error: null
+  };
+}
+
+async function getInspectionFeaturesRaw(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  return client
+    .from("inspectionFeature")
+    .select("*")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function getBalloons(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const result = await client
+    .from("balloon")
+    .select("*")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .order("createdAt", { ascending: true });
+
+  return {
+    data: (result.data ?? []).map(mapBalloon),
+    error: result.error
+  };
+}
+
+export async function getInspectionPlan(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string
+) {
+  const [featuresResult, balloonsResult] = await Promise.all([
+    getInspectionFeaturesRaw(client, inspectionDocumentId),
+    getBalloons(client, inspectionDocumentId)
+  ]);
+
+  if (featuresResult.error) {
+    return { data: null, error: featuresResult.error };
+  }
+  if (balloonsResult.error) {
+    return { data: null, error: balloonsResult.error };
+  }
+
+  const balloonByFeatureId = new Map(
+    (balloonsResult.data ?? []).map((b) => [b.inspectionFeatureId, b])
+  );
+
+  return {
+    data: (featuresResult.data ?? []).map((row) => {
+      const b = balloonByFeatureId.get(row.id);
+      const featureId = row.id;
+      return {
+        /** Feature id (primary key for plan rows). */
+        id: featureId,
+        featureId,
+        /** Balloon id when placed; null for table-only features. */
+        balloonId: b?.id ?? null,
+        inspectionDocumentId: row.inspectionDocumentId,
+        pageNumber: b?.pageNumber ?? row.pageNumber,
+        label: row.label,
+        description: row.description,
+        nominalValue: row.nominalValue,
+        tolerancePlus: row.tolerancePlus,
+        toleranceMinus: row.toleranceMinus,
+        unit: row.unit,
+        regionX: b ? b.regionX : null,
+        regionY: b ? b.regionY : null,
+        regionWidth: b ? b.regionWidth : null,
+        regionHeight: b ? b.regionHeight : null,
+        xCoordinate: b ? b.xCoordinate : null,
+        yCoordinate: b ? b.yCoordinate : null
+      };
+    }),
+    error: null
+  };
+}
+
+export async function updateInspectionDocumentSampling(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof inspectionDocumentSamplingValidator> & {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, ...sampling } = args;
+  return client
+    .from("inspectionDocument")
+    .update({
+      ...sampling,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", inspectionDocumentId)
+    .eq("companyId", companyId);
+}
+
+export async function saveInspectionDocumentAtomic(
+  client: SupabaseClient<Database>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    pdfUrl?: string | null;
+    pageCount?: number;
+    defaultPageWidth?: number;
+    defaultPageHeight?: number;
+    features: unknown;
+    balloons: unknown;
+  }
+) {
+  return (
+    client as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{
+        data: unknown;
+        error: unknown;
+      }>;
+    }
+  ).rpc("save_inspection_document_atomic", {
+    p_inspection_document_id: args.inspectionDocumentId,
+    p_company_id: args.companyId,
+    p_user_id: args.userId,
+    p_pdf_url: args.pdfUrl ?? null,
+    p_page_count: args.pageCount ?? null,
+    p_default_page_width: args.defaultPageWidth ?? null,
+    p_default_page_height: args.defaultPageHeight ?? null,
+    p_features: args.features,
+    p_balloons: args.balloons
   });
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * v5 reconciler decision core (spec:
  * .ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D1).

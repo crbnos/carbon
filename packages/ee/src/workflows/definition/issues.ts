@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /** Everything that stops a workflow being activated. Every issue is fatal; there is no severity. */
 export type WorkflowIssueCode =
   | "MALFORMED_DEFINITION"

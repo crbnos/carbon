@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   HStack,
@@ -181,7 +185,7 @@ const SamplingRuleModal = ({
             {context === "document" ? (
               <Trans>Default Sampling</Trans>
             ) : (
-              <Trans>Sampling — Feature {featureLabel}</Trans>
+              <Trans>Sampling — Characteristic {featureLabel}</Trans>
             )}
           </ModalTitle>
         </ModalHeader>
@@ -190,8 +194,8 @@ const SamplingRuleModal = ({
             {context === "document" ? (
               <p className="text-sm text-muted-foreground">
                 <Trans>
-                  Applies to features without their own rule, and to the lot
-                  when this plan drives an inspection.
+                  Applies to characteristics without their own rule, and to the
+                  lot when this plan drives an inspection.
                 </Trans>
               </p>
             ) : null}

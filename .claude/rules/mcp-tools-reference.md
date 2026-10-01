@@ -523,6 +523,15 @@ the model context or the MCP dispatch.
   *different*, still-current concept — don't conflate them.
 - To block a tool from MCP, add its `<module>_<func>` name to
   `MCP_BLOCKED_TOOL_NAMES` and regenerate metadata.
+- **Moving a service function to another module RENAMES its published tool**
+  (`production_getInspectionDocument` → `quality_getInspectionDocument`). Add the
+  old name to `OPERATION_ALIASES` (`api+/v1+/lib/operations.server.ts`) in the same
+  change. `operationsByName` maps the old name to the NEW entry, so `call_tool`,
+  `describe_tool` (which prints a deprecation line), the agent, workflows and
+  `callOperation` all resolve it; `router.server.ts` mounts the old HTTP path,
+  marked `deprecated` in the spec. The alias runs and is gated as the new
+  operation (its permission, not the old module's). Search and the docs never list
+  aliases. `dispatch-parity.test.ts` fails on a dangling or shadowing alias.
 - **A `{module}.service.ts` must not import a `*.server` module** (`@carbon/auth/users.server`,
   `@carbon/ee/rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
   The module barrel (`~/modules/{module}`) re-exports the service, and client components

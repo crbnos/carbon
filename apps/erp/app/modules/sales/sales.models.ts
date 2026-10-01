@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   bicMatchesCountry,
   conditionAstFormField,
@@ -486,9 +490,13 @@ export const quoteLineValidator = z.object({
   unitOfMeasureCode: zfd.text(
     z.string().min(1, { message: "Unit of measure is required" })
   ),
-  quantity: z.array(
-    zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
-  ),
+  quantity: z
+    .array(
+      zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
+    )
+    .refine((quantities) => new Set(quantities).size === quantities.length, {
+      message: "Each quantity must be different"
+    }),
   modelUploadId: zfd.text(z.string().optional()),
   noQuoteReason: zfd.text(z.string().optional()),
   taxPercent: zfd.numeric(

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export { accountingConsolidationFunction } from "./accounting-consolidation";
 export { accountingJournalBackfillFunction } from "./accounting-journal-backfill";
 export { accountingMasterSyncFunction } from "./accounting-master-sync";

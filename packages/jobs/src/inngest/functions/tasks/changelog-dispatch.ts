@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ChangelogEntryEmail } from "@carbon/documents/email";
 import { ERP_URL } from "@carbon/env";
 import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";

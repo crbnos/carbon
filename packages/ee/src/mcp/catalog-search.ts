@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Ranked full-text search over the tool catalog, extracted from server.ts so it
 // is typed and unit-testable. Backed by zbsearch (BM25 + prefix expansion) with
 // a curated alias layer in front — the engine knows nothing about ERP domain

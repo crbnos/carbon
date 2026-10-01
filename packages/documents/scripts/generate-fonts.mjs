@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Generates src/pdf/fonts.data.ts — the editor's body fonts as base64 woff data
 // URIs from @fontsource/* (OFL/Apache), registered in-process with no network at
 // render. Runs on the root postinstall + turbo build task; gitignored output.

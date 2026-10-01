@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
@@ -10,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DisabledReason,
   generateHTML,
   Heading,
   HStack,
@@ -149,6 +154,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getOpportunity(serviceRole, quote.data.opportunityId)
   ]);
 
+  // A No Quote line is the company's own decision not to bid — the customer
+  // never sees it, its prices, or its thumbnail.
+  const quotedLines = (quoteLines.data ?? []).filter(
+    (line) => line.status !== "No Quote"
+  );
+  const quotedLineIds = new Set(quotedLines.map((line) => line.id));
+
   // Started before the conditional await below so this costs no extra round trip.
   // The group's configured currency.decimalPlaces is authoritative over CLDR, and
   // useCurrencies' own fetcher is permission-gated, so a public page has to carry
@@ -168,7 +180,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     );
   }
 
-  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
+  const thumbnailPaths = quotedLines.reduce<Record<string, string | null>>(
     (acc, line) => {
       if (line.thumbnailPath) {
         acc[line.id!] = line.thumbnailPath;
@@ -221,31 +233,32 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           }
         : null,
       currencies: (await currenciesPromise)?.data ?? [],
-      quoteLines:
-        quoteLines.data?.map((line) => ({
-          id: line.id,
-          description: line.description,
-          itemReadableId: line.itemReadableId,
-          quantity: line.quantity,
-          additionalCharges: line.additionalCharges,
-          taxPercent: line.taxPercent,
-          unitPricePrecision: line.unitPricePrecision,
-          externalNotes: line.externalNotes
-        })) ?? [],
+      quoteLines: quotedLines.map((line) => ({
+        id: line.id,
+        description: line.description,
+        itemReadableId: line.itemReadableId,
+        quantity: line.quantity,
+        additionalCharges: line.additionalCharges,
+        taxPercent: line.taxPercent,
+        unitPricePrecision: line.unitPricePrecision,
+        externalNotes: line.externalNotes
+      })),
       thumbnails: thumbnails,
       quoteLinePrices:
-        quoteLinePrices.data?.map((price) => ({
-          quoteLineId: price.quoteLineId,
-          quantity: price.quantity,
-          unitPrice: price.unitPrice,
-          convertedUnitPrice: price.convertedUnitPrice,
-          netUnitPrice: price.netUnitPrice,
-          convertedNetUnitPrice: price.convertedNetUnitPrice,
-          discountPercent: price.discountPercent,
-          shippingCost: price.shippingCost,
-          convertedShippingCost: price.convertedShippingCost,
-          leadTime: price.leadTime
-        })) ?? null,
+        quoteLinePrices.data
+          ?.filter((price) => quotedLineIds.has(price.quoteLineId))
+          .map((price) => ({
+            quoteLineId: price.quoteLineId,
+            quantity: price.quantity,
+            unitPrice: price.unitPrice,
+            convertedUnitPrice: price.convertedUnitPrice,
+            netUnitPrice: price.netUnitPrice,
+            convertedNetUnitPrice: price.convertedNetUnitPrice,
+            discountPercent: price.discountPercent,
+            shippingCost: price.shippingCost,
+            convertedShippingCost: price.convertedShippingCost,
+            leadTime: price.leadTime
+          })) ?? null,
       customerDetails: customerDetails.data,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,
@@ -463,7 +476,23 @@ const LineItems = ({
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the price out of it. */}
-                    <Heading className="min-w-0">{line.itemReadableId}</Heading>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Heading className="min-w-0">
+                        {line.itemReadableId}
+                      </Heading>
+                      {selectedLines[line.id!]?.quantity === 0 &&
+                        (pricingByLine[line.id!]?.length ?? 0) > 0 &&
+                        ![
+                          "Ordered",
+                          "Partial",
+                          "Expired",
+                          "Cancelled"
+                        ].includes(quote.status) && (
+                          <Badge variant="secondary" className="shrink-0">
+                            <Trans>Removed</Trans>
+                          </Badge>
+                        )}
+                    </div>
                     <HStack spacing={4} className="shrink-0">
                       <MotionMoney
                         value={
@@ -568,7 +597,10 @@ const LinePricingOptions = ({
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const percentFormatter = usePercentFormatter();
-  const { quote } = useLoaderData<typeof loader>().data!;
+  const { quote, quoteLines } = useLoaderData<typeof loader>().data!;
+  // Removing the only item would just empty the quote; Reject covers that.
+  const canRemoveLine =
+    (quoteLines?.filter((quoteLine) => !!quoteLine.id).length ?? 0) > 1;
 
   const [selectedValue, setSelectedValue] = useState<string | null>(
     selectedLine?.quantity?.toString() ?? null
@@ -961,7 +993,8 @@ const LinePricingOptions = ({
         </div>
       )}
 
-      {selectedLine.quantity !== 0 &&
+      {canRemoveLine &&
+        selectedLine.quantity !== 0 &&
         !["Ordered", "Partial", "Expired", "Cancelled"].includes(
           quote.status
         ) && (
@@ -977,7 +1010,7 @@ const LinePricingOptions = ({
                 }));
               }}
             >
-              <Trans>Remove</Trans>
+              <Trans>Remove this item</Trans>
             </Button>
           </HStack>
         )}
@@ -1186,6 +1219,11 @@ const Quote = ({ data }: { data: QuoteData }) => {
   const convertedShippingCost =
     (quote.exchangeRate ?? 1) * (quoteShipment?.shippingCost ?? 0);
   const total = subtotal + tax + convertedShippingCost;
+  // Gate on items, not money: quote-level shipping keeps the total above zero
+  // even after the customer removes every item.
+  const hasSelectedItem = Object.values(selectedLines).some(
+    (line) => line.quantity > 0
+  );
 
   const termsHTML = generateHTML(terms as JSONContent);
 
@@ -1335,15 +1373,24 @@ const Quote = ({ data }: { data: QuoteData }) => {
             {companySettings?.digitalQuoteEnabled &&
               quote?.status === "Sent" && (
                 <>
-                  <Button
-                    onClick={confirmQuoteModal.onOpen}
-                    size="lg"
-                    variant="primary"
-                    isDisabled={total === 0}
-                    className="w-full mt-8 text-lg"
+                  <DisabledReason
+                    className="w-full mt-8"
+                    reason={
+                      hasSelectedItem
+                        ? undefined
+                        : t`Select at least one item to accept the quote`
+                    }
                   >
-                    <Trans>Accept Quote</Trans>
-                  </Button>
+                    <Button
+                      onClick={confirmQuoteModal.onOpen}
+                      size="lg"
+                      variant="primary"
+                      isDisabled={!hasSelectedItem}
+                      className="w-full text-lg"
+                    >
+                      <Trans>Accept Quote</Trans>
+                    </Button>
+                  </DisabledReason>
                   <Button
                     onClick={rejectQuoteModal.onOpen}
                     size="lg"

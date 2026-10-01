@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertEquals, assertThrows } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { accountDefaults, accounts as seedAccounts } from "../lib/seed.data.ts";
 import { resolveShippingDefault } from "./shipping-default.ts";

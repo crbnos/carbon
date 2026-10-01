@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // @ts-nocheck
 import { getLogger } from "@carbon/logger";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -102,13 +106,20 @@ export async function createMcpServer<Ctx extends McpContext>(
           missing.push(toolName);
           continue;
         }
+        // A deprecated alias resolves to its replacement's entry (the app's
+        // `OPERATION_ALIASES`), so the names differ — say so, once, up front.
+        const deprecation =
+          meta.name === toolName
+            ? ""
+            : `'${toolName}' is deprecated — it now runs '${meta.name}'. Call '${meta.name}' instead.\n\n`;
         sections.push(
-          formatToolDescription(meta, {
-            isList: isListOperation(meta),
-            sibling: meta.paginates
-              ? null
-              : paginatingSibling(meta.name, (n) => operationsByName.get(n))
-          })
+          deprecation +
+            formatToolDescription(meta, {
+              isList: isListOperation(meta),
+              sibling: meta.paginates
+                ? null
+                : paginatingSibling(meta.name, (n) => operationsByName.get(n))
+            })
         );
       }
 

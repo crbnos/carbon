@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! One-shot `run-job` CLI: run ONE action to completion and exit — no HTTP
 //! server. The ECS Fargate overflow entrypoint (and any non-HTTP invoke) for
 //! jobs past Lambda's 15-min cap. It reuses the *exact* compute + finalize path

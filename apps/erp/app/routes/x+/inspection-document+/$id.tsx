@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,38 +9,48 @@ import { flash } from "@carbon/auth/session.server";
 import { ClientOnly, Spinner } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { lazy, Suspense } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 import {
   getBalloons,
+  getGaugeTypesList,
   getInspectionDocument,
   getInspectionFeatures
-} from "~/modules/production";
-import type { InspectionDocumentContent } from "~/modules/production/types";
-import type { SamplingRule } from "~/modules/production/ui/InspectionDocument/SamplingRuleModal";
+} from "~/modules/quality";
+import type { InspectionDocumentContent } from "~/modules/quality/types";
+import type { SamplingRule } from "~/modules/quality/ui/InspectionDocument/SamplingRuleModal";
 import { getCompanySettings } from "~/modules/settings";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
   () =>
-    import(
-      "~/modules/production/ui/InspectionDocument/InspectionDocumentEditor"
-    )
+    import("~/modules/quality/ui/InspectionDocument/InspectionDocumentEditor")
 );
 
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: any): BreadcrumbSegment[] => {
     const segments: BreadcrumbSegment[] = [
-      { breadcrumb: msg`Production`, to: path.to.production },
+      { breadcrumb: msg`Quality`, to: path.to.quality },
       { breadcrumb: msg`Inspection Plans`, to: path.to.inspectionDocuments }
     ];
     const name = data?.diagram?.name;
     return name ? [...segments, { breadcrumb: name }] : segments;
   },
-  module: "production"
+  module: "quality"
 };
+
+// The editor saves itself, and each save's response already carries the
+// saved rows — reloading the plan after every edit would only slow the next
+// save down.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate
+}) => (formAction?.endsWith("/save") ? false : defaultShouldRevalidate);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -52,12 +66,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     featuresResult,
     balloonsResult,
     unitOfMeasuresResult,
+    gaugeTypesResult,
     companySettings
   ] = await Promise.all([
     getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
     getUnitOfMeasuresList(client, companyId),
+    getGaugeTypesList(client, companyId),
     getCompanySettings(client, companyId)
   ]);
 
@@ -89,6 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     features,
     balloons,
     unitOfMeasures,
+    gaugeTypes: gaugeTypesResult.data ?? [],
     samplingStandard:
       ((companySettings.data as any)?.samplingStandard as
         | "ANSI_Z1_4"
@@ -97,8 +114,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function BalloonDetailRoute() {
-  const { diagram, features, balloons, unitOfMeasures, samplingStandard } =
-    useLoaderData<typeof loader>();
+  const {
+    diagram,
+    features,
+    balloons,
+    unitOfMeasures,
+    gaugeTypes,
+    samplingStandard
+  } = useLoaderData<typeof loader>();
   const content = diagram.content as InspectionDocumentContent | null;
 
   return (
@@ -119,6 +142,7 @@ export default function BalloonDetailRoute() {
             }
           >
             <InspectionDocumentEditor
+              key={diagram.id}
               diagramId={diagram.id}
               name={diagram.name}
               partId={diagram.partId}
@@ -126,6 +150,7 @@ export default function BalloonDetailRoute() {
               features={features}
               balloons={balloons}
               unitOfMeasures={unitOfMeasures}
+              gaugeTypes={gaugeTypes}
               sampling={(diagram.sampling as SamplingRule | null) ?? null}
               samplingStandard={samplingStandard}
             />

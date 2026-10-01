@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * The Carbon glossary — one source of truth for term definitions, used by both
  * the docs site's inline <Term> popovers and the ERP/MES field-help affordance.

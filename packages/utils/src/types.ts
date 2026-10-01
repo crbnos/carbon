@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { z } from "zod";
 
 export enum Edition {
@@ -22,6 +26,9 @@ export enum Plan {
 
 // DB stores partner tiers as `PARTNER-300/400/500` etc. Collapse them onto
 // `Plan.Partner` so plan-gate checks (`requirement.includes(plan)`) match.
+export const companyPlanCacheKey = (companyId: string) =>
+  `companyPlan:${companyId}`;
+
 export function normalizePlanId(planId: string | null | undefined): Plan {
   if (!planId) return Plan.Unknown;
   if (planId.startsWith("PARTNER")) return Plan.Partner;

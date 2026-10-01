@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Entry dates are formatted from their YYYY-MM-DD parts, never through a JS
 // Date, so every timezone sees the date the entry was written with.
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Runtime shims for environments without browser globals (Node SSR, the Inngest
 // jobs worker). Import for side effects — `import "@carbon/lib/shims"` — at each
 // runtime entry, before anything that touches these globals (notably pdfjs-dist,

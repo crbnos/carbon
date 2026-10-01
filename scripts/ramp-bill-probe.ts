@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Report what Ramp stored for ONE pushed bill, next to what Carbon would code it
  * with — to tell "Carbon sent the wrong ids" from "Ramp did not keep them".

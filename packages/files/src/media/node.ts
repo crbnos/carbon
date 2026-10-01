@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Node-only: pre-instantiate the jSquash wasm codecs from disk. Their default
 // loaders fetch the .wasm relative to import.meta.url, which Node's fetch
 // refuses for file: URLs — so server-side consumers of the image pipeline

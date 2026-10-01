@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 export { actionExecutor } from "./action";
 export { itemKeyFor, planBatch } from "./batch";
 export { compare, evaluateClauses } from "./compare";

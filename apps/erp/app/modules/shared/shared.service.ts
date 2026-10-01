@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Tables } from "@carbon/database";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import type {
@@ -6,7 +10,7 @@ import type {
   SupabaseClient
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { PriceBreak, SupplierPriceMap } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
@@ -266,7 +270,7 @@ export async function getCustomerPortals(
 ) {
   let query = client
     .from("externalLink")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -533,7 +537,7 @@ export async function getEnforcementRules(
 ): Promise<PostgrestResponse<EnforcementRuleRow>> {
   let query = client
     .from("enforcementRule")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("family", family);
 

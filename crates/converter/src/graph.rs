@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Assembly tree, world bboxes, source-unit detection, and graph.json emission —
 //! ported 1:1 from `app/convert.py`. Deterministic; no OCCT.
 

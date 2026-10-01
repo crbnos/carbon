@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure per-row decision for the opening-stock CSV imports (inventoryQuantity,
 // batchQuantity, serialQuantity). No DB, no I/O — so it is unit-testable with
 // `deno test`. The driver (`stock-quantity-import.ts`) preloads the lookups,

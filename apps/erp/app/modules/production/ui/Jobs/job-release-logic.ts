@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Release checks shared by the job Release dialog and batch release, so a job
 // released as part of a batch is held to exactly the rules the job page applies.
 // Pure — no JSX/lingui — and unit-tested by apps/erp/test/job-release-logic.test.ts.

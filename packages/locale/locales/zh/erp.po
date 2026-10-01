@@ -48,6 +48,9 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+msgid "(Inactive)"
+msgstr "(已停用)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
@@ -1430,6 +1433,9 @@ msgstr "添加身份验证器应用"
 msgid "Add Calibration Record"
 msgstr "添加校准记录"
 
+msgid "Add Characteristic"
+msgstr "添加特性"
+
 msgid "Add Child Storage Unit"
 msgstr "添加子存储单元"
 
@@ -1459,9 +1465,6 @@ msgstr "添加员工"
 
 msgid "Add Entry"
 msgstr "添加条目"
-
-msgid "Add Feature"
-msgstr "添加功能"
 
 msgid "Add from library…"
 msgstr "从库中添加…"
@@ -1749,6 +1752,9 @@ msgstr "所有部门"
 msgid "All Documents"
 msgstr "所有文档"
 
+msgid "All gauges"
+msgstr "所有量具"
+
 msgid "All item types"
 msgstr "所有物料类型"
 
@@ -2013,6 +2019,9 @@ msgstr "此存储单元嵌套在其中的另一个存储单元（例如，架内
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "另一个系统已连接到 Ramp 作为其会计系统"
 
+msgid "Any"
+msgstr "任何"
+
 msgid "Any item group"
 msgstr "任何项目组"
 
@@ -2092,8 +2101,8 @@ msgstr "适用于全部"
 msgid "Applies to all work centers"
 msgstr "适用于所有工作中心"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "适用于没有自己规则的功能，以及当该计划驱动检验时的批次。"
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "适用于没有自己规则的特性，以及当该计划驱动检验时适用于批次。"
 
 msgid "Apply"
 msgstr "应用"
@@ -3720,6 +3729,15 @@ msgstr "更改此项将更新零件ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "更改类型将重置此项目的草稿编辑。"
 
+msgid "Characteristic"
+msgstr "特性"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "从图纸建议的特性值"
+
+msgid "Characteristics"
+msgstr "特性"
+
 msgid "Charges"
 msgstr "卡消费"
 
@@ -3819,6 +3837,9 @@ msgstr "清除到期日"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
+
+msgid "Clear gauge"
+msgstr "清除量具"
 
 msgid "Clear search"
 msgstr "清除搜索"
@@ -3921,11 +3942,11 @@ msgstr "折叠 {0}"
 msgid "Collapse all"
 msgstr "全部折叠"
 
+msgid "Collapse characteristics table"
+msgstr "折叠特性表"
+
 msgid "Collapse Costs"
 msgstr "折叠成本"
-
-msgid "Collapse features table"
-msgstr "折叠功能表"
 
 msgid "Collapse Labor"
 msgstr "折叠人工"
@@ -4298,6 +4319,9 @@ msgstr "耗材"
 msgid "Consumable"
 msgstr "耗材"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "耗材详情"
 
@@ -4418,6 +4442,9 @@ msgstr "将MRP建议转换为采购订单和工单。"
 msgid "Convert to Quote"
 msgstr "转换为报价"
 
+msgid "Converted Total Price"
+msgstr ""
+
 msgid "Converting…"
 msgstr "转换中…"
 
@@ -4429,6 +4456,9 @@ msgstr "已复制链接到剪贴板"
 
 msgid "Copied setup prompt to your clipboard"
 msgstr "已将换型提示复制到剪贴板"
+
+msgid "Copied!"
+msgstr "已复制！"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
@@ -4445,11 +4475,20 @@ msgstr "复制API密钥"
 msgid "Copy batch number"
 msgstr "复制生产批次号"
 
+msgid "Copy change notice unique identifier"
+msgstr "复制变更通知唯一标识符"
+
 msgid "Copy company unique identifier"
 msgstr "复制公司唯一标识符"
 
 msgid "Copy consumable number"
 msgstr "复制耗材编号"
+
+msgid "Copy consumable unique identifier"
+msgstr "复制耗材唯一标识符"
+
+msgid "Copy customer unique identifier"
+msgstr "复制客户唯一标识符"
 
 msgid "Copy dispatch ID"
 msgstr "复制维护工单ID"
@@ -4474,6 +4513,9 @@ msgstr "复制问题唯一标识符"
 
 msgid "Copy Job number"
 msgstr "复制工作单号"
+
+msgid "Copy job unique identifier"
+msgstr "复制工单唯一标识符"
 
 msgid "Copy link"
 msgstr "复制链接"
@@ -4553,6 +4595,15 @@ msgstr "复制程序文件名"
 msgid "Copy procedure unique identifier"
 msgstr "复制程序文件唯一标识符"
 
+msgid "Copy purchase invoice unique identifier"
+msgstr "复制采购发票唯一标识符"
+
+msgid "Copy purchase order unique identifier"
+msgstr "复制采购订单唯一标识符"
+
+msgid "Copy purchase return order unique identifier"
+msgstr "复制采购退货订单唯一标识符"
+
 msgid "Copy Quality Document"
 msgstr "复制质量文件"
 
@@ -4562,17 +4613,38 @@ msgstr "复制报价"
 msgid "Copy Quote number"
 msgstr "复制报价单号"
 
+msgid "Copy quote unique identifier"
+msgstr "复制报价单唯一标识符"
+
 msgid "Copy return number"
 msgstr "复制退货编号"
 
+msgid "Copy RFQ unique identifier"
+msgstr "复制询价单唯一标识符"
+
 msgid "Copy RMA number"
 msgstr "复制 RMA 编号"
+
+msgid "Copy sales invoice unique identifier"
+msgstr "复制销售发票唯一标识符"
+
+msgid "Copy sales order unique identifier"
+msgstr "复制销售订单唯一标识符"
+
+msgid "Copy sales return order unique identifier"
+msgstr "复制销售退货订单唯一标识符"
 
 msgid "Copy service number"
 msgstr "复制服务编号"
 
 msgid "Copy service unique identifier"
 msgstr "复制服务唯一标识符"
+
+msgid "Copy supplier quote unique identifier"
+msgstr "复制供应商报价唯一标识符"
+
+msgid "Copy supplier unique identifier"
+msgstr "复制供应商唯一标识符"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "将此项目的定价复制到另一个范围。"
@@ -4582,6 +4654,9 @@ msgstr "复制此链接以与客户分享报价"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "复制此链接以与供应商共享报价"
+
+msgid "Copy to clipboard"
+msgstr "复制到剪贴板"
 
 msgid "Copy tool number"
 msgstr "复制工具编号"
@@ -6128,9 +6203,6 @@ msgstr "由运动规划器检测"
 msgid "Developer"
 msgstr "开发人员"
 
-msgid "Diagram saved"
-msgstr "图表已保存"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "与选择不同 — 允许，但请确认它们能够嵌套在一起"
 
@@ -6409,11 +6481,11 @@ msgstr "拖动以在图纸上放置"
 msgid "Drag to reorder"
 msgstr "拖动以重新排序"
 
-msgid "Drag to resize diagram and features"
-msgstr "拖动以调整图表和功能的大小"
+msgid "Drag to resize diagram and characteristics"
+msgstr "拖动以调整图表和特性大小"
 
-msgid "Drag to resize drawing and features"
-msgstr "拖动以调整绘图和功能的大小"
+msgid "Drag to resize drawing and characteristics"
+msgstr "拖动以调整绘图和特性大小"
 
 msgid "Drag to zoom"
 msgstr "拖动以缩放"
@@ -6424,8 +6496,8 @@ msgstr "提取"
 msgid "Drawing Number"
 msgstr "图号"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "绘图已替换。气泡位置已移除；特性行保持不变。"
 
 msgid "Drop Ship"
 msgstr "代发货"
@@ -7461,11 +7533,11 @@ msgstr "展开 {0}"
 msgid "Expand all"
 msgstr "全部展开"
 
+msgid "Expand characteristics table"
+msgstr "展开特性表"
+
 msgid "Expand Costs"
 msgstr "展开成本"
-
-msgid "Expand features table"
-msgstr "展开功能表"
 
 msgid "Expand Labor"
 msgstr "展开人工"
@@ -7650,8 +7722,8 @@ msgstr "不合格"
 msgid "Failed"
 msgstr "失败"
 
-msgid "Failed features"
-msgstr "失效特性"
+msgid "Failed characteristics"
+msgstr "失败的特性"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7659,6 +7731,9 @@ msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"
 
 msgid "Failed to add lines"
 msgstr "添加行失败"
+
+msgid "Failed to apply pricing rules"
+msgstr "无法应用定价规则"
 
 msgid "Failed to convert image"
 msgstr "图像转换失败"
@@ -7902,6 +7977,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to record gauge"
+msgstr "未能记录量具"
+
 msgid "Failed to regenerate schedule"
 msgstr "排程再生成失败"
 
@@ -7935,8 +8013,8 @@ msgstr "未能检索 CSV 列数据。"
 msgid "Failed to save configuration rule"
 msgstr "保存配置规则失败"
 
-msgid "Failed to save diagram"
-msgstr "保存图表失败"
+msgid "Failed to save inspection plan"
+msgstr "未能保存检验计划"
 
 msgid "Failed to save measurement"
 msgstr "保存测量值失败"
@@ -8036,15 +8114,6 @@ msgstr "传真"
 
 msgid "Fax Number"
 msgstr "传真号码"
-
-msgid "Feature"
-msgstr "特征"
-
-msgid "Feature values suggested from drawing"
-msgstr "从绘图中建议的特征值"
-
-msgid "Features"
-msgstr "功能"
 
 msgid "Fees"
 msgstr "费用"
@@ -8350,6 +8419,9 @@ msgstr "量具"
 
 msgid "Gauge Calibration Notifications"
 msgstr "量具校准通知"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "特性{characteristicLabel}的量具：{currentGauge}"
 
 msgid "Gauge ID"
 msgstr "量具ID"
@@ -9124,6 +9196,9 @@ msgstr "包括已停用"
 msgid "Included"
 msgstr "已包含"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "包括税费和运费"
 
@@ -9847,6 +9922,12 @@ msgstr "人工机器差异"
 msgid "Labor & Machine Variance (default)"
 msgstr "人工机器差异（默认）"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "人工费率"
 
@@ -10324,6 +10405,12 @@ msgstr "允许使用小写物料编号"
 msgid "Machine"
 msgstr "机器"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "机器费率"
 
@@ -10565,6 +10652,12 @@ msgstr "市场汇率历史（兑美元）"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不会被安排。"
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "主量具"
 
@@ -10609,6 +10702,9 @@ msgstr "原材料"
 
 msgid "Material"
 msgstr "原材料"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "原材料维度"
@@ -11106,6 +11202,9 @@ msgstr "净变化"
 
 msgid "Net Income"
 msgstr "净收益"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "永不"
@@ -11692,6 +11791,9 @@ msgstr "此任务没有可用预测。"
 
 msgid "No Gauge Selected"
 msgstr "未选择量具"
+
+msgid "No gauges found."
+msgstr "未找到量具。"
 
 msgid "No grouped notifications"
 msgstr "没有分组通知"
@@ -12766,6 +12868,9 @@ msgstr "否则"
 msgid "Out"
 msgstr "出"
 
+msgid "Out of calibration"
+msgstr "校准过期"
+
 msgid "Outbound"
 msgstr "出库"
 
@@ -12919,6 +13024,9 @@ msgstr "零件"
 
 msgid "Part Being Replaced"
 msgstr "被替代的零件"
+
+msgid "Part Cost"
+msgstr ""
 
 msgid "Part Details"
 msgstr "零件详情"
@@ -13699,6 +13807,9 @@ msgstr "生产：车间应用和排程"
 msgid "Profile"
 msgstr "个人资料"
 
+msgid "Profit Percent"
+msgstr ""
+
 msgid "Progress"
 msgstr "进度"
 
@@ -14442,6 +14553,9 @@ msgstr "最近的付款"
 msgid "Recently Created"
 msgstr "最近创建"
 
+msgid "Recently used"
+msgstr "最近使用"
+
 msgid "Recertify Every (Days)"
 msgstr "每(天)重新认证"
 
@@ -14737,6 +14851,9 @@ msgstr "移除按列排序"
 msgid "Remove station"
 msgstr "删除工位"
 
+msgid "Remove this item"
+msgstr ""
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
 
@@ -14819,8 +14936,8 @@ msgstr "用演示数据集替换此公司的数据——首先快照，以便您
 msgid "Replacement Order"
 msgstr "替换订单"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "替换 PDF 会移除此文件上的所有气球位置。功能行及其值保持不变；你可以在新绘图上重新放置气球。"
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "替换PDF将移除此文件上的所有气泡位置。特性行及其值保持不变；您可以在新绘图上重新放置气泡。"
 
 msgid "Replenishment"
 msgstr "补货"
@@ -15568,8 +15685,8 @@ msgstr "样本量"
 msgid "Sampling"
 msgstr "抽样"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "抽样 — 功能 {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "抽样 — 特性{featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "抽样正常检验"
@@ -15770,6 +15887,9 @@ msgstr "已报废"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "搜索{gaugeTypeName}..."
+
 msgid "Search accounts"
 msgstr "搜索账户"
 
@@ -15814,6 +15934,9 @@ msgstr "搜索字段..."
 
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
+
+msgid "Search gauges..."
+msgstr "搜索量具..."
 
 msgid "Search items or bins"
 msgstr "搜索物料或料箱"
@@ -15978,6 +16101,9 @@ msgstr "选择一个操作…"
 msgid "Select an option"
 msgstr "选择一个选项"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "至少选择一行进行转换"
 
@@ -16010,6 +16136,9 @@ msgstr "选择员工类型"
 
 msgid "Select field"
 msgstr "选择字段"
+
+msgid "Select gauge"
+msgstr "选择量具"
 
 msgid "Select Gauge"
 msgstr "选择量具"
@@ -16595,6 +16724,9 @@ msgstr "显示可用的跟踪号码"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "显示时长"
@@ -18137,8 +18269,8 @@ msgstr "批次将标记为已通过。{fails} 个抽样失败已记录在案。"
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "批次仍将被拒绝，但在配置至少一个问题类型之前无法创建 NCR。"
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "批次的每个特征抽样方案将从选定的文件重新解析。"
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "该批次各特征的抽样方案将从所选文件重新确定。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商对此工艺收费的最低金额，无论数量如何；低于盈亏平衡量的工单仍至少成本此金额。"
@@ -19071,9 +19203,6 @@ msgstr "切换级别"
 msgid "Toggle Properties"
 msgstr "切换属性"
 
-msgid "Toggle the sidebar"
-msgstr "切换侧边栏"
-
 msgid "Toggle views"
 msgstr "切换视图"
 
@@ -19101,6 +19230,9 @@ msgstr "工具详情"
 msgid "Tool ID"
 msgstr "工具ID"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "工具"
 
@@ -19125,11 +19257,17 @@ msgstr "总金额"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "资产的总资本化成本（购买价格加运费、安装和其他成为账面价值一部分的成本）。"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "总折扣"
 
 msgid "Total Due"
 msgstr "应付总额"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"
@@ -19137,11 +19275,23 @@ msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个
 msgid "Total Hours"
 msgstr "总计小时"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "总计分钟"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "总价格"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "总计数量"
@@ -19502,6 +19652,9 @@ msgstr "未知"
 
 msgid "unknown error"
 msgstr "未知错误"
+
+msgid "Unknown gauge"
+msgstr "未知量具"
 
 msgid "unknown location"
 msgstr "未知位置"
@@ -20074,6 +20227,9 @@ msgstr "查看备注"
 
 msgid "View on schedule board"
 msgstr "在排程看板中查看"
+
+msgid "View only — changes are not saved"
+msgstr "仅查看 — 更改不会被保存"
 
 msgid "View Open"
 msgstr "查看未结"
@@ -20995,6 +21151,9 @@ msgstr "您的邀请无效或已被接受。如果您认为这是错误，请联
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "你的工作是：检查每一行的真实样本，然后标记为已验证。基础数据首先加载，然后是主记录，最后是截止时的未结交易。"
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "您的最新更改未能保存。您确定要离开此页面吗？"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "你的法定名称、地址、品牌和文件默认值"
