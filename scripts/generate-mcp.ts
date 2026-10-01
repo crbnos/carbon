@@ -121,7 +121,7 @@ export async function generateToolMetadata(): Promise<void> {
   }
   if (declared.length > 0) {
     console.log(
-      `\n  Classification declared on the tag (overrides the name-verb guess): ${declared.length}`
+      `\n  Classification declared on the tag (overrides what the body and name imply): ${declared.length}`
     );
     for (const d of declared) {
       console.log(`      ${d.toolName}: ${d.from} → ${d.to}`);

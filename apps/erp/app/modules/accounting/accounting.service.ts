@@ -2309,6 +2309,7 @@ type AccountingPeriodCloseColumns = {
   periodNumber?: number | null;
 };
 
+/** @mcp */
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3506,8 +3507,12 @@ export function evaluateCloseChecklist(
   return { tasks: views, canClose, blockingReason, autoTaskStates };
 }
 
-// Idempotently instantiate the checklist for a period from active definitions,
-// then overlay live readiness. Returns the evaluated tasks plus the close gate.
+/**
+ * Idempotently instantiate the checklist for a period from active definitions,
+ * then overlay live readiness. Returns the evaluated tasks plus the close gate.
+ *
+ * @mcp
+ */
 export async function getPeriodCloseChecklist(
   client: SupabaseClient<Database>,
   companyId: string,

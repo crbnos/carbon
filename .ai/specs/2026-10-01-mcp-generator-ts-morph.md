@@ -1,6 +1,6 @@
 # MCP generator: replace hand-rolled TypeScript parsing with ts-morph
 
-> Status: draft
+> Status: in progress — Phase 1 and the structural half of Phase 2 implemented; Phase 0, 2b, 2c and 3 open
 > Author: Sidwebworks
 > Date: 2026-10-01
 
@@ -349,6 +349,35 @@ All resolved with the user on 2026-10-01 before this spec was written.
 
 ## Changelog
 
+- 2026-10-01: Phase 1 and Phase 2 (scans + 2a) implemented in
+  `scripts/lib/service-ast.ts`. One ts-morph project is shared with
+  `response-schema.ts`; discovery, parameters, doc tags and every body question
+  come from the AST, and `parseExportedFunctions`, `precedingJsdoc`,
+  `extractFunctionBody`, `stripComments` and the regex tag readers are gone.
+  Digest verdict against the pre-change manifest (1476 tools): 10 entries moved,
+  all explained —
+  - `accounting_getOrCreateAccountingPeriod` and
+    `accounting_getPeriodCloseChecklist` READ → WRITE (`accounting:view` →
+    `accounting:update`). Both insert rows; the name-first rule had published
+    them as reads with no `@mcp` opt-in. Both are now tagged.
+  - 8 schemas (plus the first of the two above) where a parameter has both a
+    type and a default (`sortDescending: boolean = false`): the text parser read
+    the type as `"boolean = false"` and published an untyped REQUIRED field;
+    they are now typed and optional. So Phase 1 was not digest-neutral, in the
+    direction of being correct.
+  Divergences from the design above:
+  - 2a does NOT turn the seven non-read-named pure functions into READs. A body
+    with no write of its own is indistinguishable from one that delegates its
+    write (`issueMaterial` → edge function), so the name still breaks that tie
+    and those seven keep their `@mcp read` declaration.
+  - A write is anchored on a `.from(…)` receiver chain rather than on the member
+    name alone; `members.delete(id)` on a Set no longer reads as a row delete.
+  - `scripts/one-off/tag-mcp-exposure.ts` was deleted rather than ported: that
+    folder is executed against every production database on deploy.
+  Not done: Phase 0 (`scripts/` has no tsconfig or lint coverage; ts-morph is
+  still 22), 2b (per-call-site table resolution), 2c (escape reporting), and
+  Phase 3 (the type parser and its text helpers are still in
+  `service-metadata.ts`, now ~1530 lines).
 - 2026-10-01: Phase 2 redesigned after measurement, and after opt-in exposure
   landed (`a961578699`). The original draft treated Phase 2 as a drop-in
   ts-morph swap; measuring it showed 58/77 agreement, zero extra breakage found,

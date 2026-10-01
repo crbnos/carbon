@@ -42,7 +42,9 @@ export const MCP_MODULE_ALLOWLIST: readonly string[] = [
 ];
 
 /**
- * The JSDoc tag that opts a data-CHANGING function in.
+ * The JSDoc tag that opts a data-CHANGING function in. The generator reads it
+ * off the declaration's parsed doc tags (`scripts/lib/service-ast.ts`), never
+ * off the comment's text, so prose that mentions "@mcp" does not count.
  *
  * Required for WRITE and DESTRUCTIVE only. READs stay opt-out: they are 802 of
  * the 1557 tools, they are bounded by the caller's own RLS and module
@@ -55,47 +57,21 @@ export const MCP_EXPOSURE_TAG = "@mcp";
 /** Classifications that require {@link MCP_EXPOSURE_TAG} to be exposed. */
 export const MCP_TAG_REQUIRED_FOR: readonly string[] = ["WRITE", "DESTRUCTIVE"];
 
-/** Whether a JSDoc block opts its function in. */
-export function hasMcpExposureTag(jsdoc: string | undefined): boolean {
-  if (!jsdoc) return false;
-  // Tag-line only, so prose mentioning "@mcp" in a sentence does not count.
-  return jsdoc
-    .split("\n")
-    .some((line) =>
-      new RegExp(`^\\s*\\*?\\s*${MCP_EXPOSURE_TAG}(\\s|$)`).test(line)
-    );
-}
-
 /**
- * A classification DECLARED on the tag — `@mcp read`, `@mcp write`,
- * `@mcp destructive` — which wins over `classifyFunction`'s name-verb guess.
+ * The tag may also DECLARE the classification — `@mcp read`, `@mcp write`,
+ * `@mcp destructive` — which wins over what the generator infers.
  *
- * The guess is not merely cosmetic. Classification drives three things: the
- * permission actions a caller must hold (`permissionActionsFor`: READ → view),
- * the injected auth fields (READ → companyId only), and whether the function
- * needs an `@mcp` tag at all. So a read guessed WRITE over-demands permission —
- * `items_diffMethod` diffs two methods and asks for `parts:update`,
- * `production_maxToolQuantityByItem` returns a maximum and asks for
- * `production:update` — which locks out an API key scoped to `view`.
+ * Classification is not cosmetic. It drives the permission actions a caller
+ * must hold (READ → view), the injected auth fields (READ → companyId only),
+ * and whether the function needs the tag at all. A read inferred WRITE
+ * over-demands permission: `items_diffMethod` diffs two methods and would ask
+ * for `parts:update`, locking out an API key scoped to `view`.
  *
- * Declaring it follows the rule this generator already applies to descriptions:
- * "a JSDoc on the function itself beats the override table (code closest
- * wins)". The declaration is authoritative and the generator VERIFIES it
- * against the body, refusing a contradiction, so a declaration cannot quietly
- * downgrade a real write.
+ * A declaration is verified against the function's body and a contradiction
+ * fails generation, so it cannot quietly downgrade a real write.
  */
-export function declaredClassification(
-  jsdoc: string | undefined
-): "READ" | "WRITE" | "DESTRUCTIVE" | null {
-  if (!jsdoc) return null;
-  for (const line of jsdoc.split("\n")) {
-    const m = new RegExp(
-      `^\\s*\\*?\\s*${MCP_EXPOSURE_TAG}\\s+(read|write|destructive)\\b`,
-      "i"
-    ).exec(line);
-    if (m?.[1]) {
-      return m[1].toUpperCase() as "READ" | "WRITE" | "DESTRUCTIVE";
-    }
-  }
-  return null;
-}
+export const MCP_DECLARED_CLASSIFICATIONS = {
+  read: "READ",
+  write: "WRITE",
+  destructive: "DESTRUCTIVE"
+} as const;

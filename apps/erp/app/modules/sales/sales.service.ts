@@ -4116,7 +4116,6 @@ type QuoteLinePriceInput = {
 };
 
 /**
- * @mcp
  * @mcp destructive — it delegates to rewriteQuoteLinePrices, which
  *                  deleteFrom("quoteLinePrice") then re-inserts. The body of
  *                  THIS function holds no delete, so neither the name verb nor

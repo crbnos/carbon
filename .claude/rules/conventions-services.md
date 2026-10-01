@@ -204,6 +204,27 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - **RPCs**: heavy/aggregate logic is `client.rpc("fn_name", { ... })`; the function is
   defined in a migration. See database-patterns.md.
 
+## A service function is a potential API tool
+
+Every exported function of an ERP `{module}.service.ts` is read by the MCP /
+v1-API generator (`pnpm run generate:mcp`). What that means when you add one:
+
+- A function that only READS is published automatically. If it must stay
+  internal, add it to `MCP_BLOCKED_TOOL_NAMES`.
+- A function that WRITES or DELETES is published only when its JSDoc carries
+  `@mcp`. Leave the tag off unless it is safe to call with nothing but the
+  payload — whatever gate or orchestration its route performs does not run for
+  an API caller.
+- The name is still the contract for the permission and audit fields
+  (`upsert*` → create+update, `delete*` → delete, …), so follow the table below.
+  When the name cannot say what the function is — it delegates its write to a
+  helper, an RPC or an edge function — declare it: `@mcp write`,
+  `@mcp destructive`, or `@mcp read` for a pure function with a non-read name.
+- Don't spread a payload into a write on a table the payload has extra keys for;
+  build the row. The dispatcher stamps `createdBy`/`updatedBy` onto the payload.
+
+Details: [mcp-tools-reference.md](mcp-tools-reference.md).
+
 ## Naming conventions
 
 | Operation | Name | First arg |

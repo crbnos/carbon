@@ -2647,3 +2647,35 @@ tiebreak (a label, a sort order, then the id). Never rely on insertion order sur
 
 **Applies to:** any list ordered by `createdAt` whose rows are written together — RPCs,
 Kysely transactions, `insertInto(...).values([...])`, seeds.
+
+## `scripts/one-off/` is executed in production
+
+**Context:** A codemod that added `@mcp` tags to service files was saved as
+`scripts/one-off/tag-mcp-exposure.ts` — "a script run once".
+
+**Problem:** That folder is a registry, not a scratch area. `ci/src/migrations.ts` runs
+every `.ts` file in it against every workspace database on the next deploy and records it
+in `scriptRun`. A source-rewriting codemod there would have been executed by the deploy
+workflow.
+
+**Rule:** `scripts/one-off/` is only for one-time DATA migrations (see its README). A
+codemod is run locally and deleted, or lives in `scripts/` if it is worth keeping.
+
+**Applies to:** anything added under `scripts/one-off/`.
+
+## A lookup table keyed by source text must be a `Map`
+
+**Context:** The MCP generator decided "is this call a database write" with
+`WRITES[memberName]` over an object literal.
+
+**Problem:** `memberName` comes from the code being analysed, so `x.toString()` looked up
+`WRITES["toString"]`, found `Object.prototype.toString`, and counted as a write. Five read
+tools silently left the manifest until the digest diff showed them missing.
+
+**Rule:** When the key is arbitrary input (an identifier from parsed source, a column name,
+a user string), use a `Map`/`Set` or `Object.hasOwn`, never `obj[key]` truthiness. And diff
+the generated manifest against the previous one before trusting a generator change.
+
+**Applies to:** `scripts/lib/service-ast.ts`, and any analyser or dispatcher that indexes a
+record by a name it did not choose.
+
