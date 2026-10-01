@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Pasif)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -149,7 +152,7 @@ msgid "All clear"
 msgstr "Tamamen temiz"
 
 msgid "All gauges"
-msgstr ""
+msgstr "Tüm ölçüm aletleri"
 
 msgid "All jobs"
 msgstr "Tüm iş emirleri"
@@ -271,6 +274,12 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Characteristic"
+msgstr "Özellik"
+
+msgid "Characteristics"
+msgstr "Özellikler"
+
 msgid "Chat"
 msgstr "Sohbet"
 
@@ -287,7 +296,7 @@ msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
 
 msgid "Clear gauge"
-msgstr ""
+msgstr "Ölçüm aletini temizle"
 
 msgid "Clear Search"
 msgstr "Aramayı Temizle"
@@ -307,7 +316,7 @@ msgstr "<0/>'den beri kaydedilmiş"
 msgid "Close"
 msgstr "Kapat"
 
-msgid "Collapse features table"
+msgid "Collapse characteristics table"
 msgstr "Özellikler tablosunu daralt"
 
 msgid "Collapse panel"
@@ -469,8 +478,8 @@ msgstr "Taslak"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Dosyayı buraya sürükleyip bırakın veya bir dosya seçmek için tıklayın"
 
-msgid "Drag to resize drawing and features"
-msgstr "Çizimi ve özellikleri yeniden boyutlandırmak için sürükleyin"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -547,7 +556,7 @@ msgstr "Partideki her iş emri bu adımları takip eder. Tüm bunlar için bir a
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Her birim için bir karar verildi: {passes} geçti ve {fails} başarısız oldu. Lot, her birim kendi sonucuna yönlendirilmek üzere kapanır."
 
-msgid "Expand features table"
+msgid "Expand characteristics table"
 msgstr "Özellikler tablosunu genişlet"
 
 msgid "Expand panel"
@@ -569,7 +578,7 @@ msgstr "İlk süresi dolacak"
 msgid "Failed"
 msgstr "Başarısız"
 
-msgid "Failed features"
+msgid "Failed characteristics"
 msgstr "Başarısız özellikler"
 
 msgid "Failed to complete inventory adjustment"
@@ -588,7 +597,7 @@ msgid "Failed to fetch storageUnits"
 msgstr "Depolama birimlerini almak başarısız oldu"
 
 msgid "Failed to record gauge"
-msgstr ""
+msgstr "Ölçüm aleti kaydedilemedi"
 
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
@@ -606,12 +615,6 @@ msgstr "Dosyayı yüklemede başarısız oldu: {0}"
 
 msgid "Failed to upload image"
 msgstr "Görsel yüklenemedi"
-
-msgid "Feature"
-msgstr "Özellik"
-
-msgid "Features"
-msgstr "Özellikler"
 
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
@@ -655,7 +658,10 @@ msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
 
 msgid "Gauge"
-msgstr ""
+msgstr "Ölçüm aleti"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Özellik {characteristicLabel} için ölçüm aleti: {currentGauge}"
 
 msgid "General"
 msgstr "Genel"
@@ -699,9 +705,6 @@ msgstr "{0} içinde"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
-
-msgid "Inactive gauge"
-msgstr ""
 
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
@@ -975,7 +978,7 @@ msgid "No files"
 msgstr "Dosya yok"
 
 msgid "No gauges found."
-msgstr ""
+msgstr "Ölçüm aleti bulunamadı."
 
 msgid "No Impact"
 msgstr "Etki Yok"
@@ -1145,7 +1148,7 @@ msgid "or"
 msgstr "veya"
 
 msgid "Out of calibration"
-msgstr ""
+msgstr "Kalibrasyon dışı"
 
 msgid "Output lot"
 msgstr "Çıktı Lotu"
@@ -1298,7 +1301,7 @@ msgid "Recent"
 msgstr "Son"
 
 msgid "Recently used"
-msgstr ""
+msgstr "Son kullanılanlar"
 
 msgid "Record"
 msgstr "Kaydet"
@@ -1432,13 +1435,13 @@ msgid "Search"
 msgstr "Ara"
 
 msgid "Search {gaugeTypeName}..."
-msgstr ""
+msgstr "Ara {gaugeTypeName}..."
 
 msgid "Search by job or item ID"
 msgstr "İş veya ürün kimliği ile ara"
 
 msgid "Search gauges..."
-msgstr ""
+msgstr "Ölçüm aletlerini ara..."
 
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
@@ -1475,7 +1478,7 @@ msgid "Select Batch {0}"
 msgstr "Seçilecek Parti {0}"
 
 msgid "Select gauge"
-msgstr ""
+msgstr "Ölçüm aleti seç"
 
 msgid "Select Printer"
 msgstr "Yazıcı Seç"
@@ -1760,6 +1763,9 @@ msgstr "Yayımlanmamış seri/parti malzemeleri"
 
 msgid "Unknown"
 msgstr "Bilinmiyor"
+
+msgid "Unknown gauge"
+msgstr "Bilinmeyen ölçüm aleti"
 
 msgid "Unlock"
 msgstr "Kilit aç"

@@ -148,7 +148,7 @@ const SalesInvoiceProperties = () => {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  aria-label={t`Copy`}
+                  aria-label={t`Copy unique identifier`}
                   size="sm"
                   className="p-1"
                   onClick={() => copyToClipboard(invoiceId)}
@@ -158,7 +158,7 @@ const SalesInvoiceProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>
-                  <Trans>Copy Sales Invoice unique identifier</Trans>
+                  <Trans>Copy sales invoice unique identifier</Trans>
                 </span>
               </TooltipContent>
             </Tooltip>

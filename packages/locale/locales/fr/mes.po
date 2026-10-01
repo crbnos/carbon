@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inactif)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -149,7 +152,7 @@ msgid "All clear"
 msgstr "Tout est correct"
 
 msgid "All gauges"
-msgstr ""
+msgstr "Tous les instruments de mesure"
 
 msgid "All jobs"
 msgstr "Tous les ordres de fabrication"
@@ -271,6 +274,12 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Cartes"
 
+msgid "Characteristic"
+msgstr "Caractéristique"
+
+msgid "Characteristics"
+msgstr "Caractéristiques"
+
 msgid "Chat"
 msgstr "Discussion"
 
@@ -287,7 +296,7 @@ msgid "Clear Filters"
 msgstr "Effacer les filtres"
 
 msgid "Clear gauge"
-msgstr ""
+msgstr "Effacer l'instrument de mesure"
 
 msgid "Clear Search"
 msgstr "Effacer la recherche"
@@ -307,7 +316,7 @@ msgstr "Connecté depuis <0/>"
 msgid "Close"
 msgstr "Fermer"
 
-msgid "Collapse features table"
+msgid "Collapse characteristics table"
 msgstr "Réduire le tableau des caractéristiques"
 
 msgid "Collapse panel"
@@ -469,7 +478,7 @@ msgstr "Brouillon"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Glissez-déposez un fichier ici, ou cliquez pour sélectionner un fichier"
 
-msgid "Drag to resize drawing and features"
+msgid "Drag to resize drawing and characteristics"
 msgstr "Faites glisser pour redimensionner le dessin et les caractéristiques"
 
 #. placeholder {0}: active.data.current?.type
@@ -547,8 +556,8 @@ msgstr "Chaque ordre de fabrication du lot de production suit ces étapes. Enreg
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Chaque unité a un verdict : {passes} réussie(s) et {fails} échouée(s). Le lot se ferme avec chaque unité acheminée vers son propre résultat."
 
-msgid "Expand features table"
-msgstr "Développer le tableau des caractéristiques"
+msgid "Expand characteristics table"
+msgstr "Agrandir le tableau des caractéristiques"
 
 msgid "Expand panel"
 msgstr "Agrandir le panneau"
@@ -569,8 +578,8 @@ msgstr "Expiration en premier"
 msgid "Failed"
 msgstr "Échoué"
 
-msgid "Failed features"
-msgstr "Fonctionnalités échouées"
+msgid "Failed characteristics"
+msgstr "Caractéristiques non conformes"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Échec de l'ajustement de stock"
@@ -588,7 +597,7 @@ msgid "Failed to fetch storageUnits"
 msgstr "Échec de la récupération des unités de stockage"
 
 msgid "Failed to record gauge"
-msgstr ""
+msgstr "Échec de l'enregistrement de l'instrument de mesure"
 
 msgid "Failed to save measurement"
 msgstr "Échec de l'enregistrement de la mesure"
@@ -606,12 +615,6 @@ msgstr "Échec du téléversement du fichier : {0}"
 
 msgid "Failed to upload image"
 msgstr "Échec du téléversement de l'image"
-
-msgid "Feature"
-msgstr "Fonctionnalité"
-
-msgid "Features"
-msgstr "Caractéristiques"
 
 msgid "File size exceeds 10MB limit"
 msgstr "La taille du fichier dépasse la limite de 10 Mo"
@@ -655,7 +658,10 @@ msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 
 msgid "Gauge"
-msgstr ""
+msgstr "Instrument de mesure"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Instrument de mesure pour la caractéristique {characteristicLabel} : {currentGauge}"
 
 msgid "General"
 msgstr "Général"
@@ -699,9 +705,6 @@ msgstr "dans {0}"
 
 msgid "In Progress"
 msgstr "En cours"
-
-msgid "Inactive gauge"
-msgstr ""
 
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
@@ -975,7 +978,7 @@ msgid "No files"
 msgstr "Aucun fichier"
 
 msgid "No gauges found."
-msgstr ""
+msgstr "Aucun instrument de mesure trouvé."
 
 msgid "No Impact"
 msgstr "Aucun impact"
@@ -1145,7 +1148,7 @@ msgid "or"
 msgstr "ou"
 
 msgid "Out of calibration"
-msgstr ""
+msgstr "Hors d'étalonnage"
 
 msgid "Output lot"
 msgstr "Lot de sortie"
@@ -1298,7 +1301,7 @@ msgid "Recent"
 msgstr "Récent"
 
 msgid "Recently used"
-msgstr ""
+msgstr "Utilisés récemment"
 
 msgid "Record"
 msgstr "Enregistrer"
@@ -1432,13 +1435,13 @@ msgid "Search"
 msgstr "Rechercher"
 
 msgid "Search {gaugeTypeName}..."
-msgstr ""
+msgstr "Rechercher {gaugeTypeName}..."
 
 msgid "Search by job or item ID"
 msgstr "Rechercher par numéro de travail ou d'article"
 
 msgid "Search gauges..."
-msgstr ""
+msgstr "Rechercher les instruments de mesure..."
 
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
@@ -1475,7 +1478,7 @@ msgid "Select Batch {0}"
 msgstr "Sélectionner le lot {0}"
 
 msgid "Select gauge"
-msgstr ""
+msgstr "Sélectionner un instrument de mesure"
 
 msgid "Select Printer"
 msgstr "Sélectionner l'imprimante"
@@ -1760,6 +1763,9 @@ msgstr "Matériaux série/lot non distribués"
 
 msgid "Unknown"
 msgstr "Inconnu"
+
+msgid "Unknown gauge"
+msgstr "Instrument de mesure inconnu"
 
 msgid "Unlock"
 msgstr "Déverrouiller"

@@ -256,7 +256,7 @@ const SalesReturnOrderProperties = () => {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  aria-label={t`Copy`}
+                  aria-label={t`Copy unique identifier`}
                   size="sm"
                   className="p-1"
                   onClick={() => copyToClipboard(id)}

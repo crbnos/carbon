@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" is done — all {0} of its Setup Map items are configured
 msgid "(excluded for this customer)"
 msgstr "(excluded for this customer)"
 
+msgid "(Inactive)"
+msgstr "(Inactive)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -1430,6 +1433,9 @@ msgstr "Add Authenticator App"
 msgid "Add Calibration Record"
 msgstr "Add Calibration Record"
 
+msgid "Add Characteristic"
+msgstr "Add Characteristic"
+
 msgid "Add Child Storage Unit"
 msgstr "Add Child Storage Unit"
 
@@ -1459,9 +1465,6 @@ msgstr "Add Employee"
 
 msgid "Add Entry"
 msgstr "Add Entry"
-
-msgid "Add Feature"
-msgstr "Add Feature"
 
 msgid "Add from library…"
 msgstr "Add from library…"
@@ -2098,8 +2101,8 @@ msgstr "Applies to all"
 msgid "Applies to all work centers"
 msgstr "Applies to all work centers"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "Applies to features without their own rule, and to the lot when this plan drives an inspection."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 
 msgid "Apply"
 msgstr "Apply"
@@ -3726,6 +3729,15 @@ msgstr "Changing this will update the part ID"
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
 
+msgid "Characteristic"
+msgstr "Characteristic"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "Characteristic values suggested from drawing"
+
+msgid "Characteristics"
+msgstr "Characteristics"
+
 msgid "Charges"
 msgstr "Charges"
 
@@ -3930,11 +3942,11 @@ msgstr "Collapse {0}"
 msgid "Collapse all"
 msgstr "Collapse all"
 
+msgid "Collapse characteristics table"
+msgstr "Collapse characteristics table"
+
 msgid "Collapse Costs"
 msgstr "Collapse Costs"
-
-msgid "Collapse features table"
-msgstr "Collapse features table"
 
 msgid "Collapse Labor"
 msgstr "Collapse Labor"
@@ -4574,8 +4586,8 @@ msgstr "Copy procedure name"
 msgid "Copy procedure unique identifier"
 msgstr "Copy procedure unique identifier"
 
-msgid "Copy Purchase Invoice unique identifier"
-msgstr "Copy Purchase Invoice unique identifier"
+msgid "Copy purchase invoice unique identifier"
+msgstr "Copy purchase invoice unique identifier"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copy purchase order unique identifier"
@@ -4604,8 +4616,8 @@ msgstr "Copy RFQ unique identifier"
 msgid "Copy RMA number"
 msgstr "Copy RMA number"
 
-msgid "Copy Sales Invoice unique identifier"
-msgstr "Copy Sales Invoice unique identifier"
+msgid "Copy sales invoice unique identifier"
+msgstr "Copy sales invoice unique identifier"
 
 msgid "Copy sales order unique identifier"
 msgstr "Copy sales order unique identifier"
@@ -4645,6 +4657,9 @@ msgstr "Copy training name"
 
 msgid "Copy training unique identifier"
 msgstr "Copy training unique identifier"
+
+msgid "Copy unique identifier"
+msgstr "Copy unique identifier"
 
 msgid "Copy week"
 msgstr "Copy week"
@@ -6170,9 +6185,6 @@ msgstr "Detected by the motion planner"
 msgid "Developer"
 msgstr "Developer"
 
-msgid "Diagram saved"
-msgstr "Diagram saved"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Differs from the selection — allowed, but confirm they nest together"
 
@@ -6451,11 +6463,11 @@ msgstr "Drag to place on drawing"
 msgid "Drag to reorder"
 msgstr "Drag to reorder"
 
-msgid "Drag to resize diagram and features"
-msgstr "Drag to resize diagram and features"
+msgid "Drag to resize diagram and characteristics"
+msgstr "Drag to resize diagram and characteristics"
 
-msgid "Drag to resize drawing and features"
-msgstr "Drag to resize drawing and features"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Drag to resize drawing and characteristics"
 
 msgid "Drag to zoom"
 msgstr "Drag to zoom"
@@ -6466,8 +6478,8 @@ msgstr "Drawing"
 msgid "Drawing Number"
 msgstr "Drawing Number"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 
 msgid "Drop Ship"
 msgstr "Drop Ship"
@@ -7503,11 +7515,11 @@ msgstr "Expand {0}"
 msgid "Expand all"
 msgstr "Expand all"
 
+msgid "Expand characteristics table"
+msgstr "Expand characteristics table"
+
 msgid "Expand Costs"
 msgstr "Expand Costs"
-
-msgid "Expand features table"
-msgstr "Expand features table"
 
 msgid "Expand Labor"
 msgstr "Expand Labor"
@@ -7692,8 +7704,8 @@ msgstr "Fail"
 msgid "Failed"
 msgstr "Failed"
 
-msgid "Failed features"
-msgstr "Failed features"
+msgid "Failed characteristics"
+msgstr "Failed characteristics"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7980,8 +7992,8 @@ msgstr "Failed to retrieve CSV column data."
 msgid "Failed to save configuration rule"
 msgstr "Failed to save configuration rule"
 
-msgid "Failed to save diagram"
-msgstr "Failed to save diagram"
+msgid "Failed to save inspection plan"
+msgstr "Failed to save inspection plan"
 
 msgid "Failed to save measurement"
 msgstr "Failed to save measurement"
@@ -8081,15 +8093,6 @@ msgstr "Fax"
 
 msgid "Fax Number"
 msgstr "Fax Number"
-
-msgid "Feature"
-msgstr "Feature"
-
-msgid "Feature values suggested from drawing"
-msgstr "Feature values suggested from drawing"
-
-msgid "Features"
-msgstr "Features"
 
 msgid "Fees"
 msgstr "Fees"
@@ -8395,6 +8398,9 @@ msgstr "Gauge"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Gauge Calibration Notifications"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Gauge for characteristic {characteristicLabel}: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "Gauge ID"
@@ -9153,9 +9159,6 @@ msgstr "Inactive"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Inactive actions will not appear in selection lists"
-
-msgid "Inactive gauge"
-msgstr "Inactive gauge"
 
 msgid "Inbound inspection"
 msgstr "Inbound inspection"
@@ -14867,8 +14870,8 @@ msgstr "Replace this company's data with a demo dataset — snapshotted first, s
 msgid "Replacement Order"
 msgstr "Replacement Order"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 
 msgid "Replenishment"
 msgstr "Replenishment"
@@ -15616,8 +15619,8 @@ msgstr "Sample Size"
 msgid "Sampling"
 msgstr "Sampling"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "Sampling — Feature {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "Sampling — Characteristic {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Sampling Standard"
@@ -18188,8 +18191,8 @@ msgstr "The lot will be marked Passed. {fails} sampled failure(s) are recorded f
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "The lot's per-feature sampling plan will be re-resolved from the selected document."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
@@ -19554,6 +19557,9 @@ msgstr "Unknown"
 msgid "unknown error"
 msgstr "unknown error"
 
+msgid "Unknown gauge"
+msgstr "Unknown gauge"
+
 msgid "unknown location"
 msgstr "unknown location"
 
@@ -20125,6 +20131,9 @@ msgstr "View notes"
 
 msgid "View on schedule board"
 msgstr "View on schedule board"
+
+msgid "View only — changes are not saved"
+msgstr "View only — changes are not saved"
 
 msgid "View Open"
 msgstr "View Open"
@@ -21046,6 +21055,9 @@ msgstr "Your invitation is invalid or has already been accepted. Please contact 
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "Your latest changes could not be saved. Are you sure you want to leave this page?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Your legal name, addresses, branding, and document defaults"

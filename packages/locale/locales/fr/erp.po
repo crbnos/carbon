@@ -48,6 +48,9 @@ msgstr "« {taskName} » est fait – tous les {0} éléments de sa carte de mis
 msgid "(excluded for this customer)"
 msgstr "(exclu pour ce client)"
 
+msgid "(Inactive)"
+msgstr "(Inactif)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# jour de marge} other {# jours de marge}}"
@@ -1430,6 +1433,9 @@ msgstr "Ajouter une application d'authentification"
 msgid "Add Calibration Record"
 msgstr "Ajouter un enregistrement d'étalonnage"
 
+msgid "Add Characteristic"
+msgstr "Ajouter une caractéristique"
+
 msgid "Add Child Storage Unit"
 msgstr "Ajouter une unité de stockage enfant"
 
@@ -1459,9 +1465,6 @@ msgstr "Ajouter un employé"
 
 msgid "Add Entry"
 msgstr "Ajouter une entrée"
-
-msgid "Add Feature"
-msgstr "Ajouter une fonctionnalité"
 
 msgid "Add from library…"
 msgstr "Ajouter à partir de la bibliothèque…"
@@ -1750,7 +1753,7 @@ msgid "All Documents"
 msgstr "Tous les documents"
 
 msgid "All gauges"
-msgstr ""
+msgstr "Tous les instruments de mesure"
 
 msgid "All item types"
 msgstr "Tous les types d'articles"
@@ -2017,7 +2020,7 @@ msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Un autre système est connecté à Ramp en tant que système comptable"
 
 msgid "Any"
-msgstr ""
+msgstr "Tout"
 
 msgid "Any item group"
 msgstr "Tout groupe d'articles"
@@ -2098,8 +2101,8 @@ msgstr "S'applique à tous"
 msgid "Applies to all work centers"
 msgstr "S'applique à tous les Postes de travail"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "S'applique aux fonctionnalités sans leur propre Règle, et au Lot quand ce plan dirige un Contrôle."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "S'applique aux caractéristiques sans leur propre règle et au lot lorsque ce plan de contrôle entraîne une inspection."
 
 msgid "Apply"
 msgstr "Appliquer"
@@ -3726,6 +3729,15 @@ msgstr "Modifier ceci mettra à jour l'ID de pièce"
 msgid "Changing type resets this item's draft edits."
 msgstr "Modifier le type réinitialise les brouillons de cet article."
 
+msgid "Characteristic"
+msgstr "Caractéristique"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "Valeurs de caractéristique suggérées à partir du dessin"
+
+msgid "Characteristics"
+msgstr "Caractéristiques"
+
 msgid "Charges"
 msgstr "Débits"
 
@@ -3827,7 +3839,7 @@ msgid "Clear Filters"
 msgstr "Effacer les filtres"
 
 msgid "Clear gauge"
-msgstr ""
+msgstr "Effacer l'instrument de mesure"
 
 msgid "Clear search"
 msgstr "Effacer la recherche"
@@ -3930,11 +3942,11 @@ msgstr "Réduire {0}"
 msgid "Collapse all"
 msgstr "Réduire tout"
 
+msgid "Collapse characteristics table"
+msgstr "Réduire le tableau des caractéristiques"
+
 msgid "Collapse Costs"
 msgstr "Réduire les coûts"
-
-msgid "Collapse features table"
-msgstr "Réduire le tableau des fonctionnalités"
 
 msgid "Collapse Labor"
 msgstr "Réduire la main-d'œuvre"
@@ -4455,7 +4467,7 @@ msgid "Copy batch number"
 msgstr "Copier le numéro de lot de production"
 
 msgid "Copy change notice unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de l'avis de modification"
 
 msgid "Copy company unique identifier"
 msgstr "Copier l'identifiant unique de la Société"
@@ -4464,10 +4476,10 @@ msgid "Copy consumable number"
 msgstr "Copier le numéro de consommable"
 
 msgid "Copy consumable unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du consommable"
 
 msgid "Copy customer unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du client"
 
 msgid "Copy dispatch ID"
 msgstr "Copier l'ID de l'intervention de maintenance"
@@ -4494,7 +4506,7 @@ msgid "Copy Job number"
 msgstr "Copier le numéro de travail"
 
 msgid "Copy job unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de l'ordre de fabrication"
 
 msgid "Copy link"
 msgstr "Copier le lien"
@@ -4574,14 +4586,14 @@ msgstr "Copier le nom de la procédure"
 msgid "Copy procedure unique identifier"
 msgstr "Copier l'identifiant unique de la procédure"
 
-msgid "Copy Purchase Invoice unique identifier"
-msgstr ""
+msgid "Copy purchase invoice unique identifier"
+msgstr "Copier l'identifiant unique de la facture d'achat"
 
 msgid "Copy purchase order unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du bon de commande"
 
 msgid "Copy purchase return order unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de l'ordre de retour d'achat"
 
 msgid "Copy Quality Document"
 msgstr "Copier le Document de Qualité"
@@ -4593,25 +4605,25 @@ msgid "Copy Quote number"
 msgstr "Copier le numéro de devis"
 
 msgid "Copy quote unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du devis"
 
 msgid "Copy return number"
 msgstr "Copier le numéro de retour"
 
 msgid "Copy RFQ unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de la RFQ"
 
 msgid "Copy RMA number"
 msgstr "Copier le numéro de RMA"
 
-msgid "Copy Sales Invoice unique identifier"
-msgstr ""
+msgid "Copy sales invoice unique identifier"
+msgstr "Copier l'identifiant unique de la facture de vente"
 
 msgid "Copy sales order unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de la commande client"
 
 msgid "Copy sales return order unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique de l'ordre de retour de vente"
 
 msgid "Copy service number"
 msgstr "Copier le numéro de service"
@@ -4620,10 +4632,10 @@ msgid "Copy service unique identifier"
 msgstr "Copier l'identifiant unique du service"
 
 msgid "Copy supplier quote unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du devis fournisseur"
 
 msgid "Copy supplier unique identifier"
-msgstr ""
+msgstr "Copier l'identifiant unique du fournisseur"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copiez la tarification de cet article vers une autre portée."
@@ -4645,6 +4657,9 @@ msgstr "Copier le nom de la formation"
 
 msgid "Copy training unique identifier"
 msgstr "Copier l'identifiant unique de la formation"
+
+msgid "Copy unique identifier"
+msgstr "Copier l'identifiant unique"
 
 msgid "Copy week"
 msgstr "Copier la semaine"
@@ -6170,9 +6185,6 @@ msgstr "Détecté par le planificateur de mouvement"
 msgid "Developer"
 msgstr "Développeur"
 
-msgid "Diagram saved"
-msgstr "Diagramme enregistré"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Diffère de la sélection — autorisé, mais confirmez qu'ils s'imbriquent ensemble"
 
@@ -6451,11 +6463,11 @@ msgstr "Faites glisser pour placer sur le dessin"
 msgid "Drag to reorder"
 msgstr "Glisser pour réorganiser"
 
-msgid "Drag to resize diagram and features"
-msgstr "Faites glisser pour redimensionner le diagramme et les fonctionnalités"
+msgid "Drag to resize diagram and characteristics"
+msgstr "Faites glisser pour redimensionner le diagramme et les caractéristiques"
 
-msgid "Drag to resize drawing and features"
-msgstr "Faites glisser pour redimensionner le dessin et les fonctionnalités"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Faites glisser pour redimensionner le dessin et les caractéristiques"
 
 msgid "Drag to zoom"
 msgstr "Glisser pour zoomer"
@@ -6466,8 +6478,8 @@ msgstr "Prélèvement"
 msgid "Drawing Number"
 msgstr "Numéro de plan"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "Le dessin a été remplacé. Les placements de bulles ont été supprimés ; les lignes de fonctionnalités restent inchangées."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "Dessin remplacé. Les placements de bulles ont été supprimés ; les lignes de caractéristiques restent inchangées."
 
 msgid "Drop Ship"
 msgstr "Livraison directe"
@@ -7503,11 +7515,11 @@ msgstr "Développer {0}"
 msgid "Expand all"
 msgstr "Développer tout"
 
+msgid "Expand characteristics table"
+msgstr "Développer le tableau des caractéristiques"
+
 msgid "Expand Costs"
 msgstr "Développer les coûts"
-
-msgid "Expand features table"
-msgstr "Développer le tableau des fonctionnalités"
 
 msgid "Expand Labor"
 msgstr "Développer Main-d'œuvre"
@@ -7692,7 +7704,7 @@ msgstr "Non conforme"
 msgid "Failed"
 msgstr "Échoué"
 
-msgid "Failed features"
+msgid "Failed characteristics"
 msgstr "Caractéristiques échouées"
 
 #. placeholder {0}: rows.length
@@ -7945,7 +7957,7 @@ msgid "Failed to move account: {0}"
 msgstr "Impossible de déplacer le compte : {0}"
 
 msgid "Failed to record gauge"
-msgstr ""
+msgstr "Échec de l'enregistrement de l'instrument de mesure"
 
 msgid "Failed to regenerate schedule"
 msgstr "Impossible de régénérer le planning"
@@ -7980,8 +7992,8 @@ msgstr "Impossible de récupérer les données de colonne CSV."
 msgid "Failed to save configuration rule"
 msgstr "Échec de l'enregistrement de la règle de configuration"
 
-msgid "Failed to save diagram"
-msgstr "Impossible d'enregistrer le diagramme"
+msgid "Failed to save inspection plan"
+msgstr "Échec de l'enregistrement du plan de contrôle"
 
 msgid "Failed to save measurement"
 msgstr "Impossible d'enregistrer la mesure"
@@ -8081,15 +8093,6 @@ msgstr "Télécopie"
 
 msgid "Fax Number"
 msgstr "Numéro de fax"
-
-msgid "Feature"
-msgstr "Fonctionnalité"
-
-msgid "Feature values suggested from drawing"
-msgstr "Valeurs de caractéristiques suggérées à partir du dessin"
-
-msgid "Features"
-msgstr "Fonctionnalités"
 
 msgid "Fees"
 msgstr "Frais"
@@ -8395,6 +8398,9 @@ msgstr "Instrument de mesure"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Notifications d'étalonnage de l'instrument de mesure"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Instrument de mesure pour la caractéristique {characteristicLabel} : {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "ID instrument de mesure"
@@ -9153,9 +9159,6 @@ msgstr "Inactif"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Les actions inactives n'apparaîtront pas dans les listes de sélection"
-
-msgid "Inactive gauge"
-msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Contrôle à réception"
@@ -11736,7 +11739,7 @@ msgid "No Gauge Selected"
 msgstr "Aucun instrument de mesure sélectionné"
 
 msgid "No gauges found."
-msgstr ""
+msgstr "Aucun instrument de mesure trouvé."
 
 msgid "No grouped notifications"
 msgstr "Aucune notification groupée"
@@ -12809,7 +12812,7 @@ msgid "Out"
 msgstr "Hors"
 
 msgid "Out of calibration"
-msgstr ""
+msgstr "Hors étalonnage"
 
 msgid "Outbound"
 msgstr "Expédition"
@@ -14488,7 +14491,7 @@ msgid "Recently Created"
 msgstr "Récemment créé"
 
 msgid "Recently used"
-msgstr ""
+msgstr "Utilisé récemment"
 
 msgid "Recertify Every (Days)"
 msgstr "Recertifier tous les (jours)"
@@ -14867,8 +14870,8 @@ msgstr "Remplacer les données de cette société par un ensemble de données de
 msgid "Replacement Order"
 msgstr "Commande de remplacement"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "Le remplacement du PDF supprime tous les placements de bulles sur ce document. Les lignes de fonctionnalités et leurs valeurs restent ; vous pouvez placer à nouveau les bulles sur le nouveau dessin."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "Le remplacement du PDF supprime tous les placements de bulles sur ce document. Les lignes de caractéristiques et leurs valeurs restent ; vous pouvez placer les bulles à nouveau sur le nouveau dessin."
 
 msgid "Replenishment"
 msgstr "Réapprovisionnement"
@@ -15616,8 +15619,8 @@ msgstr "Taille d'échantillon"
 msgid "Sampling"
 msgstr "Échantillonnage"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "Échantillonnage — Fonctionnalité {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "Échantillonnage — Caractéristique {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Norme d'échantillonnage"
@@ -15819,7 +15822,7 @@ msgid "Search"
 msgstr "Rechercher"
 
 msgid "Search {gaugeTypeName}..."
-msgstr ""
+msgstr "Rechercher {gaugeTypeName}..."
 
 msgid "Search accounts"
 msgstr "Rechercher les comptes"
@@ -15867,7 +15870,7 @@ msgid "Search for existing or create a new one"
 msgstr "Rechercher un existant ou en créer un nouveau"
 
 msgid "Search gauges..."
-msgstr ""
+msgstr "Rechercher des instruments de mesure..."
 
 msgid "Search items or bins"
 msgstr "Rechercher des articles ou des casiers"
@@ -16066,7 +16069,7 @@ msgid "Select field"
 msgstr "Sélectionner un champ"
 
 msgid "Select gauge"
-msgstr ""
+msgstr "Sélectionner un instrument de mesure"
 
 msgid "Select Gauge"
 msgstr "Sélectionner un instrument de mesure"
@@ -18188,8 +18191,8 @@ msgstr "Le lot sera marqué Réussi. {fails} défaut(s) d'échantillonnage sont 
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Le lot sera toujours rejeté, mais un NCR ne peut pas être créé tant qu'au moins un type de problème n'est pas configuré."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "Le plan d'échantillonnage par caractéristique du lot sera re-résolu à partir du document sélectionné."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "Le plan d'échantillonnage par caractéristique du lot sera redéterminé à partir du document sélectionné."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Le montant minimum que ce fournisseur facturera pour ce procédé, indépendamment de la quantité; les ordres de fabrication en dessous du volume de rentabilité coûtent au moins ce montant."
@@ -19554,6 +19557,9 @@ msgstr "Inconnu"
 msgid "unknown error"
 msgstr "erreur inconnue"
 
+msgid "Unknown gauge"
+msgstr "Instrument de mesure inconnu"
+
 msgid "unknown location"
 msgstr "localisation inconnue"
 
@@ -20125,6 +20131,9 @@ msgstr "Afficher les notes"
 
 msgid "View on schedule board"
 msgstr "Voir sur le tableau de planification"
+
+msgid "View only — changes are not saved"
+msgstr "Lecture seule — les modifications ne sont pas enregistrées"
 
 msgid "View Open"
 msgstr "Afficher les ouvertes"
@@ -21042,6 +21051,9 @@ msgstr "Votre invitation est invalide ou a déjà été acceptée. Veuillez cont
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "Votre travail ici : vérifiez un vrai échantillon de chaque ligne, puis marquez-le comme validé. Les données de base se chargent en premier, puis les enregistrements principaux, puis les transactions ouvertes au basculement."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "Vos dernières modifications n'ont pas pu être enregistrées. Êtes-vous sûr de vouloir quitter cette page ?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Votre nom légal, adresses, marque et paramètres par défaut des documents"

@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inactive)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -271,6 +274,12 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Characteristic"
+msgstr "Characteristic"
+
+msgid "Characteristics"
+msgstr "Characteristics"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -307,8 +316,8 @@ msgstr "Clocked in since <0/>"
 msgid "Close"
 msgstr "Close"
 
-msgid "Collapse features table"
-msgstr "Collapse features table"
+msgid "Collapse characteristics table"
+msgstr "Collapse characteristics table"
 
 msgid "Collapse panel"
 msgstr "Collapse panel"
@@ -469,8 +478,8 @@ msgstr "Draft"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Drag and drop a file here, or click to select a file"
 
-msgid "Drag to resize drawing and features"
-msgstr "Drag to resize drawing and features"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Drag to resize drawing and characteristics"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -547,8 +556,8 @@ msgstr "Every job in the batch follows these steps. Record a step for all of the
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 
-msgid "Expand features table"
-msgstr "Expand features table"
+msgid "Expand characteristics table"
+msgstr "Expand characteristics table"
 
 msgid "Expand panel"
 msgstr "Expand panel"
@@ -569,8 +578,8 @@ msgstr "Expiring first"
 msgid "Failed"
 msgstr "Failed"
 
-msgid "Failed features"
-msgstr "Failed features"
+msgid "Failed characteristics"
+msgstr "Failed characteristics"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
@@ -606,12 +615,6 @@ msgstr "Failed to upload file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
-
-msgid "Feature"
-msgstr "Feature"
-
-msgid "Features"
-msgstr "Features"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -657,6 +660,9 @@ msgstr "Forgot to Clock Out?"
 msgid "Gauge"
 msgstr "Gauge"
 
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+
 msgid "General"
 msgstr "General"
 
@@ -699,9 +705,6 @@ msgstr "in {0}"
 
 msgid "In Progress"
 msgstr "In Progress"
-
-msgid "Inactive gauge"
-msgstr "Inactive gauge"
 
 msgid "Inspect Item"
 msgstr "Inspect Item"
@@ -1760,6 +1763,9 @@ msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unknown gauge"
+msgstr "Unknown gauge"
 
 msgid "Unlock"
 msgstr "Unlock"

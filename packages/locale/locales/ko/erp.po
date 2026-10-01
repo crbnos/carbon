@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" 완료 — 설정 맵 항목 {0}개가 모두 설정되�
 msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
+msgid "(Inactive)"
+msgstr "(비활성)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
@@ -1430,6 +1433,9 @@ msgstr "인증 앱 추가"
 msgid "Add Calibration Record"
 msgstr "교정 기록 추가"
 
+msgid "Add Characteristic"
+msgstr "특성 추가"
+
 msgid "Add Child Storage Unit"
 msgstr "하위 보관 단위 추가"
 
@@ -1459,9 +1465,6 @@ msgstr "직원 추가"
 
 msgid "Add Entry"
 msgstr "항목 추가"
-
-msgid "Add Feature"
-msgstr "기능 추가"
 
 msgid "Add from library…"
 msgstr "라이브러리에서 추가…"
@@ -1750,7 +1753,7 @@ msgid "All Documents"
 msgstr "모든 문서"
 
 msgid "All gauges"
-msgstr ""
+msgstr "모든 계측기"
 
 msgid "All item types"
 msgstr "모든 품목 유형"
@@ -2017,7 +2020,7 @@ msgid "Another system is connected to Ramp as its accounting system"
 msgstr "다른 시스템이 Ramp에 회계 시스템으로 연결되어 있습니다"
 
 msgid "Any"
-msgstr ""
+msgstr "아무거나"
 
 msgid "Any item group"
 msgstr "모든 품목 그룹"
@@ -2098,8 +2101,8 @@ msgstr "전체에 적용"
 msgid "Applies to all work centers"
 msgstr "모든 작업장에 적용"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "자신의 규칙이 없는 기능과 이 계획이 검사를 실행할 때의 로트에 적용됩니다."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "자신의 규칙이 없는 특성과 이 계획이 검사를 실행하는 로트에 적용됩니다."
 
 msgid "Apply"
 msgstr "적용"
@@ -3726,6 +3729,15 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
 
+msgid "Characteristic"
+msgstr "특성"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "도면에서 제안된 특성 값"
+
+msgid "Characteristics"
+msgstr "특성"
+
 msgid "Charges"
 msgstr "청구"
 
@@ -3827,7 +3839,7 @@ msgid "Clear Filters"
 msgstr "필터 지우기"
 
 msgid "Clear gauge"
-msgstr ""
+msgstr "계측기 제거"
 
 msgid "Clear search"
 msgstr "검색어 지우기"
@@ -3930,11 +3942,11 @@ msgstr "축소 {0}"
 msgid "Collapse all"
 msgstr "모두 접기"
 
+msgid "Collapse characteristics table"
+msgstr "특성 테이블 축소"
+
 msgid "Collapse Costs"
 msgstr "원가 접기"
-
-msgid "Collapse features table"
-msgstr "기능 표 접기"
 
 msgid "Collapse Labor"
 msgstr "노무 접기"
@@ -4455,7 +4467,7 @@ msgid "Copy batch number"
 msgstr "배치 번호 복사"
 
 msgid "Copy change notice unique identifier"
-msgstr ""
+msgstr "변경 통지 고유 식별자 복사"
 
 msgid "Copy company unique identifier"
 msgstr "회사 고유 식별자 복사"
@@ -4464,10 +4476,10 @@ msgid "Copy consumable number"
 msgstr "소모품 번호 복사"
 
 msgid "Copy consumable unique identifier"
-msgstr ""
+msgstr "소모품 고유 식별자 복사"
 
 msgid "Copy customer unique identifier"
-msgstr ""
+msgstr "고객 고유 식별자 복사"
 
 msgid "Copy dispatch ID"
 msgstr "유지보수 지시 ID 복사"
@@ -4494,7 +4506,7 @@ msgid "Copy Job number"
 msgstr "작업 번호 복사"
 
 msgid "Copy job unique identifier"
-msgstr ""
+msgstr "작업 지시 고유 식별자 복사"
 
 msgid "Copy link"
 msgstr "링크 복사"
@@ -4574,14 +4586,14 @@ msgstr "절차서 이름 복사"
 msgid "Copy procedure unique identifier"
 msgstr "절차서 고유 식별자 복사"
 
-msgid "Copy Purchase Invoice unique identifier"
-msgstr ""
+msgid "Copy purchase invoice unique identifier"
+msgstr "매입 송장 고유 식별자 복사"
 
 msgid "Copy purchase order unique identifier"
-msgstr ""
+msgstr "발주서 고유 식별자 복사"
 
 msgid "Copy purchase return order unique identifier"
-msgstr ""
+msgstr "구매 반품 주문 고유 식별자 복사"
 
 msgid "Copy Quality Document"
 msgstr "품질 문서 복사"
@@ -4593,25 +4605,25 @@ msgid "Copy Quote number"
 msgstr "견적 번호 복사"
 
 msgid "Copy quote unique identifier"
-msgstr ""
+msgstr "견적서 고유 식별자 복사"
 
 msgid "Copy return number"
 msgstr "반품 번호 복사"
 
 msgid "Copy RFQ unique identifier"
-msgstr ""
+msgstr "견적 요청 고유 식별자 복사"
 
 msgid "Copy RMA number"
 msgstr "RMA 번호 복사"
 
-msgid "Copy Sales Invoice unique identifier"
-msgstr ""
+msgid "Copy sales invoice unique identifier"
+msgstr "매출 송장 고유 식별자 복사"
 
 msgid "Copy sales order unique identifier"
-msgstr ""
+msgstr "수주 고유 식별자 복사"
 
 msgid "Copy sales return order unique identifier"
-msgstr ""
+msgstr "판매 반품 주문 고유 식별자 복사"
 
 msgid "Copy service number"
 msgstr "서비스 번호 복사"
@@ -4620,10 +4632,10 @@ msgid "Copy service unique identifier"
 msgstr "서비스 고유 식별자 복사"
 
 msgid "Copy supplier quote unique identifier"
-msgstr ""
+msgstr "공급업체 견적 고유 식별자 복사"
 
 msgid "Copy supplier unique identifier"
-msgstr ""
+msgstr "공급업체 고유 식별자 복사"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "이 품목의 가격 책정을 다른 범위로 복사합니다."
@@ -4645,6 +4657,9 @@ msgstr "교육 이름 복사"
 
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
+
+msgid "Copy unique identifier"
+msgstr "고유 식별자 복사"
 
 msgid "Copy week"
 msgstr "주간 복사"
@@ -6170,9 +6185,6 @@ msgstr "모션 플래너가 감지함"
 msgid "Developer"
 msgstr "개발자"
 
-msgid "Diagram saved"
-msgstr "다이어그램이 저장됨"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "선택과 다릅니다 — 허용되지만 함께 중첩되는지 확인하세요"
 
@@ -6451,11 +6463,11 @@ msgstr "드래그하여 도면에 배치"
 msgid "Drag to reorder"
 msgstr "드래그하여 순서 변경"
 
-msgid "Drag to resize diagram and features"
-msgstr "드래그하여 다이어그램과 피처 크기 조정"
+msgid "Drag to resize diagram and characteristics"
+msgstr "다이어그램 및 특성의 크기를 조정하려면 드래그하세요"
 
-msgid "Drag to resize drawing and features"
-msgstr "드래그하여 드로잉 및 기능의 크기를 조정"
+msgid "Drag to resize drawing and characteristics"
+msgstr "도면 및 특성의 크기를 조정하려면 드래그하세요"
 
 msgid "Drag to zoom"
 msgstr "드래그하여 확대/축소"
@@ -6466,8 +6478,8 @@ msgstr "도면"
 msgid "Drawing Number"
 msgstr "도면 번호"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "도면이 교체되었습니다. 풍선 배치가 제거되었으며 특성 행은 변경되지 않았습니다."
 
 msgid "Drop Ship"
 msgstr "직배송"
@@ -7503,11 +7515,11 @@ msgstr "{0} 펼치기"
 msgid "Expand all"
 msgstr "모두 펼치기"
 
+msgid "Expand characteristics table"
+msgstr "특성 테이블 확장"
+
 msgid "Expand Costs"
 msgstr "원가 펼치기"
-
-msgid "Expand features table"
-msgstr "기능 표 펼치기"
 
 msgid "Expand Labor"
 msgstr "노무 펼치기"
@@ -7692,8 +7704,8 @@ msgstr "불합격"
 msgid "Failed"
 msgstr "실패"
 
-msgid "Failed features"
-msgstr "부적합 특성"
+msgid "Failed characteristics"
+msgstr "실패한 특성"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7945,7 +7957,7 @@ msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
 msgid "Failed to record gauge"
-msgstr ""
+msgstr "계측기 기록에 실패했습니다"
 
 msgid "Failed to regenerate schedule"
 msgstr "일정 재생성 실패"
@@ -7980,8 +7992,8 @@ msgstr "CSV 열 데이터를 가져오지 못했습니다."
 msgid "Failed to save configuration rule"
 msgstr "설정 규칙을 저장하지 못했습니다"
 
-msgid "Failed to save diagram"
-msgstr "다이어그램을 저장하지 못했습니다"
+msgid "Failed to save inspection plan"
+msgstr "검사 계획 저장에 실패했습니다"
 
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
@@ -8081,15 +8093,6 @@ msgstr "팩스"
 
 msgid "Fax Number"
 msgstr "팩스 번호"
-
-msgid "Feature"
-msgstr "기능"
-
-msgid "Feature values suggested from drawing"
-msgstr "도면에서 제안된 기능 값"
-
-msgid "Features"
-msgstr "기능"
 
 msgid "Fees"
 msgstr "수수료"
@@ -8395,6 +8398,9 @@ msgstr "계측기"
 
 msgid "Gauge Calibration Notifications"
 msgstr "계측기 교정 알림"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "특성 {characteristicLabel}에 대한 계측기: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "계측기 ID"
@@ -9153,9 +9159,6 @@ msgstr "비활성"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
-
-msgid "Inactive gauge"
-msgstr ""
 
 msgid "Inbound inspection"
 msgstr "수입 검사"
@@ -11736,7 +11739,7 @@ msgid "No Gauge Selected"
 msgstr "선택된 계측기 없음"
 
 msgid "No gauges found."
-msgstr ""
+msgstr "계측기를 찾을 수 없습니다."
 
 msgid "No grouped notifications"
 msgstr "그룹화된 알림이 없습니다"
@@ -12809,7 +12812,7 @@ msgid "Out"
 msgstr "출고"
 
 msgid "Out of calibration"
-msgstr ""
+msgstr "교정 범위 벗어남"
 
 msgid "Outbound"
 msgstr "출고"
@@ -14488,7 +14491,7 @@ msgid "Recently Created"
 msgstr "최근 생성됨"
 
 msgid "Recently used"
-msgstr ""
+msgstr "최근 사용"
 
 msgid "Recertify Every (Days)"
 msgstr "매 (Days)마다 재인증"
@@ -14867,8 +14870,8 @@ msgstr "이 회사의 데이터를 데모 데이터셋으로 교체합니다 —
 msgid "Replacement Order"
 msgstr "대체 주문"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "PDF를 교체하면 이 문서의 모든 풍선 표시가 제거됩니다. 기능 행과 값은 유지되며, 새 도면에 풍선을 다시 배치할 수 있습니다."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "PDF를 교체하면 이 문서의 모든 풍선 배치가 제거됩니다. 특성 행과 해당 값은 유지되며, 새 도면에서 풍선을 다시 배치할 수 있습니다."
 
 msgid "Replenishment"
 msgstr "보충"
@@ -15616,8 +15619,8 @@ msgstr "샘플 크기"
 msgid "Sampling"
 msgstr "샘플링"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "샘플링 — 기능 {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "샘플링 — 특성 {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "샘플링 표준"
@@ -15819,7 +15822,7 @@ msgid "Search"
 msgstr "검색"
 
 msgid "Search {gaugeTypeName}..."
-msgstr ""
+msgstr "검색 {gaugeTypeName}..."
 
 msgid "Search accounts"
 msgstr "계정 검색"
@@ -15867,7 +15870,7 @@ msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
 
 msgid "Search gauges..."
-msgstr ""
+msgstr "계측기 검색..."
 
 msgid "Search items or bins"
 msgstr "품목 또는 빈 검색"
@@ -16066,7 +16069,7 @@ msgid "Select field"
 msgstr "필드 선택"
 
 msgid "Select gauge"
-msgstr ""
+msgstr "계측기 선택"
 
 msgid "Select Gauge"
 msgstr "계측기 선택"
@@ -18188,8 +18191,8 @@ msgstr "로트는 통과로 표시됩니다. {fails}개의 샘플 불합격 항�
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 그대로 반려되지만, 이슈 유형이 하나 이상 설정되기 전까지는 NCR을 생성할 수 없습니다."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "로트의 특성별 샘플링 계획이 선택된 문서에서 다시 결정됩니다."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "로트의 특성별 샘플링 계획은 선택한 문서에서 다시 결정됩니다."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "이 공급업체가 수량과 관계없이 이 공법에 대해 청구할 최소 금액; 손익분기점 이하의 작업 지시도 최소한 이 금액이 들어갑니다."
@@ -19554,6 +19557,9 @@ msgstr "알 수 없음"
 msgid "unknown error"
 msgstr "알 수 없는 오류"
 
+msgid "Unknown gauge"
+msgstr "알 수 없는 계측기"
+
 msgid "unknown location"
 msgstr "알 수 없는 위치"
 
@@ -20125,6 +20131,9 @@ msgstr "메모 보기"
 
 msgid "View on schedule board"
 msgstr "일정 보드에서 보기"
+
+msgid "View only — changes are not saved"
+msgstr "보기 전용 — 변경 사항이 저장되지 않습니다"
 
 msgid "View Open"
 msgstr "미결 보기"
@@ -21042,6 +21051,9 @@ msgstr "초대가 유효하지 않거나 이미 수락되었습니다. 이것이
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "여기서 할 일: 각 행의 실제 샘플을 확인한 후 검증 완료로 표시하세요. 기초 데이터가 먼저 로드되고, 이어서 마스터 레코드, 전환 시점의 미결 거래 순으로 로드됩니다."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "최근 변경 사항을 저장할 수 없습니다. 이 페이지를 떠나시겠습니까?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "법인명, 주소, 브랜딩, 문서 기본값"

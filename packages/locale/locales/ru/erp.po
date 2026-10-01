@@ -48,6 +48,9 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+msgid "(Inactive)"
+msgstr "(Неактивный)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# день страхового запаса} few {# дня страхового запаса} many {# дней страхового запаса} other {# дней страхового запаса}}"
@@ -1430,6 +1433,9 @@ msgstr "Добавить приложение-аутентификатор"
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
 
+msgid "Add Characteristic"
+msgstr "Добавить характеристику"
+
 msgid "Add Child Storage Unit"
 msgstr "Добавить дочернюю единицу хранения"
 
@@ -1459,9 +1465,6 @@ msgstr "Добавить сотрудника"
 
 msgid "Add Entry"
 msgstr "Добавить запись"
-
-msgid "Add Feature"
-msgstr "Добавить функцию"
 
 msgid "Add from library…"
 msgstr "Добавить из библиотеки…"
@@ -1750,7 +1753,7 @@ msgid "All Documents"
 msgstr "Все документы"
 
 msgid "All gauges"
-msgstr ""
+msgstr "Все средства измерения"
 
 msgid "All item types"
 msgstr "Все типы номенклатуры"
@@ -2017,7 +2020,7 @@ msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Другая система подключена к Ramp как система учета"
 
 msgid "Any"
-msgstr ""
+msgstr "Любой"
 
 msgid "Any item group"
 msgstr "Любая группа товаров"
@@ -2098,8 +2101,8 @@ msgstr "Применяется ко всем"
 msgid "Applies to all work centers"
 msgstr "Применяется ко всем рабочим центрам"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "Применяется к функциям без собственного правила и к партии, когда этот план инициирует контроль."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Применяется к характеристикам без собственного правила и к партии, когда этот план контроля проводит контроль."
 
 msgid "Apply"
 msgstr "Применить"
@@ -3726,6 +3729,15 @@ msgstr "Изменение этого обновит ID детали"
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
 
+msgid "Characteristic"
+msgstr "Характеристика"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "Значения характеристик, предложенные из чертежа"
+
+msgid "Characteristics"
+msgstr "Характеристики"
+
 msgid "Charges"
 msgstr "Списания"
 
@@ -3827,7 +3839,7 @@ msgid "Clear Filters"
 msgstr "Очистить фильтры"
 
 msgid "Clear gauge"
-msgstr ""
+msgstr "Очистить средство измерения"
 
 msgid "Clear search"
 msgstr "Очистить поиск"
@@ -3930,11 +3942,11 @@ msgstr "Свернуть {0}"
 msgid "Collapse all"
 msgstr "Свернуть все"
 
+msgid "Collapse characteristics table"
+msgstr "Свернуть таблицу характеристик"
+
 msgid "Collapse Costs"
 msgstr "Свернуть себестоимость"
-
-msgid "Collapse features table"
-msgstr "Свернуть таблицу функций"
 
 msgid "Collapse Labor"
 msgstr "Свернуть Труд"
@@ -4455,7 +4467,7 @@ msgid "Copy batch number"
 msgstr "Копировать номер серии"
 
 msgid "Copy change notice unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор извещения об изменении"
 
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
@@ -4464,10 +4476,10 @@ msgid "Copy consumable number"
 msgstr "Скопировать номер расходного материала"
 
 msgid "Copy consumable unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор расходного материала"
 
 msgid "Copy customer unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор покупателя"
 
 msgid "Copy dispatch ID"
 msgstr "Скопировать ID заявки на техобслуживание"
@@ -4494,7 +4506,7 @@ msgid "Copy Job number"
 msgstr "Скопировать номер задания"
 
 msgid "Copy job unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор производственного заказа"
 
 msgid "Copy link"
 msgstr "Копировать ссылку"
@@ -4574,14 +4586,14 @@ msgstr "Копировать имя процедуры"
 msgid "Copy procedure unique identifier"
 msgstr "Скопировать уникальный идентификатор процедуры"
 
-msgid "Copy Purchase Invoice unique identifier"
-msgstr ""
+msgid "Copy purchase invoice unique identifier"
+msgstr "Скопировать уникальный идентификатор счета-фактуры полученного"
 
 msgid "Copy purchase order unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор заказа поставщику"
 
 msgid "Copy purchase return order unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор возврата по заказу поставщику"
 
 msgid "Copy Quality Document"
 msgstr "Копировать документ качества"
@@ -4593,25 +4605,25 @@ msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
 
 msgid "Copy quote unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор коммерческого предложения"
 
 msgid "Copy return number"
 msgstr "Скопировать номер возврата"
 
 msgid "Copy RFQ unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор запроса цен"
 
 msgid "Copy RMA number"
 msgstr "Скопировать номер RMA"
 
-msgid "Copy Sales Invoice unique identifier"
-msgstr ""
+msgid "Copy sales invoice unique identifier"
+msgstr "Скопировать уникальный идентификатор счета-фактуры выданного"
 
 msgid "Copy sales order unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор заказа покупателя"
 
 msgid "Copy sales return order unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор возврата по заказу покупателя"
 
 msgid "Copy service number"
 msgstr "Копировать номер услуги"
@@ -4620,10 +4632,10 @@ msgid "Copy service unique identifier"
 msgstr "Копировать уникальный идентификатор услуги"
 
 msgid "Copy supplier quote unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор предложения поставщика"
 
 msgid "Copy supplier unique identifier"
-msgstr ""
+msgstr "Скопировать уникальный идентификатор поставщика"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопировать ценообразование этой номенклатуры в другую область."
@@ -4645,6 +4657,9 @@ msgstr "Копировать название обучения"
 
 msgid "Copy training unique identifier"
 msgstr "Скопировать уникальный идентификатор обучения"
+
+msgid "Copy unique identifier"
+msgstr "Скопировать уникальный идентификатор"
 
 msgid "Copy week"
 msgstr "Копировать неделю"
@@ -6170,9 +6185,6 @@ msgstr "Обнаружено планировщиком движения"
 msgid "Developer"
 msgstr "Разработчик"
 
-msgid "Diagram saved"
-msgstr "Диаграмма сохранена"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Отличается от выбора — допустимо, но убедитесь в их совместимости"
 
@@ -6451,11 +6463,11 @@ msgstr "Перетащите, чтобы разместить на чертеж�
 msgid "Drag to reorder"
 msgstr "Перетащите для переупорядочивания"
 
-msgid "Drag to resize diagram and features"
-msgstr "Перетащите, чтобы изменить размер диаграммы и функций"
+msgid "Drag to resize diagram and characteristics"
+msgstr "Перетащить для изменения размера диаграммы и характеристик"
 
-msgid "Drag to resize drawing and features"
-msgstr "Перетащите, чтобы изменить размер рисунка и функций"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Перетащить для изменения размера чертежа и характеристик"
 
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
@@ -6466,8 +6478,8 @@ msgstr "Снятие"
 msgid "Drawing Number"
 msgstr "Номер чертежа"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "Чертеж заменен. Размещения выносок были удалены; строки характеристик остались без изменений."
 
 msgid "Drop Ship"
 msgstr "Дропшиппинг"
@@ -7503,11 +7515,11 @@ msgstr "Развернуть {0}"
 msgid "Expand all"
 msgstr "Развернуть все"
 
+msgid "Expand characteristics table"
+msgstr "Развернуть таблицу характеристик"
+
 msgid "Expand Costs"
 msgstr "Развернуть Себестоимость"
-
-msgid "Expand features table"
-msgstr "Развернуть таблицу функций"
 
 msgid "Expand Labor"
 msgstr "Развернуть Труд"
@@ -7692,8 +7704,8 @@ msgstr "Не годен"
 msgid "Failed"
 msgstr "Неудачно"
 
-msgid "Failed features"
-msgstr "Отказавшие элементы"
+msgid "Failed characteristics"
+msgstr "Неудачные характеристики"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7945,7 +7957,7 @@ msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
 msgid "Failed to record gauge"
-msgstr ""
+msgstr "Не удалось записать средство измерения"
 
 msgid "Failed to regenerate schedule"
 msgstr "Ошибка при пересчете графика"
@@ -7980,8 +7992,8 @@ msgstr "Не удалось получить данные столбцов CSV."
 msgid "Failed to save configuration rule"
 msgstr "Ошибка при сохранении правила конфигурации"
 
-msgid "Failed to save diagram"
-msgstr "Не удалось сохранить диаграмму"
+msgid "Failed to save inspection plan"
+msgstr "Не удалось сохранить план контроля"
 
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
@@ -8081,15 +8093,6 @@ msgstr "Факс"
 
 msgid "Fax Number"
 msgstr "Номер факса"
-
-msgid "Feature"
-msgstr "Функция"
-
-msgid "Feature values suggested from drawing"
-msgstr "Значения функции предложены на основе чертежа"
-
-msgid "Features"
-msgstr "Функции"
 
 msgid "Fees"
 msgstr "Сборы"
@@ -8395,6 +8398,9 @@ msgstr "Средство измерения"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Уведомления о калибровке средств измерения"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Средство измерения для характеристики {characteristicLabel}: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "ID средства измерения"
@@ -9153,9 +9159,6 @@ msgstr "Неактивно"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Неактивные действия не будут отображаться в списках выбора"
-
-msgid "Inactive gauge"
-msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Входной контроль"
@@ -11736,7 +11739,7 @@ msgid "No Gauge Selected"
 msgstr "Средство измерения не выбрано"
 
 msgid "No gauges found."
-msgstr ""
+msgstr "Средства измерения не найдены."
 
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
@@ -12809,7 +12812,7 @@ msgid "Out"
 msgstr "Вне"
 
 msgid "Out of calibration"
-msgstr ""
+msgstr "Вне калибровки"
 
 msgid "Outbound"
 msgstr "Исходящие"
@@ -14488,7 +14491,7 @@ msgid "Recently Created"
 msgstr "Недавно созданные"
 
 msgid "Recently used"
-msgstr ""
+msgstr "Недавно используемые"
 
 msgid "Recertify Every (Days)"
 msgstr "Пересертификация каждые (дни)"
@@ -14867,8 +14870,8 @@ msgstr "Заменить данные этой организации демон
 msgid "Replacement Order"
 msgstr "Заказ на замену"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "Замена PDF удаляет все размещения выносок на этом документе. Строки элементов и их значения остаются; вы можете разместить выноски снова на новом чертеже."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "Замена PDF удаляет все размещения выносок на этом документе. Строки характеристик и их значения остаются; вы можете разместить выноски снова на новом чертеже."
 
 msgid "Replenishment"
 msgstr "Пополнение"
@@ -15616,8 +15619,8 @@ msgstr "Объем выборки"
 msgid "Sampling"
 msgstr "Выборочный контроль"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "Выборочный контроль — функция {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "Выборочный контроль — Характеристика {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Стандарт выборочного контроля"
@@ -15819,7 +15822,7 @@ msgid "Search"
 msgstr "Поиск"
 
 msgid "Search {gaugeTypeName}..."
-msgstr ""
+msgstr "Поиск {gaugeTypeName}..."
 
 msgid "Search accounts"
 msgstr "Поиск счетов"
@@ -15867,7 +15870,7 @@ msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
 
 msgid "Search gauges..."
-msgstr ""
+msgstr "Поиск средств измерения..."
 
 msgid "Search items or bins"
 msgstr "Поиск номенклатуры или ячеек"
@@ -16066,7 +16069,7 @@ msgid "Select field"
 msgstr "Выберите поле"
 
 msgid "Select gauge"
-msgstr ""
+msgstr "Выберите средство измерения"
 
 msgid "Select Gauge"
 msgstr "Выбрать средство измерения"
@@ -18188,8 +18191,8 @@ msgstr "Партия будет отмечена как пройдено. Заф
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Партия все еще будет отклонена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "План выборочного контроля партии по каждому признаку будет переопределен из выбранного документа."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "План выборочного контроля для каждой характеристики партии будет переопределен на основе выбранного документа."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Минимальная сумма, которую этот поставщик будет взимать за этот процесс, независимо от количества; производственные заказы ниже объема безубыточности все равно стоят как минимум столько."
@@ -19554,6 +19557,9 @@ msgstr "Неизвестно"
 msgid "unknown error"
 msgstr "неизвестная ошибка"
 
+msgid "Unknown gauge"
+msgstr "Неизвестное средство измерения"
+
 msgid "unknown location"
 msgstr "неизвестное местоположение"
 
@@ -20125,6 +20131,9 @@ msgstr "Просмотр Примечаний"
 
 msgid "View on schedule board"
 msgstr "Открыть на доске расписания"
+
+msgid "View only — changes are not saved"
+msgstr "Только просмотр — изменения не сохраняются"
 
 msgid "View Open"
 msgstr "Просмотреть открытые"
@@ -21042,6 +21051,9 @@ msgstr "Ваше приглашение недействительно или у
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "Ваша задача здесь: проверьте реальный образец каждой строки, затем отметьте её как проверенную. Данные фундамента загружаются первыми, затем основные записи, затем открытые транзакции при переходе."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "Ваши последние изменения не были сохранены. Вы уверены, что хотите покинуть эту страницу?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Ваше юридическое имя, адреса, брендинг и стандартные параметры документов"
