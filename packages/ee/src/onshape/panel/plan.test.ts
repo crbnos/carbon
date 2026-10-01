@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { OnshapeBomNode } from "./bom";
 import {
+  assemblyTextChanges,
   bomLineItemType,
   buildAssemblyPlan,
   buildPartPlan,
@@ -1040,6 +1041,128 @@ describe("pickAdoptTarget", () => {
     expect(
       pickAdoptTarget([rows[0] as (typeof rows)[number]], "0")
     ).toBeUndefined();
+  });
+});
+
+describe("assemblyTextChanges", () => {
+  it("writes only the descriptions Onshape gives that differ", () => {
+    expect(
+      assemblyTextChanges(
+        { name: "Foot assembly (Carbon BOM)", description: "ours" },
+        { name: "Foot assembly", description: null }
+      )
+    ).toEqual([
+      { field: "name", from: "Foot assembly (Carbon BOM)", to: "Foot assembly" }
+    ]);
+    expect(
+      assemblyTextChanges(
+        { name: "Pad", description: null },
+        { name: "Pad", description: "Rubber pad" }
+      )
+    ).toEqual([{ field: "description", from: null, to: "Rubber pad" }]);
+  });
+});
+
+describe("buildAssemblyPlan descriptions", () => {
+  const source = (partId: string) => ({
+    documentId: "d2",
+    elementId: "ps",
+    partId
+  });
+  const build = (
+    linkedItemIds?: Set<string>,
+    links = new Map<string, string>()
+  ) =>
+    buildAssemblyPlan({
+      documentId: "d",
+      wv: "w",
+      wvId: "w1",
+      elementId: "e",
+      root: {
+        partNumber: "WB-100",
+        name: "Workbench",
+        description: null,
+        revision: null
+      },
+      nodes: [
+        node({
+          index: "1",
+          partNumber: "LEG-003",
+          name: "Leg tube",
+          itemSource: source("JND")
+        }),
+        node({
+          index: "2",
+          partNumber: "PLT-004",
+          name: "Mounting plate",
+          itemSource: source("JQD")
+        }),
+        node({
+          index: "3",
+          partNumber: "HDW-010",
+          name: "Hex nut",
+          itemSource: source("JHD")
+        })
+      ],
+      items: [
+        {
+          id: "wb",
+          readableId: "WB-100",
+          revision: "0",
+          name: "Workbench (Carbon)"
+        },
+        {
+          id: "leg",
+          readableId: "LEG-003",
+          revision: "0",
+          name: "Leg (Carbon)"
+        },
+        {
+          id: "plt",
+          readableId: "PLT-004",
+          revision: "0",
+          name: "Plate (Carbon)"
+        },
+        {
+          id: "hdw",
+          readableId: "HDW-010",
+          revision: "0",
+          name: "Nut (Carbon)"
+        }
+      ],
+      methodByItemId: new Map(),
+      mappedLinesByMethodId: new Map(),
+      manualLinesByMethodId: new Map(),
+      options,
+      linkedItemIdByExternalId: links,
+      linkedItemIds
+    });
+
+  it("writes the root's and every child's this push links, not one linked elsewhere", () => {
+    // LEG-003 is already linked to its row; PLT-004 is linked to another
+    // Onshape part, so it keeps that link; HDW-010 is linked nowhere.
+    const plan = build(
+      new Set(["leg", "plt"]),
+      new Map([["d2:ps:JND", "leg"]])
+    );
+    expect(plan.root.changes).toEqual([
+      { field: "name", from: "Workbench (Carbon)", to: "Workbench" }
+    ]);
+    const byNumber = new Map(plan.items.map((item) => [item.partNumber, item]));
+    expect(byNumber.get("LEG-003")?.changes).toEqual([
+      { field: "name", from: "Leg (Carbon)", to: "Leg tube" }
+    ]);
+    expect(byNumber.get("PLT-004")?.changes).toBeUndefined();
+    expect(byNumber.get("HDW-010")?.changes).toEqual([
+      { field: "name", from: "Nut (Carbon)", to: "Hex nut" }
+    ]);
+  });
+
+  it("only writes children already linked to their row when it can't tell what else is linked", () => {
+    const plan = build(undefined, new Map([["d2:ps:JND", "leg"]]));
+    const byNumber = new Map(plan.items.map((item) => [item.partNumber, item]));
+    expect(byNumber.get("LEG-003")?.changes).toHaveLength(1);
+    expect(byNumber.get("HDW-010")?.changes).toBeUndefined();
   });
 });
 

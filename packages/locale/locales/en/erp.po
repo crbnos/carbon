@@ -11050,12 +11050,6 @@ msgstr "Name"
 msgid "Name an internal project owner with decision authority"
 msgstr "Name an internal project owner with decision authority"
 
-msgid "Name and description are managed in Onshape."
-msgstr "Name and description are managed in Onshape."
-
-msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Names fill in wherever those roles are referenced across the hub."
 
@@ -16551,6 +16545,12 @@ msgstr "short"
 
 msgid "Short"
 msgstr "Short"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "Short and long descriptions are managed in Onshape."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
 
 msgid "Short Description"
 msgstr "Short Description"

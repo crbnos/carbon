@@ -161,8 +161,9 @@ a failed copy or carry deletes the new Draft with the service role. The
 assembly plan loads the reusable Draft too (`loadReusableDrafts`), so the review
 names the Draft the push will write into.
 
-**Item ownership lock.** A panel-linked item's `name` and `description` belong
-to Onshape. `checkItemIdentityEdit` (`apps/erp/app/modules/items/onshape-lock.ts`,
+**Item ownership lock.** A panel-linked item's `name` and `description` (the UI
+labels them Short Description and Long Description; panel and card copy uses
+those labels) belong to Onshape. `checkItemIdentityEdit` (`apps/erp/app/modules/items/onshape-lock.ts`,
 kept out of the service file so it is not an MCP tool, and out of `.server` so
 the client-bundled service can import it) guards `upsertPart` (after resolving
 a readable id), `updateItem` and the Properties sidebar
@@ -172,8 +173,8 @@ owned keys out of the write. The panel's own push writes them directly. CSV
 import is not guarded (deliberate admin bulk action).
 
 The item page's only integration footprint is the self-loading
-`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): "Name and
-description are managed in Onshape", last push time, **Open in Onshape** (the
+`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): "Short and
+long descriptions are managed in Onshape", last push time, **Open in Onshape** (the
 exact tab when the link records a workspace, else the document — assembly
 pushes link children without one) and **Detach** (behind a `Confirm` dialog;
 `api+/integrations.onshape.detach` deletes the item's `onshape-v2` row only,
@@ -219,7 +220,13 @@ method is not released).
 - Assembly apply is FLAT over `plan.methods`. An assembly push links a child
   item to its Onshape source only when neither the item nor the source is
   linked already (`linkChildParts`); a part push owns the link. The pushed
-  assembly itself is always linked.
+  assembly itself is always linked. Every reused item that is or becomes
+  linked to its BOM row (the root, children already linked to the row, and
+  children `linkChildParts` will link — the plan decides with `linkedItemIds`)
+  takes Onshape's Short and Long Description (`assemblyTextChanges`); only
+  values Onshape gives are written, because Name and Description are optional
+  BOM columns and an empty cell must not blank Carbon's text. The review lists
+  each change.
 - Assembly plans carry a `depth`: `all` (default) or `top` (the root's method
   only, each sub-assembly a line pointing at its own method). `plan-assembly`
   refuses over `MAX_PLAN_PARTS` (1500) distinct part numbers.
