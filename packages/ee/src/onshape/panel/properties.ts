@@ -427,6 +427,14 @@ export function mergeCustomFieldValues(
 }
 
 /**
+ * A custom field Carbon holds no value for. The item forms save a blank field
+ * as `""`, so an empty string is as empty as a missing key.
+ */
+function isBlankCustomValue(value: unknown): boolean {
+  return value === undefined || value === null || value === "";
+}
+
+/**
  * Whether writing the owned mapped fields would change what Carbon holds. A
  * part whose CAD is unchanged still needs a push when a property was mapped,
  * or remapped, after its last push.
@@ -440,7 +448,7 @@ export function ownedCustomFieldsDiffer(
     if (field.mode !== "owned") return false;
     const value = held[field.fieldId];
     return field.value === null
-      ? value !== undefined && value !== null
+      ? !isBlankCustomValue(value)
       : value !== field.value;
   });
 }
@@ -458,6 +466,6 @@ export function withoutNoOpClears(
     (field) =>
       field.mode !== "owned" ||
       field.value !== null ||
-      (held[field.fieldId] !== undefined && held[field.fieldId] !== null)
+      !isBlankCustomValue(held[field.fieldId])
   );
 }

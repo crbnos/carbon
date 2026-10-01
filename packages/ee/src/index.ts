@@ -158,6 +158,7 @@ export {
   mergeItemEdits,
   pickAdoptTarget,
   pickLatestRow,
+  pickReuseRow,
   proposeItem,
   reconcileMethodForReplenishment,
   VALID_METHOD_TYPES_BY_REPLENISHMENT

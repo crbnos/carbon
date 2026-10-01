@@ -18,7 +18,7 @@ import {
   mergeExistingItemEdits,
   normalizeConfiguration,
   ownedCustomFieldsDiffer,
-  pickLatestRow,
+  pickReuseRow,
   proposeItem
 } from "@carbon/ee";
 import type { MappedLineRow } from "@carbon/ee/onshape";
@@ -271,7 +271,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const rows = rowsByReadableId.get(partNumber) ?? [];
     const found =
       rows.find((row) => row.id === plannedItemId) ??
-      pickLatestRow(rows) ??
+      pickReuseRow(rows) ??
       null;
     if (found) {
       itemByReadableId.set(partNumber, found);
@@ -345,7 +345,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const db = getDatabaseClient();
   const rootRows = rowsByReadableId.get(root.partNumber) ?? [];
   const rootWillReuse = Boolean(
-    rootRows.find((row) => row.id === root.itemId) ?? pickLatestRow(rootRows)
+    rootRows.find((row) => row.id === root.itemId) ?? pickReuseRow(rootRows)
   );
   const rootOwnedFieldIds = new Set(
     rootFields
