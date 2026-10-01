@@ -34,7 +34,7 @@ export const config = {
 
 const payloadSchema = z.object({
   documentId: z.string().min(1),
-  // A push needs a place assets can be exported from: a workspace or a version.
+  // Exports need a workspace or a version, not a microversion.
   wv: z.enum(["w", "v"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1),
@@ -46,23 +46,7 @@ const payloadSchema = z.object({
 const ITEM_COLUMNS =
   "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType";
 
-/**
- * Plan a part push: what pushing these parts of the current Onshape element
- * would do to Carbon, with nothing written.
- *
- * The one live Onshape read a push needs (the element's part list) happens
- * here, so the apply that follows never touches Onshape — the plan carries
- * everything it needs, including each part's microversion, which is the only
- * "unchanged since last push" signal. When the company has mapped Onshape
- * properties to custom fields, one more metadata read resolves per-part
- * values into the plan. Carbon is read in bulk: the element's
- * mappings, every revision of the requested part numbers, and the items those
- * mappings point at (entityId has no foreign key, so a mapping can outlive its
- * item and must not read as a link).
- *
- * Permissions match the apply route so a user who cannot push fails here,
- * before reviewing and editing anything.
- */
+/** Plan a part push without writing; the apply makes no Onshape call. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -112,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const failure = onshapeFailure(error);
     return data(failure.body, { status: failure.status });
   }
-  // Hidden parts are not shown in the panel, so they cannot be pushed either.
+  // Hidden parts are not shown in the panel, so they cannot be pushed.
   parts = parts.filter((part) => !part.isHidden);
 
   const requested = parts.filter((part) => partIds.includes(part.partId));
@@ -141,9 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("revision")
     ),
     loadPlanOptions(client, companyId),
-    // The property map lives on the integration's plain metadata;
-    // getOnshapeClient reads that row but does not expose it, so this is the
-    // same RLS read once more, selecting only what the plan needs.
+    // getOnshapeClient reads this row but does not expose its metadata.
     client
       .from("companyIntegration")
       .select("metadata")
@@ -158,8 +140,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (matches.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // A failed read must not silently plan a push without the mapped fields —
-  // an "owned" field the user expects to follow every push would be skipped.
+  // Planning without the map would silently skip owned fields.
   if (integration.error) {
     return data(
       { error: "Failed to read the Onshape property map" },
@@ -175,9 +156,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }));
   const matchedItems = (matches.data ?? []) as PlanItemRow[];
 
-  // A linked item whose readableId differs from the Onshape part number (the
-  // number changed after linking) is not in `matches`; load it by id so the
-  // plan can tell a live link from a stale mapping row.
+  // An item renumbered after linking is not in `matches`; loading it by id
+  // tells a live link from a stale mapping row.
   const mappedItemIds = [
     ...new Set(
       mappingRows
@@ -207,8 +187,6 @@ export async function action({ request }: ActionFunctionArgs) {
     items: [...matchedItems, ...mappedItems],
     options
   });
-  // A requested id the element no longer has is dropped from the plan; when
-  // that is all of them there is nothing to review.
   if (rows.length === 0) {
     return data(
       { error: "None of the selected parts are in this element" },
@@ -216,11 +194,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Custom fields ride on the plan only when the company mapped properties:
-  // the common no-map case must stay free (zero extra Onshape reads, rows
-  // carry no customFields keys). Numberless rows are refused outright, so
-  // they skip resolution. Unchanged rows do not: a property mapped after the
-  // last push has to reach Carbon even though the CAD did not move.
+  // No map means no extra Onshape reads. Unchanged rows still resolve: a
+  // property mapped after the last push must reach Carbon.
   const propertyMap = parsePropertyMap(integration.data?.metadata);
   const resolvable = rows.filter((row) => row.action !== "skip-no-part-number");
   if (propertyMap.length > 0 && resolvable.length > 0) {
@@ -238,9 +213,6 @@ export async function action({ request }: ActionFunctionArgs) {
         )
       ]);
     } catch (error) {
-      // A property read that fails would silently break the owned-field
-      // promise if the plan went out without values, so it fails the plan
-      // the same way the part-list read does.
       const failure = onshapeFailure(error);
       return data(failure.body, { status: failure.status });
     }
@@ -259,10 +231,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    // Rows on an existing item compare against Carbon's values: an unchanged
-    // row is only worth pushing when its mapped fields differ (it then goes
-    // as an update that skips the model export), and no row claims to clear
-    // a field Carbon doesn't hold.
+    // An unchanged row becomes an update (no model export) only when its mapped
+    // fields differ from Carbon's; no row clears a field Carbon doesn't hold.
     const existing = resolvable.filter(
       (row) => row.item && (row.customFields ?? []).length > 0
     );

@@ -59,9 +59,7 @@ export const config = {
   runtime: "nodejs"
 };
 
-// `mergeItemEdits` is the validator — an unknown enum value, a unit the company lacks or an empty name comes back
-// as a 422 naming the row, not a blanket 400 — so the schema pins only the
-// shape and the cast to ItemEdit below is safe.
+// Shape only: `mergeItemEdits` validates values and answers a 422 naming the row.
 const itemEditSchema = z.object({
   name: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -133,30 +131,7 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
 }
 
 /**
- * Apply a reviewed release plan to Carbon.
- *
- * The plan (`plan-release`) holds every Onshape read the push needs — the
- * release's items and each released assembly's BOM at its version — so this
- * route reads nothing from Onshape: it takes the plan (once; the store hands
- * it out with GETDEL), merges the user's edits, and writes. Carbon's state at
- * apply time outranks the plan's pins: a letter that appeared since the
- * review is reused, a part number that gained a row is revised rather than
- * created twice.
- *
- * Per released part/assembly: ensure a Carbon item AT the released letter —
- * `createRevision` from the base item (active; made the default when the
- * review asked for it, so consuming lines cut over) or a fresh item with the
- * reviewed values when the part number was never in Carbon. Released
- * assemblies then get the plan's BOM lines applied to the new revision's
- * Draft make method: the revision copy's Onshape-origin lines (found through
- * the base method's mapping rows) and any lines a previous release push
- * wrote are replaced, manual lines survive. One Draft change notice, named
- * and described from the review, records what was created; asset exports
- * (models + thumbnails, released drawings as PDF) run as background jobs.
- * Re-applying a release that is already in Carbon re-applies BOMs and assets
- * and creates nothing (idempotent on the release's part number + letter
- * pairs). A letter item whose make method has since been released in Carbon
- * keeps its BOM, reported as skipped.
+ * Apply a reviewed release plan. Makes no Onshape call; Carbon's state at apply time outranks the plan.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -176,9 +151,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { planId, changeNotice: changeNoticeEdit } = parsed.data;
   const edits = parsed.data.edits as Record<string, ItemEdit>;
 
-  // Peek first: a 422 on the edits must leave the plan in place so the user
-  // can fix a field and apply again; the plan is taken only once the writes
-  // are about to start.
+  // Peek, not take: a 422 must leave the plan in place for a retry.
   const stored = await peekPanelPlan(planId, { companyId, userId });
   if (!stored) {
     return data(
@@ -194,16 +167,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan = stored.plan as StoredReleasePlan;
   const makeDefault = parsed.data.makeDefault ?? plan.makeDefault;
-  // Whether to record a change notice is the review's call when the review had
-  // one to decide on. A client that sends no flag — including the panel, for a
-  // plan that proposed none — gets one whenever this push creates something:
-  // the default is resolved after the writes, because a row that vanished
-  // since the review turns into a create that the plan could not foresee.
+  // Unset: record a notice whenever this push creates something, decided after the writes.
   const createChangeNoticeChoice = parsed.data.createChangeNotice;
 
-  // ---- Merge the review's edits before any write --------------------------
-  // Items and children are keyed by part number; the two sets are disjoint
-  // by construction (a child is a BOM row that is not a release item).
+  // Merge the review's edits before any write.
   const merged = mergeEditsForCreates(
     [
       ...plan.items
@@ -222,9 +189,7 @@ export async function action({ request }: ActionFunctionArgs) {
     edits,
     plan.options
   );
-  // A re-push plan carries no change notice; merge against the default name
-  // anyway, because a row that vanished since the review turns into a create
-  // and the notice is then needed.
+  // A row that vanished since review becomes a create, so even a re-push needs notice values.
   const changeNoticeMerge = mergeChangeNoticeEdit(
     plan.changeNotice ?? {
       name: plan.releaseName ?? `Onshape release ${plan.releaseId}`,
@@ -252,10 +217,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const changeNoticeValues = changeNoticeMerge.changeNotice;
 
-  // The plan is taken further down, after the reads that every write depends
-  // on: a failed read before any write answers 500 with the review still in
-  // place, instead of burning the one-shot plan on a push that wrote nothing.
-
   const modelItems = plan.items.filter(isModelReleaseItem);
   const drawingItems = plan.items.filter((item) => !isModelReleaseItem(item));
 
@@ -273,12 +234,8 @@ export async function action({ request }: ActionFunctionArgs) {
     errors: []
   };
 
-  // Apply the reviewer's manufacturing edits to an item Carbon already has —
-  // the reused letter item, or a new revision (which inherits the base's
-  // fields). Baseline is the plan's snapshot; only what changed is written.
-  // A part number that is both a release item and a BOM child prefers the
-  // release item's snapshot (items set after children below), and the applied
-  // set guards against writing it twice.
+  // Writes only fields that differ from the plan's snapshot. A part number that is
+  // both a release item and a BOM child uses the release item's snapshot.
   const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
   for (const child of plan.children) {
     if (child.current) currentByPartNumber.set(child.partNumber, child.current);
@@ -308,10 +265,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   };
 
-  // ---- Re-resolve Carbon rows for every part number (all revisions) -------
-  // The plan may be minutes old. Every release part number and every level-1
-  // BOM child is read again so the decisions below rest on what Carbon holds
-  // now, not on what it held at review time.
+  // Re-read every part number (all revisions): the plan may be minutes old.
   const partNumbers = [
     ...new Set([
       ...modelItems.map((item) => item.partNumber),
@@ -343,12 +297,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const letterRowFor = (partNumber: string, revision: string) =>
     (byReadable.get(partNumber) ?? []).find((row) => row.revision === revision);
 
-  // ---- Pass 1: ensure an item at every released revision letter -----------
+  // Pass 1: an item at every released letter.
   const created: CreatedEntry[] = [];
   const revisionItemByPartNumber = new Map<string, ItemRow>();
 
-  // Decide first, then read every base, then write. The plan pinned the base
-  // it showed ("Rev B from Rev A"); it is honoured while the row exists.
+  // The base the plan pinned is honoured while its row exists.
   type Decision =
     | { item: ReleasePlanItem; kind: "reuse"; row: ItemRow }
     | { item: ReleasePlanItem; kind: "revision"; base: ItemRow }
@@ -363,8 +316,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return {
       item,
       kind: "create",
-      // The reviewed values, or — when the review expected a base that is
-      // gone — the same bare defaults a create always started from.
       proposed:
         merged.items.get(item.partNumber) ??
         proposeItem(
@@ -374,10 +325,8 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   });
 
-  // An assembly whose BOM the review could not read is not minted at all: a
-  // revision copied from the base would carry the base's Onshape lines with
-  // no mapping rows, and a fresh item would have no BOM — both are wrong in
-  // ways a later push cannot repair. Reuse is unaffected (nothing is written).
+  // An assembly whose BOM was not read at review is not minted: a revision would carry the
+  // base's Onshape lines with no mapping rows, and a new item would have no BOM.
   for (const decision of decisions) {
     if (
       decision.kind !== "reuse" &&
@@ -410,8 +359,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const bases = await selectInBatches(baseIds, (batch) =>
     client.from("item").select("*").eq("companyId", companyId).in("id", batch)
   );
-  // A failed batch would read as "no base" and skip every revision while the
-  // rest of the release was written: a partial push.
+  // A failed read would look like "no base" and skip revisions: a partial push.
   if (bases.error) {
     return data(
       { error: "Failed to read the base revisions" },
@@ -422,13 +370,8 @@ export async function action({ request }: ActionFunctionArgs) {
     fullBaseById.set(row.id, row);
   }
 
-  // ---- The base revisions' Onshape lines, read before any write ----------
-  // `createRevision` copies the base method's lines onto the new revision,
-  // with new ids and no mapping rows. The ones a panel push wrote to the base
-  // are identified here — by the base's mapping rows, then by item + order +
-  // quantity — so pass 2 can remove the copies before writing the released
-  // BOM. Read now, while nothing is written: once the revision exists, a
-  // failed read leaves copies that look manual and are never replaced.
+  // `createRevision` copies the base's lines without mapping rows. Key its Onshape lines now:
+  // once the revision exists, a failed read leaves copies that look manual.
   const assemblyBaseIds = [
     ...new Set(
       decisions.flatMap((decision) =>
@@ -504,6 +447,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // Take the plan only after the reads the writes depend on, so a failed read keeps the review.
   // One-shot from here: a concurrent apply of the same review finds nothing.
   if (!(await takePanelPlan(planId, { companyId, userId }))) {
     return data(
@@ -559,9 +503,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       summary.revisionsCreated += 1;
     } else {
-      // Never in Carbon: create the item directly at the released letter with
-      // the values the user reviewed. `upsertPart` reads the new id back by
-      // readableId, which is only right because no other revision exists.
+      // `upsertPart` reads the new id back by readableId, safe only because no other revision exists.
       const { proposed } = decision;
       const insertedItem = await upsertPart(
         client,
@@ -595,23 +537,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
     revisionItemByPartNumber.set(item.partNumber, row);
     rememberRow(row);
-    // A no-op for a fresh create — it has no `current` snapshot and already
-    // took its edits through the proposal.
     await applyItemFieldEdit(item.partNumber, row.id);
   }
 
   summary.alreadyPushed = created.length === 0;
 
-  // ---- Pass 2: BOMs for released assemblies -------------------------------
-  // Every read the BOM writes depend on is made before the first delete. A
-  // failure among them skips the BOM writes for the whole release and says
-  // so: deleting or inserting on a partial read is how released BOMs end up
-  // with duplicated or orphaned lines.
+  // Pass 2: BOMs for released assemblies. Any read failure skips every BOM write:
+  // deleting or inserting on a partial read duplicates or orphans lines.
   let bomReadFailure: string | null = null;
 
-  // Active make methods for every target and every base in one query. The
-  // map is reused by the change notice below: nothing this route writes
-  // changes which method is active.
+  // Reused by the change notice: nothing this route writes changes which method is active.
   const methodByItemId = new Map(baseMethodByItemId);
   try {
     for (const [itemId, method] of await loadActiveMakeMethods(
@@ -631,9 +566,7 @@ export async function action({ request }: ActionFunctionArgs) {
       error instanceof Error ? error.message : "failed to read make methods";
   }
 
-  // 2a — which assemblies take their BOM. Status is re-checked here: a method
-  // released between review and apply keeps its BOM. That is a skip, not an
-  // error: the item is in Carbon at the letter, and the review said so.
+  // 2a: assemblies that take their BOM. A method released since review keeps its BOM (a skip).
   type BomTarget = {
     item: ReleasePlanItem;
     label: string;
@@ -662,10 +595,8 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // A BOM the review could not read is stored as null and leaves the
-    // method alone — deleting its Onshape-origin lines on the strength of a
-    // failed read would turn a transient Onshape error into an erased BOM. A
-    // genuinely empty BOM is an empty array and is applied like any other.
+    // null is a BOM the review could not read: leave the method alone rather than erase it.
+    // An empty BOM is [] and is applied.
     const lines = plan.bomLinesByElementId[item.elementId];
     if (!lines) {
       summary.skipped.push(
@@ -690,10 +621,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  // 2b — resolve every line's item once: the same release's letter item,
-  // else any existing revision (purchased hardware is reused, never
-  // re-minted), else a create with the reviewed values. A child the review
-  // expected to reuse but which vanished since gets the bare defaults.
+  // 2b: line items: this release's letter item, else the latest existing revision, else a create.
   const childItemByPartNumber = new Map<string, ItemRow>();
   const childFailed = new Set<string>();
   for (const target of bomTargets) {
@@ -753,8 +681,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Methods of children that are themselves made (sub-assemblies): a line
-  // points at the child's method.
+  // Sub-assembly lines point at the child's make method.
   const madeChildItemIds = [
     ...new Set(
       bomTargets.flatMap((target) =>
@@ -776,8 +703,7 @@ export async function action({ request }: ActionFunctionArgs) {
         methodByItemId.set(itemId, method);
       }
     } catch (error) {
-      // Written without them, every sub-assembly line would carry a null
-      // child-method pointer and flatten the released tree.
+      // Without them every sub-assembly line would get a null method and flatten the tree.
       bomReadFailure =
         error instanceof Error
           ? error.message
@@ -785,10 +711,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // 2c — the reads that decide what the release replaces, then the deletes.
-  // First the revision copies of the base method's Onshape lines (keyed
-  // before any write, above); manual lines stay. Then the lines a previous
-  // release push wrote to the targets.
+  // 2c: delete the revision copies of the base's Onshape lines (manual lines stay), then the
+  // lines a previous release push wrote.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
     bomTargets.flatMap(
       (target): Array<[string, string]> =>
@@ -825,8 +749,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (bomReadFailure) {
-    // A revision created from a base with Onshape lines has those lines
-    // copied onto it, and without the BOM pass nothing removed them.
     const carriesCopies = created.some((entry) => {
       const baseMethod = entry.baseItemId
         ? baseMethodByItemId.get(entry.baseItemId)
@@ -866,8 +788,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (mapped && !bomReadFailure) {
-    // A line whose delete failed is still in the method and still Onshape's:
-    // its ownership row stays, or it reads as manual and is never replaced.
+    // A line whose delete failed keeps its ownership row, or it would read as manual.
     const failedLineIds = new Set<string>();
     for (const batch of chunkFilterValues(
       mapped.data.map((mapping) => mapping.entityId)
@@ -903,10 +824,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   summary.methodsTouched += bomTargets.length;
 
-  // 2d — write the released lines. Level-1 only: deeper levels belong to the
-  // released subassemblies' own methods, which this release populates
-  // through their own entries. One insert per method, lines and ownership
-  // rows together (`insertOwnedMethodLines`).
+  // 2d: write the released lines. Level 1 only; sub-assemblies get theirs from their own entries.
   for (const target of bomTargets) {
     const { item, label, methodId } = target;
     const lines: OwnedMethodLine[] = [];
@@ -946,9 +864,6 @@ export async function action({ request }: ActionFunctionArgs) {
           itemType,
           unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA"
         },
-        // A released line with no ownership record is indistinguishable from
-        // a manual one, and manual lines are preserved across revisions by
-        // design — so it would never be replaced again.
         metadata: {
           makeMethodId: methodId,
           documentId: plan.documentId,
@@ -973,7 +888,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Pass 3: release mappings + default revisions -----------------------
+  // Pass 3: release mappings and default revisions.
   for (const item of modelItems) {
     const row = revisionItemByPartNumber.get(item.partNumber);
     if (!row) continue;
@@ -1006,9 +921,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // New revisions become the default their consumers resolve to (the
-  // product's own Make Default semantics: methodMaterial lines of sibling
-  // revisions are repointed here).
+  // Make Default repoints sibling revisions' methodMaterial lines to the new revision.
   if (makeDefault) {
     for (const entry of created) {
       if (!entry.baseItemId) continue; // brand-new item: it is the only revision
@@ -1026,7 +939,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Pass 4: one Draft change notice for what this push created ---------
+  // Pass 4: one Draft change notice for what this push created.
   if (created.length > 0 && (createChangeNoticeChoice ?? true)) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
@@ -1035,10 +948,8 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       createdBy: userId,
       name: changeNoticeValues.name,
-      // The description column is tiptap JSON; the key is omitted, not
-      // nulled, when the review left it empty.
+      // Tiptap JSON; omitted, not nulled, when empty.
       ...(description ? { description: description as Json } : {}),
-      // A business date on the company's calendar, never the server's day.
       openDate: datetime
         .today(await getCompanyTimeZone(client, companyId))
         .toString()
@@ -1077,7 +988,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // ---- Pass 5: asset exports at the released versions ---------------------
+  // Pass 5: asset exports at the released versions.
   const assetTargets: Array<{
     item: ReleasePlanItem;
     itemId: string;
@@ -1093,8 +1004,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
   for (const drawing of drawingItems) {
-    // v1 drawing match: the released drawing shares its part number with a
-    // model item in the same release.
+    // A drawing matches the model item with its part number in this release.
     const target = revisionItemByPartNumber.get(drawing.partNumber);
     if (!target) {
       summary.skipped.push(
@@ -1105,8 +1015,6 @@ export async function action({ request }: ActionFunctionArgs) {
     assetTargets.push({ item: drawing, itemId: target.id, kind: "drawing" });
   }
   for (const target of assetTargets) {
-    // A drawing is the whole drawing element; a model export selects the
-    // released part and configuration.
     const selection: ReleaseExportSelection =
       target.kind === "drawing"
         ? { ok: true }
@@ -1117,12 +1025,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       continue;
     }
-    // The event id makes a retried apply idempotent per item + element: the
-    // job spends live quota on every execution.
-    //
-    // Guarded per target: the writes have landed, so a queue failure is a
-    // partial success, not a failed push — and one target failing must not
-    // stop the rest being queued.
+    // The event id dedupes a retried apply; the job spends Onshape quota on every run.
+    // Per-target try: the writes have landed, so a queue failure is a partial success.
     try {
       await trigger(
         "onshape-panel-sync",
