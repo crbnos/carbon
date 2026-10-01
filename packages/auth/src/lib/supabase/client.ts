@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
@@ -17,14 +21,17 @@ const RETRYABLE_STATUS = new Set([500, 502, 503, 504, 512, 408, 524]);
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const methodOf = (input: RequestInfo | URL, init?: RequestInit) =>
+  (
+    init?.method ?? (input instanceof Request ? input.method : "GET")
+  ).toUpperCase();
+
 // Storage object writes (uploads) must NOT go through the retry/timeout wrapper:
 // re-sending a multi-GB PUT on a 5xx is wasteful, and the 25s per-attempt timeout
 // would abort any legitimately long upload. Fail fast — pass straight through and
 // honor only the caller's own signal.
 const isStorageUpload = (input: RequestInfo | URL, init?: RequestInit) => {
-  const method = (
-    init?.method ?? (input instanceof Request ? input.method : "GET")
-  ).toUpperCase();
+  const method = methodOf(input, init);
   if (method !== "POST" && method !== "PUT") return false;
   const url = input instanceof Request ? input.url : String(input);
   return url.includes("/storage/v1/object/");
@@ -35,13 +42,30 @@ const isEdgeFunctionInvoke = (input: RequestInfo | URL) => {
   return url.includes("/functions/v1/");
 };
 
+// Only a READ may be replayed. A 5xx or a lost response does not mean the write
+// did not land — PostgREST commits before it answers, so a retried insert is a
+// duplicate row and a retried RPC re-runs a transaction. None of PostgREST's
+// write verbs carry an idempotency key: insert/upsert/rpc are POST, update is
+// PATCH, delete is DELETE. This is the same rule the Edge Function carve-out
+// above encodes (.ai/lessons.md — the quoteToQuote duplicate-quote incidents,
+// "a retry wrapper must never blindly retry a write with real side effects and
+// no idempotency key"); that fix covered `/functions/v1/` and left every
+// PostgREST write still replaying. The per-attempt timeout still applies to
+// writes — it bounds latency without duplicating anything.
+const isReplayable = (input: RequestInfo | URL, init?: RequestInit) => {
+  const method = methodOf(input, init);
+  return method === "GET" || method === "HEAD";
+};
+
 export const fetchWithRetry: typeof fetch = async (input, init) => {
   if (isStorageUpload(input, init) || isEdgeFunctionInvoke(input)) {
     return fetch(input, init);
   }
 
+  const maxRetries = isReplayable(input, init) ? MAX_RETRIES : 0;
+
   let lastError: unknown;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const timeoutSignal = AbortSignal.timeout(PER_ATTEMPT_TIMEOUT_MS);
     const signal = init?.signal
       ? AbortSignal.any([init.signal, timeoutSignal])
@@ -49,7 +73,7 @@ export const fetchWithRetry: typeof fetch = async (input, init) => {
 
     try {
       const response = await fetch(input, { ...init, signal });
-      if (RETRYABLE_STATUS.has(response.status) && attempt < MAX_RETRIES) {
+      if (RETRYABLE_STATUS.has(response.status) && attempt < maxRetries) {
         await sleep(BACKOFF_MS[attempt] ?? 1000);
         continue;
       }
@@ -57,7 +81,7 @@ export const fetchWithRetry: typeof fetch = async (input, init) => {
     } catch (error) {
       lastError = error;
       if (init?.signal?.aborted) throw error;
-      if (attempt >= MAX_RETRIES) throw error;
+      if (attempt >= maxRetries) throw error;
       await sleep(BACKOFF_MS[attempt] ?? 1000);
     }
   }

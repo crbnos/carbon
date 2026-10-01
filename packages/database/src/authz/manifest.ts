@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
 import {
@@ -232,6 +236,7 @@ export const manifest = {
   changeOrderRequiredAction: company("parts"),
   changeOrderSupersession: company("parts", { read: "parts_view" }),
   changeOrderType: company("parts"),
+  changelogDispatch: serviceOnly(),
   company: policies({
     select: and(
       isNotNull("companyGroupId"),

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { asCarbonOwnedSettings } from "../../sync/delegation";
 import {
@@ -111,14 +115,14 @@ describe("getJournalPostingPolicyDecision", () => {
       })
     ).toEqual({ kind: "push", granularity: "individual" });
 
-    // Manufacturing defaults: Production Event + Job Consumption summarize
+    // No type summarizes by default — daily summary is opt-in per type
     expect(
       getJournalPostingPolicyDecision({
         sourceType: "Production Event",
         settings,
         docSync: DOC_SYNC_ON
       })
-    ).toEqual({ kind: "push", granularity: "daily-summary" });
+    ).toEqual({ kind: "push", granularity: "individual" });
   });
 
   it("always-on: a stored enabled:false cannot exclude an automated type; Manual is permanently excluded (MANUAL_DISABLED)", () => {

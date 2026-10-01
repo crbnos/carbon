@@ -6402,6 +6402,141 @@ export default {
         tags: ["workflow"]
       }
     },
+    "/changelogDispatch": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changelogDispatch"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      }
+    },
     "/approvalRequests": {
       get: {
         parameters: [
@@ -53968,6 +54103,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -54090,6 +54228,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -54164,6 +54305,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
             $ref: "#/parameters/body.inspectionFeature"
@@ -77968,6 +78112,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78063,6 +78213,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78110,6 +78266,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
           },
           {
             $ref: "#/parameters/body.inspectionSamplingPlan"
@@ -97971,6 +98133,107 @@ export default {
         tags: ["(rpc) get_quote_methods"]
       }
     },
+    "/rpc/get_completion_jobs": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "time_zone",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "through_date",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "search",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                search: {
+                  format: "text",
+                  type: "string"
+                },
+                through_date: {
+                  format: "date",
+                  type: "string"
+                },
+                time_zone: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "time_zone"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      }
+    },
     "/rpc/xid_time": {
       post: {
         parameters: [
@@ -109387,6 +109650,35 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    changelogDispatch: {
+      required: ["guid", "dispatchedAt", "emailsSent"],
+      properties: {
+        guid: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        title: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        dispatchedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        emailsSent: {
+          default: 0,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -132145,6 +132437,12 @@ export default {
           enum: ["Normal", "Tightened", "Reduced"],
           format: 'public."inspectionSeverity"',
           type: "string"
+        },
+        gaugeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143385,6 +143683,16 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        gaugeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gauge.id`.<fk table='gauge' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        gaugeRecordedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -154494,6 +154802,45 @@ export default {
     },
     "rowFilter.workflow.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.changelogDispatch": {
+      name: "changelogDispatch",
+      description: "changelogDispatch",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changelogDispatch"
+      }
+    },
+    "rowFilter.changelogDispatch.guid": {
+      name: "guid",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.dispatchedAt": {
+      name: "dispatchedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.emailsSent": {
+      name: "emailsSent",
       required: false,
       in: "query",
       type: "string"
@@ -179936,6 +180283,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionFeature.gaugeTypeId": {
+      name: "gaugeTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itarCertification": {
       name: "itarCertification",
       description: "itarCertification",
@@ -192397,6 +192750,18 @@ export default {
     },
     "rowFilter.inspectionSamplingPlan.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.gaugeRecordedAt": {
+      name: "gaugeRecordedAt",
       required: false,
       in: "query",
       type: "string"

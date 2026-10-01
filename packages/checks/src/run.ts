@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { keyOf, loadBaseline } from "./baseline";
@@ -23,12 +27,15 @@ import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadEdgeFunctions } from "./sources/edge-functions";
+import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -59,7 +66,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,
-  noUnscopedKyselyWrite
+  noUnscopedKyselyWrite,
+  noUnguardedSubmit
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
@@ -108,7 +116,7 @@ export function loadAuthzHelperNames(root: string): string[] {
     .map((file) => file.replace(/\.sql$/, ""));
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions under `root`. */
+/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
@@ -127,7 +135,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders
     ]),
-    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS)
+    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
+    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader])
   ];
 }
 

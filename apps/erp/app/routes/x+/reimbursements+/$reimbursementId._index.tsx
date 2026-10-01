@@ -1,10 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, HStack, useDisclosure, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useLoaderData,
+  useNavigation
+} from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import {
@@ -157,6 +167,7 @@ export default function ReimbursementDetailRoute() {
     balanceDue,
     defaultBankAccount
   } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
   const { t } = useLingui();
   const permissions = usePermissions();
   const voidModal = useDisclosure();
@@ -193,7 +204,14 @@ export default function ReimbursementDetailRoute() {
             method="post"
             action={path.to.reimbursementPost(reimbursement.id)}
           >
-            <Button type="submit" variant="primary">
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={
+                navigation.formAction ===
+                path.to.reimbursementPost(reimbursement.id)
+              }
+            >
               <Trans>Post</Trans>
             </Button>
           </Form>

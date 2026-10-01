@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { pageSchema } from "fumadocs-core/source/schema";
 import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
@@ -27,6 +31,19 @@ export const guide = defineDocs({
       flow: z.string().default("make-to-order"),
       flowName: z.string().default("Make to order"),
       flowIndex: z.number().default(0),
+    }),
+  },
+});
+
+// One file per dated entry. Carbon has no versions, so `date` is the ordering key.
+export const changelog = defineDocs({
+  dir: "content/changelog",
+  docs: {
+    schema: pageSchema.extend({
+      date: z.string().date(),
+      tags: z.array(z.string()).default([]),
+      // Optional hero image, a path under /public.
+      image: z.string().optional(),
     }),
   },
 });

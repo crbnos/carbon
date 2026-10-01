@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import {
@@ -387,6 +391,7 @@ export default function MESTimecardPage() {
                                   />
                                 )}
                               <Button
+                                isLoading={fetcher.state !== "idle"}
                                 variant="secondary"
                                 type="submit"
                                 disabled={isNaN(

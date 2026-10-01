@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The storage unit where a tracked entity currently holds stock, derived from
 // its item-ledger rows by net on-hand per bin. Pure — no DB, no I/O — so it is
 // unit-testable with `deno test`.

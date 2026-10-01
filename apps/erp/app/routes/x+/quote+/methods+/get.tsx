@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
@@ -93,8 +97,25 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
 
+    if (copyLine.error) {
+      return { error: "Failed to copy quote line" };
+    }
+
+    // The copied method re-seeds the line's prices at cost-plus only; apply
+    // the line's pricing rules and configuration prices on top.
+    const [quoteId, quoteLineId] = validation.data.targetId.split(":");
+    const recalculate = await recalculateQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      userId
+    );
+
     return {
-      error: copyLine.error ? "Failed to copy quote line" : null
+      error: recalculate.error
+        ? "Failed to recalculate quote line prices"
+        : null
     };
   }
 

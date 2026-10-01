@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Browser-only: the bundler-resolved pdfjs worker URL (Vite `?url`). Kept in
 // its own module so the static import is synchronous — react-pdf's
 // `<Document>` may render on first paint, before any async registration

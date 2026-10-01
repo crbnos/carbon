@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference path="../vite-env.d.ts" />
 // The reference is load-bearing, not decoration: `@carbon/files` exports SOURCE
 // (`./src/*.ts`), so a consumer typechecks this very file inside its own program

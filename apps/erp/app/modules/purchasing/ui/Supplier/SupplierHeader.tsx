@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -11,6 +15,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -36,6 +41,7 @@ import {
   LuCheckCheck,
   LuClipboardCheck,
   LuEllipsisVertical,
+  LuKeySquare,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -174,6 +180,11 @@ const SupplierHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={supplierId}
+                  label={t`Copy supplier unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
             <CardAction className="flex h-full flex-row items-center gap-2">

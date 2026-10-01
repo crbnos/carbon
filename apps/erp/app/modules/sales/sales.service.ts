@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
@@ -80,6 +84,7 @@ import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,
   asConfiguration,
+  configuredQuoteBasePrice,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   resolvePreservedQuoteLinePriceFields,
@@ -4564,6 +4569,25 @@ type BuildPriceRowsResult = {
   error: unknown | null;
 };
 
+// The part's unit sale price for a configured line (see
+// configuredQuoteBasePrice); null data for an unconfigured line, which never
+// reads it.
+async function getConfiguredSalePrice(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string | null | undefined,
+  configuration: Record<string, unknown> | null
+): Promise<{ data: number | null; error: PostgrestError | null }> {
+  if (!itemId || !configuration) return { data: null, error: null };
+  const { data, error } = await client
+    .from("itemUnitSalePrice")
+    .select("unitSalePrice")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return { data: data?.unitSalePrice ?? null, error };
+}
+
 /** @mcp */
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
@@ -4634,6 +4658,15 @@ export async function buildMakeToOrderPriceRows(
 
   const { effects } = result;
 
+  const configuration = asConfiguration(lineResult.data.configuration);
+  const salePrice = await getConfiguredSalePrice(
+    client,
+    companyId,
+    itemId,
+    configuration
+  );
+  if (salePrice.error) return { rows: [], error: salePrice.error };
+
   const priceRows: QuoteLinePriceRow[] = [];
   for (const qty of quantities) {
     const categoryCosts: Record<string, number> = {};
@@ -4648,14 +4681,21 @@ export async function buildMakeToOrderPriceRows(
       return sum + cost * (1 + markup / 100);
     }, 0);
 
+    const basePrice = configuredQuoteBasePrice({
+      configuration,
+      unitSalePrice: salePrice.data,
+      categoryMarkups: null,
+      defaultMarkups: effectiveDefaults
+    });
+
     const finalPrice = itemId
       ? (
           await resolvePrice(client, companyId, {
             itemId,
             quantity: qty,
             customerId,
-            existingBasePrice: rollupPrice,
-            configuration: asConfiguration(lineResult.data.configuration)
+            existingBasePrice: basePrice ?? rollupPrice,
+            configuration
           })
         ).finalPrice
       : rollupPrice;
@@ -4666,7 +4706,8 @@ export async function buildMakeToOrderPriceRows(
       companyId,
       quantity: qty,
       unitPrice: round(finalPrice, precision),
-      categoryMarkups: effectiveDefaults,
+      // A row priced from the sale price is not cost-plus.
+      categoryMarkups: basePrice === null ? effectiveDefaults : {},
       priceSource: "system",
       exchangeRate,
       createdBy: userId,
@@ -4989,6 +5030,15 @@ export async function recalculateQuoteLinePrices(
 
   const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
 
+  const configuration = asConfiguration(lineResult.data.configuration);
+  const salePrice = await getConfiguredSalePrice(
+    client,
+    companyId,
+    itemId,
+    configuration
+  );
+  if (salePrice.error) return { error: salePrice.error };
+
   const repricedRows: {
     quantity: number;
     unitPrice: number;
@@ -5026,6 +5076,13 @@ export async function recalculateQuoteLinePrices(
       return sum + cost * (1 + markup / 100);
     }, 0);
 
+    const basePrice = configuredQuoteBasePrice({
+      configuration,
+      unitSalePrice: salePrice.data,
+      categoryMarkups: row.categoryMarkups as Record<string, number> | null,
+      defaultMarkups: effectiveDefaults
+    });
+
     const finalPrice =
       itemId && companyId
         ? (
@@ -5033,8 +5090,8 @@ export async function recalculateQuoteLinePrices(
               itemId,
               quantity: qty,
               customerId,
-              existingBasePrice: rollupPrice,
-              configuration: asConfiguration(lineResult.data.configuration)
+              existingBasePrice: basePrice ?? rollupPrice,
+              configuration
             })
           ).finalPrice
         : rollupPrice;
@@ -5042,7 +5099,8 @@ export async function recalculateQuoteLinePrices(
     repricedRows.push({
       quantity: qty,
       unitPrice: round(finalPrice, precision),
-      categoryMarkups: markups
+      // A row priced from the sale price is not cost-plus.
+      categoryMarkups: basePrice === null ? markups : {}
     });
   }
 

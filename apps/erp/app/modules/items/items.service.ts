@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type {
@@ -4456,6 +4460,16 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
+  // The MCP/API path skips methodMaterialValidator, and the insert spreads the
+  // id over the column default — so a blank id was stored as "" and the next
+  // blank create collided with it.
+  if (!methodMaterial.id?.trim()) {
+    return {
+      data: null,
+      error: { message: "Material ID is required" }
+    };
+  }
+
   // sourcingType and methodType are item-level properties (edited in the
   // item's Properties sidebar). A methodMaterial is a read-only mirror of its
   // component item, so derive both from the item rather than trusting the

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { resolveDate } from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
@@ -50,22 +54,17 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Abilities ─────────────────────────────────────────────────────────────
   // Each ability is the qualification for a process. Reuse a same-named process
-  // when the dataset already defines one (marking it as requiring the ability);
-  // otherwise mint a dedicated process for the qualification.
+  // when the dataset already defines one; otherwise mint a dedicated process for
+  // the qualification. No process requires its ability, so a demo user can run
+  // any operation without first being trained on it.
   ctx.log("abilities");
   for (const name of data.abilities) {
     let processId = ctx.refs.processes[name];
-    if (processId) {
-      await ctx.client.query(
-        `UPDATE "process" SET "requiresAbility" = true WHERE "id" = $1 AND "companyId" = $2`,
-        [processId, ctx.companyId]
-      );
-    } else {
+    if (!processId) {
       processId = await insertId(ctx, "process", {
         name,
         defaultStandardFactor: "Minutes/Piece",
-        processType: "Process",
-        requiresAbility: true
+        processType: "Process"
       });
       ctx.refs.processes[name] = processId;
     }

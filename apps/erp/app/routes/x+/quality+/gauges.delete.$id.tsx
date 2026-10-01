@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -21,7 +25,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         success: false
       },
-      await flash(request, error(mutation.error, "Failed to delete gauge"))
+      await flash(
+        request,
+        error(
+          mutation.error,
+          // A gauge recorded on a closed inspection is kept for traceability.
+          mutation.error.code === "23503"
+            ? "Gauge is used elsewhere. Set it to Inactive instead."
+            : "Failed to delete gauge"
+        )
+      )
     );
   }
 

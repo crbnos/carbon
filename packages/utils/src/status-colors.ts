@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /* Single source of truth for status enum → UI color across Carbon. The ERP renders
  * these via `@carbon/react`'s <Status color> (and Badge variants); the docs site renders
  * a colored dot from the same map, so the documentation can't drift from the app.

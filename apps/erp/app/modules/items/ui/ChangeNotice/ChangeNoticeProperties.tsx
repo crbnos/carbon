@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DatePicker,
   InputControlled,
@@ -6,6 +10,7 @@ import {
 } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   Separator,
   Subheading,
@@ -18,7 +23,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect } from "react";
-import { LuLink } from "react-icons/lu";
+import { LuKeySquare, LuLink } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { Assignee, EmployeeAvatar } from "~/components";
@@ -154,26 +159,35 @@ const ChangeNoticeProperties = () => {
           <Subheading as="h3" variant="light">
             <Trans>Properties</Trans>
           </Subheading>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                aria-label={t`Copy link`}
-                size="sm"
-                className="p-1"
-                onClick={() =>
-                  copyToClipboard(
-                    window.location.origin + path.to.changeNotice(id)
-                  )
-                }
-              >
-                <LuLink className="w-3 h-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>Copy link to change notice</Trans>
-            </TooltipContent>
-          </Tooltip>
+          <HStack spacing={1}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy link`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() =>
+                    copyToClipboard(
+                      window.location.origin + path.to.changeNotice(id)
+                    )
+                  }
+                >
+                  <LuLink className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <Trans>Copy link to change notice</Trans>
+              </TooltipContent>
+            </Tooltip>
+            <Copy
+              text={id}
+              label={t`Copy change notice unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
+          </HStack>
         </HStack>
         <VStack spacing={1}>
           <span className="text-sm tracking-tight">

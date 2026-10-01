@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useIsomorphicLayoutEffect } from "@carbon/react";
 import type React from "react";
 import type { ComponentProps, FormEvent, RefObject } from "react";
@@ -318,6 +322,7 @@ export function ValidatedForm<
   const reset = useFormStore(formId, (state) => state.reset);
   const startSubmit = useFormStore(formId, (state) => state.startSubmit);
   const endSubmit = useFormStore(formId, (state) => state.endSubmit);
+  const isSubmitting = useFormStore(formId, (state) => state.isSubmitting);
   const syncFormProps = useFormStore(formId, (state) => state.syncFormProps);
   const setFormElementInState = useFormStore(
     formId,
@@ -411,7 +416,34 @@ export function ValidatedForm<
     target: typeof e.currentTarget,
     nativeEvent: HTMLSubmitEvent["nativeEvent"]
   ) => {
+    // A submit already in flight owns this form. `fetcher.submit` aborts the
+    // previous BROWSER request, but the server action it started runs to
+    // completion regardless — nothing reads `request.signal` — so a second
+    // POST is a second set of side effects: another PDF, another customer
+    // email, another ledger write. Guarding here rather than on each submit
+    // button is what makes it hold for every form, including the ones whose
+    // button forgot. This is the same `isSubmitting` flag `<Submit>` already
+    // trusts for its disabled state, so it clears down the same proven paths.
+    if (isSubmitting) return;
     startSubmit();
+    try {
+      await runSubmit(e, target, nativeEvent);
+    } catch (error) {
+      // Validation and the caller's `onSubmit` are both awaited, so either can
+      // reject before any router submission starts — and then no completion
+      // hook exists to clear `isSubmitting`. That already left `<Submit>`
+      // permanently disabled; with the re-entry guard above it would wedge the
+      // whole form until unmount. Clear, then let the error surface.
+      endSubmit();
+      throw error;
+    }
+  };
+
+  const runSubmit = async (
+    e: FormEvent<HTMLFormElement>,
+    target: typeof e.currentTarget,
+    nativeEvent: HTMLSubmitEvent["nativeEvent"]
+  ) => {
     const submitter = nativeEvent.submitter as HTMLFormSubmitter | null;
 
     const isValidSubmit = submitter?.form === target;

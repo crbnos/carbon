@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // botProtection is decided at import time from env, so each case sets the env

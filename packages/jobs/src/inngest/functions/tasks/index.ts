@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export { assemblyConvertFunction } from "./assembly-convert";
 export { assemblyPlanFunction } from "./assembly-plan";
+export { changelogDispatchFunction } from "./changelog-dispatch";
 export { companyExportFunction } from "./company-export";
 export { companyImportFunction } from "./company-import";
 export {

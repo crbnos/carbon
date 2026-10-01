@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * The view resolver (Workstream C). A pure mapping from an operation's classification
  * (`operationType`) to the execution view the operator should land on. The MES operation

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Database client singleton for server-side usage.
  * Similar to Prisma client singleton. from https://www.prisma.io/docs/guides/react-router-7

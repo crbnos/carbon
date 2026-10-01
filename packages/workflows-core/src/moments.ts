@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * The CE-safe wire contract for workflow "moments" — business events a row
  * change cannot express. `@carbon/lib` (`raise-moment.ts`) needs `MomentKey` /

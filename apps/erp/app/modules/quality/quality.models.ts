@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { procedureStepType } from "../shared/shared.models";
@@ -501,3 +505,402 @@ export const inspectionMeasurementValidator = z.object({
   passed: zfd.text(z.enum(["true", "false"]).optional()),
   notes: zfd.text(z.string().optional())
 });
+
+// Records the gauge used for one feature of a lot; an empty gaugeId clears it.
+export const inspectionGaugeValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
+  gaugeId: zfd.text(z.string().optional())
+});
+
+// ─── Inspection Documents ─────────────────────────────────────────────────────
+
+export const inspectionDocumentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: zfd.text(z.string().optional()),
+  partId: z.string().min(1, { message: "Part is required" }),
+  drawingNumber: zfd.text(z.string().optional()),
+  pdfUrl: zfd.text(z.string().optional()),
+  annotations: zfd.text(z.string().optional()),
+  features: zfd.text(z.string().optional())
+});
+
+export const balloonFeatureValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  inspectionDocumentId: z.string().min(1, { message: "Diagram is required" }),
+  balloonNumber: zfd.numeric(z.number().min(1)),
+  description: z.string().min(1, { message: "Description is required" }),
+  nominalValue: zfd.numeric(z.number().optional()),
+  tolerancePlus: zfd.numeric(z.number().optional()),
+  toleranceMinus: zfd.numeric(z.number().optional()),
+  unitOfMeasureCode: zfd.text(z.string().optional())
+});
+
+export const balloonCreateFromPayloadItemValidator = z.object({
+  pageNumber: z.number(),
+  regionX: z.number(),
+  regionY: z.number(),
+  regionWidth: z.number(),
+  regionHeight: z.number(),
+  label: z.string().min(1),
+  xCoordinate: z.number(),
+  yCoordinate: z.number(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonUpdateItemValidator = z.object({
+  id: z.string().min(1),
+  pageNumber: z.number().optional(),
+  regionX: z.number().optional(),
+  regionY: z.number().optional(),
+  regionWidth: z.number().optional(),
+  regionHeight: z.number().optional(),
+  label: z.string().optional(),
+  xCoordinate: z.number().optional(),
+  yCoordinate: z.number().optional(),
+  nominalValue: z.string().nullable().optional(),
+  tolerancePlus: z.string().nullable().optional(),
+  toleranceMinus: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+});
+
+export const balloonDeleteValidator = z.object({
+  ids: z.array(z.string().min(1))
+});
+
+const normalizedCoordinateValidator = z.number().min(0).max(1);
+const normalizedSizeValidator = z.number().gt(0).max(1);
+const pageNumberValidator = z.number().int().min(1);
+
+export const balloonAnchorCreateItemValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator
+  })
+  .strict();
+
+export const balloonCreateItemWithOverlayValidator = z
+  .object({
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    data: z.record(z.string(), z.unknown()).optional()
+  })
+  .strict();
+
+export const balloonCreateItemsValidator = z.array(
+  z.union([
+    balloonCreateItemWithOverlayValidator,
+    balloonAnchorCreateItemValidator
+  ])
+);
+
+export const balloonUpdateItemsValidator = z.array(
+  balloonUpdateItemValidator.extend({
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    data: z.record(z.string(), z.unknown()).optional()
+  })
+);
+
+export const balloonDeleteIdsValidator = z.array(z.string().min(1));
+
+// The document-level default sampling rule (fallback for features without
+// their own rule; the lot-level plan base). Sent by the editor as JSON.
+export const inspectionDocumentSamplingValidator = z.object({
+  samplingPlanType: z.enum(samplingPlanTypes).nullable(),
+  samplingSampleSize: z.number().int().positive().nullable(),
+  samplingPercentage: z.number().positive().max(100).nullable(),
+  samplingAql: z.number().positive().nullable(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable()
+});
+
+const inspectionFeatureSamplingFieldsValidator = {
+  samplingPlanType: z.enum(samplingPlanTypes).nullable().optional(),
+  samplingSampleSize: z.number().int().positive().nullable().optional(),
+  samplingPercentage: z.number().positive().max(100).nullable().optional(),
+  samplingAql: z.number().positive().nullable().optional(),
+  samplingInspectionLevel: z.enum(inspectionLevels).nullable().optional(),
+  samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
+};
+
+// The gauge type a feature must be measured with (optional). The save RPC
+// refuses another company's gauge type.
+const inspectionFeatureGaugeTypeValidator = {
+  gaugeTypeId: z.string().min(1).nullable().optional()
+};
+
+// The plan editor mints the ids of the characteristics and balloons it
+// creates, so a row keeps one id from the moment it is drawn. A taken id fails
+// the insert; it never overwrites. Other callers may still send a tempId and
+// read the persisted id back from the save's id maps.
+const clientIdValidator = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
+
+export const inspectionSaveFeatureCreateItemValidator = z
+  .object({
+    id: clientIdValidator.optional(),
+    tempId: z.string().min(1).optional(),
+    pageNumber: pageNumberValidator,
+    label: z.string().min(1),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureGaugeTypeValidator
+  })
+  .strict()
+  .refine((data) => Boolean(data.id) || Boolean(data.tempId), {
+    message: "id or tempId is required"
+  });
+
+export const inspectionSaveFeatureUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    label: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional(),
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureGaugeTypeValidator
+  })
+  .strict();
+
+export const inspectionSaveFeaturesPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveFeatureCreateItemValidator).default([]),
+    update: z.array(inspectionSaveFeatureUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveBalloonGeometryCreateItemValidator = z
+  .object({
+    id: clientIdValidator.optional(),
+    tempInspectionFeatureId: z.string().min(1).optional(),
+    inspectionFeatureId: z.string().min(1).optional(),
+    tempBalloonAnchorId: z.string().min(1).optional(),
+    pageNumber: pageNumberValidator,
+    regionX: normalizedCoordinateValidator,
+    regionY: normalizedCoordinateValidator,
+    regionWidth: normalizedSizeValidator,
+    regionHeight: normalizedSizeValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator
+  })
+  .strict()
+  .refine(
+    (data) =>
+      Boolean(data.tempInspectionFeatureId) ||
+      Boolean(data.inspectionFeatureId),
+    { message: "tempInspectionFeatureId or inspectionFeatureId is required" }
+  );
+
+export const inspectionSaveBalloonGeometryUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    regionX: normalizedCoordinateValidator.optional(),
+    regionY: normalizedCoordinateValidator.optional(),
+    regionWidth: normalizedSizeValidator.optional(),
+    regionHeight: normalizedSizeValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveBalloonsGeometryPayloadValidator = z
+  .object({
+    create: z
+      .array(inspectionSaveBalloonGeometryCreateItemValidator)
+      .default([]),
+    update: z
+      .array(inspectionSaveBalloonGeometryUpdateItemValidator)
+      .default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload; use features + balloons geometry split. */
+export const inspectionSaveBalloonCreateItemValidator = z
+  .object({
+    tempBalloonAnchorId: z.string().min(1),
+    label: z.string().min(1),
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1).optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    nominalValue: z.string().nullable().optional(),
+    tolerancePlus: z.string().nullable().optional(),
+    toleranceMinus: z.string().nullable().optional(),
+    unit: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(procedureStepType).optional()
+  })
+  .strict();
+
+/** @deprecated Legacy combined payload. */
+export const inspectionSaveBalloonsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveBalloonCreateItemValidator).default([]),
+    update: z.array(inspectionSaveBalloonUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const inspectionSaveAnchorCreateItemValidator = z
+  .object({
+    tempId: z.string().min(1),
+    pageNumber: pageNumberValidator,
+    xCoordinate: normalizedCoordinateValidator,
+    yCoordinate: normalizedCoordinateValidator,
+    width: normalizedSizeValidator,
+    height: normalizedSizeValidator
+  })
+  .strict();
+
+export const inspectionSaveAnchorUpdateItemValidator = z
+  .object({
+    id: z.string().min(1),
+    pageNumber: pageNumberValidator.optional(),
+    xCoordinate: normalizedCoordinateValidator.optional(),
+    yCoordinate: normalizedCoordinateValidator.optional(),
+    width: normalizedSizeValidator.optional(),
+    height: normalizedSizeValidator.optional()
+  })
+  .strict();
+
+export const inspectionSaveAnchorsPayloadValidator = z
+  .object({
+    create: z.array(inspectionSaveAnchorCreateItemValidator).default([]),
+    update: z.array(inspectionSaveAnchorUpdateItemValidator).default([]),
+    delete: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+// ─── Balloon region vision analysis ──────────────────────────────────────────
+
+/**
+ * POST `/api/quality/inspection-document/:inspectionDocumentId/balloon-analyze` — request body
+ * uses `balloonRegionAnalysisRequestSchema`. Successful JSON body includes `analysis`
+ * matching `balloonRegionAnalysisResultSchema`:
+ *
+ * - `nominal`, `tol_plus`, `tol_minus`: number or `null` (no free-text dimensions).
+ * - `type`: always one of `balloonRegionFeatureTypes` (use `unknown` when not classifiable).
+ * - `unit`: one of `balloonRegionUnits` only when a unit symbol/text is visible in the crop;
+ *   otherwise `null` (clients must not assume a default unit).
+ *
+ * Breaking change vs legacy: `type` and `unit` are closed vocabularies, not arbitrary strings.
+ *
+ * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.server.ts`.
+ */
+
+/** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */
+export const balloonRegionAnalysisRequestSchema = z.object({
+  /** Base64-encoded image bytes (no `data:` prefix). */
+  imageBase64: z.string().min(1).max(28_000_000),
+  mediaType: z.enum(["image/png", "image/jpeg", "image/webp"]).optional()
+});
+
+/** Allowed `type` values for vision extraction (strict contract). */
+export const balloonRegionFeatureTypes = [
+  "linear",
+  "diameter",
+  "radius",
+  "angle",
+  "unknown"
+] as const;
+
+/** Allowed `unit` literals when a unit is visibly present in the crop; otherwise API returns `null`. */
+export const balloonRegionUnits = [
+  "mm",
+  "cm",
+  "m",
+  "in",
+  "ft",
+  "um",
+  "degree",
+  "rad"
+] as const;
+
+/** Structured extraction from a cropped engineering-drawing region. */
+export const balloonRegionAnalysisResultSchema = z.object({
+  nominal: z
+    .number()
+    .nullable()
+    .describe(
+      "Primary scalar from the dimension (length, diameter, radius, or angle magnitude). Null if unreadable."
+    ),
+  tol_plus: z
+    .number()
+    .nullable()
+    .describe(
+      "Upper tolerance vs nominal: bilateral ±T → +T; unilateral +a / −b → +a as printed (e.g. +0.005 → 0.005)."
+    ),
+  tol_minus: z
+    .number()
+    .nullable()
+    .describe(
+      "Lower tolerance vs nominal: bilateral ±T → −T (e.g. −0.02); unilateral +0.005 / −0.000 → 0 for a −.000 stack (no extra material below nominal on minus side)."
+    ),
+  unit: z
+    .enum(balloonRegionUnits)
+    .nullable()
+    .describe(
+      'Allowed enum or null. Null unless unit text/symbol is visible in the crop (e.g. mm, in, ", °). Never infer from decimals or title block. For angles: degree or rad only when that notation appears; else null.'
+    ),
+  type: z
+    .enum(balloonRegionFeatureTypes)
+    .describe(
+      "Feature kind: linear, diameter, radius, angle, or unknown when ambiguous or not a simple dimension."
+    )
+});
+
+export type BalloonRegionAnalysis = z.infer<
+  typeof balloonRegionAnalysisResultSchema
+>;

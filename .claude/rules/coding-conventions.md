@@ -23,6 +23,11 @@ rules — this file does not repeat them:
 - **Framework**: **React Router v7** (NOT Remix). Apps `apps/erp` and `apps/mes`
   build with `react-router build`. Routing uses `remix-flat-routes`.
 - **Language**: TypeScript everywhere. **Never hand-edit generated DB types.**
+- **License header**: every source file opens with an SPDX header — `AGPL-3.0-only`,
+  or `LicenseRef-Carbon-Commercial` under `packages/ee/` and in `.ee.` files
+  (`spdx-license-header` check). Write it with `pnpm --filter @carbon/checks
+  license-headers`; moving a file across that boundary means swapping it
+  (see [commercial-licensing.md](commercial-licensing.md)).
 - **Backend data**: Supabase client (`SupabaseClient<Database>`) for most reads/
   writes; Kysely for multi-row transactions (see services/database rules).
 

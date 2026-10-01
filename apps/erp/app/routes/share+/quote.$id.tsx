@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
@@ -149,6 +153,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getOpportunity(serviceRole, quote.data.opportunityId)
   ]);
 
+  // A No Quote line is the company's own decision not to bid — the customer
+  // never sees it, its prices, or its thumbnail.
+  const quotedLines = (quoteLines.data ?? []).filter(
+    (line) => line.status !== "No Quote"
+  );
+  const quotedLineIds = new Set(quotedLines.map((line) => line.id));
+
   // Started before the conditional await below so this costs no extra round trip.
   // The group's configured currency.decimalPlaces is authoritative over CLDR, and
   // useCurrencies' own fetcher is permission-gated, so a public page has to carry
@@ -168,7 +179,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     );
   }
 
-  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
+  const thumbnailPaths = quotedLines.reduce<Record<string, string | null>>(
     (acc, line) => {
       if (line.thumbnailPath) {
         acc[line.id!] = line.thumbnailPath;
@@ -221,31 +232,32 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           }
         : null,
       currencies: (await currenciesPromise)?.data ?? [],
-      quoteLines:
-        quoteLines.data?.map((line) => ({
-          id: line.id,
-          description: line.description,
-          itemReadableId: line.itemReadableId,
-          quantity: line.quantity,
-          additionalCharges: line.additionalCharges,
-          taxPercent: line.taxPercent,
-          unitPricePrecision: line.unitPricePrecision,
-          externalNotes: line.externalNotes
-        })) ?? [],
+      quoteLines: quotedLines.map((line) => ({
+        id: line.id,
+        description: line.description,
+        itemReadableId: line.itemReadableId,
+        quantity: line.quantity,
+        additionalCharges: line.additionalCharges,
+        taxPercent: line.taxPercent,
+        unitPricePrecision: line.unitPricePrecision,
+        externalNotes: line.externalNotes
+      })),
       thumbnails: thumbnails,
       quoteLinePrices:
-        quoteLinePrices.data?.map((price) => ({
-          quoteLineId: price.quoteLineId,
-          quantity: price.quantity,
-          unitPrice: price.unitPrice,
-          convertedUnitPrice: price.convertedUnitPrice,
-          netUnitPrice: price.netUnitPrice,
-          convertedNetUnitPrice: price.convertedNetUnitPrice,
-          discountPercent: price.discountPercent,
-          shippingCost: price.shippingCost,
-          convertedShippingCost: price.convertedShippingCost,
-          leadTime: price.leadTime
-        })) ?? null,
+        quoteLinePrices.data
+          ?.filter((price) => quotedLineIds.has(price.quoteLineId))
+          .map((price) => ({
+            quoteLineId: price.quoteLineId,
+            quantity: price.quantity,
+            unitPrice: price.unitPrice,
+            convertedUnitPrice: price.convertedUnitPrice,
+            netUnitPrice: price.netUnitPrice,
+            convertedNetUnitPrice: price.convertedNetUnitPrice,
+            discountPercent: price.discountPercent,
+            shippingCost: price.shippingCost,
+            convertedShippingCost: price.convertedShippingCost,
+            leadTime: price.leadTime
+          })) ?? null,
       customerDetails: customerDetails.data,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,

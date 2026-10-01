@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // libheif-js ships no TypeScript types; jSquash's subpath .js imports carry
 // their own. Only what the image pipeline uses is declared here.
 declare module "libheif-js/wasm-bundle.js" {

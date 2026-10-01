@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -232,7 +236,9 @@ export const onboardFunction = inngest.createFunction(
 
         await step.run("send-slack-customer-notification", async () => {
           try {
-            slack.sendMessage({
+            // Awaited: sendMessage rethrows now, and an unawaited rejection
+            // would escape this catch as an unhandled rejection.
+            await slack.sendMessage({
               channel: "#sales",
               text: "New Customer",
               blocks: [

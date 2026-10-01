@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Validates the oRPC wiring the Carbon API v1 surface depends on, without booting the
 // app: a runtime-built router of procedures, the OpenAPIHandler matching a prefixed
 // POST path, server-side call(), the scope gate, and the custom JSON-Schema converter

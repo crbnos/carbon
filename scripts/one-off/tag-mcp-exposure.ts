@@ -1,7 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * One-time migration: add `@mcp` to every WRITE/DESTRUCTIVE service function
  * that already has an in-app caller, so the opt-in gate in `mcp-exposure.ts`
  * preserves the tools the app itself uses and drops only the ones nothing calls.
+ *
+ * LIMITATION: classifications are seeded from the COMMITTED digest, so a
+ * function that moves between modules is invisible here — its old
+ * `{oldModule}_{fn}` key is in the map and its new one is not. When a merge
+ * relocates service functions (as #1780 moved the inspection-document block
+ * from production to quality), re-tag those by hand.
  *
  * Over-tagging is the SAFE error: keeping a tool that is currently exposed is
  * the status quo, while missing a caller would remove a tool someone uses. So

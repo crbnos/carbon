@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { validateDimensionSlots } from "../../../core/dimension-mapping";
 import {
@@ -399,7 +403,7 @@ describe("resolvePostingSyncSettings", () => {
     ).toEqual({ enabled: true, granularity: "individual" });
     expect(
       DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes["Production Event"]
-    ).toEqual({ enabled: true, granularity: "daily-summary" });
+    ).toEqual({ enabled: true, granularity: "individual" });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes.Manual).toEqual({
       enabled: false,
       granularity: "individual"

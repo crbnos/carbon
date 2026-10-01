@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "react-router";
 
@@ -144,6 +148,8 @@ export const path = {
       generatePath(`${x}/inspection-lot/${id}/complete-passed`),
     inspectionDisposition: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/disposition`),
+    inspectionGauge: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/measurement`),
     inspectionSample: (id: string) =>

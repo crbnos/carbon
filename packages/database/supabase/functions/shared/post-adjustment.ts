@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { Transaction } from "kysely";
 import { DB } from "../lib/database.ts";

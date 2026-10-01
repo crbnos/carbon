@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import z from "zod";
 import type {
@@ -498,12 +502,12 @@ export const POSTING_POLICY: Record<
   "Production Event": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Job Consumption": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Job Receipt": {
     representation: "journal",
@@ -519,7 +523,7 @@ export const POSTING_POLICY: Record<
   "Maintenance Event": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Asset Depreciation": {
     representation: "journal",

@@ -1,6 +1,39 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
+
+export type ChangelogPanelEntry = {
+  guid: string;
+  slug: string;
+  title: string;
+  description: string | null;
+};
+
+// The newest entry in the dispatch ledger (service-role only). `slug` is the
+// last segment of the guid permalink and keys the dismissal flag.
+export async function getChangelogPanelEntry(
+  serviceRole: SupabaseClient<Database>
+): Promise<ChangelogPanelEntry | null> {
+  const latest = await serviceRole
+    .from("changelogDispatch")
+    .select("guid, title, description")
+    .order("dispatchedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!latest.data?.title) return null;
+  const slug = latest.data.guid.split("/").filter(Boolean).pop() ?? "";
+  if (!slug) return null;
+  return {
+    guid: latest.data.guid,
+    slug,
+    title: latest.data.title,
+    description: latest.data.description
+  };
+}
 
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
