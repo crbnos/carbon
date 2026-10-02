@@ -114,6 +114,10 @@ export function DeferredDrawerSections({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+// About eight orders tall. A part can have hundreds of open orders; past this
+// the grid scrolls inside itself and renders only the rows in view.
+const ORDER_GRID_MAX_HEIGHT = 400;
+
 export function SuggestedOrdersGrid<O extends SuggestedOrder>({
   title,
   titleAction,
@@ -236,6 +240,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
         onNewRow={!isDisabled ? onAdd : undefined}
         contained={false}
         withSimpleSorting={false}
+        maxHeight={ORDER_GRID_MAX_HEIGHT}
       />
     </div>
   );
@@ -476,6 +481,7 @@ export function OpenOrdersGrid({
           onDataChange={onRowsChange}
           contained={false}
           withSimpleSorting={false}
+          maxHeight={ORDER_GRID_MAX_HEIGHT}
         />
       )}
     </div>
