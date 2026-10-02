@@ -132,8 +132,11 @@ need them.
 ## Ask First
 
 - Adding a native module or a config plugin: it ends Expo Go compatibility, so
-  every device check then needs a development build (and iOS needs the paid
-  Apple Developer Program).
+  every device check then needs a development build. On Android that costs
+  nothing — build an APK and install it. On iOS an EAS development build needs
+  the paid Apple Developer Program, or Xcode's free provisioning for a 7-day
+  certificate. Note this is the cost of LOSING Expo Go; testing the app as it
+  stands needs no developer account on either platform.
 - Any change to a `/api/v1` request or response shape. The API is
   additive-only: the two most recent store releases must keep working and a
   self-hosted server can be months behind the app.

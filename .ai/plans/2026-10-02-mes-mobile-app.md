@@ -13,15 +13,38 @@ except for the parts that need the user's own accounts and hardware. Branch
 
 Done: Tasks 1-48, 50 (server side) and 52.
 
-Remaining, and all of it is blocked on something only the user has:
+**Testing the app needs no developer account.** Expo Go on a physical device is
+the loop (see `apps/mobile/AGENTS.md` -> "Run it on a device"), and it costs
+nothing. An earlier draft of this section implied otherwise by folding the store
+work in with verification; they are separate, and conflating them sends the next
+reader looking for a credit card before they can open the app.
 
-- **Task 49** - TestFlight and Play internal testing. Needs an Expo account
-  (`eas init`, `eas update:configure`), an Apple Developer Program membership
-  and a Google Play service account. `eas.json` carries `REPLACE_ME_*`
-  placeholders for the four values; `apps/mobile/AGENTS.md` lists them. The
-  `development` profile additionally needs `expo-dev-client`, which is a native
-  module and therefore an Ask First item - adding it ends Expo Go compatibility,
-  which is the current device loop.
+What the paid accounts actually buy is DISTRIBUTION TO OTHER PEOPLE:
+
+| Goal | Needs |
+|---|---|
+| Run it on your own devices | nothing - Expo Go |
+| Give a build to a colleague on Android | nothing - send the APK |
+| Give a build to a colleague on iPhone, or TestFlight | Apple Developer Program |
+| Publish to the App Store | Apple Developer Program |
+| Publish to Google Play | Google Play developer account |
+
+The one thing Expo Go cannot do is the `carbon-mes://` deep link, because it
+owns `exp://`. The in-app scanner reaches the same screens, so that is a gap in
+convenience rather than in coverage. Xcode's free provisioning will also install
+a 7-day standalone build on an iPhone with no paid account, if a real binary is
+ever needed before paying.
+
+Remaining:
+
+- **Task 49** - TestFlight and Play internal testing, i.e. getting a build to
+  somebody else's device. Needs an Expo account (`eas init`,
+  `eas update:configure`), and then an Apple Developer Program membership
+  and/or a Google Play service account depending on the platform. `eas.json`
+  carries `REPLACE_ME_*` placeholders for the four values and
+  `apps/mobile/AGENTS.md` lists them. The `development` profile additionally
+  wants `expo-dev-client`, which is a native module and therefore an Ask First
+  item - adding it ends Expo Go compatibility, which is the current device loop.
 - **Task 50** - the review ACCOUNT. The endpoint, the allow-list and the rate
   limiting are done and tested; what is left is creating the account on Carbon
   Cloud and setting `APP_REVIEW_EMAILS` there.
