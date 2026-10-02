@@ -6019,11 +6019,17 @@ export const getMethod = defineServerFn({
 
         const madeItemIds: string[] = [];
 
-        traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
-          if (node.data.itemId && node.data.methodType === "Make to Order") {
-            madeItemIds.push(node.data.itemId);
+        // Awaited: the walk is async, and without it only the root had been
+        // visited when the make methods below were read, so a sub-assembly
+        // inside this one had no make method to save its materials under.
+        await traverseQuoteMethod(
+          quoteMethodTree,
+          (node: QuoteMethodTreeItem) => {
+            if (node.data.itemId && node.data.methodType === "Make to Order") {
+              madeItemIds.push(node.data.itemId);
+            }
           }
-        });
+        );
 
         const makeMethods = await client
           .from("activeMakeMethods")
