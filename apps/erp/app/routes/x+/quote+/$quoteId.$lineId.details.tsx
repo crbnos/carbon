@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -156,9 +160,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       ...line.data,
       // Present quantity breaks least-to-greatest everywhere they're consumed
       // (line form, costing grid, pricing grid). Preserve null so the `?? [1]`
-      // fallbacks downstream still apply.
+      // fallbacks downstream still apply. Distinct: a line saved with a
+      // repeated break must not render twice (one price row per quantity).
       quantity: line.data.quantity
-        ? [...line.data.quantity].sort((a, b) => a - b)
+        ? [...new Set(line.data.quantity)].sort((a, b) => a - b)
         : line.data.quantity
     },
     operations: operations?.data ?? [],

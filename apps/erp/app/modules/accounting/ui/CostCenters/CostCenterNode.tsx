@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
@@ -65,8 +70,11 @@ function CostCenterNodeComponent({
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => onEdit(costCenter.id!)}>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
+              onClick={() => onEdit(costCenter.id!)}
+            >
               <LuPencil className="mr-2 size-4" />
               <Trans>Edit</Trans>
             </DropdownMenuItem>
@@ -75,6 +83,7 @@ function CostCenterNodeComponent({
               <Trans>Add cost center</Trans>
             </DropdownMenuItem>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(costCenter.id!)}
             >

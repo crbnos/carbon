@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Display-only status for items the hub checks off automatically — their state
 // derives from other checklists (Setup Map rows, plan tasks), so they are never
 // tickable in place. Mirrors the ERP's operation-status icon language (the Bill

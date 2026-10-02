@@ -66,6 +66,10 @@ and 404 on a miss — the caller's credentials prove nothing about the ids in th
 ## 4. Skeleton
 
 ```typescript
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
@@ -124,6 +128,7 @@ Self-hosted instances sync separately (`.github/workflows/functions.yml`). Mergi
 ## Checklist
 
 - [ ] `pnpm db:function:new <name>`; nothing imported from outside `functions/<name>/`
+- [ ] AGPL SPDX license header at the top of every new file (`pnpm --filter @carbon/checks license-headers`)
 - [ ] `[functions.<name>]` in `config.toml` (`enabled`, `verify_jwt = true`)
 - [ ] CORS `OPTIONS` short-circuit
 - [ ] Payload validated

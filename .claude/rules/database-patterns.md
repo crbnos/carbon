@@ -26,8 +26,39 @@ All client factories live in `packages/auth/src/lib/supabase/`.
 | `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, server functions |
 | `getCarbonAPIKeyClient(apiKey)` | `client.ts` (`carbon-key` header) | Yes | Public API key auth |
 
-`createClient` is configured with `autoRefreshToken: false`, `persistSession: false`, and a
-`fetchWithRetry` wrapper (retries 5xx/408/timeouts with backoff). Do not re-create this config ad hoc.
+`createClient` is configured with `autoRefreshToken: false`, `persistSession: false` and
+`db: { timeout: 25_000 }`. Database retries are supabase-js's own (a read is retried up to three
+times on a rejected fetch, 503 or 520; a write is never replayed; a timed-out call is not retried).
+Storage reads get the same through `global.fetch: storageReadFetch` (`client.ts`): a GET, HEAD or
+listing waits at most 25 s for headers (the body is not timed) and is retried twice on a 5xx or a
+dropped connection; uploads, deletes, auth and function calls pass straight through. Do not
+re-create this config ad hoc, and do not widen that wrapper to database calls: it would multiply
+the SDK's retries.
+
+**Every Supabase client built while handling a request is bound to it** (`requestFetch` in
+`client.server.ts`). `requirePermissions` passes its `Request`; anything else — a
+`getCarbonServiceRole()` deep in a service, the API-key client, `getUserScopedClient` — finds
+it through `currentRequest()` (`@carbon/logger`, set by `requestMiddleware`). Inngest
+steps run as requests to `/api/inngest`, so their clients are bound too (they are POSTs, so
+never cancelled). Outside a request (scripts, module-level clients) nothing is bound.
+
+- **At most 8 calls in flight per request, across all its clients.** Every call waits for one of
+  `REQUEST_CONCURRENCY` slots of one limiter per request (`async.limit`, memoized with
+  `oncePerRequest`), like an HTTP agent's `maxSockets`, so `Promise.all` over a page's queries
+  cannot take every PostgREST connection. A call never waits on another call, so this cannot
+  deadlock.
+- **On a read (GET/HEAD), `request.signal` cancels reads.** When the browser disconnects before
+  the response is done, selects, RPCs and storage reads in flight are cancelled and later ones
+  fail at once with an `AbortError` in `{ error }`, never retried. Not tied to the signal:
+  actions, table writes even on a GET (an OAuth callback saving its tokens), auth and
+  edge-function calls. Error and warning logs from such an abandoned read are dropped
+  (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance `handleError`
+  already takes. **On Vercel the signal never aborts**: Vercel only aborts it with
+  `supportsCancellation` in `vercel.json`, which also terminates the function when the client
+  disconnects — the app is one function, so actions would die mid-write. Do not enable it.
+  Cancellation therefore applies on ECS and self-hosted only.
+
+Kysely has neither: it is bounded by the process pool below.
 
 ### Getting a client in a route
 
@@ -136,9 +167,17 @@ Two real options, in order of preference:
    review, and ships through a migration. Do not push app logic into SQL just to get atomicity.
 
 For **multi-row / multi-table writes** where partial failure is a bug, use Kysely. The route passes
-`getDatabaseClient()` (`apps/erp/app/services/database.server.ts` — a cached singleton over a 10-conn
-`pg` pool built by `getPostgresClient`/`getPostgresConnectionPool` in
-`packages/database/src/client.ts`, `@carbon/database/client`, Node-only). Kysely opens one PG transaction, runs
+`getDatabaseClient()` (`apps/erp/app/services/database.server.ts` — a cached singleton over
+`getProcessPool()` in `packages/database/src/client.ts`, `@carbon/database/client`, Node-only). A Node process
+has ONE pool of 16 connections, shared by the app's client, the jobs (`getJobDatabaseClient()`)
+and scripts, and nothing but an exiting script ends it. `traceConnectionWaits` (`@carbon/logger/tracing.server`)
+records a `db pool wait` span when a caller queues for a connection and `db connect` when one is
+opened, since query spans time only the query. On Vercel both apps' `entry.server.tsx` call
+`attachDatabasePool(getProcessPool())` (`@vercel/functions`): a frozen instance cannot run pg's idle
+timer, so it is kept up until idle connections have closed. Sixteen is a per-instance cap, not
+a database budget: the pool connects through the Supabase pooler, so what bounds the total is the
+pooler's client limit across every running instance, and raising the per-process size multiplies by
+the instance count. Kysely opens one PG transaction, runs
 every write inside it, and rolls everything back on any error.
 
 **Use transactions when:**

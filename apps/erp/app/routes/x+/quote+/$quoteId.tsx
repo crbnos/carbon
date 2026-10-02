@@ -1,13 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Outlet,
   redirect,
@@ -49,6 +57,11 @@ export const handle: Handle = {
   module: "sales"
 };
 
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["quoteId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "sales",
@@ -79,7 +92,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     prices,
     opportunity,
     methods,
-    opportunityDocuments,
     companySettings
   ] = await Promise.all([
     getCustomer(client, quote.data?.customerId ?? ""),
@@ -89,7 +101,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuoteLinePricesByQuoteId(client, quoteId),
     getOpportunity(client, quote.data?.opportunityId),
     getQuoteMethodTrees(client, quoteId),
-    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? ""),
     getCompanySettings(client, companyId)
   ]);
 
@@ -195,7 +206,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     lines: lines.data ?? [],
     methods: methodTrees,
-    files: opportunityDocuments,
+    files: getOpportunityDocuments(client, companyId, quote.data.opportunityId),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,
@@ -265,7 +276,7 @@ export default function QuoteRoute() {
               <ResizablePanels
                 explorer={<QuoteExplorer methods={methods} />}
                 content={
-                  <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                     <VStack spacing={4} className="p-4">
                       <Outlet />
                     </VStack>

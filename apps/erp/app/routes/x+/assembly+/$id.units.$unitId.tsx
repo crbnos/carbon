@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -28,7 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return data(
       { success: false },
-      await flash(request, error(validation.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(validation.error, "Failed to update component group")
+      )
     );
   }
 
@@ -45,7 +52,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     return data(
       { success: false },
-      await flash(request, error(update.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(update.error, "Failed to update component group")
+      )
     );
   }
 

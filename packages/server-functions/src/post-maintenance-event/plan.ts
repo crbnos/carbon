@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure planner for maintenance labor postings. A dispatch's time entries are
 // expensed at their work center's labor rate: Dr maintenanceAccount /
 // Cr laborAbsorptionAccount. Rather than tracking a posted flag, every call

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
@@ -7454,8 +7458,10 @@ export const getMethod = defineServerFn({
                       l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
-                    // stays protected on the new quote/revision.
+                    // stays protected on the new quote/revision, and the
+                    // trace that explains it.
                     priceSource: l.priceSource ?? "system",
+                    priceTrace: toJson(l.priceTrace),
                     createdBy: userId
                   }))
                 )
@@ -8462,9 +8468,11 @@ async function insertAssemblyDataForJobOperation(
 
   if (instruction.error) return new Set<string>();
 
-  const sourceSteps = (instruction.data?.assemblyInstructionStep ?? []).sort(
-    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-  );
+  // A sub-assembly (header) row is not a build action, so it never becomes a
+  // job step; its member steps are copied in play order like any other.
+  const sourceSteps = (instruction.data?.assemblyInstructionStep ?? [])
+    .filter((step) => !step.isSubAssembly)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   if (sourceSteps.length === 0) return new Set<string>();
 
   const sourceStepIds = sourceSteps.map((step) => step.id);
@@ -8496,6 +8504,16 @@ async function insertAssemblyDataForJobOperation(
     toolsByStep.set(tool.stepId, list);
   }
 
+  // The operation's own steps (its procedure's, inserted before this) number
+  // from 1 as well: the instruction's steps follow them, or the two interleave.
+  const ownSteps = await trx
+    .selectFrom("jobOperationStep")
+    .select((eb) => eb.fn.max("sortOrder").as("lastSortOrder"))
+    .where("operationId", "=", operationId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const firstSortOrder = Number(ownSteps?.lastSortOrder ?? 0) + 1;
+
   // Correlate inserted job steps back to their source steps via the provenance
   // column, not row order.
   const insertedSteps = await trx
@@ -8512,7 +8530,7 @@ async function insertAssemblyDataForJobOperation(
         maxValue: source.maxValue,
         listValues: source.listValues,
         fileTypes: source.fileTypes,
-        sortOrder: source.sortOrder ?? index + 1,
+        sortOrder: firstSortOrder + index,
         assemblyInstructionStepId: source.id,
         companyId,
         createdBy: userId

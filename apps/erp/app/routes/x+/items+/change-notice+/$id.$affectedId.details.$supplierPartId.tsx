@@ -1,5 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { LoaderFunctionArgs } from "react-router";
+import { isUnaffectedByNavigation } from "@carbon/utils";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
@@ -13,6 +21,13 @@ import { path } from "~/utils/path";
 // MUST be seeded or saving would wipe them) + purchase history. No action here:
 // the form posts to the part edit action (path.to.partSupplier), which returns
 // { success } so the CO stays put.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, {
+    params: ["affectedId", "id", "supplierPartId"]
+  })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts"

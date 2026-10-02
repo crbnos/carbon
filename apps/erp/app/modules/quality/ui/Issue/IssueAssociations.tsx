@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, Hidden, Number, Submit, ValidatedForm } from "@carbon/form";
 import {
@@ -14,6 +18,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -279,6 +284,7 @@ export function IssueAssociationItem({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           onDelete(child);

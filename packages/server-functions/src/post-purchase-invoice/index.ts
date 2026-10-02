@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type Database,
   getCompanyTimeZone,
@@ -1711,12 +1715,13 @@ export const postPurchaseInvoice = defineServerFn({
                   companyId
                 });
 
-                const updateData: Record<string, any> = {
-                  acquisitionCost:
-                    (Number(assetRecord.data.acquisitionCost) ?? 0) +
-                    totalLineCostWithWeightedShipping,
-                  updatedBy: userId
-                };
+                const updateData: Database["public"]["Tables"]["fixedAsset"]["Update"] =
+                  {
+                    acquisitionCost:
+                      (Number(assetRecord.data.acquisitionCost) ?? 0) +
+                      totalLineCostWithWeightedShipping,
+                    updatedBy: userId
+                  };
                 if (!assetRecord.data.acquisitionDate) {
                   updateData.acquisitionDate = today;
                 }

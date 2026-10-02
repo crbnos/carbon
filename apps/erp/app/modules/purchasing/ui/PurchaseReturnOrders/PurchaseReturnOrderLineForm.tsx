@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import type { TrackedEntityOption } from "@carbon/react";
@@ -18,6 +22,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  PrefetchLink,
   TrackedEntityPicker,
   toast,
   useDisclosure,
@@ -33,7 +38,7 @@ import {
   LuLoaderCircle,
   LuX
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -94,9 +99,8 @@ function SourceReference({
   value: string;
 }) {
   return (
-    <Link
+    <PrefetchLink
       to={to}
-      prefetch="intent"
       className="group inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-foreground"
     >
       <span className="text-muted-foreground group-hover:text-foreground">
@@ -105,7 +109,7 @@ function SourceReference({
       <span className="font-medium tabular-nums text-foreground/70 group-hover:text-foreground">
         {value}
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 

@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
@@ -13,6 +17,7 @@ const logger = getLogger("erp", "users");
  * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this
  * company, and a valid user attestation for this user? Both are required before
  * a person can enter a controlled environment.
+ * @mcp read
  */
 export async function getItarCertificationStatus(
   client: SupabaseClient<Database>,
@@ -55,6 +60,7 @@ export async function getItarCertificationStatus(
  *
  * Carbon staff never appear here: the Rider binds the customer's own
  * organization, so only the customer's admin can produce this row.
+ * @mcp read
  */
 export async function getItarEntityCertification(
   client: SupabaseClient<Database>,
@@ -79,6 +85,7 @@ export async function getItarEntityCertification(
  * certifications) don't silently lose rows; certs are already company-scoped, so
  * we fetch them all and group in memory rather than passing an unbounded `userId`
  * array to `.in()`. Last login is layered on in the route from the Auth admin API.
+ * @mcp read
  */
 export async function getItarCertificationReport(
   client: SupabaseClient<Database>,
@@ -146,6 +153,7 @@ export async function getItarCertificationReport(
   return { data, error: null };
 }
 
+/** @mcp delete */
 export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
@@ -153,6 +161,7 @@ export async function deleteGroup(
   return client.from("group").delete().eq("id", groupId);
 }
 
+/** @mcp read */
 export async function getCompaniesForUser(
   client: SupabaseClient<Database>,
   userId: string
@@ -170,6 +179,7 @@ export async function getCompaniesForUser(
   return data?.map((row) => row.companyId) ?? [];
 }
 
+/** @mcp read */
 export async function getCustomers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -183,7 +193,7 @@ export async function getCustomers(
     .select(
       `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       customer!inner(name, customerType!left(name))`,
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -197,6 +207,7 @@ export async function getCustomers(
   return query;
 }
 
+/** @mcp read */
 export async function getEmployee(
   client: SupabaseClient<Database>,
   id: string,
@@ -212,6 +223,7 @@ export async function getEmployee(
 
 // Pending only (mirrors the 'Invited' condition in the `employees` view): counting
 // accepted invites would leave a deactivated employee with no way to be re-invited.
+/** @mcp read */
 export async function getUnrevokedInviteEmails(
   client: SupabaseClient<Database>,
   companyId: string
@@ -230,6 +242,7 @@ export async function getUnrevokedInviteEmails(
  * One RPC rather than a per-row lookup: TOTP factors live in Supabase's
  * `auth.mfa_factors`, so the alternative is an admin-API call per employee —
  * an N+1 that degrades with headcount.
+ * @mcp read
  */
 export async function getUsersWithVerifiedMfa(
   client: SupabaseClient<Database>,
@@ -238,6 +251,7 @@ export async function getUsersWithVerifiedMfa(
   return client.rpc("users_with_verified_mfa", { company_id: companyId });
 }
 
+/** @mcp read */
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -247,7 +261,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -277,6 +291,7 @@ export async function getEmployees(
  *
  * TODO: After running db:generate, replace email pattern filter with
  * .eq("isConsoleOperator", true) once the column is in the employees view.
+ * @mcp read
  */
 export async function getConsoleOperators(
   client: SupabaseClient<Database>,
@@ -287,7 +302,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -301,6 +316,7 @@ export async function getConsoleOperators(
   return query;
 }
 
+/** @mcp read */
 export async function getEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
@@ -312,6 +328,7 @@ export async function getEmployeeType(
     .single();
 }
 
+/** @mcp read */
 export async function getEmployeeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -319,7 +336,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -335,6 +352,7 @@ export async function getEmployeeTypes(
   return query;
 }
 
+/** @mcp read */
 export async function getInvitable(
   client: SupabaseClient<Database>,
   companyId: string
@@ -347,10 +365,12 @@ export async function getInvitable(
     .order("lastName");
 }
 
+/** @mcp read */
 export async function getModules(client: SupabaseClient<Database>) {
   return client.from("modules").select("name").order("name");
 }
 
+/** @mcp read */
 export async function getGroup(
   client: SupabaseClient<Database>,
   groupId: string
@@ -358,6 +378,7 @@ export async function getGroup(
   return client.from("group").select("id, name").eq("id", groupId).single();
 }
 
+/** @mcp read */
 export async function getGroupMembers(
   client: SupabaseClient<Database>,
   groupId: string
@@ -368,6 +389,7 @@ export async function getGroupMembers(
     .eq("groupId", groupId);
 }
 
+/** @mcp read */
 export async function getGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -388,6 +410,7 @@ export async function getGroups(
   return query;
 }
 
+/** @mcp read */
 export async function getGroupEmails(
   client: SupabaseClient<Database>,
   groupIds: string[]
@@ -403,6 +426,7 @@ export async function getGroupEmails(
   return getUserEmails(client, userIdsResult.data);
 }
 
+/** @mcp read */
 export async function getUserSelectGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -417,6 +441,7 @@ export async function getUserSelectGroups(
   });
 }
 
+/** @mcp read */
 export async function getUserSelectGroupMembers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -435,6 +460,7 @@ export async function getUserSelectGroupMembers(
   };
 }
 
+/** @mcp read */
 export async function searchUsersForSelect(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -482,6 +508,7 @@ export async function searchUsersForSelect(
   return query;
 }
 
+/** @mcp action */
 export async function resolveUserSelectIds(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -502,6 +529,7 @@ export async function resolveUserSelectIds(
   return { users, groups };
 }
 
+/** @mcp read */
 export async function getPermissionsByEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
@@ -512,6 +540,7 @@ export async function getPermissionsByEmployeeType(
     .eq("employeeTypeId", employeeTypeId);
 }
 
+/** @mcp read */
 export async function getSuppliers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -525,7 +554,7 @@ export async function getSuppliers(
     .select(
       `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       supplier!inner(name, supplierType!left(name))`,
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -539,6 +568,7 @@ export async function getSuppliers(
   return query;
 }
 
+/** @mcp read */
 export async function getUsers(client: SupabaseClient<Database>) {
   return fetchAllFromTable<{
     id: string;
@@ -555,6 +585,7 @@ export async function getUsers(client: SupabaseClient<Database>) {
   );
 }
 
+/** @mcp read */
 export async function getUserEmails(
   client: SupabaseClient<Database>,
   userIds: string[]
@@ -574,6 +605,7 @@ export async function getUserEmails(
     .filter((email): email is string => !!email);
 }
 
+/** @mcp create */
 export async function insertGroup(
   client: SupabaseClient<Database>,
   group: { name: string; companyId: string }
@@ -581,6 +613,7 @@ export async function insertGroup(
   return client.from("group").insert(group).select("*").single();
 }
 
+/** @mcp upsert */
 export async function upsertGroup(
   client: SupabaseClient<Database>,
   {
@@ -596,6 +629,7 @@ export async function upsertGroup(
   return client.from("group").upsert([{ id, name, companyId }]);
 }
 
+/** @mcp upsert destructive */
 export async function upsertGroupMembers(
   client: SupabaseClient<Database>,
   groupId: string,

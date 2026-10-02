@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   TrackedEntityOption,
@@ -37,6 +41,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -48,7 +53,10 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
@@ -61,6 +69,11 @@ import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["pickingListId"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

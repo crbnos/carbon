@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -319,6 +324,11 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={
+              row.postingDate
+                ? MENU_ITEM_SHORTCUTS.view
+                : MENU_ITEM_SHORTCUTS.edit
+            }
             disabled={!permissions.can("update", "inventory")}
             onClick={() => {
               navigate(
@@ -330,6 +340,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
             {row.postingDate ? t`View Receipt` : t`Edit Receipt`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "inventory") ||
               !!row.postingDate ||

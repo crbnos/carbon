@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Stable public facade for the server-only Ramp integration service.
  *
@@ -44,9 +48,14 @@ export {
   projectFingerprint,
   pushProjects
 } from "./projects";
-export type { RampPurchaseOrderBatch, RampVendorSupplier } from "./spend";
+export type {
+  RampPurchaseOrderBatch,
+  RampVendorResolution,
+  RampVendorSupplier
+} from "./spend";
 export {
   prepareRampPurchaseOrderBatch,
+  prepareRampVendorResolution,
   resolveOrCreateRampSpendVendor
 } from "./spend";
 export {

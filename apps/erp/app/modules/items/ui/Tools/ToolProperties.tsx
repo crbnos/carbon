@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import { InputControlled, Select, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -34,6 +39,7 @@ import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useCompanySettings, useRouteData } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -90,7 +96,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
     pickMethods: PickMethod[];
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
-    supersession?: {
+    supersession?: Promise<{
       successorItemId: string | null;
       successorEffectivityDate: string | null;
       successor: {
@@ -98,17 +104,29 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         readableIdWithRevision: string;
         name: string;
       } | null;
-    } | null;
-    supersededBy?: Array<{
-      predecessor: {
-        id: string;
-        readableIdWithRevision: string;
-        name: string;
-      } | null;
-    }>;
+    } | null>;
+    supersededBy?: Promise<
+      Array<{
+        predecessor: {
+          id: string;
+          readableIdWithRevision: string;
+          name: string;
+        } | null;
+      }>
+    >;
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.tool(itemId));
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const locations = data?.locations ?? sharedToolsData?.locations ?? [];
@@ -243,26 +261,13 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(routeData?.toolSummary?.id ?? "")
-                  }
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy tool unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.toolSummary?.id ?? ""}
+              label={t`Copy tool unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -645,25 +650,23 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           />
         </ValidatedForm>
       )}
-      {routeDataFromRoute?.supersession?.successor && (
+      {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">
             <Trans>Superseded By</Trans>
           </h3>
           <Link
-            to={path.to.tool(routeDataFromRoute.supersession.successor.id)}
+            to={path.to.tool(supersession.successor.id)}
             className="text-sm text-primary hover:underline"
           >
-            {routeDataFromRoute.supersession.successor.readableIdWithRevision}
+            {supersession.successor.readableIdWithRevision}
           </Link>
-          {routeDataFromRoute.supersession.successorEffectivityDate && (
+          {supersession.successorEffectivityDate && (
             <p className="text-xs text-muted-foreground">
               <Trans>
                 From{" "}
                 <DateTime
-                  value={
-                    routeDataFromRoute.supersession.successorEffectivityDate
-                  }
+                  value={supersession.successorEffectivityDate}
                   variant="date"
                 />
               </Trans>
@@ -671,12 +674,12 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
           )}
         </div>
       )}
-      {(routeDataFromRoute?.supersededBy?.length ?? 0) > 0 && (
+      {(supersededBy?.length ?? 0) > 0 && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">
             <Trans>Supersedes</Trans>
           </h3>
-          {routeDataFromRoute?.supersededBy?.map(
+          {supersededBy?.map(
             (ref) =>
               ref.predecessor && (
                 <Link

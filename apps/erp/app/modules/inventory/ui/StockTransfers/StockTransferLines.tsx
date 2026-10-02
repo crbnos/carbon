@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -15,6 +19,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -201,6 +206,7 @@ function StockTransferLineComponent({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   disabled={
                     !isEditable || !permissions.can("update", "inventory")
                   }
@@ -217,6 +223,7 @@ function StockTransferLineComponent({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !isEditable || !permissions.can("delete", "inventory")
                   }

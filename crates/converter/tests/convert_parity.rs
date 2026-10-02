@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Convert the STEP fixtures with the Rust converter and assert the graph.json
 //! matches the Python reference (nodeId + geometryHash byte-identical; transforms/
 //! bbox/volume/color within epsilon). Env ASSEMBLER_FIXTURES points at a dir with

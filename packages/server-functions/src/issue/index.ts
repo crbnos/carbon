@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type Database,
   getCompanyTimeZone,
@@ -2242,6 +2246,10 @@ export const issue = defineServerFn({
           throw new NotFoundError("Job operation not found");
         }
 
+        // UNIT-AXIS order, identical to the apps' getTrackedEntitiesByMakeMethodId:
+        // position here is the `index` step records are stored under, so the
+        // tiebreakers are not optional — `createdAt` ties for bulk-minted serials
+        // and Postgres breaks a tie by physical row order, which any UPDATE moves.
         const trackedEntities = await client
           .from("trackedEntity")
           .select("*")
@@ -2249,11 +2257,21 @@ export const issue = defineServerFn({
             "Job Make Method": jobOperation.data.jobMakeMethodId
           })
           .eq("companyId", companyId)
-          .order("createdAt", { ascending: true });
+          .order("createdAt", { ascending: true })
+          .order("readableId", { ascending: true })
+          .order("id", { ascending: true });
 
         if (!trackedEntities.data || trackedEntities.data.length === 0) {
           throw new NotFoundError("Tracked entities not found");
         }
+
+        // The unit this completion is for, as the 0-based axis index its step
+        // records are keyed by. Derived HERE rather than taken from the caller:
+        // three routes post this payload and none of them should be trusted, or
+        // required, to know the axis.
+        const completedUnitIndex = trackedEntities.data.findIndex(
+          (entity: { id: string }) => entity.id === trackedEntityId
+        );
 
         const relatedTrackedEntities = trackedEntities.data.filter(
           (trackedEntity) =>
@@ -2337,9 +2355,18 @@ export const issue = defineServerFn({
                 type: "Complete",
                 sourceDocument: "Job Operation",
                 sourceDocumentId: row.jobOperationId,
+                // `Job` is what the traceability sidebar loads step records by,
+                // and `Unit` is what scopes them to THIS serial. Without `Job`
+                // the sidebar showed none; without `Unit` it would show every
+                // unit's values under one serial. Same two keys the production
+                // event activity already writes (MES startProductionEvent).
                 attributes: {
+                  Job: jobOperation.data.jobId,
                   "Job Operation": row.jobOperationId,
-                  Employee: userId
+                  Employee: userId,
+                  ...(completedUnitIndex >= 0
+                    ? { Unit: completedUnitIndex }
+                    : {})
                 },
                 companyId,
                 createdBy: userId
@@ -4090,7 +4117,10 @@ export const issue = defineServerFn({
               // run's dead entity can be the oldest match — it must not absorb
               // this member's consumption.
               .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+              // Deterministic among tied `createdAt` (bulk-minted serials).
               .orderBy("createdAt", "asc")
+              .orderBy("readableId", "asc")
+              .orderBy("id", "asc")
               .executeTakeFirst();
             if (!parent) {
               throw new Error(

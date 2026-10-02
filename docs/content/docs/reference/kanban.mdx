@@ -3,9 +3,9 @@ title: Kanban
 description: Scan-based pull replenishment. A kanban card ties an item to a bin, and scanning it fires a purchase order or a job.
 ---
 
-A <Term>kanban</Term> in Carbon is a physical pull signal: a printed card (or QR code) that lives with the stock it replenishes. It ties one item to a location and storage unit, carries a reorder quantity, and — when someone scans it — creates the downstream order to refill that bin. Nobody watches a number; the card *is* the trigger.
+A <Term>kanban</Term> is a physical pull signal represented by a printed card, QR code, or URL. It links an item, location, storage unit, and reorder quantity. Scanning the signal creates the purchase order or job needed to refill the bin.
 
-This is deliberately different from a [reordering policy](/docs/reference/reordering). A policy runs inside the planning engine and reasons about on-hand levels, demand, and reorder points. A kanban is manual and physical: a person empties a bin, scans the card, and an order appears. Use a policy for planned, calculated replenishment; use a kanban for two-bin shop-floor pull where a scan should just *do the thing*.
+A [reordering policy](/docs/reference/reordering) calculates suggestions from on-hand quantity, demand, and reorder points. Kanban replenishment is manual: scanning creates an order immediately. Use policies for planning-driven replenishment and kanban for scan-driven shop-floor pull.
 
 ## What a kanban holds
 
@@ -30,7 +30,7 @@ The replenishment system enum has three values (`Buy`, `Make`, `Buy and Make`), 
 
 ## The scan flow
 
-Every kanban card carries three scan targets, one per **action**: `order`, `start`, and `complete`. Scanning opens a URL that runs the action and redirects you into the resulting document. The QR codes are color-coded so the right one is obvious on the floor: order is black, start is emerald, complete is blue.
+Each kanban has scan targets for `order`, `start`, and `complete`. A scan opens a URL, runs the action, and redirects to the resulting document. QR codes are black for order, emerald for start, and blue for complete.
 
 The **order** scan (the create signal) branches on the replenishment system:
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import { Select, Submit, ValidatedForm } from "@carbon/form";
@@ -15,6 +19,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -122,6 +127,7 @@ const SalesRFQHeader = () => {
                 <Trans>Reopen</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   isLocked ||
                   !permissions.can("delete", "sales") ||
@@ -177,6 +183,7 @@ const SalesRFQHeader = () => {
           )}
 
           <Button
+            isLoading={statusFetcher.state !== "idle"}
             isDisabled={
               status !== "Ready for Quote" ||
               routeData?.lines?.length === 0 ||

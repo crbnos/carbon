@@ -800,6 +800,19 @@ keyset helpers and its two metadata cursors are gone.
   pushed this way reads back with `provider_name: "RILLET"`.
   `GET /developer/v1/bills/drafts/{id}` DOES exist and returns the stored coding,
   which is how this was confirmed.
+- **The vendor is the seat-holder's too.** A bill's "Accounting Merchant" comes from
+  the Ramp vendor's `accounting_vendor_remote_id`, and a vendor Carbon creates or
+  matches has none — so in push-only every bill arrived with it empty even though the
+  lines were coded. `decideRampSpendVendor` (`lib/spend.ts`, pure, tested) reads the
+  seat-holder's vendor mapping (`rillet` / `vendor`) and: adopts the Ramp vendor that
+  accounting vendor is ALREADY linked to (Ramp allows one); else links the mapped /
+  matched / newly created vendor with `PATCH /vendors/{id}`. The link is a separate,
+  best-effort call — never in the create body — so a refused link cannot fail the bill.
+  A vendor a human linked to a DIFFERENT accounting vendor is left alone. The link is
+  recorded on the `ramp` vendor mapping's `metadata.accountingVendorRemoteId`, so a
+  linked supplier costs no Ramp call afterwards. <!-- UNVERIFIED: not yet live-tested
+  that Ramp's accounting-vendor remote id equals the Rillet vendor id Carbon stores
+  (the account ids do match — see above). -->
 - **A delegated family's OWNER keeps its own entities.** `applyLedgerDelegation`
   takes the `integrationId` whose config is being resolved; without it, resolving
   Ramp's config disabled Ramp's `bill` entity (Ramp owns `ap` in push-only), so the

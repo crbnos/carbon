@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
@@ -24,7 +28,10 @@ export const BACKUP_VERSION = 1;
  * operational counter, never user data. `employeePin` holds console PIN
  * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
  * it is a credential; being secret also keeps an in-place restore from wiping
- * every operator's PIN.)
+ * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
+ * identity — `providerId` and a verified `domain` are unique across ALL
+ * companies, so a copy collides with the source company or hands its domain to
+ * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.)
  */
 export const SECRET_TABLES = [
   "apiKey",
@@ -33,7 +40,10 @@ export const SECRET_TABLES = [
   "employeePin",
   "webhook",
   "oauthClient",
-  "oauthToken"
+  "oauthCode",
+  "oauthToken",
+  "ssoConnection",
+  "ssoDomain"
 ];
 
 /**

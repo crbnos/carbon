@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -11,6 +15,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  PrefetchLink,
   Status,
   Table,
   Tbody,
@@ -465,9 +470,8 @@ export function SyncActivity({
                             {getEntityLabel(operation.entityType)}
                           </span>
                           {entityReference.path ? (
-                            <Link
+                            <PrefetchLink
                               to={entityReference.path}
-                              prefetch="intent"
                               onClick={(e) => e.stopPropagation()}
                               title={operation.entityId}
                               className={cn(
@@ -476,7 +480,7 @@ export function SyncActivity({
                               )}
                             >
                               {entityReference.label}
-                            </Link>
+                            </PrefetchLink>
                           ) : (
                             <span
                               title={operation.entityId}
@@ -932,16 +936,15 @@ function SyncOperationDetailDrawer({
           <Detail label={t`Entity`}>
             <div className="flex flex-col gap-0.5">
               {entityReference.path ? (
-                <Link
+                <PrefetchLink
                   to={entityReference.path}
-                  prefetch="intent"
                   className={cn(
                     "break-all text-xs hover:underline",
                     !entityReference.isReadable && "font-mono"
                   )}
                 >
                   {entityReference.label}
-                </Link>
+                </PrefetchLink>
               ) : (
                 <span
                   className={cn(

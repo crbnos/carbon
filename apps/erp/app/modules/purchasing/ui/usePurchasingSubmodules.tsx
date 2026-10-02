@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuContainer,
@@ -35,13 +39,13 @@ export default function usePurchasingSubmodules() {
           table: "purchasingRfq"
         },
         {
-          name: t`Quotes`,
+          name: t`Supplier Quotes`,
           to: path.to.supplierQuotes,
           icon: <LuFileText />,
           table: "supplierQuote"
         },
         {
-          name: t`Orders`,
+          name: t`Purchase Orders`,
           to: path.to.purchaseOrders,
           icon: <LuLayoutList />,
           table: "purchaseOrder"

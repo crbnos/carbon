@@ -8,62 +8,62 @@ flowName: RFQ to bill
 flowIndex: 2
 ---
 
-The order is placed and sitting at **"To Receive and Invoice"**. Two things now happen on their own schedules: the goods show up, and the supplier's bill shows up. They rarely arrive together, and Carbon is built around that fact: receiving and invoicing are separate posted steps that reconcile against the order, not against each other directly.
+A purchase order at **"To Receive and Invoice"** tracks receipt and invoicing independently. Both processes reconcile against the purchase-order line rather than directly against each other.
 
 <Figure illustration="receive-bill-axes" caption="Received and invoiced are two independent axes on one purchase order line; the line closes only when both complete." />
 
 ## The line keeps score
 
-A <Term>purchase order</Term> line tracks `purchaseQuantity` against two independent counters: `quantityReceived` and `quantityInvoiced`. The amounts still owed, `quantityToReceive` and `quantityToInvoice`, are computed for you. A line carries two flags, `receivedComplete` and `invoicedComplete`, and only when both are true is that line done.
+A <Term>purchase order</Term> line tracks `purchaseQuantity`, `quantityReceived`, and `quantityInvoiced`. Carbon computes `quantityToReceive` and `quantityToInvoice`. The line is complete only when `receivedComplete` and `invoicedComplete` are both true.
 
-Those two flags are exactly what the order's status rolls up. Receive everything and the order drops to **"To Invoice"**; bill everything and it drops to **"To Receive"**; once a line is both received and invoiced, it's **"Completed"**. Receiving and billing move the same order along two separate axes.
+Carbon derives the order status from those flags. A fully received order moves to **"To Invoice"**; a fully invoiced order moves to **"To Receive"**; an order that is both moves to **"Completed"**.
 
 ## Receive the goods
 
-Create a receipt from the order and Carbon pre-fills it from the outstanding lines, linking each receipt line back to its purchase order line. The receipt opens at **"Draft"**. And like a shipment, creating it changes nothing on hand.
+Create a **Draft** receipt from the order. Carbon copies the outstanding lines and links each receipt line to its purchase-order line. Creating the receipt does not change inventory.
 
-**<Term id="posting">Posting</Term>** is the event. Post the receipt and stock comes in through the item ledger as a *Purchase Receipt*, the order line's `quantityReceived` rises, `receivedComplete` flips once the full quantity is in, and the order advances. The receipt moves to **"Posted"**.
+**<Term id="posting">Posting</Term>** the receipt adds stock through a *Purchase Receipt* item-ledger entry, increments `quantityReceived`, updates `receivedComplete`, recalculates the order status, and moves the receipt to **"Posted"**.
 
 <Callout tone="amber" badge="INVENTORY vs LEDGER" title="Stock moves whether or not accounting is on.">
-Posting a receipt always updates inventory. The accounting entries are written only when accounting is enabled for the company: debit inventory or <Term id="wip">WIP</Term>, credit the <Term id="gr-ir">goods-received-not-invoiced (GR/IR)</Term> clearing account. Inventory and the general ledger advance on different switches.
+Posting always updates inventory. If accounting is enabled, Carbon also debits inventory or <Term id="wip">WIP</Term> and credits the <Term id="gr-ir">goods-received-not-invoiced (GR/IR)</Term> clearing account.
 </Callout>
 
 <Callout tone="green" badge="QUALITY HANDOFF" title="Inspected parts land on hold, not on the shelf.">
-Receive an item flagged for inspection and its <Term id="tracked-entity">tracked units</Term> come in **"On Hold"**, with an inbound inspection opened at **"Pending"** — received, but quarantined until quality clears them for use.
+For an item that requires inspection, received <Term id="tracked-entity">tracked units</Term> enter **"On Hold"** and Carbon creates a **"Pending"** inbound inspection. The units remain unavailable until quality releases them.
 </Callout>
 
 <Screenshot src="/screens/receive-post-receipt.png" label="Post receipt" caption="Posting the receipt: stock enters the item ledger, the line's received quantity rises, the order advances." ratio="wide" />
 
 ## Buy by the box, stock by the each
 
-Suppliers rarely sell in your stock unit. You might buy fasteners by the thousand-count box but stock and issue them as eaches. Every purchase order line carries a **<Term>conversion factor</Term>** between the two units, so the price and quantity you agree with the supplier stay in *their* terms while inventory moves in *yours*.
+A purchase-order line stores a **<Term>conversion factor</Term>** between the purchasing unit and inventory unit. Supplier pricing and quantities remain in the purchasing unit; inventory transactions use the inventory unit.
 
 <Figure illustration="conversion-factor" caption="Buy by the box, stock by the each: the line's conversion factor turns one purchased box into ten stocked units." />
 
-Posting the receipt does the translation: the outstanding purchase quantity is multiplied by the factor, so the receipt lands stock, and moves the item ledger, in your *inventory* unit. You still agree the order with the supplier in *their* unit, and the floor pulls stock in the unit it builds with. Neither side has to do the arithmetic in its head.
+When the receipt posts, Carbon multiplies the purchase quantity by the conversion factor and records the result in the inventory unit.
 
 ## The supplier bill
 
-When the invoice arrives, draw a purchase invoice from the order. Carbon keeps the lines that still have something to bill and opens the invoice at **"Draft"**. Each invoice line links back to its **purchase order line**. And that is the only structural link in the chain.
+Create a **Draft** purchase invoice from the order. Carbon includes lines with an outstanding invoice quantity and links each invoice line to its purchase-order line.
 
-There is, deliberately, no direct link from an invoice to a receipt. A receipt isn't even required before you bill: a direct invoice can create its own receipt as it posts. Carbon reconciles on the shared order line, not on a receipt-to-invoice match.
+Invoices do not link directly to receipts. A direct invoice can create a receipt when it posts. Reconciliation uses the shared purchase-order line.
 
 <Callout tone="blue" badge="THREE-WAY MATCH" title="The match is on the order line, not a receipt record.">
-Order, receipt, and bill are reconciled through the quantities on their shared purchase order line. Posting the invoice clears the GR/IR accrual the receipt booked, at the receipt's cost, and books any difference between order price and bill to a purchase price-variance account.
+Carbon reconciles order, receipt, and invoice quantities on the purchase-order line. Posting clears the receipt's GR/IR accrual at receipt cost and posts any difference from the invoice price to purchase price variance.
 </Callout>
 
 <Screenshot src="/screens/receive-purchase-invoice.png" label="Purchase invoice" caption="A draft supplier invoice drawn from the order, lines matched on the purchase order line." ratio="wide" />
 
 ## Match and post
 
-Posting the purchase invoice writes the payable side of the ledger, all gated on accounting being enabled: credit Accounts Payable, debit inventory or WIP, reverse the GR/IR clearing the receipt set up, and send any price difference to variance. It bumps each order line's `quantityInvoiced`, flips `invoicedComplete`, and recomputes the order's status. The invoice itself lands on **"Open"**.
+Posting increments each order line's `quantityInvoiced`, updates `invoicedComplete`, recalculates the order status, and moves the invoice to **"Open"**. If accounting is enabled, Carbon credits Accounts Payable, debits inventory or WIP, clears GR/IR, and posts price differences to variance.
 
-Note what posting does *not* do: it never marks the invoice **"Paid"**. As on the sales side, a payment is its own posted entity, not a field. You record a **<Term>payment</Term>** (a **"Disbursement"** for cash out) and apply it to the bill through a **<Term id="invoice-settlement">settlement</Term>** that carries the principal plus any discount or write-off; a **debit memo** settles the same way without cash. The bill's status is *derived* from what's applied: **"Partially Paid"** part-way, **"Paid"** once covered, **"Overdue"** if the due date passes first. Voiding a posted invoice writes reversing entries rather than deleting it.
+Posting does not mark the invoice **"Paid"**. Record outgoing cash as a **<Term>payment</Term>** of type **"Disbursement"** and apply it through a **<Term id="invoice-settlement">settlement</Term>**. A settlement records principal plus any discount or write-off; a debit memo uses the same process without cash. Carbon derives **"Partially Paid"**, **"Paid"**, and **"Overdue"** from the applied amount and due date. Voiding a posted invoice writes reversing entries.
 
 <Callout tone="green" badge="POSTED ≠ PAID" title="A posted bill is 'Open' until a payment is applied.">
-Posting settles the accounting against the order and receipt; it doesn't disburse cash. The bill waits at **"Open"** until you post a payment (a **"Disbursement"**) and apply it via a settlement, which is what records the outflow and flips the bill to **"Paid"**.
+Posting the invoice does not disburse cash. The bill remains **"Open"** until a posted **"Disbursement"** is applied through a settlement.
 </Callout>
 
 <Divider />
 
-That's RFQ to bill end to end: one part shopped to several suppliers, ordered from the best, received into stock, and billed against the very same order line — the buy-side mirror of quote to cash, reconciled on the order, not on paperwork.
+The RFQ-to-bill sequence is RFQ, supplier quote, purchase order, receipt, invoice, and settlement. Receipt and invoice quantities reconcile on the purchase-order line.

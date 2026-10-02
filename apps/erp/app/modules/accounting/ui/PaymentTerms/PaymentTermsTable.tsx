@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -93,6 +97,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "accounting")}
             onClick={() => {
               navigate(`${path.to.paymentTerm(row.id)}?${params.toString()}`);
@@ -102,6 +107,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
             <Trans>Edit Payment Term</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "accounting")}
             onClick={() => {
               navigate(

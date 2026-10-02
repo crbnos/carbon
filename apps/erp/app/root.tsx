@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
@@ -9,10 +13,8 @@ import {
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import {
-  requestContextMiddleware,
-  requestIdMiddleware
-} from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
+import { timedMiddleware } from "@carbon/logger/tracing.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -60,13 +62,12 @@ import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [
-  // First: publishes the request context so server code can reach it via ALS.
-  requestContextMiddleware,
-  requestIdMiddleware,
-  securityMiddleware,
-  flashMiddleware
-];
+export const middleware = timedMiddleware({
+  // First: the request scope (context, request id, access log).
+  request: requestMiddleware,
+  security: securityMiddleware,
+  flash: flashMiddleware
+});
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
@@ -69,6 +73,11 @@ export type Events = {
         documentIds: string[];
       };
     };
+  };
+
+  // Sent after a changelog entry is published; platform-level, no companyId.
+  "carbon/changelog-dispatch": {
+    data: Record<string, never>;
   };
 
   // Assembly model conversion (CAD → GLB + assembly graph)

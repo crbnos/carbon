@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { IconButton } from "@carbon/react";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
@@ -5,7 +9,7 @@ import { LuThumbsDown, LuThumbsUp } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 
-export function AgentFeedback({ threadId }: { threadId: string }) {
+export function AgentFeedback({ messageId }: { messageId: string }) {
   const fetcher = useFetcher();
   const [submitted, setSubmitted] = useState<"up" | "down" | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -21,7 +25,7 @@ export function AgentFeedback({ threadId }: { threadId: string }) {
     setSubmitted(feedback);
     posthog.capture("agent_feedback", { feedback });
     fetcher.submit(
-      { threadId, feedback },
+      { messageId, feedback },
       { method: "post", action: path.to.api.agentFeedback }
     );
   }

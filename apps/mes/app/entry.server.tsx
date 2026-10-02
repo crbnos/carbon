@@ -1,16 +1,37 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import {
   getNonce,
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
+import { getProcessPool } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
+import { createTracing } from "@carbon/logger/tracing.server";
+import { async } from "@carbon/utils";
+import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 
 ensureLoggingConfigured();
+
+// Vercel freezes an instance once its response is sent: keep it up until idle
+// database connections have closed and background work has finished.
+if (process.env.VERCEL) {
+  attachDatabasePool(getProcessPool());
+  async.onBackground(waitUntil);
+}
+
+export const instrumentations = createTracing({
+  serviceName: "carbon-mes",
+  // Vercel can suspend the instance once the response is sent.
+  afterRequest: process.env.VERCEL ? (flush) => waitUntil(flush()) : undefined
+});
 
 const log = getLogger("mes");
 

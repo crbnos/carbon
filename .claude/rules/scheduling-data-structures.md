@@ -369,7 +369,9 @@ only; its output is read by nothing in the placement path (spec
   dispatch-sequencing policy** — the old per-work-center policy table, its rule enum,
   and the FIFO/EDD/SPT/… comparators were all removed; placement order is the only
   sequence.
-- **`persistChanges` (one transaction, only when `persist`)** writes, for every op, the
+- **`persistChanges` (one transaction, only when `persist`)** writes, for every op whose
+  values changed (`isDistinctFromAny` guards the UPDATE in SQL, so a quiet regen writes no
+  `jobOperation` or `job` row and queues no audit/search event), the
   forward placement's results — `startDate` (projected start, business day) +
   `jobOperation.projectedCompletionAt` (exact placed-end instant, timestamptz) +
   `priority` + `workCenterId` + conflict flags. `dueDate` is the backward need-by and

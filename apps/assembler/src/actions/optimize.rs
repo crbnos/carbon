@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! `optimize` action — any supported CAD/mesh input → optimised GLB. Resolves the
 //! source format (explicit or content auto-detected), loads it into a GLB
 //! (OCCT-tessellating B-rep, ingesting STL, mmapping a GLB, or repacking a text

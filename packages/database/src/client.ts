@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type Driver,
   Kysely,
+  type KyselyConfig,
   PostgresAdapter,
   type PostgresDialectConfig,
   PostgresIntrospector,
@@ -61,21 +66,24 @@ const pgTypes = ((pg as { types?: typeof pg.types }).types ??
 pgTypes.setTypeParser(NUMERIC_OID, Number);
 pgTypes.setTypeParser(DATE_OID, identity);
 
-// A pg.Pool is a long-lived singleton; creating one per invocation (per inngest
-// event handler / cron tick) and never ending it leaks connections and exhausts
-// `max_connections`.
-const poolCache = new Map<number, pg.Pool>();
+/** Connections in a Node process's one pool. The pools it replaced (10, 5 and
+ *  1, one per size asked for) held up to 16 between them. */
+const PROCESS_POOL_SIZE = 16;
+let processPool: pg.Pool | undefined;
 
-export function getPostgresConnectionPool(connections: number): pg.Pool {
-  const cached = poolCache.get(connections);
-  // An ended pool can never serve connections again ("Cannot use a pool after
-  // calling end on the pool") — evict it so callers get a live pool instead of
-  // a permanently broken process.
-  if (cached && !cached.ending) return cached;
-
-  const pool = createPostgresConnectionPool(connections);
-  poolCache.set(connections, pool);
-  return pool;
+/**
+ * The Node process's one connection pool, shared by the app's Kysely client,
+ * the jobs and the scripts. Only a script about to exit ends it. A pool per
+ * caller let one process hold several, and a caller that ended its pool broke
+ * everyone else holding it.
+ */
+export function getProcessPool(): pg.Pool {
+  // An ended pool can never serve again ("Cannot use a pool after calling end
+  // on the pool"): a script that ended it and carries on gets a new one.
+  if (!processPool || processPool.ending) {
+    processPool = createPostgresConnectionPool(PROCESS_POOL_SIZE);
+  }
+  return processPool;
 }
 
 function createPostgresConnectionPool(connections: number): pg.Pool {
@@ -107,9 +115,11 @@ interface PgDriverConstructor {
 
 export function getPostgresClient<D = KyselyDatabase>(
   pool: pg.Pool,
-  driver: PgDriverConstructor
+  driver: PgDriverConstructor,
+  log?: KyselyConfig["log"]
 ): Kysely<D> {
   return new Kysely<D>({
+    log,
     dialect: {
       createAdapter: () => new PostgresAdapter(),
       createDriver: () => new driver({ pool }),

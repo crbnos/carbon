@@ -7,7 +7,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
 - Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
-- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Runtime deps are the ones in `package.json`; `@carbon/database` is among them only for the pure subpaths listed under Never.
+- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). The `async` module is the one exception to "no side effects": it schedules work the caller hands it and holds the host's lifetime hook. Runtime deps are the ones in `package.json`; `@carbon/database` is among them only for the pure subpaths listed under Never.
 
 ## Ask First
 
@@ -49,6 +49,7 @@ pnpm --filter @carbon/utils typecheck
 | `async` | Promise helpers used as a namespace (`import { async } from "@carbon/utils"`): `async.map` (bounded `concurrency`, input order kept), `async.all`, `async.allSettled`, `async.background(task, onError)` (fire-and-forget with a mandatory error handler) — use these over bare `Promise.all` over rows, void async IIFEs, or unhandled `.then` chains |
 | `errors` | `getErrorMessage(error, fallback)` — the error's own message, else the caller's copy (server functions leave `message` empty for data-layer failures so the fallback wins) |
 | `arrays` | Array manipulation, grouping, deduplication |
+| `async` | The `async` object: `Promise.all`, `Promise.allSettled` and `items.map` with a limit on how many run at once (`DEFAULT_CONCURRENCY`, 8, unless `{ concurrency }` says otherwise). `map(items, mapper)` follows p-map, `all(tasks)` and `allSettled(tasks)` take FUNCTIONS (a promise is already running) and keep the tuple's types, `limit(n)` follows p-limit. After a failure `map` / `all` start nothing further. Database calls inside a request need no limit of their own — the client `requirePermissions` returns has at most 8 in flight. `background(task, onError)` is fire-and-forget with a required error handler. `onBackground(hook)` registers what keeps the process alive for that work — both apps register Vercel's `waitUntil` in `entry.server.tsx` — so use `background` (never a bare unawaited promise) for anything a request leaves running |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Pair with `getCompanyTimeZone` / `getLocationTimeZone` from `@carbon/database` |
@@ -59,7 +60,8 @@ pnpm --filter @carbon/utils typecheck
 | `format` | The ONLY place display/input digit counts are chosen: `moneyFormatOptions` (settlement — the currency's decimals are floor AND ceiling), `rateFormatOptions` (per-unit RATE — those decimals are only the floor, ceiling is `SCALE`), the `PERCENT_FORMAT` / `PERCENT_POINTS_FORMAT` / `SCALE_FORMAT` constants, `cldrCurrencyDecimals`, their `format*` helpers, and `INPUT_FORMAT` / `INPUT_STEP` for editable fields. Call sites pick a KIND, never a digit count |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `items` | Item lookups and `getReadableIdWithRevision` (`readableId.revision`) |
-| `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
+| `revalidate` | `shouldRevalidate` predicates: `isSearchParamOnlyNavigation` (root loaders), `isUnaffectedByNavigation` (detail layouts — names the route/search params the loader reads) |
+| `redirect` | `redirectBeforeLoaders(loader)` — route middleware for an index route that only redirects, so the redirect runs before its parents' loaders |
 | `status` | Status resolution, status color mapping |
 | `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and sales rules |
 | `rule-filters` | Item scoping for broadcast rules (`ItemFilter`, `ruleAppliesToItem`, `toItemFilter`) — family-neutral, split out of `rules.ts` |

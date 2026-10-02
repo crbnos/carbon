@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure row planning for inventory adjustment postings. No I/O, and it is the SINGLE
 // copy of the arithmetic that `bookAdjustment` (one movement at a time) and
 // the bulk opening-stock importer (a whole CSV in a handful of statements)

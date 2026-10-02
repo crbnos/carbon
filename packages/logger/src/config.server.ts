@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   configureSync,
@@ -5,6 +9,7 @@ import {
   getJsonLinesFormatter
 } from "@logtape/logtape";
 import { redactByField } from "@logtape/redaction";
+import { isAbandonedRead } from "./context.server";
 import { devFormatter } from "./dev-formatter";
 import { readEnv } from "./env";
 import { httpDevFormatter } from "./http-formatter";
@@ -13,6 +18,26 @@ import { CARBON_ROOT_CATEGORY } from "./logger";
 import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
+
+/**
+ * A cancelled call: the AbortError itself, or what supabase-js makes of it — a
+ * database error whose message starts `AbortError:`, a storage error holding
+ * it as `originalError` — possibly under a result's `error`.
+ */
+function isAbortError(value: unknown, depth = 0): boolean {
+  if (!value || typeof value !== "object" || depth > 2) return false;
+  const { name, message, error, originalError, cause } = value as Record<
+    string,
+    unknown
+  >;
+  return (
+    name === "AbortError" ||
+    (typeof message === "string" && message.startsWith("AbortError")) ||
+    isAbortError(error, depth + 1) ||
+    isAbortError(originalError, depth + 1) ||
+    isAbortError(cause, depth + 1)
+  );
+}
 
 export type ConfigureLoggingOptions = {
   /** Override the env-derived level. */
@@ -63,11 +88,23 @@ export function ensureLoggingConfigured(
     reset: true,
     contextLocalStorage: new AsyncLocalStorage(),
     sinks: { console: sink, httpConsole: httpSink },
+    filters: {
+      // Once the client of a read has gone, its database reads are cancelled
+      // and each comes back as an AbortError. Those are not failures, the same
+      // stance `handleError` takes on an aborted request. Anything else logged
+      // after the client left (a write that failed) still gets through.
+      liveRequest: (record) =>
+        !(
+          isAbandonedRead() &&
+          Object.values(record.properties).some((value) => isAbortError(value))
+        )
+    },
     loggers: [
       {
         category: [CARBON_ROOT_CATEGORY],
         lowestLevel: level,
-        sinks: ["console"]
+        sinks: ["console"],
+        filters: ["liveRequest"]
       },
       {
         category: [CARBON_ROOT_CATEGORY, "http"],

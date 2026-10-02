@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ReactNode } from "react";
 import { DocsNav, type DocsNavNode } from "@/components/api/docs-nav";
 import { TableOfContents } from "@/components/api/toc";
@@ -44,7 +48,7 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
 // URLs (/docs/reference/<slug>) never move. Any reference page missing from this map is
 // appended ungrouped, so adding a new entity can never make it vanish from the nav.
 const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
-  { label: "Getting started", slugs: ["onboarding"] },
+  { label: "Getting started", slugs: ["onboarding", "keyboard-shortcuts"] },
   {
     label: "Sales",
     slugs: ["quotes", "pricing", "sales-orders", "rmas", "customer-portal"],

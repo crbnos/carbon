@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
@@ -128,7 +133,10 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => navigate(path.to.operationBatch(row.id))}
+        >
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>

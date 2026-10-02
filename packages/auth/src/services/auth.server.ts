@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import {
   ApiKeyNotFoundError,
@@ -18,11 +22,15 @@ import {
   IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   STRIPE_BYPASS_COMPANY_IDS,
+  SUPABASE_ANON_KEY,
   VERCEL_URL
 } from "../config/env";
 import { getCarbon } from "../lib/supabase";
-import { getCarbonAPIKeyClient } from "../lib/supabase/client";
-import { getCarbonServiceRole } from "../lib/supabase/client.server";
+import { getCarbonAPIKeyClient, getCarbonClient } from "../lib/supabase/client";
+import {
+  getCarbonServiceRole,
+  requestFetch
+} from "../lib/supabase/client.server";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
@@ -43,9 +51,12 @@ const log = getLogger("auth");
 export { logAuthEvent } from "./auth-events.server";
 
 // Each matched loader used to build its own Supabase client for identical
-// credentials; `createClient` is not free and they are interchangeable.
-const carbonForRequest = (accessToken: string) =>
-  oncePerRequest(`carbon:${accessToken}`, () => getCarbon(accessToken));
+// credentials; `createClient` is not free and they are interchangeable. Both are
+// bound to the request (`requestFetch`).
+const carbonForRequest = (accessToken: string, request: Request) =>
+  oncePerRequest(`carbon:${accessToken}`, () =>
+    getCarbonClient(SUPABASE_ANON_KEY!, accessToken, requestFetch(request))
+  );
 
 const serviceRoleForRequest = () =>
   oncePerRequest("carbon:service-role", () => getCarbonServiceRole());
@@ -260,12 +271,6 @@ export async function requirePermissions(
         });
       }
 
-      // Update lastUsedAt (fire-and-forget)
-      void serviceRole
-        .from("apiKey")
-        .update({ lastUsedAt: new Date().toISOString() } as any)
-        .eq("id" as any, apiKeyData.id);
-
       // Check scopes against required permissions
       const scopes = apiKeyData.scopes ?? {};
       const scopeCheckPassed = Object.entries(requiredPermissions).every(
@@ -326,7 +331,7 @@ export async function requirePermissions(
         }
       }
 
-      const client = getCarbonAPIKeyClient(apiKey);
+      const client = getCarbonAPIKeyClient(apiKey, requestFetch(request));
 
       return {
         client,
@@ -373,7 +378,7 @@ export async function requirePermissions(
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
           ? serviceRoleForRequest()
-          : carbonForRequest(accessToken),
+          : carbonForRequest(accessToken, request),
       companyId,
       companyGroupId,
       email,
@@ -435,7 +440,7 @@ export async function requirePermissions(
     client:
       !!requiredPermissions.bypassRls && myClaims.role === "employee"
         ? serviceRoleForRequest()
-        : carbonForRequest(accessToken),
+        : carbonForRequest(accessToken, request),
     companyId,
     companyGroupId,
     email,

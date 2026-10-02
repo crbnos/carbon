@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShortcutInput } from "@carbon/react";
 import {
   Count,
   cn,
   HStack,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -11,7 +16,7 @@ import {
 } from "@carbon/react";
 import { useMemo } from "react";
 import type { IconType } from "react-icons";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useOptimisticLocation, useUrlParams } from "~/hooks";
 
 type DetailTopbarProps = {
@@ -72,9 +77,8 @@ const DetailTopbar = ({
         return (
           <Tooltip key={route.name}>
             <TooltipTrigger className="w-full">
-              <Link
+              <PrefetchLink
                 to={linkTo}
-                prefetch="intent"
                 className={cn(
                   "inline-flex items-center justify-center whitespace-nowrap rounded-[6px] px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isActive && "bg-background text-foreground shadow-button-base"
@@ -85,7 +89,7 @@ const DetailTopbar = ({
                 {route.count !== undefined && (
                   <Count count={route.count} className="ml-auto" />
                 )}
-              </Link>
+              </PrefetchLink>
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="bottom">

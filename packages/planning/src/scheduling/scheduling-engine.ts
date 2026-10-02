@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type Database,
   getCompanyTimeZone,
@@ -66,6 +70,21 @@ import {
 export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
 const log = getLogger("planning", "schedule");
+
+/**
+ * True when writing `values` would change the row. Compared in Postgres so a
+ * stored DATE or timestamptz is matched in its own type, not as a JS string.
+ * With nothing to compare it is true, so the write goes ahead.
+ */
+export function isDistinctFromAny(values: Record<string, unknown>) {
+  const comparisons = Object.entries(values)
+    .filter(([, value]) => value !== undefined)
+    .map(
+      ([column, value]) => sql`${sql.ref(column)} is distinct from ${value}`
+    );
+  if (comparisons.length === 0) return sql<boolean>`true`;
+  return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
+}
 
 /**
  * Unified Scheduling Engine
@@ -485,6 +504,7 @@ export class SchedulingEngine {
               .set({ status: "Ready" })
               .where("id", "=", opId)
               .where("status", "not in", [
+                "Ready",
                 "Done",
                 "Canceled",
                 "In Progress",
@@ -911,27 +931,32 @@ export class SchedulingEngine {
         // dueDate is the backward need-by target and is DIFF-written: only
         // when the computed value differs from the stored one (a quiet regen
         // touches zero dueDate values), and never for a pinned op —
-        // manuallyScheduled means a human owns that target. The forward
-        // results (startDate day + projectedCompletionAt instant) are written
-        // for every op.
+        // manuallyScheduled means a human owns that target.
         const needBy = this.needByByOperation.get(op.id) ?? null;
         const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
         const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
 
+        const placement = {
+          startDate: op.startDate,
+          projectedCompletionAt: op.projectedCompletionAt ?? null,
+          ...(writeDueDate ? { dueDate: needBy } : {}),
+          ...(op.priority != null ? { priority: op.priority } : {}),
+          workCenterId,
+          hasConflict: op.hasConflict,
+          conflictReason: op.conflictReason
+        };
+
+        // Every UPDATE is queued for the audit/search handlers, so an op whose
+        // placement is unchanged must not be written at all.
         await trx
           .updateTable("jobOperation")
           .set({
-            startDate: op.startDate,
-            projectedCompletionAt: op.projectedCompletionAt ?? null,
-            ...(writeDueDate ? { dueDate: needBy } : {}),
-            priority: op.priority ?? undefined,
-            workCenterId,
-            hasConflict: op.hasConflict,
-            conflictReason: op.conflictReason,
+            ...placement,
             updatedAt: datetime.timestamp(),
             updatedBy: this.userId
           })
           .where("id", "=", op.id)
+          .where(isDistinctFromAny(placement))
           .execute();
       }
 
@@ -988,6 +1013,13 @@ export class SchedulingEngine {
         })
         .where("id", "=", this.jobId)
         .where("companyId", "=", this.companyId)
+        .where(
+          isDistinctFromAny({
+            projectedCompletionAt: this.projectedCompletionAt,
+            scheduleOutdatedReason: null,
+            scheduleOutdatedAt: null
+          })
+        )
         .execute();
     });
 

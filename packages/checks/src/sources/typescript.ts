@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
@@ -74,6 +78,14 @@ export const REQUEST_HANDLING_ROOTS = [
   "packages/jobs/src",
   "packages/lib/src",
   "packages/utils/src"
+];
+
+// The route trees of every React Router app: index-redirect-before-loaders.
+export const ROUTE_ROOTS = [
+  "apps/erp/app/routes",
+  "apps/mes/app/routes",
+  "apps/academy/app/routes",
+  "apps/starter/app/routes"
 ];
 
 export function loadTypescriptFiles(

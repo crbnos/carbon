@@ -21,11 +21,12 @@ the procedure, not a re-description — it does not repeat that detail.
 | Handler functions (one per type) | `packages/jobs/src/inngest/functions/events/<type>.ts` |
 | Handler barrel | `packages/jobs/src/inngest/functions/events/index.ts` |
 | Drainer (event-triggered, drains pgmq, fans out) | `packages/jobs/src/inngest/functions/events/queue.ts` |
-| Wake (DB → Inngest doorbell) | `util.wake_event_queue()` → `util.send_inngest_event` (`packages/database/supabase/migrations/20260929213953_send-inngest-events-from-postgres.sql`) |
+| Wake (DB → Inngest doorbell) | `util.wake_event_queue()` (`packages/database/src/event-system/functions/util.wake_event_queue.sql`) → `util.send_inngest_event` (`packages/database/supabase/migrations/20261002170250_send-inngest-events-from-postgres.sql`) |
 | Served `functions` array | `packages/jobs/src/inngest/index.ts` |
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
-| `attach_event_trigger`, handler-type CHECK | `packages/database/supabase/migrations/` |
+| `attach_event_trigger`, `dispatch_event_batch` and the other event-system functions | `packages/database/src/event-system/functions/<name>.sql` (edit the file, then `authz migration`; see `authz-manifest.md`) |
+| Handler-type CHECK, per-table `attach_event_trigger(...)` calls | `packages/database/supabase/migrations/` |
 
 ## Use cases → handler type
 
@@ -200,7 +201,8 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
    ```
 2. Add a dispatch block **inside the drain loop** (the body runs once per `pass`;
    step ids must include the pass suffix or replays break). Use
-   `chunk(..., CHUNK_SIZE)` to stay under Inngest's 256KB event limit.
+   `packBySize(..., MAX_EVENT_BYTES, MAX_RECORDS)` to stay under Inngest's 256KB
+   event limit (`MAX_SLOW_RECORDS` if the handler calls an external service per record).
    **Batched** (like SEARCH — one event per chunk, `data.records` is an array):
    ```typescript
    if (grouped.YOUR_NEW_TYPE.length > 0) {
@@ -208,9 +210,9 @@ In `packages/jobs/src/inngest/functions/events/queue.ts`:
        event: job.message.event,
        companyId: job.message.companyId,
      }));
-     const chunks = chunk(records, CHUNK_SIZE);
+     const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
      for (let i = 0; i < chunks.length; i++) {
-       await step.sendEvent(`dispatch-your-new-type-${pass}-${i}`, {
+       await step.sendEvent(`send-your-new-type-${pass}-${i}`, {
          name: "carbon/event-your-new-type" as const,
          data: { records: chunks[i] },
        });
@@ -231,7 +233,7 @@ Two edits:
 
 1. Export it from the barrel `packages/jobs/src/inngest/functions/events/index.ts`.
 2. Add it to the `functions` array in **`packages/jobs/src/inngest/index.ts`** (under
-   the "Event handlers" group). That array is what `serve()` / `connect()` serves.
+   the "Event handlers" group). That array is what `serve()` serves.
 
 There is **no** `packages/jobs/src/inngest/functions/index.ts` — older docs referenced
 that path; it does not exist.
@@ -275,7 +277,7 @@ that path; it does not exist.
 3. **Operation casing** — `["INSERT"]`, not `["insert"]`.
 4. **Forgot to register** — a new handler must be in BOTH the `events/index.ts` barrel AND
    the `functions` array in `packages/jobs/src/inngest/index.ts`, or it is never served.
-5. **Event size** — always `chunk(..., CHUNK_SIZE)`; Inngest caps events at 256KB.
+5. **Event size** — always `packBySize(..., MAX_EVENT_BYTES, …)`; Inngest caps events at 256KB.
 6. **Wrong dispatch shape** — match the queue branch to the handler: per-row (`msgId` +
    flattened config) vs batched (`{ records: [...] }`). Mixing them breaks Zod parsing.
 

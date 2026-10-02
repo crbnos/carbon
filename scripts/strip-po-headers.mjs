@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Normalize .po files before commit. Strips two churn sources:
 //
 //   1. `POT-Creation-Date` header — wall clock at extract time, produces a

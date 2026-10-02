@@ -3,11 +3,11 @@ title: Your account
 description: Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language — separate from company-wide settings.
 ---
 
-Everything on the **Account** screen is yours alone: your name and photo, the passkeys you sign in with, which topics reach you by email, the theme you look at all day. Changing them touches nothing for anyone else. Company-wide switches live under **Settings** and are gated by admin permissions; your account settings need no special permission at all. Open it from your avatar in the top bar.
+The **Account** screen manages your profile, credentials, notification preferences, and display settings. These settings affect only your account and require no special permission. Company-wide configuration is under **Settings** and requires administrative access. Open **Account** from your avatar in the top bar.
 
 ## Profile
 
-Profile is the one card everyone shares; the form itself warns *"This information will be visible to all users, so be careful what you share."*
+Profile information is visible to other users. The form warns: *"This information will be visible to all users, so be careful what you share."*
 
 <FieldTable>
   <Field name="First name / Last name" required>Your display name across Carbon.</Field>
@@ -19,23 +19,25 @@ Profile is the one card everyone shares; the form itself warns *"This informatio
 
 ## Signing in
 
-Sign-in is a magic link, Google or Microsoft OAuth, or a passkey — there is no password. Which methods exist is a deployment-wide choice, not a per-user one.
+Carbon supports magic links, Google or Microsoft OAuth, and passkeys; it does not use passwords. Available methods are configured for the deployment, not per user.
 
 <Screenshot label="Account → Security: passkey list with add/rename/remove, and the two-factor authenticator card" caption="Security holds everything you sign in with." />
 
-**Account → Security** is where you manage your own credentials. Add a passkey through your browser's WebAuthn prompt to sign in with Face ID, Touch ID, or your device PIN; rename each one so you can tell devices apart; remove one to revoke that device. Each row shows when it was added and last used. The same screen holds the authenticator-app card — see [two-factor authentication](/docs/reference/two-factor) for setup, enforcement, and recovery.
+Use **Account → Security** to manage credentials. Add a passkey through your browser's WebAuthn prompt to sign in with Face ID, Touch ID, or a device PIN. Rename passkeys to identify their devices, or remove one to revoke it. Each row shows when the passkey was added and last used. This screen also contains the authenticator-app settings. See [two-factor authentication](/docs/reference/two-factor) for setup, enforcement, and recovery.
 
 <Callout type="tip" title="Keep more than one way in">
-A passkey is tied to a device. Register a second one up front, or you'll be falling back to the magic-link email when the first device goes missing.
+A passkey is tied to a device. Register a second passkey to retain access if the first device is unavailable; otherwise, use a magic link.
 </Callout>
 
 ## Notification preferences
 
-**Account → Notifications** is your personal grid of topic × channel switches: in-app is always delivered, and the toggles govern email and (when connected) Slack. The default is on; a switch off is an opt-out for that one topic and channel. What raises each notification and how channels are gated is the [notifications reference](/docs/reference/notifications) — this page is where you tune it for yourself.
+**Account → Notifications** contains topic-by-channel preferences. In-app notifications are always delivered. The toggles control email and, when connected, Slack. Each topic and channel is enabled by default; turn off a switch to opt out of that combination. See [notifications](/docs/reference/notifications) for notification triggers and channel availability.
 
 ## Theme, language, and attributes
 
-Your color theme is stored in a browser cookie, so it follows you per device and applies to nobody else; company-wide branding is an admin setting. Language is a preference Carbon carries for you rather than a live toggle on this screen. Your company can also define **user attributes** (a certification date, a shift preference) grouped into categories: whether one shows on your public profile depends on its category being public, and you can edit your own value only when the attribute is marked <Term id="attribute-self-managed">self-managed</Term>.
+Your color theme is stored in a browser cookie, so it applies only to the current device. Company-wide branding is an administrative setting. Carbon stores a language preference, but this screen does not currently expose a language selector.
+
+Your company can define categorized **user attributes**, such as certification dates or shift preferences. An attribute appears on your public profile only when its category is public. You can edit its value only when it is marked <Term id="attribute-self-managed">self-managed</Term>.
 
 For the switches that shape the whole company, see [company settings](/docs/reference/company-settings) and [people](/docs/reference/people).
 

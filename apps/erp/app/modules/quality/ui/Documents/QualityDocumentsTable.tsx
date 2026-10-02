@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -5,6 +9,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -186,6 +191,7 @@ const QualityDocumentsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.qualityDocument(row.id!)}`);
@@ -195,6 +201,7 @@ const QualityDocumentsTable = memo(
               Edit Document
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {

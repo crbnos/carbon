@@ -1,4 +1,8 @@
-import { cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { cn, navRailItemClasses } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LuEyeOff, LuGripVertical } from "react-icons/lu";
@@ -6,13 +10,11 @@ import type { DraftModule } from "./useNavigationEditMode";
 
 type SortableNavItemProps = {
   module: DraftModule;
-  isOpen: boolean;
   onToggleHidden: (key: string) => void;
 };
 
 export function SortableNavItem({
   module,
-  isOpen,
   onToggleHidden
 }: SortableNavItemProps) {
   const {
@@ -34,17 +36,10 @@ export function SortableNavItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative",
-        "h-10 w-10 group-data-[state=expanded]:w-full",
-        "flex items-center rounded-md",
-        "group-data-[state=collapsed]:justify-center",
-        "group-data-[state=expanded]:-space-x-2",
-        "font-medium shrink-0 inline-flex select-none",
-        "transition-[background-color,color,width] duration-100 ease-out",
+        navRailItemClasses,
         "hover:bg-accent hover:text-accent-foreground",
         "border border-transparent",
-        isDragging && "opacity-50 border-primary",
-        "group/item"
+        isDragging && "opacity-50 border-primary"
       )}
     >
       {/* Drag handle */}

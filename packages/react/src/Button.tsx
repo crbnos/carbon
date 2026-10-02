@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
@@ -211,7 +215,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           })
         )}
         type={asChild ? undefined : (props.type ?? "button")}
-        disabled={isDisabled || props.disabled}
+        // `isLoading` disables too. It already blocks the keyboard path via
+        // `useShortcutKeys` above, so leaving it out here made the component
+        // internally inconsistent: a spinning button refused Enter but still
+        // took a mouse click. Every call site that guards a submit with
+        // `isLoading={fetcher.state !== "idle"}` — and there are many — was
+        // therefore showing a spinner over a live button, which is worse than
+        // no spinner: it says "working on it" while accepting another click.
+        disabled={isDisabled || props.disabled || isLoading}
         role={asChild ? undefined : "button"}
         ref={mergeRefs(ref, innerRef)}
       >

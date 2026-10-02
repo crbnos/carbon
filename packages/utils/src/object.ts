@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Group an array by a key derived from each item. Indexed loop and a
  * `result[key] === undefined` check keep the hot path off `.reduce`'s
@@ -47,3 +51,11 @@ export const get = <T extends Record<string, any>, K extends keyof T>(
   const value = obj[key];
   return value === undefined ? defaultValue : value;
 };
+
+/**
+ * Passes a value TypeScript cannot check to a typed parameter: a patch or
+ * filter whose column or table is only known at runtime. Never use it for a
+ * typed payload that carries keys the table lacks — strip those instead, or
+ * PostgREST rejects the write (PGRST204) and the compiler no longer warns.
+ */
+export const unchecked = (value: unknown) => value as never;

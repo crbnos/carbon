@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -218,6 +228,7 @@ const ActionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.issue(row.nonConformanceId!)}`);

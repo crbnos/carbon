@@ -1,4 +1,14 @@
-import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Checkbox,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -55,6 +65,7 @@ const RequiredActionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.requiredAction(row.id)}?${params.toString()}`
@@ -65,6 +76,7 @@ const RequiredActionsTable = memo(
               Edit Action
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {

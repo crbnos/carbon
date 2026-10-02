@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -28,6 +32,7 @@ import { getItemReplenishment } from "~/modules/items";
 import { getJobsBySalesOrderLine } from "~/modules/production";
 import type {
   Opportunity,
+  PriceTraceStep,
   SalesOrder,
   SalesOrderLineType
 } from "~/modules/sales";
@@ -278,6 +283,7 @@ export default function EditSalesOrderLineRoute() {
     shippingCost: line?.shippingCost ?? 0,
     configuration:
       (line?.configuration as Record<string, unknown> | null) ?? null,
+    priceTrace: (line?.priceTrace as PriceTraceStep[] | null) ?? null,
     assetReadableId: (line as any)?.assetReadableId ?? undefined,
     assetName: (line as any)?.assetName ?? undefined,
     ...getCustomFields(line?.customFields)

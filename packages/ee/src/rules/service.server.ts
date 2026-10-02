@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Server-only enforcement-rule AUTHORING (storage + sales families).
 //
 // The commercial LOCK for both rule families: every write here calls
@@ -12,7 +16,7 @@
 
 import type { Database, Json } from "@carbon/database";
 import type { ConditionAst, Severity, TargetType } from "@carbon/utils";
-import { datetime, sanitize } from "@carbon/utils";
+import { datetime, sanitize, unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import type { Feature } from "../plan";
@@ -279,6 +283,6 @@ export async function unassignStorageRule(
   return (client as SupabaseClient<Database>)
     .from(table)
     .delete()
-    .eq(idCol, args.targetId)
+    .eq(unchecked(idCol), args.targetId)
     .eq("ruleId", args.ruleId);
 }

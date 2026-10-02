@@ -1,33 +1,32 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { navigateBlock } from "../../agent.blocks";
-import { resolvePage } from "../../agent.pages";
 
 // Fire-once guard across re-renders/remounts. navigate parts are never persisted,
-// so history reconstruction never contains them → they can't re-fire on reload.
+// so a reopened thread never contains them and can't re-fire on reload.
 const fired = new Set<string>();
 
+/**
+ * Goes to the page the navigate tool resolved on the server. The tool returns `{ url }`
+ * for a page it could open and `{ error }` otherwise; only an in-app `/x/` url is followed.
+ */
 export function AgentNavigate({
-  input,
-  state,
+  output,
   toolCallId
 }: {
-  input: unknown;
-  state: string;
+  output: unknown;
   toolCallId: string;
 }) {
   const navigate = useNavigate();
   useEffect(() => {
     if (fired.has(toolCallId)) return;
-    // Only act once the input has FULLY streamed in. Firing during "input-streaming"
-    // uses a truncated id (e.g. "6uApsOM" of "6uApsOMhi3YiEVlme6o3I") → a dead route.
-    if (state !== "input-available" && state !== "output-available") return;
-    const parsed = navigateBlock.safeParse(input);
-    if (!parsed.success) return;
-    const dest = resolvePage(parsed.data.key, parsed.data.params);
-    if (!dest) return; // unknown/unsafe key → no-op rather than a broken route
+    const url = (output as { url?: unknown } | undefined)?.url;
+    if (typeof url !== "string" || !url.startsWith("/x/")) return;
     fired.add(toolCallId);
-    navigate(dest);
-  }, [input, state, toolCallId, navigate]);
+    navigate(url);
+  }, [output, toolCallId, navigate]);
   return null;
 }

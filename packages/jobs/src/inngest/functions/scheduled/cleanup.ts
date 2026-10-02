@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  LEGACY_PRIVATE_BUCKET,
-  storage,
-  TEMP_STAGING_BUCKET
-} from "@carbon/files";
+import { LEGACY_PRIVATE_BUCKET, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
+import { filterEmpty } from "@carbon/utils";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { purgeStaleAgentThreads } from "./agent-thread-retention";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
 // and the compact pipeline COPIES what must survive into `private` (never an
@@ -15,9 +17,6 @@ import { inngest } from "../../client";
 // source pointer). This sweep is the ONLY thing that deletes from staging:
 // stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
-
-// Agent chat threads are transient — purge after 30 days of inactivity.
-const AGENT_THREAD_TTL_DAYS = 30;
 
 // Everything under `{companyId}/tmp/` in the private bucket is transient by
 // contract: HEIC-conversion round-trip files (removed in a `finally`, but a
@@ -37,6 +36,25 @@ async function listStorageObjects(where: ReturnType<typeof sql>) {
   } catch (error) {
     return { data: [], error };
   }
+}
+
+/**
+ * The staged names that also exist in their company's bucket or the legacy
+ * shared one. One query: probing each name over HTTP was two requests per
+ * object, every night, for objects that are referenced and never pruned.
+ */
+async function findDurableCopies(names: string[]) {
+  const buckets = [
+    LEGACY_PRIVATE_BUCKET,
+    ...new Set(filterEmpty(names.map((name) => name.split("/")[0])))
+  ];
+  const { rows } = await sql<{ name: string }>`
+    SELECT DISTINCT name FROM storage.objects
+    WHERE bucket_id = ANY(${buckets}::text[])
+      AND name = ANY(${names}::text[])
+      AND bucket_id IN (${LEGACY_PRIVATE_BUCKET}, split_part(name, '/', 1))
+  `.execute(getJobDatabaseClient());
+  return new Set(rows.map((row) => row.name));
 }
 
 type NotifyEvent = {
@@ -355,60 +373,15 @@ export const cleanupFunction = inngest.createFunction(
     });
 
     await step.run("purge-old-agent-threads", async () => {
-      logger.info("Purging agent chat threads older than 30 days...");
-      const cutoff = new Date(
-        Date.now() - AGENT_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      // Small batches: the ids ride in PostgREST query strings below, and the
-      // job runs 3×/day, so any backlog drains within a few runs.
-      const old = await serviceRole
-        .from("agentThread")
-        .select("id")
-        .lt("createdAt", cutoff)
-        .limit(200);
-      if (old.error) {
-        logger.error("Error fetching old agent threads", { error: old.error });
-        return;
-      }
-      const ids = old.data.map((t) => t.id);
-      if (ids.length === 0) {
-        logger.info("No old agent threads to purge");
-        return;
-      }
-
-      // Age by last activity, not creation — a thread the user is still
-      // talking in stays, even if it was started over 30 days ago.
-      const active = await serviceRole
-        .from("agentMessage")
-        .select("threadId")
-        .in("threadId", ids)
-        .gte("createdAt", cutoff);
-      if (active.error) {
-        logger.error("Error checking agent thread activity", {
-          error: active.error
-        });
-        return;
-      }
-      const activeIds = new Set(active.data.map((m) => m.threadId));
-      const purgeIds = ids.filter((id) => !activeIds.has(id));
-      if (purgeIds.length === 0) {
-        logger.info("No stale agent threads to purge", {
-          stillActive: activeIds.size
-        });
-        return;
-      }
-
-      // Messages and parts cascade with the thread.
-      const purged = await serviceRole
-        .from("agentThread")
-        .delete()
-        .in("id", purgeIds);
-      if (purged.error) {
-        logger.error("Error purging agent threads", { error: purged.error });
+      const result = await purgeStaleAgentThreads(getJobDatabaseClient());
+      if (result.drained) {
+        logger.info("Purged stale agent threads", { count: result.purged });
       } else {
-        logger.info("Purged stale agent threads", { count: purgeIds.length });
+        logger.warn("Stale agent threads remain after this run", {
+          count: result.purged
+        });
       }
+      return result;
     });
 
     await step.run("prune-staged-raw-models", async () => {
@@ -439,28 +412,16 @@ export const cleanupFunction = inngest.createFunction(
       // holding a temp-staging source pointer). Once the durable copy exists,
       // the staged one is redundant regardless of size or references: every
       // reader probes/falls back to `private`.
-      const relocated = new Set<string>();
-      const CHUNK = 20;
       // A durable copy may live in the company's own bucket (current pipeline)
-      // or the legacy shared `private` bucket (pre-migration relocations);
-      // `info` probes both. Object keys start with the companyId segment, and
-      // a key without one can't have a durable copy anywhere.
-      const probeDurableCopy = async (name: string) => {
-        const companyId = name.split("/")[0];
-        if (!companyId) return null;
-        const found = await storage(serviceRole)
-          .company(companyId)
-          .info(name)
-          .then((r) => !r.error)
-          .catch(() => false);
-        return found ? name : null;
-      };
-      for (let i = 0; i < staleNames.length; i += CHUNK) {
-        const chunk = staleNames.slice(i, i + CHUNK);
-        const probes = await Promise.all(chunk.map(probeDurableCopy));
-        for (const name of probes) {
-          if (name) relocated.add(name);
-        }
+      // or the legacy shared `private` bucket (pre-migration relocations).
+      // Object keys start with the companyId segment, and a key without one
+      // can't have a durable copy anywhere.
+      let relocated: Set<string>;
+      try {
+        relocated = await findDurableCopies(staleNames);
+      } catch (error) {
+        logger.error("Error finding durable copies of staged raws", { error });
+        return;
       }
 
       // Rule 2 — ORPHANED: no modelUpload points at it via EITHER column

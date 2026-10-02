@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export * from "@carbon/database/accounting-currency";
 export * from "@carbon/database/accounting-posting";
 export * from "@carbon/database/precision";
@@ -6,7 +10,8 @@ export * from "./accounting";
 export * from "./address";
 export * from "./arrays";
 export * from "./assembly-units";
-export * as async from "./async";
+export * from "./async";
+export * from "./balloons";
 export * from "./bank";
 export * from "./batch-compatibility";
 export * from "./batch-duration";
@@ -41,6 +46,7 @@ export * from "./payment-funding";
 export * from "./pick-guards";
 export * from "./purchase-cost-adjustment";
 export * from "./receiving";
+export * from "./redirect";
 export * from "./resolve-return-cost";
 export * from "./resolve-tracked-entity-bin";
 export * from "./revalidate";

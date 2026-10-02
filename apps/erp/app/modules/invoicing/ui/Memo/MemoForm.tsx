@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -9,6 +13,7 @@ import {
   CardTitle,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -118,7 +123,11 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
               }
               menuItems={
                 status === "Draft" && canDelete ? (
-                  <DropdownMenuItem destructive onClick={deleteModal.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
+                    destructive
+                    onClick={deleteModal.onOpen}
+                  >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete</Trans>
                   </DropdownMenuItem>
@@ -192,9 +201,17 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
                   />
                 )}
                 {isVendor ? (
-                  <Supplier name="supplierId" label={t`Supplier`} />
+                  <Supplier
+                    autoFocus={!isEditing}
+                    name="supplierId"
+                    label={t`Supplier`}
+                  />
                 ) : (
-                  <Customer name="customerId" label={t`Customer`} />
+                  <Customer
+                    autoFocus={!isEditing}
+                    name="customerId"
+                    label={t`Customer`}
+                  />
                 )}
                 <Select
                   name="direction"

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,11 +17,15 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Await,
   Outlet,
@@ -30,15 +38,16 @@ import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ServiceSummary } from "~/modules/items";
 import {
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodTree,
   getPartUsedIn,
   getService,
   getSupplierParts
 } from "~/modules/items";
+import {
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
+  streamItemSupersession
+} from "~/modules/items/items.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
@@ -53,6 +62,11 @@ export const handle: Handle = {
   module: "items"
 };
 
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["itemId"], search: ["methodId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -62,14 +76,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [serviceSummary, supplierParts, tags, supersession, supersededBy] =
-    await Promise.all([
-      getService(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getTagsList(client, companyId, "service"),
-      getItemSupersession(client, itemId, companyId),
-      getItemSupersededBy(client, itemId, companyId)
-    ]);
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
+  const [serviceSummary, supplierParts, tags] = await Promise.all([
+    getService(client, itemId, companyId),
+    getSupplierParts(client, itemId, companyId),
+    getTagsList(client, companyId, "service")
+  ]);
 
   if (serviceSummary.error) {
     throw redirect(
@@ -84,7 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
+  const methodTree = getMakeMethodsOnce(client, itemId, companyId).then(
     async (makeMethods) => {
       const makeMethod = requestedMethodId
         ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
@@ -94,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           makeMethods.data?.[0]);
       if (!makeMethod) return null;
 
-      const fullMethod = await getMakeMethodById(
+      const fullMethod = await getMakeMethodByIdOnce(
         client,
         makeMethod.id,
         companyId
@@ -115,11 +132,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     serviceSummary: serviceSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree
@@ -218,7 +235,7 @@ export default function ServiceRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ServiceHeader />
+      <ServiceHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
@@ -321,7 +338,7 @@ export default function ServiceRoute() {
               </div>
             }
             content={
-              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+              <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                 <Outlet />
               </div>
             }

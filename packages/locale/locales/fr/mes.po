@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inactif)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "Tout"
 msgid "All clear"
 msgstr "Tout est correct"
 
+msgid "All gauges"
+msgstr "Tous les instruments de mesure"
+
 msgid "All jobs"
 msgstr "Tous les ordres de fabrication"
 
@@ -160,6 +166,9 @@ msgstr "Tous les retouches"
 
 msgid "All scrap"
 msgstr "Tout rebut"
+
+msgid "All steps"
+msgstr ""
 
 msgid "Allocate failed units"
 msgstr "Allouer les unités défaillantes"
@@ -268,6 +277,12 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Cartes"
 
+msgid "Characteristic"
+msgstr "Caractéristique"
+
+msgid "Characteristics"
+msgstr "Caractéristiques"
+
 msgid "Chat"
 msgstr "Discussion"
 
@@ -282,6 +297,9 @@ msgstr "Effacer"
 
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
+
+msgid "Clear gauge"
+msgstr "Effacer l'instrument de mesure"
 
 msgid "Clear Search"
 msgstr "Effacer la recherche"
@@ -301,7 +319,7 @@ msgstr "Connecté depuis <0/>"
 msgid "Close"
 msgstr "Fermer"
 
-msgid "Collapse features table"
+msgid "Collapse characteristics table"
 msgstr "Réduire le tableau des caractéristiques"
 
 msgid "Collapse panel"
@@ -354,9 +372,6 @@ msgstr "Finalisation"
 msgid "Connecting"
 msgstr "Connexion..."
 
-msgid "Console"
-msgstr "Console"
-
 msgid "Console Mode"
 msgstr "Mode console"
 
@@ -368,6 +383,15 @@ msgstr "Consommé expiré"
 
 msgid "Continue"
 msgstr "Continuer"
+
+msgid "Copied!"
+msgstr "Copié !"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Copy to clipboard"
+msgstr "Copier dans le presse-papiers"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,7 +490,7 @@ msgstr "Brouillon"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Glissez-déposez un fichier ici, ou cliquez pour sélectionner un fichier"
 
-msgid "Drag to resize drawing and features"
+msgid "Drag to resize drawing and characteristics"
 msgstr "Faites glisser pour redimensionner le dessin et les caractéristiques"
 
 #. placeholder {0}: active.data.current?.type
@@ -494,6 +518,9 @@ msgstr "Dû aujourd'hui ?"
 
 msgid "Duplicate batch number"
 msgstr "Numéro de lot de production en doublon"
+
+msgid "Duplicate or copy"
+msgstr ""
 
 msgid "Duplicate serial number"
 msgstr "Numéro de série en doublon"
@@ -544,8 +571,8 @@ msgstr "Chaque ordre de fabrication du lot de production suit ces étapes. Enreg
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Chaque unité a un verdict : {passes} réussie(s) et {fails} échouée(s). Le lot se ferme avec chaque unité acheminée vers son propre résultat."
 
-msgid "Expand features table"
-msgstr "Développer le tableau des caractéristiques"
+msgid "Expand characteristics table"
+msgstr "Agrandir le tableau des caractéristiques"
 
 msgid "Expand panel"
 msgstr "Agrandir le panneau"
@@ -566,8 +593,8 @@ msgstr "Expiration en premier"
 msgid "Failed"
 msgstr "Échoué"
 
-msgid "Failed features"
-msgstr "Fonctionnalités échouées"
+msgid "Failed characteristics"
+msgstr "Caractéristiques non conformes"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Échec de l'ajustement de stock"
@@ -583,6 +610,9 @@ msgstr "Échec de la récupération des opérations actives"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Échec de la récupération des unités de stockage"
+
+msgid "Failed to record gauge"
+msgstr "Échec de l'enregistrement de l'instrument de mesure"
 
 msgid "Failed to save measurement"
 msgstr "Échec de l'enregistrement de la mesure"
@@ -600,12 +630,6 @@ msgstr "Échec du téléversement du fichier : {0}"
 
 msgid "Failed to upload image"
 msgstr "Échec du téléversement de l'image"
-
-msgid "Feature"
-msgstr "Fonctionnalité"
-
-msgid "Features"
-msgstr "Caractéristiques"
 
 msgid "File size exceeds 10MB limit"
 msgstr "La taille du fichier dépasse la limite de 10 Mo"
@@ -648,6 +672,12 @@ msgstr "Corrigez les quantités surlignées avant de continuer."
 msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 
+msgid "Gauge"
+msgstr "Instrument de mesure"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Instrument de mesure pour la caractéristique {characteristicLabel} : {currentGauge}"
+
 msgid "General"
 msgstr "Général"
 
@@ -687,6 +717,9 @@ msgstr "Impérial"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "dans {0}"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "En cours"
@@ -962,6 +995,9 @@ msgstr "Aucune intervention de maintenance qui vous est assignée"
 msgid "No files"
 msgstr "Aucun fichier"
 
+msgid "No gauges found."
+msgstr "Aucun instrument de mesure trouvé."
+
 msgid "No Impact"
 msgstr "Aucun impact"
 
@@ -1111,6 +1147,11 @@ msgstr "Ouvrir une NCR pour le traitement du MRB"
 msgid "Open Jobs"
 msgstr "Ordres de fabrication ouverts"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "Opérations"
 
@@ -1128,6 +1169,9 @@ msgstr "Optionnel"
 
 msgid "or"
 msgstr "ou"
+
+msgid "Out of calibration"
+msgstr "Hors d'étalonnage"
 
 msgid "Output lot"
 msgstr "Lot de sortie"
@@ -1195,6 +1239,9 @@ msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de 
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication, pour {substitutedAssemblies} assemblages"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "Déconnecter"
@@ -1279,6 +1326,9 @@ msgstr "Raison de la retouche"
 msgid "Recent"
 msgstr "Récent"
 
+msgid "Recently used"
+msgstr "Utilisés récemment"
+
 msgid "Record"
 msgstr "Enregistrer"
 
@@ -1319,6 +1369,9 @@ msgstr "Retirer du stock"
 
 msgid "Remove part"
 msgstr "Retirer la pièce"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
@@ -1410,8 +1463,14 @@ msgstr "Mise au rebut du numéro de série sélectionné"
 msgid "Search"
 msgstr "Rechercher"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Rechercher {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Rechercher par numéro de travail ou d'article"
+
+msgid "Search gauges..."
+msgstr "Rechercher les instruments de mesure..."
 
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
@@ -1446,6 +1505,9 @@ msgstr "Sélectionner un article..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Sélectionner le lot {0}"
+
+msgid "Select gauge"
+msgstr "Sélectionner un instrument de mesure"
 
 msgid "Select Printer"
 msgstr "Sélectionner l'imprimante"
@@ -1598,6 +1660,21 @@ msgstr "Des étapes sont manquantes"
 msgid "Storage Unit"
 msgstr "Unité de stockage"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
 
@@ -1731,6 +1808,9 @@ msgstr "Matériaux série/lot non distribués"
 msgid "Unknown"
 msgstr "Inconnu"
 
+msgid "Unknown gauge"
+msgstr "Instrument de mesure inconnu"
+
 msgid "Unlock"
 msgstr "Déverrouiller"
 
@@ -1784,6 +1864,11 @@ msgstr "Utiliser un compte différent"
 msgid "Used automatically at completion"
 msgstr "Utilisé automatiquement à l'achèvement"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "Valeur"
 
@@ -1792,6 +1877,9 @@ msgstr "Vérifier"
 
 msgid "View maintenance dispatch"
 msgstr "Voir l'intervention de maintenance"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."

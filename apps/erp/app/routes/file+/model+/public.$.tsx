@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -40,8 +44,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // the companyId, which selects the per-company bucket (with legacy fallback).
   const companyId = path.split("/")[0];
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const { data: fileData, error } = await storage(client)
     .company(companyId)
     .download(path);

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -22,7 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -38,6 +42,7 @@ import { companyValidator } from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
+/** @mcp read */
 export async function getAccountsPayableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string
@@ -49,6 +54,7 @@ export async function getAccountsPayableBillingAddress(
     .single();
 }
 
+/** @mcp read */
 export async function getAccountsReceivableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string
@@ -60,6 +66,7 @@ export async function getAccountsReceivableBillingAddress(
     .single();
 }
 
+/** @mcp update */
 export async function updateAccountsPayableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -72,6 +79,7 @@ export async function updateAccountsPayableBillingAddress(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAccountsReceivableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -90,6 +98,10 @@ export async function deleteSubsidiary(
   return client.from("company").delete().eq("id", companyId);
 }
 
+/**
+ * @mcp read
+ * @mcp permission users:update
+ */
 export async function getApiKeys(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -97,7 +109,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -113,13 +125,33 @@ export async function getApiKeys(
   return query;
 }
 
+type CompaniesRow = Database["public"]["Views"]["companies"]["Row"];
+
+const logoUrl = (path: string | null) =>
+  path ? `${PUBLIC_STORAGE_URL_PREFIX}${path}` : null;
+
+function withLogoUrls(company: CompaniesRow) {
+  return {
+    ...company,
+    logoLight: logoUrl(company.logoLight),
+    logoDark: logoUrl(company.logoDark),
+    logoLightIcon: logoUrl(company.logoLightIcon),
+    logoDarkIcon: logoUrl(company.logoDarkIcon),
+    logoWatermark: logoUrl(company.logoWatermark)
+  };
+}
+
+/**
+ * The view already carries `companyGroupName`, so there is nothing to embed.
+ * @mcp read
+ */
 export async function getCompanies(
   client: SupabaseClient<Database>,
   userId: string
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .order("name");
 
@@ -127,28 +159,14 @@ export async function getCompanies(
     return companies;
   }
 
-  return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
-      ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
-      logoLight: company.logoLight
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLight}`
-        : null,
-      logoDark: company.logoDark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDark}`
-        : null,
-      logoLightIcon: company.logoLightIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLightIcon}`
-        : null,
-      logoDarkIcon: company.logoDarkIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDarkIcon}`
-        : null,
-      logoWatermark: company.logoWatermark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoWatermark}`
-        : null
-    })),
-    error: null
-  };
+  return { data: companies.data.map(withLogoUrls), error: null };
+}
+
+/** The `getEmployeeCompanies` filter, for a list already loaded by `getCompanies`. */
+export function employeeCompaniesOf<T extends { role: string | null }>(
+  companies: T[]
+) {
+  return companies.filter((company) => company.role === "employee");
 }
 
 /**
@@ -156,6 +174,7 @@ export async function getCompanies(
  * supplier/customer-only memberships (which belong to the portals) are
  * excluded. Single source of truth for the login callback, the select-company
  * picker, and the x+/_layout enforcement guard — keep those in sync via this.
+ * @mcp read
  */
 export async function getEmployeeCompanies(
   client: SupabaseClient<Database>,
@@ -163,7 +182,7 @@ export async function getEmployeeCompanies(
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .eq("role", "employee")
     .order("name");
@@ -172,30 +191,10 @@ export async function getEmployeeCompanies(
     return companies;
   }
 
-  return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
-      ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
-      logoLight: company.logoLight
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLight}`
-        : null,
-      logoDark: company.logoDark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDark}`
-        : null,
-      logoLightIcon: company.logoLightIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLightIcon}`
-        : null,
-      logoDarkIcon: company.logoDarkIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDarkIcon}`
-        : null,
-      logoWatermark: company.logoWatermark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoWatermark}`
-        : null
-    })),
-    error: null
-  };
+  return { data: companies.data.map(withLogoUrls), error: null };
 }
 
+/** @mcp read */
 export async function getIndustries(client: SupabaseClient<Database>) {
   return client
     .from("industry")
@@ -204,6 +203,7 @@ export async function getIndustries(client: SupabaseClient<Database>) {
     .order("sortOrder");
 }
 
+/** @mcp read */
 export async function getCompany(
   client: SupabaseClient<Database>,
   companyId: string
@@ -240,6 +240,7 @@ export async function getCompany(
   };
 }
 
+/** @mcp read */
 export async function getCompanyIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -250,6 +251,7 @@ export async function getCompanyIntegrations(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getCompanyPlan(
   client: SupabaseClient,
   companyId: string
@@ -257,6 +259,7 @@ export async function getCompanyPlan(
   return client.from("companyPlan").select("*").eq("id", companyId).single();
 }
 
+/** @mcp read */
 export async function getCompanySettings(
   client: SupabaseClient<Database>,
   companyId: string
@@ -268,10 +271,12 @@ export async function getCompanySettings(
     .single();
 }
 
+/** @mcp read */
 export async function getConfig(client: SupabaseClient<Database>) {
   return client.from("config").select("*").single();
 }
 
+/** @mcp read */
 export async function getCurrentSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -297,6 +302,7 @@ export async function getCurrentSequence(
   };
 }
 
+/** @mcp read */
 export async function getCustomField(
   client: SupabaseClient<Database>,
   id: string
@@ -304,6 +310,7 @@ export async function getCustomField(
   return client.from("customField").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getCustomFields(
   client: SupabaseClient<Database>,
   table: string,
@@ -317,6 +324,7 @@ export async function getCustomFields(
     .single();
 }
 
+/** @mcp read */
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -327,7 +335,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -341,6 +349,7 @@ export async function getCustomFieldsTables(
   return query;
 }
 
+/** @mcp read */
 export async function getIntegration(
   client: SupabaseClient<Database>,
   id: string,
@@ -354,6 +363,7 @@ export async function getIntegration(
     .maybeSingle();
 }
 
+/** @mcp read */
 export async function getIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -361,6 +371,7 @@ export async function getIntegrations(
   return client.from("integrations").select("*").eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getKanbanOutputSetting(
   client: SupabaseClient<Database>,
   companyId: string
@@ -372,6 +383,7 @@ export async function getKanbanOutputSetting(
     .single();
 }
 
+/** @mcp read */
 export async function getNextSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -383,14 +395,17 @@ export async function getNextSequence(
   });
 }
 
+/** @mcp read */
 export async function getPlanById(client: SupabaseClient, planId: string) {
   return client.from("plan").select("*").eq("id", planId).single();
 }
 
+/** @mcp read */
 export async function getPlans(client: SupabaseClient) {
   return client.from("plan").select("*");
 }
 
+/** @mcp read */
 export async function getSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -404,6 +419,7 @@ export async function getSequence(
     .single();
 }
 
+/** @mcp read */
 export async function getSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -414,7 +430,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -428,6 +444,7 @@ export async function getSequences(
   return query;
 }
 
+/** @mcp read */
 export async function getSequencesList(
   client: SupabaseClient<Database>,
   table: string,
@@ -441,6 +458,7 @@ export async function getSequencesList(
     .order("table");
 }
 
+/** @mcp read */
 export async function getItemSerialSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -451,7 +469,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -470,6 +488,7 @@ export async function getItemSerialSequences(
   return query;
 }
 
+/** @mcp read */
 export async function getItemSerialSequence(
   client: SupabaseClient<Database>,
   id: string,
@@ -483,6 +502,7 @@ export async function getItemSerialSequence(
     .single();
 }
 
+/** @mcp read */
 export async function getItemSerialSequenceByItemId(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -496,6 +516,7 @@ export async function getItemSerialSequenceByItemId(
     .maybeSingle();
 }
 
+/** @mcp upsert */
 export async function upsertItemSerialSequence(
   client: SupabaseClient<Database>,
   itemSerialSequence:
@@ -526,6 +547,7 @@ export async function upsertItemSerialSequence(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteItemSerialSequence(
   client: SupabaseClient<Database>,
   id: string,
@@ -538,6 +560,7 @@ export async function deleteItemSerialSequence(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getSubsidiaries(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -551,6 +574,7 @@ export async function getSubsidiaries(
     .order("name");
 }
 
+/** @mcp read */
 export async function getSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
@@ -558,6 +582,7 @@ export async function getSubsidiary(
   return client.from("company").select("*").eq("id", companyId).single();
 }
 
+/** @mcp read */
 export async function getTerms(
   client: SupabaseClient<Database>,
   companyId: string
@@ -565,6 +590,7 @@ export async function getTerms(
   return client.from("terms").select("*").eq("id", companyId).single();
 }
 
+/** @mcp read */
 export async function getDocumentTemplate(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -582,6 +608,7 @@ export async function getDocumentTemplate(
  * Load a stored document template as a `DocumentTemplate | null` ready to pass
  * to a PDF (which runs it through `resolveTemplate`). Returns null when no row
  * is stored, so the PDF falls back to the type's default.
+ * @mcp read
  */
 export async function getDocumentTemplateConfig(
   client: SupabaseClient<Database>,
@@ -592,6 +619,7 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
+/** @mcp upsert */
 export async function upsertDocumentTemplate(
   client: SupabaseClient<Database>,
   documentTemplate: {
@@ -617,6 +645,7 @@ export async function upsertDocumentTemplate(
   );
 }
 
+/** @mcp read */
 export async function getDocumentSections(
   client: SupabaseClient<Database>,
   companyId: string
@@ -628,6 +657,7 @@ export async function getDocumentSections(
     .order("name");
 }
 
+/** @mcp read */
 export async function getDocumentSection(
   client: SupabaseClient<Database>,
   id: string,
@@ -641,6 +671,7 @@ export async function getDocumentSection(
     .maybeSingle();
 }
 
+/** @mcp read */
 export async function getDocumentSectionsByIds(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -653,6 +684,10 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
+/**
+ * @mcp upsert
+ * @mcp key documentSection id
+ */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {
@@ -715,6 +750,7 @@ export async function upsertDocumentSection(
     .select("id");
 }
 
+/** @mcp delete */
 export async function deleteDocumentSection(
   client: SupabaseClient<Database>,
   id: string,
@@ -727,7 +763,10 @@ export async function deleteDocumentSection(
     .eq("companyId", companyId);
 }
 
-/** Fetch the given section ids and return them keyed by id for rendering. */
+/**
+ * Fetch the given section ids and return them keyed by id for rendering.
+ * @mcp action
+ */
 export async function resolveSections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -757,10 +796,12 @@ export async function resolveSections(
   return map;
 }
 
+/** @mcp read */
 export async function getWebhook(client: SupabaseClient<Database>, id: string) {
   return client.from("webhook").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getWebhooks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -769,7 +810,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -786,6 +827,7 @@ export async function getWebhooks(
   return query;
 }
 
+/** @mcp read */
 export async function getWebhookTables(client: SupabaseClient<Database>) {
   return client.from("webhookTable").select("*").order("name");
 }
@@ -810,10 +852,12 @@ export async function insertSubsidiary(
     isEliminationEntity?: boolean;
   }
 ) {
-  const { id: _, ...data } = subsidiary;
+  // company has no createdBy column.
+  const { id: _, createdBy: _createdBy, ...data } = subsidiary;
   return client.from("company").insert(data).select("id").single();
 }
 
+/** @mcp update */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
@@ -857,6 +901,7 @@ export async function updateCompanyPlan(
   return client.from("companyPlan").update(updateData).eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateDefaultCustomerCc(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -873,6 +918,7 @@ export async function updateDefaultCustomerCc(
   );
 }
 
+/** @mcp update */
 export async function updateCompany(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -889,6 +935,7 @@ export async function updateCompany(
  * — a committed base flip with surviving old-base pins silently mis-rates
  * every new document, and a non-atomic cleanup can race a freshly created
  * new-base override. Kysely throws on rollback; the route try/catches.
+ * @mcp update destructive
  */
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
@@ -918,6 +965,7 @@ export async function updateCompanyWithBaseCurrencyChange(
   });
 }
 
+/** @mcp update */
 export async function updateShelfLifeSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -945,6 +993,7 @@ export async function updateShelfLifeSettings(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateDigitalQuoteSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -969,6 +1018,7 @@ export async function updateDigitalQuoteSetting(
 // client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
 // would pull the service-role client into the browser bundle (Vite blocks it).
 
+/** @mcp update */
 export async function updateAccountingEnabledSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -980,6 +1030,7 @@ export async function updateAccountingEnabledSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAssetTaxDepreciationSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -994,6 +1045,7 @@ export async function updateAssetTaxDepreciationSettings(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1005,6 +1057,7 @@ export async function updateTimeCardSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateKanbanOutputSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1016,6 +1069,7 @@ export async function updateKanbanOutputSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLogoDark(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1031,6 +1085,7 @@ export async function updateLogoDark(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLogoDarkIcon(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1042,6 +1097,7 @@ export async function updateLogoDarkIcon(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLogoLight(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1053,6 +1109,7 @@ export async function updateLogoLight(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLogoLightIcon(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1064,6 +1121,7 @@ export async function updateLogoLightIcon(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLogoWatermark(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1075,6 +1133,7 @@ export async function updateLogoWatermark(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateMaintenanceDispatchNotificationSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1091,6 +1150,7 @@ export async function updateMaintenanceDispatchNotificationSettings(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateMaterialGeneratedIdsSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1102,6 +1162,7 @@ export async function updateMaterialGeneratedIdsSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateMetricSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1113,6 +1174,7 @@ export async function updateMetricSettings(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAllowLowercaseItemIdsSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1124,6 +1186,7 @@ export async function updateAllowLowercaseItemIdsSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateBomExplorerReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1135,6 +1198,7 @@ export async function updateBomExplorerReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1157,6 +1221,7 @@ export async function updateProductLabelSize(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updatePurchasePriceUpdateTimingSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1168,6 +1233,7 @@ export async function updatePurchasePriceUpdateTimingSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateLeadTimesOnReceiptSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1178,6 +1244,7 @@ export async function updateLeadTimesOnReceiptSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateIncludeMaterialsOnTravelerSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1191,6 +1258,7 @@ export async function updateIncludeMaterialsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateIncludeOperationsOnTravelerSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1202,6 +1270,7 @@ export async function updateIncludeOperationsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1218,6 +1287,7 @@ export async function updateAccountsPayableAddressSetting(
  *
  * See `party-contact.ts` for why the requirement lives on the PARTY and why the
  * bar is an email rather than merely a contact row.
+ * @mcp update
  */
 export async function updateRequireSupplierContactSetting(
   client: SupabaseClient<Database>,
@@ -1230,7 +1300,10 @@ export async function updateRequireSupplierContactSetting(
     .eq("id", companyId);
 }
 
-/** The customer-side mirror. Ships off; nothing downstream forces it today. */
+/**
+ * The customer-side mirror. Ships off; nothing downstream forces it today.
+ * @mcp update
+ */
 export async function updateRequireCustomerContactSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1242,6 +1315,7 @@ export async function updateRequireCustomerContactSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAccountsReceivableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1277,6 +1351,7 @@ export async function updateAccountsReceivableEmail(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateSalesRuleNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1288,6 +1363,7 @@ export async function updateSalesRuleNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateQuoteLineCategoryMarkups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1299,6 +1375,7 @@ export async function updateQuoteLineCategoryMarkups(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateRfqReadySetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1310,6 +1387,7 @@ export async function updateRfqReadySetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -1325,6 +1403,7 @@ export async function updateSequence(
     .eq("table", table);
 }
 
+/** @mcp update */
 export async function updateSuggestionNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1336,6 +1415,7 @@ export async function updateSuggestionNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateSupplierQuoteNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1347,6 +1427,7 @@ export async function updateSupplierQuoteNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateDefaultSupplierCc(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1358,6 +1439,7 @@ export async function updateDefaultSupplierCc(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateShowCurrencyTrailingZerosSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1369,6 +1451,7 @@ export async function updateShowCurrencyTrailingZerosSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateShowSupplierReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1380,6 +1463,7 @@ export async function updateShowSupplierReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateShowCustomerReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1391,6 +1475,7 @@ export async function updateShowCustomerReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateAutoSelectMaterialWithoutPickingListSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1402,6 +1487,7 @@ export async function updateAutoSelectMaterialWithoutPickingListSetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateIncompletePickingListPolicySetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1413,6 +1499,7 @@ export async function updateIncompletePickingListPolicySetting(
     .eq("id", companyId);
 }
 
+/** @mcp update */
 export async function updateReturnPickedMaterialTimingSetting(
   client: SupabaseClient<Database>,
   companyId: string,

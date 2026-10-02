@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
@@ -37,7 +41,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
   const rampIds: string[] = [];
 
   beforeAll(async () => {
-    db = getJobDatabaseClient(2);
+    db = getJobDatabaseClient();
     const company = await db
       .selectFrom("company")
       .innerJoin("employeeJob", "employeeJob.companyId", "company.id")

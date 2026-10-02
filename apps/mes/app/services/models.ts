@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -464,4 +468,11 @@ export const inspectionMeasurementValidator = z.object({
   // Attribute (non-numeric) features toggle pass/fail instead of a value.
   passed: zfd.text(z.enum(["true", "false"]).optional()),
   notes: zfd.text(z.string().optional())
+});
+
+// Records the gauge used for one feature of a lot; an empty gaugeId clears it.
+export const inspectionGaugeValidator = z.object({
+  inspectionId: z.string().min(1, { message: "Inspection is required" }),
+  inspectionFeatureId: z.string().min(1, { message: "Feature is required" }),
+  gaugeId: zfd.text(z.string().optional())
 });

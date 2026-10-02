@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! `convert` action — STEP → GLB + graph.json. Async job: the caller long-polls
 //! and hands fresh signed upload URLs (`glb`, `graph`) per poll (late-mint). The
 //! in-process result cache still skips re-tessellation for repeated content; the

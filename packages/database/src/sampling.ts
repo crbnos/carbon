@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Attribute sampling engine: the Z1.4 / ISO 2859-1 table constants and the pure
  * resolver post-receipt and the inspection engine (`./quality.ts`) use to

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Ramp OAuth scopes — the single source of truth, shared by the API client
  * (`lib/client.ts`, the client-credentials + refresh-token requests) and the

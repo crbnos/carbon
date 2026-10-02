@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { DefaultDisabledSubmit, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -165,6 +170,7 @@ const ReceiptForm = ({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !permissions.can("delete", "inventory") ||
                     !permissions.is("employee")

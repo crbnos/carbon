@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /* Primitives for the hand-drawn architecture diagrams (`architecture-diagrams.tsx`).
  *
  * These are laid out by hand rather than generated, because a generated one could not be

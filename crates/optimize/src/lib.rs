@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Mesh optimisation for GLB assets. Parses a binary glTF, runs meshopt on every
 //! mesh primitive (weld/remap → vertex-cache → overdraw → vertex-fetch, plus an
 //! optional simplify ladder), and re-encodes the GLB. The node tree, materials,

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure journal construction from authoritative, locked funding allocations.
 // Cash/sourceAmount are document currency. Control, relief, carrying remainders,
 // and the persisted per-application realized FX snapshots are company base.

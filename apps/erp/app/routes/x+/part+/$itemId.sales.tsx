@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -7,7 +11,12 @@ import {
 } from "@carbon/ee/rules";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { isUnaffectedByNavigation } from "@carbon/utils";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
   getItemCustomerParts,
@@ -20,6 +29,11 @@ import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["itemId"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

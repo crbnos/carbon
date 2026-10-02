@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardAction,
@@ -10,6 +14,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import type { BankCodeLabelKey } from "@carbon/utils";
@@ -198,6 +203,7 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
                           disabled={!permissions.can("update", "accounting")}
                           onClick={() => navigate(account.id)}
                         >
@@ -205,6 +211,7 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                           <Trans>Edit</Trans>
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
                           destructive
                           disabled={!permissions.can("delete", "accounting")}
                           onClick={() => {

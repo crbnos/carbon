@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCheck, LuX } from "react-icons/lu";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   InspectionSample,
   InspectionSamplingPlan
 } from "~/services/types";
 import { path } from "~/utils/path";
+import InspectionGaugePicker from "./InspectionGaugePicker";
 
 // A cell save's response payload (the measurement action returns it so the
 // matrix can update without a revalidation roundtrip). Same contract as the
@@ -28,6 +34,11 @@ export type MeasurementSaveResult = {
 // sample route) rather than a per-feature measurement.
 export const OVERALL_ROW_ID = "__overall__";
 
+// Mirrors RECENT_INSPECTION_GAUGE_LIMIT in packages/database/src/quality.ts
+// (the server's "recently used" cap) — that module is server-only (Kysely), so
+// it cannot be imported into this client component.
+const RECENT_INSPECTION_GAUGE_LIMIT = 10;
+
 type MatrixRow = {
   featureId: string;
   label: string;
@@ -37,6 +48,8 @@ type MatrixRow = {
   sampleSize: number;
   acceptanceNumber: number;
   rejectionNumber: number;
+  gaugeTypeId: string | null;
+  gaugeTypeName: string | null;
 };
 
 type InspectionMeasurementMatrixProps = {
@@ -46,6 +59,8 @@ type InspectionMeasurementMatrixProps = {
   features: InspectionSamplingPlan[];
   samples: InspectionSample[];
   measurements: InspectionMeasurement[];
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   maxSampleSize: number;
   // Lot size caps how many sample columns can exist — a feature's n is the
   // required minimum, but the inspector may record up to the whole lot.
@@ -78,6 +93,8 @@ const InspectionMeasurementMatrix = ({
   features,
   samples,
   measurements,
+  gauges,
+  recentGaugeIds,
   maxSampleSize,
   lotSize,
   lotAcceptanceNumber,
@@ -116,7 +133,9 @@ const InspectionMeasurementMatrix = ({
           specLabel: "",
           sampleSize: maxSampleSize,
           acceptanceNumber: lotAcceptanceNumber,
-          rejectionNumber: lotRejectionNumber
+          rejectionNumber: lotRejectionNumber,
+          gaugeTypeId: null,
+          gaugeTypeName: null
         }
       ];
     }
@@ -141,7 +160,9 @@ const InspectionMeasurementMatrix = ({
         specLabel,
         sampleSize: lotFeature.sampleSize,
         acceptanceNumber: lotFeature.acceptanceNumber,
-        rejectionNumber: lotFeature.rejectionNumber
+        rejectionNumber: lotFeature.rejectionNumber,
+        gaugeTypeId: feature.gaugeTypeId ?? null,
+        gaugeTypeName: feature.gaugeType?.name ?? null
       };
     });
   }, [
@@ -353,6 +374,143 @@ const InspectionMeasurementMatrix = ({
     [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
+  // The gauge recorded per feature: the plan rows' value, overridden
+  // optimistically on selection until the loader data agrees with it.
+  const [gaugeByFeature, setGaugeByFeature] = useState<
+    Record<string, string | null>
+  >({});
+  const [recentGauges, setRecentGauges] = useState(recentGaugeIds);
+  useEffect(() => {
+    setRecentGauges(recentGaugeIds);
+  }, [recentGaugeIds]);
+  const serverGaugeFor = useCallback(
+    (featureId: string): string | null =>
+      features.find((f) => f.inspectionFeatureId === featureId)?.gaugeId ??
+      null,
+    [features]
+  );
+  const serverGaugeForRef = useRef(serverGaugeFor);
+  serverGaugeForRef.current = serverGaugeFor;
+  const gaugeFor = useCallback(
+    (featureId: string): string | null =>
+      featureId in gaugeByFeature
+        ? gaugeByFeature[featureId]
+        : serverGaugeFor(featureId),
+    [gaugeByFeature, serverGaugeFor]
+  );
+
+  // Per-feature request bookkeeping, so a request that settles late can never
+  // undo a newer pick: `latest` is the newest request id, `settled` whether
+  // it has answered, `confirmed` the newest request the server accepted.
+  const gaugeRequests = useRef<
+    Record<
+      string,
+      {
+        latest: number;
+        settled: boolean;
+        confirmed?: { id: number; gaugeId: string | null };
+      }
+    >
+  >({});
+  // One gauge request per characteristic at a time, so the server commits the
+  // picks in the order they were made.
+  const gaugeQueue = useRef<Record<string, Promise<void>>>({});
+
+  // Once the loader data matches a settled pick, drop the override so later
+  // revalidations show the server's value.
+  useEffect(() => {
+    const caughtUp = Object.keys(gaugeByFeature).filter((featureId) => {
+      const request = gaugeRequests.current[featureId];
+      return (
+        (!request || request.settled) &&
+        serverGaugeFor(featureId) === gaugeByFeature[featureId]
+      );
+    });
+    if (caughtUp.length === 0) return;
+    for (const featureId of caughtUp) {
+      const request = gaugeRequests.current[featureId];
+      if (request) {
+        request.confirmed = {
+          id: request.latest,
+          gaugeId: serverGaugeFor(featureId)
+        };
+      }
+    }
+    setGaugeByFeature((prev) => {
+      const next = { ...prev };
+      for (const featureId of caughtUp) delete next[featureId];
+      return next;
+    });
+  }, [gaugeByFeature, serverGaugeFor]);
+
+  const persistGauge = useCallback(
+    async (featureId: string, gaugeId: string | null) => {
+      const request = gaugeRequests.current[featureId] ?? {
+        latest: 0,
+        settled: true
+      };
+      gaugeRequests.current[featureId] = request;
+      const requestId = request.latest + 1;
+      request.latest = requestId;
+      request.settled = false;
+      setGaugeByFeature((prev) => ({ ...prev, [featureId]: gaugeId }));
+
+      // Wait for this characteristic's previous request; a pick superseded
+      // while it waited is never sent.
+      const sent = (gaugeQueue.current[featureId] ?? Promise.resolve()).then(
+        async () => {
+          if (requestId !== request.latest) return null;
+          const formData = new FormData();
+          formData.set("inspectionId", inspectionId);
+          formData.set("inspectionFeatureId", featureId);
+          formData.set("gaugeId", gaugeId ?? "");
+          const response = await fetch(path.to.inspectionGauge(inspectionId), {
+            method: "post",
+            body: formData
+          }).catch(() => null);
+          const body = (await response?.json().catch(() => null)) as {
+            error?: { message: string } | null;
+          } | null;
+          return {
+            ok: !!response?.ok && !!body && !body.error,
+            message: body?.error?.message
+          };
+        }
+      );
+      gaugeQueue.current[featureId] = sent.then(() => undefined);
+      const result = await sent;
+      if (!result) return;
+      const { ok } = result;
+
+      if (ok && (!request.confirmed || requestId > request.confirmed.id)) {
+        request.confirmed = { id: requestId, gaugeId };
+      }
+      if (requestId === request.latest) request.settled = true;
+
+      if (!ok) {
+        toast.error(result.message ?? t`Failed to record gauge`);
+      } else if (gaugeId) {
+        setRecentGauges((prev) =>
+          [gaugeId, ...prev.filter((id) => id !== gaugeId)].slice(
+            0,
+            RECENT_INSPECTION_GAUGE_LIMIT
+          )
+        );
+      }
+
+      // Once the newest pick has answered, show what the server last
+      // accepted: that pick if it succeeded, else the newest earlier pick
+      // that did, else the loader's value.
+      if (request.settled) {
+        const shown = request.confirmed
+          ? request.confirmed.gaugeId
+          : serverGaugeForRef.current(featureId);
+        setGaugeByFeature((prev) => ({ ...prev, [featureId]: shown }));
+      }
+    },
+    [inspectionId, t]
+  );
+
   const columnHeaders = useMemo(
     () =>
       Array.from({ length: columnCount }, (_, index) => {
@@ -387,11 +545,16 @@ const InspectionMeasurementMatrix = ({
           <tr>
             <th className="sticky left-0 z-30 min-w-[220px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
               {hasFeatures ? (
-                <span>{t`Feature`}</span>
+                <span>{t`Characteristic`}</span>
               ) : (
                 <span>{t`Result`}</span>
               )}
             </th>
+            {hasFeatures && (
+              <th className="min-w-[140px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
+                {t`Gauge`}
+              </th>
+            )}
             {columnHeaders.map((column, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
               <th
@@ -452,6 +615,22 @@ const InspectionMeasurementMatrix = ({
                     </div>
                   </div>
                 </td>
+                {hasFeatures && (
+                  <td className="h-px border-b border-r border-border p-0 align-middle">
+                    <InspectionGaugePicker
+                      gauges={gauges}
+                      characteristicLabel={row.label}
+                      recentGaugeIds={recentGauges}
+                      gaugeTypeId={row.gaugeTypeId}
+                      gaugeTypeName={row.gaugeTypeName}
+                      value={gaugeFor(row.featureId)}
+                      isReadOnly={isReadOnly}
+                      onChange={(gaugeId) =>
+                        persistGauge(row.featureId, gaugeId)
+                      }
+                    />
+                  </td>
+                )}
                 {Array.from({ length: columnCount }, (_, columnIndex) => {
                   const disabled = isReadOnly;
                   const status = cellStatus(columnIndex, row.featureId);

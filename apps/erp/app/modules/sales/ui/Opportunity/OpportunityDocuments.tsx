@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -15,6 +19,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -165,6 +170,7 @@ const OpportunityDocuments = ({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => download(attachment)}
                             >
                               <Trans>Download</Trans>
@@ -216,7 +222,7 @@ const DraggableCell = ({
 }) => {
   const context = useDndContext();
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: attachment.id,
+    id: attachment.id ?? attachment.name,
     data: {
       id: attachment.id,
       name: attachment.name,
@@ -443,8 +449,13 @@ export default OpportunityDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 export const usePendingItems = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;

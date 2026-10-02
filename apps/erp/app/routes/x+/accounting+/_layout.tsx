@@ -1,13 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIntegrationIdsByRole } from "@carbon/ee";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  MetaFunction,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import {
   getAccountsList,
   getBaseCurrency,
@@ -22,11 +30,20 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Accounting" }];
 };
 
+function AccountingSidebar() {
+  const { groups } = useAccountingSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
   to: path.to.accounting,
-  module: "accounting"
+  module: "accounting",
+  sidebar: AccountingSidebar
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -71,17 +88,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AccountingRoute() {
-  const { groups } = useAccountingSubmodules();
-
   return (
-    <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full bg-card">
-        <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="relative h-full">
-          <Outlet />
-          <AccountingBetaGate />
-        </VStack>
-      </div>
-    </CollapsibleSidebarProvider>
+    <VStack spacing={0} className="relative h-full">
+      <Outlet />
+      <AccountingBetaGate />
+    </VStack>
   );
 }

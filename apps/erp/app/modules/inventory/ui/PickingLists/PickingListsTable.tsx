@@ -1,4 +1,14 @@
-import { Button, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Button,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -158,6 +168,11 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={
+              row.status !== "Draft"
+                ? MENU_ITEM_SHORTCUTS.view
+                : MENU_ITEM_SHORTCUTS.edit
+            }
             disabled={!permissions.can("update", "inventory")}
             onClick={() => {
               navigate(
@@ -171,6 +186,7 @@ const PickingListsTable = memo(({ data, count }: PickingListsTableProps) => {
               : t`Edit Picking List`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "inventory") || row.status !== "Draft"
             }

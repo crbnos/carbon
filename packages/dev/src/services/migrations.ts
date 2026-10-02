@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync, readFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { log } from "@clack/prompts";
@@ -203,7 +207,7 @@ export async function syncAuthz(root: string, dbPort: number): Promise<string> {
     process.stderr.write(r.stderr?.toString() ?? "");
     process.stdout.write(r.stdout?.toString() ?? "");
     throw new Error(
-      "authz sync failed: fix packages/database/src/authz/manifest.ts, then migrate again"
+      "authz sync failed: fix the rule or function file named above (packages/database/src/authz, src/event-system/functions), then migrate again"
     );
   }
   const counts = (r.stdout ?? "").match(/changed \d+ (helper|table)\(s\)/g);

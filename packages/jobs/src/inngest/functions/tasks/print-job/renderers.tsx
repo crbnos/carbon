@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // This module is .tsx because the built-in renderers render React PDF
 // components (ProductLabelPDF, StorageUnitLabelPDF, KanbanLabelPDF) via
 // renderToStream.

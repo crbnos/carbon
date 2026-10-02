@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -14,6 +18,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -152,6 +157,7 @@ const SupplierInteractionDocuments = ({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => download(attachment)}
                             >
                               <Trans>Download</Trans>
@@ -354,8 +360,13 @@ export default SupplierInteractionDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 export const usePendingItems = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -13,6 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   MenuSub,
@@ -682,7 +687,10 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         }[]) ?? [];
       return (
         <>
-          <MenuItem onClick={() => navigate(path.to.material(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.material(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Material</Trans>
           </MenuItem>
@@ -706,6 +714,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             </MenuSub>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "parts")}
             onClick={() => {

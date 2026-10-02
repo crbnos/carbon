@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -7,3 +12,5 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
   throw redirect(path.to.consumableDetails(itemId));
 }
+
+export const middleware = [redirectBeforeLoaders(loader)];

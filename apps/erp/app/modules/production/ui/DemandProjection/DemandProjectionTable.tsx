@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Combobox,
   DropdownMenu,
@@ -7,6 +11,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useUrlParams,
   VStack
 } from "@carbon/react";
@@ -155,7 +160,10 @@ const DemandProjectionsTable = memo(
                     />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
+                    <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
+                      asChild
+                    >
                       <Link
                         to={path.to.demandProjection(
                           row.original.id!,
@@ -167,6 +175,7 @@ const DemandProjectionsTable = memo(
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onSelect={() => setSelectedItem(row.original)}
                       destructive
                     >

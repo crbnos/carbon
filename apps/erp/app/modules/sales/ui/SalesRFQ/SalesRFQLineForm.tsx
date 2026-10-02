@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -10,6 +14,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -239,7 +244,10 @@ const SalesRFQLineForm = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
+                            onClick={deleteDisclosure.onOpen}
+                          >
                             <DropdownMenuIcon icon={<LuTrash />} />
                             Delete Line
                           </DropdownMenuItem>

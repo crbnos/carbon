@@ -3,11 +3,11 @@ title: Maintenance
 description: "Keeping work centers running: reactive and preventive maintenance dispatches."
 ---
 
-Maintenance in Carbon keeps the machines on the floor running. The unit of work is a **dispatch**, a work-order-like record raised against a **<Term>work center</Term>**, raised either reactively when something breaks or on a recurring preventive schedule. Execution happens on the floor in MES; authoring and reporting live in the back office under Resources.
+A maintenance **dispatch** records work against a **<Term>work center</Term>**. Dispatches are created reactively for failures or generated from preventive schedules. Operators execute them in MES; configuration and reporting are under Resources in the ERP.
 
 ## Dispatches
 
-A **maintenance dispatch** is one job of upkeep: what's wrong, which work center, who's on it, and the time and parts it took. It moves through a short lifecycle:
+A **maintenance dispatch** records the problem, work center, assignee, time, and parts. It uses this lifecycle:
 
 <StatusFlow entity="maintenanceDispatch">
   <Status name="Open">Raised, not yet picked up.</Status>
@@ -29,7 +29,7 @@ Maintenance targets a **work center**, not a <Term id="fixed-asset">fixed asset<
 
 ## Preventive schedules
 
-Recurring upkeep is defined as a **maintenance schedule**: a work center, a **frequency** (Daily, Weekly, Monthly, Quarterly, Annual), the parts it needs, and how far in advance to raise the work. A daily background job reads the active schedules and, when one is due within the advance window, generates an **Open** dispatch, tagged `Scheduled` and `Preventive`, with the schedule's parts copied onto it. Daily schedules honor per-weekday flags and can skip holidays.
+A **maintenance schedule** defines a work center, frequency (Daily, Weekly, Monthly, Quarterly, or Annual), required parts, and generation lead time. A daily background job creates an **Open** dispatch when an active schedule enters its advance window. The dispatch has source `Scheduled`, severity `Preventive`, and a copy of the scheduled parts. Daily schedules can select weekdays and exclude holidays.
 
 ## Blocking and OEE impact
 

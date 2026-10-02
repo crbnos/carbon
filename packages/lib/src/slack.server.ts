@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
 import { storage } from "@carbon/files";
@@ -33,7 +37,12 @@ class SlackClient {
         blocks
       });
     } catch (error) {
+      // Log, then RETHROW. Swallowing here made every caller's own catch dead
+      // code and let a failed post report success — `send-slack` classified
+      // errors it could never receive and settled `{ success: true }`. All
+      // callers already wrap this in a try/catch of their own.
       log.error("Error sending Slack message", { channel, error });
+      throw error;
     }
   }
 }

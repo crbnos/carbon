@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getNextSerialNumbers } from "@carbon/database/sequence";
 import { sql } from "kysely";
 import { z } from "zod";
@@ -132,7 +136,15 @@ export const assignSerialNumbers = defineServerFn({
           .execute();
 
         if (count > 1) {
-          const rows = serials.slice(1).map((readableId) => ({
+          // Each row gets its OWN `createdAt`, one millisecond apart, in serial
+          // order. Left to the column default they would all take the
+          // transaction's `now()` and tie — and `createdAt` is the unit axis
+          // every step record is indexed against (see
+          // getTrackedEntitiesByMakeMethodId). Tied rows come back in physical
+          // order, which an UPDATE changes, so recorded values slid onto other
+          // serials. The seed keeps its earlier timestamp and stays unit 0.
+          const rows = serials.slice(1).map((readableId, offset) => ({
+            createdAt: sql<string>`now() + ${offset + 1}::int * interval '1 millisecond'`,
             sourceDocument: seed.sourceDocument,
             sourceDocumentId: seed.sourceDocumentId,
             sourceDocumentReadableId: seed.sourceDocumentReadableId,

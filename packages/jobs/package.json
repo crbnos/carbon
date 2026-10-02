@@ -23,7 +23,7 @@
     "@slack/web-api": "catalog:",
     "@supabase/functions-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "ai": "5.0.172",
+    "ai": "catalog:",
     "axios": "catalog:",
     "inngest": "^3.52.7",
     "kysely": "catalog:",
@@ -50,8 +50,7 @@
     ".": "./src/index.ts",
     "./backups": "./src/backups/schema.ts",
     "./events": "./src/events.ts",
-    "./inngest": "./src/inngest/index.ts",
-    "./worker": "./src/inngest/worker.ts"
+    "./inngest": "./src/inngest/index.ts"
   },
   "main": "./src/index.ts",
   "name": "@carbon/jobs",

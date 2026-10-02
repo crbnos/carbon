@@ -54,7 +54,9 @@ overrides:
   "ws@8": 8.21.0
 
 catalog:
-  '@ai-sdk/openai': 2.0.102
+  '@ai-sdk/anthropic': 4.0.65
+  '@ai-sdk/openai': 4.0.78
+  '@ai-sdk/react': 4.0.119
   '@dnd-kit/core': 6.3.1
   '@dnd-kit/sortable': 8.0.0
   '@dnd-kit/utilities': 3.2.2
@@ -76,6 +78,13 @@ catalog:
   '@orpc/openapi': 1.15.0
   '@orpc/openapi-client': 1.15.0
   '@orpc/server': 1.15.0
+  '@opentelemetry/api': 1.9.0
+  '@opentelemetry/exporter-trace-otlp-proto': 0.217.0
+  '@opentelemetry/instrumentation': 0.217.0
+  '@opentelemetry/instrumentation-undici': 0.27.0
+  '@opentelemetry/resources': 2.7.1
+  '@opentelemetry/sdk-trace-node': 2.7.1
+  '@opentelemetry/semantic-conventions': 1.40.0
   '@paralleldrive/cuid2': 2.2.2
   '@react-aria/i18n': 3.12.16
   '@react-email/components': 0.3.3
@@ -87,10 +96,10 @@ catalog:
   '@shikijs/themes': 4.2.0
   '@shikijs/types': 4.2.0
   '@slack/web-api': 7.10.0
-  '@supabase/functions-js': 2.1.5
-  '@supabase/postgrest-js': 2.80.0
-  '@supabase/storage-js': 2.80.0
-  '@supabase/supabase-js': 2.80.0
+  '@supabase/functions-js': 2.117.2
+  '@supabase/postgrest-js': 2.117.2
+  '@supabase/storage-js': 2.117.2
+  '@supabase/supabase-js': 2.117.2
   '@tailwindcss/container-queries': 0.2.2
   '@tailwindcss/typography': 0.5.19
   '@tailwindcss/vite': 4.3.0
@@ -112,7 +121,9 @@ catalog:
   '@types/react-dom': 18.3.7
   '@types/node': '24'
   '@vercel/analytics': 1.6.1
+  '@vercel/functions': 3.9.9
   '@vercel/react-router': 1.2.6
+  ai: 7.0.116
   axios: 1.16.0
   botid: 1.5.11
   class-variance-authority: 0.7.1

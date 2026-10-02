@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import path from "node:path";
 import { loadEnv } from "vite";
 
@@ -27,4 +31,24 @@ export function applyDotenvToProcessEnv(mode, appDir) {
       process.env[key] = value;
     }
   }
+}
+
+/**
+ * Resolve `specifier` to `file` in the browser build only. A top-level
+ * `resolve.alias` applies to every environment, so a stub meant to keep a
+ * chunk out of the client bundle also replaces the module on the server.
+ *
+ * @param {string} specifier
+ * @param {string} file
+ * @returns {import("vite").Plugin}
+ */
+export function clientOnlyAlias(specifier, file) {
+  return {
+    name: `carbon:client-only-alias:${specifier}`,
+    enforce: "pre",
+    applyToEnvironment: (environment) => environment.name === "client",
+    resolveId(source) {
+      if (source === specifier) return file;
+    },
+  };
 }

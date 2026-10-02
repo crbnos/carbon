@@ -1,9 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting";
@@ -31,6 +40,11 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["invoiceId"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -60,18 +74,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, files, orgHasCredits, currency, rampMapping] =
+  const [supplier, interaction, orgHasCredits, currency, rampMapping] =
     await Promise.all([
       purchaseInvoice.data?.supplierId
         ? getSupplier(client, purchaseInvoice.data.supplierId)
         : null,
       getSupplierInteraction(
         client,
-        purchaseInvoice.data.supplierInteractionId!
-      ),
-      getSupplierInteractionDocuments(
-        client,
-        companyId,
         purchaseInvoice.data.supplierInteractionId!
       ),
       getCompanyHasOpenCredits(client, companyId, "purchase"),
@@ -99,7 +108,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
-    files,
+    files: getSupplierInteractionDocuments(
+      client,
+      companyId,
+      purchaseInvoice.data.supplierInteractionId!
+    ),
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
     orgHasCredits,
@@ -127,7 +140,7 @@ export default function PurchaseInvoiceRoute() {
             <ResizablePanels
               explorer={<PurchaseInvoiceExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

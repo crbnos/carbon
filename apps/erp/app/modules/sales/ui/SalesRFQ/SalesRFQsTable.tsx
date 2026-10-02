@@ -1,4 +1,14 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -229,11 +239,15 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const renderContextMenu = useMemo(() => {
     return (row: SalesRFQ) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.salesRfqDetails(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.salesRfqDetails(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "sales")}
           onClick={() => {

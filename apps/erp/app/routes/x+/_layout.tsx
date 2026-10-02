@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CarbonEdition,
   CarbonProvider,
@@ -32,6 +36,7 @@ import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
+  SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
   useNProgress
@@ -39,8 +44,8 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
+  requiresItarEntityCertification,
+  SHELL_MAX_AGE_MS
 } from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
@@ -58,17 +63,25 @@ import {
   useNavigate
 } from "react-router";
 import { RealtimeDataProvider } from "~/components";
-import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import ChangelogPanel from "~/components/ChangelogPanel";
+import {
+  ModuleSidebarLayout,
+  PrimaryNavigation,
+  Topbar
+} from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
+import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
+import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
+  employeeCompaniesOf,
   getCompanies,
   getCompanyIntegrations,
   getCompanySettings,
@@ -88,12 +101,19 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
 
+// Set from the component when loader data arrives, not in shouldRevalidate:
+// link prefetching calls that too.
+let shellLoadedAt = Date.now();
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
+  formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
     currentUrl.pathname.startsWith("/x/users") ||
@@ -105,16 +125,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 16 parallel queries plus an auth round-trip.
-  // Without this it re-ran on every table filter, sort and page click, none of
-  // which can change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
-    return false;
+  // Only a mutation can change what the shell returns, so a GET re-runs it
+  // only once the data has aged out — that covers out-of-band changes.
+  if (!formMethod || formMethod === "GET") {
+    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
   }
 
   return defaultShouldRevalidate;
@@ -157,10 +171,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
+  // Streamed, not awaited. Each catches: the loader can exit early with
+  // nothing awaiting them.
+  const implementation = Promise.all([
+    implementationHubPromise,
+    getImplementationCheckStates(client, companyId),
+    implementationSignalsPromise
+  ])
+    .then(([hub, checkStates, signals]) => ({
+      implementationHub: hub.data ?? null,
+      implementationCheckStates: checkStates.data ?? [],
+      implementationSignals: signals
+    }))
+    .catch((error) => {
+      log.error("Failed to load implementation hub", { companyId, error });
+      return {
+        implementationHub: null,
+        implementationCheckStates: [],
+        implementationSignals: null
+      };
+    });
+  const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
+    () => false
+  );
+  // Whether this user dismissed it is a user flag, read client-side.
+  const changelog = getCachedChangelogPanelEntry().catch(() => null);
+
   // Parallelize all requests
   const [
     companies,
-    employeeCompaniesResult,
     stripeCustomer,
     plan,
     customFields,
@@ -171,16 +210,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
-    auditLogEnabled,
     modulePreferences,
     printerRoutes,
-    implementationHub,
-    implementationCheckStates,
-    implementationSignals,
     itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
-    getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
     getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
@@ -191,12 +225,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
-    implementationHubPromise,
-    getImplementationCheckStates(client, companyId),
-    implementationSignalsPromise,
     itarCertificationPromise
   ]);
 
@@ -229,7 +259,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request, reason);
   }
 
-  const employeeCompanies = employeeCompaniesResult.data ?? [];
+  // Derived from the read above. A failed read falls back to its own query, so
+  // a multi-company user still reaches the picker rather than onboarding.
+  const employeeCompanies = companies.data
+    ? employeeCompaniesOf(companies.data)
+    : ((await getEmployeeCompanies(client, userId)).data ?? []);
   const hasMultipleCompanies = employeeCompanies.length > 1;
 
   // Send multi-company users to the picker, preserving where they were headed.
@@ -313,9 +347,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementationHub: implementationHub.data ?? null,
-    implementationCheckStates: implementationCheckStates.data ?? [],
-    implementationSignals,
+    implementation,
+    changelog,
     itarCertification: {
       ...itarCertification,
       // Server-decided, never client-inferred: the gate must not be skippable
@@ -346,6 +379,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
+  const loaderData = useLoaderData<typeof loader>();
   const {
     company,
     session,
@@ -356,10 +390,15 @@ export default function AuthenticatedRoute() {
     itarCertification,
     mfaEnrollment,
     sessionTimeout
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
+  useEffect(() => {
+    shellLoadedAt = Date.now();
+  }, [loaderData]);
   const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
+  const changelogPanel = useChangelogPanel();
 
   // Session lock (NIST 3.1.10) — client idle UX only; the server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT.
@@ -493,19 +532,31 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               <TooltipProvider>
-                <div className="flex h-screen">
+                <SidebarProvider
+                  defaultOpen={false}
+                  keyboardShortcut={false}
+                  className="h-screen min-h-0"
+                >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                      <Outlet />
+                      <ModuleSidebarLayout>
+                        <Outlet />
+                      </ModuleSidebarLayout>
                     </main>
                   </div>
-                </div>
+                </SidebarProvider>
                 <TrainingPanel
                   training={training}
                   isOpen={isOpen}
                   onDismiss={dismiss}
+                />
+                {/* Shares the training panel's corner; training wins while open. */}
+                <ChangelogPanel
+                  entry={changelogPanel.entry}
+                  isOpen={changelogPanel.isOpen && !isOpen}
+                  onDismiss={changelogPanel.dismiss}
                 />
                 <AgentRoot />
                 <ShortcutHelp />

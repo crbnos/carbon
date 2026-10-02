@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -272,6 +282,7 @@ const ChangeNoticesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "parts")}
               onClick={() => {
                 navigate(path.to.changeNotice(row.id!));
@@ -281,6 +292,7 @@ const ChangeNoticesTable = memo(
               {t`Edit Change Notice`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {

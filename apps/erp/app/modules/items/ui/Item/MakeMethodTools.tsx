@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Number, SelectControlled, Submit, ValidatedForm } from "@carbon/form";
 import {
@@ -21,6 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   Menubar,
   MenubarItem,
   Modal,
@@ -30,6 +35,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   toast,
   useDisclosure,
   VStack
@@ -252,9 +258,7 @@ const MakeMethodTools = ({
             </MenubarItem>
             {itemLink && (
               <MenubarItem leftIcon={<LuGitFork />} asChild>
-                <Link prefetch="intent" to={itemLink}>
-                  Item Master
-                </Link>
+                <PrefetchLink to={itemLink}>Item Master</PrefetchLink>
               </MenubarItem>
             )}
           </HStack>
@@ -309,6 +313,7 @@ const MakeMethodTools = ({
                                 isLocked={isChangeNoticeLocked}
                               >
                                 <DropdownMenuItem
+                                  shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                                   disabled={isChangeNoticeLocked}
                                   onClick={() => {
                                     flushSync(() => {

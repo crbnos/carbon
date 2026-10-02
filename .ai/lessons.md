@@ -988,7 +988,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** `space-x-*` / `space-y-*` are structural (`:not(:last-child)`) — never use them on a container whose children a component may add to at runtime; use `gap-*`, which only applies between elements that generate boxes and so ignores `display:none`. When a component renders extra DOM next to its main element (React Router prefetch links, portals, measurement nodes), isolate it in a `display: contents` wrapper so it can't perturb the caller's layout. To diagnose "impossible" width changes, diff every computed property between states and count child nodes — a node-count delta with no style delta means injected DOM, not CSS.
 
-**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `<Link prefetch>` placed directly inside a `space-*` container.
+**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `PrefetchLink` (`@carbon/react`, which injects the same tags on press) or `<Link prefetch>` placed directly inside a `space-*` container.
 
 ## A list-query benchmark that omits the ORDER BY measures a query the app never runs
 
@@ -2025,7 +2025,7 @@ full-screen ERP route.
 
 **Rule:** Obsolete for `get-method`, `convert` and the `post-*` functions: they are server functions now, called in-process, so no HTTP retry sits in front of them. Still true: the `isEdgeFunctionInvoke` carve-out in `fetchWithRetry` stays for the remaining edge functions, and a retry wrapper must never blindly retry a write with real side effects and no idempotency key. Original rule: A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry` and `isEdgeFunctionInvoke` were removed with the supabase-js 2.117 upgrade; `storageReadFetch` retries storage reads only and never touches `/functions/v1/`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 ## pdfjs rejects Node Buffer by constructor check
 
 **Context:** `@carbon/files/pdf` and the shared image pipeline feed bytes from `fs.readFile` / `storage.download().arrayBuffer()` into pdfjs (via unpdf) and jSquash codecs.
@@ -2579,3 +2579,303 @@ tracked file.
 **Applies to:** `packages/database/src/types.ts`,
 `packages/database/supabase/functions/lib/types.ts`,
 `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, any generated artifact.
+
+---
+
+## A submit button that stays live is a duplicate-write engine
+
+**Context:** Finalizing quote Q000699 emailed the customer the same PDF three times within
+one minute, same recipient list each time. The finalize action evaluates sales rules across
+every line, renders a PDF, uploads it, writes a `document` row, flips the quote to `Sent`,
+renders two email bodies and signs an attachment URL before it triggers the send — seconds
+of wall time, during which `QuoteFinalizeModal`'s Finalize button was enabled and not even
+spinning (`isDisabled={loading}`, where `loading` was the modal's own data-fetch flag).
+
+**Problem:** Three layers of the same defect, and only the first is about a button.
+(1) `fetcher.submit` aborts the previous BROWSER request; the server action it started runs
+to completion regardless, because nothing in a route action reads `request.signal`. So N
+clicks are N complete sets of side effects. The guard had existed as `onSubmit={onClose}`
+(the modal unmounted before a second click was possible) and was dropped in `e59a9e26e2`
+when closing moved to `useRuleViolations({ onSuccess: onClose })` — correct on its own, since
+violations must be able to reopen the modal, but nothing replaced the guard.
+(2) `@carbon/react`'s `Button` left `isLoading` out of the DOM `disabled` attribute while
+`useShortcutKeys` already treated it as disabling — so a spinning button refused Enter but
+still took a mouse click, and every call site guarding a submit with
+`isLoading={fetcher.state !== "idle"}` was showing a spinner over a live button.
+(3) `fetchWithRetry` replayed every method on a 5xx or a 25 s timeout. PostgREST commits
+before it answers, so a retried insert is a duplicate row and a retried `.rpc()` re-runs a
+transaction. The `quoteToQuote` incidents had already produced the rule — *"a retry wrapper
+must never blindly retry a write with real side effects and no idempotency key"* — but the
+fix carved out only `/functions/v1/`, leaving every PostgREST write still replaying.
+
+**Rule:** A submit path needs a guard at each layer that can replay it. The button disables
+while its own submission is in flight (`<Submit>`, or `isLoading` bound to the fetcher's
+state); `ValidatedForm` drops a re-entrant submit so the form holds even when a button
+forgets; a retry wrapper replays only idempotent methods; and a job retries only failures
+that provably had no effect — for an SMTP send that means connect/greet/auth errors only,
+never an ambiguous `ETIMEDOUT` that may have been delivered. When triaging "the operation
+failed but extra copies appeared", check all four before assuming a browser double-submit.
+`isDisabled` bound to any-old-boolean is not a guard: name the submit state.
+
+**Applies to:** `packages/react/src/Button.tsx`, `packages/form/src/ValidatedForm.tsx`,
+`packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable` — both
+since removed: database reads now use supabase-js's own retry, which never replays a
+write, and only storage reads go through `storageReadFetch`),
+`packages/jobs/src/inngest/functions/notifications/send-{email,slack}.ts`, and any
+`<Button type="submit">` — enforced by `no-unguarded-submit` (`@carbon/checks`).
+
+## Rows inserted in one transaction share `createdAt`
+
+**Context:** The inspection plan editor listed features `ORDER BY "createdAt"`. The save
+RPC (`save_inspection_document_atomic`) creates every new feature in one transaction.
+
+**Problem:** `NOW()` is fixed for the whole transaction, so those features tie, and Postgres
+returns ties in heap order. An `UPDATE` writes a new tuple at the end of the heap, so the
+feature someone just edited dropped to the bottom after a reload. Its neighbour then sat in
+its place, and the edit read as "not saved" although the database had it.
+
+**Rule:** An `ORDER BY` on a timestamp that a batch insert sets needs a deterministic
+tiebreak (a label, a sort order, then the id). Never rely on insertion order surviving.
+
+**Applies to:** any list ordered by `createdAt` whose rows are written together — RPCs,
+Kysely transactions, `insertInto(...).values([...])`, seeds.
+
+## `scripts/one-off/` is executed in production
+
+**Context:** A codemod that added `@mcp` tags to service files was saved as
+`scripts/one-off/tag-mcp-exposure.ts` — "a script run once".
+
+**Problem:** That folder is a registry, not a scratch area. `ci/src/migrations.ts` runs
+every `.ts` file in it against every workspace database on the next deploy and records it
+in `scriptRun`. A source-rewriting codemod there would have been executed by the deploy
+workflow.
+
+**Rule:** `scripts/one-off/` is only for one-time DATA migrations (see its README). A
+codemod is run locally and deleted, or lives in `scripts/` if it is worth keeping.
+
+**Applies to:** anything added under `scripts/one-off/`.
+
+## A lookup table keyed by source text must be a `Map`
+
+**Context:** The MCP generator decided "is this call a database write" with
+`WRITES[memberName]` over an object literal.
+
+**Problem:** `memberName` comes from the code being analysed, so `x.toString()` looked up
+`WRITES["toString"]`, found `Object.prototype.toString`, and counted as a write. Five read
+tools silently left the manifest until the digest diff showed them missing.
+
+**Rule:** When the key is arbitrary input (an identifier from parsed source, a column name,
+a user string), use a `Map`/`Set` or `Object.hasOwn`, never `obj[key]` truthiness. And diff
+the generated manifest against the previous one before trusting a generator change.
+
+**Applies to:** `scripts/lib/service-ast.ts`, and any analyser or dispatcher that indexes a
+record by a name it did not choose.
+
+## A JS array bound for a jsonb column must be stringified on the Kysely path
+
+**Context:** `quoteLinePrice.priceTrace` (a `PriceTraceStep[]`) is written both through
+supabase-js (PostgREST) and through Kysely (`rewriteQuoteLinePrices`,
+`saveQuoteLineWithPrices`, `get-method`).
+
+**Problem:** node-postgres and deno-postgres serialise a parameter by its JS type, not the
+column's: an object becomes JSON, but an array becomes a Postgres array literal (`{a,b}`),
+which a jsonb column rejects. supabase-js sends JSON either way, so the same row "works" on
+one path and fails on the other — and typecheck sees nothing, since `Json` admits arrays.
+
+**Rule:** On a Kysely write, `JSON.stringify` any jsonb value that can be an array (or a bare
+string). In Deno use `toJson` / `toJsonColumns` (`functions/lib/json.ts`).
+
+**Applies to:** every `insertInto` / `updateTable` that sets a jsonb column — `priceTrace`,
+`configuration`, notes, `customFields`, any copied row spread from a supabase-js read.
+
+## Demo datasets state percentages the way people write them; the tier converts
+
+**Context:** `PricingRuleSpec.amount` is documented and validated as percent points
+(0–100], but tier 02 inserted it into `pricingRule.amount` unchanged.
+
+**Problem:** the pricing engine multiplies by a fraction (`price × amount`), so every demo
+"5% discount" was a 500% discount and drove prices to the ≥ 0 floor. It surfaced only when
+the price trace showed the step — the validator checked the dataset's own convention, not
+the column's.
+
+**Rule:** When a dataset field and the column it lands in use different units, convert in
+the tier at the insert, next to a comment naming both units — and check any new percent
+field against how the engine reads the column, not against the dataset type.
+
+**Applies to:** `packages/database/src/datasets/tiers/*` — `pricingRule.amount`, and any
+other fraction-valued column (`discountPercent`, `taxPercent`, rates).
+
+## Single fetch re-runs every matched loader on every navigation
+
+**Context:** A click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`)
+took 2.8 s in production. The Vercel log showed ~68 PostgREST calls for that one click; about
+10 belonged to the page being opened.
+
+**Problem:** React Router 7 single fetch passes `defaultShouldRevalidate = true` for every
+GET navigation, so every reused ancestor loader re-runs unless its route exports
+`shouldRevalidate`. The app shell (`x+/_layout.tsx`, ~20 queries plus an auth round-trip)
+only opted out for same-pathname navigations, and the part layouts not at all. The burst is
+what makes each call slow: the first concurrent wave ran ~200 ms per call, later ones 30–60 ms.
+
+**Rule:** A layout loader with children exports `shouldRevalidate` and re-runs only when what
+it reads changes — `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`,
+naming the route and search params the loader reads. Mutations and
+`useRevalidator().revalidate()` still reach it. Data in a shell loader that does not gate
+rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never
+awaited.
+
+**Applies to:** every route with children under `apps/erp/app/routes/x+` and
+`apps/mes/app/routes/x+` — `_layout.tsx`, `$id.tsx` with tabs, and list pages that parent a
+drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, so it passes
+`search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
+helper.
+
+## A write that changes nothing still costs a queue message, an Inngest event and a function run
+
+**Context:** `/api/inngest` was the largest consumer on the ERP deployment (2026-10-01
+traces). The audit handler's log was mostly "Skipping: no meaningful diff for UPDATE on
+jobOperation".
+
+**Problem:** The scheduler's `persistChanges` issued one `UPDATE jobOperation` per operation on
+every regen, always setting `updatedAt`, and re-stamped `status = 'Ready'` on operations that
+were already Ready. `dispatch_event_batch()` queued every one of those updates, the drainer
+sent them to Inngest ten at a time, and the audit, search and embedding handlers then threw
+them away. Nothing was wrong in any single place; the waste was the sum.
+
+**Rule:** A bulk writer guards its UPDATE on the values it writes (`isDistinctFromAny` in
+`scheduling-engine.ts` compares in Postgres, so DATE and timestamptz are matched in their own
+type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
+UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
+SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
+migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
+if the filter is lost.
+
+**Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
+of a table with event subscriptions, and every migration that redefines
+`dispatch_event_batch()`.
+
+## A cached generator's inputs are everything it executes, not everything it parses
+
+**Context:** The MCP manifest generator was made a cached Turborepo task with `inputs`
+listing the service, models and `types.ts` files it parses.
+
+**Problem:** It also EXECUTES every `*.models.ts` to convert the zod validators, so the
+schemas depend on whatever those files import: `sales.utils.ts`, `accounting.utils.ts`,
+`samplingStandards`, `@carbon/utils`. A change to one of those was a cache hit; turbo
+restored the old manifest (and the old committed digest) over the working tree, and the
+build bundled it. Uncached, this could not happen.
+
+**Rule:** Before caching a task, list what it loads and runs, not only what it reads on
+purpose, and pin that list with a test against the task's real imports. If the true set
+cannot be named, leave the task uncached.
+
+**Applies to:** `//#generate:mcp` in `turbo.json` (pinned by
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts`), and any task given `inputs`.
+
+## A key looked up "anywhere in the payload" finds the wrong one
+
+**Context:** The API dispatcher decides whether an upsert creates or updates from the
+record's `id`. It looked for `id` at the top level and then inside any nested object, to
+support `{ job: { id } }`.
+
+**Problem:** `{ name: "x", customFields: { id: "z" } }` matched the nested `id`, so a
+create was stamped as an update and went down the service's update branch.
+
+**Rule:** Read a record's key only where the record can be: the body itself or the wrapper
+named by the service's payload parameter. A search that descends into arbitrary objects
+will eventually match user data.
+
+**Applies to:** `resolveUpsertOperation` / `recordField` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`.
+
+## A git merge can move a doc comment onto a different function
+
+**Context:** Every API tool is declared by an `@mcp` line in its function's doc comment.
+Main inserted a new function directly under an existing doc block.
+
+**Problem:** The merge was clean, but the doc block (and its `@mcp` line) now sat above
+the NEW function, and the function it described had none. That function silently stopped
+being a tool. Nothing fails: an untagged export is simply not exposed.
+
+**Rule:** After merging into a branch that touches service files, regenerate the manifest
+and diff the tool NAMES against the pre-merge list. A name that disappears is a displaced
+tag until proven otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
+
+
+## A cast that silences excess-property errors hides failed writes
+
+**Context:** supabase-js 2.117 types reject keys a table does not have (`RejectExcessProperties`). The upgrade wrapped ~75 failing write payloads in `unchecked()` (a cast to `never`) to get typecheck green.
+
+**Problem:** About 30 of those were typed payloads (a zod validator spread into an insert/update) carrying fields the table lacks: `item.shelfLifeCalculateFromBom`, `ability.name`, `quote.notes`, `salesOrder.promisedDate`, `batchProperty.batchPropertyGroupId`, and more. PostgREST rejects any unknown column with PGRST204, so every such write failed whenever the field was present, and `itemValidator`'s always-present checkbox made the BoM explorer's item edit (`api+/item.$type.ts` → `updateItem`) fail on every save. The cast had removed the only warning. The 2.80 types never rejected excess keys, so these were latent all along.
+
+**Rule:** Never cast a typed payload past the table's type. When the compiler names an extra key, destructure it out at the write, where every caller is covered, and say where the value actually lives. `unchecked()` is only for a column or table chosen at runtime (`{ [field]: value }`, `.from(table)`). To list every extra key at once rather than one per error, probe with `Exclude<keyof Payload, keyof Database["public"]["Tables"][T]["Update"]>`.
+
+**Applies to:** every `{module}.service.ts` write, MES `services/*.service.ts`, `packages/utils/src/object.ts` (`unchecked`).
+
+
+## A function redefined by forking its last migration picks up whatever that fork did
+
+**Context:** Database functions were changed by copying the newest definition into a new migration and editing it. `create_audit_log_table` was forked several times; one fork made its existing-table branch re-attach the append-only trigger and re-run `secure_audit_log_table` unconditionally, and `insert_audit_log_batch` calls it on every write.
+
+**Problem:** `CREATE TRIGGER` fires PostgREST's `pgrst_ddl_watch` event trigger, which reloads the schema cache. With one audit table and one search table per company that reload took 10-13 s in production, and every request with an embed waited for it: 480+ reloads a day, each one stalling joins for every company. No test or review could see it, because each fork looked like a small diff against a file nobody reads end to end. `dispatch_event_batch` lost its composite-key pairing the same way once.
+
+**Rule:** A function that changes more than once is authored as a single file, not as a chain of forks. The event system's functions live in `packages/database/src/event-system/functions/<name>.sql`; edit the file and run `pnpm --filter @carbon/database authz migration <name>`. A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes).
+
+**Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
+
+
+## Work a request does not await is frozen with the instance on Vercel
+
+**Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
+
+**Problem:** A Vercel function instance is frozen once its response is sent. The unawaited call stopped mid-flight and finished only when the next request woke the instance, so traces showed analytics calls of 10 s and more, and on an instance that was never reused the event was lost. `request.signal` does not help either: without `supportsCancellation` it never aborts on Vercel.
+
+**Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
+
+**Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.
+
+
+## React Router's instrumentation API can observe a request, not change it
+
+**Context:** The request-id, access-log and request-context middlewares looked like candidates to move into `instrumentations`, to shorten the middleware chain.
+
+**Problem:** In React Router 7.18 an instrumentation wrapper receives a read-only view: the request is `{ method, url, headers.get }` with no `signal` and no `clone()`, the context exposes only `get`, and the result carries only `statusCode` and `meta`. It cannot set a response header, open an AsyncLocalStorage scope around the handler, or read the body, which is everything those middlewares do.
+
+**Rule:** Instrumentation is for spans and measurements. Anything that sets a header, provides context to downstream code or reads the request stays a middleware; merge middlewares into one (`requestMiddleware`) instead of moving them. A middleware's own cost is recorded by `timedMiddleware` as `carbon.middleware.<name>.ms`, not by a span, because a middleware span contains everything it calls.
+
+**Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
+
+
+## A limiter must hand a freed slot to the next waiter, not decrement and let it race
+
+**Context:** `async.limit` first released a slot by decrementing the active count and waking the first queued call.
+
+**Problem:** The woken call resumes a microtask later. A call made in between saw a free slot, took it, and the woken call then incremented too: more than `concurrency` ran at once, and under steady load a queued call could be overtaken indefinitely.
+
+**Rule:** When a slot frees and a call is queued, pass the slot to it directly and leave the count unchanged; decrement only when the queue is empty. A queued call never increments. Test it by starting a new call in the same tick a running one finishes and asserting the queued one runs first.
+
+**Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
+
+
+## "Come back here" must carry the query string
+
+**Context:** Notification emails link to `/api/link?event=…&documentId=…&companyId=…`, and `requireAuthSession` sends a request away and back for a token refresh, login, MFA or idle unlock.
+
+**Problem:** `getCurrentPath` returned `pathname` only, so every one of those round trips came back to a bare `/api/link`, which has nothing to resolve and redirects to the home page. The link itself was correct, and it worked on a second click (the token was fresh by then), so it read as an email bug. The token-refresh branch hit anyone idle for longer than the refresh threshold, which is the normal state of someone arriving from an email.
+
+**Rule:** A "return to where you were" target is `pathname + search`, never `pathname`. When it is passed on inside another URL, encode it (`encodeURIComponent` / `URLSearchParams`), or its own `&` splits it. Test the round trip with a URL that has a query string. Drop React Router's `_routes` param from it, and only when present: middleware sees that param (loaders do not), a page URL that carries it limits which loaders later data requests run, and `searchParams.delete` re-encodes the whole query even when it removes nothing. Whatever sends the target on must be matched by something that reads it: three of the four callbacks ignored the `redirectTo` their login page sent.
+
+**Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
+
+
+## A `resolve.alias` stub reaches the server bundle too
+
+**Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
+
+**Problem:** A top-level `resolve.alias` applies to every Vite environment. On the server `unpdf/pdfjs` is the only PDF engine, so every deployed document extraction (purchase invoice, sales RFQ) failed with "Serverless PDF.js bundle could not be resolved". Dev and vitest passed: dev leaves `unpdf` external, so Node resolves the real module and the alias never applies.
+
+**Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.

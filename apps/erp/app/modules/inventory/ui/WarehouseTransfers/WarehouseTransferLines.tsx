@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -14,6 +18,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -190,6 +195,7 @@ function WarehouseTransferLineListItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   disabled={isDisabled}
                   onClick={() =>
                     navigate(
@@ -203,6 +209,7 @@ function WarehouseTransferLineListItem({
                   <Trans>Edit</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={isDisabled}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Build-time generator: turns the PostgREST Swagger 2.0 spec into Protocol-style
 // API reference data (tables only, grouped by module). Run via `predev`/`prebuild`.
 //

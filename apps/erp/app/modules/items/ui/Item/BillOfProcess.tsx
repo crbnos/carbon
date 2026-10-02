@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
@@ -26,6 +30,7 @@ import {
   IconButton,
   Label,
   Loading,
+  MENU_ITEM_SHORTCUTS,
   Subheading,
   ToggleGroup,
   ToggleGroupItem,
@@ -2856,10 +2861,14 @@ function AttributesListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                     onClick={() =>
                       duplicateFetcher.submit(null, {
                         method: "post",
@@ -2870,6 +2879,7 @@ function AttributesListItem({
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -3461,10 +3471,14 @@ function ParametersListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -4016,10 +4030,14 @@ function ToolsListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >

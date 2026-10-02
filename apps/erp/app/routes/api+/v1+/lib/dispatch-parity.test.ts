@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Dispatch contract tests, pinned against REAL manifest entries.
 //
 // History: these began as an A/B parity harness against the legacy MCP
@@ -22,6 +26,7 @@ const spies = vi.hoisted(() => ({
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
   insertIssue: vi.fn(),
+  getInspectionDocument: vi.fn(),
   insertPurchaseOrder: vi.fn(),
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
@@ -62,7 +67,8 @@ vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
 }));
 vi.mock("~/modules/quality/quality.service", () => ({
-  insertIssue: spies.insertIssue
+  insertIssue: spies.insertIssue,
+  getInspectionDocument: spies.getInspectionDocument
 }));
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
@@ -92,6 +98,8 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
+import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
+import { OpenAPIGenerator } from "@orpc/openapi";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
 import { callOperation } from "./call.server";
@@ -99,9 +107,18 @@ import { DATABASE_ERROR_MESSAGES } from "./database-errors";
 import {
   type DispatchResult,
   dispatchOperation,
-  enrichWithAuthContext
+  enrichWithAuthContext,
+  resolveUpsertOperation
 } from "./dispatch.server";
-import { operationsByName } from "./operations.server";
+import { openApiHandler } from "./handler.server";
+import {
+  liveOperationAliases,
+  OPERATION_ALIASES,
+  OPERATIONS,
+  operationsByName
+} from "./operations.server";
+import { router } from "./router.server";
+import { specOptions } from "./spec-options.server";
 
 const ctx: AuthedContext = {
   client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
@@ -153,6 +170,7 @@ const allSpies = [
   spies.upsertNotificationPreference,
   spies.insertJob,
   spies.insertIssue,
+  spies.getInspectionDocument,
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
@@ -390,18 +408,44 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     );
   });
 
-  it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
+  // No caller has to say whether an upsert creates or updates. accounting_upsertAccount
+  // takes an optional id, so sending one IS the answer.
+  it("f. no _operation, no id: a create — createdBy stamped, updatedBy not", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
-      {
-        account: { name: "x" }
-      }
+      { account: { name: "x" } }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload).toMatchObject({ name: "x", createdBy: "u1" });
+    expect("updatedBy" in payload).toBe(false);
+  });
+
+  it("f2. no _operation, id sent (flat or wrapped): an update — updatedBy stamped, createdBy not", async () => {
+    for (const args of [
+      { account: { id: "a1", name: "x" } },
+      { id: "a1", name: "x" }
+    ]) {
+      const r = await runDispatch(
+        "accounting_upsertAccount",
+        spies.upsertAccount,
+        args
+      );
+      const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+      expect(payload).toMatchObject({ id: "a1", updatedBy: "u1" });
+      expect("createdBy" in payload).toBe(false);
+    }
+  });
+
+  it("f3. an _operation that is neither create nor update is refused", async () => {
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      { _operation: "replace", account: { name: "x" } }
     );
     expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'accounting_upsertAccount requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+      'accounting_upsertAccount: _operation must be "create" or "update" when it is sent. It can be left out.'
     );
   });
 
@@ -777,18 +821,136 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       id: "jm1"
     });
   });
+});
 
-  it("q. an inverted-discriminator tool requires _operation, same as the createdBy convention", async () => {
-    const r = await runDispatch(
-      "production_upsertJobMaterial",
-      spies.upsertJobMaterial,
-      { jobId: "j1", itemId: "i1" }
+// Where the payload cannot say (the id is required either way, or there is none),
+// the manifest names the row to look for and the answer is whether it exists. The
+// rules are the REAL ones from the generated manifest; only the database is stood in.
+describe("upserts decided by whether the record exists", () => {
+  const rule = (name: string) => {
+    const upsert = operationsByName.get(name)?.upsert;
+    if (!upsert) throw new Error(`${name} has no upsert rule`);
+    return upsert;
+  };
+  // The service's payload parameter — the only object a key may be wrapped in.
+  const PARAMS = ["record"];
+  const database = (rows: Record<string, Record<string, unknown>[]>) => {
+    const asked: [string, Record<string, unknown>][] = [];
+    const rowExists = async (
+      table: string,
+      filter: Record<string, unknown>
+    ) => {
+      asked.push([table, filter]);
+      return (rows[table] ?? []).some((row) =>
+        Object.entries(filter).every(([column, value]) => row[column] === value)
+      );
+    };
+    return { asked, rowExists };
+  };
+
+  it("q. a job material with a client-chosen id: created when new, updated once it exists", async () => {
+    const upsert = rule("production_upsertJobMaterial");
+    const args = { id: "jm1", jobId: "j1", quantity: 2 };
+
+    const empty = database({});
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, empty.rowExists)
+    ).toBe("create");
+    expect(empty.asked).toEqual([["jobMaterial", { id: "jm1" }]]);
+
+    const stored = database({ jobMaterial: [{ id: "jm1" }] });
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, stored.rowExists)
+    ).toBe("update");
+  });
+
+  it("r. a part is found by its item id OR its part number", async () => {
+    const upsert = rule("items_upsertPart");
+    const items = { item: [{ id: "item_1", readableId: "PN-100" }] };
+
+    for (const id of ["item_1", "PN-100"]) {
+      const db = database(items);
+      expect(
+        await resolveUpsertOperation(upsert, { id }, PARAMS, db.rowExists)
+      ).toBe("update");
+    }
+    const db = database(items);
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { id: "PN-200" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+    expect(db.asked).toEqual([
+      ["item", { id: "PN-200" }],
+      ["item", { readableId: "PN-200" }]
+    ]);
+  });
+
+  it("s. a composite key: every column is matched, and a missing one means create without asking", async () => {
+    const upsert = rule("items_upsertPickMethod");
+    const db = database({
+      pickMethod: [{ itemId: "i1", locationId: "l1" }]
+    });
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l1" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("update");
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l2" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+
+    const untouched = database({});
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1" },
+        PARAMS,
+        untouched.rowExists
+      )
+    ).toBe("create");
+    expect(untouched.asked).toEqual([]);
+  });
+
+  it("u. the key is the RECORD's: an id inside some other nested object is not it", async () => {
+    const byId = { keys: ["id"] };
+    const never = database({}).rowExists;
+    const resolve = (args: Record<string, unknown>) =>
+      resolveUpsertOperation(byId, args, PARAMS, never);
+
+    // A create whose custom fields happen to hold an `id` used to be sent down
+    // the update branch.
+    expect(await resolve({ name: "x", customFields: { id: "z" } })).toBe(
+      "create"
     );
-    expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
-    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'production_upsertJobMaterial requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+    // The record's own id, flat or inside its wrapper, still means update.
+    expect(await resolve({ id: "a1", name: "x" })).toBe("update");
+    expect(await resolve({ record: { id: "a1", name: "x" } })).toBe("update");
+    // A lone unnamed wrapper is unwrapped, as the dispatcher does.
+    expect(await resolve({ guessed: { id: "a1" } })).toBe("update");
+    expect(await resolve({ record: { name: "x" }, other: { id: "z" } })).toBe(
+      "create"
     );
+  });
+
+  it("t. no operation publishes _operation, and every branching upsert has a rule", () => {
+    for (const meta of operationsByName.values()) {
+      expect(JSON.stringify(meta.schema)).not.toContain("_operation");
+    }
+    expect(
+      [...operationsByName.values()].filter((meta) => meta.upsert).length
+    ).toBeGreaterThan(80);
   });
 });
 
@@ -958,5 +1120,98 @@ describe("blocked tools (D5)", () => {
       errorKind: "execution",
       error: "Tool disabled: settings_seedCompany is not available via MCP."
     });
+  });
+});
+
+describe("renamed operations (deprecated aliases)", () => {
+  const OLD = "production_getInspectionDocument";
+
+  it("every alias names a published operation and shadows none", () => {
+    const published = new Set(OPERATIONS.map((op) => op.name));
+    for (const [alias, target] of Object.entries(OPERATION_ALIASES)) {
+      expect(published.has(target), `${alias} → ${target} is missing`).toBe(
+        true
+      );
+      expect(published.has(alias), `${alias} is a real operation`).toBe(false);
+    }
+    expect(liveOperationAliases).toHaveLength(
+      Object.keys(OPERATION_ALIASES).length
+    );
+  });
+
+  it("resolves an old name to its replacement's entry", () => {
+    expect(operationsByName.get(OLD)?.name).toBe(
+      "quality_getInspectionDocument"
+    );
+  });
+
+  it("callOperation runs the replacement under the OLD name", async () => {
+    spies.getInspectionDocument.mockResolvedValue({
+      data: { id: "isp_1" },
+      error: null
+    });
+    const result = await callOperation(OLD, ctx, { id: "isp_1" });
+    expect(result).toEqual({ success: true, data: { id: "isp_1" } });
+    expect(spies.getInspectionDocument).toHaveBeenCalledWith(
+      spies.FAKE_CLIENT,
+      "isp_1",
+      "c1"
+    );
+  });
+
+  it("gates an API-key caller on the NEW permission, not the old one", async () => {
+    const productionOnly = await callOperation(
+      OLD,
+      { ...ctx, authKind: "api-key", scopes: { production_view: ["c1"] } },
+      { id: "isp_1" }
+    );
+    expect(productionOnly).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "API key lacks the required scope: quality_view"
+    });
+    expect(spies.getInspectionDocument).not.toHaveBeenCalled();
+
+    const quality = await callOperation(
+      OLD,
+      { ...ctx, authKind: "api-key", scopes: { quality_view: ["c1"] } },
+      { id: "isp_1" }
+    );
+    expect(quality.success).toBe(true);
+  });
+
+  it("serves the old HTTP path through the replacement", async () => {
+    spies.getInspectionDocument.mockResolvedValue({
+      data: { id: "isp_1" },
+      error: null
+    });
+    const { matched, response } = await openApiHandler.handle(
+      new Request("http://localhost/api/v1/production/getInspectionDocument", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: "isp_1" })
+      }),
+      { prefix: "/api/v1", context: ctx }
+    );
+    expect(matched).toBe(true);
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toEqual({ id: "isp_1" });
+    expect(spies.getInspectionDocument).toHaveBeenCalledWith(
+      spies.FAKE_CLIENT,
+      "isp_1",
+      "c1"
+    );
+  });
+
+  it("publishes the old path in the spec, marked deprecated", async () => {
+    const spec = await new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    }).generate(router, specOptions());
+    const post = (path: string) =>
+      (spec.paths?.[path] as { post?: { deprecated?: boolean } } | undefined)
+        ?.post;
+    expect(post("/production/getInspectionDocument")?.deprecated).toBe(true);
+    // Undefined, so the serialized spec of every real operation is unchanged.
+    expect(post("/quality/getInspectionDocument")?.deprecated).toBeUndefined();
   });
 });

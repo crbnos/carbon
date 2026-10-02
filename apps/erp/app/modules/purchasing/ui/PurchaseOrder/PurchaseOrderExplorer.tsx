@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   cn,
@@ -8,6 +12,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -331,9 +337,8 @@ function PurchaseOrderLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.purchaseOrderLine(orderId, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -378,6 +383,7 @@ function PurchaseOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
                     isDisabled || !permissions.can("delete", "purchasing")
@@ -413,7 +419,7 @@ function PurchaseOrderLineItem({
                 {(itemType as readonly string[]).includes(
                   line?.purchaseOrderLineType ?? ""
                 ) && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link
                       to={getLinkToItemDetails(
                         line.purchaseOrderLineType as ItemType,
@@ -431,7 +437,7 @@ function PurchaseOrderLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
       {receivingDisclosure.isOpen && (
         <Confirm
           action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}

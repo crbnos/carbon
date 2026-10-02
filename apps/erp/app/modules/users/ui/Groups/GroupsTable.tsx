@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
   DropdownMenuIcon,
+  MENU_ITEM_SHORTCUTS,
   MenuItem
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -96,6 +101,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={
               row.isEmployeeTypeGroup ||
               row.isCustomerTypeGroup ||
@@ -110,6 +116,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             <Trans>Edit Group</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={
               row.isEmployeeTypeGroup ||

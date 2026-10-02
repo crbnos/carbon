@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { getDatabaseClient } from "~/services/database.server";
@@ -46,11 +51,13 @@ export async function action({ request }: ActionFunctionArgs) {
       const arrayValue = value ? value.split(",") : [];
       const update = await client
         .from("nonConformance")
-        .update({
-          [field]: arrayValue,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: arrayValue,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
 
@@ -100,11 +107,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierId":
       return await client
         .from("nonConformance")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
     default:

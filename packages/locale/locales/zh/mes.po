@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "（已停用）"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "全部"
 msgid "All clear"
 msgstr "一切正常"
 
+msgid "All gauges"
+msgstr "所有量具"
+
 msgid "All jobs"
 msgstr "所有工单"
 
@@ -160,6 +166,9 @@ msgstr "全部返工"
 
 msgid "All scrap"
 msgstr "全部报废"
+
+msgid "All steps"
+msgstr ""
 
 msgid "Allocate failed units"
 msgstr "分配不合格单位"
@@ -268,6 +277,12 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Characteristic"
+msgstr "特性"
+
+msgid "Characteristics"
+msgstr "特性"
+
 msgid "Chat"
 msgstr "聊天"
 
@@ -282,6 +297,9 @@ msgstr "清除"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
+
+msgid "Clear gauge"
+msgstr "清除量具"
 
 msgid "Clear Search"
 msgstr "清除搜索"
@@ -301,8 +319,8 @@ msgstr "自 <0/> 起打卡"
 msgid "Close"
 msgstr "关闭"
 
-msgid "Collapse features table"
-msgstr "折叠功能表"
+msgid "Collapse characteristics table"
+msgstr "折叠特性表格"
 
 msgid "Collapse panel"
 msgstr "折叠面板"
@@ -354,9 +372,6 @@ msgstr "完成中"
 msgid "Connecting"
 msgstr "连接中"
 
-msgid "Console"
-msgstr "控制台"
-
 msgid "Console Mode"
 msgstr "控制台模式"
 
@@ -368,6 +383,15 @@ msgstr "已消耗已过期"
 
 msgid "Continue"
 msgstr "继续"
+
+msgid "Copied!"
+msgstr "已复制！"
+
+msgid "Copy"
+msgstr "复制"
+
+msgid "Copy to clipboard"
+msgstr "复制到剪贴板"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -466,8 +490,8 @@ msgstr "草稿"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "拖放文件到此处，或点击选择文件"
 
-msgid "Drag to resize drawing and features"
-msgstr "拖动以调整绘图和功能的大小"
+msgid "Drag to resize drawing and characteristics"
+msgstr "拖动调整图形和特性的大小"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -494,6 +518,9 @@ msgstr "今天到期？"
 
 msgid "Duplicate batch number"
 msgstr "生产批次号重复"
+
+msgid "Duplicate or copy"
+msgstr ""
 
 msgid "Duplicate serial number"
 msgstr "序列号重复"
@@ -544,8 +571,8 @@ msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
 
-msgid "Expand features table"
-msgstr "展开功能表"
+msgid "Expand characteristics table"
+msgstr "展开特性表格"
 
 msgid "Expand panel"
 msgstr "展开面板"
@@ -566,8 +593,8 @@ msgstr "即将过期优先"
 msgid "Failed"
 msgstr "失败"
 
-msgid "Failed features"
-msgstr "失败的功能"
+msgid "Failed characteristics"
+msgstr "失效特性"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
@@ -583,6 +610,9 @@ msgstr "获取活跃工序失败"
 
 msgid "Failed to fetch storageUnits"
 msgstr "获取存储单位失败"
+
+msgid "Failed to record gauge"
+msgstr "无法记录量具"
 
 msgid "Failed to save measurement"
 msgstr "无法保存测量"
@@ -600,12 +630,6 @@ msgstr "文件上传失败：{0}"
 
 msgid "Failed to upload image"
 msgstr "图片上传失败"
-
-msgid "Feature"
-msgstr "功能"
-
-msgid "Features"
-msgstr "特性"
 
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
@@ -648,6 +672,12 @@ msgstr "完成前请修正突出显示的数量。"
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 
+msgid "Gauge"
+msgstr "量具"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "特性 {characteristicLabel} 对应的量具: {currentGauge}"
+
 msgid "General"
 msgstr "常规"
 
@@ -687,6 +717,9 @@ msgstr "英制"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "在 {0}"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "进行中"
@@ -962,6 +995,9 @@ msgstr "没有分配给您的维护工单"
 msgid "No files"
 msgstr "无文件"
 
+msgid "No gauges found."
+msgstr "未找到量具。"
+
 msgid "No Impact"
 msgstr "无影响"
 
@@ -1111,6 +1147,11 @@ msgstr "为MRB处置打开NCR"
 msgid "Open Jobs"
 msgstr "未结工单"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "工序"
 
@@ -1128,6 +1169,9 @@ msgstr "可选"
 
 msgid "or"
 msgstr "或"
+
+msgid "Out of calibration"
+msgstr "需要校准"
 
 msgid "Output lot"
 msgstr "输出批次"
@@ -1195,6 +1239,9 @@ msgstr "拣货替代{substitutedFrom}（工单上的物料）"
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "拣货替代{substitutedFrom}（工单上的物料），{substitutedAssemblies}个装配"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "退出登录"
@@ -1279,6 +1326,9 @@ msgstr "返工原因"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recently used"
+msgstr "最近使用"
+
 msgid "Record"
 msgstr "记录"
 
@@ -1319,6 +1369,9 @@ msgstr "移除库存管理"
 
 msgid "Remove part"
 msgstr "移除零件"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "重新打开子装配件并创建替代件"
@@ -1410,8 +1463,14 @@ msgstr "报废所选序列号"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "搜索 {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "按工作或项目ID搜索"
+
+msgid "Search gauges..."
+msgstr "搜索量具..."
 
 msgid "Search operators..."
 msgstr "搜索操作员..."
@@ -1446,6 +1505,9 @@ msgstr "选择物料..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "选择批次 {0}"
+
+msgid "Select gauge"
+msgstr "选择量具"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -1598,6 +1660,21 @@ msgstr "缺少步骤"
 msgid "Storage Unit"
 msgstr "存储单元"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "匿名提交"
 
@@ -1731,6 +1808,9 @@ msgstr "未领料的序列号/生产批次物料"
 msgid "Unknown"
 msgstr "未知"
 
+msgid "Unknown gauge"
+msgstr "未知量具"
+
 msgid "Unlock"
 msgstr "解锁"
 
@@ -1784,6 +1864,11 @@ msgstr "使用不同的帐户"
 msgid "Used automatically at completion"
 msgstr "在完成时自动使用"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "值"
 
@@ -1792,6 +1877,9 @@ msgstr "验证"
 
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"

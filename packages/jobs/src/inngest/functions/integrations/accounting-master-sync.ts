@@ -1,3 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  type AccountingProvider,
+  createMappingService,
+  getAccountingIntegration,
+  getProviderIntegration,
+  ProviderID,
+  providerSupportsMasterDataImport,
+  type SyncContext,
+  type SyncDirection
+} from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
+import { chunkArray } from "@carbon/utils";
+import z from "zod";
 /**
  * One-shot master-data sync — customers, vendors and items, in either
  * direction, for any accounting provider.
@@ -29,25 +47,7 @@
  * and pushes through the shared mapping service, so adding a provider needs no
  * edit here.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  type AccountingProvider,
-  createMappingService,
-  getAccountingIntegration,
-  getProviderIntegration,
-  ProviderID,
-  providerSupportsMasterDataImport,
-  type SyncContext,
-  type SyncDirection
-} from "@carbon/ee/accounting";
-import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
-import z from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { runUnmappedPushLoop } from "./accounting-master-sync-loop";
 import {
@@ -160,10 +160,7 @@ export const accountingMasterSyncFunction = inngest.createFunction(
       integration.id,
       integration.metadata
     ) as AccountingProvider;
-    const database = getPostgresClient(
-      getPostgresConnectionPool(5),
-      PostgresDriver
-    );
+    const database = getJobDatabaseClient();
 
     const createdBy = getSyncOperationActor(integration);
     const result: Record<string, EntityCounts> = {};

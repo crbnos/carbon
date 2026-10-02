@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Item scoping for broadcast rules — which items a rule fires on.
 //
 // Split out of `rules.ts` (which is the AST compiler/evaluator) because this is

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComponentProps, ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -54,6 +58,7 @@ vi.mock("@carbon/react", () => {
     CardTitle: Box,
     DropdownMenuIcon: Box,
     DropdownMenuItem: Box,
+    MENU_ITEM_SHORTCUTS: { delete: "backspace" },
     Status: Box,
     VStack: Box,
     useDisclosure: () => ({ isOpen: false }),

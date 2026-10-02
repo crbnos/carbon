@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
@@ -15,10 +19,10 @@ import {
   Checkbox,
   File,
   HStack,
+  NavRailItem,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  SidebarMenuButton,
   toast,
   useMode,
   VStack
@@ -138,12 +142,7 @@ const Suggestion = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <SidebarMenuButton tooltip={t`Suggestion`}>
-          <LuMailbox />
-          <span>
-            <Trans>Suggestion</Trans>
-          </span>
-        </SidebarMenuButton>
+        <NavRailItem icon={<LuMailbox />} label={t`Suggestion`} />
       </PopoverTrigger>
       <PopoverContent className="w-[380px] ">
         <ValidatedForm

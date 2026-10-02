@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -12,7 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -116,7 +121,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                   {/* @ts-ignore */}
                   <Link to={getLinkToItemDetails(type, initialValues.id)}>
                     <Trans>View Item Master</Trans>

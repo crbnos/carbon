@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Array as ArrayInput,
   Hidden,
@@ -26,6 +30,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Switch,
   Tooltip,
@@ -426,6 +431,7 @@ function TrainingQuestionItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(question);
@@ -435,6 +441,7 @@ function TrainingQuestionItem({
                 <Trans>Edit Question</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "resources")}
                 onClick={(e) => {

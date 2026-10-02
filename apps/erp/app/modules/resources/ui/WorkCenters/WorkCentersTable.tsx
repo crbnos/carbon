@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
@@ -8,6 +12,7 @@ import {
   Button,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -304,6 +309,7 @@ const WorkCentersTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.workCenter(row.id!)}?${params?.toString()}`);
             }}

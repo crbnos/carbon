@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
-
+import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -561,14 +565,23 @@ export const convert = defineServerFn({
               selectedLines[line.id]!.quantity === 0
           );
 
-          // Only the selected lines become sales order lines below.
+          // Only the selected lines become sales order lines below. A No Quote
+          // line is never offered to the customer, so it never converts —
+          // whatever the (unauthenticated) selection payload says.
           const selectedQuoteLines = quoteLineRows.filter(
             (line) =>
               line.id &&
+              line.status !== "No Quote" &&
               selectedLines &&
               line.id in selectedLines &&
               selectedLines[line.id]!.quantity > 0
           );
+
+          // Never create an empty order: the share page gates Accept, but this
+          // payload comes from an unauthenticated endpoint.
+          if (selectedQuoteLines.length === 0) {
+            throw new Error("No quote lines selected to convert");
+          }
 
           // Services are never shipped — a service-only order goes straight to
           // "To Invoice" so it isn't stuck waiting on a shipment that can't happen.
@@ -700,6 +713,15 @@ export const convert = defineServerFn({
                 status: "Ordered",
                 unitOfMeasureCode: line.unitOfMeasureCode,
                 unitPrice: price.netUnitPrice ?? 0,
+                // How the quoted price was reached, carried onto the order.
+                priceTrace: toJson(
+                  quoteToOrderPriceTrace(
+                    price.priceTrace,
+                    price.unitPrice ?? 0,
+                    price.netUnitPrice ?? 0,
+                    price.discountPercent ?? 0
+                  )
+                ),
                 promisedDate: todayDate
                   .add({ days: price.leadTime ?? 0 })
                   .toString(),

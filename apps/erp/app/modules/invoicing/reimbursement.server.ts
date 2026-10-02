@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ServerFnContext } from "@carbon/server-functions";
 import { postReimbursement as postReimbursementOperation } from "@carbon/server-functions/post-reimbursement";
 import { EPSILON } from "@carbon/utils";

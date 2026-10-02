@@ -24,9 +24,14 @@ Phase-7 write) and throws on failure.
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
    — every 3 hours. A `find-companies` step selects all rows from `company`,
-   then **one `step.run` per company** (`mrp-<companyId>`) calls
-   `runMrp(serviceRole, getJobDatabaseClient(), { type: "company", id,
-   companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
+   narrowed by `companiesWithPlanningWork` (`scheduled/mrp-companies.ts`): one
+   UNION over the open demand/supply views, `demandProjection`, and the rows an
+   earlier run wrote (`demandForecast` with `forecastMethod = 'mrp'`,
+   `demandForecastSource`, `supplyForecast`, non-zero actuals). A company in
+   none of them would read nothing and write nothing, so it is skipped; a
+   failed lookup plans for every company. Then **one `step.run` per company**
+   (`mrp-<companyId>`) calls `runMrp(serviceRole, getJobDatabaseClient(),
+   { type: "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
    the loop try/catches per step and returns `{ companies, failed }`). Every
    Inngest step is one HTTP request to `/api/inngest`, so a step's ceiling is
    that Vercel function's max duration — set project-wide in the Vercel
@@ -203,9 +208,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   - production (`create: "production"`, role `employee`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then
     `recalculateJobRequirements()`.
-  - purchasing (`create: "purchasing"`, role `employee`): inserts purchase
-    orders/lines grouped by supplier+period, upserts `supplyForecast`
-    (`'Purchase Order'`).
+  - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier
+    per submit — reuses the supplier's open Draft/Planned `Purchase` PO whose
+    delivery location is the planning location (header lookup, not a
+    line-in-period match), else inserts one. Lines are matched on item +
+    `requiredDate`, so orders for different weeks stay as separate lines on
+    the same PO. Upserts `supplyForecast` (`'Purchase Order'`) per order period.
 
 ## Gotchas
 

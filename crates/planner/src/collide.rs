@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Collision-query core over the FCL bridge: `contacts_at` (max penetration
 //! depth per neighbor), the `classify` early-stop path, path/free-travel sweeps,
 //! and the mate/seated/self exemption maps.

@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -186,6 +195,7 @@ const PurchaseReturnOrdersTable = memo(
       return (row: PurchaseReturnOrderListItem) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("view", "purchasing")}
             onClick={() => {
               navigate(path.to.purchaseReturnOrderDetails(row.id!));
@@ -195,6 +205,7 @@ const PurchaseReturnOrdersTable = memo(
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "purchasing")}
             destructive
             onClick={() => {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import {
@@ -15,6 +19,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -387,6 +392,7 @@ export default function MESTimecardPage() {
                                   />
                                 )}
                               <Button
+                                isLoading={fetcher.state !== "idle"}
                                 variant="secondary"
                                 type="submit"
                                 disabled={isNaN(
@@ -436,12 +442,14 @@ export default function MESTimecardPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.edit}
                                 onClick={() => startEdit(entry)}
                               >
                                 <DropdownMenuIcon icon={<LuPencil />} />
                                 <Trans>Edit</Trans>
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.delete}
                                 onClick={() =>
                                   setDeletingEntry({
                                     id: entry.id,

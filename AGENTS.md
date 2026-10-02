@@ -14,6 +14,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
+- Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
 - Never claim work is complete without running verification commands. Evidence before assertions — run the command, read the output, then state the result.
 
 ## Ask First
@@ -51,6 +52,14 @@ pnpm run generate:types      # Regenerate DB types (after migrations)
 pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+`typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
+only when its own files, a workspace dependency's files, or the lockfile changed
+(`--force` re-runs regardless). That is only correct while a task reads nothing
+outside that set. A package whose task reads other paths declares them in its own
+`turbo.json` — as `inputs`, or `"cache": false` when it scans the repo
+(`packages/checks`, `docs/content`) — and a package that needs a generated root
+artifact depends on the task that makes it (`apps/erp/turbo.json`).
 
 Both `db:check:*` commands read your live local schema. They run from
 `.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
@@ -105,8 +114,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Infrastructure** | |
 | File uploads, images, HEIC, MIME types, CAD formats | `packages/files/AGENTS.md` |
 | PDF generation | `.claude/rules/pdf-generation-patterns.md` + `packages/documents/AGENTS.md` |
+| Email templates (notification / transactional / broadcast design) | `.claude/rules/email-design.md` + `packages/documents/AGENTS.md` |
 | Printing system | `.claude/rules/printing-system.md` + `packages/printing/AGENTS.md` |
 | CSV import/export | `.claude/rules/csv-import-system.md` + `.claude/rules/table-csv-export.md` |
+| Changelog entries (authoring + the feed) | `.claude/rules/changelog-authoring.md` |
+| Writing/shipping a changelog entry (end to end) | `.claude/skills/changelog-entry/SKILL.md` |
 | Billing / Stripe | `.claude/rules/billing-system.md` + `packages/stripe/AGENTS.md` |
 | Deployment (SST) | `.claude/rules/sst-deployment-infrastructure.md` |
 | Audit log system | `.claude/rules/audit-log-system.md` |
@@ -195,6 +207,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
 - **Precision**: `@carbon/utils` re-exports `@carbon/database/precision` (and the accounting-currency, posting and ledger helpers) by design — `@carbon/utils` depends on `@carbon/database`, never the reverse
+- **Licensing**: open-core (root `LICENSE`). Everything under `packages/ee/` and every file whose name contains `.ee.` is under the Carbon Commercial License (`packages/ee/LICENSE`); all other first-party code is AGPL-3.0-only. Each source file states its license in a leading SPDX header (`LicenseRef-Carbon-Commercial` or `AGPL-3.0-only`), enforced by the `spdx-license-header` check (`@carbon/checks`); generated and third-party files carry none. See `.claude/rules/commercial-licensing.md`.
 
 ## ERP Module Layout
 

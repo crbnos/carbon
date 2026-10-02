@@ -8,7 +8,7 @@ zod round-trip. Internal workspace package — never published to npm.
 
 - Treat `ManifestEntry` as the shape of the GENERATED manifest — the data itself is
   the erp app's gitignored `routes/api+/mcp+/lib/tool-metadata.json`, produced by
-  `pnpm generate:mcp` (turbo root task `//#generate:mcp`; `typecheck`/`build`/`test`
+  `pnpm generate:mcp` (turbo root task `//#generate:mcp`; erp's and docs' `typecheck`/`build`/`test`
   depend on it). Change the generator (`scripts/lib/service-metadata.ts`) and these
   types together.
 - Keep `jsonSchema()` a pass-through validator (never rejects). It is the **output**

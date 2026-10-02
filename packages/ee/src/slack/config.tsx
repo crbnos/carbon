@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";

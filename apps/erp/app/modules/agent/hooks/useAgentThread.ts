@@ -1,57 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
-import { isUiBlockTool } from "../agent.blocks";
 import { useBrowsingContext } from "./useBrowsingContext";
 
-// Persisted rows as returned by the thread-history endpoint.
-type DbPart = {
-  orderIndex: number;
-  type: string;
-  textContent: string | null;
-  toolName: string | null;
-  toolCallId: string | null;
-  toolInput: unknown;
-  toolOutput: unknown;
-};
-type DbMessage = { id: string; role: string; parts?: DbPart[] };
-
-// Rebuild persisted rows into the AI SDK's UIMessage shape for history replay.
-// Only text and UI-block tool parts are reconstructed — read-tool step lines are
-// transient and not replayed. The SDK types tool parts as `tool-${name}` template
-// literals we can't express statically, so the DB→UIMessage mapping is asserted
-// once here, at this single boundary, instead of leaking casts into callers.
-function reconstructMessages(dbMessages: DbMessage[]): UIMessage[] {
-  return dbMessages
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({
-      id: m.id,
-      role: m.role,
-      parts: (m.parts ?? [])
-        .slice()
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .flatMap((p): Record<string, unknown>[] => {
-          if (p.type === "text" && p.textContent) {
-            return [{ type: "text", text: p.textContent }];
-          }
-          if (p.type === "tool" && p.toolName && isUiBlockTool(p.toolName)) {
-            return [
-              {
-                type: `tool-${p.toolName}`,
-                toolCallId: p.toolCallId ?? `hist-${p.orderIndex}`,
-                state: "output-available",
-                input: p.toolInput,
-                output: p.toolOutput
-              }
-            ];
-          }
-          return [];
-        })
-    }))
-    .filter((m) => m.parts.length > 0) as unknown as UIMessage[];
+/** The text of the newest user message — the only thing a send puts on the wire. */
+function lastUserText(messages: UIMessage[]): string | undefined {
+  const last = messages.findLast((m) => m.role === "user");
+  return last?.parts
+    .map((p) => (p.type === "text" ? p.text : ""))
+    .join("")
+    .trim();
 }
 
 /**
@@ -75,10 +40,14 @@ export function useAgentThread() {
     () =>
       new DefaultChatTransport({
         api: path.to.api.agentChat,
-        prepareSendMessagesRequest: ({ messages }) => ({
+        // Only the newest question travels: the server loads the thread's history
+        // itself, so nothing held in the browser reaches the model. A retry sends it
+        // too, for when the first attempt was refused before the server saved it.
+        prepareSendMessagesRequest: ({ messages, trigger }) => ({
           body: {
-            messages,
             threadId: threadIdRef.current,
+            trigger,
+            text: lastUserText(messages),
             context: contextRef.current
           }
         })
@@ -86,9 +55,19 @@ export function useAgentThread() {
     []
   );
 
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat({
-    transport
-  });
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    status,
+    stop,
+    error: chatError,
+    regenerate,
+    clearError
+  } = useChat({ transport });
+  // Set when a send could not even start (no thread); the chat's own error covers the rest.
+  const [sendError, setSendError] = useState<Error | null>(null);
+  const error = chatError ?? sendError ?? undefined;
 
   const isStreaming = status === "streaming" || status === "submitted";
   const isStreamingRef = useRef(isStreaming);
@@ -145,6 +124,8 @@ export function useAgentThread() {
   // Guards the async gap between the isStreaming check and sendMessage, so rapid
   // clicks can't fire duplicate turns before the stream status flips.
   const isPreparingRef = useRef(false);
+  // A question whose thread could not be created never reached useChat, so Retry resends it.
+  const unsentRef = useRef<string | null>(null);
   async function send(text: string) {
     // One turn at a time: ignore sends (from the input or a block action) mid-stream.
     if (isStreamingRef.current || isPreparingRef.current) return;
@@ -153,35 +134,73 @@ export function useAgentThread() {
       posthog.capture("agent_message_sent", {
         hasContext: !!contextRef.current
       });
-      await ensureThread();
+      setSendError(null);
+      const id = await ensureThread();
+      if (!id) {
+        unsentRef.current = text;
+        setSendError(new Error("Could not start a conversation"));
+        return;
+      }
+      unsentRef.current = null;
       sendMessage({ text });
     } finally {
       isPreparingRef.current = false;
     }
   }
 
+  // Re-answer the last question after a failed turn, from the stored thread — or resend
+  // a question that never left the browser.
+  const retry = () => {
+    if (isStreamingRef.current) return;
+    const unsent = unsentRef.current;
+    if (unsent) {
+      void send(unsent);
+      return;
+    }
+    setSendError(null);
+    clearError();
+    void regenerate();
+  };
+
+  // Switching threads stops the current answer, and a slow response for a thread the
+  // user has already left is ignored, so one thread's messages never show under another.
+  const loadSeq = useRef(0);
+
   // Reset in place (no navigation) so the panel never flickers closed.
   const newThread = useCallback(() => {
+    ++loadSeq.current;
+    unsentRef.current = null;
+    void stop();
+    // stop() and setMessages() leave useChat's error in place.
+    clearError();
     setMessages([]);
+    setSendError(null);
     setThread(null);
     threadIdRef.current = null;
-  }, [setMessages, setThread]);
+  }, [clearError, setMessages, setThread, stop]);
 
   const loadThread = useCallback(
     async (id: string) => {
+      const seq = ++loadSeq.current;
+      void stop();
+      clearError();
+      setSendError(null);
       setThread(id);
       threadIdRef.current = id;
       const res = await fetch(path.to.api.agentThread(id));
+      if (seq !== loadSeq.current) return;
       if (!res.ok) {
         // Stale/archived thread (e.g. a persisted id resumed from a previous
         // session) — fall back to a fresh chat so sends don't post to a dead thread.
         newThread();
         return;
       }
-      const data = (await res.json()) as { messages?: DbMessage[] };
-      setMessages(reconstructMessages(data.messages ?? []));
+      // The server returns the thread ready to show (`toDisplayMessages`).
+      const data = (await res.json()) as { messages: UIMessage[] };
+      if (seq !== loadSeq.current) return;
+      setMessages(data.messages);
     },
-    [newThread, setMessages, setThread]
+    [clearError, newThread, setMessages, setThread, stop]
   );
 
   // Resume the last chat when the panel opens: if it mounted with a persisted thread
@@ -199,6 +218,7 @@ export function useAgentThread() {
     error,
     isStreaming,
     send,
+    retry,
     stop,
     loadThread,
     newThread,

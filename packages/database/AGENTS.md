@@ -7,6 +7,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Use `pnpm db:migrate:new <name>` to create migrations; `pnpm db:migrate` to apply (regenerates types). There is **no** `db:build`.
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
 - RLS: every public table's policies are a rule in `src/authz/manifest.ts` (usually `company("<module>")` — the four standard policies) and the RLS helpers are `src/authz/helpers/<name>.sql`. `pnpm db:migrate` syncs them locally; `pnpm --filter @carbon/database authz migration <name>` ships them to production (`migration.test.ts` fails until it does). See `.claude/rules/authz-manifest.md`.
+- Event-system functions (dispatch, subscriptions, queue wake-up, audit log, search index, embeddings) are one file each in `src/event-system/functions/` (`<name>.sql`, `util.<name>.sql` for the `util` schema), synced and shipped by the same `authz sync` / `authz migration` commands. Edit the file; never redefine one in a migration.
 - Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
@@ -32,7 +33,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Specify decimal places in `NUMERIC` columns (use bare `NUMERIC`).
 - Use `000000` for the HHMMSS portion of migration timestamps (causes cross-branch collisions).
 - Recreate or call the retired RLS helpers `has_role`, `has_company_permission`, `get_companies_with_permission`, `get_permission_companies` — dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone.
-- Write `CREATE`/`ALTER POLICY` on a public table, or define a managed RLS helper, in a migration — and never hand-edit a generated authz migration or `src/authz/baseline.json`.
+- Write `CREATE`/`ALTER POLICY` on a public table, or define a managed RLS helper or event-system function, in a migration — and never hand-edit a generated authz migration or `src/authz/baseline.json`.
 - Write a `SECURITY DEFINER` function that trusts a company id from its caller without `PERFORM assert_company_access(company_id)` first — every `public` function is an API endpoint (see `.claude/rules/database-migration-patterns.md`).
 - `REVOKE EXECUTE` on a `public` function: on this Postgres image calling it then segfaults the backend. Guard inside the function, or make it `SECURITY INVOKER`.
 
@@ -53,13 +54,14 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
-| `./client` | Node-only. `Kysely`, `KyselyDatabase`, node-postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
+| `./client` | Node-only. `Kysely`, `KyselyDatabase`, `getPostgresClient`, and `getProcessPool()` (one shared pool per process — never create another, never end it outside an exiting script); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` server function |
 | `./mrp-engine` | `explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, … — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` and by get-method (`@carbon/server-functions`) |
 | `./configuration-rule` | `runConfigurationRule` — runs configurator rule code in QuickJS (WebAssembly) with no host access and time/memory limits — plus `transpileRule` (sucrase: wraps a stored rule body in `configure(params)` and strips its types, throws on a syntax error). Both are used by get-method (`@carbon/server-functions`, `get-method/sandbox.ts`) and the ERP rule editor, so a preview and a job run the same JavaScript. Never run rule code with `new Function`/`eval`/`import()` |
 | `./fetch-all` | `fetchAll` — serial paginated PostgREST reads from a query factory (the root's `fetchAllRecords` is the concurrent, strictly typed variant) |
 | `./json` | `toJson` / `toJsonColumns` — pre-serialise `json`/`jsonb` values written through Kysely (the driver sends strings and arrays unquoted) |
+| `./price-trace` | `quoteToOrderPriceTrace` — the price trace a sales order line carries when the `convert` server function turns a quote into an order |
 | `./supersession-pick` | The supersession rules shared by MRP, get-method and picking (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Consumption follows what was picked (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
 | `./posting` | `buildPaymentJournal` / `buildMemoJournal` (`src/build-payment-journal.ts`, `src/build-memo-journal.ts`) for the `post-payment` / `post-memo` server functions and the dataset tiers |

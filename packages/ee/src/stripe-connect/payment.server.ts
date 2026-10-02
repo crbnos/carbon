@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Stripe Connect payment recording — shared between the webhook handler in the
  * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
@@ -6,10 +10,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { ServerFnContext } from "@carbon/server-functions";
 import { postPayment } from "@carbon/server-functions/post-payment";
@@ -29,10 +30,9 @@ const logger = getLogger("ee", "stripe-connect", "payments");
 const INTEGRATION = "stripe-connect";
 const SYSTEM_USER = "system";
 
-// Module-level Kysely pool, one connection: settlement replacement and the
-// post-payment / void server functions run their transactions on it, so this
-// module's posting is serialized per process.
-const _pool = getPostgresConnectionPool(1);
+// Settlement replacement and the post-payment / void server functions run
+// their transactions on this client, over the process pool.
+const _pool = getProcessPool();
 const _db = getPostgresClient<KyselyDatabase>(_pool, PostgresDriver);
 
 export type StripeConnectPaymentResult =

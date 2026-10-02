@@ -1,9 +1,12 @@
-import { Button, cn, getValidChildren } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Button, cn, getValidChildren, PrefetchLink } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
 import { cloneElement, forwardRef } from "react";
 import type { LinkProps } from "react-router";
-import { Link } from "react-router";
 
 const Breadcrumbs = forwardRef<
   HTMLElement,
@@ -71,9 +74,9 @@ const BreadcrumbLink = forwardRef<
           {children}
         </span>
       ) : (
-        <Link ref={ref} {...props} prefetch="intent">
+        <PrefetchLink ref={ref} {...props}>
           {children}
-        </Link>
+        </PrefetchLink>
       )}
     </Button>
   );

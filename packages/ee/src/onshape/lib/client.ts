@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // From @carbon/env directly (not the @carbon/auth root barrel, which pulls in
 // React UI code with top-level await and breaks non-bundler tooling — scripts,
 // test runners — that imports this client).

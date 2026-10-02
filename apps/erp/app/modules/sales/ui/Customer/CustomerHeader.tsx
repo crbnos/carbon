@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,6 +12,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -16,13 +21,14 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
@@ -111,6 +117,7 @@ const CustomerHeader = () => {
                     {auditLogTrigger}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       disabled={!permissions.can("delete", "sales")}
                       destructive
                       onClick={deleteModal.onOpen}
@@ -120,6 +127,11 @@ const CustomerHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={customerId}
+                  label={t`Copy customer unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
           </HStack>

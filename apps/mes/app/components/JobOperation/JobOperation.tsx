@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
@@ -31,6 +35,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ScrollArea,
   Separator,
   SidebarTrigger,
@@ -791,7 +796,7 @@ export const JobOperation = ({
         // the viewport itself, less the frame's md:my-2 inset.
         className="grid h-svh md:h-[calc(100svh-1rem)] min-h-0 w-full min-w-0 bg-card grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto_auto] [grid-template-areas:'header'_'context'_'sep'_'main'_'status'_'dock'] lg:grid-cols-[minmax(0,1fr)_auto] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:[grid-template-areas:'header_header'_'context_context'_'sep_sep'_'main_dock'_'status_dock']"
       >
-        <header className="[grid-area:header] flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b px-2">
+        <header className="[grid-area:header] flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2">
           <HStack className="w-full justify-between">
             <div className="flex items-center gap-0">
               <SidebarTrigger />
@@ -2266,6 +2271,9 @@ export const JobOperation = ({
                                               </DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
                                                 <DropdownMenuItem
+                                                  shortcut={
+                                                    MENU_ITEM_SHORTCUTS.download
+                                                  }
                                                   onClick={() =>
                                                     downloadModel(modelUpload)
                                                   }
@@ -2353,6 +2361,9 @@ export const JobOperation = ({
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                   <DropdownMenuItem
+                                                    shortcut={
+                                                      MENU_ITEM_SHORTCUTS.download
+                                                    }
                                                     onClick={() =>
                                                       downloadFile(file)
                                                     }

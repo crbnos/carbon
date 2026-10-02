@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -145,7 +149,10 @@ export async function getJobOperationBatch(
         .select("id, readableId, attributes, createdAt")
         .in("attributes->>Job Make Method", makeMethodIds)
         .eq("companyId", companyId)
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
         .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true })
     : { data: [], error: null };
   const entityByMakeMethod = new Map<
     string,
@@ -656,7 +663,7 @@ export async function getAssemblyPlaybackByOperationId(
   const steps = await client
     .from("assemblyInstructionStep")
     .select(
-      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, motion, camera, fastener, durationSeconds, warnings"
+      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, usedInStepId, isSubAssembly, motion, camera, fastener, durationSeconds, warnings"
     )
     .eq("assemblyInstructionId", instructionId)
     .order("sortOrder", { ascending: true });
@@ -1887,6 +1894,34 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+/**
+ * The tracked entities of a make method in UNIT-AXIS order — position `i` here is
+ * the `index` every `jobOperationStepRecord` (and inspection result) for unit `i`
+ * is stored under (`deriveUnits` in `~/utils/units`). So this order is not
+ * cosmetic: it is the join key between a recorded value and the serial it was
+ * recorded for, and it must be the same on every read, forever.
+ *
+ * `createdAt` alone is NOT that. `assign-serial-numbers` used to mint every
+ * serial after the first in one INSERT, so they share a `createdAt`; Postgres
+ * returns tied rows in physical order, and any UPDATE moves a row to the end of
+ * it. Logging one serial complete therefore reshuffled the others, and the
+ * values recorded at position 2 displayed under whichever serial slid into
+ * position 2 — and the Assembly view then auto-completed that unit.
+ *
+ * The tiebreakers make the order a pure function of immutable columns:
+ * `readableId` puts tied serials back in the sequence they were minted in
+ * (serials are zero-padded, so text order is number order within a batch) and
+ * `id` settles anything left. New serials no longer tie at all — the mint now
+ * spaces their `createdAt` — so this only decides rows minted before that.
+ *
+ * ponytail: text order, so a batch whose counter overflowed its pad width
+ * (…99 → …100 at size 2) sorts wrong among PRE-EXISTING tied rows. Sort with a
+ * numeric collator in JS if that ever turns up.
+ *
+ * Kept in step with the ERP copy (`inventory.service.ts`), the inline copies
+ * (`getJobOperationBatch` here, `JobHeader.tsx`) and the `issue` edge
+ * function's serial-complete branch — they all index into this same axis.
+ */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string,
@@ -1897,7 +1932,9 @@ export async function getTrackedEntitiesByMakeMethodId(
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true });
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 type SerialEntityForSelection = Pick<
@@ -2355,10 +2392,18 @@ export async function insertReworkQuantity(
     .insert(
       sanitize({
         ...insert,
-        type: "Rework"
+        type: "Rework" as const
       })
     )
     .select("*");
+}
+
+// The tracked entity is recorded by the issue path, not on productionQuantity.
+function withoutTracking<
+  T extends { trackedEntityId?: unknown; trackingType?: unknown }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
+  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  return rest;
 }
 
 export async function insertProductionQuantity(
@@ -2378,8 +2423,8 @@ export async function insertProductionQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Production"
+        ...withoutTracking(data),
+        type: "Production" as const
       })
     )
     .select("*");
@@ -2412,8 +2457,8 @@ export async function insertScrapQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Scrap"
+        ...withoutTracking(data),
+        type: "Scrap" as const
       })
     )
     .select("*");
@@ -2598,7 +2643,7 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex"
+    "id" | "action" | "hasActiveEvents" | "unitIndex" | "exclusive"
   > & {
     startTime: string;
     employeeId: string;
@@ -2621,11 +2666,14 @@ export async function startProductionEvent(
   });
   if (!refs.ok) return notFoundResponse(refs.message);
 
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(data).select("id").single(),
+      client.from("productionEvent").insert(event).select("id").single(),
       client
         .from("jobOperation")
         .select("*")
@@ -2704,7 +2752,7 @@ export async function startProductionEvent(
 
   const eventInsert = await client
     .from("productionEvent")
-    .insert(data)
+    .insert(event)
     .select("*");
 
   if (!eventInsert.error) {

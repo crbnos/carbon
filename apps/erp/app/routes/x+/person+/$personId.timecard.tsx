@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,6 +21,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Select,
   SelectContent,
   SelectItem,
@@ -598,6 +603,7 @@ export default function PersonTimecardRoute() {
                           />
                         )}
                       <Button
+                        isLoading={fetcher.state !== "idle"}
                         variant="secondary"
                         type="submit"
                         disabled={isNaN(new Date(addClockIn).getTime())}
@@ -680,6 +686,7 @@ export default function PersonTimecardRoute() {
                             )}
                           <input type="hidden" name="note" value={editNote} />
                           <Button
+                            isLoading={fetcher.state !== "idle"}
                             variant="secondary"
                             type="submit"
                             disabled={isNaN(new Date(editClockIn).getTime())}
@@ -726,11 +733,15 @@ export default function PersonTimecardRoute() {
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => startEdit(entry)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.edit}
+                            onClick={() => startEdit(entry)}
+                          >
                             <DropdownMenuIcon icon={<LuPencil />} />
                             <Trans>Edit</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
                             onClick={() =>
                               setDeletingEntry({
                                 id: entry.id,

@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -82,6 +91,7 @@ const DepreciationRunTable = memo(
       (row: DepreciationRunListItem) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
             disabled={!permissions.can("view", "accounting")}
             onClick={() => navigate(path.to.depreciationRun(row.id))}
           >
@@ -90,6 +100,7 @@ const DepreciationRunTable = memo(
           </MenuItem>
           {row.status === "Draft" && (
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!permissions.can("delete", "accounting")}
               destructive
               onClick={() => {

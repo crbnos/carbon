@@ -61,7 +61,7 @@
     "dev": "react-router dev",
     "lint": "biome lint --write ",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
   "sideEffects": false

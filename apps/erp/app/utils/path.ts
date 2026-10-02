@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CARBON_API_URL,
   getAppUrl,
@@ -135,10 +139,10 @@ export const path = {
         generatePath(`${api}/ai/csv/${table}/columns`),
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
-          `${api}/production/inspection-document/${inspectionDocumentId}/balloon-analyze`
+          `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
       inspectionDocuments: (itemId: string) =>
-        generatePath(`${api}/production/inspection-documents/${itemId}`),
+        generatePath(`${api}/quality/inspection-documents/${itemId}`),
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -376,8 +380,6 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/components/reassign`),
     assemblyInstructionStepHiddenComponents: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/hidden/${stepId}`),
-    assemblyInstructionStepJoin: (id: string, stepId: string) =>
-      generatePath(`${x}/assembly/${id}/steps/join/${stepId}`),
     assemblyInstructionStepMotion: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>
@@ -399,6 +401,14 @@ export const path = {
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
+    assemblySubAssembly: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}`),
+    assemblySubAssemblyDelete: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/delete`),
+    assemblySubAssemblyNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/new`),
+    assemblySubAssemblyUngroup: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/ungroup`),
     assemblySyncBop: (id: string) =>
       generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
@@ -449,6 +459,10 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
+    // The `?app=` hint lets the docs' Subscribe popover link to this instance.
+    changelog: withDocsHost("https://docs.carbon.ms/changelog"),
+    changelogEntry: (slug: string) =>
+      withDocsHost(`https://docs.carbon.ms/changelog/${slug}`),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>
@@ -1264,7 +1278,9 @@ export const path = {
       generatePath(`${x}/inspection/${id}/document`),
     inspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}`),
-    inspectionDocuments: `${x}/production/inspection`,
+    inspectionDocuments: `${x}/quality/inspection-plans`,
+    inspectionGauge: (id: string) =>
+      generatePath(`${x}/inspection/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection/${id}/measurement`),
     inspectionPartial: (id: string) =>
@@ -1579,7 +1595,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
-    newInspectionDocument: `${x}/production/inspection/new`,
+    newInspectionDocument: `${x}/quality/inspection-plans/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
     newInvestigationType: `${x}/quality/investigation-types/new`,
@@ -1981,6 +1997,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteLineOrder: (quoteId: string) =>
       generatePath(`${x}/quote/${quoteId}/line-order`),
+    quoteLinePriceTrace: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/price-trace`),
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
     quoteLineUpdatePrecision: (quoteId: string, lineId: string) =>
@@ -2162,6 +2180,7 @@ export const path = {
 
     saveViews: `${x}/shared/views`,
     scheduleForecast: `${x}/scheduling/forecast`,
+    scheduleOutbound: `${x}/scheduling/outbound`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

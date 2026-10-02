@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Proportional time-splitting + completion planning for a job operation batch.
 // See .ai/specs/2026-08-21-job-operation-batching.md.
 

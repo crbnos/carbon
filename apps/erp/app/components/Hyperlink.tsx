@@ -1,8 +1,11 @@
-import { Button, cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Button, cn, PrefetchLink } from "@carbon/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { LuPanelRight } from "react-icons/lu";
 import type { LinkProps } from "react-router";
-import { Link } from "react-router";
 
 const Hyperlink = ({
   children,
@@ -18,8 +21,7 @@ const Hyperlink = ({
     // (a `:not(:last-child)` margin) hands the anchor a phantom 8px on hover —
     // which reflows the whole table column under `table-layout: auto`.
     <span className="contents">
-      <Link
-        prefetch="intent"
+      <PrefetchLink
         className={cn(
           "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-start gap-3",
           className
@@ -42,7 +44,7 @@ const Hyperlink = ({
             Open
           </Button>
         )}
-      </Link>
+      </PrefetchLink>
     </span>
   ) : (
     <span className={cn("text-foreground", className)} {...props}>

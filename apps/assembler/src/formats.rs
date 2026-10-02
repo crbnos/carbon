@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Explicit input-format registry + content auto-detection.
 //!
 //! One source of truth for what the assembler ingests. Surfaced via `GET /v1`

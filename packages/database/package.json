@@ -24,6 +24,7 @@
     "./fetch-all": "./src/fetch-all.ts",
     "./job-quantities-engine": "./src/job-quantities-engine.ts",
     "./json": "./src/json.ts",
+    "./price-trace": "./src/price-trace.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",

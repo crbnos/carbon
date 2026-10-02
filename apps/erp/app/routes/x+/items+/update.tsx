@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
 import { deriveItemMethodUpdate } from "~/modules/items";
@@ -74,11 +79,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "unitOfMeasureCode":
       return await client
         .from("item")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", items as string[])
         .eq("companyId", companyId);
     case "replenishmentSystem":

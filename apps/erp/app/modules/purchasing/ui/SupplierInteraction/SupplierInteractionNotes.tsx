@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -57,7 +61,7 @@ const SupplierInteractionNotes = ({
   const onUpdateExternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrder")
         .update({
           externalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),
@@ -72,7 +76,7 @@ const SupplierInteractionNotes = ({
   const onUpdateInternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrder")
         .update({
           internalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),

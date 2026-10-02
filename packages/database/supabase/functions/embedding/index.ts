@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Text → gte-small embeddings (384 dims) on Supabase's built-in model runtime.
 // Self-contained: nothing is imported from outside this directory.
 //
@@ -100,7 +104,7 @@ async function requireApiKey(apiKey: string): Promise<void> {
   }
   const { data: limit, error } = await serviceRole.rpc("check_api_key_rate_limit", {
     p_api_key_id: row.id,
-    p_limit: row.rateLimit ?? 60,
+    p_limit: row.rateLimit ?? 20,
     p_window: row.rateLimitWindow ?? "1m",
   });
   if (error) throw error;

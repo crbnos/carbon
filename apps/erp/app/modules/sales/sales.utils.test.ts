@@ -1,13 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   applyPriceRules,
   configurationSurcharge,
+  configuredQuoteBasePrice,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   reconcileQuantityBreaks,
+  repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
-  toMatchedRule
+  toMatchedRule,
+  withBasePriceSource
 } from "./sales.utils";
 import type { MatchedRule } from "./types";
 
@@ -417,5 +424,132 @@ describe("resolveJobConfiguration", () => {
       configuration: null,
       reconfigured: false
     });
+  });
+});
+
+describe("configuredQuoteBasePrice", () => {
+  const configuration = { orbit_regime: "LEO" };
+  const defaults = { materialCost: 20, laborCost: 30 };
+
+  it("starts a configured line from the part's sale price", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBe(1800000);
+  });
+
+  it("prices an unconfigured line cost-plus", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration: null,
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBeNull();
+    expect(
+      configuredQuoteBasePrice({
+        configuration: {},
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBeNull();
+  });
+
+  it("prices cost-plus when the part has no sale price", () => {
+    for (const unitSalePrice of [null, undefined, 0]) {
+      expect(
+        configuredQuoteBasePrice({
+          configuration,
+          unitSalePrice,
+          categoryMarkups: null,
+          defaultMarkups: {}
+        })
+      ).toBeNull();
+    }
+  });
+
+  it("keeps the sale price for a row seeded with the company defaults", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { ...defaults },
+        defaultMarkups: defaults
+      })
+    ).toBe(100);
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: {},
+        defaultMarkups: defaults
+      })
+    ).toBe(100);
+  });
+
+  it("prices cost-plus once someone chose a markup", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { materialCost: 40, laborCost: 40 },
+        defaultMarkups: defaults
+      })
+    ).toBeNull();
+    // 0% Markup with no company defaults is still a choice (price at cost).
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { materialCost: 0, laborCost: 0 },
+        defaultMarkups: {}
+      })
+    ).toBeNull();
+  });
+});
+
+describe("withBasePriceSource", () => {
+  const trace = [
+    { step: "Base Price", source: "Item Unit Sale Price", amount: 100 },
+    { step: "Markup", source: "Rule: A", amount: 110, adjustment: 10 },
+    { step: "Final Price", source: "Resolved", amount: 110 }
+  ];
+
+  it("names the base the row really started from", () => {
+    expect(withBasePriceSource(trace, "Cost + Markup")).toEqual([
+      { step: "Base Price", source: "Cost + Markup", amount: 100 },
+      trace[1],
+      trace[2]
+    ]);
+  });
+
+  it("keeps the trace as resolved when there is no other base", () => {
+    expect(withBasePriceSource(trace, null)).toBe(trace);
+  });
+});
+
+describe("repricedUnitPrice", () => {
+  const current = (amount: number) => [
+    { step: "Base Price", source: "Cost + Markup", amount: 100 },
+    { step: "Final Price", source: "Resolved", amount }
+  ];
+
+  it("is null for a manual price, which has no current calculation", () => {
+    expect(repricedUnitPrice(null, 110, 2)).toBeNull();
+  });
+
+  it("is null when today's price rounds to the stored one", () => {
+    expect(repricedUnitPrice(current(110.004), 110, 2)).toBeNull();
+  });
+
+  it("is today's price at the line's precision when it differs", () => {
+    expect(repricedUnitPrice(current(104.5678), 110, 2)).toBe(104.57);
+    expect(repricedUnitPrice(current(104.5678), 110, 4)).toBe(104.5678);
   });
 });

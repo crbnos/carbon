@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260929213953",
+  "schemaVersion": "20261002153217",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-29T22:09:07.752Z",
+  "exportedAt": "2026-10-02T15:23:41.816Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -415,6 +415,7 @@
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
+        "showBomExplorerReadableId",
         "id",
         "digitalQuoteNotificationGroup",
         "rfqReadyNotificationGroup",
@@ -559,10 +560,10 @@
       "name": "customerType",
       "rows": 0,
       "columns": [
-        "protected",
-        "createdAt",
         "updatedAt",
         "customFields",
+        "protected",
+        "createdAt",
         "id",
         "name",
         "companyId",
@@ -665,14 +666,14 @@
         "filteredData",
         "createdAt",
         "updatedAt",
-        "storagePath",
-        "error",
-        "createdBy",
-        "updatedBy",
         "id",
         "companyId",
         "sourceDocument",
-        "sourceDocumentId"
+        "sourceDocumentId",
+        "storagePath",
+        "error",
+        "createdBy",
+        "updatedBy"
       ]
     },
     {
@@ -736,10 +737,10 @@
       "name": "employeeType",
       "rows": 0,
       "columns": [
-        "updatedAt",
-        "systemType",
         "protected",
         "createdAt",
+        "updatedAt",
+        "systemType",
         "id",
         "name",
         "companyId"
@@ -1823,6 +1824,7 @@
         "active",
         "createdAt",
         "updatedAt",
+        "configurationPrices",
         "id",
         "name",
         "customerIds",
@@ -2170,13 +2172,13 @@
       "name": "service",
       "rows": 0,
       "columns": [
+        "serviceType",
+        "approved",
         "fromDate",
         "toDate",
         "customFields",
         "createdAt",
         "updatedAt",
-        "serviceType",
-        "approved",
         "id",
         "approvedBy",
         "companyId",
@@ -2215,9 +2217,9 @@
       "name": "employeeJob",
       "rows": 0,
       "columns": [
-        "startDate",
         "updatedAt",
         "customFields",
+        "startDate",
         "id",
         "locationId",
         "shiftId",
@@ -2679,6 +2681,7 @@
         "updatedAt",
         "status",
         "buildWave",
+        "isSubAssembly",
         "id",
         "assemblyInstructionId",
         "parentStepId",
@@ -2693,7 +2696,8 @@
         "createdBy",
         "updatedBy",
         "rootStepId",
-        "hiddenComponentNodeIds"
+        "hiddenComponentNodeIds",
+        "usedInStepId"
       ]
     },
     {
@@ -2943,7 +2947,8 @@
         "toleranceMinus",
         "unit",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "gaugeTypeId"
       ]
     },
     {
@@ -3838,6 +3843,8 @@
       "name": "charge",
       "rows": 0,
       "columns": [
+        "type",
+        "status",
         "transactionDate",
         "postingDate",
         "exchangeRate",
@@ -3847,8 +3854,6 @@
         "createdAt",
         "updatedAt",
         "customFields",
-        "type",
-        "status",
         "id",
         "companyId",
         "chargeId",
@@ -4236,6 +4241,7 @@
         "nonTaxableAddOnCost",
         "priceTrace",
         "sortOrder",
+        "configuration",
         "id",
         "salesOrderId",
         "itemId",
@@ -4487,6 +4493,7 @@
       "name": "job",
       "rows": 0,
       "columns": [
+        "status",
         "dueDate",
         "deadlineType",
         "quantity",
@@ -4507,7 +4514,6 @@
         "priority",
         "projectedCompletionAt",
         "scheduleOutdatedAt",
-        "status",
         "id",
         "jobId",
         "itemId",
@@ -4603,6 +4609,7 @@
         "exchangeRate",
         "shippingCost",
         "categoryMarkups",
+        "priceTrace",
         "quoteId",
         "quoteLineId",
         "createdBy",
@@ -4804,13 +4811,15 @@
         "rejectionNumber",
         "createdAt",
         "updatedAt",
+        "gaugeRecordedAt",
         "id",
         "inspectionId",
         "inspectionFeatureId",
         "codeLetter",
         "companyId",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "gaugeId"
       ]
     },
     {
@@ -5607,6 +5616,7 @@
       "name": "purchaseOrderLine",
       "rows": 0,
       "columns": [
+        "sortOrder",
         "purchaseOrderLineType",
         "purchaseQuantity",
         "quantityReceived",
@@ -5629,7 +5639,6 @@
         "promisedDate",
         "requiredDate",
         "receivedDate",
-        "sortOrder",
         "id",
         "purchaseOrderId",
         "itemId",
@@ -6345,6 +6354,12 @@
       "name": "purchaseInvoice",
       "rows": 0,
       "columns": [
+        "exchangeRate",
+        "postingDate",
+        "dateIssued",
+        "dateDue",
+        "datePaid",
+        "subtotal",
         "totalDiscount",
         "totalAmount",
         "totalTax",
@@ -6354,12 +6369,6 @@
         "internalNotes",
         "exchangeRateUpdatedAt",
         "status",
-        "exchangeRate",
-        "postingDate",
-        "dateIssued",
-        "dateDue",
-        "datePaid",
-        "subtotal",
         "id",
         "invoiceId",
         "supplierId",

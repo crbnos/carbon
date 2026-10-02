@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -1328,12 +1332,12 @@ async function rollbackInvite(
     serviceRole
       .from("customerAccount")
       .delete()
-      .eq("userId", userId)
+      .eq("id", userId)
       .eq("companyId", companyId),
     serviceRole
       .from("supplierAccount")
       .delete()
-      .eq("userId", userId)
+      .eq("id", userId)
       .eq("companyId", companyId)
   ]);
 }

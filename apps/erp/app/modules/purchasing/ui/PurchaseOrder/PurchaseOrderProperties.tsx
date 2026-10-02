@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -20,6 +25,7 @@ import {
   LuCopy,
   LuExternalLink,
   LuInfo,
+  LuKeySquare,
   LuLink,
   LuRefreshCcw
 } from "react-icons/lu";
@@ -159,6 +165,13 @@ const PurchaseOrderProperties = () => {
                 <span>Copy link to Purchase Order</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={orderId}
+              label={t`Copy purchase order unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

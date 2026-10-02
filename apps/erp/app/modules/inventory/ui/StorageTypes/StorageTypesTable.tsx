@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -55,6 +59,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "parts")}
             onClick={() => {
               navigate(`${path.to.storageType(row.id)}?${params.toString()}`);
@@ -64,6 +69,7 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
             <Trans>Edit Storage Type</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "parts")}
             destructive
             onClick={() => {

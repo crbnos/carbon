@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardAction,
@@ -10,7 +14,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -56,6 +61,7 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
                     onClick={() =>
                       navigate(path.to.customerPart(itemId, row.original.id!))
                     }
@@ -65,6 +71,7 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
                     Edit Customer Part
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     onClick={() =>
                       navigate(
                         path.to.deleteCustomerPart(itemId, row.original.id!)

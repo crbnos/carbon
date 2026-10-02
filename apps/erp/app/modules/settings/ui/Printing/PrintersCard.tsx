@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
@@ -16,6 +20,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -148,6 +153,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({

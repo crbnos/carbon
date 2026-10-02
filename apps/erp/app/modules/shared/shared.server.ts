@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -44,8 +49,8 @@ export async function assign(
     client
       // @ts-ignore
       .from(table)
-      .update({ assignee: assignee ? assignee : null })
-      .eq("id", id)
+      .update(unchecked({ assignee: assignee ? assignee : null }))
+      .eq(unchecked("id"), id)
   );
 }
 

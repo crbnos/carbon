@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { DateTimePicker, Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -13,6 +17,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -382,6 +387,7 @@ function MaintenanceExplorerChildItem({
           <DropdownMenuContent>
             {child.type === "event" && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onSelect={() => {
                   onEdit(child);
                 }}
@@ -392,6 +398,7 @@ function MaintenanceExplorerChildItem({
             )}
             {permissions.can("delete", "resources") && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 onSelect={() => {
                   onDelete(child);

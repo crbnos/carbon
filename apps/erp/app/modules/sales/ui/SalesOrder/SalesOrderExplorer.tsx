@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Count,
@@ -12,6 +16,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -428,6 +433,7 @@ function SalesOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -441,6 +447,7 @@ function SalesOrderLineItem({
                 {/* @ts-expect-error */}
                 {itemType.includes(line?.salesOrderLineType ?? "") && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >

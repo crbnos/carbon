@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
@@ -243,6 +248,7 @@ const AssemblyInstructionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "production")}
               onClick={() => {
                 navigate(path.to.assemblyInstruction(row.id!));
@@ -252,6 +258,7 @@ const AssemblyInstructionsTable = memo(
               Edit Instruction
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "production")}
               onClick={() => {

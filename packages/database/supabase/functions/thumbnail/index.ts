@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Screenshots a model in the viewer and returns a 300×300 PNG thumbnail.
 // Self-contained: nothing is imported from outside this directory.
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";

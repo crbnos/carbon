@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
@@ -2901,7 +2905,11 @@ export const create = defineServerFn({
                         .contains("attributes", {
                           "Job Make Method": jobMakeMethod.id
                         })
-                        .order("createdAt", { ascending: true });
+                        // Unit-axis order, so "Shipment Line Index" follows serial order
+                        // instead of the physical order of tied `createdAt` rows.
+                        .order("createdAt", { ascending: true })
+                        .order("readableId", { ascending: true })
+                        .order("id", { ascending: true });
 
                       let index = 0;
                       for await (const trackedEntity of trackedEntities?.data ??
@@ -3213,7 +3221,11 @@ export const create = defineServerFn({
                       .contains("attributes", {
                         "Job Make Method": jobMakeMethod.id
                       })
-                      .order("createdAt", { ascending: true });
+                      // Unit-axis order, so "Shipment Line Index" follows serial order
+                      // instead of the physical order of tied `createdAt` rows.
+                      .order("createdAt", { ascending: true })
+                      .order("readableId", { ascending: true })
+                      .order("id", { ascending: true });
 
                     let index = 0;
                     for await (const trackedEntity of trackedEntities?.data ??
