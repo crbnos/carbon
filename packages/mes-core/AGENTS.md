@@ -40,7 +40,8 @@ API conventions: `.claude/rules/mes-mobile-api.md`.
   whole reason `MES_LOCALES` is duplicated in `locales.ts`.
 - Never import `@carbon/database` for anything but `import type`.
 - Never put server logic here. Commands live in
-  `apps/mes/app/services/commands.server.ts`, screen reads in `screens.server.ts`.
+  `apps/mes/app/services/commands.server.ts` (a barrel over `commands.*.server.ts`
+  area modules), screen reads in `screens.server.ts`.
 
 ## Validation Commands
 
@@ -60,5 +61,11 @@ pnpm exec turbo run typecheck --filter=@carbon/mes-core
 | `authCodeRequest` … `authPasswordRequest` | `./contract` | Sign-in bodies |
 | `authSessionResponse` | `./contract` | Tokens plus `mfaRequired` |
 | `meResponse`, `MeInstance`, `MePermissions` | `./contract` | What the app learns about an instance |
-| `operationsQuery` | `./contract` | The operations list query |
+| `operationsQuery`, `operationsScreen`, `operationCard` | `./contract` | The operations list query and its response |
+| `startEventBody`, `endEventBody`, `completeFromScanBody` | `./models` | Time events |
+| `quantityBody`, `scrapBody`, `reworkBody`, `finishBody` | `./models` | Quantities |
+| `issueMaterialBody`, `issueTrackedBody`, `unconsumeBody` | `./models` | Materials |
+| `stepRecordBody`, `noteBody`, `qualityIssueBody`, `printBody` | `./models` | Steps, notes, quality, print |
+| `pickQuantityBody`, `pickTrackedBody`, `pickingListStatusBody`, `isPickingListLocked` | `./models` | Picking |
+| `clockOutBody`, `pinInBody` | `./models` | Time card and shared terminal |
 | `MES_LOCALES`, `resolveMesLocale` | `./locales` | The 13 shipped locales |

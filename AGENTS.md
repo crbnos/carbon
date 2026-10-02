@@ -97,6 +97,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Inventory (lots, bins, adjustments) | `.claude/rules/inventory-system.md` + `modules/inventory/AGENTS.md` |
 | Production (work orders, scheduling, routings) | `.claude/rules/scheduling-data-structures.md` + `modules/production/AGENTS.md` |
 | MES (shop floor, job operations) | `.claude/rules/mes-job-operation-ui.md` |
+| MES mobile app (Expo) + the `/api/v1` it calls | `apps/mobile/AGENTS.md` + `.claude/rules/mes-mobile-api.md` + `packages/mes-core/AGENTS.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
