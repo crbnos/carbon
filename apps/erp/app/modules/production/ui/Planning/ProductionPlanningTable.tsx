@@ -122,6 +122,13 @@ type ProductionPlanningTableProps = {
   locationToday: string;
 };
 
+// `useNumberFormatter()` with no argument builds a new formatter on EVERY render:
+// react-aria memoizes on the options object, and a default `{}` is a new object
+// each time. The formatter is a dependency of `columns`, so every render of this
+// table rebuilt the columns, which remounts every cell — opening the order
+// drawer did it six times over. One shared options object keeps it stable.
+const NUMBER_FORMAT_OPTIONS: Intl.NumberFormatOptions = {};
+
 const ProductionPlanningTable = ({
   data,
   count,
@@ -134,7 +141,7 @@ const ProductionPlanningTable = ({
   const permissions = usePermissions();
   const { t } = useLingui();
 
-  const numberFormatter = useNumberFormatter();
+  const numberFormatter = useNumberFormatter(NUMBER_FORMAT_OPTIONS);
   const locations = useLocations();
   const unitOfMeasures = useUnitOfMeasure();
   const itemPostingGroups = useItemPostingGroups();
@@ -538,7 +545,10 @@ const ProductionPlanningTable = ({
         cell: ({ row }) => (
           <HStack
             className="py-1 cursor-pointer"
-            onClick={() => {
+            onClick={(event) => {
+              // The row itself toggles its expanded actions on click; this
+              // opens the drawer instead, so the click must not reach it.
+              event.stopPropagation();
               setSelectedItem(row.original);
             }}
           >
@@ -816,7 +826,8 @@ const ProductionPlanningTable = ({
                 variant="secondary"
                 leftIcon={hasOrders ? undefined : <LuCircleCheck />}
                 isDisabled={isDisabled || isBlocked}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setSelectedItem(row.original);
                 }}
               >

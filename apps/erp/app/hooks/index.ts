@@ -9,6 +9,7 @@ import {
   useRouteData,
   useUrlParams
 } from "@carbon/react";
+import { useAfterFirstPaint } from "./useAfterFirstPaint";
 import {
   CompanySettingsProvider,
   useCompanySettings
@@ -51,6 +52,7 @@ import { useTrainingPanel } from "./useTrainingPanel";
 import { useUser } from "./useUser";
 
 export {
+  useAfterFirstPaint,
   CompanySettingsProvider,
   useCompanySettings,
   useCompanyTimeZone,

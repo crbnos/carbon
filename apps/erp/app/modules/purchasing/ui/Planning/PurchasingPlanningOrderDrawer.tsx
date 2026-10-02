@@ -60,6 +60,7 @@ import type {
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import {
   actionForOrder,
+  DeferredDrawerSections,
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
@@ -869,68 +870,70 @@ export const PurchasingPlanningOrderDrawer = memo(
                     )}
                   </VStack>
 
-                  <SuggestedOrdersGrid<PlannedOrder>
-                    title={<Trans>Suggested Orders</Trans>}
-                    titleAction={
-                      lastBeyondFenceDate &&
-                      timeFenceDate && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              leftIcon={<LuCalendarRange />}
-                              onClick={onIncludeBeyondFence}
-                            >
-                              <Plural
-                                value={beyondFenceOrders.length}
-                                one={`# More After ${fenceLabel}`}
-                                other={`# More After ${fenceLabel}`}
-                              />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <Trans>
-                              Suggested orders required after this item's time
-                              fence. Extend the fence to include them.
-                            </Trans>
-                          </TooltipContent>
-                        </Tooltip>
-                      )
-                    }
-                    orders={orders}
-                    leadTime={selectedItem.leadTime ?? 0}
-                    todayIso={locationToday}
-                    quantityHeader={t`Purchase Qty`}
-                    orderByHeader={t`Order By`}
-                    onChange={onSuggestedOrdersChange}
-                    onAdd={onAddOrder}
-                  />
+                  <DeferredDrawerSections>
+                    <SuggestedOrdersGrid<PlannedOrder>
+                      title={<Trans>Suggested Orders</Trans>}
+                      titleAction={
+                        lastBeyondFenceDate &&
+                        timeFenceDate && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                leftIcon={<LuCalendarRange />}
+                                onClick={onIncludeBeyondFence}
+                              >
+                                <Plural
+                                  value={beyondFenceOrders.length}
+                                  one={`# More After ${fenceLabel}`}
+                                  other={`# More After ${fenceLabel}`}
+                                />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <Trans>
+                                Suggested orders required after this item's time
+                                fence. Extend the fence to include them.
+                              </Trans>
+                            </TooltipContent>
+                          </Tooltip>
+                        )
+                      }
+                      orders={orders}
+                      leadTime={selectedItem.leadTime ?? 0}
+                      todayIso={locationToday}
+                      quantityHeader={t`Purchase Qty`}
+                      orderByHeader={t`Order By`}
+                      onChange={onSuggestedOrdersChange}
+                      onAdd={onAddOrder}
+                    />
 
-                  <OpenOrdersGrid
-                    title={<Trans>Open Orders</Trans>}
-                    documentHeader={t`PO`}
-                    quantityHeader={t`Qty`}
-                    rows={openOrderRows}
-                    renderStatusIcon={renderOpenOrderStatus}
-                    onSave={onSaveOpenOrder}
-                    onRowsChange={onOpenOrdersChange}
-                    {...actionHandlers}
-                  />
+                    <OpenOrdersGrid
+                      title={<Trans>Open Orders</Trans>}
+                      documentHeader={t`PO`}
+                      quantityHeader={t`Qty`}
+                      rows={openOrderRows}
+                      renderStatusIcon={renderOpenOrderStatus}
+                      onSave={onSaveOpenOrder}
+                      onRowsChange={onOpenOrdersChange}
+                      {...actionHandlers}
+                    />
 
-                  <ItemPlanningChart
-                    compact
-                    itemId={selectedItem.id}
-                    locationId={locationId}
-                    safetyStock={selectedItem.demandAccumulationSafetyStock}
-                    timeFenceDate={timeFenceDate}
-                    plannedOrders={chartOrders}
-                    conversionFactor={
-                      (selectedItem.suppliers as SupplierPart[])?.find(
-                        (s) => s.supplierId === selectedSupplier
-                      )?.conversionFactor ?? 1
-                    }
-                  />
+                    <ItemPlanningChart
+                      compact
+                      itemId={selectedItem.id}
+                      locationId={locationId}
+                      safetyStock={selectedItem.demandAccumulationSafetyStock}
+                      timeFenceDate={timeFenceDate}
+                      plannedOrders={chartOrders}
+                      conversionFactor={
+                        (selectedItem.suppliers as SupplierPart[])?.find(
+                          (s) => s.supplierId === selectedSupplier
+                        )?.conversionFactor ?? 1
+                      }
+                    />
+                  </DeferredDrawerSections>
                 </TabsContent>
               </div>
             </DrawerBody>

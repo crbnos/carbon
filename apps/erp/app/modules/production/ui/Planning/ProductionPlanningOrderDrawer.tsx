@@ -41,6 +41,7 @@ import type {
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
 import {
   actionForOrder,
+  DeferredDrawerSections,
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
@@ -518,63 +519,65 @@ export const ProductionPlanningOrderDrawer = memo(
                 )}
               </VStack>
 
-              <SuggestedOrdersGrid<ProductionOrder>
-                title={<Trans>Suggested Jobs</Trans>}
-                titleAction={
-                  lastBeyondFenceDate &&
-                  timeFenceDate && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          leftIcon={<LuCalendarRange />}
-                          onClick={onIncludeBeyondFence}
-                        >
-                          <Plural
-                            value={beyondFenceOrders.length}
-                            one={`# More After ${fenceLabel}`}
-                            other={`# More After ${fenceLabel}`}
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <Trans>
-                          Suggested orders required after this item's time
-                          fence. Extend the fence to include them.
-                        </Trans>
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                }
-                orders={orders}
-                leadTime={row.leadTime ?? 0}
-                todayIso={locationToday}
-                quantityHeader={t`Quantity`}
-                orderByHeader={t`Start By`}
-                onChange={onSuggestedOrdersChange}
-                onAdd={onAddOrder}
-              />
+              <DeferredDrawerSections>
+                <SuggestedOrdersGrid<ProductionOrder>
+                  title={<Trans>Suggested Jobs</Trans>}
+                  titleAction={
+                    lastBeyondFenceDate &&
+                    timeFenceDate && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<LuCalendarRange />}
+                            onClick={onIncludeBeyondFence}
+                          >
+                            <Plural
+                              value={beyondFenceOrders.length}
+                              one={`# More After ${fenceLabel}`}
+                              other={`# More After ${fenceLabel}`}
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <Trans>
+                            Suggested orders required after this item's time
+                            fence. Extend the fence to include them.
+                          </Trans>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  }
+                  orders={orders}
+                  leadTime={row.leadTime ?? 0}
+                  todayIso={locationToday}
+                  quantityHeader={t`Quantity`}
+                  orderByHeader={t`Start By`}
+                  onChange={onSuggestedOrdersChange}
+                  onAdd={onAddOrder}
+                />
 
-              <OpenOrdersGrid
-                title={<Trans>Open Jobs</Trans>}
-                documentHeader={t`Job`}
-                quantityHeader={t`Qty`}
-                rows={openJobRows}
-                renderStatusIcon={renderOpenJobStatus}
-                onSave={onSaveOpenJob}
-                onRowsChange={onOpenJobsChange}
-                {...actionHandlers}
-              />
+                <OpenOrdersGrid
+                  title={<Trans>Open Jobs</Trans>}
+                  documentHeader={t`Job`}
+                  quantityHeader={t`Qty`}
+                  rows={openJobRows}
+                  renderStatusIcon={renderOpenJobStatus}
+                  onSave={onSaveOpenJob}
+                  onRowsChange={onOpenJobsChange}
+                  {...actionHandlers}
+                />
 
-              <ItemPlanningChart
-                compact
-                itemId={row.id}
-                locationId={locationId}
-                safetyStock={row.demandAccumulationSafetyStock}
-                timeFenceDate={timeFenceDate}
-                plannedOrders={chartOrders}
-              />
+                <ItemPlanningChart
+                  compact
+                  itemId={row.id}
+                  locationId={locationId}
+                  safetyStock={row.demandAccumulationSafetyStock}
+                  timeFenceDate={timeFenceDate}
+                  plannedOrders={chartOrders}
+                />
+              </DeferredDrawerSections>
             </div>
           </DrawerBody>
           <DrawerFooter>

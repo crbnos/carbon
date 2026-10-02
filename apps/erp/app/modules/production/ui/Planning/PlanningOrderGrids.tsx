@@ -15,7 +15,7 @@ import { LuTrash } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import { useQuantityFormatter } from "~/hooks";
+import { useAfterFirstPaint, useQuantityFormatter } from "~/hooks";
 import type { PlanningAction } from "~/modules/production";
 import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
@@ -87,6 +87,32 @@ type SuggestedOrdersGridProps<O extends SuggestedOrder> = {
   onChange: (orders: O[]) => void;
   onAdd: () => void;
 };
+
+/**
+ * Holds the drawer's expensive sections (the two grids and the chart) back
+ * until the drawer itself is on screen.
+ *
+ * Built in the same pass as the drawer they kept the click from showing
+ * anything for 200 ms on a part with a handful of orders, and far longer on one
+ * with forty: every open order mounts tooltips, a menu and editable cells. With
+ * this the drawer slides in at once over placeholders of about the right size,
+ * and the sections fill in a frame or two later.
+ */
+export function DeferredDrawerSections({ children }: { children: ReactNode }) {
+  const isPainted = useAfterFirstPaint();
+
+  if (!isPainted) {
+    return (
+      <div className="flex w-full flex-col gap-4" aria-busy="true">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 export function SuggestedOrdersGrid<O extends SuggestedOrder>({
   title,
