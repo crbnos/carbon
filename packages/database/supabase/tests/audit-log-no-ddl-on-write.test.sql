@@ -14,6 +14,7 @@ DECLARE
   tbl text := 'auditLog_audit_ddl_probe';
   entry jsonb := '{"tableName":"job","entityType":"job","entityId":"j1","recordId":"j1","operation":"UPDATE","actorId":null,"diff":{},"metadata":null}';
   trigger_before oid; policy_before oid; trigger_after oid; policy_after oid;
+  matching int;
 BEGIN
   PERFORM create_audit_log_table(company);
 
@@ -35,6 +36,20 @@ BEGIN
     'an audit write must not recreate the append-only trigger';
   ASSERT policy_after = policy_before,
     'an audit write must not recreate the read policy';
+
+  -- A batch is one INSERT: every entry lands, a JSON null is stored as NULL,
+  -- and an entry's own createdAt wins over the clock.
+  ASSERT insert_audit_log_batch(company, ARRAY[
+    entry,
+    entry || '{"diff":null,"createdAt":"2020-01-02T03:04:05Z"}'
+  ]) = 2, 'a batch reports how many entries it wrote';
+  EXECUTE format(
+    'SELECT count(*) FROM %I WHERE "diff" IS NULL AND "metadata" IS NULL
+       AND "createdAt" = ''2020-01-02T03:04:05Z''', tbl) INTO matching;
+  ASSERT matching = 1, 'JSON null is stored as NULL and createdAt is the entry''s';
+  EXECUTE format('SELECT count(*) FROM %I WHERE "diff" = ''{}''', tbl) INTO matching;
+  ASSERT matching = 3, 'an entry without createdAt is still written';
+  ASSERT insert_audit_log_batch(company, ARRAY[]::jsonb[]) = 0, 'an empty batch writes nothing';
 
   EXECUTE format('DROP TRIGGER "append_only" ON %I', tbl);
   EXECUTE format('DROP POLICY "SELECT" ON %I', tbl);

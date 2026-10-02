@@ -62,7 +62,7 @@ behaviour arrived, not where to read the current definition. Details:
 - `get_primary_key_column(table)` — dynamic PK lookup (`20260212165827`).
 
 ### RPC (callable from app)
-`create_event_system_subscription(p_name, p_table, p_company_id, p_operations[], p_handler_type, p_config?, p_filter?, p_active?)` → `TABLE(id, name, handlerType, table)`; `delete_event_system_subscription(p_subscription_id)`; `delete_event_system_subscriptions_by_name(p_company_id, p_name)`; plus search helpers `upsert_to_search_index(...)` / `delete_from_search_index(p_company_id, p_entity_type, p_entity_id)`.
+`create_event_system_subscription(p_name, p_table, p_company_id, p_operations[], p_handler_type, p_config?, p_filter?, p_active?)` → `TABLE(id, name, handlerType, table)` (upserts on `(companyId, name, table)`; the caller must be allowed to manage the NEW handler type and, when a row is replaced, the type it already had — `util.can_manage_event_subscription`: WEBHOOK needs a settings permission, the rest any employee; pinned by `supabase/tests/event-subscription-authz.test.sql`); `delete_event_system_subscription(p_subscription_id)`; `delete_event_system_subscriptions_by_name(p_company_id, p_name)`; plus search helpers `upsert_to_search_index(...)` / `delete_from_search_index(p_company_id, p_entity_type, p_entity_id)`.
 
 ### Misc
 - Queue: PGMQ queue **`event_system`**.
