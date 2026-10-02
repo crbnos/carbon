@@ -2819,3 +2819,26 @@ tag until proven otherwise.
 
 **Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
 
+
+## A local run cannot verify a step that needs something the repo does not carry
+
+**Context:** `apps/mobile`'s typecheck was green on every local run and failed in CI
+twice in a row, for two unrelated reasons. First `pnpm install --frozen-lockfile` broke
+on a lockfile entry for a dependency nothing imported; then `tsc --noEmit` reported
+`Property 'className' does not exist on type 'ViewProps'` across every component.
+
+**Problem:** Both were the same shape. `pnpm install` skips the clean-checkout
+verification when `node_modules` already satisfies the manifest, and
+`src/uniwind-types.d.ts` — the generated declaration that augments React Native's props
+with `className` — is gitignored and was written by an earlier `expo start`. The machine
+that had already run the app was the only machine where either step could pass, so a
+local green told me nothing about a fresh checkout.
+
+**Rule:** A verification command must create everything it depends on. A gitignored
+generated artifact belongs in the script that needs it (`typecheck` now runs
+`uniwind generate-artifacts` first), not in a developer's working directory. Before
+trusting a local pass on install or typecheck, delete the artifact — `rm` the generated
+file, or install into an empty `node_modules` — and run it again.
+
+**Applies to:** `apps/mobile/package.json` scripts, `apps/mobile/.gitignore`, the
+`Mobile` job in `.github/workflows/check.yml`.
