@@ -20,6 +20,7 @@
 //! fallback. Wires the `converter` and `planner` crates via `actions::*`.
 
 mod actions;
+mod admission;
 mod cache;
 mod config;
 mod dispatch;
@@ -41,7 +42,6 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::sync::Semaphore;
 use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
 
 const VERSION: &str = "0.1.0";
@@ -59,7 +59,7 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub slots: Arc<Semaphore>,
+    pub admission: admission::Admission,
     pub jobs: jobs::JobStore,
     pub cache: Arc<cache::ResultCache>,
     pub progress: progress::ProgressStore,
@@ -84,7 +84,7 @@ fn main() {
 /// one-shot `run-job` CLI so both share one JobStore + cache + concurrency.
 pub async fn build_state() -> AppState {
     AppState {
-        slots: Arc::new(Semaphore::new(config::max_concurrency())),
+        admission: admission::Admission::from_env(),
         jobs: jobs::JobStore::from_env().await,
         cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
         progress: progress::ProgressStore::default(),
@@ -92,9 +92,8 @@ pub async fn build_state() -> AppState {
 }
 
 async fn serve() {
-    let max = config::max_concurrency();
     let state = build_state().await;
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     // Parked outputs nobody drained (see `jobs.rs`): the disk half of the
     // pending TTL, including whatever a previous process left behind.
     let sweeper = state.jobs.clone();
@@ -129,7 +128,8 @@ async fn serve() {
         .with_state(state);
 
     eprintln!(
-        "assembler config: version={VERSION} concurrency={max} cacheMB={} maxParts={} maxSourceMB={} longPollCap={}s jobTtl={}s resultTtl={}s",
+        "assembler config: version={VERSION} memoryBudgetMB={} cacheMB={} maxParts={} maxSourceMB={} longPollCap={}s jobTtl={}s resultTtl={}s",
+        admission.budget_mb(),
         config::cache_bytes() / 1024 / 1024,
         config::max_parts(),
         config::max_source_bytes() / 1024 / 1024,
@@ -149,11 +149,12 @@ async fn serve() {
         .await
         .unwrap();
 
-    // Jobs run detached (create returns 202) and each holds a slot; wait for
-    // every slot to free before exiting so a deploy/scale-down doesn't kill an
-    // in-flight job. The grace deadline in shutdown_signal force-exits a wedged one.
+    // Jobs run detached (create returns 202) and each holds part of the memory
+    // budget while it computes; wait for all of it to come back before exiting
+    // so a deploy/scale-down doesn't kill an in-flight job. The grace deadline
+    // in shutdown_signal force-exits a wedged one.
     eprintln!("assembler draining in-flight jobs");
-    let _ = slots.acquire_many(max as u32).await;
+    admission.drain().await;
     eprintln!("assembler drained cleanly; exiting");
 }
 

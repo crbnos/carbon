@@ -160,6 +160,11 @@ pub async fn download_hashed(
     Ok(hasher.digest128())
 }
 
+/// A downloaded source's size, for the memory estimate. 0 if it cannot be read.
+pub async fn file_len(path: &std::path::Path) -> u64 {
+    tokio::fs::metadata(path).await.map_or(0, |m| m.len())
+}
+
 /// A file's bytes, memory-mapped: the page cache backs them, so uploading a
 /// parked or cached artifact does not copy it onto the heap.
 pub fn map_file(path: &std::path::Path) -> std::io::Result<bytes::Bytes> {

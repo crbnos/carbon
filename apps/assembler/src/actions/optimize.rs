@@ -14,9 +14,8 @@
 
 use crate::formats::{self, Format};
 use crate::jobs::{Done, Output};
-use crate::{http, AppState};
+use crate::{admission, http, AppState};
 use serde_json::json;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 pub struct OptimizeReq {
@@ -86,10 +85,9 @@ impl ActionErr {
 
 pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
     let jobs = state.jobs.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
     tokio::spawn(async move {
-        let _permit = slots.acquire().await;
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -114,10 +112,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         // Charge the download + tessellation already spent against the budget.
         opts.deadline = opts.budget.map(|b| started + b);
 
-        let res = tokio::task::spawn_blocking(move || {
-            run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
-        })
-        .await;
+        let res = {
+            let _grant = admission
+                .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                .await;
+            tokio::task::spawn_blocking(move || {
+                run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
+            })
+            .await
+        };
         let _ = tokio::fs::remove_file(&tmp).await;
 
         let outcome = match res {

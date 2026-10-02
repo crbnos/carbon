@@ -9,7 +9,7 @@
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{config, http, progress, AppState};
+use crate::{admission, config, http, progress, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -33,10 +33,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let jobs = state.jobs.clone();
     let cache = Arc::clone(&state.cache);
     let progress_store = state.progress.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
     tokio::spawn(async move {
-        let _permit = slots.acquire().await;
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -78,6 +77,11 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 entry
             }
             None => {
+                // Held for the tessellation only: the download before it streams
+                // to disk and the upload after it holds just the outputs.
+                let _grant = admission
+                    .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                    .await;
                 let tmp_str = tmp.to_string_lossy().to_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);

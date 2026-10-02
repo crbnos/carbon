@@ -33,16 +33,6 @@ pub fn cache_bytes() -> usize {
     512 * 1024 * 1024
 }
 
-/// Concurrent heavy jobs per instance — one per core, derived. Each job is
-/// CPU-bound (rayon sweeps saturate cores), so more slots than cores just
-/// thrashes; the semaphore also backs the 429-busy response and shutdown drain.
-/// Lambda runs one job per worker invocation regardless.
-pub fn max_concurrency() -> usize {
-    std::thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(2)
-}
-
 /// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
 /// job running past it jumps straight to the coarsest rung instead of grinding
 /// every middle pass. Auto-derived: 720s on Lambda (lands under the 900s hard
@@ -96,11 +86,12 @@ pub fn max_long_poll_secs() -> u64 {
     25
 }
 
-/// Cap on tokio's blocking pool — the implicit convert queue. OCCT scales to
-/// ~core count; beyond that extra blocking threads just oversubscribe (c=64
-/// measured: p99 7.2s uncapped). Excess spawn_blocking tasks queue inside the
-/// pool, so overload degrades to waiting, never to 429s. +2 headroom keeps
-/// tokio::fs ops from starving behind long converts.
+/// Cap on tokio's blocking pool — the CPU half of admission (`admission.rs` is
+/// the memory half). OCCT scales to ~core count; beyond that extra blocking
+/// threads just oversubscribe (c=64 measured: p99 7.2s uncapped). Excess
+/// spawn_blocking tasks queue inside the pool, so overload degrades to waiting,
+/// never to 429s. +2 headroom keeps tokio::fs ops from starving behind long
+/// converts.
 pub fn blocking_threads() -> usize {
     let cores = std::thread::available_parallelism().map_or(8, |n| n.get());
     (cores + 2).max(2)

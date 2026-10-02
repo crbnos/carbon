@@ -9,9 +9,8 @@
 //! uploaded.
 
 use crate::jobs::{Done, Output};
-use crate::{http, AppState};
+use crate::{admission, http, AppState};
 use serde_json::json;
-use std::sync::Arc;
 use std::time::Instant;
 
 pub struct ThumbnailReq {
@@ -25,10 +24,9 @@ pub struct ThumbnailReq {
 
 pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
     let jobs = state.jobs.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
     tokio::spawn(async move {
-        let _permit = slots.acquire().await;
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -46,7 +44,12 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
         let src_str = src.to_string_lossy().to_string();
         let size = req.size;
 
-        let res = tokio::task::spawn_blocking(move || render(&src_str, size)).await;
+        let res = {
+            let _grant = admission
+                .acquire(admission::estimate_mb(http::file_len(&src).await))
+                .await;
+            tokio::task::spawn_blocking(move || render(&src_str, size)).await
+        };
         let _ = tokio::fs::remove_file(&src).await;
 
         let png = match res {
