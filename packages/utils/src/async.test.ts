@@ -212,6 +212,28 @@ describe("async.all", () => {
     expect(g.peak()).toBe(2);
   });
 
+  it("never frees a slot twice when a task asks for another one late", async () => {
+    const g = gauge();
+    const result = await async.all(
+      {
+        async sum() {
+          const a = this.$.a;
+          // `a` settles during this, and the slot is not back yet when
+          // `b` is asked for.
+          await tick(15);
+          const b = this.$.b;
+          return (await a) + (await b);
+        },
+        a: () => g.run(1, 5),
+        b: () => g.run(2, 30),
+        c: () => g.run(3, 5)
+      },
+      { concurrency: 1 }
+    );
+    expect(result.sum).toBe(3);
+    expect(g.peak()).toBe(1);
+  });
+
   it("starts nothing queued after a failure", async () => {
     const started: string[] = [];
     const task =

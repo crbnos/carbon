@@ -164,22 +164,31 @@ function executeTasksInternal<T extends Record<string, any>>(
     }
   };
 
-  // Each task gets its own `$`, so the slot it holds can be handed back while
-  // it waits on another task and taken again once every wait has settled.
+  // Each task gets its own `$`. Asking for another task hands the slot back;
+  // the task takes one again once nothing it asked for is still pending.
   const contextFor = () => {
     let held = true;
     let done = false;
     let waiting = 0;
+    let acquiring = false;
     let resumed: Promise<void> = Promise.resolve();
     let resume: () => void = () => undefined;
 
     const settle = () => {
-      if (--waiting === 0) {
+      if (--waiting === 0 && !acquiring) {
+        acquiring = true;
         limiter.acquire().then(() => {
-          // The task returned without awaiting what it asked for.
-          if (done) limiter.release();
-          else held = true;
-          resume();
+          acquiring = false;
+          if (done) {
+            limiter.release();
+            resume();
+          } else if (waiting > 0) {
+            // It asked for another task meanwhile: keep waiting without a slot.
+            limiter.release();
+          } else {
+            held = true;
+            resume();
+          }
         });
       }
       return resumed;
@@ -195,13 +204,16 @@ function executeTasksInternal<T extends Record<string, any>>(
         ) {
           return dep;
         }
-        if (waiting++ === 0) {
+        // Only a held slot is handed back. A task that asks again before it
+        // has its slot back joins the wait already in progress.
+        if (held) {
           resumed = new Promise((resolve) => {
             resume = resolve;
           });
           held = false;
           limiter.release();
         }
+        waiting++;
         return dep.then(
           (value) => settle().then(() => value),
           (reason) =>
