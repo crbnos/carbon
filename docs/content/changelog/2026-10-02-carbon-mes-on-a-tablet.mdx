@@ -1,0 +1,55 @@
+---
+title: "Carbon MES on a tablet and a phone"
+description: "A native Carbon MES app for iOS and Android: run an operation, issue material by scan, pick, and clock in."
+date: "2026-10-02"
+tags: ["production", "mes", "inventory"]
+image: "/changelog/2026-10-02-carbon-mes-on-a-tablet.svg"
+---
+
+Carbon MES has always run in a browser, which is fine on a desk and awkward on a shop floor — a tablet clamped to a machine wants a numeric keypad, a 96pt Start button and a barcode scanner, not a tab. So there is now a native Carbon MES app for iOS and Android.
+
+It is built on the same data and, more importantly, the same code: every write goes through a JSON API that executes the same server functions the browser's own routes execute. A quantity reported from a tablet runs the same material backflush, the same cost posting and the same floor gates as one reported from Chrome, so the two cannot disagree about a job.
+
+<Callout type="warn" title="Not in the app stores yet">
+The app is not published to the App Store or Google Play. It runs today through an internal build, which is what the pilot devices use — so this is a heads-up rather than something to download.
+</Callout>
+
+## Run an operation without leaving it
+
+Start and pause Setup, Labor and Machine time; report good, scrap and rework; finish. The dock is a column on a landscape tablet and a bar under the thumb on a phone, and no action ever navigates away from the operation — a rule that refused a quantity shows the server's own words with what you typed still on screen.
+
+On a landscape tablet the operations list stays beside the operation, so working through a queue never loses your place in it. See [the MES reference](/docs/reference/mes#the-native-app).
+
+## Issue material by scanning it
+
+Scanning a part anywhere on the Materials tab issues it, with the camera or a hardware scanner paired in keyboard mode. The match is exact, so scanning `ABC-1` cannot issue `ABC-10`. Tracked parts carry their lot or serial, and a [supersession](/docs/reference/change-orders/supersession) substitution says what it replaced.
+
+## Work instructions, with photos
+
+The operation's steps in order, recorded per unit, with values, measurements, checkboxes and lists. A File step takes a photo with the camera or from your library, stored in the job's own files where the ERP reads it.
+
+## Picking and your timecard
+
+The picking lists assigned to you, with quantity and lot picking and your company's [expiry policy](/docs/reference/traceability) enforced — an expired lot is blocked, allowed, or allowed after a confirmation, as configured. Plus clock in, clock out and end shift, with a live elapsed timer.
+
+## Shared terminals
+
+A tablet bolted to a work center becomes a shared terminal, the same idea as console mode in the browser. Each operator enters their PIN, and a header above the tabs shows whose name the next write will carry — amber while nobody is pinned in, because on a shared terminal that is not a neutral state.
+
+## It keeps working when the Wi-Fi does not
+
+Unlike the browser, the app queues what it cannot send. Reports on one operation stay in the order you made them, a jammed operation never blocks another, and a retry reuses the original request key so a replay cannot post the same production event twice.
+
+<Accordion title="Improvements">
+- Thirteen languages, sharing the browser MES's translation catalog — a string already translated for the web is already translated in the app.
+- Light and dark, following the device or set explicitly, under **More → Appearance**.
+- One device can hold several linked Carbons — production and staging, or two customers' servers — with the session, cache and offline queue scoped to each.
+- Air-gapped and controlled-environment deployments make no outbound request to any host but their own Carbon; analytics are never initialised rather than merely switched off.
+- An idle device in a controlled environment signs itself out; an idle shared terminal pins the operator out instead, so it stays ready for the next person.
+</Accordion>
+
+<Accordion title="Still in the browser">
+- Assembly and inspection operations, and batch-mode operations.
+- Timestamp, Person and Inspection work-instruction steps — the instruction text is still readable in the app.
+- Raising a maintenance request, and editing or deleting a timecard entry.
+</Accordion>
