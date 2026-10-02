@@ -311,3 +311,85 @@ export const operationsScreen = z
   })
   .passthrough();
 export type OperationsScreen = z.infer<typeof operationsScreen>;
+
+/**
+ * One operation, as the app reads it.
+ *
+ * A deliberate SUBSET with `.passthrough()`: the web payload carries ~21 keys
+ * of DB-derived data for a Kanban-era UI, and an older app build must not fail
+ * because a newer server added a field (`/api/v1` is additive-only). Every
+ * field named here is one the operator screen renders or acts on.
+ */
+export const productionEvent = z
+  .object({
+    id: z.string(),
+    type: z.enum(["Setup", "Labor", "Machine"]),
+    startTime: z.string(),
+    endTime: z.string().nullable().optional(),
+    duration: z.number().nullable().optional(),
+    employeeId: z.string().nullable().optional(),
+    workCenterId: z.string().nullable().optional()
+  })
+  .passthrough();
+export type ProductionEvent = z.infer<typeof productionEvent>;
+
+export const operationDetail = z
+  .object({
+    operation: z
+      .object({
+        id: z.string(),
+        description: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        operationQuantity: z.number().nullable().optional(),
+        quantityComplete: z.number().nullable().optional(),
+        quantityScrapped: z.number().nullable().optional(),
+        quantityReworked: z.number().nullable().optional(),
+        workCenterId: z.string().nullable().optional(),
+        // `makeDurations` has already summed these, in milliseconds.
+        setupDuration: z.number().nullable().optional(),
+        laborDuration: z.number().nullable().optional(),
+        machineDuration: z.number().nullable().optional(),
+        operationDueDate: z.string().nullable().optional(),
+        itemReadableId: z.string().nullable().optional(),
+        itemDescription: z.string().nullable().optional(),
+        thumbnailPath: z.string().nullable().optional()
+      })
+      .passthrough(),
+    job: z
+      .object({
+        id: z.string().nullable().optional(),
+        jobId: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        customerId: z.string().nullable().optional(),
+        dueDate: z.string().nullable().optional()
+      })
+      .passthrough(),
+    events: z.array(productionEvent),
+    quantities: z.object({
+      scrap: z.number(),
+      production: z.number(),
+      rework: z.number()
+    }),
+    /** Null unless the operation runs in a released batch (batch UI is web-only in v1). */
+    batch: z.unknown().nullable(),
+    /** The selected serial/batch unit, resolved by the server when it can be. */
+    trackedEntityId: z.string().nullable().optional(),
+    isFirstOperation: z.boolean(),
+    workCenter: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            isBlocked: z.boolean().nullable().optional(),
+            blockingDispatchReadableId: z.string().nullable().optional()
+          })
+          .passthrough()
+          .nullable()
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+  })
+  .passthrough();
+export type OperationDetail = z.infer<typeof operationDetail>;

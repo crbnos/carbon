@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { OperationCard as OperationCardData } from "@carbon/mes-core";
-import { statusColor } from "@carbon/utils/status-colors";
 import { useLingui } from "@lingui/react/macro";
 import { Pressable, View } from "react-native";
+import { BigNumber } from "~/components/BigNumber";
+import { StatusBadge } from "~/components/StatusBadge";
 import { Body, Card, Muted } from "~/components/ui";
 
 /**
@@ -16,24 +17,6 @@ import { Body, Card, Muted } from "~/components/ui";
  * The whole card is the press target — a 48pt row is the minimum for a gloved
  * thumb, and there is nothing to hover on a tablet.
  */
-
-const STATUS_CLASSES: Record<string, string> = {
-  green: "bg-emerald-500",
-  emerald: "bg-emerald-500",
-  blue: "bg-blue-500",
-  yellow: "bg-yellow-500",
-  orange: "bg-orange-500",
-  red: "bg-red-500",
-  gray: "bg-muted-foreground",
-  zinc: "bg-muted-foreground"
-};
-
-function statusDotClass(status: string | null | undefined) {
-  if (!status) return STATUS_CLASSES.gray;
-  // Shared with the web so the two cannot drift on what "In Progress" looks like.
-  const color = statusColor("jobOperation", status);
-  return (color && STATUS_CLASSES[color]) ?? STATUS_CLASSES.gray;
-}
 
 export function OperationCard({
   operation,
@@ -67,19 +50,11 @@ export function OperationCard({
                 ""}
             </Muted>
           </View>
-          <View className="flex-row items-center gap-2">
-            <View
-              className={`size-3 rounded-full ${statusDotClass(operation.status)}`}
-            />
-            <Muted className="text-sm">{operation.status ?? ""}</Muted>
-          </View>
+          <StatusBadge entity="jobOperation" status={operation.status} />
         </View>
 
         <View className="flex-row items-end justify-between gap-3">
-          <View className="flex-row items-baseline gap-2">
-            <Body className="text-3xl font-semibold">{done}</Body>
-            <Muted className="text-sm">{t`of ${target}`}</Muted>
-          </View>
+          <BigNumber value={done} of={target} />
           <View className="items-end gap-1">
             {operation.jobReadableId ? (
               <Muted className="text-sm">{operation.jobReadableId}</Muted>

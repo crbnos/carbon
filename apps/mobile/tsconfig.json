@@ -7,6 +7,13 @@
     // resolved through imports — so this only ADDS node globals, which the
     // vitest files need (they read the web theme and the lingui config off disk).
     "types": ["node"],
+    // `@carbon/utils/precision` re-exports the edge-runtime copy by an explicit
+    // `.ts` path, which AGENTS.md records as deliberate (the edge runtime only
+    // mounts supabase/functions/). Metro resolves it; tsc needs to be told.
+    // Safe here because this project only ever typechecks — `expo export` does
+    // the bundling, and `noEmit` is set by expo/tsconfig.base.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
       "~/*": ["./src/*"],
       "~/assets/*": ["./assets/*"],

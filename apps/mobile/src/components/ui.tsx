@@ -29,17 +29,55 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function Screen({
   children,
   className,
-  scroll = false
+  scroll = false,
+  title,
+  onBack,
+  headerRight
 }: {
   children: ReactNode;
   className?: string;
   scroll?: boolean;
+  /** Renders a sticky header. Omit it for a screen that titles itself. */
+  title?: string;
+  /** Adds a "‹ Back" target to the header. 48pt, left, where a thumb is. */
+  onBack?: () => void;
+  headerRight?: ReactNode;
 }) {
   const body = (
     <View className={`flex-1 px-4 ${className ?? ""}`}>{children}</View>
   );
+  // Sticky rather than scrolling away: on a tablet clamped to a machine, the
+  // only way back out of a screen must not depend on scroll position.
+  const header =
+    title || onBack || headerRight ? (
+      <View className="flex-row items-center gap-2 border-b border-border bg-background px-4 pb-3">
+        {onBack ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            className="min-h-[48px] flex-row items-center pr-3 active:opacity-60"
+          >
+            <Text className="text-2xl text-muted-foreground">{"\u2039"}</Text>
+            <Text className="pl-1 text-base text-muted-foreground">Back</Text>
+          </Pressable>
+        ) : null}
+        {title ? (
+          <Text
+            className="flex-1 text-xl font-semibold text-foreground"
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+        ) : (
+          <View className="flex-1" />
+        )}
+        {headerRight}
+      </View>
+    ) : null;
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      {header}
       {scroll ? (
         <ScrollView
           className="flex-1"

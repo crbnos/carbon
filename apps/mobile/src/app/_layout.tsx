@@ -7,6 +7,7 @@
 import "~/i18n/polyfills";
 import "../../global.css";
 
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useState } from "react";
@@ -30,17 +31,20 @@ export default function RootLayout() {
           <InstanceProvider>
             <AuthProvider>
               <I18nRoot>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen
-                    name="(app)/scan"
-                    options={{ presentation: "modal" }}
-                  />
-                  <Stack.Screen
-                    name="(app)/pin"
-                    options={{ presentation: "fullScreenModal" }}
-                  />
-                </Stack>
-                {/*
+                {/* Sheets are presented imperatively from inside a screen, so
+                    the provider that hosts them has to sit above the Stack. */}
+                <BottomSheetModalProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen
+                      name="(app)/scan"
+                      options={{ presentation: "modal" }}
+                    />
+                    <Stack.Screen
+                      name="(app)/pin"
+                      options={{ presentation: "fullScreenModal" }}
+                    />
+                  </Stack>
+                  {/*
                   Web MES puts toasts bottom-LEFT because its dock sits
                   bottom-right. sonner-native offers only top-center,
                   bottom-center and center, and on a phone the dock is a full
@@ -48,7 +52,8 @@ export default function RootLayout() {
                   dock, keeps the rule it serves: never cover the primary
                   action.
                 */}
-                <Toaster position="bottom-center" offset={96} />
+                  <Toaster position="bottom-center" offset={96} />
+                </BottomSheetModalProvider>
               </I18nRoot>
             </AuthProvider>
           </InstanceProvider>
