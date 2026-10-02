@@ -2085,7 +2085,7 @@ export default function IntegrationRoute() {
       )
     });
   }
-  if (syncActivity) {
+  if (syncActivity && integrationId) {
     tabs.push({
       value: "sync-activity",
       label:
@@ -2100,6 +2100,7 @@ export default function IntegrationRoute() {
       content: (tabBar) => (
         <SyncActivity
           tabs={tabBar}
+          integrationId={integrationId}
           operations={syncActivity.operations}
           count={syncActivity.count}
           status={syncActivity.status}

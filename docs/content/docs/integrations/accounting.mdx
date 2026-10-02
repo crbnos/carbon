@@ -89,7 +89,9 @@ The **Posting Sync** tab controls three things:
 
 The **Sync Activity** tab is an inbox of every sync operation, with **Status**, **Entity**, **Direction**
 (push or pull), **Trigger**, **Attempts**, **Last Attempt**, and any **Error**. Filter by status, **Retry** or
-**Skip** a failed operation, **Re-send** a completed one, or **Retry all** at once. When failed operations
+**Skip** a failed operation, **Re-send** a completed one, or **Retry all** at once. **Export CSV** downloads
+every operation under the current status filter, not just the page on screen, with the document number,
+provider ID, and full error for each. When failed operations
 remain after an outbound sweep, Carbon raises an in-app notification so the sync never fails silently.
 
 Reconciliation runs weekly and writes the **Sync Tie-Out** report (**Accounting → Reports → Sync Tie-Out**).
