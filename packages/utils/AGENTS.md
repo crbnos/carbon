@@ -38,6 +38,7 @@ pnpm --filter @carbon/utils typecheck
 | `payment-funding` | Shared effective-settlement, invoice/funding balance reducers and exact document-principal allocation; callers own tenant/status/reservation queries |
 | `sales-posting-amounts` | Pure sales component normalization and posting calculations |
 | `arrays` | Array manipulation, grouping, deduplication |
+| `async` | The `async` object: `async.all` / `async.allSettled` (named tasks, each may await another through `this.$.name`), `async.map(items, fn)` (ordered, stops starting items after the first failure) and `async.background(task, onError)` (fire-and-forget with a required error handler). All run at most `concurrency` things at once (`DEFAULT_CONCURRENCY`, 8), so one caller cannot take every database connection; a task waiting on another gives its slot up. Use these instead of `Promise.all` over rows or queries |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |

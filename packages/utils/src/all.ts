@@ -12,8 +12,38 @@
  *   async c() { return (await this.$.a) + 10 }
  * })
  *
+ * At most `concurrency` tasks run at once (default DEFAULT_CONCURRENCY). A task
+ * waiting on `this.$.other` gives its slot up while it waits, so a dependency
+ * can always start, even with a limit of 1.
+ *
  * Credits: https://github.com/shuding/better-all/blob/main/lib/index.ts
  */
+
+/** How many tasks `all`, `allSettled` and `async.map` run at once by default. */
+export const DEFAULT_CONCURRENCY = 8;
+
+export type ConcurrencyOptions = { concurrency?: number };
+
+/** A counting semaphore: `acquire` resolves when a slot is free. */
+export function createLimiter(concurrency: number) {
+  const limit = Math.max(1, concurrency);
+  let active = 0;
+  const queue: (() => void)[] = [];
+  return {
+    acquire(): Promise<void> {
+      if (active < limit) {
+        active++;
+        return Promise.resolve();
+      }
+      return new Promise((resolve) => queue.push(resolve));
+    },
+    release() {
+      const next = queue.shift();
+      if (next) next();
+      else active--;
+    }
+  };
+}
 
 // Extract the resolved return type from task functions
 type TaskResult<T> = T extends (...args: any[]) => infer R ? Awaited<R> : never;
@@ -57,8 +87,12 @@ type AllSettledResult<T extends Record<string, (...args: any[]) => any>> = {
  */
 function executeTasksInternal<T extends Record<string, any>>(
   tasks: T,
-  handleSettled: boolean
+  handleSettled: boolean,
+  concurrency: number
 ): Promise<any> {
+  const limiter = createLimiter(concurrency);
+  // Set once a task fails under `all`: tasks still queued are not started.
+  let stopped = false;
   const taskNames = Object.keys(tasks) as (keyof T)[];
   const results = new Map<keyof T, any>();
   const errors = new Map<keyof T, any>();
@@ -112,19 +146,70 @@ function executeTasksInternal<T extends Record<string, any>>(
     }
   };
 
-  // Create dep proxy
-  const depProxy = new Proxy({} as DepProxy<T>, {
-    get(_, depName: string) {
-      return waitForDep(depName as keyof T);
-    }
-  });
+  // Each task gets its own `$`, so the slot it holds can be handed back while
+  // it waits on another task and taken again once every wait has settled.
+  const contextFor = () => {
+    let held = true;
+    let done = false;
+    let waiting = 0;
+    let resumed: Promise<void> = Promise.resolve();
+    let resume: () => void = () => undefined;
 
-  // Create context with $ proxy
-  const context: TaskContext<T> = { $: depProxy };
+    const settle = () => {
+      if (--waiting === 0) {
+        limiter.acquire().then(() => {
+          // The task returned without awaiting what it asked for.
+          if (done) limiter.release();
+          else held = true;
+          resume();
+        });
+      }
+      return resumed;
+    };
 
-  // Run all tasks in parallel
+    const $ = new Proxy({} as DepProxy<T>, {
+      get(_, depName: string) {
+        const dep = waitForDep(depName as keyof T);
+        if (
+          results.has(depName) ||
+          errors.has(depName) ||
+          !(depName in tasks)
+        ) {
+          return dep;
+        }
+        if (waiting++ === 0) {
+          resumed = new Promise((resolve) => {
+            resume = resolve;
+          });
+          held = false;
+          limiter.release();
+        }
+        return dep.then(
+          (value) => settle().then(() => value),
+          (reason) =>
+            settle().then(() => {
+              throw reason;
+            })
+        );
+      }
+    });
+
+    const finish = () => {
+      done = true;
+      if (held) limiter.release();
+      held = false;
+    };
+
+    return { context: { $ } as TaskContext<T>, finish };
+  };
+
   const promises = taskNames.map(async (name) => {
+    await limiter.acquire();
+    const { context, finish } = contextFor();
     try {
+      if (stopped) {
+        throw new Error(`Task "${String(name)}" was not started`);
+      }
       const taskFn = tasks[name];
       if (typeof taskFn !== "function") {
         throw new Error(`Task "${String(name)}" is not a function`);
@@ -135,8 +220,11 @@ function executeTasksInternal<T extends Record<string, any>>(
     } catch (err) {
       handleError(name, err);
       if (!handleSettled) {
+        stopped = true;
         throw err;
       }
+    } finally {
+      finish();
     }
   });
 
@@ -167,11 +255,12 @@ export function all<T extends Record<string, any>>(
           ? Promise<R>
           : Promise<ReturnType<T[K]>>;
       };
-    }> & {
-      [P in keyof T]: T[P] extends (...args: any[]) => any ? T[P] : never;
-    }
+    }>,
+  { concurrency = DEFAULT_CONCURRENCY }: ConcurrencyOptions = {}
 ): Promise<AllResult<T>> {
-  return executeTasksInternal(tasks, false) as Promise<AllResult<T>>;
+  return executeTasksInternal(tasks, false, concurrency) as Promise<
+    AllResult<T>
+  >;
 }
 
 /**
@@ -196,9 +285,10 @@ export function allSettled<T extends Record<string, any>>(
           ? Promise<R>
           : Promise<ReturnType<T[K]>>;
       };
-    }> & {
-      [P in keyof T]: T[P] extends (...args: any[]) => any ? T[P] : never;
-    }
+    }>,
+  { concurrency = DEFAULT_CONCURRENCY }: ConcurrencyOptions = {}
 ): Promise<AllSettledResult<T>> {
-  return executeTasksInternal(tasks, true) as Promise<AllSettledResult<T>>;
+  return executeTasksInternal(tasks, true, concurrency) as Promise<
+    AllSettledResult<T>
+  >;
 }
