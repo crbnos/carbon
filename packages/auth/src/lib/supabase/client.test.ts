@@ -12,6 +12,10 @@ vi.mock("../../config/env", () => ({
   SUPABASE_URL: "http://supabase.test"
 }));
 
+const waitEnded = vi.fn();
+const startSpan = vi.fn((_name: string, _attributes: object) => waitEnded);
+vi.mock("@carbon/logger/tracing.server", () => ({ startSpan }));
+
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
 const { requestFetch } = await import("./client.server");
@@ -25,7 +29,11 @@ const { RouterContextProvider } = await import("react-router");
 // A client serving one request is bound to it: a share of PostgREST's
 // connections, and on a read, the request's abort signal.
 describe("a client bound to a request", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    startSpan.mockClear();
+    waitEnded.mockClear();
+  });
 
   // Resolves only when its signal aborts, as a slow query would.
   const hangingFetch = () =>
@@ -62,9 +70,16 @@ describe("a client bound to a request", () => {
     ).map((query) => query.then((result) => result));
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect(fetchMock).toHaveBeenCalledTimes(8);
+    // The four that queued each opened a wait span, still open.
+    expect(startSpan).toHaveBeenCalledTimes(4);
+    expect(startSpan).toHaveBeenLastCalledWith("supabase slot wait", {
+      "carbon.request.calls_waiting": 4
+    });
+    expect(waitEnded).not.toHaveBeenCalled();
 
     controller.abort();
     await Promise.all(calls);
+    expect(waitEnded).toHaveBeenCalledTimes(4);
   });
 
   it("shares the limit between every client built during the request", async () => {

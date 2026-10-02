@@ -263,7 +263,10 @@ export function traceConnectionWaits<P extends ObservablePool>(pool: P): P {
     // The callback form is pg's own `pool.query`; only the promise form is
     // awaited by a caller.
     connect: (...args: unknown[]) => {
-      if (args.length > 0 || pool.idleCount > 0) return connect(...args);
+      // Idle connections go to callers already queued first.
+      if (args.length > 0 || pool.idleCount > pool.waitingCount) {
+        return connect(...args);
+      }
       const full = pool.totalCount >= (pool.options.max ?? 10);
       return withSpan(
         full ? "db pool wait" : "db connect",
@@ -335,6 +338,16 @@ function end(span: Span, error: Error | undefined) {
     span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
   }
   span.end();
+}
+
+/**
+ * Starts a span and returns what ends it, for a wait that someone else's call
+ * finishes. Does nothing when tracing is off.
+ */
+export function startSpan(name: string, attributes: Attributes): () => void {
+  if (!enabled) return () => undefined;
+  const span = trace.getTracer("carbon").startSpan(name, { attributes });
+  return () => span.end();
 }
 
 /** Runs `run` in a child span of whatever is active; a plain call when tracing is off. */

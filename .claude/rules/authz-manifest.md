@@ -89,7 +89,7 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `authz migration <name>`. Never fork the definition into a hand-written migration —
   that is how `create_audit_log_table` came to run `CREATE TRIGGER` on every audit write
   and how `dispatch_event_batch` lost its composite-key pairing once.
-- **Cutoff**: `no-authz-ddl-in-migrations` checks these from `20261002085324` (the
+- **Cutoff**: `no-authz-ddl-in-migrations` checks these from `20261002114954` (the
   takeover migration, `EVENT_SYSTEM_SINCE`), the RLS helpers from `20260927000000`. Each
   directory has its own cutoff in `MANAGED_FUNCTION_SETS`.
 - **Not in `baseline.json`**: the takeover migration ships all 39, so every one has a

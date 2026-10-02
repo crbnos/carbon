@@ -20,16 +20,22 @@ import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 const CONFIGURED = Symbol.for("carbon.logging.configured");
 
 /**
- * A cancelled call: the AbortError itself, or supabase-js's error for it
- * (`message: "AbortError: …"`), possibly under a result's `error`.
+ * A cancelled call: the AbortError itself, or what supabase-js makes of it — a
+ * database error whose message starts `AbortError:`, a storage error holding
+ * it as `originalError` — possibly under a result's `error`.
  */
 function isAbortError(value: unknown, depth = 0): boolean {
   if (!value || typeof value !== "object" || depth > 2) return false;
-  const { name, message, error } = value as Record<string, unknown>;
+  const { name, message, error, originalError, cause } = value as Record<
+    string,
+    unknown
+  >;
   return (
     name === "AbortError" ||
     (typeof message === "string" && message.startsWith("AbortError")) ||
-    isAbortError(error, depth + 1)
+    isAbortError(error, depth + 1) ||
+    isAbortError(originalError, depth + 1) ||
+    isAbortError(cause, depth + 1)
   );
 }
 

@@ -22,13 +22,13 @@ const check = noAuthzDdlInMigrations([
     schema: "public",
     name: "dispatch_event_batch",
     file: "packages/database/src/event-system/functions/dispatch_event_batch.sql",
-    since: "20261002085324"
+    since: "20261002114954"
   },
   {
     schema: "util",
     name: "wake_event_queue",
     file: "packages/database/src/event-system/functions/util.wake_event_queue.sql",
-    since: "20261002085324"
+    since: "20261002114954"
   }
 ]);
 const NEW = "20260928120000_widget.sql";

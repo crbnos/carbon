@@ -51,6 +51,13 @@ describe("ensureLoggingConfigured (server)", () => {
     controller.abort();
     inRequest(cancelled);
     inRequest({ result: cancelled });
+    // A cancelled storage read: the abort sits under `originalError`.
+    inRequest({
+      error: {
+        name: "StorageUnknownError",
+        originalError: new DOMException("aborted", "AbortError")
+      }
+    });
     expect(write).toHaveBeenCalledTimes(1);
 
     // A real failure after the client left, e.g. a write, is still logged.

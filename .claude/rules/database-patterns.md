@@ -175,7 +175,10 @@ functions only and throws on Node. `traceConnectionWaits` (`@carbon/logger/traci
 records a `db pool wait` span when a caller queues for a connection and `db connect` when one is
 opened, since query spans time only the query. On Vercel both apps' `entry.server.tsx` call
 `attachDatabasePool(getProcessPool())` (`@vercel/functions`): a frozen instance cannot run pg's idle
-timer, so it is kept up until idle connections have closed. Kysely opens one PG transaction, runs
+timer, so it is kept up until idle connections have closed. Sixteen is a per-instance cap, not
+a database budget: the pool connects through the Supabase pooler, so what bounds the total is the
+pooler's client limit across every running instance, and raising the per-process size multiplies by
+the instance count. Kysely opens one PG transaction, runs
 every write inside it, and rolls everything back on any error.
 
 **Use transactions when:**

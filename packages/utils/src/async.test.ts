@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { async } from "./async";
 
 const tick = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -154,17 +154,18 @@ describe("async.limit", () => {
     const g = gauge();
     const limit = async.limit(2);
     const order: number[] = [];
-    const results = await Promise.all(
-      [1, 2, 3, 4, 5].map((n) =>
-        limit(async () => {
-          order.push(n);
-          return g.run(n);
-        })
-      )
+    const calls = [1, 2, 3, 4, 5].map((n) =>
+      limit(async () => {
+        order.push(n);
+        return g.run(n);
+      })
     );
-    expect(results).toEqual([1, 2, 3, 4, 5]);
+    expect(limit.activeCount).toBe(2);
+    expect(limit.pendingCount).toBe(3);
+    expect(await Promise.all(calls)).toEqual([1, 2, 3, 4, 5]);
     expect(order).toEqual([1, 2, 3, 4, 5]);
     expect(g.peak()).toBe(2);
+    expect(limit.activeCount).toBe(0);
   });
 
   it("hands a freed slot to the queued call, not to one made while it resumes", async () => {
@@ -206,6 +207,8 @@ describe("async.limit", () => {
 });
 
 describe("async.onBackground", () => {
+  afterEach(() => async.onBackground(undefined));
+
   it("hands every piece of background work to the host's hook, failures included", async () => {
     const kept: Promise<unknown>[] = [];
     async.onBackground((work) => kept.push(work));

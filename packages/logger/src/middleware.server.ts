@@ -28,6 +28,7 @@ export {
   describeRequest,
   getRequestContext,
   getRouterContext,
+  isReadRequest,
   oncePerRead,
   oncePerRequest,
   requestContextMiddleware

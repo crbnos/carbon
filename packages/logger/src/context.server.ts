@@ -50,12 +50,17 @@ export const requestContextMiddleware: MiddlewareFunction<Response> = (
   { context, request },
   next
 ) => {
-  context.set(isReadRequestContext, READ_METHODS.has(request.method));
+  context.set(isReadRequestContext, isReadRequest(request));
   context.set(requestContext, request);
   return storage.run(context, () => next());
 };
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/** Whether a request only reads. The one definition, shared with `@carbon/auth`. */
+export function isReadRequest(request: { method: string }): boolean {
+  return READ_METHODS.has(request.method);
+}
 
 /** Whether this request only reads — see `oncePerRead`. */
 const isReadRequestContext = createContext<boolean>(false);
@@ -169,7 +174,7 @@ export function runInRequestContext<T>(
   // As the middleware decides it: from the request's method, when there is one.
   const isRead =
     options?.isRead ??
-    (options?.request ? READ_METHODS.has(options.request.method) : true);
+    (options?.request ? isReadRequest(options.request) : true);
   provider.set(isReadRequestContext, isRead);
   provider.set(requestContext, options?.request ?? null);
   return storage.run(provider, fn);

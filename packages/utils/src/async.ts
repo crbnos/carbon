@@ -129,6 +129,7 @@ async function map<T, R>(
 /**
  * p-limit: `limit(fn)` runs `fn` once fewer than `concurrency` of the calls
  * made through this `limit` are running, in the order they were made.
+ * `activeCount` and `pendingCount` say how many are running and queued.
  */
 function limit(concurrency = DEFAULT_CONCURRENCY) {
   assertConcurrency(concurrency);
@@ -141,7 +142,7 @@ function limit(concurrency = DEFAULT_CONCURRENCY) {
     if (waiter) waiter();
     else active--;
   };
-  return async <R>(fn: () => MaybePromise<R>): Promise<R> => {
+  const run = async <R>(fn: () => MaybePromise<R>): Promise<R> => {
     if (active >= concurrency) {
       await new Promise<void>((resolve) => queue.push(resolve));
     } else {
@@ -152,6 +153,13 @@ function limit(concurrency = DEFAULT_CONCURRENCY) {
     } finally {
       next();
     }
+  };
+  return Object.defineProperties(run, {
+    activeCount: { get: () => active },
+    pendingCount: { get: () => queue.length }
+  }) as typeof run & {
+    readonly activeCount: number;
+    readonly pendingCount: number;
   };
 }
 
@@ -178,7 +186,9 @@ function background(
  * once at startup. Without one, unawaited work stalls mid-flight until the
  * next request wakes the instance, or is lost.
  */
-function onBackground(hook: (work: Promise<unknown>) => void): void {
+function onBackground(
+  hook: ((work: Promise<unknown>) => void) | undefined
+): void {
   extendLifetime = hook;
 }
 

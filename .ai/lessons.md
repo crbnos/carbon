@@ -2834,3 +2834,36 @@ tag until proven otherwise.
 **Rule:** A function that changes more than once is authored as a single file, not as a chain of forks. The event system's functions live in `packages/database/src/event-system/functions/<name>.sql`; edit the file and run `pnpm --filter @carbon/database authz migration <name>`. A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes).
 
 **Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
+
+
+## Work a request does not await is frozen with the instance on Vercel
+
+**Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
+
+**Problem:** A Vercel function instance is frozen once its response is sent. The unawaited call stopped mid-flight and finished only when the next request woke the instance, so traces showed analytics calls of 10 s and more, and on an instance that was never reused the event was lost. `request.signal` does not help either: without `supportsCancellation` it never aborts on Vercel.
+
+**Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
+
+**Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.
+
+
+## React Router's instrumentation API can observe a request, not change it
+
+**Context:** The request-id, access-log and request-context middlewares looked like candidates to move into `instrumentations`, to shorten the middleware chain.
+
+**Problem:** In React Router 7.18 an instrumentation wrapper receives a read-only view: the request is `{ method, url, headers.get }` with no `signal` and no `clone()`, the context exposes only `get`, and the result carries only `statusCode` and `meta`. It cannot set a response header, open an AsyncLocalStorage scope around the handler, or read the body, which is everything those middlewares do.
+
+**Rule:** Instrumentation is for spans and measurements. Anything that sets a header, provides context to downstream code or reads the request stays a middleware; merge middlewares into one (`requestMiddleware`) instead of moving them. A middleware's own cost is recorded by `timedMiddleware` as `carbon.middleware.<name>.ms`, not by a span, because a middleware span contains everything it calls.
+
+**Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
+
+
+## A limiter must hand a freed slot to the next waiter, not decrement and let it race
+
+**Context:** `async.limit` first released a slot by decrementing the active count and waking the first queued call.
+
+**Problem:** The woken call resumes a microtask later. A call made in between saw a free slot, took it, and the woken call then incremented too: more than `concurrency` ran at once, and under steady load a queued call could be overtaken indefinitely.
+
+**Rule:** When a slot frees and a call is queued, pass the slot to it directly and leave the count unchanged; decrement only when the queue is empty. A queued call never increments. Test it by starting a new call in the same tick a running one finishes and asserting the queued one runs first.
+
+**Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.

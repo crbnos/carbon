@@ -45,8 +45,9 @@ it("records a wait only when connect() cannot hand out an idle connection", asyn
   await opening.connect();
   expect(names()).toEqual(["db connect"]);
 
+  // One idle connection, but an earlier caller is already queued for it.
   const full = traceConnectionWaits(
-    fakePool({ idleCount: 0, totalCount: 2, waitingCount: 3 })
+    fakePool({ idleCount: 1, totalCount: 2, waitingCount: 3 })
   );
   await full.connect();
   expect(names()).toEqual(["db connect", "db pool wait"]);

@@ -21,7 +21,7 @@ import type { ConformanceCheck, Violation } from "../check";
  */
 const SINCE = "20260927000000";
 /** The migration that took over the event-system functions. */
-const EVENT_SYSTEM_SINCE = "20261002085324";
+const EVENT_SYSTEM_SINCE = "20261002114954";
 
 /** The directories of managed function files, and the migration each set is checked from. */
 export const MANAGED_FUNCTION_SETS = [

@@ -298,6 +298,7 @@ describe("captureWorkEvent", () => {
       expect(kept).toHaveLength(1);
       await kept[0];
       expect(sent).toBe(true);
+      async.onBackground(undefined);
     });
   });
 });
