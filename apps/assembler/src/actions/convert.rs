@@ -180,12 +180,12 @@ async fn complete(
         Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
-            bytes: entry.glb.to_vec(),
+            bytes: entry.glb.clone(),
         },
         Output {
             name: "graph".into(),
             content_type: "application/json".into(),
-            bytes: entry.graph_bytes.to_vec(),
+            bytes: entry.graph_bytes.clone(),
         },
     ];
     // Convert output paths are job-scoped, so no result-pointer cache (the bytes

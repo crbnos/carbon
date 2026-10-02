@@ -82,7 +82,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
         let outputs = vec![Output {
             name: "thumbnail".into(),
             content_type: "image/png".into(),
-            bytes: png,
+            bytes: png.into(),
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });

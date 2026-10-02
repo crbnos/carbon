@@ -117,7 +117,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let outputs = vec![Output {
             name: "raw".into(),
             content_type: "application/zstd".into(),
-            bytes: out.bytes,
+            bytes: out.bytes.into(),
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });

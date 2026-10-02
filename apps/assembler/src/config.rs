@@ -85,6 +85,11 @@ pub fn pending_ttl_secs() -> u64 {
     300
 }
 
+/// Where outputs wait on disk for a late-minted upload URL (see `jobs.rs`).
+pub fn pending_dir() -> std::path::PathBuf {
+    std::env::temp_dir().join("asm-pending")
+}
+
 /// Server-side cap on the `?wait=` long-poll hold (seconds). Kept under typical
 /// proxy/LB idle timeouts so a held request never trips them.
 pub fn max_long_poll_secs() -> u64 {

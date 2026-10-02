@@ -129,7 +129,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                         let outputs = vec![Output {
                             name: "plan".into(),
                             content_type: "application/json".into(),
-                            bytes,
+                            bytes: bytes.into(),
                         }];
                         jobs.finish(&job_id, outputs, done, cache).await;
                     }

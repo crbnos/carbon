@@ -160,6 +160,19 @@ pub async fn download_hashed(
     Ok(hasher.digest128())
 }
 
+/// A file's bytes, memory-mapped: the page cache backs them, so uploading a
+/// parked or cached artifact does not copy it onto the heap.
+pub fn map_file(path: &std::path::Path) -> std::io::Result<bytes::Bytes> {
+    let file = std::fs::File::open(path)?;
+    if file.metadata()?.len() == 0 {
+        return Ok(bytes::Bytes::new());
+    }
+    // SAFETY: these files are written once by this service and then only read
+    // or unlinked; an unlinked file stays mapped until the map is dropped.
+    let map = unsafe { memmap2::Mmap::map(&file) }?;
+    Ok(bytes::Bytes::from_owner(map))
+}
+
 pub async fn upload(
     url: &str,
     body: impl Into<reqwest::Body>,

@@ -95,6 +95,15 @@ async fn serve() {
     let max = config::max_concurrency();
     let state = build_state().await;
     let slots = Arc::clone(&state.slots);
+    // Parked outputs nobody drained (see `jobs.rs`): the disk half of the
+    // pending TTL, including whatever a previous process left behind.
+    let sweeper = state.jobs.clone();
+    tokio::spawn(async move {
+        loop {
+            sweeper.sweep_parked().await;
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        }
+    });
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1", get(discovery))

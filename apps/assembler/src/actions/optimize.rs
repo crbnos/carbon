@@ -173,7 +173,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let outputs = vec![Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
-            bytes: outcome.glb,
+            bytes: outcome.glb.into(),
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });
