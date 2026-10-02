@@ -74,4 +74,5 @@ pnpm exec turbo run typecheck --filter=@carbon/mes-core
 | `stepRecordBody`, `noteBody`, `qualityIssueBody`, `printBody` | `./models` | Steps, notes, quality, print |
 | `pickQuantityBody`, `pickTrackedBody`, `pickingListStatusBody`, `isPickingListLocked` | `./models` | Picking |
 | `clockOutBody`, `pinInBody` | `./models` | Time card and shared terminal |
+| `consoleTerminalResponse`, `consolePinInResponse`, `consolePinOutResponse`, `consoleOperator` | `./contract` | The shared-tablet token responses (`HEADERS.terminal` / `HEADERS.operator`) |
 | `MES_LOCALES`, `resolveMesLocale` | `./locales` | The 13 shipped locales |

@@ -228,6 +228,16 @@ export type PickingListStatusBody = z.infer<typeof pickingListStatusBody>;
 export const clockOutBody = z.object({ note: z.string().optional() });
 export type ClockOutBody = z.infer<typeof clockOutBody>;
 
+/**
+ * The shared-tablet pin-in. `userId` is the operator the terminal picked from
+ * the employee list; `pin` is their console PIN.
+ *
+ * This is the one body in this file that carries a CREDENTIAL. It is never
+ * logged, never echoed back, and `POST /console/pin-in` deliberately opts out
+ * of the idempotency window — that window keys a sha256 of the request body,
+ * and a 4-digit PIN has only 10,000 preimages, so storing its fingerprint
+ * would put the PIN itself within reach of anything that can read Redis.
+ */
 export const pinInBody = z.object({
   userId: z.string().min(1),
   pin: z.string().regex(/^\d{4,8}$/, { message: "Enter your 4-8 digit PIN" })

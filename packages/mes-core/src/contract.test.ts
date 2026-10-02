@@ -10,6 +10,9 @@ import {
   authMfaRequest,
   authVerifyRequest,
   compareAppVersion,
+  consolePinInResponse,
+  consolePinOutResponse,
+  consoleTerminalResponse,
   HEADERS,
   meResponse,
   operationsQuery,
@@ -19,6 +22,7 @@ import {
   serverSpeaksApiVersion,
   timecardScreen
 } from "./contract";
+import { pinInBody } from "./models";
 
 describe("compareAppVersion", () => {
   it("compares numerically, not lexicographically", () => {
@@ -345,5 +349,88 @@ describe("timecardScreen", () => {
         weekEnd: "2026-10-04"
       }).success
     ).toBe(false);
+  });
+});
+
+describe("console (shared tablet) responses", () => {
+  it("pins the two header names the tokens travel in", () => {
+    expect(HEADERS.terminal).toBe("x-carbon-terminal");
+    expect(HEADERS.operator).toBe("x-carbon-operator");
+  });
+
+  it("accepts a minted terminal token", () => {
+    expect(
+      consoleTerminalResponse.safeParse({ terminalToken: "a.b.c" }).success
+    ).toBe(true);
+  });
+
+  it("refuses an empty terminal token — the app would send a blank header", () => {
+    expect(
+      consoleTerminalResponse.safeParse({ terminalToken: "" }).success
+    ).toBe(false);
+  });
+
+  it("accepts a pin-in with the operator the header will render", () => {
+    expect(
+      consolePinInResponse.safeParse({
+        operatorToken: "a.b.c",
+        operator: { userId: "user_2", name: "Op Two", avatarUrl: null },
+        expiresAt: 1790935200000
+      }).success
+    ).toBe(true);
+  });
+
+  it("refuses a pin-in with no token or no operator to attribute work to", () => {
+    expect(
+      consolePinInResponse.safeParse({
+        operatorToken: "",
+        operator: { userId: "user_2", name: "Op Two", avatarUrl: null },
+        expiresAt: 1790935200000
+      }).success
+    ).toBe(false);
+    expect(
+      consolePinInResponse.safeParse({
+        operatorToken: "a.b.c",
+        operator: { name: "Op Two", avatarUrl: null },
+        expiresAt: 1790935200000
+      }).success
+    ).toBe(false);
+  });
+
+  it("never carries the PIN back out", () => {
+    const parsed = consolePinInResponse.parse({
+      operatorToken: "a.b.c",
+      operator: { userId: "user_2", name: "Op Two", avatarUrl: null },
+      expiresAt: 1790935200000,
+      pin: "1234"
+    });
+    expect(parsed).not.toHaveProperty("pin");
+  });
+
+  it("pins pin-out as a plain acknowledgement", () => {
+    expect(consolePinOutResponse.safeParse({ ok: true }).success).toBe(true);
+    expect(consolePinOutResponse.safeParse({ ok: false }).success).toBe(false);
+  });
+});
+
+describe("pinInBody", () => {
+  it("accepts a 4-to-8 digit PIN", () => {
+    expect(pinInBody.safeParse({ userId: "user_2", pin: "1234" }).success).toBe(
+      true
+    );
+    expect(
+      pinInBody.safeParse({ userId: "user_2", pin: "12345678" }).success
+    ).toBe(true);
+  });
+
+  it("refuses anything that is not a bare PIN, so nothing odd reaches the verifier", () => {
+    for (const pin of ["123", "123456789", "12a4", "", " 1234", "1234 "]) {
+      expect(pinInBody.safeParse({ userId: "user_2", pin }).success).toBe(
+        false
+      );
+    }
+    expect(pinInBody.safeParse({ userId: "", pin: "1234" }).success).toBe(
+      false
+    );
   });
 });

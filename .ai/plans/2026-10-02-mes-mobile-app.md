@@ -6,6 +6,23 @@
 **Branches (one PR per phase):** `feat/mobile-scaffold` (Phase 0), `feat/mobile-spike` (Phase 1), `feat/mes-api` (Phase 2), `feat/mobile-screens` (Phase 3; may be split into one PR per screen group), `feat/mobile-ship` (Phase 4). Never put "claude" in a branch name; no `Co-Authored-By` trailers.
 
 ## Progress
+
+**Session of 2026-10-02 (second pass).** Tasks 23, 31, 34–43, 45–48 and 52's
+groundwork are done; the branch is `sid/carbon-mobile`, PR crbnos/carbon#1811.
+Not done: Task 44 (the shared-terminal UI on top of Task 23's endpoints),
+Task 49 (TestFlight / Play builds — needs the user's own Apple and Google
+accounts and `expo-dev-client`, which is an Ask First native module), Task 50
+(the store-review account on Carbon Cloud), Task 51 (the acceptance matrix —
+needs the three devices), and Task 52's docs page and changelog entry.
+Translations for the 339 newly-extracted strings need `pnpm translate`, which
+calls an external LLM service, so it is left for the user to run.
+
+Three bugs found while building, all recorded in the commits: the supabase
+client never had a session set (so every direct read returned zero rows, not an
+error); the instance cache key was a server-chosen display name rather than the
+local uuid; and `typecheck` depended on a gitignored Uniwind declaration, which
+is now a lesson in `.ai/lessons.md`.
+
 - [x] Task 1: Record the spec corrections found during planning
 - [x] Task 2: Scope the React pin to the packages that need it
 - [x] Task 3: Create `packages/mes-core`

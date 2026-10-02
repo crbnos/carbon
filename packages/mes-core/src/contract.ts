@@ -686,3 +686,59 @@ export const operationNote = z
   })
   .passthrough();
 export type OperationNote = z.infer<typeof operationNote>;
+
+// ---------------------------------------------------------------------------
+// Console — the shared tablet
+// ---------------------------------------------------------------------------
+
+/**
+ * A tablet clamped to a machine signs in ONCE as a terminal account; the
+ * operators who use it pin in with their PIN, and their work is attributed to
+ * them. Two tokens, both signed and verified server-side (`@carbon/auth`
+ * `console-token.server`), carry that:
+ *
+ * - the TERMINAL token (`HEADERS.terminal`) says which tablet session is
+ *   offering a PIN. It is bound to the company and the signed-in terminal
+ *   account, and is sent only to `POST /console/pin-in`.
+ * - the OPERATOR token (`HEADERS.operator`) IS the identity claim, sent with
+ *   every call the operator makes. It expires, it is bound to the same company
+ *   and terminal session, and the server re-validates the operator against the
+ *   database on every request.
+ *
+ * The app keeps BOTH in memory only — never SecureStore, never the query cache
+ * — so a stolen tablet carries no operator session and a cold start lands on
+ * the PIN screen. Nothing on the server depends on the app persisting them.
+ */
+export const consoleTerminalResponse = z.object({
+  terminalToken: z.string().min(1)
+});
+export type ConsoleTerminalResponse = z.infer<typeof consoleTerminalResponse>;
+
+/** Who is pinned in, as the app renders it in the operator header. */
+export const consoleOperator = z.object({
+  userId: z.string(),
+  name: z.string(),
+  avatarUrl: z.string().nullable()
+});
+export type ConsoleOperator = z.infer<typeof consoleOperator>;
+
+export const consolePinInResponse = z.object({
+  operatorToken: z.string().min(1),
+  operator: consoleOperator,
+  /**
+   * When the claim lapses, as epoch ms — an hour, or the deployment's
+   * `instance.idleLockMs` in a controlled environment. Every authenticated
+   * response refreshes the token and so moves this forward, so the app treats
+   * it as a deadline to re-pin, not as a countdown it owns.
+   */
+  expiresAt: z.number()
+});
+export type ConsolePinInResponse = z.infer<typeof consolePinInResponse>;
+
+/**
+ * Pin-out is the app DROPPING the token; there is no server-side session to
+ * destroy. The call exists so the act is audited and so the app has one place
+ * to confirm the operator header it just sent is gone.
+ */
+export const consolePinOutResponse = z.object({ ok: z.literal(true) });
+export type ConsolePinOutResponse = z.infer<typeof consolePinOutResponse>;

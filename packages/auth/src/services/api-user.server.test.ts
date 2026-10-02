@@ -36,7 +36,12 @@ vi.mock("../config/env", () => ({
   CONTROLLED_ENVIRONMENT: false,
   // Default off: the local DEV_BYPASS_EMAIL exemption must not be in play for
   // the ordinary MFA assertions below.
-  IS_LOCAL_DEV: false
+  IS_LOCAL_DEV: false,
+  // Read by console-pin.server, which api-user.server now imports for the
+  // operator hook's re-validation.
+  CarbonEdition: "Community",
+  DOMAIN: "localhost",
+  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000
 }));
 
 vi.mock("../lib/supabase/client", () => ({
@@ -290,10 +295,15 @@ describe("requireApiUser — shared tablet", () => {
     userId: OPERATOR,
     companyId: COMPANY,
     sessionUserId: USER,
+    name: "Op Two",
+    avatarUrl: null,
     pinnedAt: Date.now()
   };
 
-  it("refuses an operator header when the endpoint accepts none", async () => {
+  // With no injected hook the module's own one runs, which verifies the
+  // signature for real — so an operator header nobody signed is refused
+  // rather than believed.
+  it("refuses an operator token it did not sign", async () => {
     expect(
       await codeOf(
         requireApiUser(
@@ -302,7 +312,7 @@ describe("requireApiUser — shared tablet", () => {
           deps()
         )
       )
-    ).toBe("400:validation_failed");
+    ).toBe("401:operator_expired");
   });
 
   it("attributes the work to the pinned operator", async () => {
@@ -319,6 +329,28 @@ describe("requireApiUser — shared tablet", () => {
     expect(user.userId).toBe(OPERATOR);
     expect(user.sessionUserId).toBe(USER);
     expect(user.consoleMode).toBe(true);
+  });
+
+  it("hands back a re-signed token so the window slides", async () => {
+    const user = await requireApiUser(
+      request({ ...authed, "x-carbon-operator": "tok" }),
+      {},
+      deps({
+        operator: {
+          verify: vi.fn().mockResolvedValue(operator),
+          revalidate: vi.fn().mockResolvedValue(true)
+        }
+      })
+    );
+    // Verified by console-token.server's own tests; here it only has to BE
+    // there, because the route wrapper is what returns it to the tablet.
+    expect(user.operatorToken).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
+  });
+
+  it("leaves no operator token on an ordinary signed-in call", async () => {
+    const user = await requireApiUser(request(authed), {}, deps());
+    expect(user.consoleMode).toBe(false);
+    expect(user.operatorToken).toBeUndefined();
   });
 
   it("refuses an operator token bound to another terminal", async () => {

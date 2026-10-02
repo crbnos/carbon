@@ -13,6 +13,14 @@ import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission } from "../types";
 import { getAuthAccountByAccessToken } from "./auth.server";
 import { logAuthEvent } from "./auth-events.server";
+import {
+  revalidateConsolePinIn,
+  type StoredConsolePinIn
+} from "./console-pin.server";
+import {
+  refreshOperatorToken,
+  verifyOperatorToken
+} from "./console-token.server";
 import { userHasVerifiedTotpFactor } from "./mfa.server";
 import { getClaims, makePermissionsFromClaims } from "./users";
 
@@ -114,6 +122,15 @@ export type ApiUser = {
   claims: ApiClaims;
   /** RLS-scoped as the signed-in user, like the web's non-bypass client. */
   client: SupabaseClient<Database>;
+  /**
+   * In console mode only: the operator's claim re-signed with a fresh
+   * `pinnedAt`. The route wrapper returns it in the `x-carbon-operator`
+   * response header and the app replaces what it holds in memory, which is how
+   * a pin-in survives a long shift — the web gets the same sliding window for
+   * free, because the MES shell loader rewrites the pin-in cookie on every
+   * navigation.
+   */
+  operatorToken?: string;
 };
 
 export type ApiPermissions = {
@@ -124,22 +141,23 @@ export type ApiPermissions = {
   role?: string;
 };
 
-/** A verified operator token's payload, as `console-pin.server` stores it. */
-export type ApiOperator = {
-  userId: string;
-  companyId: string;
-  sessionUserId: string;
-  pinnedAt: number;
-};
+/**
+ * A verified operator token's payload — the SAME claim the signed
+ * `console-pin-<companyId>` cookie carries on the web, so one
+ * `revalidateConsolePinIn` answers "may this operator still act?" for both
+ * carriers and a tablet and a browser cannot disagree.
+ */
+export type ApiOperator = StoredConsolePinIn;
 
 export type ApiUserDeps = {
   getUser?: typeof getAuthAccountByAccessToken;
   getClaims?: (userId: string, companyId: string) => Promise<ApiClaims>;
   hasTotp?: typeof userHasVerifiedTotpFactor;
   /**
-   * Shared-tablet support, injected by the MES app. `@carbon/auth` cannot
-   * import `@carbon/ee` (ee already depends on auth, so it would be a cycle),
-   * and the entitlement + PIN checks live there — so the caller supplies them.
+   * Shared-tablet support. Defaults to `DEFAULT_OPERATOR_HOOK` below; the MES
+   * app overrides it to add the commercial console ENTITLEMENT check, because
+   * `@carbon/auth` cannot import `@carbon/ee` (ee already depends on auth, so
+   * it would be a cycle).
    */
   operator?: {
     verify: (token: string) => Promise<ApiOperator | null>;
@@ -207,6 +225,23 @@ export async function bustApiClaims(userId: string, companyId: string) {
     log.error("Failed to bust API claims", { error: e });
   }
 }
+
+/**
+ * The shared-tablet hook: an operator claim this server SIGNED, verified
+ * server-side, then re-validated against the database.
+ *
+ * `revalidate` asks `revalidateConsolePinIn` — the operator must still be an
+ * ACTIVE employee of the token's company and `companySettings.consoleEnabled`
+ * must still be on. It deliberately does NOT ask for the commercial
+ * `PERMISSIONS` entitlement, which lives in `@carbon/ee` and would be an
+ * import cycle from here: the MES app injects a `deps.operator` that adds
+ * `isConsoleModeEnabledForCompany`, and `POST /api/v1/console/pin-in` asks it
+ * before minting, so a company with no entitlement never gets a token at all.
+ */
+export const DEFAULT_OPERATOR_HOOK: NonNullable<ApiUserDeps["operator"]> = {
+  verify: verifyOperatorToken,
+  revalidate: revalidateConsolePinIn
+};
 
 const userRatelimit = new Ratelimit({
   redis,
@@ -347,23 +382,27 @@ export async function requireApiUser(
     throw new ApiError(401, "mfa_required", "Enter your two-factor code");
   }
 
+  // Everything above has already passed: the Bearer token resolved to a real
+  // account, the company header matched its claims, the permissions held and
+  // the MFA gate cleared. ONLY NOW is the operator claim read, and all it can
+  // do is move the attribution from the terminal account to a person that
+  // account is already allowed to act as.
   let effectiveUserId = user.id;
   let consoleMode = false;
+  let freshOperatorToken: string | undefined;
   const operatorToken = request.headers.get("x-carbon-operator")?.trim();
   if (operatorToken) {
-    if (!deps.operator) {
-      throw new ApiError(
-        400,
-        "validation_failed",
-        "Operator tokens are not accepted on this endpoint"
-      );
-    }
-    const operator = await deps.operator.verify(operatorToken);
+    const hook = deps.operator ?? DEFAULT_OPERATOR_HOOK;
+    const operator = await hook.verify(operatorToken);
     if (
       !operator ||
+      // Bound to ONE company, so a token cannot be replayed against another
+      // tenant the terminal account happens to belong to...
       operator.companyId !== companyId ||
+      // ...and to the terminal SESSION that minted it, so a token lifted off
+      // one tablet is worthless on the next one.
       operator.sessionUserId !== user.id ||
-      !(await deps.operator.revalidate(operator))
+      !(await hook.revalidate(operator))
     ) {
       throw new ApiError(
         401,
@@ -373,6 +412,7 @@ export async function requireApiUser(
     }
     effectiveUserId = operator.userId;
     consoleMode = true;
+    freshOperatorToken = await refreshOperatorToken(operator);
   }
 
   const withinLimit = deps.rateLimit
@@ -390,6 +430,7 @@ export async function requireApiUser(
     accessToken: bearer,
     email: user.email ?? "",
     claims,
-    client: getCarbon(bearer)
+    client: getCarbon(bearer),
+    ...(freshOperatorToken && { operatorToken: freshOperatorToken })
   };
 }
