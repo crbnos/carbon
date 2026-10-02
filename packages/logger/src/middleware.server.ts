@@ -163,7 +163,10 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
     const res = await next();
     annotateRequestSpan({
       "http.response.status_code": res.status,
-      "carbon.request_id": requestId
+      "carbon.request_id": requestId,
+      // The client left before the response was ready, so a read's queries
+      // were cancelled and its status says nothing about the server.
+      ...(request.signal.aborted && { "carbon.request.abandoned": true })
     });
     // Debug-level so it is visible in dev but filtered by the prod `info`
     // default — the pipeline is observable with zero migrated call sites.
