@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -374,6 +375,7 @@ function PurchaseInvoiceLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -387,6 +389,7 @@ function PurchaseInvoiceLineItem({
                 {/* @ts-expect-error */}
                 {itemType.includes(line.invoiceLineType ?? "") && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >

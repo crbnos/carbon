@@ -45,10 +45,18 @@ export interface ManifestEntry {
    *  fetchAll read — pagination args are inert in the service, and the MCP
    *  layer pages the response at its own boundary instead. */
   paginates: boolean;
-  /** The JSON Schema for the operation's input. When the service branches on
-   *  `"createdBy" in payload`, a required `_operation: "create" | "update"`
-   *  property is present here — that property IS the marker (there is no parallel
-   *  flag), matching how the dispatcher decides today. */
+  /** Present when the service picks insert-vs-update by testing for an audit
+   *  field on the payload (`"createdBy" in payload`), so the dispatcher has to
+   *  stamp exactly one of them. `keys` are the payload fields that identify the
+   *  record; a call missing any of them is a create. With no `lookups`, a call
+   *  carrying them all is an update. With `lookups`, it is an update only when
+   *  one of them finds a row in the caller's company — `match` maps a column of
+   *  `table` to the payload field it is compared with. */
+  upsert?: {
+    keys: string[];
+    lookups?: Array<{ table: string; match: Record<string, string> }>;
+  };
+  /** The JSON Schema for the operation's input. */
   schema: Record<string, unknown>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could

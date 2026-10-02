@@ -54,13 +54,17 @@ async function main(): Promise<void> {
     console.log(
       `check-manifest: ok — ${fresh.totalTools} operations across ${fresh.modules} modules, digest current.`
     );
-    // A validator that silently fell back to source-text parsing publishes a lossy
-    // schema. The digest can be perfectly current and still be built that way, so
-    // report it separately rather than folding it into the pass/fail.
+    // A module that will not load no longer degrades to source-text parsing — the
+    // schemas it should have contributed are simply absent, so the digest being
+    // current says nothing about whether it is complete.
     if (registryStats.moduleErrors.length > 0) {
-      console.warn(
-        `  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load; their schemas came from the textual fallback.`
+      console.error(
+        `  ✗ ${registryStats.moduleErrors.length} module(s) failed to load, so their schemas are missing:`
       );
+      for (const e of registryStats.moduleErrors) {
+        console.error(`      ${e.module}: ${e.error}`);
+      }
+      process.exit(1);
     }
     return;
   }

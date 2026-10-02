@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Avatar, HStack, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Avatar,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -115,6 +121,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(
                 `${path.to.contractor(
@@ -127,6 +134,7 @@ const ContractorsTable = memo(({ data, count }: ContractorsTableProps) => {
             <Trans>Edit Contractor</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {

@@ -5,6 +5,7 @@
 import {
   Badge,
   Button,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -195,11 +196,15 @@ const WorkflowsTable = memo(
     const renderContextMenu = useCallback(
       (row: Workflow) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.workflow(row.id))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.open}
+            onClick={() => navigate(path.to.workflow(row.id))}
+          >
             <MenuIcon icon={<LuWorkflow />} />
             {t`Open Workflow`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.rename}
             disabled={!permissions.can("update", "workflows")}
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
@@ -222,6 +227,7 @@ const WorkflowsTable = memo(
             {t`Unpublish`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "workflows")}
             onClick={() => {

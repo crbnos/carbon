@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  cn,
   NavRail,
   NavRailItem,
   NavRailLink,
@@ -55,7 +56,12 @@ import { useNavigationEditMode } from "./useNavigationEditMode";
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
 
-const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
+// Only modules have a g-then-letter key; pass it for those.
+const renderLink = (
+  link: Authenticated<NavItem>,
+  isActive: boolean,
+  goToKey?: string
+) => (
   <NavRailLink
     key={link.name}
     to={link.to}
@@ -64,6 +70,7 @@ const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
     tag={link.tag}
     external={link.external}
     isActive={isActive}
+    trailing={goToKey ? <GoToHint goToKey={goToKey} /> : undefined}
   />
 );
 
@@ -130,7 +137,11 @@ const PrimaryNavigation = () => {
   const footer = (
     <>
       {settingsModule && !editMode.isEditing
-        ? renderLink(settingsModule, isModuleActive(settingsModule.to))
+        ? renderLink(
+            settingsModule,
+            isModuleActive(settingsModule.to),
+            MODULE_GO_TO[settingsModule.key]
+          )
         : null}
 
       {editMode.isEditing ? (
@@ -191,7 +202,9 @@ const PrimaryNavigation = () => {
             </SortableContext>
           </DndContext>
         ) : (
-          links.map((link) => renderLink(link, isModuleActive(link.to)))
+          links.map((link) =>
+            renderLink(link, isModuleActive(link.to), MODULE_GO_TO[link.key])
+          )
         )}
 
         {editMode.isEditing && (
@@ -207,6 +220,25 @@ const PrimaryNavigation = () => {
     </>
   );
 };
+
+// Hovering is what expands the rail, so the g-then-letter hint shows on the
+// hovered/focused row only.
+const GoToHint = ({ goToKey }: { goToKey: string }) => (
+  <span
+    aria-hidden
+    className={cn(
+      "flex items-center gap-0.5 opacity-0 transition-opacity duration-100",
+      "group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
+    )}
+  >
+    <ShortcutKey
+      shortcut={MODULE_GO_TO_PREFIX}
+      variant="small"
+      className="mx-0"
+    />
+    <ShortcutKey shortcut={goToKey} variant="small" className="mx-0" />
+  </span>
+);
 
 const NavigationSearchButton = () => {
   const { t } = useLingui();

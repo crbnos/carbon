@@ -162,6 +162,7 @@ export async function completeJob(
  * `production` update gate is re-applied here (the MCP executor performs no
  * per-tool check). `client` MUST stay named `client` and first — the MCP executor
  * injects it positionally by that exact name; renaming breaks the tool.
+ * @mcp action
  */
 export async function scheduleJob(
   client: SupabaseClient<Database>,
@@ -204,6 +205,8 @@ export async function scheduleJob(
  *   creates match the UI: estimates fill at release).
  * - Update recalcs requirements ALWAYS; dependencies when the material is
  *   Make to Order and tied to an operation.
+ * @mcp upsert
+ * @mcp key jobMaterial id
  */
 export async function upsertJobMaterial(
   client: SupabaseClient<Database>,

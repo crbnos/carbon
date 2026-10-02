@@ -17,6 +17,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Skeleton,
   Tooltip,
   TooltipContent,
@@ -407,6 +408,7 @@ export function RevisionsItem({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
                           onSelect={() => {
                             flushSync(() => {
                               setSelectedRevision({

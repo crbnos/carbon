@@ -2,8 +2,9 @@
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "//#lingui:compile", "//#generate:mcp"],
-      "env": ["ASSETS_URL"],
+      "dependsOn": ["^build", "//#lingui:compile"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "env": ["ASSETS_URL", "VERCEL"],
       "outputs": [
         "dist/**",
         "build/**",
@@ -19,27 +20,30 @@
       "outputs": ["src/pdf/fonts.data.ts"]
     },
     "//#lingui:compile": {
-      "inputs": [
-        "lingui.config.js",
-        "apps/erp/app/**",
-        "apps/mes/app/**",
-        "packages/react/src/**",
-        "docs/content/src/glossary/**",
-        "packages/ee/src/workflows/**",
-        "packages/locale/locales/**/*.po"
-      ],
+      "inputs": ["lingui.config.js", "packages/locale/locales/**/*.po"],
       "outputs": ["packages/locale/locales/**/*.mjs"]
     },
+    "transit": {
+      "dependsOn": ["^transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"]
+    },
     "test": {
-      "cache": false,
-      "dependsOn": ["^build", "//#generate:mcp"]
+      "dependsOn": ["^build", "transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "outputs": []
     },
     "typecheck": {
-      "cache": false,
-      "dependsOn": ["//#generate:mcp"]
+      "dependsOn": ["transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
+      "outputs": [".react-router/types/**", ".source/**", "lib/*.generated.ts"]
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/AGENTS.md",
+        "!**/CLAUDE.md",
+        "$TURBO_ROOT$/biome.jsonc"
+      ],
       "outputs": []
     },
     "dev": {
@@ -74,12 +78,15 @@
       "outputs": []
     },
     "//#generate:mcp": {
-      "cache": false,
       "inputs": [
-        "apps/erp/app/modules/*/*.service.ts",
-        "apps/erp/app/modules/*/*.mcp.server.ts",
-        "apps/erp/app/modules/*/*.models.ts",
+        "apps/erp/app/modules/**/*.ts",
+        "apps/erp/app/types/**",
+        "apps/erp/app/utils/**",
         "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
+        "apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts",
+        "apps/erp/tsconfig.json",
+        "packages/{api,database,documents,files,locale,logger,notifications,printing,utils}/src/**",
+        "packages/database/supabase/functions/shared/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"
       ],

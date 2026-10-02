@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
@@ -132,7 +133,10 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => navigate(path.to.operationBatch(row.id))}
+        >
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>

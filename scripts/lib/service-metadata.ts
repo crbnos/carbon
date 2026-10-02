@@ -6,12 +6,16 @@
  * Service metadata parser — the pure core behind the MCP tool manifest and the
  * Carbon API contract.
  *
- * Textually parses every `apps/erp/app/modules/*.service.ts` (+ `.ee` / `.mcp.server`
+ * Turns every `apps/erp/app/modules/*.service.ts` (+ `.ee` / `.mcp.server`
  * companions) into operation metadata: classification, description, positional
  * service params, the audit fields to inject, the required permission, and a JSON
  * Schema for the input. NO filesystem writes and no process side effects — callers
- * (`scripts/generate-mcp.ts`) own emitting the manifest. Grounded against the
- * long-standing generator logic; the parsing helpers are moved verbatim.
+ * (`scripts/generate-mcp.ts`) own emitting the manifest.
+ *
+ * Which functions exist, their parameters, their doc tags and what their bodies
+ * do all come from the AST (`service-ast.ts`). The one thing still read as TEXT
+ * is a parameter's declared type, which `typeToJsonSchema` below turns into a
+ * JSON Schema.
  */
 
 import * as fs from "fs";
@@ -26,10 +30,28 @@ import type {
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
+  MCP_DESTRUCTIVE,
+  MCP_EXPOSURE_TAG,
+  MCP_MODULE_ALLOWLIST,
+  MCP_SETTINGS,
+  MCP_VERBS,
+  type McpVerb
+} from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
+import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
+import {
+  branchesOnKeyPresence,
+  buildServiceAst,
+  dbWrites,
+  idDistinguishesUpdate,
+  namedTables,
+  paginates as bodyPaginates,
+  type ServiceAst,
+  type ServiceFunction
+} from "./service-ast";
 import {
   buildValidatorRegistry,
   CONTEXT_PARAMS,
@@ -88,54 +110,6 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
   inventory_updateWarehouseTransfer: "Update an existing warehouse transfer",
 };
 
-// Per-tool overrides of the auto-computed injectAuth set. The default rule
-// (insert* → companyId + createdBy + updatedBy) is wrong for tools that spread
-// their argument object straight into an INSERT on an append-only ledger table.
-// Those tables now carry an updatedBy column (schema uniformity, migration
-// 20260701143512), but by convention it must stay NULL — an "edit" is a new
-// offsetting row, never an in-place mutation. Injecting updatedBy would stamp it
-// on the ledger row and destroy the "untouched since creation" guarantee, so we
-// drop it here. Both tools below insert([data]) where data is built from the
-// spread of their injected args:
-//   - inventory_insertManualInventoryAdjustment → itemLedger
-//   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
-// account_upsertNotificationPreference spreads its argument into an upsert on
-// notificationPreference, which (like userModulePreference) carries no
-// createdBy/updatedBy columns at all — injecting them breaks the write. The
-// four lean material lookups (dimension, finish, grade, type) are the same:
-// no audit columns, argument spread into the row.
-const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
-  inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
-  accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
-  account_upsertNotificationPreference: ["companyId"],
-  items_upsertMaterialDimension: ["companyId"],
-  items_upsertMaterialFinish: ["companyId"],
-  items_upsertMaterialGrade: ["companyId"],
-  items_upsertMaterialType: ["companyId"],
-  // Both operations replace settlement rows in a transaction. Their verbs do
-  // not imply INSERT to the name-based rule, but the service requires the
-  // authenticated creator for every replacement row.
-  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
-  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
-  // Both read the caller's group-scoped currency with the payload's
-  // companyGroupId and write a memo, so it must come from the auth context —
-  // a caller-supplied group would resolve another group's currency rows.
-  purchasing_createPurchaseReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
-  sales_createSalesReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
-};
-
 // service-module → permission-module. `items` operations are gated by the `parts`
 // permission; `account` and `shared` gate only on a valid key of the company (no
 // module permission), so they map to null. Every other module is identity.
@@ -144,37 +118,6 @@ const PERMISSION_MODULE_MAP: Record<string, string | null> = {
   account: null,
   shared: null,
 };
-
-// Per-tool permission overrides, for operations whose route gates on a DIFFERENT
-// module than their service module (spot-checked against the real routes). Keep
-// this hand-curated list small and grounded — each entry needs a verified route.
-const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
-  // API-key management is an admin capability: the list loader
-  // (x+/settings+/api-keys.tsx) gates on { update: "users" }, not "settings" —
-  // deriving "settings" would let a settings-scoped key read the key family.
-  // The WRITES (upsert/delete) moved to @carbon/ee/api-keys.server behind
-  // requireEntitlement, so they are no longer scanned as MCP tools; only the
-  // read remains here.
-  settings_getApiKeys: { module: "users", actions: ["update"] },
-};
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface ParsedParam {
-  name: string;
-  typeStr: string;
-  optional: boolean;
-  description?: string;
-}
-
-interface ParsedFunction {
-  name: string;
-  params: ParsedParam[];
-  /** Body of a JSDoc block comment immediately preceding the export, if any. */
-  jsdoc?: string;
-}
 
 // ---------------------------------------------------------------------------
 // Parsing helpers
@@ -250,62 +193,6 @@ function isArrowClose(str: string, i: number): boolean {
   return str[i] === ">" && str[i - 1] === "=";
 }
 
-/** Index of the first `char` at nesting depth 0, or -1. A defaulted parameter
- *  splits on `=`, so that scan skips `=>` and `==`/`!=`/`<=`/`>=`. */
-function findTopLevel(str: string, char: ":" | "="): number {
-  let depth = 0;
-  for (let i = 0; i < str.length; i++) {
-    const j = skipComment(str, i);
-    if (j !== i) {
-      i = j - 1;
-      continue;
-    }
-    const ch = str[i];
-    if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch) && !isArrowClose(str, i)) depth--;
-    if (ch !== char || depth !== 0) continue;
-    if (char === "=") {
-      const prev = str[i - 1];
-      if (str[i + 1] === ">" || str[i + 1] === "=" || "!<>=".includes(prev)) {
-        continue;
-      }
-    }
-    return i;
-  }
-  return -1;
-}
-
-function inferTypeFromDefaultLiteral(literal: string): string {
-  const t = literal.trim();
-  if (t === "true" || t === "false") return "boolean";
-  if (/^-?\d+(\.\d+)?$/.test(t)) return "number";
-  if (/^["'`].*["'`]$/.test(t)) return "string";
-  return "unknown";
-}
-
-// A destructuring pattern is not a name; storing the raw source text put braces and
-// newlines into the manifest, so reformatting a signature churned the committed
-// digest. The synthetic name only has to avoid `CONTEXT_PARAMS` and the dispatcher's
-// `args` branch — nothing else reads a param name for meaning.
-function destructuredParamName(raw: string, existing: ParsedParam[]): string {
-  if (!raw.startsWith("{")) return raw;
-  const base = "destructured";
-  if (!existing.some((p) => p.name === base)) return base;
-  let i = 2;
-  while (existing.some((p) => p.name === `${base}${i}`)) i++;
-  return `${base}${i}`;
-}
-
-/** The body of a JSDoc block whose closing marker directly precedes `index`. */
-function precedingJsdoc(content: string, index: number): string | undefined {
-  const before = content.slice(0, index);
-  const end = before.lastIndexOf("*/");
-  if (end === -1 || before.slice(end + 2).trim() !== "") return undefined;
-  const start = before.lastIndexOf("/**", end);
-  if (start === -1) return undefined;
-  return before.slice(start + 3, end);
-}
-
 /**
  * Reduce a function-level JSDoc body to a one-line tool description: the prose
  * before the first `@tag`, first sentence only, whitespace collapsed. The
@@ -331,84 +218,6 @@ export function extractJsdocSummary(raw: string): string | undefined {
   return cased.length > 160 ? `${cased.slice(0, 159).trimEnd()}…` : cased;
 }
 
-function parseExportedFunctions(content: string): ParsedFunction[] {
-  const results: ParsedFunction[] = [];
-  const regex = /export\s+(?:async\s+)?function\s+(\w+)\s*\(/g;
-  let match;
-
-  while ((match = regex.exec(content)) !== null) {
-    const name = match[1];
-    const jsdoc = precedingJsdoc(content, match.index);
-    const openParen = match.index + match[0].length - 1;
-    const closeParen = findMatchingBrace(content, openParen);
-    const rawParams = content.substring(openParen + 1, closeParen).trim();
-
-    if (!rawParams) {
-      results.push({ name, params: [], jsdoc });
-      continue;
-    }
-
-    const paramStrings = splitAtTopLevel(rawParams, ",");
-    const params: ParsedParam[] = [];
-
-    for (const p of paramStrings) {
-      if (!p) continue;
-      // With comment-inert splitting, a param keeps the comment that precedes
-      // it: keep a `/** doc */` as its description, drop everything else.
-      const doc = p.match(/\/\*\*([\s\S]*?)\*\//);
-      const description = doc
-        ? doc[1]
-            .split("\n")
-            .map((line) => line.replace(/^\s*\*?\s?/, "").trim())
-            .join(" ")
-            .trim() || undefined
-        : undefined;
-      const stripped = p
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .split("\n")
-        .map((line) => line.replace(/\/\/.*$/, ""))
-        .join("\n")
-        .trim();
-      if (!stripped) continue;
-      const colonIdx = findTopLevel(stripped, ":");
-      if (colonIdx === -1) {
-        const eqIdx = findTopLevel(stripped, "=");
-        if (eqIdx === -1) {
-          params.push({
-            name: destructuredParamName(stripped, params),
-            typeStr: "unknown",
-            optional: false
-          });
-        } else {
-          const paramName = stripped.substring(0, eqIdx).trim();
-          const defaultLiteral = stripped.substring(eqIdx + 1).trim();
-          params.push({
-            name: paramName,
-            typeStr: inferTypeFromDefaultLiteral(defaultLiteral),
-            optional: true,
-            description
-          });
-        }
-        continue;
-      }
-      const before = stripped.substring(0, colonIdx).trim();
-      const optional = before.endsWith("?");
-      const rawName = before.replace(/\?$/, "").trim();
-      const typeStr = stripped.substring(colonIdx + 1).trim();
-      params.push({
-        name: destructuredParamName(rawName, params),
-        typeStr,
-        optional,
-        description
-      });
-    }
-
-    results.push({ name, params, jsdoc });
-  }
-
-  return results;
-}
-
 // ---------------------------------------------------------------------------
 // Type → JSON Schema conversion
 // ---------------------------------------------------------------------------
@@ -421,7 +230,6 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
  * — a guessed `contact.phone` reached the insert and failed with PGRST204.
  */
 type TypeResolveContext = SchemaBuildContext & {
-  modelsContent: string | null;
   /** Module-local sources searched for `type X = …` / `interface X {…}`. */
   aliasSources?: string[];
   /** Cycle guard for alias-to-alias references. */
@@ -788,7 +596,7 @@ function resolveInferExpression(
   return null;
 }
 
-/** Registry-first, textual-fallback validator lookup, mirroring the top-level
+/** Registry lookup for a nested validator reference, mirroring the top-level
  *  param resolution in `buildToolSchema` (including its provenance report). */
 function lookupValidatorSchema(
   validatorName: string,
@@ -798,13 +606,6 @@ function lookupValidatorSchema(
   if (native) {
     ctx.onResolved?.(validatorName, "native");
     return native as Record<string, unknown>;
-  }
-  if (ctx.modelsContent) {
-    const textual = parseValidatorFields(validatorName, ctx.modelsContent);
-    if (textual) {
-      ctx.onResolved?.(validatorName, "textual");
-      return textual;
-    }
   }
   ctx.onResolved?.(validatorName, "unresolved");
   return null;
@@ -909,51 +710,6 @@ function splitObjectFields(inner: string): string[] {
 // Validator resolution
 // ---------------------------------------------------------------------------
 
-function parseValidatorFields(
-  validatorName: string,
-  modelsContent: string,
-  seen: Set<string> = new Set()
-): Record<string, unknown> | null {
-  // Cycle guard for mutually-referential validators.
-  if (seen.has(validatorName)) return null;
-  seen = new Set(seen).add(validatorName);
-
-  const rhs = extractValidatorRhs(validatorName, modelsContent);
-  if (rhs === null) return null;
-
-  const properties: Record<string, unknown> = {};
-  const required: string[] = [];
-  const mergeIn = (sub: Record<string, unknown> | null) => {
-    if (!sub) return;
-    Object.assign(properties, sub.properties as Record<string, unknown>);
-    for (const r of (sub.required as string[] | undefined) ?? []) {
-      if (!required.includes(r)) required.push(r);
-    }
-  };
-
-  // Base validators pulled in by `Base.merge(...)` / `Base.extend(...)` — resolve
-  // each referenced `*Validator` (same file) and fold its fields in first, so the
-  // extension below can override. This is what makes
-  // `applyX(itemValidator.merge(z.object({...})))` resolvable instead of opaque.
-  const refs = new Set(
-    (rhs.match(/\b\w+Validator\b/g) ?? []).filter((n) => n !== validatorName)
-  );
-  for (const ref of refs) {
-    mergeIn(parseValidatorFields(ref, modelsContent, seen));
-  }
-
-  // This validator's own object literal — for a `.merge(z.object({...}))` /
-  // wrapped chain the FIRST z.object is the extension; for a plain
-  // `z.object({...})` it is the whole thing. Wrappers (`applyX(...)`, `.refine`,
-  // `.superRefine`) are transparent to this scan.
-  mergeIn(parseFirstZObject(rhs));
-
-  if (Object.keys(properties).length === 0) return null;
-  const result: Record<string, unknown> = { type: "object", properties };
-  if (required.length > 0) result.required = required;
-  return result;
-}
-
 /**
  * Resolve a bare type-alias name against the module's own sources (service
  * file, `types.ts`, models, and the shared equivalents): `type X = <rhs>` and
@@ -1017,275 +773,203 @@ function resolveTypeAlias(
   return null;
 }
 
-// The assignment expression of `export const {name} = <expr>;`, captured to the
-// first top-level `;` (arrow-guarded) so a `*Validator` reference or `z.object`
-// from a later declaration is never pulled in.
-function extractValidatorRhs(
-  validatorName: string,
-  modelsContent: string
-): string | null {
-  const regex = new RegExp(`export\\s+const\\s+${validatorName}\\s*=\\s*`);
-  const match = regex.exec(modelsContent);
-  if (!match) return null;
-  const start = match.index + match[0].length;
-
-  let depth = 0;
-  for (let i = start; i < modelsContent.length; i++) {
-    const ch = modelsContent[i];
-    if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch) && !isArrowClose(modelsContent, i)) depth--;
-    else if (ch === ";" && depth === 0) {
-      return modelsContent.substring(start, i);
-    }
-  }
-  return modelsContent.substring(start);
-}
-
-// Parse the first `z.object({ ... })` in an expression into a JSON-Schema object.
-function parseFirstZObject(expr: string): Record<string, unknown> | null {
-  const idx = expr.indexOf("z.object(");
-  if (idx === -1) return null;
-  const braceStart = expr.indexOf("{", idx);
-  if (braceStart === -1) return null;
-  const braceEnd = findMatchingBrace(expr, braceStart);
-  const inner = expr.substring(braceStart + 1, braceEnd).trim();
-
-  const properties: Record<string, unknown> = {};
-  const required: string[] = [];
-
-  // Validator fields are comma-separated, not semicolon-separated
-  const fields = splitAtTopLevel(inner, ",");
-
-  for (const field of fields) {
-    const f = field.trim();
-    if (!f || f.startsWith("//")) continue;
-
-    const colonMatch = f.match(/^(\w+)\s*:/);
-    if (!colonMatch) continue;
-    const fieldName = colonMatch[1];
-
-    if (CONTEXT_PARAMS.has(fieldName)) continue;
-
-    const zodExpr = f.substring(colonMatch[0].length).trim();
-    const schema = zodExprToJsonSchema(zodExpr);
-    const isOptional =
-      zodExpr.includes(".optional()") ||
-      zodExpr.includes(".nullable()") ||
-      zodExpr.startsWith("zfd.text(") ||
-      zodExpr.startsWith("zfd.numeric(") ||
-      zodExpr.includes(".default(");
-
-    properties[fieldName] = schema;
-    if (!isOptional) required.push(fieldName);
-  }
-
-  if (Object.keys(properties).length === 0) return null;
-  const result: Record<string, unknown> = { type: "object", properties };
-  if (required.length > 0) result.required = required;
-  return result;
-}
-
-function zodExprToJsonSchema(expr: string): Record<string, unknown> {
-  const e = expr.trim();
-
-  if (e.includes("z.enum(")) {
-    const enumMatch = e.match(/z\.enum\(\[([^\]]+)\]\)/);
-    if (enumMatch) {
-      const values = enumMatch[1]
-        .split(",")
-        .map((s) => s.trim().replace(/^["']|["']$/g, ""))
-        .filter(Boolean);
-      return { type: "string", enum: values };
-    }
-  }
-
-  if (e.startsWith("z.array(")) {
-    // Resolve the element schema so the array is well-formed rather than a bare
-    // `{type:"array"}` a caller can't fill.
-    const open = e.indexOf("(");
-    const close = findMatchingBrace(e, open);
-    const inner = e.substring(open + 1, close).trim();
-    return { type: "array", items: inner ? zodExprToJsonSchema(inner) : {} };
-  }
-  if (e.includes("z.number()")) return { type: "number" };
-  if (e.includes("z.boolean()")) return { type: "boolean" };
-  if (e.includes("z.string()") || e.startsWith("zfd.text("))
-    return { type: "string" };
-  if (e.includes("z.any()")) return {};
-  if (e.startsWith("zfd.numeric(")) return { type: "number" };
-  if (e.startsWith("z.preprocess(")) {
-    // A preprocessed enum whose values aren't an inline array can't be
-    // enumerated (the top-of-function z.enum check already ran on this same
-    // expr), so treat it as a string. Recursing on `e` here looped forever.
-    if (e.includes("z.enum(")) return { type: "string" };
-    if (e.includes("z.number()")) return { type: "number" };
-    return { type: "string" };
-  }
-
-  return { type: "string" };
-}
-
 // ---------------------------------------------------------------------------
 // Classification, auth & permission
 // ---------------------------------------------------------------------------
 
-function classifyFunction(
-  name: string,
-  content?: string
-): Classification {
-  if (/^delete/.test(name)) return "DESTRUCTIVE";
-  // Require a camelCase boundary after the read prefix so a mutating name that merely starts with
-  // those letters is not misread as a reader — e.g. `issueMaterial` ("is"+lowercase) is a WRITE,
-  // while `isBlocked`/`getJob` ("is"/"get"+uppercase) stay READ.
-  if (/^(get|list|fetch|search|find|count|check|is|has|compute)(?![a-z])/.test(name))
-    return "READ";
-  // Destructive-by-omission: a write whose body deletes rows (e.g. the
-  // delete-then-reinsert `upsert*Prices` rewrite) can silently drop data the
-  // caller didn't include. Flag it so the client treats it as destructive, even
-  // though its name says `upsert`/`update`. injectAuth stays name-based below, so
-  // the insert branch still gets its createdBy.
-  if (content && functionBodyDeletes(content, name)) return "DESTRUCTIVE";
-  return "WRITE";
+const AUTH_FIELDS: readonly AuthField[] = [
+  "companyId",
+  "companyGroupId",
+  "createdBy",
+  "updatedBy",
+  "userId"
+];
+const PERMISSION_ACTIONS: readonly PermissionAction[] = [
+  "view",
+  "create",
+  "update",
+  "delete"
+];
+
+type McpSetting = keyof typeof MCP_SETTINGS;
+
+/** Every `@mcp …` line on a function: its first word, and the rest. */
+function mcpLines(fn: ServiceFunction): { word: string; rest: string }[] {
+  return fn.tags
+    .filter((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)
+    .map((tag) => {
+      const [word = "", ...rest] = tag.comment.split(/\s+/);
+      return { word, rest: rest.join(" ") };
+    });
 }
 
-// True when the function body issues a row delete (supabase `.delete(` or Kysely
-// `.deleteFrom(`). Comment/URL-safe via stripComments.
-function functionBodyDeletes(content: string, funcName: string): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return /\.delete\s*\(/.test(stripped) || /\.deleteFrom\s*\(/.test(stripped);
+/** What follows `@mcp <setting>` on each such line. */
+function settingLines(fn: ServiceFunction, setting: McpSetting): string[] {
+  return mcpLines(fn)
+    .filter((line) => line.word === MCP_SETTINGS[setting])
+    .map((line) => line.rest);
+}
+
+/** A setting that may be given once. Twice is two answers to one question,
+ *  read differently depending on which came first. */
+function singleSetting(
+  fn: ServiceFunction,
+  setting: McpSetting
+): string | undefined {
+  const lines = settingLines(fn, setting);
+  if (lines.length > 1) {
+    throw new Error(
+      `${fn.toolName} has ${lines.length} \`${MCP_EXPOSURE_TAG} ${setting}\` lines. Keep one.`
+    );
+  }
+  return lines[0];
+}
+
+export interface Declaration {
+  verb: McpVerb;
+  destructive: boolean;
 }
 
 /**
- * Whether the service itself applies limit/offset — `setGenericQueryFilters`
- * (the canonical pager) or a direct `.range(`. A list operation without either
- * ignores pagination args entirely (the fetchAll `get*List` reads), so the MCP
- * layer pages the response instead. Same body-scan mechanism (and shadowed-
- * wrapper first-match caveat) as `functionBodyDeletes`.
+ * What the function declares itself to be: `@mcp <verb> [destructive]`.
+ * Undefined when it carries no `@mcp` line — then it is simply not a tool.
+ * Anything else the generator needs follows from the verb (`MCP_VERBS`); the
+ * function's NAME is never consulted.
+ *
+ * The declaration is checked against what the body does, in the direction that
+ * matters: `read` on a body that writes, or a write whose body deletes rows
+ * without `destructive`, fails generation. The reverse cannot be checked — a
+ * body with no write of its own may hand the work to a helper, an RPC or an
+ * edge function — which is exactly why it has to be declared.
  */
-function functionBodyPaginates(content: string, funcName: string): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return (
-    /setGenericQueryFilters\s*\(/.test(stripped) || /\.range\s*\(/.test(stripped)
-  );
-}
+export function declarationOf(fn: ServiceFunction): Declaration | undefined {
+  const lines = mcpLines(fn);
+  if (lines.length === 0) return undefined;
 
-function extractFunctionBody(content: string, funcName: string): string | null {
-  const regex = new RegExp(
-    `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
-  );
-  const match = regex.exec(content);
-  if (!match) return null;
-  const closeParen = findMatchingBrace(
-    content,
-    match.index + match[0].length - 1
-  );
-  const nextExport = content.indexOf("\nexport ", closeParen);
-  return content.substring(
-    closeParen,
-    nextExport === -1 ? content.length : nextExport
-  );
-}
-
-function computeInjectAuth(
-  funcName: string,
-  classification: Classification
-): AuthField[] {
-  const lower = funcName.toLowerCase();
-  // Only READ tools take no audit fields. A DESTRUCTIVE label is just a caller
-  // hint — a delete-then-reinsert `upsert*` still inserts rows and needs its
-  // createdBy/updatedBy, so audit injection is keyed off the name verb, not the
-  // classification. A genuine `delete*` matches neither verb group and falls
-  // through to companyId-only.
-  if (classification === "READ") {
-    return ["companyId"];
+  const settings: readonly string[] = Object.values(MCP_SETTINGS);
+  const verbs = lines.filter((line) => !settings.includes(line.word));
+  if (verbs.length !== 1) {
+    throw new Error(
+      `${fn.toolName} must declare exactly one \`${MCP_EXPOSURE_TAG} <verb>\` line; it has ${verbs.length}.`
+    );
   }
-  if (
-    /^(upsert|create|insert|add|new|copy|duplicate|generate)/.test(lower)
+  const { word, rest } = verbs[0];
+  if (!Object.hasOwn(MCP_VERBS, word)) {
+    throw new Error(
+      `${fn.toolName}: \`${MCP_EXPOSURE_TAG} ${word}\` is not a verb. Use one of ${Object.keys(MCP_VERBS).join(", ")}.`
+    );
+  }
+  const verb = word as McpVerb;
+  const destructive = rest.split(/\s+/)[0] === MCP_DESTRUCTIVE;
+
+  const writes = dbWrites(fn.node);
+  if (verb === "read") {
+    if (destructive) {
+      throw new Error(`${fn.toolName}: a read cannot be ${MCP_DESTRUCTIVE}.`);
+    }
+    if (writes.length > 0) {
+      throw new Error(
+        `${fn.toolName} declares \`${MCP_EXPOSURE_TAG} read\` but its body writes to ${writes[0]?.table ?? "the database"}. Declare the verb it really is.`
+      );
+    }
+  } else if (
+    verb !== "delete" &&
+    !destructive &&
+    writes.some((w) => w.kind === "delete")
   ) {
-    return ["companyId", "createdBy", "updatedBy"];
+    throw new Error(
+      `${fn.toolName} declares \`${MCP_EXPOSURE_TAG} ${verb}\` but its body deletes rows. Declare \`${MCP_EXPOSURE_TAG} ${verb} ${MCP_DESTRUCTIVE}\`.`
+    );
   }
+  return { verb, destructive };
+}
+
+/** `@mcp audit a, b` → the fields to stamp, companyId always among them. */
+function declaredAudit(fn: ServiceFunction): AuthField[] | undefined {
+  const line = singleSetting(fn, "audit");
+  if (line === undefined) return undefined;
+  const fields = line
+    .split(",")
+    .map((field) => field.trim())
+    .filter(Boolean);
+  for (const field of fields) {
+    if (!AUTH_FIELDS.includes(field as AuthField)) {
+      throw new Error(
+        `${fn.toolName}: \`${MCP_EXPOSURE_TAG} audit\` names "${field}". Use ${AUTH_FIELDS.join(", ")}.`
+      );
+    }
+  }
+  return [...new Set<AuthField>(["companyId", ...(fields as AuthField[])])];
+}
+
+/** `@mcp permission module:action+action` → the permission to gate on. */
+function declaredPermission(fn: ServiceFunction): ToolPermission | undefined {
+  const line = singleSetting(fn, "permission");
+  if (line === undefined) return undefined;
+  const [module = "", actionList = ""] = line.split(/\s+/)[0].split(":");
+  const actions = actionList.split("+").filter(Boolean);
   if (
-    /^(update|modify|set|change|edit|approve|reject|finalize|toggle|move|reorder|recalculate|sync|favorite|unfavorite|send|release|close|convert|run)/.test(
-      lower
+    !module ||
+    actions.length === 0 ||
+    actions.some(
+      (action) => !PERMISSION_ACTIONS.includes(action as PermissionAction)
     )
   ) {
-    return ["companyId", "updatedBy"];
+    throw new Error(
+      `${fn.toolName}: \`${MCP_EXPOSURE_TAG} permission\` must read <module>:<action>[+<action>] with actions from ${PERMISSION_ACTIONS.join(", ")}.`
+    );
   }
-  return ["companyId"];
+  return { module, actions: actions as PermissionAction[] };
+}
+
+/** The keys an upsert branches on to pick insert vs update. */
+const OPERATION_FIELDS = ["createdBy", "updatedBy"] as const;
+
+/**
+ * Drop `createdBy` / `updatedBy` when the function's ONE table has no such
+ * column. The verb says which audit fields a tool is handed, and
+ * `enrichWithAuthContext` stamps them onto the payload OBJECT — so a
+ * service that spreads its argument into the write (`insert([row])`,
+ * `update(sanitize(row))`) sends a nonexistent column to PostgREST and the call
+ * fails with PGRST204. The HTML form routes build the row from their validator
+ * and never saw it, so this only ever broke MCP and the v1 API.
+ *
+ * The generated types are the source of truth (`pnpm run generate:types` runs
+ * after every migration, so they cannot lag a new table). Ambiguity is left
+ * alone: zero or several tables keeps the computed set, as does a table missing
+ * from the generated types. `companyId` is never derived away — it is frequently
+ * an `.eq()` filter argument rather than a column.
+ */
+export function withoutAbsentAuditColumns(
+  fields: AuthField[],
+  fn: ServiceFunction,
+  onDrop?: (table: string, dropped: AuthField[]) => void
+): AuthField[] {
+  const audit: AuthField[] = ["createdBy", "updatedBy"];
+  if (!audit.some((f) => fields.includes(f))) return fields;
+
+  const tables = namedTables(fn.node);
+  if (tables.length !== 1) return fields;
+  const columns = getDbTableTypeFields(tables[0], "Row");
+  if (!columns) return fields;
+
+  const present = new Set(columns.map((c) => c.name));
+  const dropped = audit.filter((f) => fields.includes(f) && !present.has(f));
+  if (dropped.length === 0) return fields;
+
+  onDrop?.(tables[0], dropped);
+  return fields.filter((f) => !dropped.includes(f));
 }
 
 export function withPayloadUserId(
   fields: AuthField[],
-  func: ParsedFunction
+  func: Pick<ServiceFunction, "params">
 ): AuthField[] {
   if (fields.includes("userId")) return fields;
   const declaresUserId = func.params.some(
     (p) => p.name !== "userId" && /(^|[{;,\s])userId\s*\??\s*:/.test(p.typeStr)
   );
   return declaresUserId ? [...fields, "userId"] : fields;
-}
-
-// The permission an API-key caller must hold. `module` follows the service→permission
-// map; `actions` are derived from the operation verb, mirroring `computeInjectAuth`'s
-// verb groups but split into CRUD actions. An unmatched write verb (issue/post/ship/
-// complete/...) requires `update` — the conservative mutation gate.
-function derivePermission(
-  toolName: string,
-  mod: string,
-  funcName: string,
-  classification: Classification
-): ToolPermission {
-  if (PERMISSION_OVERRIDES[toolName]) return PERMISSION_OVERRIDES[toolName];
-
-  const permModule =
-    mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod;
-
-  return { module: permModule, actions: permissionActionsFor(funcName, classification) };
-}
-
-function permissionActionsFor(
-  funcName: string,
-  classification: Classification
-): PermissionAction[] {
-  if (classification === "READ") return ["view"];
-  const lower = funcName.toLowerCase();
-  if (/^upsert/.test(lower)) return ["create", "update"];
-  if (/^delete/.test(lower)) return ["delete"];
-  if (/^(insert|create|add|new|copy|duplicate|generate)/.test(lower))
-    return ["create"];
-  // Everything else that writes — the explicit update group plus unmatched
-  // mutation verbs (issue/post/ship/receive/complete/...) — gates on update.
-  return ["update"];
-}
-
-// Services that pick insert-vs-update by testing for an audit field on the
-// payload are the only ones MCP can't infer, so they need the `_operation` flag.
-// BOTH directions count: `"createdBy" in` (create-branch first, e.g.
-// upsertQuoteOperation) and `"updatedBy" in` (update-branch first, e.g.
-// upsertQuoteMaterial / upsertJobMaterial). The dispatch stamps createdBy on
-// create and updatedBy on update and suppresses the other, so either convention
-// lands on the branch the caller asked for.
-function usesOperationDiscriminator(
-  content: string,
-  funcName: string
-): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return (
-    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
-  );
-}
-
-// The `:` guard keeps `https://` intact.
-function stripComments(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
 /**
@@ -1309,18 +993,138 @@ function stripRedundantPatterns(node: unknown): void {
   }
 }
 
-function addOperationArg(schema: Record<string, unknown>): void {
-  const properties = (schema.properties ?? {}) as Record<string, unknown>;
-  properties._operation = {
-    type: "string",
-    enum: ["create", "update"],
-    description:
-      "Required. 'create' inserts a new record, 'update' modifies the existing record with this id.",
+/**
+ * How the dispatcher tells create from update for a service that branches on an
+ * audit field. Never the caller's job: the answer is either in the payload or
+ * in the database.
+ *
+ *  - `@mcp key <table> <column>[=<field>], …` on the function — look the row
+ *    up, `column` compared with the payload's `field` (same name by default).
+ *    Several lines are alternatives: a part's `id` may be its item id or its
+ *    part number.
+ *  - otherwise the parameter's type must make `id` decisive (sent = update).
+ *
+ * Anything else fails generation, so a new upsert cannot quietly become a tool
+ * that needs to be told what it is doing.
+ */
+export function upsertRule(
+  fn: ServiceFunction,
+  schema: Record<string, unknown>
+): NonNullable<ManifestEntry["upsert"]> {
+  const keyLines = settingLines(fn, "key");
+  if (keyLines.length === 0) {
+    if (idDistinguishesUpdate(fn.node, CONTEXT_PARAMS)) return { keys: ["id"] };
+    throw new Error(
+      `${fn.toolName} branches on createdBy/updatedBy, but its payload cannot say whether it creates or updates: \`id\` is required (or absent) in both shapes. Declare the row it updates: \`${MCP_EXPOSURE_TAG} key <table> <column>[, <column>]\`.`
+    );
+  }
+
+  // The dispatcher reads a key at the top level or inside the one object the
+  // payload is wrapped in, so the schema must declare it at one of the two.
+  const properties = (schema.properties ?? {}) as Record<
+    string,
+    { properties?: Record<string, unknown> }
+  >;
+  const declares = (field: string) =>
+    field in properties ||
+    Object.values(properties).some(
+      (property) => property?.properties && field in property.properties
+    );
+  const fail = (message: string): never => {
+    throw new Error(`${fn.toolName}: \`${MCP_EXPOSURE_TAG} key\` ${message}`);
   };
-  schema.properties = properties;
-  const required = ((schema.required as string[] | undefined) ?? []).slice();
-  if (!required.includes("_operation")) required.push("_operation");
-  schema.required = required;
+
+  // Each line is one row to look for; several lines are alternatives.
+  const lookups = keyLines.map((line) => {
+    const [table = "", ...rest] = line.split(/\s+/);
+    const columns = getDbTableTypeFields(table, "Row")?.map((c) => c.name);
+    if (!columns) {
+      return fail(
+        `names "${table}", which is not a table or view in the generated types.`
+      );
+    }
+    // The lookup is always scoped to the caller's company.
+    if (!columns.includes("companyId")) {
+      return fail(`"${table}" has no companyId column to scope the lookup by.`);
+    }
+    const match: Record<string, string> = {};
+    for (const pair of rest.join(" ").split(",")) {
+      const [column = "", field = column] = pair
+        .split("=")
+        .map((part) => part.trim());
+      if (!column) continue;
+      if (!columns.includes(column)) {
+        return fail(`"${table}" has no "${column}" column.`);
+      }
+      if (!declares(field)) {
+        return fail(`field "${field}" is not part of the tool's input.`);
+      }
+      match[column] = field;
+    }
+    if (Object.keys(match).length === 0) {
+      return fail(`${table} names no key column.`);
+    }
+    return { table, match };
+  });
+
+  return {
+    keys: [...new Set(lookups.flatMap((lookup) => Object.values(lookup.match)))],
+    lookups
+  };
+}
+
+/** Say on the key field itself what sending it does — the one place a caller
+ *  reading the schema is certain to look. */
+function describeUpsertKeys(
+  schema: Record<string, unknown>,
+  rule: NonNullable<ManifestEntry["upsert"]>
+): void {
+  type Property = Record<string, unknown> & {
+    properties?: Record<string, Property>;
+  };
+  const note = rule.lookups
+    ? "Updates the existing record with this key; creates one when there is none."
+    : "Send to update that record; omit to create a new one.";
+  const annotate = (properties: Record<string, Property> | undefined) => {
+    if (!properties) return false;
+    let found = false;
+    for (const key of rule.keys) {
+      const property = properties[key];
+      if (!property || typeof property !== "object") continue;
+      const existing =
+        typeof property.description === "string" ? property.description : "";
+      properties[key] = {
+        ...property,
+        description: existing ? `${existing} ${note}` : note
+      };
+      found = true;
+    }
+    return found;
+  };
+
+  const top = schema.properties as Record<string, Property> | undefined;
+  if (annotate(top)) return;
+  // The payload is wrapped (`{ job: {…} }`): the key lives one level down, or
+  // in an object the schema does not spell out — say it on the wrapper then.
+  for (const property of Object.values(top ?? {})) {
+    if (!property || typeof property !== "object") continue;
+    if (annotate(property.properties)) return;
+  }
+  const wrapper = Object.entries(top ?? {}).find(
+    ([, property]) =>
+      property && typeof property === "object" && property.type !== "array"
+  );
+  if (wrapper && top) {
+    const [name, property] = wrapper;
+    const hint = `Include \`${rule.keys.join("`, `")}\` to update that record; leave it out to create a new one.`;
+    top[name] = {
+      ...property,
+      description:
+        typeof property.description === "string"
+          ? `${property.description} ${hint}`
+          : hint
+    };
+  }
 }
 
 function generateDescription(funcName: string): string {
@@ -1335,12 +1139,11 @@ function generateDescription(funcName: string): string {
 // ---------------------------------------------------------------------------
 
 function buildToolSchema(
-  func: ParsedFunction,
-  modelsContent: string | null,
+  func: Pick<ServiceFunction, "params">,
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
   const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
-  const resolveCtx: TypeResolveContext = { ...ctx, modelsContent };
+  const resolveCtx: TypeResolveContext = { ...ctx };
 
   if (userParams.length === 0) {
     return { schema: { type: "object", properties: {} }, paramCount: 0 };
@@ -1423,8 +1226,8 @@ function buildToolSchema(
     if (validatorMatch) {
       const validatorName = validatorMatch[1];
 
-      // Preferred path: the REAL validator, converted by zod itself. Carries enum
-      // values, numeric bounds and nested shapes the source-text parser cannot see.
+      // The REAL validator, converted by zod itself: enum values, numeric
+      // bounds and nested shapes come from the schema object, not its source.
       const native = ctx.validators?.getSchema(ctx.module ?? "", validatorName);
       if (native) {
         ctx.onResolved?.(validatorName, "native");
@@ -1434,19 +1237,9 @@ function buildToolSchema(
         return { schema: native, paramCount: propCount };
       }
 
-      // Fallback: parse the validator's source text. Reached when the module failed
-      // to load or zod could not represent the validator — never a silent downgrade,
-      // the caller records it.
-      if (modelsContent) {
-        const resolved = parseValidatorFields(validatorName, modelsContent);
-        if (resolved) {
-          ctx.onResolved?.(validatorName, "textual");
-          const propCount = Object.keys(
-            (resolved.properties as Record<string, unknown>) || {}
-          ).length;
-          return { schema: resolved, paramCount: propCount };
-        }
-      }
+      // No fallback. A validator that cannot be loaded is reported as
+      // `unresolved` and the generator FAILS — see the note on
+      // ValidatorResolution.
       ctx.onResolved?.(validatorName, "unresolved");
     }
 
@@ -1562,7 +1355,19 @@ function loadModelsContent(mod: string): string | null {
 // ---------------------------------------------------------------------------
 
 /** How a `z.infer<typeof X>` param's schema was obtained, for the accuracy report. */
-export type ValidatorResolution = "native" | "textual" | "unresolved";
+/**
+ * How a `z.infer<typeof v>` parameter's schema was obtained. `native` is the only
+ * good answer: the REAL validator, converted by zod's own `z.toJSONSchema`.
+ *
+ * There used to be a `textual` route that re-parsed the validator's SOURCE TEXT
+ * when the module would not load — a hand-rolled zod-expression evaluator that
+ * could not see enum values, numeric bounds or nested shapes, so it published a
+ * lossy contract to MCP, the v1 OpenAPI spec and the docs. Measured over the real
+ * tree it fired ZERO times out of 342, so it was 145 lines of the most fragile
+ * code in this file standing in for a case that never happens. It is gone;
+ * `unresolved` now fails the generator instead of degrading quietly.
+ */
+export type ValidatorResolution = "native" | "unresolved";
 
 /** Per-module state threaded into `buildToolSchema`. */
 interface SchemaBuildContext {
@@ -1581,9 +1386,8 @@ export interface BuildOptions {
   /** Optional per-module progress callback (module name, tool count). */
   onModule?: (mod: string, count: number) => void;
   /**
-   * Pre-converted validators. When absent every `z.infer<typeof X>` param falls
-   * back to source-text parsing, which is the long-standing behavior — so callers
-   * that cannot run the async loader still get a manifest.
+   * Pre-converted validators. When absent every `z.infer<typeof X>` param is
+   * reported `unresolved` and published without its fields.
    */
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
@@ -1594,53 +1398,46 @@ export interface BuildOptions {
     validatorName: string,
     how: ValidatorResolution
   ) => void;
+  /**
+   * The parsed service files. Passed in by the async entry point so the response
+   * index reflects return types over the same ts-morph project; built here when
+   * absent, which keeps this function sync and self-contained.
+   */
+  ast?: ServiceAst;
+  /** An exported function with no `@mcp` tag, so it is not a tool. */
+  onUntagged?: (toolName: string) => void;
+  /** A module absent from `MCP_MODULE_ALLOWLIST`, so none of it is exposed. */
+  onModuleSkipped?: (module: string, functionCount: number) => void;
+  /**
+   * Reported whenever the verb's audit fields include a column the tool's
+   * table does not have. Surfaced by the generator so a wrong drop is
+   * visible in the run output, not only in the digest diff.
+   */
+  onAuditColumnsDropped?: (
+    toolName: string,
+    table: string,
+    dropped: AuthField[]
+  ) => void;
 }
 
 /**
- * Parse every module's service file(s) into the full operation manifest. Pure —
+ * Build the full operation manifest from every module's service file(s). Pure —
  * reads source files, returns metadata, writes nothing.
  */
 export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   const allTools: ManifestEntry[] = [];
+  const ast = opts.ast ?? buildServiceAst(MODULE_LIST);
 
   for (const mod of MODULE_LIST) {
-    let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
-    if (!fs.existsSync(serviceFile)) {
-      // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
-      // module keeps its single service file under that name (e.g.
-      // accounting.service.ts).
-      const eeServiceFile = path.join(MODULES_DIR, mod, `${mod}.ee.service.ts`);
-      if (!fs.existsSync(eeServiceFile)) {
-        console.warn(`  ⚠ Service file not found: ${serviceFile}`);
-        continue;
-      }
-      serviceFile = eeServiceFile;
+    const parsed = ast.modules.get(mod);
+    if (!parsed) {
+      console.warn(`  ⚠ Service file not found for module: ${mod}`);
+      continue;
     }
 
-    let content = fs.readFileSync(serviceFile, "utf-8");
-    const modelsContent = loadModelsContent(mod);
-    const functions = parseExportedFunctions(content);
-
-    // A module may expose MCP tools from a server-only companion file
-    // (`{mod}.mcp.server.ts`) when those functions must import `*.server`
-    // modules and therefore cannot live in the client-reachable service file.
-    const mcpServerFile = path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
-    if (fs.existsSync(mcpServerFile)) {
-      const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
-      content = `${content}\n${mcpServerContent}`;
-      // A same-named mcp.server export SHADOWS the service one — matching the
-      // runtime registry, where the mcp.server spread wins — so an orchestration
-      // wrapper can replace a bare service function without renaming the
-      // published tool. Its PARAMS come from the wrapper; note that body scans
-      // (classification, the `_operation` discriminator) read the FIRST match in
-      // the concatenated content, i.e. the service body — a wrapper must keep
-      // the same discriminator convention as the function it shadows.
-      const mcpFunctions = parseExportedFunctions(mcpServerContent);
-      const shadowed = new Set(mcpFunctions.map((f) => f.name));
-      for (let i = functions.length - 1; i >= 0; i--) {
-        if (shadowed.has(functions[i].name)) functions.splice(i, 1);
-      }
-      functions.push(...mcpFunctions);
+    if (!MCP_MODULE_ALLOWLIST.includes(mod)) {
+      opts.onModuleSkipped?.(mod, parsed.functions.length);
+      continue;
     }
 
     // Sources searched when a param references a bare type alias, most
@@ -1648,23 +1445,48 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     // models, then the shared module's equivalents (the common cross-module
     // import target).
     const aliasSources = [
-      content,
+      parsed.text,
       readIfExists(path.join(MODULES_DIR, mod, "types.ts")),
-      modelsContent,
+      loadModelsContent(mod),
       readIfExists(path.join(MODULES_DIR, "shared", "types.ts")),
       readIfExists(path.join(MODULES_DIR, "shared", "shared.models.ts"))
     ].filter((s): s is string => s !== null);
 
     let toolCount = 0;
 
-    for (const func of functions) {
-      const toolName = `${mod}_${func.name}`;
+    for (const func of parsed.functions) {
+      const { toolName } = func;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
-      const classification = classifyFunction(func.name, content);
+      // A function is a tool because it says so, and it says what kind.
+      const declared = declarationOf(func);
+      if (!declared) {
+        opts.onUntagged?.(toolName);
+        continue;
+      }
+      const verb = MCP_VERBS[declared.verb];
+      const classification: Classification = declared.destructive
+        ? "DESTRUCTIVE"
+        : verb.classification;
+      // The dispatcher fills one positional argument per parameter from a JSON
+      // object; a variadic tail has no such slot.
+      const rest = func.params.find((p) => p.rest);
+      if (rest) {
+        throw new Error(
+          `${toolName} takes a rest parameter (...${rest.name}), which the API cannot express. Give it an array parameter, or add it to MCP_BLOCKED_TOOL_NAMES.`
+        );
+      }
+      // A declared `@mcp audit` states INTENT and wins outright (a ledger row
+      // keeps `updatedBy` NULL even though the column exists); only the verb's
+      // own set is checked against the real schema.
       const injectAuth = withPayloadUserId(
-        INJECT_AUTH_OVERRIDES[toolName] ||
-          computeInjectAuth(func.name, classification),
+        declaredAudit(func) ??
+          withoutAbsentAuditColumns(
+            ["companyId", ...verb.audit],
+            func,
+            (table, dropped) =>
+              opts.onAuditColumnsDropped?.(toolName, table, dropped)
+          ),
         func
       );
       // A JSDoc on the function itself beats the override table (code closest
@@ -1674,13 +1496,11 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         DESCRIPTION_OVERRIDES[toolName] ||
         generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
-      const permission = derivePermission(
-        toolName,
-        mod,
-        func.name,
-        classification
-      );
-      const { schema, paramCount } = buildToolSchema(func, modelsContent, {
+      const permission: ToolPermission = declaredPermission(func) ?? {
+        module: mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod,
+        actions: [...verb.actions]
+      };
+      const { schema, paramCount } = buildToolSchema(func, {
         module: mod,
         validators: opts.validators,
         aliasSources,
@@ -1688,15 +1508,20 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
           opts.onValidatorResolved?.(toolName, validatorName, how),
       });
       stripRedundantPatterns(schema);
-      if (
+      // A service that picks insert-vs-update by testing for an audit field on
+      // the payload needs exactly ONE of them stamped. BOTH directions count:
+      // `"createdBy" in` (create-branch first, upsertQuoteOperation) and
+      // `"updatedBy" in` (update-branch first, upsertQuoteMaterial /
+      // upsertJobMaterial). Which one is decided by the dispatcher from the
+      // rule recorded here, never by an argument the caller has to supply.
+      const upsert =
         injectAuth.includes("createdBy") &&
-        usesOperationDiscriminator(content, func.name)
-      ) {
-        addOperationArg(schema);
-      }
+        branchesOnKeyPresence(func.node, OPERATION_FIELDS)
+          ? upsertRule(func, schema)
+          : undefined;
+      if (upsert) describeUpsertKeys(schema, upsert);
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
-      const paginates = functionBodyPaginates(content, func.name);
 
       allTools.push({
         name: toolName,
@@ -1707,7 +1532,11 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         serviceParams,
         injectAuth,
         permission,
-        paginates,
+        // Whether the service applies limit/offset itself. A list operation
+        // that does not ignores pagination args entirely (the fetchAll
+        // `get*List` reads), so the MCP layer pages the response instead.
+        paginates: bodyPaginates(func.node),
+        ...(upsert ? { upsert } : {}),
         schema,
         ...(responseSchema ? { responseSchema } : {}),
       });
@@ -1735,20 +1564,22 @@ export interface BuildWithValidatorsResult {
 }
 
 /**
- * The production entry point: load and convert the real validators, then build the
- * manifest against them. Falls back per-validator to source-text parsing, so a
- * module that fails to load degrades exactly one module's schemas rather than the
- * whole run — and `registryStats` / `resolutions` report every such case.
+ * The production entry point: load and convert the real validators, parse the
+ * service files once, and build the manifest and its response schemas against
+ * both. `registryStats` / `resolutions` report every validator that failed to
+ * load; the generator refuses to write a manifest when any did.
  */
 export async function buildAllToolMetadataWithValidators(
   opts: Omit<BuildOptions, "validators"> = {}
 ): Promise<BuildWithValidatorsResult> {
   const validators = await buildValidatorRegistry(MODULE_LIST);
-  const responses = buildResponseSchemaIndex(MODULE_LIST);
+  const ast = opts.ast ?? buildServiceAst(MODULE_LIST);
+  const responses = buildResponseSchemaIndex(ast);
   const resolutions: ValidatorResolutionRecord[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
+    ast,
     validators,
     responses,
     onValidatorResolved: (toolName, validatorName, how) => {

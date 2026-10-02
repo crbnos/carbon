@@ -35,6 +35,9 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** How create is told from update: the key fields, or `table(columns)` for
+   *  each row the dispatcher looks up. Absent when the service does not branch. */
+  upsert?: string;
 }
 
 export interface ManifestDigest {
@@ -85,6 +88,20 @@ export function serializeManifestDigest(digest: ManifestDigest): string {
   ].join("\n");
 }
 
+function describeUpsert(upsert: NonNullable<ManifestEntry["upsert"]>): string {
+  if (!upsert.lookups) return upsert.keys.join(",");
+  return upsert.lookups
+    .map(
+      (lookup) =>
+        `${lookup.table}(${Object.entries(lookup.match)
+          .map(([column, field]) =>
+            column === field ? column : `${column}=${field}`
+          )
+          .join(",")})`
+    )
+    .join("|");
+}
+
 export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
   return {
     totalTools: tools.length,
@@ -103,7 +120,8 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
-        paginates: t.paginates
+        paginates: t.paginates,
+        ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {})
       }))
   };
 }
@@ -158,6 +176,9 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.paginates !== after.paginates) {
       parts.push(`paginates ${before.paginates} → ${after.paginates}`);
+    }
+    if (before.upsert !== after.upsert) {
+      parts.push(`upsert ${before.upsert ?? "none"} → ${after.upsert ?? "none"}`);
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {

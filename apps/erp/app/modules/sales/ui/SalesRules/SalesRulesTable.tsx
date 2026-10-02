@@ -7,7 +7,13 @@
 // permission checks use `sales`.
 
 import type { Json } from "@carbon/database";
-import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { SALES_RULE_SURFACES, type SalesRuleSurface } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -131,6 +137,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
     (row: (typeof rows)[number]) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("update", "sales")}
           onClick={() => {
             navigate(`${path.to.salesRule(row.id)}?${params.toString()}`);
@@ -140,6 +147,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
           <Trans>Edit Rule</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

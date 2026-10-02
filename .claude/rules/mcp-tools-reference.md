@@ -24,15 +24,30 @@ catalogSearch, toolMetadata }`.
 > `describe_tool` / `search_tools` read from it at runtime.
 >
 > That manifest is **gitignored build output** (1.9 MB, rewritten wholesale on every
-> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, which runs
-> from `postinstall` and as the turbo root task `//#generate:mcp` that `typecheck`,
-> `build` and `test` depend on — so a fresh clone regenerates it before anything
-> imports it. The committed record of the published contract is its small companion
+> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, as the turbo
+> root task `//#generate:mcp`. `postinstall` runs that task, and the `typecheck`,
+> `build` and `test` of the two packages that read the manifest — `erp` and `docs`
+> (`apps/erp/turbo.json`, `docs/turbo.json`) — depend on it, so a fresh clone
+> regenerates it before anything imports it. The task is CACHED: its `inputs` in
+> `turbo.json` are every `.ts` file under `apps/erp/app/modules`, the app's
+> `types` and `utils`, the generated DB types, the two `mcp-*` lib files,
+> `scripts/lib`, and the `src` of each package a `*.models.ts` imports. With none
+> of those changed turbo restores both output files in milliseconds instead of
+> spending ~20s. The validators are why the list is that wide: the generator
+> EXECUTES every models file, so an enum array in `sales.utils.ts` or a helper in
+> `@carbon/utils` can change a schema. Listing only service/models files made such
+> a change a cache hit that restored a STALE manifest, which the build then
+> bundled. `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models
+> file imports something the inputs do not cover; the manifest trigger in
+> `.husky/pre-commit` names the same set. Types reached only through the compiler
+> (a return type declared in a package no models file imports) are still not
+> inputs.
+> The committed record of the published contract is its small companion
 > `tool-manifest.digest.json`: one line per operation carrying classification,
 > permission, injectAuth, argument count and a hash of the schema, so a contract
-> change is still one visible line in review. `pnpm check:manifest` regenerates and
-> fails if the digest is stale; pre-commit runs it when a service, models or
-> generator file is staged.
+> change is still one visible line in review. `pnpm check:manifest` regenerates
+> WITHOUT the cache and fails if the digest is stale; pre-commit runs it when a
+> service, models or generator file is staged.
 
 ## Endpoint & transport
 
@@ -162,10 +177,10 @@ HTTP/agent/workflow callers of `callOperation` are untouched:
   "… N more rows omitted" marker — the backstop for the unpaginated `get*List`
   (fetchAll) operations. A paginated read short of its total appends
   `(showing R of C rows)` from the envelope's `count`.
-- **List paging splits on the manifest's `paginates` flag** (generator body
-  scan for `setGenericQueryFilters(`/`.range(`, same mechanism as
-  `functionBodyDeletes`; in `ManifestEntry` AND the committed digest, so a flip
-  is review-visible). Of ~536 list-shaped ops, only ~127 page natively.
+- **List paging splits on the manifest's `paginates` flag** (the generator asks
+  the function's AST whether it calls `setGenericQueryFilters` or `.range` —
+  `paginates` in `scripts/lib/service-ast.ts`; in `ManifestEntry` AND the
+  committed digest, so a flip is review-visible). Of ~536 list-shaped ops, only ~127 page natively.
   - `paginates: true` (search-style `get*`): `call_tool` INJECTS the pagination
     PAIR — `limit: MCP_DEFAULT_LIMIT` (25) AND `offset: 0` — for whichever of
     the two the caller omits (flat body, `{ args: {...} }` wrapper, and the
@@ -282,8 +297,8 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   there handed the service the note STRING instead of the record. The schema
   decides: a wrapper op declares one property named for the param, so read it; an
   op listing the param's own fields is describing it, so pass the whole body.
-  `_operation` and any property that is itself another serviceParam (`args`, and
-  scalar siblings like `locationId`) don't count toward that, since each is
+  A property that is itself another serviceParam (`args`, and
+  scalar siblings like `locationId`) does not count toward that, since each is
   addressed on its own pass. When a payload param is an **array** of rows,
   `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
   the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
@@ -383,7 +398,7 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)
 
 `tool-metadata.json` is **generated**, never hand-edited. Run
-`npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
+`pnpm run generate:mcp`; it parses every `apps/erp/app/modules/*/*.service.ts`
 (falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
 plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
 functions that must import `*.server` modules — see the gotcha below — e.g.
@@ -392,14 +407,70 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
-- **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
-  `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
-  **body issues a delete** (`.delete(` / `.deleteFrom(`, detected by
-  `functionBodyDeletes`) → `DESTRUCTIVE` too — a delete-and-reinsert `upsert*`
-  (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
-  destructive-by-omission and the client must treat it as such; everything else →
-  `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
-  in `packages/ee/src/mcp/types.ts`).
+- **How the service files are read** (`scripts/lib/service-ast.ts`): ONE ts-morph
+  project, shared with the response-schema reflection. Which functions exist
+  (exported declarations AND exported arrow consts), their parameters, their doc
+  tags and what their bodies do all come from the AST. The only thing still read
+  as text is a parameter's declared TYPE, which `typeToJsonSchema` turns into a
+  JSON Schema. A `mcp.server.ts` export that shadows a service function replaces
+  it entirely — params, doc and body.
+- **A function is a tool because its doc comment says so** (`lib/mcp-exposure.ts`
+  is the whole vocabulary). Nothing about a tool is read off the function's name
+  except the published name itself (`{module}_{functionName}`):
+
+  ```ts
+  /**
+   * Creates or updates a customer.
+   * @mcp upsert
+   */
+  export async function upsertCustomer(…)
+  ```
+
+  There is one tag, `@mcp`, always lowercase; each line says one thing:
+
+  | Line | Meaning |
+  |---|---|
+  | `@mcp <verb> [destructive]` | Required, exactly once. No such line → not a tool, reads included. Text after it is a note. |
+  | `@mcp permission <module>:<action>[+<action>]` | Only when the gate is not the tool's own module + its verb's action (`getApiKeys` → `users:update`). |
+  | `@mcp audit <field>[, <field>]` | Only when the verb's audit fields are wrong for intent the schema cannot express (a ledger insert takes `createdBy` alone). Stated in full; `companyId` is always added. |
+  | `@mcp key <table> <column>[=<field>], …` | The row an upsert updates when it exists (below). Several lines are alternatives. |
+
+  The verb decides classification, permission actions and audit fields
+  (`MCP_VERBS`), pinned by `apps/erp/test/mcp-tool-permissions.test.ts`:
+
+  | Verb | Classification | Permission | Stamped besides `companyId` |
+  |---|---|---|---|
+  | `read` | READ | view | — |
+  | `create` | WRITE | create | createdBy, updatedBy |
+  | `update` | WRITE | update | updatedBy |
+  | `upsert` | WRITE | create + update | createdBy, updatedBy |
+  | `delete` | DESTRUCTIVE | delete | — |
+  | `action` | WRITE | update | — |
+
+  `action` is a state change that is not a row edit (lock a period, complete an
+  operation). `destructive` after a write verb relabels it DESTRUCTIVE for the
+  client — a delete-then-reinsert `upsert` drops whatever the caller left out —
+  without changing its permission or audit fields. Classification drives the MCP
+  annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS` in
+  `packages/ee/src/mcp/types.ts`).
+- **The declaration is checked against the body** (`declarationOf`), in the one
+  direction that can be: `read` on a body that writes, or a write verb whose
+  body deletes rows without `destructive`, fails generation; so do an unknown
+  verb, a setting given twice, and a rest parameter. A write is a supabase
+  `.insert/.upsert/.update/.delete` whose receiver chain is rooted in `.from(…)`
+  — through `(… as any)`, parentheses, `await` and one local variable;
+  `client.storage.from(…)` does not count — or Kysely
+  `insertInto/updateTable/deleteFrom`. `members.delete(id)` on a Set is not a
+  write. The reverse cannot be checked: a body with no write of its own may hand
+  the work to a helper, an RPC or an edge function, which is why the verb is
+  declared rather than inferred. `MCP_MODULE_ALLOWLIST` is the coarse gate (a
+  module absent from it exposes nothing), and the generator prints how many
+  exported functions carry no tag.
+- **Why it is declared.** Every exported function used to be a tool and its name
+  decided the rest: `get*` was a READ whatever it did
+  (`accounting_getOrCreateAccountingPeriod` inserted a period and was published on
+  `accounting:view`), `upsert*` meant "stamp createdBy and updatedBy" whatever the
+  table had, and a pure function named `diffMethod` demanded `parts:update`.
 - **Description** precedence: a function-level **JSDoc** on the service export
   (first sentence, `@tag`s stripped, trailing period removed, leading letter
   lowercased unless it starts an acronym, capped ~160 chars —
@@ -410,39 +481,50 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
-- **injectAuth** (`computeInjectAuth`): keyed off the **name verb, not the
-  classification** — only `READ` takes `["companyId"]`. `upsert|create|insert|
-  add|new|copy|duplicate|generate*` → `["companyId","createdBy","updatedBy"]`;
-  `update|set|sync|run|…*` → `["companyId","updatedBy"]`; anything else (incl. a
-  genuine `delete*`) → `["companyId"]`. A DESTRUCTIVE-classified `upsert*` still
-  inserts rows, so it keeps its `createdBy` — the label is only a caller hint.
+- **injectAuth** starts from the verb's audit fields (table above) plus
+  `companyId`, then is checked against the schema (`withoutAbsentAuditColumns`):
+  when the function names exactly ONE relation and that relation has no
+  `createdBy`/`updatedBy` column, the field is dropped — dispatch stamps these
+  onto the payload object, and a service that spreads its argument into the write
+  would otherwise send a column that does not exist (PGRST204, how
+  `items_upsertItemCustomerPart` failed). Zero or several relations leaves the
+  set alone. `userId` is added when the payload's own type declares one
+  (`withPayloadUserId`). `@mcp audit` replaces all of that for intent the schema
+  cannot express.
 
-- **`_operation`** (`usesOperationDiscriminator`): a tool whose service picks
-  insert-vs-update by testing for an audit field on the payload gets a **required**
-  `_operation: "create" | "update"` in its schema — the schema is the only marker,
-  there is no parallel metadata flag. **BOTH discriminator directions count**:
-  `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`) AND
-  `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
-  `upsertJobMaterial`, `upsertJob`, `upsertProductionQuantity`, `upsertPartner`,
-  `upsertPeriodCloseTaskDefinition`). The generator only matched `"createdBy" in`
-  until it was broadened — so the inverted ones shipped WITHOUT `_operation`, and
-  since `enrichWithAuthContext` always stamped `updatedBy`, their `"updatedBy" in`
-  test was always true: every create was forced down the UPDATE branch, matched
-  zero rows for a fresh id, and returned **PGRST116** — a silent no-op the customer
-  hit trying to add quote/job materials over the connector. (A few — `upsertJobOperation`,
-  `upsertContractor`, `upsertGaugeCalibrationRecord` — got `_operation` anyway from
-  a secondary `"createdBy" in` in the body, but were broken the same way until the
-  dispatch fix below, because their PRIMARY branch is `"updatedBy" in`.)
-  The dispatch (`api+/v1+/lib/dispatch.server.ts`) strips `_operation` from the args
-  (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
-  stamps audit fields **symmetrically**: on `"create"` it stamps `createdBy` and
-  **suppresses `updatedBy`**; on `"update"` it stamps `updatedBy` and **suppresses
-  `createdBy`** — so either convention lands on the branch the caller asked for, and
-  the create path matches the create-variant service type / UI insert (createdBy, no
-  updatedBy). With no `_operation` (operation `undefined`) both audit fields are
-  stamped, as before. Missing/invalid `_operation` on such a tool is rejected before
-  the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
-  Pinned by `dispatch-parity.test.ts` (cases o/p/q) and `mcp-tool-metadata.test.ts`.
+- **Create vs update on an upsert is never the caller's question.** A service
+  that picks insert-vs-update by testing for an audit field on the payload
+  (`branchesOnKeyPresence`: `"createdBy" in …` create-branch first, e.g.
+  `upsertQuoteOperation`, or `"updatedBy" in …` update-branch first, e.g.
+  `upsertQuoteMaterial`, `upsertJobMaterial`, `upsertJob`) needs exactly ONE of
+  the two stamped — stamp both and an `"updatedBy" in` service takes its UPDATE
+  branch on every create, matches zero rows and returns PGRST116. The generator
+  records how to decide in the manifest entry's `upsert` (also in the digest), and
+  fails generation for a branching upsert it cannot give a rule to:
+  - **By `id`** (`{ keys: ["id"] }`, most upserts) — read off the parameter's TYPE
+    (`idDistinguishesUpdate`, `service-ast.ts`): every union member that requires
+    `updatedBy` has an `id`, and no other member requires one. Sending `id` means
+    update; omitting it means create.
+  - **By lookup** (`lookups: [{ table, match }]`, the rest) — declared on the
+    function with `@mcp key <table> <column>[=<field>], …` when the payload
+    cannot say: a part's `id` is its part number on create and its item id (or
+    part number) on update, so `upsertPart` carries `@mcp key item id` and
+    `@mcp key item readableId=id` (alternatives); a pick method has no id, only
+    `itemId, locationId`. The dispatcher looks the row up with the caller's
+    client, scoped to the caller's company (the table must have `companyId`), and
+    updates when it exists.
+  `resolveUpsertOperation` (`api+/v1+/lib/dispatch.server.ts`) applies the rule —
+  a missing or empty key is a create without asking the database. The key is
+  read from the RECORD only: the body's top level, the payload parameter's
+  wrapper (`{ job: { id } }`), or a lone unnamed wrapper. Never from any other
+  nested object — `{ name, customFields: { id } }` was once read as an update.
+  It then stamps
+  `createdBy` and suppresses `updatedBy` on create, the reverse on update. The
+  key field's schema `description` says what sending it does. These tools used
+  to require `_operation: "create" | "update"`; no schema publishes it now, but
+  a caller that still sends it is obeyed (and a value other than those two is
+  refused). Pinned by `dispatch-parity.test.ts` (f, f2, f3, o–t) and
+  `mcp-tool-metadata.test.ts`.
 
 ## The 15 modules (current `tool-metadata.json`)
 
@@ -484,8 +566,12 @@ the model context or the MCP dispatch.
 
 ## Gotchas
 
-- The generator reads a service's **parameter list textually**, but resolves more
-  shapes than it used to. An **inline** array-of-objects
+- The generator takes a service's parameters from the AST (name, optionality,
+  rest, the `/** doc */` above the parameter, and the type's text with comments
+  removed), then resolves that TYPE text — and it resolves more shapes than it
+  used to. A parameter with a default is optional and keeps its declared type
+  (`sortDescending: boolean = false` used to publish as an untyped, required
+  field). An **inline** array-of-objects
   (`prices: { quantity: number; ... }[]`) now publishes as a typed
   `{"type":"array","items":{...}}`; a `z.infer<typeof V>` validator param resolves
   `V.merge(z.object({...}))` / `applyX(...)` wrappers / referenced `*Validator`s
@@ -509,8 +595,6 @@ the model context or the MCP dispatch.
   `apps/erp/test/mcp-tool-metadata.test.ts`). Still opaque, deliberately:
   compiler-derived types (`ReturnType`/`Awaited`), aliases imported from other
   packages, `Map<...>` params, and genuine `Json`/`unknown`/rich-text fields.
-  Keep `//` comments above the function, not inside the parameter list (a
-  comment there is parsed as a property name).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
   `getDatabaseClient()` by `dispatch.server.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the
@@ -521,8 +605,11 @@ the model context or the MCP dispatch.
 - "Shelf" was renamed to **storage unit**: use `inventory_*StorageUnit*`, not
   `getShelf` (which no longer exists). "Shelf life" (`*ShelfLife*`) is a
   *different*, still-current concept — don't conflate them.
-- To block a tool from MCP, add its `<module>_<func>` name to
-  `MCP_BLOCKED_TOOL_NAMES` and regenerate metadata.
+- To expose a service function, put `@mcp <verb>` in its doc comment and
+  regenerate; without the tag it is not a tool, whatever it is called. To keep an
+  exposed-looking function internal on purpose (and say why), also add its
+  `<module>_<func>` name to `MCP_BLOCKED_TOOL_NAMES` — that list is enforced at
+  run time too.
 - **Moving a service function to another module RENAMES its published tool**
   (`production_getInspectionDocument` → `quality_getInspectionDocument`). Add the
   old name to `OPERATION_ALIASES` (`api+/v1+/lib/operations.server.ts`) in the same
@@ -552,8 +639,9 @@ the model context or the MCP dispatch.
   estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
   routes' orchestration (MTO method pull on transition, recalc released creates /
   all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Body scans (classification, `_operation`) read the FIRST
-  match in the concatenated content — the service body — so a wrapper must keep
-  the same discriminator convention as the function it shadows. Pinned by
+  hash is unchanged. Classification, the upsert rule and the audit-column rule are
+  read from the WRAPPER's own body (it replaces the service function in the AST),
+  and it is the wrapper that carries the `@mcp` tags; the service function it
+  shadows carries none. Pinned by
   `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
   function exactly once" case in `mcp-tool-metadata.test.ts`.

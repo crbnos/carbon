@@ -95,13 +95,15 @@ describe("image pipeline", () => {
 
     // webp encode is test-only (nothing in prod encodes webp), so its wasm
     // init lives here rather than in initNodeImageCodecs
-    const webpEncode = await import("@jsquash/webp/encode.js");
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
+    const [webpEncode, webpEncWasm] = await Promise.all([
+      import("@jsquash/webp/encode.js"),
+      import("@jsquash/webp/codec/enc/webp_enc_simd.wasm?inline")
+    ]);
     await webpEncode.init(
       await WebAssembly.compile(
-        await readFile(
-          require.resolve("@jsquash/webp/codec/enc/webp_enc_simd.wasm")
+        Buffer.from(
+          webpEncWasm.default.slice(webpEncWasm.default.indexOf(",") + 1),
+          "base64"
         )
       )
     );

@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -279,11 +280,15 @@ const CustomersTable = memo(
     const renderContextMenu = useMemo(
       () => (row: Customer) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.customer(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.customer(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "sales")}
             onClick={() => {

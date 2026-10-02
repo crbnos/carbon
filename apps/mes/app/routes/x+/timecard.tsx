@@ -19,6 +19,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -441,12 +442,14 @@ export default function MESTimecardPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.edit}
                                 onClick={() => startEdit(entry)}
                               >
                                 <DropdownMenuIcon icon={<LuPencil />} />
                                 <Trans>Edit</Trans>
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.delete}
                                 onClick={() =>
                                   setDeletingEntry({
                                     id: entry.id,

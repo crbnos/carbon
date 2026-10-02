@@ -360,6 +360,7 @@
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/AssemblyInstructionExplorer.tsx::const solveElapsedLabel = `${Math.floor(solveElapsedSeconds / 60)}:${String(",
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/AssemblyStepBom.tsx::)}, ${Math.round(color[2] * 255)}, ${color[3]})`",
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/AssemblyStepBom.tsx::backgroundColor: `rgba(${Math.round(color[0] * 255)}, ${Math.round(",
+  "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/AssemblyStepList.tsx::const wanted = current + Math.round(offsetX / INDENT);",
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/ModelConvertProgress.tsx::if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;",
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/ModelConvertProgress.tsx::if (n >= 1024) return `${Math.round(n / 1024)} KB`;",
   "no-raw-rounding::apps/erp/app/modules/production/ui/Assemblies/ModelConvertProgress.tsx::return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;",

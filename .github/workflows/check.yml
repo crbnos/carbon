@@ -32,6 +32,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -56,6 +67,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
@@ -89,6 +111,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -117,6 +150,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -144,6 +188,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -170,6 +225,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts, MCP manifest), typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile

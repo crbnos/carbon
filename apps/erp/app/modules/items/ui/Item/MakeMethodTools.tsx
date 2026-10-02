@@ -25,6 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   Menubar,
   MenubarItem,
   Modal,
@@ -313,6 +314,7 @@ const MakeMethodTools = ({
                                 isLocked={isChangeNoticeLocked}
                               >
                                 <DropdownMenuItem
+                                  shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                                   disabled={isChangeNoticeLocked}
                                   onClick={() => {
                                     flushSync(() => {

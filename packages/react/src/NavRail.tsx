@@ -309,6 +309,7 @@ export function NavRailLink({
   label,
   isActive = false,
   tag,
+  trailing,
   external = false,
   target,
   rel
@@ -318,6 +319,7 @@ export function NavRailLink({
   label: string;
   isActive?: boolean;
   tag?: ReactNode;
+  trailing?: ReactNode;
   external?: boolean;
   target?: LinkProps["target"];
   rel?: string;
@@ -329,6 +331,7 @@ export function NavRailLink({
       label={label}
       isActive={isActive}
       tag={tag}
+      trailing={trailing}
     >
       <Link
         to={to}

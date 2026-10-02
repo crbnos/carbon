@@ -17,6 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   MenuSub,
@@ -631,7 +632,10 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         }[]) ?? [];
       return (
         <>
-          <MenuItem onClick={() => navigate(path.to.part(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.part(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Part</Trans>
           </MenuItem>
@@ -667,6 +671,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
             <Trans>Create Change Notice</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "parts")}
             onClick={() => {

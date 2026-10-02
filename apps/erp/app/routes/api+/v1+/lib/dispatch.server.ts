@@ -5,7 +5,8 @@
 // The bridge from an oRPC procedure to a Carbon service function.
 //
 // Owns the executeFunction lineage in full: positional-arg assembly from
-// serviceParams, payload stamping via enrichWithAuthContext, `_operation` handling,
+// serviceParams, payload stamping via enrichWithAuthContext, create-vs-update
+// resolution for upserts,
 // and the Supabase unwrap. HTTP, MCP, the agent and the workflow dispatcher all pass
 // through here. Unlike the legacy executor (which returned { success, … }), this
 // THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
@@ -92,8 +93,8 @@ export function enrichWithAuthContext(
   // discriminates on `"updatedBy" in` (update-branch first — upsertJobMaterial,
   // upsertQuoteMaterial, …) down its UPDATE branch, which matches zero rows for a
   // new id and returns PGRST116, so the record never inserts. Suppress it on an
-  // explicit create so the row inserts. With no _operation (operation undefined)
-  // both audit fields are stamped, exactly as before.
+  // create so the row inserts. With no upsert rule (operation undefined) both
+  // audit fields are stamped, exactly as before.
   if (operation === "create") {
     delete enriched.updatedBy;
   } else if (fields.includes("updatedBy")) {
@@ -160,8 +161,11 @@ function overwriteIdentityKeys(
   return row;
 }
 
-// Pulls the MCP-only `_operation` flag out of the args, top level or nested.
-// Returns every value it found so the caller can reject contradictory ones.
+// Pulls a caller-supplied `_operation` out of the args, top level or nested.
+// No schema publishes it any more — the dispatcher works out create-vs-update
+// itself (resolveUpsertOperation) — but callers written against the old
+// contract still send it, and an explicit answer wins. Returns every value it
+// found so the caller can reject contradictory ones.
 export function extractOperation(args: Record<string, any> | undefined): {
   operations: string[];
   args: Record<string, any> | undefined;
@@ -187,6 +191,91 @@ export function extractOperation(args: Record<string, any> | undefined): {
   }
 
   return { operations, args: cleaned };
+}
+
+type UpsertRule = NonNullable<ManifestEntry["upsert"]>;
+
+/** Service params the dispatcher fills itself; the rest carry the payload. */
+const UPSERT_CONTEXT_PARAMS = new Set([
+  "client",
+  "db",
+  "userId",
+  "companyId",
+  "companyGroupId",
+  "eliminationClient"
+]);
+
+/**
+ * A field of the RECORD the call is about: at the top level of the body, or
+ * inside the object the payload is wrapped in — `{ job: { id } }`, where `job`
+ * is one of the service's payload parameters, or a lone unnamed wrapper, which
+ * the dispatcher unwraps the same way.
+ *
+ * Never inside any other nested object. Searching them all read
+ * `{ name, customFields: { id } }` as an update of record `id`, and a create
+ * was sent down the service's update branch.
+ */
+function recordField(
+  args: Record<string, any> | undefined,
+  field: string,
+  payloadParams: readonly string[]
+): unknown {
+  if (!args) return undefined;
+  if (args[field] !== undefined) return args[field];
+
+  const isObject = (value: unknown): value is Record<string, any> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+
+  for (const name of payloadParams) {
+    const wrapper = args[name];
+    if (isObject(wrapper) && wrapper[field] !== undefined)
+      return wrapper[field];
+  }
+  const keys = Object.keys(args);
+  if (keys.length === 1 && !payloadParams.includes(keys[0])) {
+    const wrapper = args[keys[0]];
+    if (isObject(wrapper)) return wrapper[field];
+  }
+  return undefined;
+}
+
+/**
+ * Whether this call creates or updates, for a service that needs exactly one of
+ * `createdBy` / `updatedBy` stamped. The caller is never asked:
+ *
+ *  - a key field missing or empty → create;
+ *  - no lookups → the keys were sent, so update;
+ *  - lookups → update when one of them finds the row, else create.
+ *
+ * `rowExists` is the only thing here that touches the database.
+ */
+export async function resolveUpsertOperation(
+  rule: UpsertRule,
+  args: Record<string, any> | undefined,
+  payloadParams: readonly string[],
+  rowExists: (
+    table: string,
+    filter: Record<string, unknown>
+  ) => Promise<boolean>
+): Promise<McpOperation> {
+  const values: Record<string, unknown> = {};
+  for (const key of rule.keys) {
+    const value = recordField(args, key, payloadParams);
+    if (value === undefined || value === null || value === "") return "create";
+    values[key] = value;
+  }
+  if (!rule.lookups) return "update";
+
+  for (const lookup of rule.lookups) {
+    const filter = Object.fromEntries(
+      Object.entries(lookup.match).map(([column, field]) => [
+        column,
+        values[field]
+      ])
+    );
+    if (await rowExists(lookup.table, filter)) return "update";
+  }
+  return "create";
 }
 
 const SCALAR_PARAM_TYPES = new Set(["string", "number", "integer", "boolean"]);
@@ -230,9 +319,9 @@ const CONTEXT_PARAM_NAMES = new Set([
  *
  * A wrapper op declares exactly one property named for the param — read it. An op
  * whose schema lists the param's own FIELDS is describing the object, not
- * addressing it — pass the whole body. `_operation` is a synthetic discriminator
- * and any property that is itself another serviceParam is addressed on its own
- * pass, so neither counts toward that decision.
+ * addressing it — pass the whole body. A property that is itself another
+ * serviceParam is addressed on its own pass, so it does not count toward that
+ * decision.
  */
 function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   const properties = (meta.schema as { properties?: Record<string, unknown> })
@@ -247,8 +336,7 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   if (payloadParams.length !== 1 || payloadParams[0] !== paramName) return true;
 
   const own = Object.keys(properties).filter(
-    (k) =>
-      k !== "_operation" && !(k !== paramName && meta.serviceParams.includes(k))
+    (k) => !(k !== paramName && meta.serviceParams.includes(k))
   );
   return own.length === 1 && own[0] === paramName;
 }
@@ -271,7 +359,7 @@ export async function dispatchOperation(
       ? (input as Record<string, any>)
       : undefined;
 
-  // Strip the MCP `_operation` discriminator before the args reach the service.
+  // A legacy `_operation` never reaches the service.
   const { operations: requestedOperations, args: normalizedArgs } =
     extractOperation(rawArgs);
 
@@ -285,29 +373,48 @@ export async function dispatchOperation(
     });
   }
 
-  const needsOperation = Boolean(
-    (meta.schema as { properties?: Record<string, unknown> })?.properties
-      ?._operation
-  );
   const distinctOperations = [...new Set(requestedOperations)];
-  if (needsOperation && distinctOperations.length > 1) {
+  if (meta.upsert && distinctOperations.length > 1) {
     throw new ORPCError("BAD_REQUEST", {
       message: `${meta.name} received conflicting _operation values (${distinctOperations.join(", ")}).`
     });
   }
   const requestedOperation = distinctOperations[0];
   if (
-    needsOperation &&
+    meta.upsert &&
+    requestedOperation !== undefined &&
     requestedOperation !== "create" &&
     requestedOperation !== "update"
   ) {
     throw new ORPCError("BAD_REQUEST", {
-      message: `${meta.name} requires _operation to be "create" (insert a new record) or "update" (modify an existing one).`
+      message: `${meta.name}: _operation must be "create" or "update" when it is sent. It can be left out.`
     });
   }
-  const operation = needsOperation
-    ? (requestedOperation as McpOperation)
-    : undefined;
+  const operation: McpOperation | undefined = !meta.upsert
+    ? undefined
+    : ((requestedOperation as McpOperation | undefined) ??
+      (await resolveUpsertOperation(
+        meta.upsert,
+        normalizedArgs,
+        meta.serviceParams.filter((name) => !UPSERT_CONTEXT_PARAMS.has(name)),
+        async (table, filter) => {
+          // Scoped to the caller's company on top of RLS: a user-scoped client
+          // can see every company the user belongs to.
+          const { data, error } = await (context.client as any)
+            .from(table)
+            .select("companyId")
+            .match(filter)
+            .eq("companyId", context.companyId)
+            .limit(1);
+          if (error) {
+            throw new ORPCError("BAD_REQUEST", {
+              message: supabaseErrorMessage(error),
+              data: { supabase: error }
+            });
+          }
+          return Array.isArray(data) && data.length > 0;
+        }
+      )));
 
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {
