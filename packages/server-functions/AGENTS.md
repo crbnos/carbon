@@ -56,8 +56,23 @@ resets after a failed build, so one bad start does not poison later calls.
   exception is `src/local-database-test-fixture.ts`, the live-database test gate
   (`hasLocalDatabase`, `databaseTest`), which opens a one-connection pool for the
   regressions that need real transactions.
-- MUST read and write through `ctx.supabase()` (the service-role client) or `ctx.db`,
-  never a caller's RLS client.
+- MUST read and write through `ctx.db` or `ctx.supabase()` (the service-role client),
+  never a caller's RLS client. Prefer `ctx.db`: in production a PostgREST call takes
+  about 52 ms at the median and a direct statement 4.5 ms, so a function that reads
+  through the Supabase client pays for every lookup ten times over.
+- MUST use `src/lib/rows.ts` for a read whose rows are copied or compared as PostgREST
+  would return them: `selectRows` / `selectRow`, or `single` / `maybeSingle` / `many`
+  for code written against `{ data, error }`. They go through `to_jsonb`, so timestamps
+  stay strings at full precision (a Kysely row hands back a `Date` cut to the
+  millisecond), `columns` is the select list, `embed` nests child rows, and there is
+  no 1000-row cap. `isNull` is `IS NULL`; a `null` value matches nothing, as `.eq` does.
+  Plain Kysely is fine for a narrow lookup with no timestamps.
+- MUST read on the transaction (`trx`) while one is open, never on `db`: a second
+  pooled connection per open transaction can exhaust the process's sixteen. A read that
+  must NOT see the transaction's own writes needs a reason and a comment.
+- MUST run a group of lookups with `inOrder` rather than `Promise.all`: each query
+  started at once takes its own pooled connection, and opening one costs more than the
+  reads do.
 - MUST re-read record ids from the input under `companyId` before writing
   (`assertCompanyRecords`).
 - MUST throw `NotFoundError` for a missing record, `InvalidInputError` for input the
@@ -94,7 +109,8 @@ pnpm --filter @carbon/checks test
 | `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `PermissionRule`; `ServerFnContext`, `Actor`, `Permissions`, `authorize`, `clientUsesKey`; `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError`; `assertCompanyRecords`; `hasPermissions`, `permissionsFromClaims`, `RequiredPermissions`, `ModulePermissions` |
 | `./<name>` | one server function (`src/<name>/index.ts`) |
 
-Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
+Shared posting internals live in `src/lib/` (not exported): `rows` (the PostgREST-shaped
+reader above), `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
 
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and
