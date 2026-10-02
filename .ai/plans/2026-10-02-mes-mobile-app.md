@@ -26,19 +26,19 @@
 - [x] Task 18: App — instance store, Connect screen, Instances screen
 - [x] Task 19: App — API client, session storage, sign-in / verify / two-factor / password screens
 - [x] Task 20: App — context picker, Operations list, Phase 1 parity check
-- [ ] Task 21: Re-check the routes to move; JSON schemas in `@carbon/mes-core/models`
-- [ ] Task 22: Idempotency keys and request plumbing for every POST
-- [ ] Task 23: Terminal and operator tokens; `/console/*` endpoints
-- [ ] Task 24: Commands — time events (`event.tsx`, `start.$operationId.tsx`, `end.$operationId.tsx`)
-- [ ] Task 25: Commands — quantities (`complete.tsx`, `scrap.tsx`, `rework.tsx`, `finish.tsx`)
-- [ ] Task 26: Commands — materials (`issue.tsx`, `issue-tracked-entity.tsx`, `unconsume.tsx`)
-- [ ] Task 27: Commands — step records and notes
-- [ ] Task 28: Commands — quality issue and print
-- [ ] Task 29: Commands — picking
-- [ ] Task 30: Commands — timecard
-- [ ] Task 31: Screens — operation detail, rework targets, picking, tracked options, timecard
-- [ ] Task 32: API route tests and the web regression pass
-- [ ] Task 33: Docs — `.claude/rules/mes-mobile-api.md`, AGENTS.md rows, spec changelog
+- [x] Task 21: Re-check the routes to move; JSON schemas in `@carbon/mes-core/models`
+- [x] Task 22: Idempotency keys and request plumbing for every POST
+- [ ] Task 23: Terminal and operator tokens; `/console/*` endpoints — NOT STARTED. The app has no shared-terminal mode yet; `requireApiUser` already has the operator hook, so this is the token signing plus the three `/console/*` endpoints.
+- [x] Task 24: Commands — time events (`event.tsx`, `start.$operationId.tsx`, `end.$operationId.tsx`)
+- [x] Task 25: Commands — quantities (`complete.tsx`, `scrap.tsx`, `rework.tsx`, `finish.tsx`)
+- [x] Task 26: Commands — materials (`issue.tsx`, `issue-tracked-entity.tsx`, `unconsume.tsx`)
+- [x] Task 27: Commands — step records and notes
+- [x] Task 28: Commands — quality issue and print
+- [x] Task 29: Commands — picking
+- [x] Task 30: Commands — timecard
+- [~] Task 31: Screens — operation detail, rework targets, picking, tracked options, timecard — PARTIAL. `getOperationScreen` and `getReworkTargetsScreen` are extracted and exposed; the picking, tracked-options and timecard screen reads are not.
+- [~] Task 32: API route tests and the web regression pass — PARTIAL. Every route has a test (194 in apps/mes) and the command chain was verified live against seeded data; the manual web regression pass through the browser has NOT been run.
+- [x] Task 33: Docs — `.claude/rules/mes-mobile-api.md`, AGENTS.md rows, spec changelog
 - [ ] Task 34: Design primitives — tokens, `ActionDock`, `HeroButton`, `StatusBadge`, `OperationCard`
 - [ ] Task 35: Operation detail — Details tab and the dock (start / pause, work type, times)
 - [ ] Task 36: Report good / scrap / rework / finish / end
@@ -108,6 +108,26 @@
 - **Tasks 10/15 — `operationsScreen` is a subset** of what the web loader returns
   (cards, not a Kanban board), with `.passthrough()` so a newer server's extra
   fields cannot fail an older app build.
+- **Phase 2 — commands split across six area modules.** The plan called for one
+  `commands.server.ts`; it would be ~2000 lines over unrelated domains, and three
+  agents had to write it concurrently. `commands.server.ts` is now the barrel and
+  holds the contract; the commands live in `commands.{time,quantities,materials,steps,picking,timecard}.server.ts`,
+  which matches MES's existing flat-services convention.
+- **Phase 2 — `FAILURE_STATUS.blocked` is 409, not the plan's 403.** A rule
+  violation is a state conflict, not a permission problem; the operator may be
+  able to proceed after acknowledging.
+- **Phase 2 — two table-driven test files rather than one per route.** The eight
+  materials/steps routes and the three time-card routes are siblings sharing
+  every behaviour under test, so a new endpoint is one row rather than a new file
+  to copy wrong. `.claude/rules/testing-no-mock-theater.md` applies: the
+  assertion that earns its place everywhere is that a command receives the pinned
+  operator and not the terminal account.
+- **Phase 2 — `@carbon/auth/api-user.server` cannot be partially mocked under
+  mes's vitest.** Its auth chain reaches `@carbon/content`'s glossary, whose
+  lingui `msg` macro vitest does not transform. Each route test mirrors the
+  self-contained `ApiError` / `apiErrorResponse` pair instead.
+- **Phase 2 — `endEventBody.exclusive` is implemented though no web caller passes
+  it**, so a declared schema field is not silently ignored.
 
 ## Dependencies
 - Phase 0 (Tasks 1–8) runs in order: 2 → 3 → 4 → 5 → 6 → 7 → 8. Task 1 is independent.
