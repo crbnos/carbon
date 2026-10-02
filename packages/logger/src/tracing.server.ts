@@ -34,7 +34,7 @@ import {
   ATTR_URL_PATH,
   ATTR_URL_QUERY
 } from "@opentelemetry/semantic-conventions";
-import type { ServerInstrumentation } from "react-router";
+import type { MiddlewareFunction, ServerInstrumentation } from "react-router";
 import { REDACTED, redactSearch } from "./redaction";
 
 const REQUEST_SPAN = createContextKey("carbon.request-span");
@@ -161,23 +161,35 @@ export function fetchSpanName(method: string, origin: string, path: string) {
 }
 
 /**
- * React Router reports a middleware by its route alone, so four root
- * middleware are four spans named `middleware root`. This names each span
- * after its key, in the order given. A key, not the function's `name`: the
- * production build minifies function names (`middleware VZe`).
+ * The middleware in the order given, each one's OWN time recorded on the
+ * request span as `carbon.middleware.<key>.ms`: its total minus the time spent
+ * in what it calls next. A span per middleware cannot say that — it contains
+ * everything after it, so it reads as slow whenever a loader is. Named by key,
+ * not by the function's `name`, which the production build minifies.
  */
-export function namedMiddleware<
-  Middleware extends (...args: never[]) => unknown
->(middleware: Record<string, Middleware>): Middleware[] {
+export function timedMiddleware<Result>(
+  middleware: Record<string, MiddlewareFunction<Result>>
+): MiddlewareFunction<Result>[] {
   const entries = Object.entries(middleware);
   if (!enabled) return entries.map(([, run]) => run);
-  return entries.map(
-    ([name, run]) =>
-      ((...args) => {
-        trace.getActiveSpan()?.updateName(`middleware ${name}`);
-        return run(...args);
-      }) as Middleware
-  );
+  return entries.map(([name, run]) => async (args, next) => {
+    const start = performance.now();
+    let downstream = 0;
+    try {
+      return await run(args, async () => {
+        const called = performance.now();
+        try {
+          return await next();
+        } finally {
+          downstream += performance.now() - called;
+        }
+      });
+    } finally {
+      annotateRequestSpan({
+        [`carbon.middleware.${name}.ms`]: performance.now() - start - downstream
+      });
+    }
+  });
 }
 
 // Inngest's event API takes the event key as a path segment (`POST /e/<key>`),
@@ -394,7 +406,6 @@ export function routerInstrumentation(
         };
 
       instrument({
-        middleware: traced("middleware"),
         loader: traced("loader"),
         action: traced("action")
       });

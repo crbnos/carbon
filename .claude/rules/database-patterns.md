@@ -38,7 +38,7 @@ the SDK's retries.
 **Every Supabase client built while handling a request is bound to it** (`requestFetch` in
 `client.server.ts`). `requirePermissions` passes its `Request`; anything else — a
 `getCarbonServiceRole()` deep in a service, the API-key client, `getUserScopedClient` — finds
-it through `currentRequest()` (`@carbon/logger`, set by `requestContextMiddleware`). Inngest
+it through `currentRequest()` (`@carbon/logger`, set by `requestMiddleware`). Inngest
 steps run as requests to `/api/inngest`, so their clients are bound too (they are POSTs, so
 never cancelled). Outside a request (scripts, module-level clients) nothing is bound.
 

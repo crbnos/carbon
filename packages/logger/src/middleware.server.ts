@@ -9,7 +9,11 @@ import {
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
-import { getRequestContext, requestDetailContext } from "./context.server";
+import {
+  getRequestContext,
+  requestContextMiddleware,
+  requestDetailContext
+} from "./context.server";
 import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
 import { annotateRequestSpan } from "./tracing.server";
 
@@ -194,3 +198,14 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
 };
+
+/**
+ * The request scope in one middleware: publishes the request context
+ * (`requestContextMiddleware`) and, inside it, assigns the request id and
+ * writes the access log (`requestIdMiddleware`). Register FIRST in an app's
+ * root `middleware`, so everything downstream runs inside both.
+ */
+export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
+  requestContextMiddleware(args, () =>
+    Promise.resolve(requestIdMiddleware(args, next) as Response)
+  );
