@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { resultShapeOf } from "../../../scripts/lib/result-shape";
 import {
   auditParams,
   branchesOnKeyPresence,
@@ -474,5 +475,63 @@ describe("positional params the dispatcher fills", () => {
     expect(() => contextParamsOf(fns.viaRpc)).toThrow(/positional `updatedBy`/);
     // An inner binding of the same name is not the function's own parameter.
     expect(() => contextParamsOf(fns.shadowed)).toThrow(/positional `updatedBy`/);
+  });
+});
+
+describe("how a service reports failure in its result", () => {
+  const fns = parse(`
+    type Failure = { message: string };
+    type Row = { id: string };
+    export async function read(): Promise<{ data: Row | null; error: Failure | null }> {
+      return { data: null, error: null };
+    }
+    export async function bareError(): Promise<{ error: Failure | null }> {
+      return { error: null };
+    }
+    export async function errorOnOnePath(): Promise<Row | { error: string }> {
+      return { id: "a" };
+    }
+    export async function manyWrites() {
+      const one: { data: null; error: Failure | null } = { data: null, error: null };
+      return Promise.all([one, one]);
+    }
+    export async function flagged(): Promise<
+      { ok: true; created: number } | { ok: false; reason: string }
+    > {
+      return { ok: true, created: 1 };
+    }
+    export async function rows(): Promise<Row[]> {
+      return [];
+    }
+    export async function nothing(): Promise<void> {}
+    export async function mixedList(): Promise<Array<Row | { error: Failure }>> {
+      return [];
+    }
+    export async function twoSignals(): Promise<
+      { error: Failure | null } | { success: boolean }
+    > {
+      return { success: true };
+    }
+  `);
+  const shape = (name: string) =>
+    resultShapeOf(
+      fns[name].node.getProject().getTypeChecker().compilerObject,
+      fns[name]
+    );
+
+  it("reads the shape off the awaited return type", () => {
+    expect(shape("read")).toBe("envelope");
+    // No \`data\`: the result dispatch used to hand back as a success.
+    expect(shape("bareError")).toBe("envelope");
+    expect(shape("errorOnOnePath")).toBe("envelope");
+    expect(shape("manyWrites")).toBe("envelopes");
+    expect(shape("flagged")).toBe("flag");
+    expect(shape("rows")).toBe("plain");
+    expect(shape("nothing")).toBe("plain");
+  });
+
+  it("refuses a result dispatch could not read one way", () => {
+    expect(() => shape("mixedList")).toThrow(/list whose items/);
+    expect(() => shape("twoSignals")).toThrow(/cannot tell which reports failure/);
   });
 });

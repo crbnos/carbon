@@ -21,6 +21,9 @@ const spies = vi.hoisted(() => ({
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
+  recalculateQuoteLinePrices: vi.fn(),
+  updateQuoteMaterialOrder: vi.fn(),
+  cancelSalesOrder: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
@@ -77,6 +80,9 @@ vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
+  recalculateQuoteLinePrices: spies.recalculateQuoteLinePrices,
+  updateQuoteMaterialOrder: spies.updateQuoteMaterialOrder,
+  cancelSalesOrder: spies.cancelSalesOrder,
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
@@ -169,6 +175,9 @@ const allSpies = [
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
+  spies.recalculateQuoteLinePrices,
+  spies.updateQuoteMaterialOrder,
+  spies.cancelSalesOrder,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
@@ -370,6 +379,86 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(suppliers.calls).toEqual([
       [spies.FAKE_CLIENT, "rfq1", ["s1"], "c1", "u1"]
     ]);
+  });
+
+  // A service reports failure in what it returns. Each of these used to reach
+  // the caller as a success, because only `{ data, error }` was read.
+  describe("a failure in the service's result is an error, whatever its shape", () => {
+    const pgError = { code: "23503", message: "violates foreign key" };
+
+    it("a bare { error } with no data", async () => {
+      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: pgError });
+      const r = await runDispatch(
+        "sales_recalculateQuoteLinePrices",
+        spies.recalculateQuoteLinePrices,
+        { quoteId: "q1", quoteLineId: "ql1" }
+      );
+      expect(r.dispatch).toBeUndefined();
+      expect(r.dispatchError).toMatchObject({
+        message: "violates foreign key",
+        data: { supabase: pgError }
+      });
+    });
+
+    it("a bare { error: null } is still the result", async () => {
+      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: null });
+      const r = await runDispatch(
+        "sales_recalculateQuoteLinePrices",
+        spies.recalculateQuoteLinePrices,
+        { quoteId: "q1", quoteLineId: "ql1" }
+      );
+      expect(r.dispatchError).toBeUndefined();
+      expect(r.dispatch).toEqual({ data: { error: null } });
+    });
+
+    it("one failed write in a Promise.all of writes", async () => {
+      const ok = { data: null, error: null, status: 204 };
+      spies.updateQuoteMaterialOrder.mockResolvedValue([
+        ok,
+        { data: null, error: pgError, status: 409 }
+      ]);
+      const failed = await runDispatch(
+        "sales_updateQuoteMaterialOrder",
+        spies.updateQuoteMaterialOrder,
+        { updates: [{ id: "a", order: 1 }] }
+      );
+      expect(failed.dispatchError).toMatchObject({
+        data: { supabase: pgError }
+      });
+
+      spies.updateQuoteMaterialOrder.mockResolvedValue([ok, ok]);
+      const passed = await runDispatch(
+        "sales_updateQuoteMaterialOrder",
+        spies.updateQuoteMaterialOrder,
+        { updates: [{ id: "a", order: 1 }] }
+      );
+      expect(passed.dispatch).toEqual({ data: [ok, ok] });
+    });
+
+    it("a { success: false } flag", async () => {
+      spies.cancelSalesOrder.mockResolvedValue({
+        success: false,
+        message: "Order has posted shipments",
+        cancelledJobIds: []
+      });
+      const refused = await runDispatch(
+        "sales_cancelSalesOrder",
+        spies.cancelSalesOrder,
+        { salesOrderId: "so1" }
+      );
+      expect(refused.dispatchError).toMatchObject({
+        message: "Order has posted shipments"
+      });
+
+      const done = { success: true, message: "Cancelled", cancelledJobIds: [] };
+      spies.cancelSalesOrder.mockResolvedValue(done);
+      const cancelled = await runDispatch(
+        "sales_cancelSalesOrder",
+        spies.cancelSalesOrder,
+        { salesOrderId: "so1" }
+      );
+      expect(cancelled.dispatch).toEqual({ data: done });
+    });
   });
 
   it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {

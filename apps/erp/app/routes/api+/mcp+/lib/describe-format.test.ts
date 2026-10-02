@@ -23,6 +23,7 @@ const baseTool: ManifestEntry = {
   serviceParams: ["client", "id"],
   contextParams: { client: "client" },
   injectAuth: ["companyId"],
+  resultShape: "envelope",
   permission: { module: "sales", actions: ["view"] },
   paginates: true,
   schema: {

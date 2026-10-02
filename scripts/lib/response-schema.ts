@@ -16,7 +16,10 @@
  * schema, ~10s to walk. The manifest grows 1.3 -> 1.6 MB, and it is gitignored.
  */
 
+import type { ResultShape } from "@carbon/api";
 import { Node, type Type } from "ts-morph";
+import { MCP_EXPOSURE_TAG } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
+import { resultShapeOf } from "./result-shape";
 import type { ServiceAst } from "./service-ast";
 
 export type JsonSchema = Record<string, unknown>;
@@ -258,6 +261,8 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
 export interface ResponseSchemaIndex {
   /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
   get(module: string, functionName: string): JsonSchema | null;
+  /** How the function reports failure in its result (`resultShapeOf`). */
+  shape(module: string, functionName: string): ResultShape;
   readonly stats: { functions: number; derived: number; empty: number };
 }
 
@@ -279,11 +284,18 @@ export function buildResponseSchemaIndex(ast: ServiceAst): ResponseSchemaIndex {
   ast.project.resolveSourceFileDependencies();
 
   const schemas = new Map<string, JsonSchema>();
+  const shapes = new Map<string, ResultShape>();
   const stats = { functions: 0, derived: 0, empty: 0 };
+  const checker = ast.project.getTypeChecker().compilerObject;
 
   for (const mod of ast.modules.values()) {
     for (const fn of mod.functions) {
       stats.functions++;
+      // Only a tool's result is read by dispatch; an unpublished helper may
+      // return whatever it likes.
+      if (fn.tags.some((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)) {
+        shapes.set(fn.toolName, resultShapeOf(checker, fn));
+      }
       let schema: JsonSchema;
       try {
         schema = typeToJsonSchema(
@@ -306,6 +318,9 @@ export function buildResponseSchemaIndex(ast: ServiceAst): ResponseSchemaIndex {
   return {
     get(module, functionName) {
       return schemas.get(`${module}_${functionName}`) ?? null;
+    },
+    shape(module, functionName) {
+      return shapes.get(`${module}_${functionName}`) ?? "plain";
     },
     stats
   };

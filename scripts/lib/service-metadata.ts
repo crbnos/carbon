@@ -1577,6 +1577,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         serviceParams,
         contextParams,
         injectAuth,
+        resultShape: opts.responses?.shape(mod, func.name) ?? "plain",
         permission,
         // Whether the service applies limit/offset itself. A list operation
         // that does not ignores pagination args entirely (the fetchAll

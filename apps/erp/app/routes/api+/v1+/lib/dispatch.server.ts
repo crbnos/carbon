@@ -521,16 +521,61 @@ export async function dispatchOperation(
     result = await result;
   }
 
-  // Supabase response shape { data, error, count } — unwrap, or throw on error.
-  if (result && typeof result === "object" && "data" in result) {
-    const r = result as { data: unknown; error?: unknown; count?: number };
-    if (r.error) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: supabaseErrorMessage(r.error),
-        data: { supabase: r.error }
-      });
-    }
-    return { data: r.data, count: r.count ?? undefined };
+  return readServiceResult(meta, result);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function serviceFailure(error: unknown): ORPCError<"BAD_REQUEST", unknown> {
+  return new ORPCError("BAD_REQUEST", {
+    message: supabaseErrorMessage(error),
+    data: { supabase: error }
+  });
+}
+
+/**
+ * Turn what the service returned into the operation's result, or throw when the
+ * service said it failed. A service does not throw, and where it puts the
+ * failure is read off its return type by the generator (`resultShape`).
+ *
+ * Only `{ data, error }` used to be read, and only when `data` was present, so
+ * a bare `{ error }`, a failed write inside a `Promise.all`, and `{ ok: false }`
+ * all went back to the caller as a success.
+ */
+function readServiceResult(
+  meta: ManifestEntry,
+  result: unknown
+): DispatchResult {
+  if (meta.resultShape === "envelopes" && Array.isArray(result)) {
+    const failed = result.find((item) => isRecord(item) && item.error);
+    if (failed) throw serviceFailure((failed as { error: unknown }).error);
+    return { data: result };
+  }
+
+  if (!isRecord(result)) return { data: result };
+
+  // Read whatever the manifest says: a truthy `error` on the result object is a
+  // failure under every shape, including a return type the checker saw as `any`.
+  if (result.error) throw serviceFailure(result.error);
+
+  if (
+    meta.resultShape === "flag" &&
+    (result.ok === false || result.success === false)
+  ) {
+    const reason = result.reason ?? result.message;
+    throw new ORPCError("BAD_REQUEST", {
+      message:
+        typeof reason === "string" ? reason : "The operation did not succeed."
+    });
+  }
+
+  if ("data" in result) {
+    return {
+      data: result.data,
+      count: (result.count as number | null | undefined) ?? undefined
+    };
   }
   return { data: result };
 }

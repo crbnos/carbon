@@ -26,6 +26,12 @@ export type ContextSource =
   | "companyId"
   | "companyGroupId";
 
+/**
+ * How the service reports failure in the value it returns, read off its return
+ * type by the generator (`scripts/lib/result-shape.ts`).
+ */
+export type ResultShape = "envelope" | "envelopes" | "flag" | "plain";
+
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
@@ -52,6 +58,8 @@ export interface ManifestEntry {
    *  the caller's payload. */
   contextParams: Record<string, ContextSource>;
   injectAuth: AuthField[];
+  /** Where dispatch looks for a failure in the service's result. */
+  resultShape: ResultShape;
   permission: ToolPermission;
   /** Whether the service itself applies limit/offset (`setGenericQueryFilters`
    *  or a direct `.range(`). A list operation with `paginates: false` is a

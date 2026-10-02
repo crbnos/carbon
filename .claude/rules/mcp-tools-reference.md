@@ -360,6 +360,22 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   `client`. Left out of the generator's list it became a required field a caller
   cannot express — a
   Supabase client — so the two consolidated-balance ops failed every call.
+- **A failure in the service's result is an error, whatever its shape.** A
+  service does not throw; `readServiceResult` (`dispatch.server.ts`) reads the
+  failure where the manifest's `resultShape` says it is. The generator takes that
+  off the declared return type with the checker (`scripts/lib/result-shape.ts`,
+  awaited, so a Promise and a builder returned without `await` read alike):
+  `envelope` — an object with an `error` member, PostgREST's response or a
+  hand-built `{ error }` with or without `data` (1,311 tools); `envelopes` — a
+  list of those, a `Promise.all` of writes (15); `flag` — `{ ok | success }`
+  with no `error` (2); `plain` (154). Only `{ data, error }` WITH a `data` key
+  used to be read, so a bare `{ error }`, one failed write in a `Promise.all`
+  and `{ ok: false }` all went back as a success. A truthy top-level `error` is
+  a failure under every shape, so a service must not return a bare row that has
+  an `error` column — wrap it in `{ data }`. A return type that mixes the two
+  signals, or a list whose items disagree, fails generation. The digest shows
+  `result` for `envelopes` and `flag`. Pinned by `dispatch-parity.test.ts` and
+  `apps/erp/test/mcp-service-ast.test.ts`.
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or
@@ -412,7 +428,7 @@ functions that must import `*.server` modules — see the gotcha below — e.g.
 `production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
 exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
-`{ name, module, classification, description, paramCount, serviceParams, contextParams, injectAuth, schema }`.
+`{ name, module, classification, description, paramCount, serviceParams, contextParams, injectAuth, resultShape, schema }`.
 
 - **How the service files are read** (`scripts/lib/service-ast.ts`): ONE ts-morph
   project, shared with the response-schema reflection. Which functions exist

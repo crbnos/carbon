@@ -35,6 +35,9 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** How the result reports failure, when it is not PostgREST's `{ data, error }`
+   *  (`envelope`) or a plain value. */
+  result?: string;
   /** Positional params filled from a context value of a different name
    *  (`updatedBy=userId`). Absent when every context param is its own source. */
   context?: string;
@@ -134,6 +137,9 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
         paginates: t.paginates,
+        ...(t.resultShape === "envelopes" || t.resultShape === "flag"
+          ? { result: t.resultShape }
+          : {}),
         ...(describeContext(t) ? { context: describeContext(t) } : {}),
         ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {})
       }))
