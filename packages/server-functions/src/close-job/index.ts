@@ -10,6 +10,7 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import { inOrder, single } from "../lib/rows";
 
 export const closeJobInput = z.object({
   jobId: z.string()
@@ -29,20 +30,24 @@ export const closeJob = defineServerFn({
     const client = await ctx.supabase();
 
     const today = datetime
-      .today(await getCompanyTimeZone(client, companyId))
+      .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [accountingSettings, companyRecord] = await Promise.all([
-      client
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single(),
-      client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single()
+    const [accountingSettings, companyRecord] = await inOrder([
+      () =>
+        single(
+          db,
+          "companySettings",
+          { id: companyId },
+          { columns: ["accountingEnabled"] }
+        ),
+      () =>
+        single(
+          db,
+          "company",
+          { id: companyId },
+          { columns: ["companyGroupId"] }
+        )
     ]);
 
     const accountingEnabled =
@@ -54,7 +59,7 @@ export const closeJob = defineServerFn({
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
 
-    const accountDefaults = await getDefaultPostingGroup(client, companyId);
+    const accountDefaults = await getDefaultPostingGroup(db, companyId);
     if (accountDefaults?.error || !accountDefaults?.data) {
       throw new Error("Error getting account defaults");
     }

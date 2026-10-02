@@ -9,6 +9,7 @@ import type { Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "sync");
 
@@ -185,12 +186,12 @@ export const sync = defineServerFn({
         const client = await ctx.supabase();
 
         // Check if top-level make method is Active and find or create a Draft
-        const topLevelMakeMethod = await client
-          .from("makeMethod")
-          .select("id, itemId, version, status")
-          .eq("id", makeMethodId)
-          .eq("companyId", companyId)
-          .maybeSingle();
+        const topLevelMakeMethod = await maybeSingle(
+          db,
+          "makeMethod",
+          { id: makeMethodId, companyId },
+          { columns: ["id", "itemId", "version", "status"] }
+        );
 
         // Service-role client: a make method outside companyId is a 404.
         if (!topLevelMakeMethod.data) {
@@ -201,13 +202,21 @@ export const sync = defineServerFn({
           data.map((item) => item.id).filter((id): id is string => Boolean(id))
         );
 
-        const existingItems = await client
-          .from("item")
-          .select(
-            "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
-          )
-          .eq("companyId", companyId)
-          .in("id", Array.from(existingItemIds));
+        const existingItems = await many(
+          db,
+          "item",
+          { companyId, id: Array.from(existingItemIds) },
+          {
+            columns: [
+              "id",
+              "readableId",
+              "readableIdWithRevision",
+              "unitOfMeasureCode",
+              "type",
+              "revision"
+            ]
+          }
+        );
         if (existingItems.error) throw new Error("Failed to fetch items");
 
         const existingItemsByItemId = new Map(
@@ -282,11 +291,12 @@ export const sync = defineServerFn({
         }
 
         // Read after the Draft above may have been created, as before.
-        const existingMakeMethods = await client
-          .from("activeMakeMethods")
-          .select("id, itemId, version, status")
-          .eq("companyId", companyId)
-          .in("itemId", Array.from(existingItemIds));
+        const existingMakeMethods = await many(
+          db,
+          "activeMakeMethods",
+          { companyId, itemId: Array.from(existingItemIds) },
+          { columns: ["id", "itemId", "version", "status"] }
+        );
         if (existingMakeMethods.error) {
           throw new Error("Failed to fetch make methods");
         }

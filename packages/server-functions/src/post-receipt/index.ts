@@ -37,6 +37,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -58,20 +59,24 @@ export const postReceipt = defineServerFn({
     const client = await ctx.supabase();
     try {
       const today = datetime
-        .today(await getCompanyTimeZone(client, companyId))
+        .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
-      const [companyRecord, accountingSettings] = await Promise.all([
-        client
-          .from("company")
-          .select("companyGroupId")
-          .eq("id", companyId)
-          .single(),
-        client
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single()
+      const [companyRecord, accountingSettings] = await inOrder([
+        () =>
+          single(
+            db,
+            "company",
+            { id: companyId },
+            { columns: ["companyGroupId"] }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["accountingEnabled"] }
+          )
       ]);
       if (companyRecord.error) throw new Error("Failed to fetch company");
       const companyGroupId = companyRecord.data.companyGroupId;
@@ -79,41 +84,38 @@ export const postReceipt = defineServerFn({
         accountingSettings.data?.accountingEnabled ?? false;
 
       const [receipt, receiptLines, receiptLineTracking, dimensions] =
-        await Promise.all([
+        await inOrder([
           // The client is service-role: authorization proved the caller may
           // act in companyId, not that receiptId belongs to it.
-          client
-            .from("receipt")
-            .select("*")
-            .eq("id", receiptId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("receiptLine")
-            .select("*")
-            .eq("receiptId", receiptId)
-            .eq("companyId", companyId),
-          client
-            .from("trackedEntity")
-            .select("*")
-            .contains("attributes", { Receipt: receiptId })
-            .eq("companyId", companyId),
-          client
-            .from("dimension")
-            .select("id, entityType")
-            .eq("companyGroupId", companyGroupId!)
-            .eq("active", true)
-            .in("entityType", [
-              "SupplierType",
-              "Supplier",
-              "CustomerType",
-              "Customer",
-              "ItemPostingGroup",
-              "Item",
-              "Location",
-              "Process",
-              "FixedAssetClass"
-            ])
+          () => maybeSingle(db, "receipt", { id: receiptId, companyId }),
+          () => many(db, "receiptLine", { receiptId, companyId }),
+          () =>
+            client
+              .from("trackedEntity")
+              .select("*")
+              .contains("attributes", { Receipt: receiptId })
+              .eq("companyId", companyId),
+          () =>
+            many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyGroupId!,
+                active: true,
+                entityType: [
+                  "SupplierType",
+                  "Supplier",
+                  "CustomerType",
+                  "Customer",
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Process",
+                  "FixedAssetClass"
+                ]
+              },
+              { columns: ["id", "entityType"] }
+            )
         ]);
 
       if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -135,21 +137,28 @@ export const postReceipt = defineServerFn({
         }
         return acc;
       }, []);
-      const [items, itemCosts, companySettings] = await Promise.all([
-        client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem")
-          .in("id", itemIds)
-          .eq("companyId", companyId),
-        client
-          .from("itemCost")
-          .select("itemId, itemPostingGroupId")
-          .in("itemId", itemIds),
-        client
-          .from("companySettings")
-          .select("samplingStandard")
-          .eq("id", companyId)
-          .single()
+      const [items, itemCosts, companySettings] = await inOrder([
+        () =>
+          many(
+            db,
+            "item",
+            { id: itemIds, companyId },
+            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          ),
+        () =>
+          many(
+            db,
+            "itemCost",
+            { itemId: itemIds },
+            { columns: ["itemId", "itemPostingGroupId"] }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["samplingStandard"] }
+          )
       ]);
       if (items.error) {
         throw new Error("Failed to fetch items");
@@ -275,24 +284,24 @@ export const postReceipt = defineServerFn({
           }
 
           const [originalItemLedger, originalJournalLines, returnLinesVoid] =
-            await Promise.all([
-              client
-                .from("itemLedger")
-                .select("*")
-                .eq("documentId", receiptId)
-                .eq("documentType", "Sales Return Receipt")
-                .eq("companyId", companyId),
-              client
-                .from("journalLine")
-                .select("*")
-                .eq("documentId", receiptId)
-                .eq("documentType", "Receipt")
-                .eq("companyId", companyId),
-              client
-                .from("salesReturnOrderLine")
-                .select("*")
-                .eq("salesReturnOrderId", salesReturnOrderId)
-                .eq("companyId", companyId)
+            await inOrder([
+              () =>
+                many(db, "itemLedger", {
+                  documentId: receiptId,
+                  documentType: "Sales Return Receipt",
+                  companyId
+                }),
+              () =>
+                many(db, "journalLine", {
+                  documentId: receiptId,
+                  documentType: "Receipt",
+                  companyId
+                }),
+              () =>
+                many(db, "salesReturnOrderLine", {
+                  salesReturnOrderId,
+                  companyId
+                })
             ]);
           if (originalItemLedger.error)
             throw new Error("Failed to fetch original item ledger entries");
@@ -529,23 +538,23 @@ export const postReceipt = defineServerFn({
           originalItemLedger,
           originalJournalLines,
           purchaseOrderLinesVoid
-        ] = await Promise.all([
-          client
-            .from("itemLedger")
-            .select("*")
-            .eq("documentId", receiptId)
-            .eq("documentType", "Purchase Receipt")
-            .eq("companyId", companyId),
-          client
-            .from("journalLine")
-            .select("*")
-            .eq("documentId", receiptId)
-            .eq("documentType", "Receipt")
-            .eq("companyId", companyId),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .eq("purchaseOrderId", receiptHeader.sourceDocumentId)
+        ] = await inOrder([
+          () =>
+            many(db, "itemLedger", {
+              documentId: receiptId,
+              documentType: "Purchase Receipt",
+              companyId
+            }),
+          () =>
+            many(db, "journalLine", {
+              documentId: receiptId,
+              documentType: "Receipt",
+              companyId
+            }),
+          () =>
+            many(db, "purchaseOrderLine", {
+              purchaseOrderId: receiptHeader.sourceDocumentId
+            })
         ]);
 
         if (originalItemLedger.error)
@@ -680,11 +689,12 @@ export const postReceipt = defineServerFn({
               )
               .reduce((sum, jl) => sum + Math.abs(jl.amount ?? 0), 0);
 
-            const assetRecord = await client
-              .from("fixedAsset")
-              .select("id, acquisitionCost, status")
-              .eq("id", faPoLine.assetId!)
-              .single();
+            const assetRecord = await single(
+              db,
+              "fixedAsset",
+              { id: faPoLine.assetId! },
+              { columns: ["id", "acquisitionCost", "status"] }
+            );
 
             if (!assetRecord.error && assetRecord.data) {
               const newAcquisitionCost = Math.max(
@@ -925,21 +935,22 @@ export const postReceipt = defineServerFn({
             throw new Error("Receipt has no sourceDocumentId");
 
           const [purchaseOrder, purchaseOrderLines, purchaseOrderDelivery] =
-            await Promise.all([
-              client
-                .from("purchaseOrder")
-                .select("*")
-                .eq("id", receiptHeader.sourceDocumentId)
-                .single(),
-              client
-                .from("purchaseOrderLine")
-                .select("*")
-                .eq("purchaseOrderId", receiptHeader.sourceDocumentId),
-              client
-                .from("purchaseOrderDelivery")
-                .select("supplierShippingCost")
-                .eq("id", receiptHeader.sourceDocumentId)
-                .single()
+            await inOrder([
+              () =>
+                single(db, "purchaseOrder", {
+                  id: receiptHeader.sourceDocumentId
+                }),
+              () =>
+                many(db, "purchaseOrderLine", {
+                  purchaseOrderId: receiptHeader.sourceDocumentId
+                }),
+              () =>
+                single(
+                  db,
+                  "purchaseOrderDelivery",
+                  { id: receiptHeader.sourceDocumentId },
+                  { columns: ["supplierShippingCost"] }
+                )
             ]);
           if (purchaseOrder.error)
             throw new Error("Failed to fetch purchase order");
@@ -974,12 +985,10 @@ export const postReceipt = defineServerFn({
             0
           );
 
-          const supplier = await client
-            .from("supplier")
-            .select("*")
-            .eq("id", purchaseOrder.data.supplierId)
-            .eq("companyId", companyId)
-            .single();
+          const supplier = await single(db, "supplier", {
+            id: purchaseOrder.data.supplierId,
+            companyId
+          });
           if (supplier.error) throw new Error("Failed to fetch supplier");
 
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -1025,10 +1034,12 @@ export const postReceipt = defineServerFn({
               .map((pol) => pol.jobOperationId)
               .filter((id): id is string => !!id);
             if (jobOpIds.length > 0) {
-              const jobOps = await client
-                .from("jobOperation")
-                .select("id, processId")
-                .in("id", jobOpIds);
+              const jobOps = await many(
+                db,
+                "jobOperation",
+                { id: jobOpIds },
+                { columns: ["id", "processId"] }
+              );
               for (const op of jobOps.data ?? []) {
                 if (op.processId)
                   processIdByJobOperationId.set(op.id, op.processId);
@@ -1295,7 +1306,7 @@ export const postReceipt = defineServerFn({
 
           // Get account defaults (once for all lines) - only needed for journal entries
           const accountDefaults = accountingEnabled
-            ? await getDefaultPostingGroup(client, companyId)
+            ? await getDefaultPostingGroup(db, companyId)
             : null;
           if (
             accountingEnabled &&
@@ -1333,12 +1344,23 @@ export const postReceipt = defineServerFn({
                 (id) => journalReference.to.purchaseInvoice(id)
               );
 
-              const accrualJournalLines = await client
-                .from("journalLine")
-                .select("documentLineReference, amount, quantity, accountId")
-                .in("documentLineReference", accrualDocRefs)
-                .eq("accrual", true)
-                .eq("companyId", companyId);
+              const accrualJournalLines = await many(
+                db,
+                "journalLine",
+                {
+                  documentLineReference: accrualDocRefs,
+                  accrual: true,
+                  companyId
+                },
+                {
+                  columns: [
+                    "documentLineReference",
+                    "amount",
+                    "quantity",
+                    "accountId"
+                  ]
+                }
+              );
 
               if (accrualJournalLines.error) {
                 throw new Error("Failed to fetch accrual journal lines");
@@ -1747,11 +1769,12 @@ export const postReceipt = defineServerFn({
           }
 
           // Process Fixed Asset PO lines (no receipt lines — handled directly from PO)
-          const { data: receiptFaLines } = await client
-            .from("receiptFixedAssetLine")
-            .select("purchaseOrderLineId, serialNumber")
-            .eq("receiptId", receiptId)
-            .eq("received", true);
+          const { data: receiptFaLines } = await many(
+            db,
+            "receiptFixedAssetLine",
+            { receiptId, received: true },
+            { columns: ["purchaseOrderLineId", "serialNumber"] }
+          );
           const receivedFaPoLineIds = new Set(
             (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
           );
@@ -2371,23 +2394,25 @@ export const postReceipt = defineServerFn({
           const salesReturnOrderId = receiptHeader.sourceDocumentId;
 
           const [salesReturnOrder, salesReturnOrderLines, itemCostDetails] =
-            await Promise.all([
-              client
-                .from("salesReturnOrder")
-                .select("*")
-                .eq("id", salesReturnOrderId)
-                .eq("companyId", companyId)
-                .single(),
-              client
-                .from("salesReturnOrderLine")
-                .select("*, returnReason(inventoryValueZero)")
-                .eq("salesReturnOrderId", salesReturnOrderId)
-                .eq("companyId", companyId),
-              client
-                .from("itemCost")
-                .select("itemId, unitCost")
-                .in("itemId", itemIds)
-                .eq("companyId", companyId)
+            await inOrder([
+              () =>
+                single(db, "salesReturnOrder", {
+                  id: salesReturnOrderId,
+                  companyId
+                }),
+              () =>
+                client
+                  .from("salesReturnOrderLine")
+                  .select("*, returnReason(inventoryValueZero)")
+                  .eq("salesReturnOrderId", salesReturnOrderId)
+                  .eq("companyId", companyId),
+              () =>
+                many(
+                  db,
+                  "itemCost",
+                  { itemId: itemIds, companyId },
+                  { columns: ["itemId", "unitCost"] }
+                )
             ]);
           if (salesReturnOrder.error)
             throw new Error("Failed to fetch sales return order");
@@ -2427,10 +2452,12 @@ export const postReceipt = defineServerFn({
           ];
           const shipmentIdByShipmentLine = new Map<string, string>();
           if (linkedShipmentLineIds.length > 0) {
-            const shipmentLines = await client
-              .from("shipmentLine")
-              .select("id, shipmentId")
-              .in("id", linkedShipmentLineIds);
+            const shipmentLines = await many(
+              db,
+              "shipmentLine",
+              { id: linkedShipmentLineIds },
+              { columns: ["id", "shipmentId"] }
+            );
             // A failed read must abort, not fall back: an empty map here would
             // silently book every linked line at CURRENT cost instead of the
             // original outbound cost, defeating exact-cost reversing unnoticed.
@@ -2472,17 +2499,17 @@ export const postReceipt = defineServerFn({
           }
 
           const accountDefaults = accountingEnabled
-            ? await getDefaultPostingGroup(client, companyId)
+            ? await getDefaultPostingGroup(db, companyId)
             : null;
 
           // Customer type for the return-receipt journal's GL dimensions.
           const customer = accountingEnabled
-            ? await client
-                .from("customer")
-                .select("id, customerTypeId")
-                .eq("id", salesReturnOrder.data.customerId)
-                .eq("companyId", companyId)
-                .single()
+            ? await single(
+                db,
+                "customer",
+                { id: salesReturnOrder.data.customerId, companyId },
+                { columns: ["id", "customerTypeId"] }
+              )
             : null;
           const customerTypeId = customer?.data?.customerTypeId ?? null;
 
@@ -2950,15 +2977,12 @@ export const postReceipt = defineServerFn({
 
           const [warehouseTransfer, warehouseTransferLines] = await Promise.all(
             [
-              client
-                .from("warehouseTransfer")
-                .select("*")
-                .eq("id", receiptHeader.sourceDocumentId)
-                .single(),
-              client
-                .from("warehouseTransferLine")
-                .select("*")
-                .eq("transferId", receiptHeader.sourceDocumentId)
+              single(db, "warehouseTransfer", {
+                id: receiptHeader.sourceDocumentId
+              }),
+              many(db, "warehouseTransferLine", {
+                transferId: receiptHeader.sourceDocumentId
+              })
             ]
           );
 
@@ -2971,16 +2995,21 @@ export const postReceipt = defineServerFn({
           const transferItemIds = warehouseTransferLines.data
             .map((line) => line.itemId)
             .filter(Boolean) as string[];
-          const [itemCosts, transferItems] = await Promise.all([
-            client
-              .from("itemCost")
-              .select("itemId, itemPostingGroupId, unitCost")
-              .in("itemId", transferItemIds),
-            client
-              .from("item")
-              .select("id, replenishmentSystem")
-              .in("id", transferItemIds)
-              .eq("companyId", companyId)
+          const [itemCosts, transferItems] = await inOrder([
+            () =>
+              many(
+                db,
+                "itemCost",
+                { itemId: transferItemIds },
+                { columns: ["itemId", "itemPostingGroupId", "unitCost"] }
+              ),
+            () =>
+              many(
+                db,
+                "item",
+                { id: transferItemIds, companyId },
+                { columns: ["id", "replenishmentSystem"] }
+              )
           ]);
 
           if (itemCosts.error) {
@@ -3009,7 +3038,7 @@ export const postReceipt = defineServerFn({
 
           // Get account defaults (once for all lines) - only needed for journal entries
           const accountDefaults = accountingEnabled
-            ? await getDefaultPostingGroup(client, companyId)
+            ? await getDefaultPostingGroup(db, companyId)
             : null;
           if (
             accountingEnabled &&

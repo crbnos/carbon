@@ -10,6 +10,7 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
+import { single } from "../lib/rows";
 import {
   diffLaborGroups,
   type LaborDimension,
@@ -34,20 +35,20 @@ export const postMaintenanceEvent = defineServerFn({
   permissions: { update: "resources" },
   async run(ctx, { maintenanceDispatchIds }) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
     const dispatchIds = [...new Set(maintenanceDispatchIds)];
 
-    const settings = await client
-      .from("companySettings")
-      .select("accountingEnabled")
-      .eq("id", companyId)
-      .single();
+    const settings = await single(
+      db,
+      "companySettings",
+      { id: companyId },
+      { columns: ["accountingEnabled"] }
+    );
     if (!settings.data?.accountingEnabled) {
       return { success: true, journalIds: [] as string[] };
     }
 
     const postingDate = datetime
-      .today(await getCompanyTimeZone(client, companyId))
+      .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
     const journalIds = await db.transaction().execute(async (trx) => {

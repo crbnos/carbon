@@ -22,7 +22,7 @@ export const postMemo = defineServerFn({
     const { db, companyId, userId } = ctx;
     const client = await ctx.supabase();
     const today = datetime
-      .today(await getCompanyTimeZone(client, companyId))
+      .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
     const result = await postMemoTransaction(db, {

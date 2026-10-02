@@ -12,6 +12,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 
 const logger = getLogger("server-functions", "create");
 
@@ -189,28 +190,23 @@ export const create = defineServerFn({
         logger.info({ type, id });
 
         const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
-          await Promise.all([
-            client
-              .from("nonConformance")
-              .select("*")
-              .eq("id", id)
-              .eq("companyId", companyId)
-              .maybeSingle(),
-            client
-              .from("nonConformanceActionTask")
-              .select("*")
-              .eq("nonConformanceId", id)
-              .eq("companyId", companyId),
-            client
-              .from("nonConformanceApprovalTask")
-              .select("*")
-              .eq("nonConformanceId", id)
-              .eq("companyId", companyId),
-            client
-              .from("nonConformanceReviewer")
-              .select("*")
-              .eq("nonConformanceId", id)
-              .eq("companyId", companyId)
+          await inOrder([
+            () => maybeSingle(db, "nonConformance", { id, companyId }),
+            () =>
+              many(db, "nonConformanceActionTask", {
+                nonConformanceId: id,
+                companyId
+              }),
+            () =>
+              many(db, "nonConformanceApprovalTask", {
+                nonConformanceId: id,
+                companyId
+              }),
+            () =>
+              many(db, "nonConformanceReviewer", {
+                nonConformanceId: id,
+                companyId
+              })
           ]);
 
         if (nonConformance.error) throw new Error(nonConformance.error.message);
@@ -218,12 +214,10 @@ export const create = defineServerFn({
           throw new NotFoundError("Non-conformance not found");
 
         const workflow = nonConformance.data?.nonConformanceWorkflowId
-          ? await client
-              .from("nonConformanceWorkflow")
-              .select("*")
-              .eq("id", nonConformance.data?.nonConformanceWorkflowId)
-              .eq("companyId", companyId)
-              .maybeSingle()
+          ? await maybeSingle(db, "nonConformanceWorkflow", {
+              id: nonConformance.data?.nonConformanceWorkflowId,
+              companyId
+            })
           : null;
 
         if (workflow?.error) throw new Error(workflow.error.message);
@@ -431,18 +425,14 @@ export const create = defineServerFn({
         const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
         logger.info({ type, jobId, companyId, userId });
-        const [job, jobOperations] = await Promise.all([
-          client
-            .from("job")
-            .select("*")
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("jobOperation")
-            .select("*, jobMakeMethod(itemId)")
-            .eq("jobId", jobId)
-            .eq("companyId", companyId)
+        const [job, jobOperations] = await inOrder([
+          () => maybeSingle(db, "job", { id: jobId, companyId }),
+          () =>
+            client
+              .from("jobOperation")
+              .select("*, jobMakeMethod(itemId)")
+              .eq("jobId", jobId)
+              .eq("companyId", companyId)
         ]);
 
         if (job.error) throw new Error(job.error.message);
@@ -478,30 +468,27 @@ export const create = defineServerFn({
             supplierProcesses,
             supplierProcessesByProcess,
             existingPurchaseOrderLines
-          ] = await Promise.all([
-            supplierProcessIds.size > 0
-              ? client
-                  .from("supplierProcess")
-                  .select("*")
-                  .in("id", Array.from(supplierProcessIds) as string[])
-                  .eq("companyId", companyId)
-              : Promise.resolve({ data: [], error: null }),
-            outsideProcessIds.size > 0
-              ? client
-                  .from("supplierProcess")
-                  .select("*")
-                  .in("processId", Array.from(outsideProcessIds))
-                  .eq("companyId", companyId)
-              : Promise.resolve({ data: [], error: null }),
-            client
-              .from("purchaseOrderLine")
-              .select("*")
-              .eq("jobId", jobId)
-              .eq("companyId", companyId)
-              .in(
-                "jobOperationId",
-                outsideOperations.map((d) => d.id)
-              )
+          ] = await inOrder([
+            () =>
+              supplierProcessIds.size > 0
+                ? many(db, "supplierProcess", {
+                    id: Array.from(supplierProcessIds) as string[],
+                    companyId
+                  })
+                : Promise.resolve({ data: [], error: null }),
+            () =>
+              outsideProcessIds.size > 0
+                ? many(db, "supplierProcess", {
+                    processId: Array.from(outsideProcessIds),
+                    companyId
+                  })
+                : Promise.resolve({ data: [], error: null }),
+            () =>
+              many(db, "purchaseOrderLine", {
+                jobId,
+                companyId,
+                jobOperationId: outsideOperations.map((d) => d.id)
+              })
           ]);
 
           if (supplierProcesses.error)
@@ -576,27 +563,27 @@ export const create = defineServerFn({
           );
 
           const [suppliers, supplierPayments, supplierShipping, items] =
-            await Promise.all([
-              client
-                .from("supplier")
-                .select("*")
-                .in("id", Array.from(supplierIds))
-                .eq("companyId", companyId),
-              client
-                .from("supplierPayment")
-                .select("*")
-                .in("supplierId", Array.from(supplierIds))
-                .eq("companyId", companyId),
-              client
-                .from("supplierShipping")
-                .select("*")
-                .in("supplierId", Array.from(supplierIds))
-                .eq("companyId", companyId),
-              client
-                .from("item")
-                .select("*")
-                .in("id", Array.from(itemIds) as string[])
-                .eq("companyId", companyId)
+            await inOrder([
+              () =>
+                many(db, "supplier", {
+                  id: Array.from(supplierIds),
+                  companyId
+                }),
+              () =>
+                many(db, "supplierPayment", {
+                  supplierId: Array.from(supplierIds),
+                  companyId
+                }),
+              () =>
+                many(db, "supplierShipping", {
+                  supplierId: Array.from(supplierIds),
+                  companyId
+                }),
+              () =>
+                many(db, "item", {
+                  id: Array.from(itemIds) as string[],
+                  companyId
+                })
             ]);
 
           if (suppliers.error) throw new Error(suppliers.error.message);
@@ -608,11 +595,12 @@ export const create = defineServerFn({
           // A supplier with no configured currency means "the company's own
           // base currency" (rate 1 by definition) -- never a hardcoded USD,
           // which is only correct for USD-base companies.
-          const companyRecord = await client
-            .from("company")
-            .select("baseCurrencyCode")
-            .eq("id", companyId)
-            .single();
+          const companyRecord = await single(
+            db,
+            "company",
+            { id: companyId },
+            { columns: ["baseCurrencyCode"] }
+          );
           if (companyRecord.error) {
             throw new Error(companyRecord.error.message);
           }
@@ -854,39 +842,43 @@ export const create = defineServerFn({
         });
 
         const [purchaseOrder, purchaseOrderLines, fixedAssetPoLines, receipt] =
-          await Promise.all([
-            client
-              .from("purchaseOrders")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", purchaseOrderId)
-              .single(),
-            client
-              .from("purchaseOrderLine")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("purchaseOrderId", purchaseOrderId)
-              .in("purchaseOrderLineType", [
-                "Part",
-                "Material",
-                "Tool",
-                "Fixture",
-                "Consumable"
-              ]),
-            client
-              .from("purchaseOrderLine")
-              .select(
-                "id, purchaseOrderLineType, assetId, purchaseQuantity, quantityReceived, receivedComplete"
-              )
-              .eq("companyId", companyId)
-              .eq("purchaseOrderId", purchaseOrderId)
-              .eq("purchaseOrderLineType", "Fixed Asset"),
-            client
-              .from("receipt")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingReceiptId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "purchaseOrders", { companyId, id: purchaseOrderId }),
+            () =>
+              many(db, "purchaseOrderLine", {
+                companyId,
+                purchaseOrderId,
+                purchaseOrderLineType: [
+                  "Part",
+                  "Material",
+                  "Tool",
+                  "Fixture",
+                  "Consumable"
+                ]
+              }),
+            () =>
+              many(
+                db,
+                "purchaseOrderLine",
+                {
+                  companyId,
+                  purchaseOrderId,
+                  purchaseOrderLineType: "Fixed Asset"
+                },
+                {
+                  columns: [
+                    "id",
+                    "purchaseOrderLineType",
+                    "assetId",
+                    "purchaseQuantity",
+                    "quantityReceived",
+                    "receivedComplete"
+                  ]
+                }
+              ),
+            () =>
+              maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
           ]);
 
         if (!purchaseOrder.data)
@@ -904,16 +896,17 @@ export const create = defineServerFn({
           locationId = userLocationId ?? null;
         }
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in(
-            "id",
-            purchaseOrderLines.data
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: purchaseOrderLines.data
               .filter((d) => d.locationId === locationId)
               .map((d) => d.itemId) as string[]
-          );
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -934,11 +927,12 @@ export const create = defineServerFn({
         const receiptItemIds = purchaseOrderLines.data
           .filter((d): d is typeof d & { itemId: string } => !!d.itemId)
           .map((d) => d.itemId);
-        const pickMethods = await client
-          .from("pickMethod")
-          .select("itemId, locationId, defaultStorageUnitId")
-          .eq("companyId", companyId)
-          .in("itemId", receiptItemIds);
+        const pickMethods = await many(
+          db,
+          "pickMethod",
+          { companyId, itemId: receiptItemIds },
+          { columns: ["itemId", "locationId", "defaultStorageUnitId"] }
+        );
         const pickMethodKey = (itemId: string, loc: string | null) =>
           `${itemId}::${loc ?? ""}`;
         const defaultStorageUnitByItemLocation = new Map<string, string>();
@@ -1126,24 +1120,19 @@ export const create = defineServerFn({
         });
 
         const [warehouseTransfer, warehouseTransferLines, receipt] =
-          await Promise.all([
-            client
-              .from("warehouseTransfer")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", warehouseTransferId)
-              .single(),
-            client
-              .from("warehouseTransferLine")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("transferId", warehouseTransferId),
-            client
-              .from("receipt")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingReceiptId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "warehouseTransfer", {
+                companyId,
+                id: warehouseTransferId
+              }),
+            () =>
+              many(db, "warehouseTransferLine", {
+                companyId,
+                transferId: warehouseTransferId
+              }),
+            () =>
+              maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
           ]);
 
         if (!warehouseTransfer.data)
@@ -1153,16 +1142,17 @@ export const create = defineServerFn({
 
         const locationId = warehouseTransfer.data.toLocationId;
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in(
-            "id",
-            warehouseTransferLines.data
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: warehouseTransferLines.data
               .map((d) => d.itemId)
               .filter(Boolean) as string[]
-          );
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -1302,24 +1292,19 @@ export const create = defineServerFn({
         });
 
         const [salesReturnOrder, salesReturnOrderLines, receipt] =
-          await Promise.all([
-            client
-              .from("salesReturnOrder")
-              .select("*")
-              .eq("id", salesReturnOrderId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("salesReturnOrderLine")
-              .select("*")
-              .eq("salesReturnOrderId", salesReturnOrderId)
-              .eq("companyId", companyId),
-            client
-              .from("receipt")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingReceiptId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "salesReturnOrder", {
+                id: salesReturnOrderId,
+                companyId
+              }),
+            () =>
+              many(db, "salesReturnOrderLine", {
+                salesReturnOrderId,
+                companyId
+              }),
+            () =>
+              maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
           ]);
 
         if (!salesReturnOrder.data)
@@ -1341,11 +1326,12 @@ export const create = defineServerFn({
         const returnItemIds = salesReturnOrderLines.data
           .map((d) => d.itemId)
           .filter(Boolean) as string[];
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in("id", returnItemIds);
+        const items = await many(
+          db,
+          "item",
+          { companyId, id: returnItemIds },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -1357,11 +1343,12 @@ export const create = defineServerFn({
             .map((d) => d.id)
         );
 
-        const pickMethods = await client
-          .from("pickMethod")
-          .select("itemId, locationId, defaultStorageUnitId")
-          .eq("companyId", companyId)
-          .in("itemId", returnItemIds);
+        const pickMethods = await many(
+          db,
+          "pickMethod",
+          { companyId, itemId: returnItemIds },
+          { columns: ["itemId", "locationId", "defaultStorageUnitId"] }
+        );
         const defaultStorageUnitByItem = new Map<string, string>();
         for (const row of pickMethods.data ?? []) {
           if (row.defaultStorageUnitId && row.locationId === locationId) {
@@ -1488,24 +1475,19 @@ export const create = defineServerFn({
         });
 
         const [warehouseTransfer, warehouseTransferLines, receipt] =
-          await Promise.all([
-            client
-              .from("warehouseTransfer")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", warehouseTransferId)
-              .single(),
-            client
-              .from("warehouseTransferLine")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("transferId", warehouseTransferId),
-            client
-              .from("receipt")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingReceiptId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "warehouseTransfer", {
+                companyId,
+                id: warehouseTransferId
+              }),
+            () =>
+              many(db, "warehouseTransferLine", {
+                companyId,
+                transferId: warehouseTransferId
+              }),
+            () =>
+              maybeSingle(db, "receipt", { companyId, id: existingReceiptId! })
           ]);
 
         if (!warehouseTransfer.data)
@@ -1515,16 +1497,17 @@ export const create = defineServerFn({
 
         const locationId = warehouseTransfer.data.toLocationId;
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in(
-            "id",
-            warehouseTransferLines.data
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: warehouseTransferLines.data
               .map((d) => d.itemId)
               .filter(Boolean) as string[]
-          );
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -1665,18 +1648,14 @@ export const create = defineServerFn({
           userId
         });
 
-        const [receiptLine, trackedEntities] = await Promise.all([
-          client
-            .from("receiptLine")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", receiptLineId)
-            .single(),
-          client
-            .from("trackedEntity")
-            .select("*")
-            .eq("companyId", companyId)
-            .contains("attributes", { "Receipt Line": receiptLineId })
+        const [receiptLine, trackedEntities] = await inOrder([
+          () => single(db, "receiptLine", { companyId, id: receiptLineId }),
+          () =>
+            client
+              .from("trackedEntity")
+              .select("*")
+              .eq("companyId", companyId)
+              .contains("attributes", { "Receipt Line": receiptLineId })
         ]);
 
         logger.debug({ trackedEntities });
@@ -1825,24 +1804,22 @@ export const create = defineServerFn({
         });
 
         const [warehouseTransfer, warehouseTransferLines, shipment] =
-          await Promise.all([
-            client
-              .from("warehouseTransfer")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", warehouseTransferId)
-              .single(),
-            client
-              .from("warehouseTransferLine")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("transferId", warehouseTransferId),
-            client
-              .from("shipment")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingShipmentId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "warehouseTransfer", {
+                companyId,
+                id: warehouseTransferId
+              }),
+            () =>
+              many(db, "warehouseTransferLine", {
+                companyId,
+                transferId: warehouseTransferId
+              }),
+            () =>
+              maybeSingle(db, "shipment", {
+                companyId,
+                id: existingShipmentId!
+              })
           ]);
 
         if (!warehouseTransfer.data)
@@ -1852,16 +1829,17 @@ export const create = defineServerFn({
 
         const locationId = warehouseTransfer.data.toLocationId;
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in(
-            "id",
-            warehouseTransferLines.data
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: warehouseTransferLines.data
               .map((d) => d.itemId)
               .filter(Boolean) as string[]
-          );
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -2002,24 +1980,22 @@ export const create = defineServerFn({
         });
 
         const [salesReturnOrder, salesReturnOrderLines, shipment] =
-          await Promise.all([
-            client
-              .from("salesReturnOrder")
-              .select("*")
-              .eq("id", salesReturnOrderId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("salesReturnOrderLine")
-              .select("*")
-              .eq("salesReturnOrderId", salesReturnOrderId)
-              .eq("companyId", companyId),
-            client
-              .from("shipment")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingShipmentId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "salesReturnOrder", {
+                id: salesReturnOrderId,
+                companyId
+              }),
+            () =>
+              many(db, "salesReturnOrderLine", {
+                salesReturnOrderId,
+                companyId
+              }),
+            () =>
+              maybeSingle(db, "shipment", {
+                companyId,
+                id: existingShipmentId!
+              })
           ]);
 
         if (!salesReturnOrder.data)
@@ -2044,21 +2020,26 @@ export const create = defineServerFn({
           throw new Error('No lines are dispositioned "Return to Customer"');
 
         // Quantity already shipped back by earlier posted shipments
-        const priorShipments = await client
-          .from("shipment")
-          .select("id")
-          .eq("sourceDocumentId", salesReturnOrderId)
-          .eq("sourceDocument", "Sales Return Order")
-          .eq("status", "Posted")
-          .eq("companyId", companyId);
+        const priorShipments = await many(
+          db,
+          "shipment",
+          {
+            sourceDocumentId: salesReturnOrderId,
+            sourceDocument: "Sales Return Order",
+            status: "Posted",
+            companyId
+          },
+          { columns: ["id"] }
+        );
         const priorShipmentIds = (priorShipments.data ?? []).map((d) => d.id);
         const shippedBackByLine = new Map<string, number>();
         if (priorShipmentIds.length > 0) {
-          const priorLines = await client
-            .from("shipmentLine")
-            .select("lineId, shippedQuantity")
-            .eq("companyId", companyId)
-            .in("shipmentId", priorShipmentIds);
+          const priorLines = await many(
+            db,
+            "shipmentLine",
+            { companyId, shipmentId: priorShipmentIds },
+            { columns: ["lineId", "shippedQuantity"] }
+          );
           for (const line of priorLines.data ?? []) {
             if (!line.lineId) continue;
             shippedBackByLine.set(
@@ -2072,11 +2053,12 @@ export const create = defineServerFn({
         const returnItemIds = returnLines
           .map((d) => d.itemId)
           .filter(Boolean) as string[];
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in("id", returnItemIds);
+        const items = await many(
+          db,
+          "item",
+          { companyId, id: returnItemIds },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -2212,24 +2194,22 @@ export const create = defineServerFn({
         });
 
         const [purchaseReturnOrder, purchaseReturnOrderLines, shipment] =
-          await Promise.all([
-            client
-              .from("purchaseReturnOrder")
-              .select("*")
-              .eq("id", purchaseReturnOrderId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("purchaseReturnOrderLine")
-              .select("*")
-              .eq("purchaseReturnOrderId", purchaseReturnOrderId)
-              .eq("companyId", companyId),
-            client
-              .from("shipment")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingShipmentId!)
-              .maybeSingle()
+          await inOrder([
+            () =>
+              single(db, "purchaseReturnOrder", {
+                id: purchaseReturnOrderId,
+                companyId
+              }),
+            () =>
+              many(db, "purchaseReturnOrderLine", {
+                purchaseReturnOrderId,
+                companyId
+              }),
+            () =>
+              maybeSingle(db, "shipment", {
+                companyId,
+                id: existingShipmentId!
+              })
           ]);
 
         if (!purchaseReturnOrder.data)
@@ -2248,11 +2228,12 @@ export const create = defineServerFn({
         const returnItemIds = purchaseReturnOrderLines.data
           .map((d) => d.itemId)
           .filter(Boolean) as string[];
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in("id", returnItemIds);
+        const items = await many(
+          db,
+          "item",
+          { companyId, id: returnItemIds },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -2466,38 +2447,28 @@ export const create = defineServerFn({
           purchaseOrderLines,
           purchaseOrderDelivery,
           shipment
-        ] = await Promise.all([
-          client
-            .from("purchaseOrder")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", purchaseOrderId)
-            .single(),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("purchaseOrderId", purchaseOrderId)
-            .in("purchaseOrderLineType", [
-              "Part",
-              "Material",
-              "Tool",
-              "Fixture",
-              "Consumable"
-            ])
-            .eq("locationId", locationId),
-          client
-            .from("purchaseOrderDelivery")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", purchaseOrderId)
-            .maybeSingle(),
-          client
-            .from("shipment")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", existingShipmentId!)
-            .maybeSingle()
+        ] = await inOrder([
+          () => single(db, "purchaseOrder", { companyId, id: purchaseOrderId }),
+          () =>
+            many(db, "purchaseOrderLine", {
+              companyId,
+              purchaseOrderId,
+              purchaseOrderLineType: [
+                "Part",
+                "Material",
+                "Tool",
+                "Fixture",
+                "Consumable"
+              ],
+              locationId
+            }),
+          () =>
+            maybeSingle(db, "purchaseOrderDelivery", {
+              companyId,
+              id: purchaseOrderId
+            }),
+          () =>
+            maybeSingle(db, "shipment", { companyId, id: existingShipmentId! })
         ]);
 
         if (!purchaseOrder.data)
@@ -2505,11 +2476,15 @@ export const create = defineServerFn({
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in("id", purchaseOrderLines.data.map((d) => d.itemId) as string[]);
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: purchaseOrderLines.data.map((d) => d.itemId) as string[]
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -2665,63 +2640,66 @@ export const create = defineServerFn({
           salesOrderShipment,
           shipment,
           jobs
-        ] = await Promise.all([
-          client
-            .from("salesOrder")
-            .select("*")
-            .eq("id", salesOrderId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("salesOrderLine")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("salesOrderId", salesOrderId)
-            .in("salesOrderLineType", [
-              "Part",
-              "Material",
-              "Tool",
-              "Fixture",
-              "Consumable"
-            ])
-            .eq("locationId", locationId),
-          client
-            .from("salesOrderLine")
-            .select(
-              "id, salesOrderLineType, assetId, saleQuantity, quantitySent, sentComplete"
-            )
-            .eq("companyId", companyId)
-            .eq("salesOrderId", salesOrderId)
-            .eq("salesOrderLineType", "Fixed Asset"),
-          client
-            .from("salesOrderShipment")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", salesOrderId)
-            .maybeSingle(),
-          client
-            .from("shipment")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", existingShipmentId!)
-            .maybeSingle(),
-          client
-            .from("job")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("salesOrderId", salesOrderId)
-            .neq("status", "Cancelled")
+        ] = await inOrder([
+          () => single(db, "salesOrder", { id: salesOrderId, companyId }),
+          () =>
+            many(db, "salesOrderLine", {
+              companyId,
+              salesOrderId,
+              salesOrderLineType: [
+                "Part",
+                "Material",
+                "Tool",
+                "Fixture",
+                "Consumable"
+              ],
+              locationId
+            }),
+          () =>
+            many(
+              db,
+              "salesOrderLine",
+              { companyId, salesOrderId, salesOrderLineType: "Fixed Asset" },
+              {
+                columns: [
+                  "id",
+                  "salesOrderLineType",
+                  "assetId",
+                  "saleQuantity",
+                  "quantitySent",
+                  "sentComplete"
+                ]
+              }
+            ),
+          () =>
+            maybeSingle(db, "salesOrderShipment", {
+              companyId,
+              id: salesOrderId
+            }),
+          () =>
+            maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
+          () =>
+            client
+              .from("job")
+              .select("*")
+              .eq("companyId", companyId)
+              .eq("salesOrderId", salesOrderId)
+              .neq("status", "Cancelled")
         ]);
 
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
 
-        const items = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .in("id", salesOrderLines.data.map((d) => d.itemId) as string[]);
+        const items = await many(
+          db,
+          "item",
+          {
+            companyId,
+            id: salesOrderLines.data.map((d) => d.itemId) as string[]
+          },
+          { columns: ["id", "itemTrackingType"] }
+        );
         const serializedItems = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Serial")
@@ -3025,13 +3003,11 @@ export const create = defineServerFn({
           userId
         });
 
-        const salesOrderLine = await client
-          .from("salesOrderLine")
-          .select("*")
-          .eq("companyId", companyId)
-          .eq("id", salesOrderLineId)
-          .eq("locationId", locationId)
-          .single();
+        const salesOrderLine = await single(db, "salesOrderLine", {
+          companyId,
+          id: salesOrderLineId,
+          locationId
+        });
 
         if (!salesOrderLine.data || !salesOrderLine.data.itemId)
           throw new NotFoundError("Sales order line not found");
@@ -3040,42 +3016,32 @@ export const create = defineServerFn({
           throw new Error("Service lines cannot be shipped");
         const salesOrderId = salesOrderLine.data.salesOrderId;
 
-        const [salesOrder, salesOrderShipment, shipment, jobs] =
-          await Promise.all([
-            client
-              .from("salesOrder")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", salesOrderId)
-              .single(),
-            client
-              .from("salesOrderShipment")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", salesOrderId)
-              .maybeSingle(),
-            client
-              .from("shipment")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("id", existingShipmentId!)
-              .maybeSingle(),
+        const [salesOrder, salesOrderShipment, shipment, jobs] = await inOrder([
+          () => single(db, "salesOrder", { companyId, id: salesOrderId }),
+          () =>
+            maybeSingle(db, "salesOrderShipment", {
+              companyId,
+              id: salesOrderId
+            }),
+          () =>
+            maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
+          () =>
             client
               .from("job")
               .select("*")
               .eq("companyId", companyId)
               .eq("salesOrderLineId", salesOrderLineId)
               .neq("status", "Cancelled")
-          ]);
+        ]);
 
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
 
-        const item = await client
-          .from("item")
-          .select("id, itemTrackingType")
-          .eq("companyId", companyId)
-          .eq("id", salesOrderLine.data.itemId)
-          .single();
+        const item = await single(
+          db,
+          "item",
+          { companyId, id: salesOrderLine.data.itemId },
+          { columns: ["id", "itemTrackingType"] }
+        );
 
         if (!item.data) throw new NotFoundError("Item not found");
 
@@ -3301,13 +3267,8 @@ export const create = defineServerFn({
           userId
         });
 
-        const [shipmentLine] = await Promise.all([
-          client
-            .from("shipmentLine")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("id", shipmentLineId)
-            .single()
+        const [shipmentLine] = await inOrder([
+          () => single(db, "shipmentLine", { companyId, id: shipmentLineId })
         ]);
 
         if (!shipmentLine.data)
@@ -3357,7 +3318,7 @@ export const create = defineServerFn({
             .values({
               journalEntryId,
               postingDate: datetime
-                .today(await getCompanyTimeZone(client, companyId))
+                .today(await getCompanyTimeZone(trx, companyId))
                 .toString(),
               companyId,
               sourceType: "Manual",

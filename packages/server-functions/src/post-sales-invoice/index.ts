@@ -36,6 +36,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-sales-invoice");
 
@@ -57,20 +58,24 @@ export const postSalesInvoice = defineServerFn({
     const client = await ctx.supabase();
     try {
       const today = datetime
-        .today(await getCompanyTimeZone(client, companyId))
+        .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
-      const [companyRecord, accountingSettings] = await Promise.all([
-        client
-          .from("company")
-          .select("companyGroupId, baseCurrencyCode")
-          .eq("id", companyId)
-          .single(),
-        client
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single()
+      const [companyRecord, accountingSettings] = await inOrder([
+        () =>
+          single(
+            db,
+            "company",
+            { id: companyId },
+            { columns: ["companyGroupId", "baseCurrencyCode"] }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["accountingEnabled"] }
+          )
       ]);
       if (companyRecord.error) throw new Error("Failed to fetch company");
       const companyGroupId = companyRecord.data.companyGroupId;
@@ -78,25 +83,18 @@ export const postSalesInvoice = defineServerFn({
         accountingSettings.data?.accountingEnabled ?? false;
 
       const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
-        await Promise.all([
+        await inOrder([
           // The client is service-role: authorization proved the caller may
           // act in companyId, not that invoiceId belongs to it.
-          client
-            .from("salesInvoice")
-            .select("*")
-            .eq("id", invoiceId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("salesInvoiceLine")
-            .select("*")
-            .eq("invoiceId", invoiceId)
-            .eq("companyId", companyId),
-          client
-            .from("salesInvoiceShipment")
-            .select("shippingCost, shippingMethodId")
-            .eq("id", invoiceId)
-            .single()
+          () => maybeSingle(db, "salesInvoice", { id: invoiceId, companyId }),
+          () => many(db, "salesInvoiceLine", { invoiceId, companyId }),
+          () =>
+            single(
+              db,
+              "salesInvoiceShipment",
+              { id: invoiceId },
+              { columns: ["shippingCost", "shippingMethodId"] }
+            )
         ]);
 
       if (salesInvoice.error) throw new Error("Failed to fetch salesInvoice");
@@ -124,10 +122,9 @@ export const postSalesInvoice = defineServerFn({
         []
       );
 
-      const { data: salesOrderLines } = await client
-        .from("salesOrderLine")
-        .select("*")
-        .in("id", salesOrderLineIds);
+      const { data: salesOrderLines } = await many(db, "salesOrderLine", {
+        id: salesOrderLineIds
+      });
 
       if (!salesOrderLines) {
         throw new Error("Failed to fetch sales order lines");
@@ -149,22 +146,26 @@ export const postSalesInvoice = defineServerFn({
             []
           );
 
-          const [items, itemCosts, customer] = await Promise.all([
-            client
-              .from("item")
-              .select("id, itemTrackingType, replenishmentSystem")
-              .in("id", itemIds)
-              .eq("companyId", companyId),
-            client
-              .from("itemCost")
-              .select("itemId, itemPostingGroupId, costingMethod")
-              .in("itemId", itemIds),
-            client
-              .from("customer")
-              .select("*")
-              .eq("id", invoiceHeader.customerId ?? "")
-              .eq("companyId", companyId)
-              .single()
+          const [items, itemCosts, customer] = await inOrder([
+            () =>
+              many(
+                db,
+                "item",
+                { id: itemIds, companyId },
+                { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+              ),
+            () =>
+              many(
+                db,
+                "itemCost",
+                { itemId: itemIds },
+                { columns: ["itemId", "itemPostingGroupId", "costingMethod"] }
+              ),
+            () =>
+              single(db, "customer", {
+                id: invoiceHeader.customerId ?? "",
+                companyId
+              })
           ]);
           if (items.error) throw new Error("Failed to fetch items");
           if (itemCosts.error) throw new Error("Failed to fetch item costs");
@@ -176,12 +177,9 @@ export const postSalesInvoice = defineServerFn({
             ? customer.data.intercompanyCompanyId
             : null;
 
-          const salesOrders = await client
-            .from("salesOrder")
-            .select("*")
-            .in(
-              "salesOrderId",
-              salesOrderLines.reduce<string[]>((acc, salesOrderLine) => {
+          const salesOrders = await many(db, "salesOrder", {
+            salesOrderId: salesOrderLines.reduce<string[]>(
+              (acc, salesOrderLine) => {
                 if (
                   salesOrderLine.salesOrderId &&
                   !acc.includes(salesOrderLine.salesOrderId)
@@ -189,9 +187,11 @@ export const postSalesInvoice = defineServerFn({
                   acc.push(salesOrderLine.salesOrderId);
                 }
                 return acc;
-              }, [])
-            )
-            .eq("companyId", companyId);
+              },
+              []
+            ),
+            companyId
+          });
 
           if (salesOrders.error)
             throw new Error("Failed to fetch sales orders");
@@ -276,7 +276,7 @@ export const postSalesInvoice = defineServerFn({
 
           // Get account defaults (once for all lines)
           const accountDefaults = accountingEnabled
-            ? await getDefaultPostingGroup(client, companyId)
+            ? await getDefaultPostingGroup(db, companyId)
             : null;
           if (
             accountingEnabled &&
@@ -286,20 +286,24 @@ export const postSalesInvoice = defineServerFn({
           }
 
           const dimensions = accountingEnabled
-            ? await client
-                .from("dimension")
-                .select("id, entityType")
-                .eq("companyGroupId", companyGroupId!)
-                .eq("active", true)
-                .in("entityType", [
-                  "CustomerType",
-                  "ItemPostingGroup",
-                  "Location",
-                  "CostCenter",
-                  "FixedAssetClass",
-                  "Customer",
-                  "Item"
-                ])
+            ? await many(
+                db,
+                "dimension",
+                {
+                  companyGroupId: companyGroupId!,
+                  active: true,
+                  entityType: [
+                    "CustomerType",
+                    "ItemPostingGroup",
+                    "Location",
+                    "CostCenter",
+                    "FixedAssetClass",
+                    "Customer",
+                    "Item"
+                  ]
+                },
+                { columns: ["id", "entityType"] }
+              )
             : null;
 
           const dimensionMap = new Map<string, string>();
@@ -391,34 +395,41 @@ export const postSalesInvoice = defineServerFn({
             Database["public"]["Tables"]["fixedAssetDisposal"]["Row"],
             "id" | "fixedAssetId" | "netBookValueAtDisposal"
           >;
-          const [assetRecords, disposalRecords, currencyConfig] =
-            await Promise.all([
-              accountingEnabled && assetIds.length > 0
-                ? fetchAll<AssetRecord>(assetQuery)
-                : Promise.resolve({ data: [] as AssetRecord[], error: null }),
-              accountingEnabled && assetIds.length > 0
-                ? fetchAll<DisposalRecord>(() =>
-                    client
-                      .from("fixedAssetDisposal")
-                      .select("id, fixedAssetId, netBookValueAtDisposal")
-                      .in("fixedAssetId", assetIds)
-                      .eq("companyId", companyId)
-                      .order("createdAt", { ascending: false })
-                      .order("id", { ascending: false })
-                  )
-                : Promise.resolve({
-                    data: [] as DisposalRecord[],
-                    error: null
-                  }),
-              accountingEnabled
-                ? client
-                    .from("currency")
-                    .select("decimalPlaces")
-                    .eq("companyGroupId", companyGroupId!)
-                    .eq("code", invoiceCurrencyCode)
-                    .single()
-                : Promise.resolve({ data: null, error: null })
-            ]);
+          const [assetRecords, disposalRecords, currencyConfig] = await inOrder(
+            [
+              () =>
+                accountingEnabled && assetIds.length > 0
+                  ? fetchAll<AssetRecord>(assetQuery)
+                  : Promise.resolve({ data: [] as AssetRecord[], error: null }),
+              () =>
+                accountingEnabled && assetIds.length > 0
+                  ? fetchAll<DisposalRecord>(() =>
+                      client
+                        .from("fixedAssetDisposal")
+                        .select("id, fixedAssetId, netBookValueAtDisposal")
+                        .in("fixedAssetId", assetIds)
+                        .eq("companyId", companyId)
+                        .order("createdAt", { ascending: false })
+                        .order("id", { ascending: false })
+                    )
+                  : Promise.resolve({
+                      data: [] as DisposalRecord[],
+                      error: null
+                    }),
+              () =>
+                accountingEnabled
+                  ? single(
+                      db,
+                      "currency",
+                      {
+                        companyGroupId: companyGroupId!,
+                        code: invoiceCurrencyCode
+                      },
+                      { columns: ["decimalPlaces"] }
+                    )
+                  : Promise.resolve({ data: null, error: null })
+            ]
+          );
           if (assetRecords.error)
             throw new Error("Failed to fetch fixed assets for invoice posting");
           if (disposalRecords.error)
@@ -465,11 +476,20 @@ export const postSalesInvoice = defineServerFn({
             }
           }
           const postingAccounts = accountingEnabled
-            ? await client
-                .from("account")
-                .select("id, class, active, isGroup, companyGroupId")
-                .in("id", [...accountIds])
-                .eq("companyGroupId", companyGroupId!)
+            ? await many(
+                db,
+                "account",
+                { id: [...accountIds], companyGroupId: companyGroupId! },
+                {
+                  columns: [
+                    "id",
+                    "class",
+                    "active",
+                    "isGroup",
+                    "companyGroupId"
+                  ]
+                }
+              )
             : { data: [], error: null };
           if (postingAccounts.error)
             throw new Error("Failed to validate invoice posting accounts");
@@ -1330,22 +1350,22 @@ export const postSalesInvoice = defineServerFn({
 
         case "void": {
           // Get journal entries to reverse
-          const { data: journalEntries } = await client
-            .from("journalLine")
-            .select("*")
-            .eq("documentId", invoiceId)
-            .eq("documentType", "Invoice");
+          const { data: journalEntries } = await many(db, "journalLine", {
+            documentId: invoiceId,
+            documentType: "Invoice"
+          });
 
           if (!journalEntries) {
             throw new Error("No journal entries found for invoice");
           }
 
           // Get shipments created from this invoice
-          const { data: invoiceShipments } = await client
-            .from("shipment")
-            .select("id")
-            .eq("sourceDocument", "Sales Invoice")
-            .eq("sourceDocumentId", invoiceId);
+          const { data: invoiceShipments } = await many(
+            db,
+            "shipment",
+            { sourceDocument: "Sales Invoice", sourceDocumentId: invoiceId },
+            { columns: ["id"] }
+          );
 
           const salesOrderLinesBySalesOrderLineId = salesOrderLines.reduce<
             Record<
@@ -1421,11 +1441,11 @@ export const postSalesInvoice = defineServerFn({
           const reversingItemLedgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
-          const { data: originalItemLedgerEntries } = await client
-            .from("itemLedger")
-            .select("*")
-            .eq("documentId", invoiceId)
-            .eq("documentType", "Sales Shipment");
+          const { data: originalItemLedgerEntries } = await many(
+            db,
+            "itemLedger",
+            { documentId: invoiceId, documentType: "Sales Shipment" }
+          );
 
           if (originalItemLedgerEntries) {
             originalItemLedgerEntries.forEach((entry) => {

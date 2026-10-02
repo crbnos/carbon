@@ -9,6 +9,7 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { getAccountingPeriodForDate } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 
 // Corrects a posted stock movement by inserting ONE opposite (delta) movement
 // linked to the original via itemLedger.correctionOfItemLedgerId. The caller
@@ -80,11 +81,12 @@ export const correctStockMovement = defineServerFn({
     let frontier = [root.id];
     const seen = new Set<string>([root.id]);
     while (frontier.length > 0) {
-      const children = await client
-        .from("itemLedger")
-        .select("id, quantity")
-        .in("correctionOfItemLedgerId", frontier)
-        .eq("companyId", companyId);
+      const children = await many(
+        db,
+        "itemLedger",
+        { correctionOfItemLedgerId: frontier, companyId },
+        { columns: ["id", "quantity"] }
+      );
       if (children.error) throw new Error("Failed to fetch corrections");
       frontier = [];
       for (const child of children.data ?? []) {
@@ -114,31 +116,43 @@ export const correctStockMovement = defineServerFn({
       `Corrected from ${effectiveQuantity} to ${correctedQuantity}`;
 
     const [itemResult, itemCostResult, accountingSettings, trackingQuantities] =
-      await Promise.all([
-        client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem")
-          .eq("id", root.itemId)
-          .eq("companyId", companyId)
-          .single(),
-        client
-          .from("itemCost")
-          .select("costingMethod, unitCost, standardCost, itemPostingGroupId")
-          .eq("itemId", root.itemId)
-          .eq("companyId", companyId)
-          .single(),
-        client
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single(),
-        root.locationId
-          ? client.rpc("get_item_quantities_by_tracking_id", {
-              item_id: root.itemId,
-              company_id: companyId,
-              location_id: root.locationId
-            })
-          : Promise.resolve({ data: null, error: null })
+      await inOrder([
+        () =>
+          single(
+            db,
+            "item",
+            { id: root.itemId, companyId },
+            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          ),
+        () =>
+          single(
+            db,
+            "itemCost",
+            { itemId: root.itemId, companyId },
+            {
+              columns: [
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId"
+              ]
+            }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["accountingEnabled"] }
+          ),
+        () =>
+          root.locationId
+            ? client.rpc("get_item_quantities_by_tracking_id", {
+                item_id: root.itemId,
+                company_id: companyId,
+                location_id: root.locationId
+              })
+            : Promise.resolve({ data: null, error: null })
       ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
@@ -200,12 +214,12 @@ export const correctStockMovement = defineServerFn({
 
     let trackedEntityStatus: string | null = null;
     if (root.trackedEntityId) {
-      const entity = await client
-        .from("trackedEntity")
-        .select("status, quantity")
-        .eq("id", root.trackedEntityId)
-        .eq("companyId", companyId)
-        .maybeSingle();
+      const entity = await maybeSingle(
+        db,
+        "trackedEntity",
+        { id: root.trackedEntityId, companyId },
+        { columns: ["status", "quantity"] }
+      );
       if (entity.error || !entity.data) {
         throw new Error("Failed to fetch tracked entity");
       }
@@ -232,7 +246,7 @@ export const correctStockMovement = defineServerFn({
     const accountingEnabled =
       accountingSettings.data?.accountingEnabled ?? false;
     const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(client, companyId)
+      ? await getDefaultPostingGroup(db, companyId)
       : null;
     if (
       accountingEnabled &&
@@ -243,20 +257,25 @@ export const correctStockMovement = defineServerFn({
 
     const dimensionMap: Record<string, string> = {};
     if (accountingEnabled) {
-      const companyRecord = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single();
+      const companyRecord = await single(
+        db,
+        "company",
+        { id: companyId },
+        { columns: ["companyGroupId"] }
+      );
       if (companyRecord.error) throw new Error("Failed to fetch company");
       const companyGroupId = companyRecord.data.companyGroupId;
       if (companyGroupId) {
-        const dimensions = await client
-          .from("dimension")
-          .select("id, entityType")
-          .eq("companyGroupId", companyGroupId)
-          .eq("active", true)
-          .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+        const dimensions = await many(
+          db,
+          "dimension",
+          {
+            companyGroupId,
+            active: true,
+            entityType: ["Item", "ItemPostingGroup", "Location"]
+          },
+          { columns: ["id", "entityType"] }
+        );
         if (dimensions.error) throw new Error("Failed to fetch dimensions");
         for (const dim of dimensions.data ?? []) {
           if (dim.entityType) dimensionMap[dim.entityType] = dim.id;

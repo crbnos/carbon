@@ -15,6 +15,7 @@ import {
   createAdjustmentJournal
 } from "../lib/post-adjustment";
 import type { AdjustmentItemCost } from "../lib/post-adjustment-cost";
+import { inOrder, many, single } from "../lib/rows";
 
 // The GL/cost posting path for inspection-reject and NCR-disposition inventory
 // write-offs. The caller (inspection reject route / closeIssue) owns the
@@ -66,7 +67,7 @@ export const postNonConformance = defineServerFn({
 
     const postingDate =
       providedPostingDate ||
-      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+      datetime.today(await getCompanyTimeZone(db, companyId)).toString();
 
     // Only movements that actually move stock post anything.
     const effectiveMovements = movements.filter((m) => m.quantity !== 0);
@@ -101,26 +102,37 @@ export const postNonConformance = defineServerFn({
 
     const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
 
-    const [itemsResult, itemCostsResult, accountingSettings] =
-      await Promise.all([
-        client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem")
-          .in("id", itemIds)
-          .eq("companyId", companyId),
-        client
-          .from("itemCost")
-          .select(
-            "itemId, costingMethod, unitCost, standardCost, itemPostingGroupId"
-          )
-          .in("itemId", itemIds)
-          .eq("companyId", companyId),
-        client
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single()
-      ]);
+    const [itemsResult, itemCostsResult, accountingSettings] = await inOrder([
+      () =>
+        many(
+          db,
+          "item",
+          { id: itemIds, companyId },
+          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+        ),
+      () =>
+        many(
+          db,
+          "itemCost",
+          { itemId: itemIds, companyId },
+          {
+            columns: [
+              "itemId",
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ]
+          }
+        ),
+      () =>
+        single(
+          db,
+          "companySettings",
+          { id: companyId },
+          { columns: ["accountingEnabled"] }
+        )
+    ]);
 
     if (itemsResult.error) throw new Error("Failed to fetch items");
     if (itemCostsResult.error) throw new Error("Failed to fetch item costs");
@@ -161,7 +173,7 @@ export const postNonConformance = defineServerFn({
     const accountingEnabled =
       accountingSettings.data?.accountingEnabled ?? false;
     const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(client, companyId)
+      ? await getDefaultPostingGroup(db, companyId)
       : null;
     if (
       accountingEnabled &&
@@ -174,20 +186,25 @@ export const postNonConformance = defineServerFn({
     // Item / ItemPostingGroup / Location tags (post-adjustment precedent).
     const dimensionMap: Record<string, string> = {};
     if (accountingEnabled) {
-      const companyRecord = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single();
+      const companyRecord = await single(
+        db,
+        "company",
+        { id: companyId },
+        { columns: ["companyGroupId"] }
+      );
       if (companyRecord.error) throw new Error("Failed to fetch company");
       const companyGroupId = companyRecord.data.companyGroupId;
       if (companyGroupId) {
-        const dimensions = await client
-          .from("dimension")
-          .select("id, entityType")
-          .eq("companyGroupId", companyGroupId)
-          .eq("active", true)
-          .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+        const dimensions = await many(
+          db,
+          "dimension",
+          {
+            companyGroupId,
+            active: true,
+            entityType: ["Item", "ItemPostingGroup", "Location"]
+          },
+          { columns: ["id", "entityType"] }
+        );
         if (dimensions.error) throw new Error("Failed to fetch dimensions");
         for (const dim of dimensions.data ?? []) {
           if (dim.entityType) dimensionMap[dim.entityType] = dim.id;

@@ -47,6 +47,7 @@ import {
   createAdjustmentJournal,
   loadOpenCostLayers
 } from "../lib/post-adjustment";
+import { many, single } from "../lib/rows";
 import { chunked } from "./chunks";
 import {
   buildStockItemMap,
@@ -249,22 +250,23 @@ export async function importStockQuantities(
   // post-inventory-adjustment / post-inventory-count do (REST hops
   // mid-transaction park the size-1 pool in idle-in-transaction).
   const today = datetime
-    .today(await getCompanyTimeZone(client, companyId))
+    .today(await getCompanyTimeZone(db, companyId))
     .toString();
   const nowIso = datetime.timestamp();
 
-  const accountingSettings = await client
-    .from("companySettings")
-    .select("accountingEnabled")
-    .eq("id", companyId)
-    .single();
+  const accountingSettings = await single(
+    db,
+    "companySettings",
+    { id: companyId },
+    { columns: ["accountingEnabled"] }
+  );
   // Fail closed: a failed settings read must not silently post without GL.
   if (accountingSettings.error) {
     throw new Error("Failed to fetch company settings");
   }
   const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
   const accountDefaults = accountingEnabled
-    ? await getDefaultPostingGroup(client, companyId)
+    ? await getDefaultPostingGroup(db, companyId)
     : null;
   if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
     throw new Error("Error getting account defaults");
@@ -277,18 +279,23 @@ export async function importStockQuantities(
   // ItemPostingGroup / Location tags.
   const dimensionMap: Record<string, string> = {};
   if (accountingEnabled) {
-    const companyRecord = await client
-      .from("company")
-      .select("companyGroupId")
-      .eq("id", companyId)
-      .single();
+    const companyRecord = await single(
+      db,
+      "company",
+      { id: companyId },
+      { columns: ["companyGroupId"] }
+    );
     if (companyRecord.error) throw new Error("Failed to fetch company");
-    const dimensions = await client
-      .from("dimension")
-      .select("id, entityType")
-      .eq("companyGroupId", companyRecord.data.companyGroupId!)
-      .eq("active", true)
-      .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+    const dimensions = await many(
+      db,
+      "dimension",
+      {
+        companyGroupId: companyRecord.data.companyGroupId!,
+        active: true,
+        entityType: ["Item", "ItemPostingGroup", "Location"]
+      },
+      { columns: ["id", "entityType"] }
+    );
     // Fail closed: journal lines must not silently lose dimension tags.
     if (dimensions.error) throw new Error("Failed to fetch dimensions");
     for (const dim of dimensions.data ?? []) {

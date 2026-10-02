@@ -32,6 +32,7 @@ import type { Insertable, Kysely } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { single } from "../lib/rows";
 import { resolveShippingDefault } from "./shipping-default";
 
 const logger = getLogger("server-functions", "seed-company");
@@ -58,11 +59,7 @@ export const seedCompany = defineServerFn({
 
     const client = await ctx.supabase();
 
-    const company = await client
-      .from("company")
-      .select("*")
-      .eq("id", companyId)
-      .single();
+    const company = await single(db, "company", { id: companyId });
     if (company.error) throw new Error(company.error.message);
     if (!company.data) throw new NotFoundError("Company not found");
 
@@ -87,11 +84,12 @@ export const seedCompany = defineServerFn({
 
     // If this is a subsidiary, get the parent's companyGroupId
     if (parentCompanyId && !companyGroupId) {
-      const parent = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", parentCompanyId)
-        .single();
+      const parent = await single(
+        db,
+        "company",
+        { id: parentCompanyId },
+        { columns: ["companyGroupId"] }
+      );
       if (parent.error) throw new Error(parent.error.message);
       if (!parent.data?.companyGroupId)
         throw new Error("Parent company has no group");
@@ -515,11 +513,12 @@ export const seedCompany = defineServerFn({
           .execute();
       } // end if (!identityOnly)
 
-      const user = await client
-        .from("userPermission")
-        .select("permissions")
-        .eq("id", userId)
-        .single();
+      const user = await single(
+        trx,
+        "userPermission",
+        { id: userId },
+        { columns: ["permissions"] }
+      );
       if (user.error) throw new Error(user.error.message);
 
       const currentPermissions = (user.data?.permissions ?? {}) as Record<

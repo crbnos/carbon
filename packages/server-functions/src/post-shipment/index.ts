@@ -33,6 +33,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -54,19 +55,14 @@ export const postShipment = defineServerFn({
     const client = await ctx.supabase();
     try {
       const today = datetime
-        .today(await getCompanyTimeZone(client, companyId))
+        .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
       const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all(
         [
           // The client is service-role: authorization proved the caller may
           // act in companyId, not that shipmentId belongs to it.
-          client
-            .from("shipment")
-            .select("*")
-            .eq("id", shipmentId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
+          maybeSingle(db, "shipment", { id: shipmentId, companyId }),
           client
             .from("shipmentLine")
             .select("*, fulfillment(*)")
@@ -109,20 +105,36 @@ export const postShipment = defineServerFn({
         []
       );
 
-      const [items, itemCosts, jobs] = await Promise.all([
-        client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem")
-          .in("id", itemIds)
-          .eq("companyId", companyId),
-        client
-          .from("itemCost")
-          .select("itemId, itemPostingGroupId")
-          .in("itemId", itemIds),
-        client
-          .from("job")
-          .select("id, quantity, quantityComplete, quantityShipped, status")
-          .in("id", jobIds)
+      const [items, itemCosts, jobs] = await inOrder([
+        () =>
+          many(
+            db,
+            "item",
+            { id: itemIds, companyId },
+            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          ),
+        () =>
+          many(
+            db,
+            "itemCost",
+            { itemId: itemIds },
+            { columns: ["itemId", "itemPostingGroupId"] }
+          ),
+        () =>
+          many(
+            db,
+            "job",
+            { id: jobIds },
+            {
+              columns: [
+                "id",
+                "quantity",
+                "quantityComplete",
+                "quantityShipped",
+                "status"
+              ]
+            }
+          )
       ]);
       if (items.error) {
         throw new Error("Failed to fetch items");
@@ -144,21 +156,22 @@ export const postShipment = defineServerFn({
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [salesOrder, salesOrderLines, salesOrderDelivery] =
-                await Promise.all([
-                  client
-                    .from("salesOrder")
-                    .select("*")
-                    .eq("id", shipmentHeader.sourceDocumentId)
-                    .single(),
-                  client
-                    .from("salesOrderLine")
-                    .select("*")
-                    .eq("salesOrderId", shipmentHeader.sourceDocumentId),
-                  client
-                    .from("salesOrderShipment")
-                    .select("shippingCost")
-                    .eq("id", shipmentHeader.sourceDocumentId)
-                    .single()
+                await inOrder([
+                  () =>
+                    single(db, "salesOrder", {
+                      id: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    many(db, "salesOrderLine", {
+                      salesOrderId: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    single(
+                      db,
+                      "salesOrderShipment",
+                      { id: shipmentHeader.sourceDocumentId },
+                      { columns: ["shippingCost"] }
+                    )
                 ]);
               if (salesOrder.error)
                 throw new Error("Failed to fetch purchase order");
@@ -167,25 +180,27 @@ export const postShipment = defineServerFn({
               if (salesOrderDelivery.error)
                 throw new Error("Failed to fetch sales order delivery");
 
-              const customer = await client
-                .from("customer")
-                .select("*")
-                .eq("id", salesOrder.data.customerId)
-                .eq("companyId", companyId)
-                .single();
+              const customer = await single(db, "customer", {
+                id: salesOrder.data.customerId,
+                companyId
+              });
               if (customer.error) throw new Error("Failed to fetch customer");
 
-              const [companyRecord, accountingSettings] = await Promise.all([
-                client
-                  .from("company")
-                  .select("companyGroupId")
-                  .eq("id", companyId)
-                  .single(),
-                client
-                  .from("companySettings")
-                  .select("accountingEnabled")
-                  .eq("id", companyId)
-                  .single()
+              const [companyRecord, accountingSettings] = await inOrder([
+                () =>
+                  single(
+                    db,
+                    "company",
+                    { id: companyId },
+                    { columns: ["companyGroupId"] }
+                  ),
+                () =>
+                  single(
+                    db,
+                    "companySettings",
+                    { id: companyId },
+                    { columns: ["accountingEnabled"] }
+                  )
               ]);
               if (companyRecord.error)
                 throw new Error("Failed to fetch company");
@@ -194,7 +209,7 @@ export const postShipment = defineServerFn({
                 accountingSettings.data?.accountingEnabled ?? false;
 
               const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(client, companyId)
+                ? await getDefaultPostingGroup(db, companyId)
                 : null;
               if (
                 accountingEnabled &&
@@ -204,20 +219,24 @@ export const postShipment = defineServerFn({
               }
 
               const dimensions = accountingEnabled
-                ? await client
-                    .from("dimension")
-                    .select("id, entityType")
-                    .eq("companyGroupId", companyGroupId!)
-                    .eq("active", true)
-                    .in("entityType", [
-                      "Customer",
-                      "CustomerType",
-                      "Item",
-                      "ItemPostingGroup",
-                      "Location",
-                      "CostCenter",
-                      "FixedAssetClass"
-                    ])
+                ? await many(
+                    db,
+                    "dimension",
+                    {
+                      companyGroupId: companyGroupId!,
+                      active: true,
+                      entityType: [
+                        "Customer",
+                        "CustomerType",
+                        "Item",
+                        "ItemPostingGroup",
+                        "Location",
+                        "CostCenter",
+                        "FixedAssetClass"
+                      ]
+                    },
+                    { columns: ["id", "entityType"] }
+                  )
                 : null;
 
               const dimensionMap = new Map<string, string>();
@@ -584,11 +603,12 @@ export const postShipment = defineServerFn({
               }, {});
 
               // Process Fixed Asset SO lines (no shipment lines — handled directly from SO)
-              const { data: shipmentFaLines } = await client
-                .from("shipmentFixedAssetLine")
-                .select("salesOrderLineId, serialNumber")
-                .eq("shipmentId", shipmentId)
-                .eq("shipped", true);
+              const { data: shipmentFaLines } = await many(
+                db,
+                "shipmentFixedAssetLine",
+                { shipmentId, shipped: true },
+                { columns: ["salesOrderLineId", "serialNumber"] }
+              );
               const shippedFaSoLineIds = new Set(
                 (shipmentFaLines ?? []).map((r) => r.salesOrderLineId)
               );
@@ -1331,28 +1351,25 @@ export const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const [purchaseOrder, purchaseOrderLines] = await Promise.all([
-                client
-                  .from("purchaseOrder")
-                  .select("*")
-                  .eq("id", shipmentHeader.sourceDocumentId)
-                  .single(),
-                client
-                  .from("purchaseOrderLine")
-                  .select("*")
-                  .eq("purchaseOrderId", shipmentHeader.sourceDocumentId)
+              const [purchaseOrder, purchaseOrderLines] = await inOrder([
+                () =>
+                  single(db, "purchaseOrder", {
+                    id: shipmentHeader.sourceDocumentId
+                  }),
+                () =>
+                  many(db, "purchaseOrderLine", {
+                    purchaseOrderId: shipmentHeader.sourceDocumentId
+                  })
               ]);
               if (purchaseOrder.error)
                 throw new Error("Failed to fetch purchase order");
               if (purchaseOrderLines.error)
                 throw new Error("Failed to fetch purchase order lines");
 
-              const supplier = await client
-                .from("supplier")
-                .select("*")
-                .eq("id", purchaseOrder.data.supplierId)
-                .eq("companyId", companyId)
-                .single();
+              const supplier = await single(db, "supplier", {
+                id: purchaseOrder.data.supplierId,
+                companyId
+              });
               if (supplier.error) throw new Error("Failed to fetch supplier");
 
               const jobOperationsUpdates: Record<
@@ -1752,18 +1769,18 @@ export const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const [warehouseTransfer, warehouseTransferLines] =
-                await Promise.all([
-                  client
-                    .from("warehouseTransfer")
-                    .select("*")
-                    .eq("id", shipmentHeader.sourceDocumentId)
-                    .single(),
-                  client
-                    .from("warehouseTransferLine")
-                    .select("*")
-                    .eq("transferId", shipmentHeader.sourceDocumentId)
-                ]);
+              const [warehouseTransfer, warehouseTransferLines] = await inOrder(
+                [
+                  () =>
+                    single(db, "warehouseTransfer", {
+                      id: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    many(db, "warehouseTransferLine", {
+                      transferId: shipmentHeader.sourceDocumentId
+                    })
+                ]
+              );
 
               if (warehouseTransfer.error)
                 throw new Error("Failed to fetch warehouse transfer");
@@ -1906,12 +1923,10 @@ export const postShipment = defineServerFn({
                 throw new Error("Shipment has no sourceDocumentId");
               const salesReturnOrderId = shipmentHeader.sourceDocumentId;
 
-              const salesReturnOrder = await client
-                .from("salesReturnOrder")
-                .select("*")
-                .eq("id", salesReturnOrderId)
-                .eq("companyId", companyId)
-                .single();
+              const salesReturnOrder = await single(db, "salesReturnOrder", {
+                id: salesReturnOrderId,
+                companyId
+              });
               if (salesReturnOrder.error)
                 throw new Error("Failed to fetch sales return order");
               // Same allowlist as the create server function: goods can only ship
@@ -1926,49 +1941,57 @@ export const postShipment = defineServerFn({
                   `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
                 );
 
-              const accountingSettings = await client
-                .from("companySettings")
-                .select("accountingEnabled")
-                .eq("id", companyId)
-                .single();
+              const accountingSettings = await single(
+                db,
+                "companySettings",
+                { id: companyId },
+                { columns: ["accountingEnabled"] }
+              );
               const accountingEnabled =
                 accountingSettings.data?.accountingEnabled ?? false;
 
               const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(client, companyId)
+                ? await getDefaultPostingGroup(db, companyId)
                 : null;
 
               // GL dimensions for the return shipment journal (item, item group,
               // customer, customer type, location).
               const [company, customer] = accountingEnabled
-                ? await Promise.all([
-                    client
-                      .from("company")
-                      .select("companyGroupId")
-                      .eq("id", companyId)
-                      .single(),
-                    client
-                      .from("customer")
-                      .select("id, customerTypeId")
-                      .eq("id", salesReturnOrder.data.customerId)
-                      .eq("companyId", companyId)
-                      .single()
+                ? await inOrder([
+                    () =>
+                      single(
+                        db,
+                        "company",
+                        { id: companyId },
+                        { columns: ["companyGroupId"] }
+                      ),
+                    () =>
+                      single(
+                        db,
+                        "customer",
+                        { id: salesReturnOrder.data.customerId, companyId },
+                        { columns: ["id", "customerTypeId"] }
+                      )
                   ])
                 : [null, null];
               const dimensions =
                 accountingEnabled && company?.data?.companyGroupId
-                  ? await client
-                      .from("dimension")
-                      .select("id, entityType")
-                      .eq("companyGroupId", company.data.companyGroupId)
-                      .eq("active", true)
-                      .in("entityType", [
-                        "CustomerType",
-                        "Customer",
-                        "ItemPostingGroup",
-                        "Item",
-                        "Location"
-                      ])
+                  ? await many(
+                      db,
+                      "dimension",
+                      {
+                        companyGroupId: company.data.companyGroupId,
+                        active: true,
+                        entityType: [
+                          "CustomerType",
+                          "Customer",
+                          "ItemPostingGroup",
+                          "Item",
+                          "Location"
+                        ]
+                      },
+                      { columns: ["id", "entityType"] }
+                    )
                   : null;
               const dimensionMap = new Map<string, string>();
               for (const dim of dimensions?.data ?? []) {
@@ -2316,18 +2339,17 @@ export const postShipment = defineServerFn({
               const purchaseReturnOrderId = shipmentHeader.sourceDocumentId;
 
               const [purchaseReturnOrder, purchaseReturnOrderLines] =
-                await Promise.all([
-                  client
-                    .from("purchaseReturnOrder")
-                    .select("*")
-                    .eq("id", purchaseReturnOrderId)
-                    .eq("companyId", companyId)
-                    .single(),
-                  client
-                    .from("purchaseReturnOrderLine")
-                    .select("*")
-                    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
-                    .eq("companyId", companyId)
+                await inOrder([
+                  () =>
+                    single(db, "purchaseReturnOrder", {
+                      id: purchaseReturnOrderId,
+                      companyId
+                    }),
+                  () =>
+                    many(db, "purchaseReturnOrderLine", {
+                      purchaseReturnOrderId,
+                      companyId
+                    })
                 ]);
               if (purchaseReturnOrder.error)
                 throw new Error("Failed to fetch purchase return order");
@@ -2338,11 +2360,12 @@ export const postShipment = defineServerFn({
                   `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
                 );
 
-              const accountingSettings = await client
-                .from("companySettings")
-                .select("accountingEnabled")
-                .eq("id", companyId)
-                .single();
+              const accountingSettings = await single(
+                db,
+                "companySettings",
+                { id: companyId },
+                { columns: ["accountingEnabled"] }
+              );
               const accountingEnabled =
                 accountingSettings.data?.accountingEnabled ?? false;
 
@@ -2351,40 +2374,47 @@ export const postShipment = defineServerFn({
               );
 
               const accountDefaults = accountingEnabled
-                ? await getDefaultPostingGroup(client, companyId)
+                ? await getDefaultPostingGroup(db, companyId)
                 : null;
 
               // GL dimensions for the return shipment journal (item, item group,
               // supplier, supplier type, location).
               const [company, supplier] = accountingEnabled
-                ? await Promise.all([
-                    client
-                      .from("company")
-                      .select("companyGroupId")
-                      .eq("id", companyId)
-                      .single(),
-                    client
-                      .from("supplier")
-                      .select("id, supplierTypeId")
-                      .eq("id", purchaseReturnOrder.data.supplierId)
-                      .eq("companyId", companyId)
-                      .single()
+                ? await inOrder([
+                    () =>
+                      single(
+                        db,
+                        "company",
+                        { id: companyId },
+                        { columns: ["companyGroupId"] }
+                      ),
+                    () =>
+                      single(
+                        db,
+                        "supplier",
+                        { id: purchaseReturnOrder.data.supplierId, companyId },
+                        { columns: ["id", "supplierTypeId"] }
+                      )
                   ])
                 : [null, null];
               const dimensions =
                 accountingEnabled && company?.data?.companyGroupId
-                  ? await client
-                      .from("dimension")
-                      .select("id, entityType")
-                      .eq("companyGroupId", company.data.companyGroupId)
-                      .eq("active", true)
-                      .in("entityType", [
-                        "SupplierType",
-                        "Supplier",
-                        "ItemPostingGroup",
-                        "Item",
-                        "Location"
-                      ])
+                  ? await many(
+                      db,
+                      "dimension",
+                      {
+                        companyGroupId: company.data.companyGroupId,
+                        active: true,
+                        entityType: [
+                          "SupplierType",
+                          "Supplier",
+                          "ItemPostingGroup",
+                          "Item",
+                          "Location"
+                        ]
+                      },
+                      { columns: ["id", "entityType"] }
+                    )
                   : null;
               const dimensionMap = new Map<string, string>();
               for (const dim of dimensions?.data ?? []) {
@@ -2956,27 +2986,28 @@ export const postShipment = defineServerFn({
                 salesOrderLines,
                 originalJournalLines,
                 accountingSettings
-              ] = await Promise.all([
-                client
-                  .from("salesOrder")
-                  .select("*")
-                  .eq("id", shipmentHeader.sourceDocumentId)
-                  .single(),
-                client
-                  .from("salesOrderLine")
-                  .select("*")
-                  .eq("salesOrderId", shipmentHeader.sourceDocumentId),
-                client
-                  .from("journalLine")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Sales Shipment")
-                  .eq("companyId", companyId),
-                client
-                  .from("companySettings")
-                  .select("accountingEnabled")
-                  .eq("id", companyId)
-                  .single()
+              ] = await inOrder([
+                () =>
+                  single(db, "salesOrder", {
+                    id: shipmentHeader.sourceDocumentId
+                  }),
+                () =>
+                  many(db, "salesOrderLine", {
+                    salesOrderId: shipmentHeader.sourceDocumentId
+                  }),
+                () =>
+                  many(db, "journalLine", {
+                    documentId: shipmentId,
+                    documentType: "Sales Shipment",
+                    companyId
+                  }),
+                () =>
+                  single(
+                    db,
+                    "companySettings",
+                    { id: companyId },
+                    { columns: ["accountingEnabled"] }
+                  )
               ]);
               if (salesOrder.error)
                 throw new Error("Failed to fetch sales order");
@@ -3009,12 +3040,10 @@ export const postShipment = defineServerFn({
                   }))
                 : [];
 
-              const customer = await client
-                .from("customer")
-                .select("*")
-                .eq("id", salesOrder.data.customerId)
-                .eq("companyId", companyId)
-                .single();
+              const customer = await single(db, "customer", {
+                id: salesOrder.data.customerId,
+                companyId
+              });
               if (customer.error) throw new Error("Failed to fetch customer");
 
               const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -3508,28 +3537,25 @@ export const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const [purchaseOrder, purchaseOrderLines] = await Promise.all([
-                client
-                  .from("purchaseOrder")
-                  .select("*")
-                  .eq("id", shipmentHeader.sourceDocumentId)
-                  .single(),
-                client
-                  .from("purchaseOrderLine")
-                  .select("*")
-                  .eq("purchaseOrderId", shipmentHeader.sourceDocumentId)
+              const [purchaseOrder, purchaseOrderLines] = await inOrder([
+                () =>
+                  single(db, "purchaseOrder", {
+                    id: shipmentHeader.sourceDocumentId
+                  }),
+                () =>
+                  many(db, "purchaseOrderLine", {
+                    purchaseOrderId: shipmentHeader.sourceDocumentId
+                  })
               ]);
               if (purchaseOrder.error)
                 throw new Error("Failed to fetch purchase order");
               if (purchaseOrderLines.error)
                 throw new Error("Failed to fetch purchase order lines");
 
-              const supplier = await client
-                .from("supplier")
-                .select("*")
-                .eq("id", purchaseOrder.data.supplierId)
-                .eq("companyId", companyId)
-                .single();
+              const supplier = await single(db, "supplier", {
+                id: purchaseOrder.data.supplierId,
+                companyId
+              });
               if (supplier.error) throw new Error("Failed to fetch supplier");
 
               const jobOperationsUpdates: Record<
@@ -3836,18 +3862,18 @@ export const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const [warehouseTransfer, warehouseTransferLines] =
-                await Promise.all([
-                  client
-                    .from("warehouseTransfer")
-                    .select("*")
-                    .eq("id", shipmentHeader.sourceDocumentId)
-                    .single(),
-                  client
-                    .from("warehouseTransferLine")
-                    .select("*")
-                    .eq("transferId", shipmentHeader.sourceDocumentId)
-                ]);
+              const [warehouseTransfer, warehouseTransferLines] = await inOrder(
+                [
+                  () =>
+                    single(db, "warehouseTransfer", {
+                      id: shipmentHeader.sourceDocumentId
+                    }),
+                  () =>
+                    many(db, "warehouseTransferLine", {
+                      transferId: shipmentHeader.sourceDocumentId
+                    })
+                ]
+              );
 
               if (warehouseTransfer.error)
                 throw new Error("Failed to fetch warehouse transfer");
@@ -3991,11 +4017,12 @@ export const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
-              const accountingSettings = await client
-                .from("companySettings")
-                .select("accountingEnabled")
-                .eq("id", companyId)
-                .single();
+              const accountingSettings = await single(
+                db,
+                "companySettings",
+                { id: companyId },
+                { columns: ["accountingEnabled"] }
+              );
               const accountingEnabled =
                 accountingSettings.data?.accountingEnabled ?? false;
 
@@ -4003,25 +4030,25 @@ export const postShipment = defineServerFn({
                 originalJournalLines,
                 originalItemLedger,
                 originalCostRows
-              ] = await Promise.all([
-                client
-                  .from("journalLine")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Return Order")
-                  .eq("companyId", companyId),
-                client
-                  .from("itemLedger")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Sales Return Shipment")
-                  .eq("companyId", companyId),
-                client
-                  .from("costLedger")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Sales Return Shipment")
-                  .eq("companyId", companyId)
+              ] = await inOrder([
+                () =>
+                  many(db, "journalLine", {
+                    documentId: shipmentId,
+                    documentType: "Return Order",
+                    companyId
+                  }),
+                () =>
+                  many(db, "itemLedger", {
+                    documentId: shipmentId,
+                    documentType: "Sales Return Shipment",
+                    companyId
+                  }),
+                () =>
+                  many(db, "costLedger", {
+                    documentId: shipmentId,
+                    documentType: "Sales Return Shipment",
+                    companyId
+                  })
               ]);
               // A failed read here must abort: treating data:null as "nothing
               // to reverse" would mark the shipment Voided while its journal
@@ -4103,14 +4130,15 @@ export const postShipment = defineServerFn({
                   const originalLines = originalJournalLines.data ?? [];
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
-                  const originalDimensions = await client
-                    .from("journalLineDimension")
-                    .select("journalLineId, dimensionId, valueId")
-                    .in(
-                      "journalLineId",
-                      originalLines.map((l) => l.id)
-                    )
-                    .eq("companyId", companyId);
+                  const originalDimensions = await many(
+                    trx,
+                    "journalLineDimension",
+                    {
+                      journalLineId: originalLines.map((l) => l.id),
+                      companyId
+                    },
+                    { columns: ["journalLineId", "dimensionId", "valueId"] }
+                  );
                   const dimensionsByLine = new Map<
                     string,
                     { dimensionId: string; valueId: string }[]
@@ -4279,11 +4307,12 @@ export const postShipment = defineServerFn({
                 );
               }
 
-              const accountingSettings = await client
-                .from("companySettings")
-                .select("accountingEnabled")
-                .eq("id", companyId)
-                .single();
+              const accountingSettings = await single(
+                db,
+                "companySettings",
+                { id: companyId },
+                { columns: ["accountingEnabled"] }
+              );
               const accountingEnabled =
                 accountingSettings.data?.accountingEnabled ?? false;
 
@@ -4292,30 +4321,30 @@ export const postShipment = defineServerFn({
                 originalItemLedger,
                 returnLinesVoid,
                 originalCostRows
-              ] = await Promise.all([
-                client
-                  .from("journalLine")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Return Order")
-                  .eq("companyId", companyId),
-                client
-                  .from("itemLedger")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Purchase Return Shipment")
-                  .eq("companyId", companyId),
-                client
-                  .from("purchaseReturnOrderLine")
-                  .select("*")
-                  .eq("purchaseReturnOrderId", purchaseReturnOrderId)
-                  .eq("companyId", companyId),
-                client
-                  .from("costLedger")
-                  .select("*")
-                  .eq("documentId", shipmentId)
-                  .eq("documentType", "Purchase Return Shipment")
-                  .eq("companyId", companyId)
+              ] = await inOrder([
+                () =>
+                  many(db, "journalLine", {
+                    documentId: shipmentId,
+                    documentType: "Return Order",
+                    companyId
+                  }),
+                () =>
+                  many(db, "itemLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  }),
+                () =>
+                  many(db, "purchaseReturnOrderLine", {
+                    purchaseReturnOrderId,
+                    companyId
+                  }),
+                () =>
+                  many(db, "costLedger", {
+                    documentId: shipmentId,
+                    documentType: "Purchase Return Shipment",
+                    companyId
+                  })
               ]);
               // A failed read here must abort: treating data:null as "nothing
               // to reverse" would mark the shipment Voided while its journal
@@ -4409,14 +4438,15 @@ export const postShipment = defineServerFn({
                   const originalLines = originalJournalLines.data ?? [];
                   // Carry the original lines' GL dimensions onto the reversing
                   // lines so the void mirrors the posting.
-                  const originalDimensions = await client
-                    .from("journalLineDimension")
-                    .select("journalLineId, dimensionId, valueId")
-                    .in(
-                      "journalLineId",
-                      originalLines.map((l) => l.id)
-                    )
-                    .eq("companyId", companyId);
+                  const originalDimensions = await many(
+                    trx,
+                    "journalLineDimension",
+                    {
+                      journalLineId: originalLines.map((l) => l.id),
+                      companyId
+                    },
+                    { columns: ["journalLineId", "dimensionId", "valueId"] }
+                  );
                   const dimensionsByLine = new Map<
                     string,
                     { dimensionId: string; valueId: string }[]

@@ -13,6 +13,7 @@ import {
   bookAdjustment,
   createAdjustmentJournal
 } from "../lib/post-adjustment";
+import { many, single } from "../lib/rows";
 import { resolveCountedEntity } from "./count-guards";
 import { planInventoryCountPost } from "./plan-post";
 
@@ -64,16 +65,14 @@ export const postInventoryCount = defineServerFn({
     const client = await ctx.supabase();
 
     const today = datetime
-      .today(await getCompanyTimeZone(client, companyId))
+      .today(await getCompanyTimeZone(db, companyId))
       .toString();
     const nowIso = datetime.timestamp();
 
-    const inventoryCount = await client
-      .from("inventoryCount")
-      .select("*")
-      .eq("id", inventoryCountId)
-      .eq("companyId", companyId)
-      .single();
+    const inventoryCount = await single(db, "inventoryCount", {
+      id: inventoryCountId,
+      companyId
+    });
 
     if (inventoryCount.error)
       throw new NotFoundError("Inventory count not found");
@@ -97,11 +96,12 @@ export const postInventoryCount = defineServerFn({
     // and return the offending line ids so the UI can highlight them.
     const itemIds = [...new Set(countedLines.map((line) => line.itemId))];
     const items = itemIds.length
-      ? await client
-          .from("item")
-          .select("id, itemTrackingType, replenishmentSystem")
-          .in("id", itemIds)
-          .eq("companyId", companyId)
+      ? await many(
+          db,
+          "item",
+          { id: itemIds, companyId },
+          { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+        )
       : null;
     if (items?.error) throw new Error(items.error.message);
 
@@ -130,13 +130,20 @@ export const postInventoryCount = defineServerFn({
     );
 
     const itemCosts = itemIds.length
-      ? await client
-          .from("itemCost")
-          .select(
-            "itemId, costingMethod, unitCost, standardCost, itemPostingGroupId"
-          )
-          .in("itemId", itemIds)
-          .eq("companyId", companyId)
+      ? await many(
+          db,
+          "itemCost",
+          { itemId: itemIds, companyId },
+          {
+            columns: [
+              "itemId",
+              "costingMethod",
+              "unitCost",
+              "standardCost",
+              "itemPostingGroupId"
+            ]
+          }
+        )
       : null;
     if (itemCosts?.error) throw new Error(itemCosts.error.message);
     const itemCostByItem = new Map(
@@ -162,11 +169,12 @@ export const postInventoryCount = defineServerFn({
     // The accountingEnabled flag gates ALL journal writes; cost layers are
     // maintained either way. Resolve settings + period BEFORE the transaction
     // (REST hops mid-transaction park the size-1 pool in idle-in-transaction).
-    const accountingSettings = await client
-      .from("companySettings")
-      .select("accountingEnabled")
-      .eq("id", companyId)
-      .single();
+    const accountingSettings = await single(
+      db,
+      "companySettings",
+      { id: companyId },
+      { columns: ["accountingEnabled"] }
+    );
     // Fail closed: a failed settings read must not silently post without GL.
     if (accountingSettings.error) {
       throw new Error("Failed to fetch company settings");
@@ -174,7 +182,7 @@ export const postInventoryCount = defineServerFn({
     const accountingEnabled =
       accountingSettings.data?.accountingEnabled ?? false;
     const accountDefaults = accountingEnabled
-      ? await getDefaultPostingGroup(client, companyId)
+      ? await getDefaultPostingGroup(db, companyId)
       : null;
     if (
       accountingEnabled &&
@@ -190,18 +198,23 @@ export const postInventoryCount = defineServerFn({
     // journal lines get Item / ItemPostingGroup / Location tags.
     const dimensionMap: Record<string, string> = {};
     if (accountingEnabled) {
-      const companyRecord = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single();
+      const companyRecord = await single(
+        db,
+        "company",
+        { id: companyId },
+        { columns: ["companyGroupId"] }
+      );
       if (companyRecord.error) throw new Error("Failed to fetch company");
-      const dimensions = await client
-        .from("dimension")
-        .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId!)
-        .eq("active", true)
-        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+      const dimensions = await many(
+        db,
+        "dimension",
+        {
+          companyGroupId: companyRecord.data.companyGroupId!,
+          active: true,
+          entityType: ["Item", "ItemPostingGroup", "Location"]
+        },
+        { columns: ["id", "entityType"] }
+      );
       // Fail closed: journal lines must not silently lose dimension tags.
       if (dimensions.error) throw new Error("Failed to fetch dimensions");
       for (const dim of dimensions.data ?? []) {

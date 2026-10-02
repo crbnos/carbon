@@ -26,6 +26,7 @@ import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { issue } from "../issue";
+import { many } from "../lib/rows";
 import { postProductionEvent } from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";
 
@@ -720,11 +721,12 @@ async function completeBatch(
   // were issued above). Idempotent: an already-Available entity is a no-op, so
   // a resume fast-forwards. Runs BEFORE the Done flip so a failure here leaves
   // the batch resumable with no member stranded Done without its output lot.
-  const memberOpRows = await client
-    .from("jobOperation")
-    .select("id, jobMakeMethodId")
-    .in("id", memberIds)
-    .eq("companyId", companyId);
+  const memberOpRows = await many(
+    db,
+    "jobOperation",
+    { id: memberIds, companyId },
+    { columns: ["id", "jobMakeMethodId"] }
+  );
   if (memberOpRows.error) {
     throw new Error(
       `Failed to load member operations: ${memberOpRows.error.message}`
@@ -738,11 +740,12 @@ async function completeBatch(
     )
   ];
   const makeMethods = makeMethodIds.length
-    ? await client
-        .from("jobMakeMethod")
-        .select("id, requiresBatchTracking")
-        .in("id", makeMethodIds)
-        .eq("companyId", companyId)
+    ? await many(
+        db,
+        "jobMakeMethod",
+        { id: makeMethodIds, companyId },
+        { columns: ["id", "requiresBatchTracking"] }
+      )
     : { data: [], error: null };
   if (makeMethods.error) {
     throw new Error(

@@ -19,6 +19,7 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getMethod } from "../get-method";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");
@@ -156,31 +157,21 @@ export const convert = defineServerFn({
     switch (payload.type) {
       case "methodVersionToActive": {
         const makeMethodId = id;
-        const makeMethod = await client
-          .from("makeMethod")
-          .select("*")
-          .eq("id", makeMethodId)
-          .eq("companyId", companyId)
-          .maybeSingle();
+        const makeMethod = await maybeSingle(db, "makeMethod", {
+          id: makeMethodId,
+          companyId
+        });
         if (makeMethod.error) throw new Error(makeMethod.error.message);
         if (!makeMethod.data) throw new NotFoundError("Make method not found");
 
-        const [relatedMakeMethods, draftQuotes, draftJobs] = await Promise.all([
-          client
-            .from("makeMethod")
-            .select("*")
-            .eq("itemId", makeMethod.data?.itemId)
-            .eq("companyId", companyId),
-          client
-            .from("quote")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("status", "Draft"),
-          client
-            .from("job")
-            .select("*")
-            .eq("companyId", companyId)
-            .eq("status", "Draft")
+        const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
+          () =>
+            many(db, "makeMethod", {
+              itemId: makeMethod.data?.itemId,
+              companyId
+            }),
+          () => many(db, "quote", { companyId, status: "Draft" }),
+          () => many(db, "job", { companyId, status: "Draft" })
         ]);
 
         if (relatedMakeMethods.error)
@@ -208,12 +199,12 @@ export const convert = defineServerFn({
           ...(activeMakeMethodIds ?? [])
         ];
 
-        const [methodMaterials] = await Promise.all([
-          client
-            .from("methodMaterial")
-            .select("*")
-            .in("materialMakeMethodId", relatedMakeMethodIds)
-            .eq("companyId", companyId)
+        const [methodMaterials] = await inOrder([
+          () =>
+            many(db, "methodMaterial", {
+              materialMakeMethodId: relatedMakeMethodIds,
+              companyId
+            })
         ]);
 
         if (methodMaterials.error)
@@ -255,30 +246,23 @@ export const convert = defineServerFn({
           purchaseOrderLines,
           purchaseOrderPayment,
           purchaseOrderDelivery
-        ] = await Promise.all([
-          client
-            .from("purchaseOrder")
-            .select("*")
-            .eq("id", purchaseOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .eq("purchaseOrderId", purchaseOrderId)
-            .eq("companyId", companyId),
-          client
-            .from("purchaseOrderPayment")
-            .select("*")
-            .eq("id", purchaseOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("purchaseOrderDelivery")
-            .select("*")
-            .eq("id", purchaseOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle()
+        ] = await inOrder([
+          () =>
+            maybeSingle(db, "purchaseOrder", {
+              id: purchaseOrderId,
+              companyId
+            }),
+          () => many(db, "purchaseOrderLine", { purchaseOrderId, companyId }),
+          () =>
+            maybeSingle(db, "purchaseOrderPayment", {
+              id: purchaseOrderId,
+              companyId
+            }),
+          () =>
+            maybeSingle(db, "purchaseOrderDelivery", {
+              id: purchaseOrderId,
+              companyId
+            })
         ]);
 
         if (!purchaseOrder.data)
@@ -372,7 +356,7 @@ export const convert = defineServerFn({
               paymentTermId: purchaseOrderPayment.data!.paymentTermId,
               currencyCode: purchaseOrder.data!.currencyCode ?? "USD",
               dateIssued: datetime
-                .today(await getCompanyTimeZone(client, companyId))
+                .today(await getCompanyTimeZone(trx, companyId))
                 .toString(),
               exchangeRate: purchaseOrder.data!.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
@@ -460,40 +444,23 @@ export const convert = defineServerFn({
           quotePayment,
           quoteShipping,
           company
-        ] = await Promise.all([
-          client
-            .from("quote")
-            .select("*")
-            .eq("id", id)
-            .eq("companyId", companyId)
-            .single(),
-          fetchAll<Database["public"]["Tables"]["quoteLine"]["Row"]>(() =>
-            client
-              .from("quoteLine")
-              .select("*")
-              .eq("quoteId", id)
-              .eq("companyId", companyId)
-          ),
-          fetchAll<Database["public"]["Tables"]["quoteLinePrice"]["Row"]>(() =>
-            client
-              .from("quoteLinePrice")
-              .select("*")
-              .eq("quoteId", id)
-              .eq("companyId", companyId)
-          ),
-          client
-            .from("quotePayment")
-            .select("*")
-            .eq("id", id)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("quoteShipment")
-            .select("*")
-            .eq("id", id)
-            .eq("companyId", companyId)
-            .single(),
-          client.from("company").select("*").eq("id", companyId).single()
+        ] = await inOrder([
+          () => single(db, "quote", { id, companyId }),
+          () =>
+            fetchAll<Database["public"]["Tables"]["quoteLine"]["Row"]>(() =>
+              client
+                .from("quoteLine")
+                .select("*")
+                .eq("quoteId", id)
+                .eq("companyId", companyId)
+            ),
+          () =>
+            fetchAll<Database["public"]["Tables"]["quoteLinePrice"]["Row"]>(
+              () => many(db, "quoteLinePrice", { quoteId: id, companyId })
+            ),
+          () => single(db, "quotePayment", { id, companyId }),
+          () => single(db, "quoteShipment", { id, companyId }),
+          () => single(db, "company", { id: companyId })
         ]);
 
         if (quote.error)
@@ -547,7 +514,7 @@ export const convert = defineServerFn({
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
           const todayDate = datetime.today(
-            await getCompanyTimeZone(client, companyId)
+            await getCompanyTimeZone(trx, companyId)
           );
           const today = todayDate.toString();
           const salesOrderId = await getNextSequence(
@@ -863,30 +830,19 @@ export const convert = defineServerFn({
           salesOrderLines,
           salesOrderPayment,
           salesOrderShipment
-        ] = await Promise.all([
-          client
-            .from("salesOrder")
-            .select("*")
-            .eq("id", salesOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("salesOrderLine")
-            .select("*")
-            .eq("salesOrderId", salesOrderId)
-            .eq("companyId", companyId),
-          client
-            .from("salesOrderPayment")
-            .select("*")
-            .eq("id", salesOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("salesOrderShipment")
-            .select("*")
-            .eq("id", salesOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle()
+        ] = await inOrder([
+          () => maybeSingle(db, "salesOrder", { id: salesOrderId, companyId }),
+          () => many(db, "salesOrderLine", { salesOrderId, companyId }),
+          () =>
+            maybeSingle(db, "salesOrderPayment", {
+              id: salesOrderId,
+              companyId
+            }),
+          () =>
+            maybeSingle(db, "salesOrderShipment", {
+              id: salesOrderId,
+              companyId
+            })
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
@@ -951,7 +907,7 @@ export const convert = defineServerFn({
               paymentTermId: salesOrderPayment.data!.paymentTermId,
               currencyCode: order.currencyCode ?? "USD",
               dateIssued: datetime
-                .today(await getCompanyTimeZone(client, companyId))
+                .today(await getCompanyTimeZone(trx, companyId))
                 .toString(),
               exchangeRate: order.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
@@ -1030,18 +986,9 @@ export const convert = defineServerFn({
         return { id: salesInvoiceId };
       }
       case "salesRfqToQuote": {
-        const [salesRfq, salesRfqLines] = await Promise.all([
-          client
-            .from("salesRfq")
-            .select("*")
-            .eq("id", id)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("salesRfqLines")
-            .select("*")
-            .eq("salesRfqId", id)
-            .eq("companyId", companyId)
+        const [salesRfq, salesRfqLines] = await inOrder([
+          () => single(db, "salesRfq", { id, companyId }),
+          () => many(db, "salesRfqLines", { salesRfqId: id, companyId })
         ]);
 
         if (salesRfq.error)
@@ -1071,13 +1018,12 @@ export const convert = defineServerFn({
 
               // Check for uniqueness and append a suffix if necessary
               while (true) {
-                const { data, error } = await client
-                  .from("item")
-                  .select("id")
-                  .eq("readableId", readableId)
-                  .eq("revision", revisionId)
-                  .eq("companyId", companyId)
-                  .single();
+                const { data, error } = await single(
+                  db,
+                  "item",
+                  { readableId, revision: revisionId, companyId },
+                  { columns: ["id"] }
+                );
 
                 if (
                   // If multiple line items in the RFQ have the same customer part number and revision,
@@ -1119,26 +1065,23 @@ export const convert = defineServerFn({
 
         // Handle customer payment terms, shipping, currency codes, etc.
         const [customerPayment, customerShipping, customer, company] =
-          await Promise.all([
-            client
-              .from("customerPayment")
-              .select("*")
-              .eq("customerId", salesRfq.data.customerId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("customerShipping")
-              .select("*")
-              .eq("customerId", salesRfq.data.customerId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("customer")
-              .select("*")
-              .eq("id", salesRfq.data.customerId)
-              .eq("companyId", companyId)
-              .single(),
-            client.from("company").select("*").eq("id", companyId).single()
+          await inOrder([
+            () =>
+              single(db, "customerPayment", {
+                customerId: salesRfq.data.customerId,
+                companyId
+              }),
+            () =>
+              single(db, "customerShipping", {
+                customerId: salesRfq.data.customerId,
+                companyId
+              }),
+            () =>
+              single(db, "customer", {
+                id: salesRfq.data.customerId,
+                companyId
+              }),
+            () => single(db, "company", { id: companyId })
           ]);
 
         if (customerPayment.error) throw customerPayment.error;
@@ -1252,7 +1195,7 @@ export const convert = defineServerFn({
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
                 expirationDate: datetime
-                  .today(await getCompanyTimeZone(client, companyId))
+                  .today(await getCompanyTimeZone(trx, companyId))
                   .add({ days: 30 })
                   .toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
@@ -1438,24 +1381,15 @@ export const convert = defineServerFn({
       case "shipmentToSalesInvoice": {
         const shipmentId = id;
         const [shipment, shipmentLines, shipmentFixedAssetLines] =
-          await Promise.all([
-            client
-              .from("shipment")
-              .select("*")
-              .eq("id", shipmentId)
-              .eq("companyId", companyId)
-              .maybeSingle(),
-            client
-              .from("shipmentLine")
-              .select("*")
-              .eq("shipmentId", shipmentId)
-              .eq("companyId", companyId),
-            client
-              .from("shipmentFixedAssetLine")
-              .select("*")
-              .eq("shipmentId", shipmentId)
-              .eq("companyId", companyId)
-              .eq("shipped", true)
+          await inOrder([
+            () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
+            () => many(db, "shipmentLine", { shipmentId, companyId }),
+            () =>
+              many(db, "shipmentFixedAssetLine", {
+                shipmentId,
+                companyId,
+                shipped: true
+              })
           ]);
 
         if (shipment.error) throw shipment.error;
@@ -1494,30 +1428,24 @@ export const convert = defineServerFn({
           salesOrderLines,
           salesOrderPayment,
           salesOrderShipment
-        ] = await Promise.all([
-          client
-            .from("salesOrder")
-            .select("*")
-            .eq("id", shipment.data?.sourceDocumentId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("salesOrderLine")
-            .select("*")
-            .in("id", salesOrderLineIds)
-            .eq("companyId", companyId),
-          client
-            .from("salesOrderPayment")
-            .select("*")
-            .eq("id", shipment.data?.sourceDocumentId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("salesOrderShipment")
-            .select("*")
-            .eq("id", shipment.data?.sourceDocumentId)
-            .eq("companyId", companyId)
-            .maybeSingle()
+        ] = await inOrder([
+          () =>
+            maybeSingle(db, "salesOrder", {
+              id: shipment.data?.sourceDocumentId,
+              companyId
+            }),
+          () =>
+            many(db, "salesOrderLine", { id: salesOrderLineIds, companyId }),
+          () =>
+            maybeSingle(db, "salesOrderPayment", {
+              id: shipment.data?.sourceDocumentId,
+              companyId
+            }),
+          () =>
+            maybeSingle(db, "salesOrderShipment", {
+              id: shipment.data?.sourceDocumentId,
+              companyId
+            })
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
@@ -1594,7 +1522,7 @@ export const convert = defineServerFn({
               paymentTermId: salesOrderPayment.data!.paymentTermId,
               currencyCode: order.currencyCode ?? "USD",
               dateIssued: datetime
-                .today(await getCompanyTimeZone(client, companyId))
+                .today(await getCompanyTimeZone(trx, companyId))
                 .toString(),
               exchangeRate: order.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
@@ -1676,25 +1604,16 @@ export const convert = defineServerFn({
       case "supplierQuoteToPurchaseOrder": {
         const { selectedLines } = payload;
 
-        const [quote, quoteLines, company, employeeJob] = await Promise.all([
-          client
-            .from("supplierQuote")
-            .select("*")
-            .eq("id", id)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("supplierQuoteLine")
-            .select("*, item(type)")
-            .eq("supplierQuoteId", id)
-            .eq("companyId", companyId),
-          client.from("company").select("*").eq("id", companyId).single(),
-          client
-            .from("employeeJob")
-            .select("*")
-            .eq("id", userId)
-            .eq("companyId", companyId)
-            .single()
+        const [quote, quoteLines, company, employeeJob] = await inOrder([
+          () => single(db, "supplierQuote", { id, companyId }),
+          () =>
+            client
+              .from("supplierQuoteLine")
+              .select("*, item(type)")
+              .eq("supplierQuoteId", id)
+              .eq("companyId", companyId),
+          () => single(db, "company", { id: companyId }),
+          () => single(db, "employeeJob", { id: userId, companyId })
         ]);
 
         if (quote.error)
@@ -1703,35 +1622,26 @@ export const convert = defineServerFn({
           throw new NotFoundError(`Quote Lines with id ${id} not found`);
 
         const [supplierPayment, supplierShipping, supplier, pickMethods] =
-          await Promise.all([
-            client
-              .from("supplierPayment")
-              .select("*")
-              .eq("supplierId", quote.data.supplierId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("supplierShipping")
-              .select("*")
-              .eq("supplierId", quote.data.supplierId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("supplier")
-              .select("*")
-              .eq("id", quote.data.supplierId)
-              .eq("companyId", companyId)
-              .single(),
+          await inOrder([
+            () =>
+              single(db, "supplierPayment", {
+                supplierId: quote.data.supplierId,
+                companyId
+              }),
+            () =>
+              single(db, "supplierShipping", {
+                supplierId: quote.data.supplierId,
+                companyId
+              }),
+            () =>
+              single(db, "supplier", { id: quote.data.supplierId, companyId }),
 
-            client
-              .from("pickMethod")
-              .select("*")
-              .in(
-                "itemId",
-                quoteLines.data.map((line) => line.itemId as string)
-              )
-              .eq("locationId", employeeJob.data?.locationId ?? "")
-              .eq("companyId", companyId)
+            () =>
+              many(db, "pickMethod", {
+                itemId: quoteLines.data.map((line) => line.itemId as string),
+                locationId: employeeJob.data?.locationId ?? "",
+                companyId
+              })
           ]);
 
         if (supplierPayment.error) throw supplierPayment.error;
@@ -2008,11 +1918,12 @@ export const convert = defineServerFn({
         }
 
         // Create RFQ→PurchaseOrder links if this quote came from an RFQ
-        const { data: linkedRfqs } = await client
-          .from("purchasingRfqToSupplierQuote")
-          .select("purchasingRfqId")
-          .eq("supplierQuoteId", id)
-          .eq("companyId", companyId);
+        const { data: linkedRfqs } = await many(
+          db,
+          "purchasingRfqToSupplierQuote",
+          { supplierQuoteId: id, companyId },
+          { columns: ["purchasingRfqId"] }
+        );
 
         if (linkedRfqs && linkedRfqs.length > 0) {
           await client.from("purchasingRfqToPurchaseOrder").insert(
@@ -2031,18 +1942,17 @@ export const convert = defineServerFn({
 
       case "warehouseTransferToShipment": {
         const warehouseTransferId = id;
-        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
-          client
-            .from("warehouseTransfer")
-            .select("*")
-            .eq("id", warehouseTransferId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("warehouseTransferLine")
-            .select("*")
-            .eq("transferId", warehouseTransferId)
-            .eq("companyId", companyId)
+        const [warehouseTransfer, warehouseTransferLines] = await inOrder([
+          () =>
+            maybeSingle(db, "warehouseTransfer", {
+              id: warehouseTransferId,
+              companyId
+            }),
+          () =>
+            many(db, "warehouseTransferLine", {
+              transferId: warehouseTransferId,
+              companyId
+            })
         ]);
 
         if (warehouseTransfer.error)
@@ -2107,18 +2017,17 @@ export const convert = defineServerFn({
 
       case "warehouseTransferToReceipt": {
         const warehouseTransferId = id;
-        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
-          client
-            .from("warehouseTransfer")
-            .select("*")
-            .eq("id", warehouseTransferId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("warehouseTransferLine")
-            .select("*")
-            .eq("transferId", warehouseTransferId)
-            .eq("companyId", companyId)
+        const [warehouseTransfer, warehouseTransferLines] = await inOrder([
+          () =>
+            maybeSingle(db, "warehouseTransfer", {
+              id: warehouseTransferId,
+              companyId
+            }),
+          () =>
+            many(db, "warehouseTransferLine", {
+              transferId: warehouseTransferId,
+              companyId
+            })
         ]);
 
         if (warehouseTransfer.error)

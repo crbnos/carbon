@@ -10,6 +10,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { inOrder, many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "update-purchased-prices");
 
@@ -81,18 +82,13 @@ export const updatePurchasedPrices = defineServerFn({
           companyId
         });
 
-        const [purchaseOrder, purchaseOrderLines] = await Promise.all([
-          client
-            .from("purchaseOrder")
-            .select("*")
-            .eq("id", purchaseOrderId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .eq("purchaseOrderId", purchaseOrderId)
-            .eq("companyId", companyId)
+        const [purchaseOrder, purchaseOrderLines] = await inOrder([
+          () =>
+            maybeSingle(db, "purchaseOrder", {
+              id: purchaseOrderId,
+              companyId
+            }),
+          () => many(db, "purchaseOrderLine", { purchaseOrderId, companyId })
         ]);
 
         if (purchaseOrder.error)
@@ -172,18 +168,10 @@ export const updatePurchasedPrices = defineServerFn({
           companyId
         });
 
-        const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
-          client
-            .from("purchaseInvoice")
-            .select("*")
-            .eq("id", invoiceId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("purchaseInvoiceLine")
-            .select("*")
-            .eq("invoiceId", invoiceId)
-            .eq("companyId", companyId)
+        const [purchaseInvoice, purchaseInvoiceLines] = await inOrder([
+          () =>
+            maybeSingle(db, "purchaseInvoice", { id: invoiceId, companyId }),
+          () => many(db, "purchaseInvoiceLine", { invoiceId, companyId })
         ]);
 
         if (purchaseInvoice.error)
@@ -252,30 +240,27 @@ export const updatePurchasedPrices = defineServerFn({
     if (shouldUpdatePrices && itemIds.length > 0) {
       // Aggregate in SQL: fetching raw rows through PostgREST silently caps
       // at 1000, which skewed the weighted average for high-volume items.
-      const [costLedgerTotals, supplierParts] = await Promise.all([
-        db
-          .selectFrom("costLedger")
-          .select(({ fn }) => [
-            "itemId",
-            // Adjustment child rows (invoice-vs-receipt price corrections)
-            // carry cost but no additional physical quantity, so they count
-            // toward cost but not quantity.
-            sql<number>`sum(case when "adjustment" then 0 else "quantity" end)`.as(
-              "quantity"
-            ),
-            fn.sum<number>("cost").as("cost")
-          ])
-          .where("itemId", "in", itemIds)
-          .where("companyId", "=", companyId)
-          .where("postingDate", ">=", dateOneYearAgo)
-          .groupBy("itemId")
-          .execute(),
-        client
-          .from("supplierPart")
-          .select("*")
-          .eq("supplierId", supplierId)
-          .in("itemId", itemIds)
-          .eq("companyId", companyId)
+      const [costLedgerTotals, supplierParts] = await inOrder([
+        () =>
+          db
+            .selectFrom("costLedger")
+            .select(({ fn }) => [
+              "itemId",
+              // Adjustment child rows (invoice-vs-receipt price corrections)
+              // carry cost but no additional physical quantity, so they count
+              // toward cost but not quantity.
+              sql<number>`sum(case when "adjustment" then 0 else "quantity" end)`.as(
+                "quantity"
+              ),
+              fn.sum<number>("cost").as("cost")
+            ])
+            .where("itemId", "in", itemIds)
+            .where("companyId", "=", companyId)
+            .where("postingDate", ">=", dateOneYearAgo)
+            .groupBy("itemId")
+            .execute(),
+        () =>
+          many(db, "supplierPart", { supplierId, itemId: itemIds, companyId })
       ]);
 
       if (supplierParts.error) {
@@ -317,18 +302,28 @@ export const updatePurchasedPrices = defineServerFn({
       );
 
       if (receiptIds.length > 0 && purchaseOrderIds.length > 0) {
-        const [receiptLines, purchaseOrders] = await Promise.all([
-          client
-            .from("receiptLine")
-            .select("receiptId,itemId,receivedQuantity,conversionFactor")
-            .in("receiptId", receiptIds)
-            .in("itemId", itemIds)
-            .eq("companyId", companyId),
-          client
-            .from("purchaseOrder")
-            .select("id,orderDate")
-            .in("id", purchaseOrderIds)
-            .eq("companyId", companyId)
+        const [receiptLines, purchaseOrders] = await inOrder([
+          () =>
+            many(
+              db,
+              "receiptLine",
+              { receiptId: receiptIds, itemId: itemIds, companyId },
+              {
+                columns: [
+                  "receiptId",
+                  "itemId",
+                  "receivedQuantity",
+                  "conversionFactor"
+                ]
+              }
+            ),
+          () =>
+            many(
+              db,
+              "purchaseOrder",
+              { id: purchaseOrderIds, companyId },
+              { columns: ["id", "orderDate"] }
+            )
         ]);
 
         if (receiptLines.error) {

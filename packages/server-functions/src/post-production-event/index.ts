@@ -11,6 +11,7 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import { inOrder, many, single } from "../lib/rows";
 
 export const postProductionEventInput = z.object({
   productionEventId: z.string(),
@@ -39,20 +40,24 @@ export const postProductionEvent = defineServerFn({
     const { db, companyId, userId } = ctx;
     const client = await ctx.supabase();
     const today = datetime
-      .today(await getCompanyTimeZone(client, companyId))
+      .today(await getCompanyTimeZone(db, companyId))
       .toString();
 
-    const [accountingSettings, companyRecord] = await Promise.all([
-      client
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single(),
-      client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single()
+    const [accountingSettings, companyRecord] = await inOrder([
+      () =>
+        single(
+          db,
+          "companySettings",
+          { id: companyId },
+          { columns: ["accountingEnabled"] }
+        ),
+      () =>
+        single(
+          db,
+          "company",
+          { id: companyId },
+          { columns: ["companyGroupId"] }
+        )
     ]);
 
     const accountingEnabled =
@@ -64,29 +69,35 @@ export const postProductionEvent = defineServerFn({
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
 
-    const [productionEvent, accountDefaults, dimensions] = await Promise.all([
-      client
-        .from("productionEvent")
-        .select("*, jobOperation!inner(jobId, processId)")
-        .eq("id", productionEventId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      getDefaultPostingGroup(client, companyId),
-      companyRecord.data.companyGroupId
-        ? client
-            .from("dimension")
-            .select("id, entityType")
-            .eq("companyGroupId", companyRecord.data.companyGroupId)
-            .eq("active", true)
-            .in("entityType", [
-              "ItemPostingGroup",
-              "Item",
-              "Location",
-              "Employee",
-              "WorkCenter",
-              "Process"
-            ])
-        : Promise.resolve({ data: null, error: null })
+    const [productionEvent, accountDefaults, dimensions] = await inOrder([
+      () =>
+        client
+          .from("productionEvent")
+          .select("*, jobOperation!inner(jobId, processId)")
+          .eq("id", productionEventId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+      () => getDefaultPostingGroup(db, companyId),
+      () =>
+        companyRecord.data.companyGroupId
+          ? many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecord.data.companyGroupId,
+                active: true,
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Employee",
+                  "WorkCenter",
+                  "Process"
+                ]
+              },
+              { columns: ["id", "entityType"] }
+            )
+          : Promise.resolve({ data: null, error: null })
     ]);
 
     if (productionEvent.error)
@@ -135,11 +146,12 @@ export const postProductionEvent = defineServerFn({
     let cost = 0;
     let overheadCost = 0;
     if (!reverse) {
-      const workCenter = await client
-        .from("workCenter")
-        .select("laborRate, machineRate, overheadRate")
-        .eq("id", event.workCenterId!)
-        .single();
+      const workCenter = await single(
+        db,
+        "workCenter",
+        { id: event.workCenterId! },
+        { columns: ["laborRate", "machineRate", "overheadRate"] }
+      );
 
       if (workCenter.error)
         throw new Error(
@@ -240,21 +252,22 @@ export const postProductionEvent = defineServerFn({
       }
     }
 
-    const job = await client
-      .from("job")
-      .select("itemId, locationId, jobId")
-      .eq("id", jobId)
-      .single();
+    const job = await single(
+      db,
+      "job",
+      { id: jobId },
+      { columns: ["itemId", "locationId", "jobId"] }
+    );
 
     if (job.error) throw new Error("Failed to fetch job");
 
     const finishedItemCost = job.data.itemId
-      ? await client
-          .from("itemCost")
-          .select("itemPostingGroupId")
-          .eq("itemId", job.data.itemId)
-          .eq("companyId", companyId)
-          .single()
+      ? await single(
+          db,
+          "itemCost",
+          { itemId: job.data.itemId, companyId },
+          { columns: ["itemPostingGroupId"] }
+        )
       : null;
 
     const journalLineReference = nanoid();

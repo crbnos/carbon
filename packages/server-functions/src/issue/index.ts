@@ -62,6 +62,7 @@ import {
   createAdjustmentJournal,
   valueMovement
 } from "../lib/post-adjustment";
+import { inOrder, many, single } from "../lib/rows";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
@@ -209,7 +210,7 @@ async function issueJobOperationMaterials(
   // all post on the same day (they previously relied on the CURRENT_DATE default,
   // which is UTC and diverged from the company-TZ journals here).
   const today = datetime
-    .today(await getCompanyTimeZone(client, companyId))
+    .today(await getCompanyTimeZone(trx, companyId))
     .toString();
 
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
@@ -638,7 +639,7 @@ async function createMaterialWipEntries(
   // Cost layer posts on the company business day, matching the caller's
   // itemLedger movement (was defaulting to CURRENT_DATE = UTC).
   const today = datetime
-    .today(await getCompanyTimeZone(client, companyId))
+    .today(await getCompanyTimeZone(trx, companyId))
     .toString();
 
   const journalLineInserts: {
@@ -1115,32 +1116,42 @@ async function assertProductionQuantityLinks(
 // Shared accounting context for the tracked-consumption paths (the per-op and
 // per-batch cases): whether accounting is enabled, the posting-group defaults,
 // and the active dimension map.
-async function loadConsumeAccountingContext(client: any, companyId: string) {
-  const [accountingSettings, companyRecord] = await Promise.all([
-    client
-      .from("companySettings")
-      .select("accountingEnabled")
-      .eq("id", companyId)
-      .single(),
-    client.from("company").select("companyGroupId").eq("id", companyId).single()
+async function loadConsumeAccountingContext(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const [accountingSettings, companyRecord] = await inOrder([
+    () =>
+      single(
+        db,
+        "companySettings",
+        { id: companyId },
+        { columns: ["accountingEnabled"] }
+      ),
+    () =>
+      single(db, "company", { id: companyId }, { columns: ["companyGroupId"] })
   ]);
   if (companyRecord.error) throw new Error("Failed to fetch company");
   const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
 
   const accountDefaults = accountingEnabled
-    ? await getDefaultPostingGroup(client, companyId)
+    ? await getDefaultPostingGroup(db, companyId)
     : null;
   if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
     throw new Error("Error getting account defaults");
   }
 
   const dimensions = accountingEnabled
-    ? await client
-        .from("dimension")
-        .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId!)
-        .eq("active", true)
-        .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+    ? await many(
+        db,
+        "dimension",
+        {
+          companyGroupId: companyRecord.data.companyGroupId!,
+          active: true,
+          entityType: ["ItemPostingGroup", "Item", "Location"]
+        },
+        { columns: ["id", "entityType"] }
+      )
     : null;
 
   const dimensionMap = new Map<string, string>();
@@ -2023,24 +2034,28 @@ export const issue = defineServerFn({
 
         const client = await ctx.supabase();
 
-        const [accountingSettings, companyRecord] = await Promise.all([
-          client
-            .from("companySettings")
-            .select("accountingEnabled")
-            .eq("id", companyId)
-            .single(),
-          client
-            .from("company")
-            .select("companyGroupId")
-            .eq("id", companyId)
-            .single()
+        const [accountingSettings, companyRecord] = await inOrder([
+          () =>
+            single(
+              db,
+              "companySettings",
+              { id: companyId },
+              { columns: ["accountingEnabled"] }
+            ),
+          () =>
+            single(
+              db,
+              "company",
+              { id: companyId },
+              { columns: ["companyGroupId"] }
+            )
         ]);
         if (companyRecord.error) throw new Error("Failed to fetch company");
         const accountingEnabled =
           accountingSettings.data?.accountingEnabled ?? false;
 
         const accountDefaults = accountingEnabled
-          ? await getDefaultPostingGroup(client, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabled &&
@@ -2050,12 +2065,16 @@ export const issue = defineServerFn({
         }
 
         const dimensions = accountingEnabled
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecord.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecord.data.companyGroupId!,
+                active: true,
+                entityType: ["ItemPostingGroup", "Item", "Location"]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
 
         const dimensionMap = new Map<string, string>();
@@ -2086,19 +2105,15 @@ export const issue = defineServerFn({
         const client = await ctx.supabase();
         await assertProductionQuantityLinks(db, companyId, row);
 
-        const [jobOperation, productionQuantities] = await Promise.all([
-          client
-            .from("jobOperation")
-            .select("*")
-            .eq("id", row.jobOperationId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("productionQuantity")
-            .select("*")
-            .eq("jobOperationId", row.jobOperationId)
-            .eq("companyId", companyId)
-            .eq("type", "Production")
+        const [jobOperation, productionQuantities] = await inOrder([
+          () =>
+            single(db, "jobOperation", { id: row.jobOperationId, companyId }),
+          () =>
+            many(db, "productionQuantity", {
+              jobOperationId: row.jobOperationId,
+              companyId,
+              type: "Production"
+            })
         ]);
 
         if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
@@ -2106,7 +2121,7 @@ export const issue = defineServerFn({
         }
 
         const accountingBatch = await loadConsumeAccountingContext(
-          client,
+          db,
           companyId
         );
 
@@ -2164,21 +2179,22 @@ export const issue = defineServerFn({
           companyId,
           userId
         } = validatedPayload;
-        const client = await ctx.supabase();
 
-        const [entity, productionQuantities] = await Promise.all([
-          client
-            .from("trackedEntity")
-            .select("id, status, readableId")
-            .eq("id", trackedEntityId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("productionQuantity")
-            .select("quantity")
-            .eq("jobOperationId", jobOperationId)
-            .eq("companyId", companyId)
-            .eq("type", "Production")
+        const [entity, productionQuantities] = await inOrder([
+          () =>
+            single(
+              db,
+              "trackedEntity",
+              { id: trackedEntityId, companyId },
+              { columns: ["id", "status", "readableId"] }
+            ),
+          () =>
+            many(
+              db,
+              "productionQuantity",
+              { jobOperationId, companyId, type: "Production" },
+              { columns: ["quantity"] }
+            )
         ]);
         if (entity.error || !entity.data) {
           throw new NotFoundError("Tracked entity not found");
@@ -2236,12 +2252,10 @@ export const issue = defineServerFn({
         const client = await ctx.supabase();
         await assertProductionQuantityLinks(db, companyId, row);
 
-        const jobOperation = await client
-          .from("jobOperation")
-          .select("*")
-          .eq("id", row.jobOperationId)
-          .eq("companyId", companyId)
-          .single();
+        const jobOperation = await single(db, "jobOperation", {
+          id: row.jobOperationId,
+          companyId
+        });
         if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
           throw new NotFoundError("Job operation not found");
         }
@@ -2279,26 +2293,29 @@ export const issue = defineServerFn({
             (trackedEntity.attributes as TrackedEntityAttributes)
         );
 
-        const [accountingSettingsSerial, companyRecordSerial] =
-          await Promise.all([
-            client
-              .from("companySettings")
-              .select("accountingEnabled")
-              .eq("id", companyId)
-              .single(),
-            client
-              .from("company")
-              .select("companyGroupId")
-              .eq("id", companyId)
-              .single()
-          ]);
+        const [accountingSettingsSerial, companyRecordSerial] = await inOrder([
+          () =>
+            single(
+              db,
+              "companySettings",
+              { id: companyId },
+              { columns: ["accountingEnabled"] }
+            ),
+          () =>
+            single(
+              db,
+              "company",
+              { id: companyId },
+              { columns: ["companyGroupId"] }
+            )
+        ]);
         if (companyRecordSerial.error)
           throw new Error("Failed to fetch company");
         const accountingEnabledSerial =
           accountingSettingsSerial.data?.accountingEnabled ?? false;
 
         const accountDefaultsSerial = accountingEnabledSerial
-          ? await getDefaultPostingGroup(client, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabledSerial &&
@@ -2308,12 +2325,16 @@ export const issue = defineServerFn({
         }
 
         const dimensionsSerial = accountingEnabledSerial
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordSerial.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecordSerial.data.companyGroupId!,
+                active: true,
+                entityType: ["ItemPostingGroup", "Item", "Location"]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
 
         const dimensionMapSerial = new Map<string, string>();
@@ -2417,19 +2438,19 @@ export const issue = defineServerFn({
                 trackedEntity.attributes as Record<string, unknown>
               ).Job;
               if (typeof jobIdForLocation === "string") {
-                const jobRow = await client
-                  .from("job")
-                  .select("locationId")
-                  .eq("id", jobIdForLocation)
-                  .eq("companyId", companyId)
-                  .single();
+                const jobRow = await single(
+                  trx,
+                  "job",
+                  { id: jobIdForLocation, companyId },
+                  { columns: ["locationId"] }
+                );
                 if (jobRow.data?.locationId) {
-                  const loc = await client
-                    .from("location")
-                    .select("code, name")
-                    .eq("id", jobRow.data.locationId)
-                    .eq("companyId", companyId)
-                    .single();
+                  const loc = await single(
+                    trx,
+                    "location",
+                    { id: jobRow.data.locationId, companyId },
+                    { columns: ["code", "name"] }
+                  );
                   locationCode = loc.data?.code ?? null;
                   locationName = loc.data?.name ?? null;
                 }
@@ -2516,12 +2537,10 @@ export const issue = defineServerFn({
           setupProductionEventId
         });
 
-        const operationRes = await client
-          .from("jobOperation")
-          .select("*")
-          .eq("id", jobOperationId)
-          .eq("companyId", companyId)
-          .single();
+        const operationRes = await single(db, "jobOperation", {
+          id: jobOperationId,
+          companyId
+        });
         const operation = operationRes.data;
         if (!operation || !operation.jobMakeMethodId) {
           throw new NotFoundError("Job operation not found");
@@ -2533,38 +2552,51 @@ export const issue = defineServerFn({
           trackedEntitiesRes,
           accountingSettingsScrapOp,
           companyRecordScrapOp
-        ] = await Promise.all([
-          client
-            .from("jobMakeMethod")
-            .select(
-              "id, itemId, requiresSerialTracking, requiresBatchTracking, parentMaterialId"
+        ] = await inOrder([
+          () =>
+            single(
+              db,
+              "jobMakeMethod",
+              { id: operation.jobMakeMethodId, companyId },
+              {
+                columns: [
+                  "id",
+                  "itemId",
+                  "requiresSerialTracking",
+                  "requiresBatchTracking",
+                  "parentMaterialId"
+                ]
+              }
+            ),
+          () =>
+            single(
+              db,
+              "job",
+              { id: operation.jobId, companyId },
+              { columns: ["id", "jobId", "locationId"] }
+            ),
+          () =>
+            client
+              .from("trackedEntity")
+              .select("id")
+              .contains("attributes", {
+                "Job Make Method": operation.jobMakeMethodId
+              })
+              .eq("companyId", companyId),
+          () =>
+            single(
+              db,
+              "companySettings",
+              { id: companyId },
+              { columns: ["accountingEnabled"] }
+            ),
+          () =>
+            single(
+              db,
+              "company",
+              { id: companyId },
+              { columns: ["companyGroupId"] }
             )
-            .eq("id", operation.jobMakeMethodId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("job")
-            .select("id, jobId, locationId")
-            .eq("id", operation.jobId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("trackedEntity")
-            .select("id")
-            .contains("attributes", {
-              "Job Make Method": operation.jobMakeMethodId
-            })
-            .eq("companyId", companyId),
-          client
-            .from("companySettings")
-            .select("accountingEnabled")
-            .eq("id", companyId)
-            .single(),
-          client
-            .from("company")
-            .select("companyGroupId")
-            .eq("id", companyId)
-            .single()
         ]);
         if (makeMethodRes.error || !makeMethodRes.data) {
           throw new NotFoundError("Job make method not found");
@@ -2581,7 +2613,7 @@ export const issue = defineServerFn({
         const accountingEnabledScrapOp =
           accountingSettingsScrapOp.data?.accountingEnabled ?? false;
         const accountDefaultsScrapOp = accountingEnabledScrapOp
-          ? await getDefaultPostingGroup(client, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabledScrapOp &&
@@ -2591,19 +2623,23 @@ export const issue = defineServerFn({
         }
 
         const dimensionsScrapOp = accountingEnabledScrapOp
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordScrapOp.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", [
-                "ItemPostingGroup",
-                "Item",
-                "Location",
-                "ScrapReason",
-                "WorkCenter",
-                "Employee"
-              ])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecordScrapOp.data.companyGroupId!,
+                active: true,
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "ScrapReason",
+                  "WorkCenter",
+                  "Employee"
+                ]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
         const dimensionMapScrapOp = new Map<string, string>();
         if (dimensionsScrapOp?.data) {
@@ -2621,7 +2657,7 @@ export const issue = defineServerFn({
         }
 
         const todayScrapOp = datetime
-          .today(await getCompanyTimeZone(client, companyId))
+          .today(await getCompanyTimeZone(db, companyId))
           .toString();
 
         let newEntityId: string | undefined;
@@ -2751,12 +2787,12 @@ export const issue = defineServerFn({
                 let locationCode: string | null = null;
                 let locationName: string | null = null;
                 if (job.locationId) {
-                  const loc = await client
-                    .from("location")
-                    .select("code, name")
-                    .eq("id", job.locationId)
-                    .eq("companyId", companyId)
-                    .single();
+                  const loc = await single(
+                    trx,
+                    "location",
+                    { id: job.locationId, companyId },
+                    { columns: ["code", "name"] }
+                  );
                   locationCode = loc.data?.code ?? null;
                   locationName = loc.data?.name ?? null;
                 }
@@ -2991,24 +3027,28 @@ export const issue = defineServerFn({
           "Job operation step"
         );
 
-        const [accountingSettings, companyRecord] = await Promise.all([
-          client
-            .from("companySettings")
-            .select("accountingEnabled")
-            .eq("id", companyId)
-            .single(),
-          client
-            .from("company")
-            .select("companyGroupId")
-            .eq("id", companyId)
-            .single()
+        const [accountingSettings, companyRecord] = await inOrder([
+          () =>
+            single(
+              db,
+              "companySettings",
+              { id: companyId },
+              { columns: ["accountingEnabled"] }
+            ),
+          () =>
+            single(
+              db,
+              "company",
+              { id: companyId },
+              { columns: ["companyGroupId"] }
+            )
         ]);
         if (companyRecord.error) throw new Error("Failed to fetch company");
         const accountingEnabled =
           accountingSettings.data?.accountingEnabled ?? false;
 
         const accountDefaults = accountingEnabled
-          ? await getDefaultPostingGroup(client, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabled &&
@@ -3018,12 +3058,16 @@ export const issue = defineServerFn({
         }
 
         const dimensions = accountingEnabled
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecord.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecord.data.companyGroupId!,
+                active: true,
+                entityType: ["ItemPostingGroup", "Item", "Location"]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
 
         const dimensionMap = new Map<string, string>();
@@ -3360,19 +3404,9 @@ export const issue = defineServerFn({
           "Scrap reason"
         );
 
-        const [trackedEntity, jobMaterial] = await Promise.all([
-          client
-            .from("trackedEntity")
-            .select("*")
-            .eq("id", trackedEntityId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("jobMaterial")
-            .select("*")
-            .eq("id", materialId)
-            .eq("companyId", companyId)
-            .single()
+        const [trackedEntity, jobMaterial] = await inOrder([
+          () => single(db, "trackedEntity", { id: trackedEntityId, companyId }),
+          () => single(db, "jobMaterial", { id: materialId, companyId })
         ]);
 
         if (!trackedEntity.data) {
@@ -3388,16 +3422,18 @@ export const issue = defineServerFn({
 
         const [accountingSettingsScrap, companyRecordScrap] = await Promise.all(
           [
-            client
-              .from("companySettings")
-              .select("accountingEnabled")
-              .eq("id", companyId)
-              .single(),
-            client
-              .from("company")
-              .select("companyGroupId")
-              .eq("id", companyId)
-              .single()
+            single(
+              db,
+              "companySettings",
+              { id: companyId },
+              { columns: ["accountingEnabled"] }
+            ),
+            single(
+              db,
+              "company",
+              { id: companyId },
+              { columns: ["companyGroupId"] }
+            )
           ]
         );
         if (companyRecordScrap.error)
@@ -3406,7 +3442,7 @@ export const issue = defineServerFn({
           accountingSettingsScrap.data?.accountingEnabled ?? false;
 
         const accountDefaultsScrap = accountingEnabledScrap
-          ? await getDefaultPostingGroup(client, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabledScrap &&
@@ -3416,19 +3452,23 @@ export const issue = defineServerFn({
         }
 
         const dimensionsScrap = accountingEnabledScrap
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordScrap.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", [
-                "ItemPostingGroup",
-                "Item",
-                "Location",
-                "ScrapReason",
-                "WorkCenter",
-                "Employee"
-              ])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecordScrap.data.companyGroupId!,
+                active: true,
+                entityType: [
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "ScrapReason",
+                  "WorkCenter",
+                  "Employee"
+                ]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
 
         const dimensionMapScrap = new Map<string, string>();
@@ -3439,7 +3479,7 @@ export const issue = defineServerFn({
         }
 
         const todayScrap = datetime
-          .today(await getCompanyTimeZone(client, companyId))
+          .today(await getCompanyTimeZone(db, companyId))
           .toString();
         // Resolve the period BEFORE the transaction parks the (size 1) pool.
         const accountingPeriodIdScrap = accountingEnabledScrap
@@ -3777,12 +3817,12 @@ export const issue = defineServerFn({
                 let locationCode: string | null = null;
                 let locationName: string | null = null;
                 if (job.locationId) {
-                  const loc = await client
-                    .from("location")
-                    .select("code, name")
-                    .eq("id", job.locationId)
-                    .eq("companyId", companyId)
-                    .single();
+                  const loc = await single(
+                    trx,
+                    "location",
+                    { id: job.locationId, companyId },
+                    { columns: ["code", "name"] }
+                  );
                   locationCode = loc.data?.code ?? null;
                   locationName = loc.data?.name ?? null;
                 }
@@ -3899,12 +3939,9 @@ export const issue = defineServerFn({
           "Job operation step"
         );
         const companyToday = datetime.today(
-          await getCompanyTimeZone(client, companyId)
+          await getCompanyTimeZone(db, companyId)
         );
-        const accounting = await loadConsumeAccountingContext(
-          client,
-          companyId
-        );
+        const accounting = await loadConsumeAccountingContext(db, companyId);
 
         const result = await db.transaction().execute((trx) =>
           consumeTrackedEntitiesIntoOperation(trx, {
@@ -3949,12 +3986,9 @@ export const issue = defineServerFn({
 
         const client = await ctx.supabase();
         const companyToday = datetime.today(
-          await getCompanyTimeZone(client, companyId)
+          await getCompanyTimeZone(db, companyId)
         );
-        const accounting = await loadConsumeAccountingContext(
-          client,
-          companyId
-        );
+        const accounting = await loadConsumeAccountingContext(db, companyId);
 
         // Resolve (and lazily create) the accounting period BEFORE the member
         // transaction opens. getCurrentAccountingPeriod reads over HTTP but
@@ -4162,9 +4196,8 @@ export const issue = defineServerFn({
         const { trackedEntityIds, readableId, companyId, userId } =
           validatedPayload;
 
-        const client = await ctx.supabase();
         const companyToday = datetime.today(
-          await getCompanyTimeZone(client, companyId)
+          await getCompanyTimeZone(db, companyId)
         );
 
         const mergeResult = await db.transaction().execute(async (trx) => {
@@ -4334,17 +4367,21 @@ export const issue = defineServerFn({
         const clientUnconsume = await ctx.supabase();
 
         const [accountingSettingsUnconsume, companyRecordUnconsume] =
-          await Promise.all([
-            clientUnconsume
-              .from("companySettings")
-              .select("accountingEnabled")
-              .eq("id", companyId)
-              .single(),
-            clientUnconsume
-              .from("company")
-              .select("companyGroupId")
-              .eq("id", companyId)
-              .single()
+          await inOrder([
+            () =>
+              single(
+                db,
+                "companySettings",
+                { id: companyId },
+                { columns: ["accountingEnabled"] }
+              ),
+            () =>
+              single(
+                db,
+                "company",
+                { id: companyId },
+                { columns: ["companyGroupId"] }
+              )
           ]);
         if (companyRecordUnconsume.error)
           throw new Error("Failed to fetch company");
@@ -4352,7 +4389,7 @@ export const issue = defineServerFn({
           accountingSettingsUnconsume.data?.accountingEnabled ?? false;
 
         const accountDefaultsUnconsume = accountingEnabledUnconsume
-          ? await getDefaultPostingGroup(clientUnconsume, companyId)
+          ? await getDefaultPostingGroup(db, companyId)
           : null;
         if (
           accountingEnabledUnconsume &&
@@ -4362,12 +4399,16 @@ export const issue = defineServerFn({
         }
 
         const dimensionsUnconsume = accountingEnabledUnconsume
-          ? await clientUnconsume
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordUnconsume.data.companyGroupId!)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+          ? await many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyRecordUnconsume.data.companyGroupId!,
+                active: true,
+                entityType: ["ItemPostingGroup", "Item", "Location"]
+              },
+              { columns: ["id", "entityType"] }
+            )
           : null;
 
         const dimensionMapUnconsume = new Map<string, string>();

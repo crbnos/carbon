@@ -49,7 +49,14 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { many, maybeSingle, selectRow, selectRows, single } from "../lib/rows";
+import {
+  isNull,
+  many,
+  maybeSingle,
+  selectRow,
+  selectRows,
+  single
+} from "../lib/rows";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
@@ -2569,7 +2576,7 @@ export const getMethod = defineServerFn({
           single(db, "activeMakeMethods", { itemId, companyId }),
           maybeSingle(db, "quoteMakeMethod", {
             quoteLineId,
-            parentMaterialId: null,
+            parentMaterialId: isNull,
             companyId
           }),
           many(db, "workCenters", { companyId }),
@@ -2623,7 +2630,7 @@ export const getMethod = defineServerFn({
           // Read back in the shape the rest of this flow uses.
           const inserted = await single(db, "quoteMakeMethod", {
             quoteLineId,
-            parentMaterialId: null,
+            parentMaterialId: isNull,
             companyId
           });
 
@@ -4088,7 +4095,7 @@ export const getMethod = defineServerFn({
             single(db, "makeMethod", { id: makeMethodId, companyId }),
             single(db, "jobMakeMethod", {
               jobId,
-              parentMaterialId: null,
+              parentMaterialId: isNull,
               companyId
             }),
             many<
@@ -4462,12 +4469,12 @@ export const getMethod = defineServerFn({
         });
         const targetJobMakeMethod = await single(db, "jobMakeMethod", {
           jobId: targetJobId,
-          parentMaterialId: null,
+          parentMaterialId: isNull,
           companyId
         });
         const sourceJobMakeMethod = await single(db, "jobMakeMethod", {
           jobId: sourceJobId,
-          parentMaterialId: null,
+          parentMaterialId: isNull,
           companyId
         });
         const sourceMaterials = await many<"jobMaterial", SourceJobMaterialRow>(
@@ -5572,7 +5579,7 @@ export const getMethod = defineServerFn({
             single(db, "makeMethod", { id: makeMethodId, companyId }),
             single(db, "quoteMakeMethod", {
               quoteLineId,
-              parentMaterialId: null,
+              parentMaterialId: isNull,
               companyId
             }),
             many<
@@ -6259,11 +6266,11 @@ export const getMethod = defineServerFn({
         const job = await single(db, "job", { id: jobId, companyId });
         const jobMakeMethod = await single(db, "jobMakeMethod", {
           jobId,
-          parentMaterialId: null,
+          parentMaterialId: isNull,
           companyId
         });
         const quoteMakeMethod = await single(db, "quoteMakeMethod", {
-          parentMaterialId: null,
+          parentMaterialId: isNull,
           quoteLineId,
           companyId
         });
@@ -6830,11 +6837,11 @@ export const getMethod = defineServerFn({
         ] = await Promise.all([
           single(db, "quoteMakeMethod", {
             quoteLineId: targetQuoteLineId,
-            parentMaterialId: null,
+            parentMaterialId: isNull,
             companyId
           }),
           single(db, "quoteMakeMethod", {
-            parentMaterialId: null,
+            parentMaterialId: isNull,
             quoteLineId: sourceQuoteLineId,
             companyId
           }),
@@ -7421,12 +7428,12 @@ export const getMethod = defineServerFn({
               sourceQuoteOperations
             ] = await Promise.all([
               single(trx, "quoteMakeMethod", {
-                parentMaterialId: null,
+                parentMaterialId: isNull,
                 quoteLineId: newLineId,
                 companyId
               }),
               single(trx, "quoteMakeMethod", {
-                parentMaterialId: null,
+                parentMaterialId: isNull,
                 quoteLineId: oldLineId,
                 companyId
               }),

@@ -2,13 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  type AnyPostgresClient,
+  type Database,
+  isKysely
+} from "@carbon/database";
+import { single } from "./rows";
 
+/** The company's posting accounts. Pass `db` (or `trx`); a Supabase client still works. */
 export async function getDefaultPostingGroup(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   companyId: string
 ) {
+  if (isKysely(client)) {
+    return await single(client, "accountDefault", { companyId });
+  }
   return await client
     .from("accountDefault")
     .select("*")

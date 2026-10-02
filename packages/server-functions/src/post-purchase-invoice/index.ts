@@ -31,6 +31,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { inOrder, many, maybeSingle, single } from "../lib/rows";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid
@@ -56,7 +57,7 @@ export const postPurchaseInvoice = defineServerFn({
     const client = await ctx.supabase();
     try {
       const today = datetime
-        .today(await getCompanyTimeZone(client, companyId))
+        .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
       const accountingEnabled = await client
@@ -69,12 +70,10 @@ export const postPurchaseInvoice = defineServerFn({
       if (type === "void") {
         // The client is service-role: authorization proved the caller may
         // act in companyId, not that invoiceId belongs to it.
-        const invoice = await client
-          .from("purchaseInvoice")
-          .select("*")
-          .eq("id", invoiceId)
-          .eq("companyId", companyId)
-          .maybeSingle();
+        const invoice = await maybeSingle(db, "purchaseInvoice", {
+          id: invoiceId,
+          companyId
+        });
         if (invoice.error) throw new Error("Failed to fetch purchaseInvoice");
         if (!invoice.data)
           throw new NotFoundError("Purchase invoice not found");
@@ -97,26 +96,20 @@ export const postPurchaseInvoice = defineServerFn({
         }
 
         const [originalItemLedger, originalJournalLines, originalCostLedger] =
-          await Promise.all([
-            client
-              .from("itemLedger")
-              .select("*")
-              .eq("documentId", invoiceId)
-              .eq("companyId", companyId),
-            client
-              .from("journalLine")
-              .select("*")
-              .eq("documentId", invoiceId)
-              .eq("documentType", "Invoice")
-              .eq("companyId", companyId),
-            client
-              .from("costLedger")
-              .select("*")
-              .eq("documentId", invoiceId)
-              // 'Purchase Receipt' + documentId=invoiceId are the legacy
-              // self-heal layers this invoice may have created
-              .in("documentType", ["Purchase Invoice", "Purchase Receipt"])
-              .eq("companyId", companyId)
+          await inOrder([
+            () => many(db, "itemLedger", { documentId: invoiceId, companyId }),
+            () =>
+              many(db, "journalLine", {
+                documentId: invoiceId,
+                documentType: "Invoice",
+                companyId
+              }),
+            () =>
+              many(db, "costLedger", {
+                documentId: invoiceId,
+                documentType: ["Purchase Invoice", "Purchase Receipt"],
+                companyId
+              })
           ]);
 
         if (originalItemLedger.error)
@@ -126,10 +119,9 @@ export const postPurchaseInvoice = defineServerFn({
         if (originalCostLedger.error)
           throw new Error("Failed to fetch cost ledger entries");
 
-        const invoiceLinesVoid = await client
-          .from("purchaseInvoiceLine")
-          .select("*")
-          .eq("invoiceId", invoiceId);
+        const invoiceLinesVoid = await many(db, "purchaseInvoiceLine", {
+          invoiceId
+        });
         if (invoiceLinesVoid.error)
           throw new Error("Failed to fetch purchase invoice lines");
 
@@ -149,10 +141,12 @@ export const postPurchaseInvoice = defineServerFn({
         const affectedPurchaseOrderIdsVoid: string[] = [];
 
         if (purchaseOrderLineIdsVoid.length > 0) {
-          const touchedLines = await client
-            .from("purchaseOrderLine")
-            .select("purchaseOrderId")
-            .in("id", purchaseOrderLineIdsVoid);
+          const touchedLines = await many(
+            db,
+            "purchaseOrderLine",
+            { id: purchaseOrderLineIdsVoid },
+            { columns: ["purchaseOrderId"] }
+          );
           if (touchedLines.error)
             throw new Error("Failed to fetch purchase order lines");
           for (const { purchaseOrderId } of touchedLines.data) {
@@ -167,10 +161,9 @@ export const postPurchaseInvoice = defineServerFn({
 
         const purchaseOrderLinesVoid =
           affectedPurchaseOrderIdsVoid.length > 0
-            ? await client
-                .from("purchaseOrderLine")
-                .select("*")
-                .in("purchaseOrderId", affectedPurchaseOrderIdsVoid)
+            ? await many(db, "purchaseOrderLine", {
+                purchaseOrderId: affectedPurchaseOrderIdsVoid
+              })
             : {
                 data: [] as Database["public"]["Tables"]["purchaseOrderLine"]["Row"][],
                 error: null
@@ -526,11 +519,12 @@ export const postPurchaseInvoice = defineServerFn({
         return { success: true };
       }
 
-      const companyRecord = await client
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single();
+      const companyRecord = await single(
+        db,
+        "company",
+        { id: companyId },
+        { columns: ["companyGroupId"] }
+      );
       if (companyRecord.error) throw new Error("Failed to fetch company");
       const companyGroupId = companyRecord.data.companyGroupId;
 
@@ -539,40 +533,38 @@ export const postPurchaseInvoice = defineServerFn({
         purchaseInvoiceLines,
         purchaseInvoiceDelivery,
         dimensions
-      ] = await Promise.all([
+      ] = await inOrder([
         // Scoped for the same reason as the void path's read.
-        client
-          .from("purchaseInvoice")
-          .select("*")
-          .eq("id", invoiceId)
-          .eq("companyId", companyId)
-          .maybeSingle(),
-        client
-          .from("purchaseInvoiceLine")
-          .select("*")
-          .eq("invoiceId", invoiceId)
-          .eq("companyId", companyId),
-        client
-          .from("purchaseInvoiceDelivery")
-          .select("supplierShippingCost")
-          .eq("id", invoiceId)
-          .single(),
-        client
-          .from("dimension")
-          .select("id, entityType")
-          .eq("companyGroupId", companyGroupId!)
-          .eq("active", true)
-          .in("entityType", [
-            "SupplierType",
-            "Supplier",
-            "ItemPostingGroup",
-            "Item",
-            "Location",
-            "CostCenter",
-            "Project",
-            "Process",
-            "FixedAssetClass"
-          ])
+        () => maybeSingle(db, "purchaseInvoice", { id: invoiceId, companyId }),
+        () => many(db, "purchaseInvoiceLine", { invoiceId, companyId }),
+        () =>
+          single(
+            db,
+            "purchaseInvoiceDelivery",
+            { id: invoiceId },
+            { columns: ["supplierShippingCost"] }
+          ),
+        () =>
+          many(
+            db,
+            "dimension",
+            {
+              companyGroupId: companyGroupId!,
+              active: true,
+              entityType: [
+                "SupplierType",
+                "Supplier",
+                "ItemPostingGroup",
+                "Item",
+                "Location",
+                "CostCenter",
+                "Project",
+                "Process",
+                "FixedAssetClass"
+              ]
+            },
+            { columns: ["id", "entityType"] }
+          )
       ]);
 
       if (purchaseInvoice.error)
@@ -611,23 +603,25 @@ export const postPurchaseInvoice = defineServerFn({
         []
       );
 
-      const [items, itemCosts, purchaseOrderLines, supplier] =
-        await Promise.all([
-          client
-            .from("item")
-            .select("id, itemTrackingType, replenishmentSystem")
-            .in("id", itemIds)
-            .eq("companyId", companyId),
-          client
-            .from("itemCost")
-            .select("itemId, itemPostingGroupId, costingMethod")
-            .in("itemId", itemIds),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .in(
-              "id",
-              purchaseInvoiceLines.data.reduce<string[]>((acc, invoiceLine) => {
+      const [items, itemCosts, purchaseOrderLines, supplier] = await inOrder([
+        () =>
+          many(
+            db,
+            "item",
+            { id: itemIds, companyId },
+            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          ),
+        () =>
+          many(
+            db,
+            "itemCost",
+            { itemId: itemIds },
+            { columns: ["itemId", "itemPostingGroupId", "costingMethod"] }
+          ),
+        () =>
+          many(db, "purchaseOrderLine", {
+            id: purchaseInvoiceLines.data.reduce<string[]>(
+              (acc, invoiceLine) => {
                 if (
                   invoiceLine.purchaseOrderLineId &&
                   !acc.includes(invoiceLine.purchaseOrderLineId)
@@ -635,15 +629,16 @@ export const postPurchaseInvoice = defineServerFn({
                   acc.push(invoiceLine.purchaseOrderLineId);
                 }
                 return acc;
-              }, [])
-            ),
-          client
-            .from("supplier")
-            .select("*")
-            .eq("id", purchaseInvoice.data.supplierId ?? "")
-            .eq("companyId", companyId)
-            .single()
-        ]);
+              },
+              []
+            )
+          }),
+        () =>
+          single(db, "supplier", {
+            id: purchaseInvoice.data?.supplierId ?? "",
+            companyId
+          })
+      ]);
       if (items.error) throw new Error("Failed to fetch items");
       if (itemCosts.error) throw new Error("Failed to fetch item costs");
       if (purchaseOrderLines.error)
@@ -667,12 +662,9 @@ export const postPurchaseInvoice = defineServerFn({
         0
       );
 
-      const purchaseOrders = await client
-        .from("purchaseOrder")
-        .select("*")
-        .in(
-          "purchaseOrderId",
-          purchaseOrderLines.data.reduce<string[]>((acc, purchaseOrderLine) => {
+      const purchaseOrders = await many(db, "purchaseOrder", {
+        purchaseOrderId: purchaseOrderLines.data.reduce<string[]>(
+          (acc, purchaseOrderLine) => {
             if (
               purchaseOrderLine.purchaseOrderId &&
               !acc.includes(purchaseOrderLine.purchaseOrderId)
@@ -680,9 +672,11 @@ export const postPurchaseInvoice = defineServerFn({
               acc.push(purchaseOrderLine.purchaseOrderId);
             }
             return acc;
-          }, [])
-        )
-        .eq("companyId", companyId);
+          },
+          []
+        ),
+        companyId
+      });
 
       if (purchaseOrders.error)
         throw new Error("Failed to fetch purchase orders");
@@ -712,10 +706,12 @@ export const postPurchaseInvoice = defineServerFn({
           .map((pol) => pol.jobOperationId)
           .filter((id): id is string => !!id);
         if (jobOpIds.length > 0) {
-          const jobOps = await client
-            .from("jobOperation")
-            .select("id, processId")
-            .in("id", jobOpIds);
+          const jobOps = await many(
+            db,
+            "jobOperation",
+            { id: jobOpIds },
+            { columns: ["id", "processId"] }
+          );
           for (const op of jobOps.data ?? []) {
             if (op.processId)
               processIdByJobOperationId.set(op.id, op.processId);
@@ -781,12 +777,9 @@ export const postPurchaseInvoice = defineServerFn({
         return acc;
       }, {});
 
-      const journalLines = await client
-        .from("journalLine")
-        .select("*")
-        .in(
-          "documentLineReference",
-          purchaseOrderLines.data.reduce<string[]>((acc, purchaseOrderLine) => {
+      const journalLines = await many(db, "journalLine", {
+        documentLineReference: purchaseOrderLines.data.reduce<string[]>(
+          (acc, purchaseOrderLine) => {
             if (
               (purchaseOrderLine.quantityReceived ?? 0) >
               (purchaseOrderLine.quantityInvoiced ?? 0)
@@ -794,9 +787,11 @@ export const postPurchaseInvoice = defineServerFn({
               acc.push(journalReference.to.receipt(purchaseOrderLine.id));
             }
             return acc;
-          }, [])
-        )
-        .eq("companyId", companyId);
+          },
+          []
+        ),
+        companyId
+      });
       if (journalLines.error) {
         throw new Error("Failed to fetch journal entries to reverse");
       }
@@ -823,7 +818,7 @@ export const postPurchaseInvoice = defineServerFn({
 
       // Get account defaults (once for all lines)
       const accountDefaults = accountingEnabled
-        ? await getDefaultPostingGroup(client, companyId)
+        ? await getDefaultPostingGroup(db, companyId)
         : null;
       if (
         accountingEnabled &&
@@ -1174,11 +1169,12 @@ export const postPurchaseInvoice = defineServerFn({
                   };
 
                   if (usesLayers && Math.abs(variance) > 0.005) {
-                    const receiptLinesForPoLine = await client
-                      .from("receiptLine")
-                      .select("receiptId")
-                      .eq("lineId", invoiceLine.purchaseOrderLineId!)
-                      .eq("companyId", companyId);
+                    const receiptLinesForPoLine = await many(
+                      db,
+                      "receiptLine",
+                      { lineId: invoiceLine.purchaseOrderLineId!, companyId },
+                      { columns: ["receiptId"] }
+                    );
                     if (receiptLinesForPoLine.error) {
                       throw new Error(
                         "Failed to fetch receipt lines for PO line"
@@ -1197,16 +1193,21 @@ export const postPurchaseInvoice = defineServerFn({
 
                     const receiptLayers =
                       receiptIds.length > 0
-                        ? await client
-                            .from("costLedger")
-                            .select("id, quantity, remainingQuantity")
-                            .eq("documentType", "Purchase Receipt")
-                            .in("documentId", receiptIds)
-                            .eq("itemId", invoiceLine.itemId!)
-                            .eq("adjustment", false)
-                            .eq("companyId", companyId)
-                            .order("postingDate", { ascending: true })
-                            .order("createdAt", { ascending: true })
+                        ? await many(
+                            db,
+                            "costLedger",
+                            {
+                              documentType: "Purchase Receipt",
+                              documentId: receiptIds,
+                              itemId: invoiceLine.itemId!,
+                              adjustment: false,
+                              companyId
+                            },
+                            {
+                              columns: ["id", "quantity", "remainingQuantity"],
+                              orderBy: ["postingDate", "createdAt"]
+                            }
+                          )
                         : { data: [], error: null };
                     if (receiptLayers.error) {
                       throw new Error("Failed to fetch receipt cost layers");
@@ -1546,11 +1547,12 @@ export const postPurchaseInvoice = defineServerFn({
                 purchaseOrderLine &&
                 (purchaseOrderLine.quantityReceived ?? 0) > 0;
 
-              const faRecord = await client
-                .from("fixedAsset")
-                .select("locationId, fixedAssetClassId")
-                .eq("id", invoiceLine.assetId)
-                .single();
+              const faRecord = await single(
+                db,
+                "fixedAsset",
+                { id: invoiceLine.assetId },
+                { columns: ["locationId", "fixedAssetClassId"] }
+              );
               const faLocationId = faRecord.data?.locationId ?? null;
               const faClassId = faRecord.data?.fixedAssetClassId ?? null;
 
@@ -1641,11 +1643,12 @@ export const postPurchaseInvoice = defineServerFn({
 
                 // Update FA acquisition cost if variance exists
                 if (Math.abs(variance) > 0.005) {
-                  const assetRecord = await client
-                    .from("fixedAsset")
-                    .select("id, acquisitionCost")
-                    .eq("id", invoiceLine.assetId)
-                    .single();
+                  const assetRecord = await single(
+                    db,
+                    "fixedAsset",
+                    { id: invoiceLine.assetId },
+                    { columns: ["id", "acquisitionCost"] }
+                  );
                   if (!assetRecord.error) {
                     await client
                       .from("fixedAsset")
@@ -1764,11 +1767,12 @@ export const postPurchaseInvoice = defineServerFn({
           }
           case "G/L Account": {
             if (accountingEnabled && accountDefaults?.data) {
-              const account = await client
-                .from("account")
-                .select("id, name, isGroup")
-                .eq("id", invoiceLine.accountId ?? "")
-                .single();
+              const account = await single(
+                db,
+                "account",
+                { id: invoiceLine.accountId ?? "" },
+                { columns: ["id", "name", "isGroup"] }
+              );
 
               if (account.error || !account.data)
                 throw new Error("Failed to fetch account");

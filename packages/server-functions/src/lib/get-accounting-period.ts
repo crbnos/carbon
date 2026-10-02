@@ -191,13 +191,13 @@ export async function getAccountingPeriodForDate(
 
 /** Pass the same business day used by the caller's journal and ledger rows. */
 export async function getCurrentAccountingPeriod(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string,
   db: Kysely<DB>,
   forDate?: string
 ) {
   const date =
     forDate ??
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+    datetime.today(await getCompanyTimeZone(db, companyId)).toString();
   return (await resolveAccountingPeriod(db, companyId, date, "current")).id;
 }
