@@ -7,12 +7,13 @@ import {
   getNonce,
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
+import { getProcessPool } from "@carbon/database/client";
 import { inngest } from "@carbon/lib/inngest";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
 import { createTracing } from "@carbon/logger/tracing.server";
-import { waitUntil } from "@vercel/functions";
+import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import { InngestSpanProcessor } from "inngest/experimental";
 import type { EntryContext, RouterContextProvider } from "react-router";
@@ -20,6 +21,11 @@ import { isRouteErrorResponse } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
+
+// Vercel freezes an instance once its response is sent, and a frozen instance
+// cannot run pg's idle timer, so its pooled connections stay open at the pooler
+// and may be dead when it wakes. This keeps the instance up until they close.
+if (process.env.VERCEL) attachDatabasePool(getProcessPool());
 
 export const instrumentations = createTracing({
   serviceName: "carbon-erp",

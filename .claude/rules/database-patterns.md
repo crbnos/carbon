@@ -53,7 +53,10 @@ never cancelled). Outside a request (scripts, module-level clients) nothing is b
   actions, table writes even on a GET (an OAuth callback saving its tokens), auth and
   edge-function calls. Error and warning logs from such an abandoned read are dropped
   (`liveRequest` filter in `@carbon/logger`'s `config.server.ts`), the stance `handleError`
-  already takes.
+  already takes. **On Vercel the signal never aborts**: Vercel only aborts it with
+  `supportsCancellation` in `vercel.json`, which also terminates the function when the client
+  disconnects — the app is one function, so actions would die mid-write. Do not enable it.
+  Cancellation therefore applies on ECS and self-hosted only.
 
 Kysely has neither: it is bounded by the process pool below.
 
@@ -170,7 +173,9 @@ has ONE pool of 16 connections, shared by the app's client, the jobs (`getJobDat
 and scripts, and nothing but an exiting script ends it; `getPostgresConnectionPool(n)` is for edge
 functions only and throws on Node. `traceConnectionWaits` (`@carbon/logger/tracing.server`)
 records a `db pool wait` span when a caller queues for a connection and `db connect` when one is
-opened, since query spans time only the query. Kysely opens one PG transaction, runs
+opened, since query spans time only the query. On Vercel both apps' `entry.server.tsx` call
+`attachDatabasePool(getProcessPool())` (`@vercel/functions`): a frozen instance cannot run pg's idle
+timer, so it is kept up until idle connections have closed. Kysely opens one PG transaction, runs
 every write inside it, and rolls everything back on any error.
 
 **Use transactions when:**
