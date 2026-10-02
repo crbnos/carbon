@@ -23,14 +23,10 @@ import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
 
-// Vercel freezes an instance once its response is sent.
+// Vercel freezes an instance once its response is sent: keep it up until idle
+// database connections have closed and background work has finished.
 if (process.env.VERCEL) {
-  // A frozen instance cannot run pg's idle timer, so its pooled connections
-  // stay open at the pooler and may be dead when it wakes. This keeps the
-  // instance up until they close.
   attachDatabasePool(getProcessPool());
-  // Work a request leaves running (analytics capture, the GTM forward) is
-  // handed to waitUntil, or it stalls mid-flight until the next request.
   async.onBackground(waitUntil);
 }
 

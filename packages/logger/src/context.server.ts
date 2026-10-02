@@ -73,19 +73,13 @@ export function currentRequest(): Request | undefined {
 }
 
 /**
- * The current request's abort signal when the request only reads; undefined on
- * a mutating request, whose writes run to the end, and outside a request. The
- * server aborts it when the client goes away before the response is done.
+ * Whether the current request only reads and its client has gone away before
+ * the response was done. Never true for a mutating request or outside one.
  */
-export function readRequestSignal(): AbortSignal | undefined {
-  const provider = storage.getStore();
-  if (!provider?.get(isReadRequestContext)) return undefined;
-  return provider.get(requestContext)?.signal;
-}
-
-/** Whether the client of the current read request has gone away. */
 export function isAbandonedRead(): boolean {
-  return readRequestSignal()?.aborted ?? false;
+  const provider = storage.getStore();
+  if (!provider?.get(isReadRequestContext)) return false;
+  return provider.get(requestContext)?.signal.aborted ?? false;
 }
 
 /** The current request's context provider, or undefined outside a request. */

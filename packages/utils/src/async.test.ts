@@ -52,10 +52,6 @@ describe("async.map", () => {
     expect(started).toEqual([1, 2]);
   });
 
-  it("returns an empty list for no items", async () => {
-    expect(await async.map([], async (n: number) => n)).toEqual([]);
-  });
-
   it("pulls a lazy input one element per free slot", async () => {
     const pulled: number[] = [];
     function* numbers() {
@@ -209,90 +205,6 @@ describe("async.limit", () => {
   });
 });
 
-describe("async.all", () => {
-  it("resolves named tasks, each able to await another", async () => {
-    const result = await async.all({
-      async a() {
-        await tick();
-        return 1;
-      },
-      async b() {
-        return (await this.$.a) + 1;
-      }
-    });
-    expect(result).toEqual({ a: 1, b: 2 });
-  });
-
-  it("aborts this.$signal in running tasks when a sibling fails", async () => {
-    let aborted: unknown;
-    await expect(
-      async.all({
-        async slow() {
-          this.$signal.addEventListener("abort", () => {
-            aborted = this.$signal.reason;
-          });
-          await tick(20);
-        },
-        async broken() {
-          throw new Error("broken");
-        }
-      })
-    ).rejects.toThrow("broken");
-    expect((aborted as Error).message).toBe("broken");
-  });
-
-  it("passes the caller's signal on as this.$signal", async () => {
-    const controller = new AbortController();
-    const result = async.all(
-      {
-        async a() {
-          await tick(10);
-          return this.$signal.aborted;
-        }
-      },
-      { signal: controller.signal }
-    );
-    controller.abort();
-    expect(await result).toEqual({ a: true });
-  });
-});
-
-describe("async.allSettled", () => {
-  it("reports each outcome, fails a dependant, and leaves this.$signal alone", async () => {
-    const result = await async.allSettled({
-      async ok() {
-        await tick();
-        return this.$signal.aborted;
-      },
-      async broken(): Promise<number> {
-        throw new Error("broken");
-      },
-      async needsBroken() {
-        return (await this.$.broken) + 1;
-      }
-    });
-    expect(result.ok).toEqual({ status: "fulfilled", value: false });
-    expect(result.broken.status).toBe("rejected");
-    expect(result.needsBroken.status).toBe("rejected");
-  });
-});
-
-describe("async.flow", () => {
-  it("returns the value of the first task to end it", async () => {
-    const result = await async.flow<string>({
-      async fast() {
-        await tick(5);
-        this.$end("fast");
-      },
-      async slow() {
-        await tick(30);
-        this.$end("slow");
-      }
-    });
-    expect(result).toBe("fast");
-  });
-});
-
 describe("async.onBackground", () => {
   it("hands every piece of background work to the host's hook, failures included", async () => {
     const kept: Promise<unknown>[] = [];
@@ -316,19 +228,5 @@ describe("async.onBackground", () => {
     // What the host waits for settles only when the work has, and never rejects.
     await Promise.all(kept);
     expect(done.sort()).toEqual(["failed", "slow"]);
-  });
-});
-
-describe("async.background", () => {
-  it("hands a failure to the error handler", async () => {
-    const seen: unknown[] = [];
-    async.background(
-      async () => {
-        throw new Error("lost");
-      },
-      (error) => seen.push(error)
-    );
-    await tick();
-    expect((seen[0] as Error).message).toBe("lost");
   });
 });

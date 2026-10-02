@@ -11,7 +11,6 @@ import {
   isAbandonedRead,
   oncePerRead,
   oncePerRequest,
-  readRequestSignal,
   requestMemoSize,
   runInRequestContext
 } from "./context.server";
@@ -41,52 +40,29 @@ describe("request context", () => {
   });
 });
 
-describe("currentRequest and readRequestSignal", () => {
+describe("currentRequest and isAbandonedRead", () => {
   const load = (controller: AbortController, method = "GET") =>
     new Request("http://erp.test/x", { method, signal: controller.signal });
 
-  it("hand over the request, and its signal only when it reads", () => {
-    const controller = new AbortController();
-    const get = load(controller);
-    const post = load(controller, "POST");
-    expect(
-      runInRequestContext(provider(), currentRequest, { request: get })
-    ).toBe(get);
-    expect(
-      runInRequestContext(provider(), readRequestSignal, { request: get })
-    ).toBe(get.signal);
-    expect(
-      runInRequestContext(provider(), readRequestSignal, { request: post })
-    ).toBeUndefined();
+  it("hands over the request being handled, and nothing outside one", () => {
+    const request = load(new AbortController());
+    expect(runInRequestContext(provider(), currentRequest, { request })).toBe(
+      request
+    );
     expect(currentRequest()).toBeUndefined();
-    expect(readRequestSignal()).toBeUndefined();
   });
 
-  it("never hand an earlier read's signal to a write in a reused context", () => {
-    const p = provider();
-    const read = load(new AbortController());
-    runInRequestContext(p, readRequestSignal, { request: read });
-    expect(
-      runInRequestContext(p, readRequestSignal, { isRead: false })
-    ).toBeUndefined();
-    expect(
-      runInRequestContext(p, readRequestSignal, {
-        isRead: false,
-        request: read
-      })
-    ).toBeUndefined();
-  });
-
-  it("report a read whose client has gone", () => {
+  it("is true only for a read whose client has gone", () => {
     const controller = new AbortController();
-    const request = load(controller);
-    expect(runInRequestContext(provider(), isAbandonedRead, { request })).toBe(
-      false
-    );
+    const read = load(controller);
+    const write = load(controller, "POST");
+    const abandoned = (request: Request) =>
+      runInRequestContext(provider(), isAbandonedRead, { request });
+
+    expect(abandoned(read)).toBe(false);
     controller.abort();
-    expect(runInRequestContext(provider(), isAbandonedRead, { request })).toBe(
-      true
-    );
+    expect(abandoned(read)).toBe(true);
+    expect(abandoned(write)).toBe(false);
     expect(isAbandonedRead()).toBe(false);
   });
 });

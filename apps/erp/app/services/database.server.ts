@@ -13,7 +13,6 @@ import { queryLog, traceConnectionWaits } from "@carbon/logger/tracing.server";
 import { PostgresDriver } from "kysely";
 
 const init = () => {
-  // The process's one pool, shared with the jobs; see getProcessPool.
   const pool = traceConnectionWaits(getProcessPool());
   // We use the PostgresDriver from Kysely here as this code only runs in Node environment
   return getPostgresClient(pool, PostgresDriver, queryLog);

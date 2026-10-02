@@ -483,8 +483,6 @@ export async function processStripeEvent({
     eventType === "invoice.payment_succeeded" ||
     eventType === "invoice.payment_failed"
   ) {
-    // Background work: the webhook answers Stripe without waiting, and on
-    // Vercel the instance stays up until it has been sent (`async.onBackground`).
     async.background(
       () => forwardToGtm(eventType, { invoice: event.data.object }),
       (error) => log.error("gtm-events forward failed", { error })
