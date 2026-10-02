@@ -2,8 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  type AnyPostgresClient,
+  type Database,
+  getCompanyTimeZone,
+  isKysely,
+  type Json
+} from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson, toJsonColumns } from "@carbon/database/json";
 import {
@@ -18,10 +24,7 @@ import {
   traverseJobMethodAsync,
   traverseQuoteMethod
 } from "@carbon/database/methods";
-import {
-  effectiveReplenishment,
-  type ReplenishmentSystem
-} from "@carbon/database/mrp-engine";
+import { effectiveReplenishment } from "@carbon/database/mrp-engine";
 import {
   getNextRevisionSequence,
   getNextSequence
@@ -42,7 +45,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import { datetime, scrapAllowance, textToTiptap } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { Transaction } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -506,60 +509,65 @@ export const getMethod = defineServerFn({
           assemblyInstructionId: string;
         }> = [];
 
-        const [makeMethod, jobMakeMethod, workCenters, supplierProcesses, job] =
-          await Promise.all([
-            // A chosen version overrides the default active-method lookup; it
-            // is re-read under itemId + companyId so a foreign or mismatched
-            // makeMethod id can never be exploded.
-            versionId
-              ? client
-                  .from("makeMethod")
-                  .select("*")
-                  .eq("id", versionId)
-                  .eq("itemId", itemId)
-                  .eq("companyId", companyId)
-                  .single()
-              : client
-                  .from("activeMakeMethods")
-                  .select("*")
-                  .eq("itemId", itemId)
-                  .eq("companyId", companyId)
-                  .single(),
-            client
-              .from("jobMakeMethod")
-              .select("*")
-              .eq("jobId", jobId)
-              .is("parentMaterialId", null)
-              .eq("companyId", companyId)
-              .single(),
-            client.from("workCenters").select("*").eq("companyId", companyId),
-            client
-              .from("supplierProcess")
-              .select("*")
-              .eq("companyId", companyId),
-            client
-              .from("job")
-              .select("locationId, quantity, startDate, dueDate")
-              .eq("id", jobId)
-              .eq("companyId", companyId)
-              .single()
-          ]);
-
-        if (makeMethod.error) {
+        // These lookups go over the direct connection, one after another on
+        // purpose: each is a few milliseconds, and running them at once would
+        // take five of the process's sixteen pooled connections per call.
+        //
+        // A chosen version overrides the default active-method lookup; it is
+        // re-read under itemId + companyId so a foreign or mismatched
+        // makeMethod id can never be exploded.
+        const makeMethod = versionId
+          ? await db
+              .selectFrom("makeMethod")
+              .select(["id", "version"])
+              .where("id", "=", versionId)
+              .where("itemId", "=", itemId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : await db
+              .selectFrom("activeMakeMethods")
+              .select(["id", "version"])
+              .where("itemId", "=", itemId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+        if (!makeMethod?.id) {
           throw new Error("Failed to get make method");
         }
+        const makeMethodId = makeMethod.id;
 
-        if (jobMakeMethod.error) {
+        const jobMakeMethods = await db
+          .selectFrom("jobMakeMethod")
+          .select(["id"])
+          .where("jobId", "=", jobId)
+          .where("parentMaterialId", "is", null)
+          .where("companyId", "=", companyId)
+          .execute();
+        // Exactly one root make method, as `.single()` required before.
+        const jobMakeMethod = jobMakeMethods[0];
+        if (!jobMakeMethod || jobMakeMethods.length > 1) {
           throw new Error("Failed to get job make method");
         }
 
-        if (workCenters.error) {
-          throw new Error("Failed to get related work centers");
-        }
-
-        if (job.error) {
+        const workCenters = await db
+          .selectFrom("workCenters")
+          .selectAll()
+          .where("companyId", "=", companyId)
+          .execute();
+        const supplierProcesses = await db
+          .selectFrom("supplierProcess")
+          .selectAll()
+          .where("companyId", "=", companyId)
+          .execute();
+        const jobRow = await db
+          .selectFrom("job")
+          .select(["locationId", "quantity", "startDate", "dueDate"])
+          .where("id", "=", jobId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!jobRow) {
           throw new Error("Failed to get job");
         }
+        const job = jobRow;
 
         // Way 1 — supersession swap at job creation. Build "old item -> effective
         // successor (x conversion factor)" for this company, gated by the job's
@@ -567,9 +575,9 @@ export const getMethod = defineServerFn({
         // match what planning already redirected. Applied to Buy/Pick lines in the
         // mapper below.
         const supersessionContext = await loadSupersessionRedirect(
-          client,
+          db,
           companyId,
-          job.data
+          job
         );
         const supersessionRedirect = supersessionContext.redirect;
 
@@ -581,7 +589,7 @@ export const getMethod = defineServerFn({
         );
 
         const [methodTrees, configurationRules] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id!),
+          getMethodTree(db, makeMethodId),
           isConfigured
             ? client
                 .from("configurationRule")
@@ -590,10 +598,6 @@ export const getMethod = defineServerFn({
                 .eq("companyId", companyId)
             : Promise.resolve({ data: [] })
         ]);
-
-        if (methodTrees.error) {
-          throw new Error("Failed to get method tree");
-        }
 
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new NotFoundError("Method tree not found");
@@ -616,7 +620,7 @@ export const getMethod = defineServerFn({
         // when the stored value is NULL, so nothing downstream can repair it).
         const scrapPercentageByItemId = new Map<string, number>();
         const defaultStorageUnitByItemId = new Map<string, string>();
-        const jobLocationId = job.data?.locationId;
+        const jobLocationId = job.locationId;
 
         // makeMethodId is globally unique (makeMethod's PK is "id" alone), so
         // the companyId filter cannot drop a legitimate row — it only closes a
@@ -832,12 +836,9 @@ export const getMethod = defineServerFn({
 
         await ensurePrefetched(db, methodTree);
 
-        const getLaborAndOverheadRates = getRatesFromWorkCenters(
-          workCenters?.data
-        );
-        const getOutsideOperationRates = getRatesFromSupplierProcesses(
-          supplierProcesses?.data
-        );
+        const getLaborAndOverheadRates = getRatesFromWorkCenters(workCenters);
+        const getOutsideOperationRates =
+          getRatesFromSupplierProcesses(supplierProcesses);
 
         // Get configuration code by field
         const configurationCodeByField = configurationRules.data?.reduce<
@@ -901,8 +902,8 @@ export const getMethod = defineServerFn({
               : Promise.resolve(),
             trx
               .updateTable("jobMakeMethod")
-              .set({ version: makeMethod.data.version ?? 1 })
-              .where("id", "=", jobMakeMethod.data.id!)
+              .set({ version: makeMethod.version ?? 1 })
+              .where("id", "=", jobMakeMethod.id)
               .where("companyId", "=", companyId)
               .execute()
           ]);
@@ -1193,7 +1194,7 @@ export const getMethod = defineServerFn({
                     let assemblyToolIds: Set<string> = new Set();
 
                     if (procedureId) {
-                      await insertProcedureDataForJobOperation(trx, client, {
+                      await insertProcedureDataForJobOperation(trx, {
                         operationId,
                         procedureId,
                         companyId,
@@ -1370,7 +1371,7 @@ export const getMethod = defineServerFn({
             } // end if (parts.billOfProcess)
 
             if (parts.billOfMaterial) {
-              const locationId = job.data?.locationId;
+              const locationId = job.locationId;
 
               const mapMethodMaterialToJobMaterial = async (
                 child: MethodTreeItem
@@ -1755,7 +1756,7 @@ export const getMethod = defineServerFn({
                     child,
                     material,
                     materialId,
-                    locationId: job.data?.locationId ?? "",
+                    locationId: job.locationId ?? "",
                     supersessionRedirect,
                     newMakeMethodId,
                     traverseMethod
@@ -1822,11 +1823,7 @@ export const getMethod = defineServerFn({
           }
 
           // Start traversal with job quantity as the root's target/parent estimated quantity
-          await traverseMethod(
-            methodTree,
-            jobMakeMethod.data.id,
-            job.data?.quantity ?? 1
-          );
+          await traverseMethod(methodTree, jobMakeMethod.id, job.quantity ?? 1);
 
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
@@ -1841,8 +1838,8 @@ export const getMethod = defineServerFn({
             companyId,
             jobId: jobId,
             jobMaterialIds: insertedJobMaterialIds,
-            locationId: job.data?.locationId,
-            asOfDate: jobBuildDate(job.data)
+            locationId: job.locationId,
+            asOfDate: jobBuildDate(job)
           });
         });
 
@@ -1966,7 +1963,7 @@ export const getMethod = defineServerFn({
         // connection. The map depends only on the company and the job's build
         // date, both fixed for the request, so per-node reload bought nothing.
         const supersessionContext = await loadSupersessionRedirect(
-          client,
+          db,
           companyId,
           job.data
         );
@@ -2138,7 +2135,7 @@ export const getMethod = defineServerFn({
                     let assemblyToolIds: Set<string> = new Set();
 
                     if (procedureId) {
-                      await insertProcedureDataForJobOperation(trx, client, {
+                      await insertProcedureDataForJobOperation(trx, {
                         operationId,
                         procedureId,
                         companyId,
@@ -4637,7 +4634,7 @@ export const getMethod = defineServerFn({
         // this re-resolves as-of the TARGET job's build date, so a supersession
         // that became effective since then still redirects the copy.
         const { redirect: supersessionRedirect } =
-          await loadSupersessionRedirect(client, companyId, targetJob.data);
+          await loadSupersessionRedirect(db, companyId, targetJob.data);
 
         let selfConsumedItem: string | null = null;
         traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
@@ -5029,7 +5026,7 @@ export const getMethod = defineServerFn({
                   let assemblyToolIds = new Set<string>();
 
                   if (procedureId) {
-                    await insertProcedureDataForJobOperation(trx, client, {
+                    await insertProcedureDataForJobOperation(trx, {
                       operationId,
                       procedureId,
                       companyId,
@@ -6379,7 +6376,7 @@ export const getMethod = defineServerFn({
         // holding the pool's single connection. The map depends only on the
         // company and the job's build date, both fixed for the request.
         const { redirect: supersessionRedirect } =
-          await loadSupersessionRedirect(client, companyId, job.data);
+          await loadSupersessionRedirect(db, companyId, job.data);
 
         const quoteMaterialIdToJobMaterialId: Record<string, string> = {};
         const quoteMakeMethodIdToJobMakeMethodId: Record<string, string> = {};
@@ -6767,7 +6764,7 @@ export const getMethod = defineServerFn({
                   }
 
                   if (procedureId) {
-                    await insertProcedureDataForJobOperation(trx, client, {
+                    await insertProcedureDataForJobOperation(trx, {
                       operationId,
                       procedureId,
                       companyId,
@@ -7781,10 +7778,23 @@ type MethodTreeItem = {
   children: MethodTreeItem[];
 };
 
+/**
+ * A make method's tree. Given a Kysely handle it reads over the direct
+ * connection and throws on failure; given a Supabase client it goes through
+ * PostgREST and returns the error. A PostgREST call costs about ten times a
+ * statement, so server functions pass `db` (or `trx` inside a transaction).
+ */
 export async function getMethodTree(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   makeMethodId: string
 ): Promise<{ data: MethodTreeItem[] | null; error: PostgrestError | null }> {
+  if (isKysely(client)) {
+    const { rows } = await sql<Method>`
+      SELECT * FROM get_method_tree(${makeMethodId})
+    `.execute(client);
+    return { data: getMethodTreeArrayToTree(rows), error: null };
+  }
+
   const items = await getMethodTreeArray(client, makeMethodId);
   if (items.error) return items;
 
@@ -7820,7 +7830,7 @@ function jobBuildDate(
 // (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
 // Every *-ToJob path needs the same map, so this is the single load point.
 async function loadSupersessionRedirect(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   job:
     | {
@@ -7831,81 +7841,54 @@ async function loadSupersessionRedirect(
     | null
     | undefined
 ): Promise<SupersessionContext> {
-  // Paged, exactly like MRP's read of the same table (mrp/index.ts): a bare
-  // select stops at PostgREST's 1000-row `max_rows` cap and silently drops the
-  // rest, so a tenant past that many supersessions would redirect an arbitrary
-  // subset — while MRP, which pages, redirects all of them. The two disagreeing
-  // about which part to consume is precisely what this shared helper exists to
-  // prevent, and the local stack does not enforce the cap, so it ships unseen.
-  // `.order("itemId")` is a precondition of that paging, not cosmetic: without a
-  // stable sort PostgREST may order rows differently per page, dropping and
-  // duplicating some.
-  const supersessionRows = await fetchAll<SupersessionRow>(() =>
-    client
-      .from("itemSupersession")
-      .select(
-        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
-      )
-      .eq("companyId", companyId)
-      .order("itemId")
-  );
-  // Throw, like every other read in this function. An empty map is
-  // indistinguishable from "this company supersedes nothing", so swallowing the
-  // error builds a real work order out of retired parts and reports success —
-  // and nothing downstream can tell that job apart from a correct one. Failing
-  // is recoverable: the route returns `{ error }`, the caller toasts it
-  // (JobMakeMethodTools), and the user retries with nothing written.
-  if (supersessionRows.error) {
-    throw new Error(
-      `Failed to load supersessions: ${supersessionRows.error.message}`
-    );
-  }
-  let rows = supersessionRows.data ?? [];
+  // Read over the direct connection: no row cap to page around (PostgREST stops
+  // at 1000 rows, which is why this used to page), and a fraction of the
+  // latency. MRP reads the same table in full, so both redirect every rule.
+  //
+  // A failure throws, like every other read in this function. An empty map is
+  // indistinguishable from "this company supersedes nothing", so swallowing an
+  // error would build a real work order out of retired parts and report
+  // success.
+  let rows: SupersessionRow[] = await db
+    .selectFrom("itemSupersession")
+    .select([
+      "itemId",
+      "supersessionMode",
+      "successorItemId",
+      "successorEffectivityDate",
+      "conversionFactor"
+    ])
+    .where("companyId", "=", companyId)
+    .orderBy("itemId")
+    .execute();
 
   const consumeFirstItemIds = rows
     .filter((r) => r.supersessionMode === "Consume First")
     .map((r) => r.itemId);
   const consumeFirstOnHand = new Map<string, number>();
   if (consumeFirstItemIds.length > 0 && job?.locationId) {
-    const [stock, items] = await Promise.all([
-      fetchAll<{ itemId: string; quantityOnHand: number | string | null }>(() =>
-        client
-          .from("itemStockQuantities")
-          .select("itemId, quantityOnHand")
-          .eq("companyId", companyId)
-          .eq("locationId", job.locationId!)
-          .in("itemId", consumeFirstItemIds)
-          .order("itemId")
-      ),
-      fetchAll<{ id: string; replenishmentSystem: ReplenishmentSystem | null }>(
-        () =>
-          client
-            .from("item")
-            .select("id, replenishmentSystem")
-            .eq("companyId", companyId)
-            .in("id", consumeFirstItemIds)
-            .order("id")
-      )
-    ]);
-    if (stock.error) {
-      throw new Error(
-        `Failed to load predecessor stock: ${stock.error.message}`
-      );
-    }
-    if (items.error) {
-      throw new Error(
-        `Failed to load predecessor replenishment: ${items.error.message}`
-      );
-    }
+    const stock = await db
+      .selectFrom("itemStockQuantities")
+      .select(["itemId", "quantityOnHand"])
+      .where("companyId", "=", companyId)
+      .where("locationId", "=", job.locationId)
+      .where("itemId", "in", consumeFirstItemIds)
+      .execute();
+    const items = await db
+      .selectFrom("item")
+      .select(["id", "replenishmentSystem"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", consumeFirstItemIds)
+      .execute();
     const onHandByItem = new Map<string, number>();
-    for (const r of stock.data ?? []) {
+    for (const r of stock) {
       onHandByItem.set(
         r.itemId,
         (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityOnHand ?? 0)
       );
     }
     const madeItemIds = new Set(
-      (items.data ?? [])
+      items
         .filter(
           (i) =>
             effectiveReplenishment(i.replenishmentSystem ?? undefined) ===
@@ -7934,23 +7917,13 @@ async function loadSupersessionRedirect(
   const boughtSuccessors = new Set<string>();
   const successorIds = [...new Set([...redirect.values()].map((r) => r.to))];
   if (successorIds.length > 0) {
-    const successors = await fetchAll<{
-      id: string;
-      replenishmentSystem: ReplenishmentSystem | null;
-    }>(() =>
-      client
-        .from("item")
-        .select("id, replenishmentSystem")
-        .eq("companyId", companyId)
-        .in("id", successorIds)
-        .order("id")
-    );
-    if (successors.error) {
-      throw new Error(
-        `Failed to load successor replenishment: ${successors.error.message}`
-      );
-    }
-    for (const i of successors.data ?? []) {
+    const successors = await db
+      .selectFrom("item")
+      .select(["id", "replenishmentSystem"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", successorIds)
+      .execute();
+    for (const i of successors) {
       if (
         effectiveReplenishment(i.replenishmentSystem ?? undefined) !== "Make"
       ) {
@@ -8145,26 +8118,20 @@ async function settleConsumeFirstLines(opts: {
   } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
-  const rules = await fetchAll<{
-    itemId: string;
-    successorItemId: string | null;
-    successorEffectivityDate: string | null;
-    conversionFactor: number | string | null;
-  }>(() =>
-    client
-      .from("itemSupersession")
-      .select(
-        "itemId, successorItemId, successorEffectivityDate, conversionFactor"
-      )
-      .eq("companyId", companyId)
-      .eq("supersessionMode", "Consume First")
-      .not("successorItemId", "is", null)
-      .order("itemId")
-  );
-  if (rules.error) {
-    throw new Error(`Failed to load supersessions: ${rules.error.message}`);
-  }
-  const consumeFirstRules = buildConsumeFirstRules(rules.data ?? [], asOfDate);
+  const rules = await trx
+    .selectFrom("itemSupersession")
+    .select([
+      "itemId",
+      "successorItemId",
+      "successorEffectivityDate",
+      "conversionFactor"
+    ])
+    .where("companyId", "=", companyId)
+    .where("supersessionMode", "=", "Consume First")
+    .where("successorItemId", "is not", null)
+    .orderBy("itemId")
+    .execute();
+  const consumeFirstRules = buildConsumeFirstRules(rules, asOfDate);
   const { successorByPredecessor, predecessorsBySuccessor } = consumeFirstRules;
   if (successorByPredecessor.size === 0) return;
 
@@ -8362,7 +8329,6 @@ function getFieldKey(field: string, id: string) {
 
 async function insertProcedureDataForJobOperation(
   trx: Transaction<KyselyDatabase>,
-  client: SupabaseClient<Database>,
   args: {
     operationId: string;
     procedureId: string;
@@ -8371,17 +8337,28 @@ async function insertProcedureDataForJobOperation(
   }
 ) {
   const { operationId, procedureId, companyId, userId } = args;
-  const procedure = await client
-    .from("procedure")
-    .select("*, procedureStep(*), procedureParameter(*)")
-    .eq("id", procedureId)
-    .eq("companyId", companyId)
-    .single();
+  // On `trx`: this runs inside the caller's transaction, once per operation
+  // that has a procedure, so a PostgREST call here was a slow round trip per
+  // operation while the transaction held its connection.
+  const procedure = await trx
+    .selectFrom("procedure")
+    .select(["content"])
+    .where("id", "=", procedureId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
 
-  if (procedure.error) return;
+  if (!procedure) return;
 
-  const attributes = procedure.data?.procedureStep ?? [];
-  const parameters = procedure.data?.procedureParameter ?? [];
+  const attributes = await trx
+    .selectFrom("procedureStep")
+    .selectAll()
+    .where("procedureId", "=", procedureId)
+    .execute();
+  const parameters = await trx
+    .selectFrom("procedureParameter")
+    .selectAll()
+    .where("procedureId", "=", procedureId)
+    .execute();
 
   if (attributes.length > 0) {
     await trx
@@ -8431,7 +8408,7 @@ async function insertProcedureDataForJobOperation(
   await trx
     .updateTable("jobOperation")
     .set({
-      workInstruction: toJson(procedure?.data?.content ?? {})
+      workInstruction: toJson(procedure.content ?? {})
     })
     .where("id", "=", operationId)
     .where("companyId", "=", companyId)
