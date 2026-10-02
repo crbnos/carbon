@@ -487,8 +487,7 @@ fn run_optimize(
 fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<Src, ActionErr> {
     match format {
         Format::Step => {
-            let text = String::from_utf8_lossy(head).into_owned();
-            let glb = converter::convert::convert_step(path, &text, opts.lin, opts.ang)
+            let glb = converter::convert::convert_step_head(path, head, opts.lin, opts.ang)
                 .map_err(|e| ActionErr::new("tessellation_failed", e.message))?
                 .glb;
             Ok(Src::Owned(glb))

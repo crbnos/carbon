@@ -92,9 +92,15 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                     if converter::convert::is_xbf(&tmp_str) {
                         converter::convert::convert_xbf(&tmp_str, lin, ang)
                     } else {
-                        // Unit detection scans at most the first 32MB of STEP text.
-                        let text = read_head_lossy(&tmp_str, 32 * 1024 * 1024)?;
-                        converter::convert::convert_step(&tmp_str, &text, lin, ang)
+                        // Unit detection scans the head of the mapped file — no
+                        // decoded copy of it.
+                        let head = http::map_file(std::path::Path::new(&tmp_str)).map_err(|e| {
+                            converter::convert::ConvertError::new(
+                                "READ_FAILED",
+                                format!("read temp: {e}"),
+                            )
+                        })?;
+                        converter::convert::convert_step_head(&tmp_str, &head, lin, ang)
                     }
                     .map(|conv| {
                         let glb = if optimize {
@@ -218,19 +224,6 @@ fn optimize_glb(glb: Vec<u8>) -> Vec<u8> {
             glb
         }
     }
-}
-
-/// Read at most `cap` bytes from the head of a file, lossy-decoded.
-fn read_head_lossy(path: &str, cap: usize) -> Result<String, converter::convert::ConvertError> {
-    use std::io::Read;
-    let file = std::fs::File::open(path).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    let mut buf = Vec::new();
-    file.take(cap as u64).read_to_end(&mut buf).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
 fn convert_code(e: &converter::convert::ConvertError) -> &'static str {
