@@ -161,6 +161,13 @@ The app mirrors this with two signed tokens instead of cookies:
 4. Commands run as the operator (`createdBy`, labor attribution). Reads and
    subscriptions keep running as the terminal user, as on web today.
 
+Three pieces of `console-pin.server.ts` the tokens need are module-private
+today and must be exported: the `StoredConsolePinIn` type, `consolePinMaxAgeMs`
+and the DB re-validation (`loadConsolePinIn`). Note also that the cookie path's
+re-validation checks only the raw `companySettings.consoleEnabled` flag — the
+`PERMISSIONS` entitlement half of `isConsoleModeEnabledForCompany` is applied
+in MES `userMiddleware`, so the API must run it itself.
+
 Tokens live in memory only (the operator token) or SecureStore (the terminal
 token), never in the query cache.
 
@@ -204,13 +211,19 @@ web login form already exposes today.
 2. `POST /api/v1/auth/verify { email, code }` — the server checks the code with
    Supabase and returns the session tokens. Precedent: the server already
    verifies magic-link tokens itself (`auth.server.ts` `verifyOtp`).
-3. `POST /api/v1/auth/mfa { code }` — when the user has a TOTP factor, the
-   server runs the challenge. Precedent: web MES verifies TOTP server-side
-   (`session.server.ts` `verifyTotpChallenge`).
+3. `POST /api/v1/auth/mfa { accessToken, refreshToken, code }` — when the user
+   has a TOTP factor, the server runs the challenge. Precedent: web MES
+   verifies TOTP server-side (`verifyTotpChallenge`, in
+   `packages/auth/src/services/mfa.server.ts`, not `session.server.ts`). It
+   needs the refresh token as well as the access token, because it sets the
+   session before issuing the challenge — hence both in the body.
 4. `GET /api/v1/me`, authenticated — only now does the app receive the Supabase
    URL and anon key (for realtime, photo uploads, direct lookups and token
    refresh), `mode`, `controlledEnvironment`, the analytics key, and the
-   instance name, alongside companies and locations. `mode` and
+   instance name, alongside companies and locations. The anon key's export name
+   is `SUPABASE_ANON_KEY`, not `SUPABASE_ANON_PUBLIC`; and the URL must be the
+   public `SUPABASE_URL`, never `SUPABASE_INTERNAL_URL` — the phone cannot
+   reach a container-internal host. `mode` and
    `controlledEnvironment` come from the same ENV the web apps read
    (`CONTROLLED_ENVIRONMENT`; a new `CARBON_DEPLOYMENT_MODE` for `connected` /
    `airgapped`, default `connected`).
@@ -284,8 +297,15 @@ web MES does (`SessionLockOverlay`, `_public+/unlock.tsx`).
    lockout (`AccountLockout`), the user-exists check, and the SSO-required
    refusal (`isSsoRequiredForEmail`, returned as `sso_required`). It then sends
    the email the web sends (`signInWithOtp` server-side, as `sendMagicLink`
-   does). Web bot protection (BotID/Turnstile) is browser-only, so the app
-   relies on the rate limit and lockout, which are the NIST controls.
+   does — with the service-role client). Web bot protection (BotID/Turnstile) is
+   browser-only, so the app relies on the rate limit and lockout, which are the
+   NIST controls.
+   Two details of those gates as they stand: the MES login action calls
+   `lockout.recordFailure(email)` on **every** non-bypass request, not only on
+   failures; and the login, mfa and unlock IP limiters all share ONE
+   `RATE_LIMIT`-per-hour bucket keyed on the bare IP. A plant's tablets sit
+   behind one NAT address, so the mobile auth endpoints get their own
+   rate-limit prefix rather than joining that bucket.
    Requesting the code straight from Supabase Auth would skip all four gates.
    The response is `{ ok: true }` for every email, so the endpoint reveals
    nothing about which accounts exist; the `sso_required` refusal is the one
@@ -306,9 +326,14 @@ web MES does (`SessionLockOverlay`, `_public+/unlock.tsx`).
    code }`; the server calls `verifyOtp({ email, token, type: "email" })` with
    the anon client and returns `{ accessToken, refreshToken, expiresAt,
    mfaRequired }`. The same lockout counts a wrong code as a failed attempt.
+   That `verifyOtp` shape is new: there is no `{ email, token, type: "email" }`
+   call anywhere in the codebase today — every existing call passes
+   `{ token_hash, type: "magiclink" }` — so this is a new call, not a moved one.
 4. **2FA.** When `mfaRequired` is true (`userHasVerifiedTotpFactor(userId)`),
-   the app posts the TOTP code to `POST /api/v1/auth/mfa { code }` with the
-   `aal1` token; the server runs the challenge and returns `aal2` tokens.
+   the app posts `POST /api/v1/auth/mfa { accessToken, refreshToken, code }`
+   with the `aal1` pair; the server runs the challenge (`verifyTotpChallenge`,
+   `packages/auth/src/services/mfa.server.ts`, which takes both tokens because
+   it sets the session first) and returns `aal2` tokens.
    `requireApiUser` rejects an `aal1` token from such a user with
    `mfa_required`, mirroring the web's `mfaVerified` bounce. Enrolment stays in
    ERP ("MES defers first login to ERP").
@@ -443,11 +468,16 @@ signed rather than stored, and the realtime publication is unchanged.
 
 Non-schema configuration changes:
 
-- `packages/database/supabase/templates/magic-link.html` adds `{{ .Token }}`.
-  The same change is applied to each hosted Supabase project's email template
-  and the self-hosted Docker setups that ship the template
+- The magic-link template adds `{{ .Token }}`. There are **two copies in the
+  repo and both must change and stay byte-identical.** The file GoTrue actually
+  loads in both docker setups is `apps/erp/public/templates/magic-link.html`,
+  served at `${ERP_URL}/templates/magic-link.html` per
+  `GOTRUE_MAILER_TEMPLATES_MAGIC_LINK`
   (`packages/dev/docker/docker-compose.dev.yml`,
-  `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml`).
+  `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml`);
+  `packages/database/supabase/templates/magic-link.html` is the `config.toml`
+  copy. The same change is applied to each hosted Supabase project's email
+  template.
 - Supabase Auth's redirect allow-list is unchanged: code sign-in has no
   redirect.
 
@@ -459,7 +489,7 @@ Imports only `zod`, `@carbon/database` types and `@supabase/supabase-js` types.
 No React, DOM or Node APIs.
 
 - `src/models.ts` — JSON zod schemas for every command body, moved from
-  `apps/mes/app/services/models.ts` (467 lines, `zfd`-based). The web file keeps
+  `apps/mes/app/services/models.ts` (478 lines, `zfd`-based). The web file keeps
   its exports, wrapping these schemas with `zfd` where it needs form parsing.
 - `src/queries.ts` — lookup reads used by the app: `(client, args) => { data,
   error }`, each scoped by `companyId`.
@@ -478,16 +508,34 @@ return JSON. Behaviour that must survive the move, per
 `post-production-event`; auto-print after `complete` never blocks the
 operation; scrap stays one `issue` `jobOperationScrap` invoke.
 
+**Every extracted function takes its context as arguments.** `userContext` —
+location id, effective user id, console flags — is set only by `userMiddleware`,
+which is registered in `x+/_layout.tsx` and `display+/_layout.tsx`; under
+`api+/` it is `null`. So each command and screen function takes `companyId`, the
+effective `userId`, `sessionUserId` and `locationId` as explicit arguments
+rather than reading context.
+
+MES service modules are imported as `~/services/<name>.service` (e.g.
+`~/services/operations.service`), not `~/services/<name>`; the two new `.server`
+modules follow the same convention, and `models.ts` keeps its bare
+`~/services/models` path.
+
 ### `@carbon/auth` (new server functions)
 
 - `requireApiUser(request, permissions?)` → `{ companyId, userId, sessionUserId,
   consoleMode, claims }`, or throws a JSON error `Response` (never a redirect):
   1. Read `Authorization: Bearer <token>`. Reject `crbn_…` API keys (those
      belong to the ERP API).
-  2. Verify the token with Supabase Auth (`auth.getUser(token)`).
-  3. Read `X-Carbon-Company`; load claims with `getUserClaims(userId,
-     companyId)` (Redis-cached, as on web). Require the employee role. Apply
-     `permissions` exactly like `requirePermissions`.
+  2. Verify the token with Supabase Auth. It cannot wrap `requirePermissions`,
+     which throws **redirects** through `requireAuthSession`; it uses
+     `getAuthAccountByAccessToken` / `verifyAuthSession` plus the claims read
+     below.
+  3. Read `X-Carbon-Company`; load claims for that company. The existing Redis
+     cache key is `permissions:${userId}`, which is **not** company-scoped even
+     though `get_claims` returns a per-company role (the web deletes the key on
+     company switch), so a per-request `X-Carbon-Company` needs a
+     company-scoped read — `permissions:${userId}:${companyId}`. Require the
+     employee role. Apply `permissions` exactly as `requirePermissions` does.
   4. If the user has a verified TOTP factor and the token is not `aal2`: `401
      mfa_required`.
   5. If `X-Carbon-Operator` is present: verify the operator token and terminal
@@ -499,6 +547,11 @@ operation; scrap stays one `issue` `jobOperationScrap` invoke.
   `StoredConsolePinIn` shape and re-validation.
 - The PIN lockout and terminal rate limit move from `x+/console.pin-in.tsx`
   into a shared helper that the web route and the API both call.
+
+**`@carbon/auth` cannot import `@carbon/ee`** — `ee` depends on `auth`, so that
+edge would be a cycle. `isConsoleModeEnabledForCompany`, `verifyEmployeePin`
+(which also needs a Kysely client) and `isSsoRequiredForEmail` are therefore
+called from MES app code, or injected into `requireApiUser` as dependencies.
 
 Commands use the service-role client after `requireApiUser`, exactly as the web
 routes do after `requirePermissions`.
@@ -517,7 +570,7 @@ app, not browsers. Errors are `{ error: { code, message, fields? } }`.
 | `GET /x/connect-mobile` (web MES) and ERP Settings → Connect mobile app | Signed-in employee | Renders the `carbon-mes://link?server=…` QR code |
 | `POST /auth/code` | Public, rate-limited | The MES login gates, then sends the code email; always `{ ok: true }` (plus `method: "password"` for review accounts); `carbon-api` header |
 | `POST /auth/verify` | Public, rate-limited, lockout | Checks the code server-side; returns tokens and `mfaRequired` |
-| `POST /auth/mfa` | `aal1` user | Runs the TOTP challenge server-side; returns `aal2` tokens |
+| `POST /auth/mfa` | `aal1` user | Body `{ accessToken, refreshToken, code }`; runs the TOTP challenge server-side (`verifyTotpChallenge`, `packages/auth/src/services/mfa.server.ts`, needs both tokens); returns `aal2` tokens |
 | `POST /auth/password` | Public, rate-limited | Store-review accounts only (`APP_REVIEW_EMAILS`); returns tokens |
 | `GET /me` | User | Instance details (Supabase URL and anon key, mode, controlled flag, analytics key, name), companies, locations, default location, work centers, console availability, permission flags |
 | `POST /console/terminal` | User with `update: "settings"` | Terminal token (console mode must be enabled) |
@@ -539,9 +592,9 @@ app, not browsers. Errors are `{ error: { code, message, fields? } }`.
 
 | Operator action | Endpoint | Web route today |
 |---|---|---|
-| Start setup, labor or machine time | `POST /operations/:id/events` | `x+/start.$operationId.tsx` |
-| Pause or stop an event | `POST /events/:id/end` | `x+/event.tsx` |
-| End the operation | `POST /operations/:id/end` | `x+/end.$operationId.tsx` |
+| Start setup, labor or machine time | `POST /operations/:id/events` | `x+/event.tsx` (the in-app Start/Stop button), or `x+/start.$operationId.tsx` when the body carries `viaScan: true` (the QR-scan flow) |
+| Pause or stop an event | `POST /events/:id/end` | `x+/event.tsx` (End branch) |
+| End the operation | `POST /operations/:id/end` | `x+/end.$operationId.tsx` (the kanban-scan completion) |
 | Report good parts | `POST /operations/:id/quantities` | `x+/complete.tsx` |
 | Report scrap | `POST /operations/:id/scrap` | `x+/scrap.tsx` |
 | Report rework | `POST /operations/:id/rework` | `x+/rework.tsx` |
@@ -557,8 +610,23 @@ app, not browsers. Errors are `{ error: { code, message, fields? } }`.
 | Pick a quantity | `POST /picking/:listId/lines/:lineId/quantity` | `x+/picking.$pickingListId.line.quantity.tsx` |
 | Pick a tracked entity | `POST /picking/:listId/lines/:lineId/tracked` | `x+/picking.$pickingListId.tracked.$lineId.tsx` |
 | Change picking-list status | `POST /picking/:listId/status` | `x+/picking.$pickingListId.status.tsx` |
-| Clock in / clock out | `POST /timecard/clock-in`, `POST /timecard/clock-out` | `x+/timecard.tsx` |
+| Clock in / clock out | `POST /timecard/clock-in`, `POST /timecard/clock-out` | `api+/timecard.ts` |
 | End shift | `POST /timecard/end-shift` | `x+/end-shift.tsx` |
+
+Two notes on that mapping. **Starting and ending are three routes, not two.**
+`x+/start.$operationId.tsx` and `x+/end.$operationId.tsx` are GET loaders that
+write — the QR-scan start and the kanban-scan completion, behind
+`rejectCrossSiteNavigation` — and they are not what the in-app buttons hit. The
+Start/Stop button posts to `x+/event.tsx`, whose Start branch has **no floor
+gate, no blocked-work-center check and no `operationStart` rules check**, while
+`start.$operationId.tsx` has all three. The API exposes both, and the floor gate
+stays on the scan path: `POST /operations/:id/events` runs the button command,
+or the scan command when the body carries `viaScan: true`.
+**Clock in/out already has a server entry point the UI uses**:
+`apps/mes/app/routes/api+/timecard.ts`, which adds a `note` on clock-out and is
+what the buttons post to — the commands are extracted from there, not from
+`x+/timecard.tsx`. That route keeps its loader plus `updateEntry` and
+`deleteEntry`, which stay web-only in v1.
 
 | Status | Meaning | App behaviour |
 |---|---|---|
@@ -579,9 +647,13 @@ app, not browsers. Errors are `{ error: { code, message, fields? } }`.
 
 - **React pin.** Replace the workspace-wide `react`, `react-dom`,
   `@types/react` and `@types/react-dom` overrides in `pnpm-workspace.yaml` with
-  scoped ones. Only two installed packages hard-depend on React
-  (`@react-email/preview-server` → react-dom 19.0.0, `linguito` → React
-  ^18.3.1); the first gets a scoped override to keep today's behaviour. Add a
+  scoped ones. `@react-email/preview-server@4.2.8` hard-depends on all four —
+  `react` 19.0.0, `react-dom` 19.0.0, `@types/react` 19.0.10 **and**
+  `@types/react-dom` 19.0.4 — and `linguito` depends on `react` ^18.3.1. Seven
+  more packages depend on `"@types/react": "*"` (`@types/react-csv`,
+  `@types/react-reconciler`, `@types/react-window`, `@visx/group`,
+  `@visx/responsive`, `@visx/shape`, `@visx/text`). All of them need
+  parent-scoped overrides to keep today's behaviour. Add a
   named catalog (`catalogs.mobile`) for React 19.2, React Native and Expo.
   Prove web is unchanged: `pnpm why react` for `erp` and `mes` shows only
   18.3.1.
@@ -876,3 +948,36 @@ Raised in PR review (#1766, Brad, 2026-09-29):
   then the authenticated `/me` delivers the Supabase URL and anon key, mode,
   controlled flag, analytics key and name. Added the no-enumeration acceptance
   criterion.
+- 2026-10-02: Planning pass (`.ai/plans/2026-10-02-mes-mobile-app.md`).
+  Corrected facts about the existing code, no design changes. `verifyTotpChallenge`
+  lives in `packages/auth/src/services/mfa.server.ts`, not `session.server.ts`,
+  and needs both tokens, so `POST /auth/mfa` takes
+  `{ accessToken, refreshToken, code }`. Start and end map to three routes, not
+  two: the in-app button posts to `x+/event.tsx` (whose Start branch has no
+  floor gate, no blocked-work-center check and no `operationStart` rules
+  check), `x+/start.$operationId.tsx` is the `viaScan` path that has all three,
+  and `x+/end.$operationId.tsx` is the kanban-scan completion. Clock in/out is
+  extracted from `api+/timecard.ts`, not `x+/timecard.tsx`.
+  `StoredConsolePinIn`, `consolePinMaxAgeMs` and `loadConsolePinIn` are
+  module-private and must be exported, and the cookie path re-validates only
+  the raw `consoleEnabled` flag — the `PERMISSIONS` entitlement check is in MES
+  `userMiddleware`. `@carbon/auth` cannot import `@carbon/ee` (a cycle), so
+  `isConsoleModeEnabledForCompany`, `verifyEmployeePin` and
+  `isSsoRequiredForEmail` are called from app code or injected. No
+  `verifyOtp({ email, token, type: "email" })` call exists yet (existing ones
+  use `token_hash` + `magiclink`) and `sendMagicLink` uses the service-role
+  client. The claims cache key `permissions:${userId}` is not company-scoped,
+  so `requireApiUser` needs `permissions:${userId}:${companyId}`, and it cannot
+  wrap `requirePermissions`, which throws redirects. The magic-link template
+  GoTrue loads is `apps/erp/public/templates/magic-link.html`; both copies
+  change. The anon key export is `SUPABASE_ANON_KEY`, and `/me` returns the
+  public `SUPABASE_URL`, never `SUPABASE_INTERNAL_URL`.
+  `@react-email/preview-server@4.2.8` pins all four React packages and seven
+  more packages take `@types/react: *`, so the scoped overrides cover all of
+  them. `models.ts` is 478 lines, and MES service modules are
+  `~/services/<name>.service`. The MES login action records a lockout attempt
+  on every non-bypass request and the login, mfa and unlock IP limiters share
+  one `RATE_LIMIT`/hour bucket per IP, so the mobile auth endpoints get their
+  own prefix. `userContext` is set only by `userMiddleware` under `x+/` and
+  `display+/`, so every extracted function takes `companyId`, the effective
+  `userId`, `sessionUserId` and `locationId` as arguments.
