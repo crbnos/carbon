@@ -421,7 +421,8 @@ writer is the 30s TTL. Then:
   perms must be present and include the active company. `{}` is NOT full access here —
   an empty scope set fails the check. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
-  except `STRIPE_BYPASS_COMPANY_IDS`.
+  except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
+  (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
 - Returns a `getCarbonAPIKeyClient(apiKey)` client (RLS resolves company via header).
 
 Key hashing: `hashApiKey` = `createHash("sha256")` hex (same in Node ERP and Deno edge

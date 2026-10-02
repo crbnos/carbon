@@ -3,19 +3,13 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
+import {
+  getCompanyPlanId,
+  isCarbonOwnedCompany
+} from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { redis } from "@carbon/kv";
-import { getLogger } from "@carbon/logger";
-import { oncePerRead } from "@carbon/logger/middleware.server";
-import {
-  companyPlanCacheKey,
-  Edition,
-  normalizePlanId,
-  Plan
-} from "@carbon/utils";
+import { Edition, normalizePlanId, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
 import {
@@ -25,8 +19,6 @@ import {
   resolveRequirement
 } from "./plan";
 
-const logger = getLogger("ee", "plan");
-
 function isBypassCompany(companyId: string): boolean {
   if (!STRIPE_BYPASS_COMPANY_IDS) return false;
   return STRIPE_BYPASS_COMPANY_IDS.split(",")
@@ -34,60 +26,19 @@ function isBypassCompany(companyId: string): boolean {
     .includes(companyId);
 }
 
-// The plan read MUST bypass RLS. `companyPlan`'s SELECT policy requires
-// `auth.role() = 'authenticated'` AND an `auth.uid()` membership row — true for a
-// web session's user client, but NOT for the anon `carbon-key` API-key client the
-// MCP/API paths carry (`auth.uid()` is NULL there). Reading through such a client
-// returns zero rows, normalizes to `Plan.Unknown`, and wrongly gates a paying
-// Partner out of MCP. So read via service role, matching the pre-existing
-// API-access plan gate in `@carbon/auth`'s `requirePermissions`.
-//
-// `maybeSingle()` (not `single()`) so the legitimate "never subscribed" zero-row
-// case is `data: null` with no error — only a real read failure logs. A failure
+// The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and
+// shared with the API-key plan gate in `requirePermissions`. A failed read
 // normalizes to the lowest plan, which turns plan-gated ENFORCEMENT (storage/sales
 // rules) off — fail-open. Callers are UI gates and evaluators that should not 500
-// on a transient blip, so log rather than throw; the signal is what was missing
-// when this silently disabled rules.
+// on a transient blip.
 //
-// Cached in Redis and cleared by the Stripe sync; the TTL covers writes that
-// don't clear it. A missing row is never cached.
-const PLAN_CACHE_TTL_SECONDS = 60;
-
-function readCompanyPlan(companyId: string): Promise<string | null> {
-  return oncePerRead(`companyPlan:${companyId}`, () =>
-    loadCompanyPlan(companyId)
-  );
-}
-
-async function loadCompanyPlan(companyId: string): Promise<string | null> {
-  const cacheKey = companyPlanCacheKey(companyId);
-  const cached = await redis.get(cacheKey);
-  if (cached) return cached;
-
-  const { data, error: planError } = await getCarbonServiceRole()
-    .from("companyPlan")
-    .select("planId")
-    .eq("id", companyId)
-    .maybeSingle();
-
-  if (planError) {
-    logger.error("getCompanyPlan failed", { companyId, error: planError });
-  }
-
-  if (data?.planId) {
-    await redis.set(cacheKey, data.planId, "EX", PLAN_CACHE_TTL_SECONDS);
-  }
-
-  return data?.planId ?? null;
-}
-
-// The `_client` param is kept for call-site compatibility; the read goes through
-// the service role regardless (see `readCompanyPlan`).
+// The `_client` param is kept for call-site compatibility; the read never goes
+// through the caller's client, whose RLS scope can hide the plan row.
 async function getCompanyPlan(
   _client: SupabaseClient<Database>,
   companyId: string
 ): Promise<Plan> {
-  return normalizePlanId(await readCompanyPlan(companyId));
+  return normalizePlanId(await getCompanyPlanId(companyId));
 }
 
 /**
@@ -113,7 +64,7 @@ export async function getPlan(
 
   // Reads via service role for the same reason as `getCompanyPlan` — the read
   // must not depend on the caller's RLS scope.
-  const planId = await readCompanyPlan(companyId);
+  const planId = await getCompanyPlanId(companyId);
   if (planId) return planId;
 
   // No durable plan row (never subscribed). Carbon-owned companies still get

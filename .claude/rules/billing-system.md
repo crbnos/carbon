@@ -118,7 +118,14 @@ users (every invite defaults to the seeded `Admin` employee type) but not author
 roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
 stays in every edition.
 
-Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId)`):
+Server checks (`plan.server.ts`) read `companyPlan.planId` through `getCompanyPlanId`
+(`@carbon/auth/company.server`), the one cached reader the API-key plan gate in
+`requirePermissions` also uses: service role, Redis for 5 minutes, memoized per read request.
+A company with no plan row is cached too (as `""`), and so is the `isCarbonOwnedCompany`
+fallback such a company falls through to. `syncStripeDataToKV` clears the plan key when
+it writes a row; a failed read is never cached. Any other change (a plan row edited by
+hand, the `customer.subscription.deleted` webhook, a group owner change) shows up within
+5 minutes, or at once after `DEL companyPlan:<companyId>` in Redis.
 
 - `companyHasPlan(client, companyId, spec)` → boolean.
 - `requirePlan({ request, client, companyId, redirectTo, message?, ...spec })` → throws a

@@ -42,7 +42,7 @@ pnpm --filter @carbon/auth test
 | `./auth.server` | `requirePermissions`, API key auth (30s Redis-cached `getApiKeyRecord` + `bustApiKeyCache`, from `services/api-key.server.ts`), `hashApiKey`, `hashOAuthSecret` |
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
-| `./company.server` | Company switching, `updateCompanySession` |
+| `./company.server` | Company switching, `updateCompanySession`; the cached plan lookups `getCompanyPlanId` and `isCarbonOwnedCompany` (Redis 5 min, a missing plan row cached as `""`) |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
 | `./console-pin.server` | MES console pin-in cookie (signed, bound to company + terminal session user): `setConsolePinIn`, `clearConsolePinIn`, `resolveConsolePinIn` (re-validated against the DB, memoized per read), `ConsolePinIn`; `requirePermissions` uses it to derive `userId` in console mode |
