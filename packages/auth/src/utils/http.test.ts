@@ -22,6 +22,14 @@ describe("getCurrentPath", () => {
     );
   });
 
+  it("leaves a query without the single-fetch param byte for byte", () => {
+    const filtered = "/x/parts?filter=status:in:[open,late]&index";
+
+    expect(
+      getCurrentPath(new Request(`https://app.carbon.ms${filtered}`))
+    ).toBe(filtered);
+  });
+
   it("drops React Router's single-fetch param", () => {
     expect(
       getCurrentPath(
