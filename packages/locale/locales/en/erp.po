@@ -2814,14 +2814,14 @@ msgstr "Assigned"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Assigned {employeeName} to {targetName} for the week"
 
-msgid "Assigned to me"
-msgstr "Assigned to me"
-
 msgid "Assigned to Me"
 msgstr "Assigned to Me"
 
 msgid "Assignee"
 msgstr "Assignee"
+
+msgid "Assignees"
+msgstr "Assignees"
 
 msgid "Assignment"
 msgstr "Assignment"

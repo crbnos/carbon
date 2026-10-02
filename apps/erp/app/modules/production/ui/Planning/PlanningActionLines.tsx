@@ -110,6 +110,31 @@ export function usePlanningActionTypeLabels(): Record<
   );
 }
 
+/** The labelled badge. The label is its CHILD, not looked up inside, because
+ *  the table's filter reads an option's text out of the element's children
+ *  (`reactNodeToString`) — for the active-filter pill and the option search. */
+function LabelledTypeBadge({
+  type,
+  count,
+  children
+}: {
+  type: PlanningActionType;
+  count?: number;
+  children: string;
+}) {
+  return (
+    <Badge variant="secondary" className="gap-1 shrink-0 whitespace-nowrap">
+      <span className="inline-flex shrink-0 [&>svg]:size-3">
+        {TYPE_ICONS[type]}
+      </span>
+      <span>{children}</span>
+      {count !== undefined && count > 1 && (
+        <span className="tabular-nums text-muted-foreground">·{count}</span>
+      )}
+    </Badge>
+  );
+}
+
 export function PlanningActionTypeBadge({
   type,
   count,
@@ -152,15 +177,9 @@ export function PlanningActionTypeBadge({
   }
 
   return (
-    <Badge variant="secondary" className="gap-1 shrink-0 whitespace-nowrap">
-      <span className="inline-flex shrink-0 [&>svg]:size-3">
-        {TYPE_ICONS[type]}
-      </span>
-      <span>{labels[type]}</span>
-      {hasCount && (
-        <span className="tabular-nums text-muted-foreground">·{count}</span>
-      )}
-    </Badge>
+    <LabelledTypeBadge type={type} count={count}>
+      {labels[type]}
+    </LabelledTypeBadge>
   );
 }
 
@@ -168,15 +187,16 @@ export function PlanningActionTypeBadge({
  *  can hold, rendered as the same badge the cell shows. Only types that
  *  belong to this grid's kind are offered. */
 export function usePlanningActionTypeOptions(kind: "Buy" | "Make") {
+  const labels = usePlanningActionTypeLabels();
   return useMemo(() => {
     const types = TYPE_ORDER.filter((type) =>
       kind === "Buy" ? type !== "Make" : type !== "Order"
     );
     return types.map((type) => ({
       value: type,
-      label: <PlanningActionTypeBadge type={type} />
+      label: <LabelledTypeBadge type={type}>{labels[type]}</LabelledTypeBadge>
     }));
-  }, [kind]);
+  }, [kind, labels]);
 }
 
 function AsapIcon() {

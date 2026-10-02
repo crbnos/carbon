@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import { datetime, isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -15,7 +16,6 @@ import type {
 import { Outlet, redirect, useLoaderData } from "react-router";
 import {
   getPlanningActions,
-  PLANNING_ACTIONS_SCOPE_PARAM,
   resolvePlanningActionScope
 } from "~/modules/production";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
@@ -29,6 +29,8 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const WEEKS_TO_PLAN = 12 * 4;
+
+const logger = getLogger("erp", "purchasing", "planning");
 
 export const handle: Handle = {
   breadcrumb: msg`Material Planning`,
@@ -66,15 +68,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  // The grid's Actions-column filter and "Assigned to me" scope are not RPC
+  // The grid's Actions and Assignee filters are not RPC
   // columns: they go to the RPC as arguments, which keeps the items with a
   // matching OPEN action inside each item's planning horizon.
-  const { gridFilters, actionTypes, actionAssignee } =
-    resolvePlanningActionScope({
-      filters,
-      scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
-      userId
-    });
+  const { gridFilters, actionTypes, actionAssignees } =
+    resolvePlanningActionScope({ filters });
 
   const items = await getPurchasingPlanning(
     client,
@@ -89,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filters: gridFilters,
       asOf: locationToday.toString(),
       actionTypes,
-      actionAssignee
+      actionAssignees
     }
   );
 
@@ -110,10 +108,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itemIds: (items.data ?? []).map((item) => item.id)
   });
 
+  // No fallback to an empty list: a grid with no actions reads as "nothing to
+  // do", which is the one thing a failed read must not look like.
+  if (planningActions.error) {
+    logger.error("Failed to load planning actions", {
+      companyId,
+      locationId,
+      error: planningActions.error
+    });
+    throw new Response("Failed to load planning actions", { status: 500 });
+  }
+
   return {
     items: (items.data ?? []) as PurchasingPlanningItem[],
     count: items.count ?? 0,
     planningActions: planningActions.data ?? [],
+    // The Actions-column filter the rows were matched on: each row shows only
+    // its actions of these types.
+    actionTypes: actionTypes ?? null,
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -123,8 +135,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingPlanningRoute() {
-  const { items, count, locationId, periods, planningActions, locationToday } =
-    useLoaderData<typeof loader>();
+  const {
+    items,
+    count,
+    locationId,
+    periods,
+    planningActions,
+    actionTypes,
+    locationToday
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -141,6 +160,7 @@ export default function PurchasingPlanningRoute() {
             locationId={locationId}
             periods={periods}
             planningActions={planningActions}
+            actionTypes={actionTypes}
             locationToday={locationToday}
           />
         </ResizablePanel>

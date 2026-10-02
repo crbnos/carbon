@@ -36,7 +36,7 @@ ALTER TABLE "planningAction" ALTER COLUMN "horizonDate" SET NOT NULL;
 
 -- 3. Grid wrappers. The base RPCs stay the one definition of the projection
 --    (generatePlanningActions reads them too); these add the columns only the
---    grids need and evaluate the Actions filter / "Assigned to me" scope in the
+--    grids need and evaluate the Actions and Assignee filters in the
 --    database, inside each item's fence, so the filter is complete at any volume
 --    and paging stays correct.
 --
@@ -48,13 +48,14 @@ ALTER TABLE "planningAction" ALTER COLUMN "horizonDate" SET NOT NULL;
 --    fails loudly (return type mismatch) until then.
 
 DROP FUNCTION IF EXISTS get_purchasing_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT);
+DROP FUNCTION IF EXISTS get_purchasing_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT[]);
 CREATE FUNCTION get_purchasing_planning_grid(
   company_id TEXT,
   location_id TEXT,
   periods TEXT[],
   as_of DATE DEFAULT NULL,
   action_types TEXT[] DEFAULT NULL,
-  action_assignee TEXT DEFAULT NULL
+  action_assignees TEXT[] DEFAULT NULL
 )
   RETURNS TABLE (
     "id" TEXT,
@@ -155,7 +156,7 @@ AS $$
       0
     ) AS "days"
   ) h
-  WHERE (action_types IS NULL AND action_assignee IS NULL)
+  WHERE (action_types IS NULL AND action_assignees IS NULL)
     OR EXISTS (
       SELECT 1
       FROM "planningAction" a
@@ -165,7 +166,7 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL)
         AND (action_types IS NULL OR a."type"::TEXT = ANY(action_types))
-        AND (action_assignee IS NULL OR a."assignee" = action_assignee)
+        AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (
           h."days" IS NULL
           OR a."horizonDate" <= COALESCE(as_of, CURRENT_DATE) + h."days"
@@ -174,13 +175,14 @@ AS $$
 $$;
 
 DROP FUNCTION IF EXISTS get_production_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT);
+DROP FUNCTION IF EXISTS get_production_planning_grid(TEXT, TEXT, TEXT[], DATE, TEXT[], TEXT[]);
 CREATE FUNCTION get_production_planning_grid(
   company_id TEXT,
   location_id TEXT,
   periods TEXT[],
   as_of DATE DEFAULT NULL,
   action_types TEXT[] DEFAULT NULL,
-  action_assignee TEXT DEFAULT NULL
+  action_assignees TEXT[] DEFAULT NULL
 )
   RETURNS TABLE (
     "id" TEXT,
@@ -277,7 +279,7 @@ AS $$
       0
     ) AS "days"
   ) h
-  WHERE (action_types IS NULL AND action_assignee IS NULL)
+  WHERE (action_types IS NULL AND action_assignees IS NULL)
     OR EXISTS (
       SELECT 1
       FROM "planningAction" a
@@ -287,7 +289,7 @@ AS $$
         AND a."status" = 'Open'
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL)
         AND (action_types IS NULL OR a."type"::TEXT = ANY(action_types))
-        AND (action_assignee IS NULL OR a."assignee" = action_assignee)
+        AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (
           h."days" IS NULL
           OR a."horizonDate" <= COALESCE(as_of, CURRENT_DATE) + h."days"

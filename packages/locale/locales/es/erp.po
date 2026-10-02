@@ -2814,14 +2814,14 @@ msgstr "Asignado"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Asignado {employeeName} a {targetName} para la semana"
 
-msgid "Assigned to me"
-msgstr "Asignado a mí"
-
 msgid "Assigned to Me"
 msgstr "Asignado a mí"
 
 msgid "Assignee"
 msgstr "Asignado a"
+
+msgid "Assignees"
+msgstr "Asignados"
 
 msgid "Assignment"
 msgstr "Asignación"
@@ -8832,7 +8832,7 @@ msgid "Hide Again"
 msgstr "Ocultar de nuevo"
 
 msgid "Hide calculation"
-msgstr ""
+msgstr "Ocultar cálculo"
 
 msgid "Hide raw"
 msgstr "Ocultar sin procesar"
@@ -9006,7 +9006,7 @@ msgid "How the sample size is decided — Inspect All, Inspect First N, Percenta
 msgstr "Cómo se decide el tamaño de la muestra — Inspeccionar Todo, Inspeccionar los Primeros N, Porcentaje del Lote o AQL (Z1.4 / ISO 2859-1). Cada modo revela sus propios campos de parámetros a continuación."
 
 msgid "How the unit price of each quantity was calculated."
-msgstr ""
+msgstr "Cómo se calculó el precio unitario de cada cantidad."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Cómo se utiliza este instrumento de medición — Estándar (verificaciones regulares) o Maestro (calibra otros instrumentos)."
@@ -12057,7 +12057,7 @@ msgid "No pricing options found"
 msgstr "No se encontraron opciones de fijación de precios"
 
 msgid "No pricing rules apply to this quantity."
-msgstr ""
+msgstr "Ninguna regla de precios se aplica a esta cantidad."
 
 msgid "No printer configured"
 msgstr "Sin impresora configurada"
@@ -13763,7 +13763,7 @@ msgid "Price override"
 msgstr "Sobrescritura de precio"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr ""
+msgstr "Precio establecido antes de que se registraran las trazas de precios — este es el cálculo de hoy."
 
 msgid "Prices"
 msgstr "Precios"
@@ -14303,7 +14303,7 @@ msgstr "Cantidad"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
-msgstr ""
+msgstr "Cantidad {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Cantidad por llegar: en órdenes de compra abiertas más en órdenes de producción (fabricación)."
@@ -15090,11 +15090,11 @@ msgid "Reports"
 msgstr "Informes"
 
 msgid "Reprice with current rules"
-msgstr ""
+msgstr "Recalcular precio con reglas actuales"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr ""
+msgstr "Recalcular el precio con las reglas y costos de hoy produce <0>{0}</0>."
 
 msgid "Reprint"
 msgstr "Reimprimir"
@@ -16862,7 +16862,7 @@ msgid "Show available tracking numbers"
 msgstr "Mostrar números de seguimiento disponibles"
 
 msgid "Show calculation"
-msgstr ""
+msgstr "Mostrar cálculo"
 
 msgid "Show Customer IDs"
 msgstr "Mostrar IDs de Cliente"
@@ -19087,7 +19087,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Este PIN no se mostrará nuevamente. Lo necesitará para salir del modo de consola en terminales MES."
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr ""
+msgstr "Este precio se ingresó manualmente, por lo que no se aplicaron reglas de precios."
 
 msgid "this purchase order"
 msgstr "esta orden de compra"

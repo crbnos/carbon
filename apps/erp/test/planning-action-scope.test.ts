@@ -4,7 +4,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
+  PLANNING_ASSIGNEE_COLUMN,
   resolvePlanningActionScope
 } from "../app/modules/production/ui/Planning/planning-action-scope";
 
@@ -12,11 +14,11 @@ describe("resolvePlanningActionScope", () => {
   it("passes the grid's own filters through untouched and restricts nothing", () => {
     const filters = [{ column: "type", operator: "eq", value: "Part" }];
     expect(
-      resolvePlanningActionScope({ filters, scope: null, userId: "me" })
+      resolvePlanningActionScope({ filters })
     ).toEqual({
       gridFilters: filters,
       actionTypes: undefined,
-      actionAssignee: undefined
+      actionAssignees: undefined
     });
   });
 
@@ -26,8 +28,6 @@ describe("resolvePlanningActionScope", () => {
         { column: "type", operator: "eq", value: "Part" },
         { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" }
       ],
-      scope: null,
-      userId: "me"
     });
     expect(gridFilters).toEqual([
       { column: "type", operator: "eq", value: "Part" }
@@ -46,52 +46,100 @@ describe("resolvePlanningActionScope", () => {
           },
           { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" }
         ],
-        scope: null,
-        userId: "me"
-      }).actionTypes
+          }).actionTypes
     ).toEqual(["Cancel", "Order"]);
   });
 
-  it("turns the `mine` scope into the assignee argument", () => {
-    expect(
-      resolvePlanningActionScope({ filters: [], scope: "mine", userId: "me" })
-    ).toEqual({
-      gridFilters: [],
-      actionTypes: undefined,
-      actionAssignee: "me"
-    });
-  });
-
-  it("ignores an unknown scope value", () => {
-    expect(
-      resolvePlanningActionScope({ filters: [], scope: "all", userId: "me" })
-        .actionAssignee
-    ).toBeUndefined();
-  });
-
-  it("returns scope and type together — the RPC matches both on the same action", () => {
+  it("strips the Assignee filter and returns its people as the RPC's assignees argument", () => {
     expect(
       resolvePlanningActionScope({
         filters: [
-          { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" }
-        ],
-        scope: "mine",
-        userId: "me"
+          { column: "type", operator: "eq", value: "Part" },
+          { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
+        ]
+      })
+    ).toEqual({
+      gridFilters: [{ column: "type", operator: "eq", value: "Part" }],
+      actionTypes: undefined,
+      actionAssignees: ["user-a"]
+    });
+  });
+
+  it("accepts several people in the `in` encoding, without duplicates", () => {
+    expect(
+      resolvePlanningActionScope({
+        filters: [
+          {
+            column: PLANNING_ASSIGNEE_COLUMN,
+            operator: "in",
+            value: "user-a,user-b"
+          },
+          { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
+        ]
+      }).actionAssignees
+    ).toEqual(["user-a", "user-b"]);
+  });
+
+  it("returns assignees and types together — the RPC matches both on the same action", () => {
+    expect(
+      resolvePlanningActionScope({
+        filters: [
+          { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" },
+          { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
+        ]
       })
     ).toEqual({
       gridFilters: [],
       actionTypes: ["Cancel"],
-      actionAssignee: "me"
+      actionAssignees: ["user-a"]
     });
+  });
+
+  it("an empty Assignee filter value restricts nothing", () => {
+    expect(
+      resolvePlanningActionScope({
+        filters: [{ column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "" }]
+      }).actionAssignees
+    ).toBeUndefined();
   });
 
   it("an empty filter value restricts nothing", () => {
     expect(
       resolvePlanningActionScope({
         filters: [{ column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "" }],
-        scope: null,
-        userId: "me"
-      }).actionTypes
+          }).actionTypes
     ).toBeUndefined();
+  });
+});
+
+describe("actionsOfTypes", () => {
+  const actions = [
+    { id: "a", type: "Expedite" },
+    { id: "b", type: "Defer" },
+    { id: "c", type: "Expedite" },
+    { id: "d", type: "Cancel" }
+  ];
+
+  it("shows every action when the grid is not filtered by type", () => {
+    expect(actionsOfTypes(actions, undefined)).toBe(actions);
+    expect(actionsOfTypes(actions, null)).toBe(actions);
+    expect(actionsOfTypes(actions, [])).toBe(actions);
+  });
+
+  it("keeps only the filtered type, in the original order", () => {
+    expect(actionsOfTypes(actions, ["Expedite"]).map((a) => a.id)).toEqual([
+      "a",
+      "c"
+    ]);
+  });
+
+  it("keeps any of several filtered types", () => {
+    expect(
+      actionsOfTypes(actions, ["Cancel", "Defer"]).map((a) => a.id)
+    ).toEqual(["b", "d"]);
+  });
+
+  it("returns nothing when the row has no action of the filtered type", () => {
+    expect(actionsOfTypes(actions, ["Order"])).toEqual([]);
   });
 });

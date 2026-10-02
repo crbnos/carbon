@@ -17,7 +17,8 @@ Design rationale: this conversation's brief (Sept 29). Spec context:
 - [x] 2. Services: optional `itemIds` restriction on `getPurchasingPlanning` /
       `getProductionPlanning`.
 - [x] 3. Loaders (both planning routes): strip the `planningActions` column filter and the
-      `actions=mine` param from the grid filters, resolve them to item ids from the loaded
+      assignee filter (first an `actions=mine` switch, now the Assignee column's people
+      filter, `filter=planningAssignee:in:<userId>,…`) from the grid filters, resolve them to item ids from the loaded
       actions, pass `itemIds`. Drop the card.
 - [x] 4. Grids (both): `planningActions` prop, Actions column (static type filter, export
       value), `canExpandRow` / `renderExpandedRow`, `headerActions` switch, worklist

@@ -209,8 +209,36 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
   (make-to-stock jobs only); `quantityToReceive = productionQuantity − received`.
 - `openPurchaseOrderLines` — `purchaseOrderLineType != 'Service'`, status IN
-  `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = requiredDate
-  (falls back to receiptPromisedDate).
+  `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
+  `requiredDate`, `promisedDate` = the line's promised date, else the order
+  delivery's `receiptPromisedDate`.
+
+### When a PO line arrives — one rule
+
+`purchaseOrderLineArrivalDate` (`packages/planning/src/mrp/supply-date.ts`,
+pure, tested): promised date, else required date, else order date + lead time
+(7 days when the item has none; from today when the order has no date). Both
+`runMrp` (which week the supply lands in) and `generatePlanningActions` (the
+order's "current date" for Expedite / Defer) call it. They used to disagree —
+the projection never read the required date, the check read it first — so
+applying an Expedite, which writes the required date, moved the action and left
+the projected shortage and its Order suggestion in place. Never date a PO line
+anywhere else.
+
+### Reads and the horizon in `generatePlanningActions`
+
+- The two planning RPCs are read through `fetchAll` with `.order("id")`, like
+  every other read in the run. A bare `client.rpc(...)` stops at PostgREST's
+  `max_rows` (1000); an item missing from those rows has no candidates, and the
+  diff then deletes its existing actions, dismissals and assignee overrides
+  included.
+- `deriveChangeActions` gives NO verdict on an order due after the last planning
+  week (`WEEKS_TO_PLAN` = 48; MRP itself plans 72). Its demand is not loaded, so
+  it would otherwise read as "nothing needs it" and be offered for Cancel. Such
+  an order is not pulled in to cover an earlier need either.
+- `runMrp` throws when the forecast-consumption settings cannot be read; the
+  window decides what is persisted as `consumedQuantity`, so defaults are not a
+  safe fallback.
 
 ## Planning UI
 
@@ -266,10 +294,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   `modules/production/ui/Planning/PlanningActionLines.tsx`; every mutation posts
   to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
   The Actions column filter (`filter=planningActions:eq:<type>`) and the
-  `headerActions` **Assigned to me** switch (`?actions=mine`) are not grid RPC
+  Assignee column's people filter (`filter=planningAssignee:in:<userId>,…` —
+  the same people list every other assignee filter uses; the column is hidden
+  by default and shows the row's assignees when turned on) are not grid RPC
   columns: the loader strips them with `resolvePlanningActionScope`
   (`ui/Planning/planning-action-scope.ts`, pure, unit-tested) and passes them to
-  the grid RPC as ARGUMENTS (`action_types`, `action_assignee`), which keeps the
+  the grid RPC as ARGUMENTS (`action_types`, `action_assignees`), which keeps the
   items with a matching OPEN action inside the item's planning horizon. The
   loader then reads the actions for the rows ON THE PAGE (`getPlanningActions`
   with `itemIds`, paged). An earlier version loaded the location's first 500
@@ -333,7 +363,14 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
     takes it from the open line / job (`OpenOrdersGrid renderStatusIcon`); the
     grid's expanded row (`PlanningActionLines`) and the drawer's read-only
     fallback rows take it from the action, which `getPlanningActions` enriches
-    with `purchaseOrderStatus` / `jobStatus` in the lookups it already makes.
+    with `purchaseOrderStatus` / `jobStatus`.
+- **`getPlanningActions` reads the item, the PO behind a line and the job as
+  PostgREST embeds, and chunks the page's item ids (100 per request).** It used
+  to look them up afterwards with `.in("id", <one id per action>)`; a page of
+  busy parts (2,000+ actions) put 50 kB of ids in the URL, the gateway answered
+  431, and the loader's `?? []` turned that into a grid with no actions. The
+  loaders now log and throw on a failed read instead — an empty Actions column
+  must never be what a failure looks like.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The

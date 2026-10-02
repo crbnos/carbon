@@ -37,6 +37,7 @@ import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { consumeForecast } from "./forecast-consumption.ts";
 import { generatePlanningActions } from "./planning-actions.ts";
+import { purchaseOrderLineArrivalDate } from "./supply-date.ts";
 
 const logger = getFunctionLogger("mrp");
 
@@ -202,6 +203,9 @@ export async function runMrp(
       )
       .eq("id", companyId)
       .maybeSingle();
+    // No fallback to the defaults on a failed read: the window decides how much
+    // forecast is consumed, and that result is persisted for every read path.
+    if (consumptionSettings.error) throw consumptionSettings.error;
     const consumptionWindow = {
       backwardPeriods:
         consumptionSettings.data?.forecastConsumptionBackwardPeriods ?? 4,
@@ -426,11 +430,11 @@ export async function runMrp(
       // supplyActual with locationId="" and violate its FK.
       if (!line.itemId || !line.quantityToReceive || !line.locationId) continue;
 
-      const dueDate = line.promisedDate
-        ? parseDate(line.promisedDate)
-        : line.orderDate
-          ? parseDate(line.orderDate).add({ days: line.leadTime ?? 7 })
-          : today.add({ days: line.leadTime ?? 7 });
+      // Same date the reschedule check walks (supply-date.ts) — the projection
+      // and the Expedite / Defer verdicts must see one arrival date per line.
+      const dueDate = parseDate(
+        purchaseOrderLineArrivalDate(line, today.toString())
+      );
 
       const period = findPeriod(dueDate, today, periods);
       if (!period) continue;

@@ -2814,14 +2814,14 @@ msgstr "Назначено"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Назначен {employeeName} на {targetName} на неделю"
 
-msgid "Assigned to me"
-msgstr "Назначено мне"
-
 msgid "Assigned to Me"
 msgstr "Назначено мне"
 
 msgid "Assignee"
 msgstr "Исполнитель"
+
+msgid "Assignees"
+msgstr "Исполнители"
 
 msgid "Assignment"
 msgstr "Назначение"
@@ -8832,7 +8832,7 @@ msgid "Hide Again"
 msgstr "Скрыть снова"
 
 msgid "Hide calculation"
-msgstr ""
+msgstr "Скрыть расчет"
 
 msgid "Hide raw"
 msgstr "Скрыть исходное"
@@ -9006,7 +9006,7 @@ msgid "How the sample size is decided — Inspect All, Inspect First N, Percenta
 msgstr "Как определяется объем выборки — проверить все, проверить первые N, процент партии или AQL (Z1.4 / ISO 2859-1). Каждый режим показывает свои собственные поля параметров ниже."
 
 msgid "How the unit price of each quantity was calculated."
-msgstr ""
+msgstr "Как рассчитывалась цена за единицу для каждого количества."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Как используется это средство измерения — Нормальный (регулярные проверки) или Эталон (калибрует другие средства измерения)."
@@ -12057,7 +12057,7 @@ msgid "No pricing options found"
 msgstr "Варианты ценообразования не найдены"
 
 msgid "No pricing rules apply to this quantity."
-msgstr ""
+msgstr "Правила ценообразования не применяются к этому количеству."
 
 msgid "No printer configured"
 msgstr "Принтер не настроен"
@@ -13763,7 +13763,7 @@ msgid "Price override"
 msgstr "Переопределение цены"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr ""
+msgstr "Цена установлена до записи трассировки ценообразования — это расчет на сегодня."
 
 msgid "Prices"
 msgstr "Цены"
@@ -14303,7 +14303,7 @@ msgstr "Количество"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
-msgstr ""
+msgstr "Количество {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Поступающее количество — из открытых заказов поставщику и производственных заказов."
@@ -15090,11 +15090,11 @@ msgid "Reports"
 msgstr "Отчеты"
 
 msgid "Reprice with current rules"
-msgstr ""
+msgstr "Пересчитать с применением текущих правил"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr ""
+msgstr "Пересчет с применением сегодняшних правил и себестоимости дает <0>{0}</0>."
 
 msgid "Reprint"
 msgstr "Перепечать"
@@ -16862,7 +16862,7 @@ msgid "Show available tracking numbers"
 msgstr "Показать доступные номера отслеживания"
 
 msgid "Show calculation"
-msgstr ""
+msgstr "Показать расчет"
 
 msgid "Show Customer IDs"
 msgstr "Показывать ID Покупателей"
@@ -19087,7 +19087,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr ""
+msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
 
 msgid "this purchase order"
 msgstr "этот заказ поставщику"

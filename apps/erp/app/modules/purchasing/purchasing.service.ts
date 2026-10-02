@@ -574,7 +574,7 @@ export async function getPurchasingPlanning(
     actionTypes?: string[];
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
-    actionAssignee?: string;
+    actionAssignees?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -590,7 +590,7 @@ export async function getPurchasingPlanning(
       periods,
       as_of: args.asOf,
       action_types: args.actionTypes,
-      action_assignee: args.actionAssignee
+      action_assignees: args.actionAssignees
     },
     {
       count: LIST_COUNT

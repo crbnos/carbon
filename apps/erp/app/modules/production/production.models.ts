@@ -84,9 +84,9 @@ export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 // models barrel drags the glossary's lingui macros, which vitest does not
 // transform (see apps/erp/test/job-complete-logic.test.ts).
 export {
+  actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
-  PLANNING_ACTIONS_SCOPE_MINE,
-  PLANNING_ACTIONS_SCOPE_PARAM,
+  PLANNING_ASSIGNEE_COLUMN,
   resolvePlanningActionScope
 } from "./ui/Planning/planning-action-scope";
 

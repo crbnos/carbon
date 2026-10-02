@@ -2814,13 +2814,13 @@ msgstr "已分配"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
 
-msgid "Assigned to me"
-msgstr "已分配给我"
-
 msgid "Assigned to Me"
 msgstr "已分配给我"
 
 msgid "Assignee"
+msgstr "经办人"
+
+msgid "Assignees"
 msgstr "经办人"
 
 msgid "Assignment"
@@ -8832,7 +8832,7 @@ msgid "Hide Again"
 msgstr "再次隐藏"
 
 msgid "Hide calculation"
-msgstr ""
+msgstr "隐藏计算"
 
 msgid "Hide raw"
 msgstr "隐藏原始内容"
@@ -9006,7 +9006,7 @@ msgid "How the sample size is decided — Inspect All, Inspect First N, Percenta
 msgstr "样本量如何确定——检验全部、检验前N个、批次百分比或AQL（Z1.4 / ISO 2859-1）。每种模式显示其自身的参数字段。"
 
 msgid "How the unit price of each quantity was calculated."
-msgstr ""
+msgstr "各数量等级下的单价如何计算。"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "此量具的用途——正常检验（定期检查）或标准器（校准其他量具）。"
@@ -12057,7 +12057,7 @@ msgid "No pricing options found"
 msgstr "未找到定价选项"
 
 msgid "No pricing rules apply to this quantity."
-msgstr ""
+msgstr "此数量不适用任何定价规则。"
 
 msgid "No printer configured"
 msgstr "未配置打印机"
@@ -13763,7 +13763,7 @@ msgid "Price override"
 msgstr "价格覆盖"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr ""
+msgstr "此价格确定于定价跟踪开始之前——这是今日的计算结果。"
 
 msgid "Prices"
 msgstr "价格"
@@ -14303,7 +14303,7 @@ msgstr "数量"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
-msgstr ""
+msgstr "数量 {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "即将到货的数量——来自未结采购订单以及生产（制造）订单。"
@@ -15090,11 +15090,11 @@ msgid "Reports"
 msgstr "报告"
 
 msgid "Reprice with current rules"
-msgstr ""
+msgstr "按当前规则重新定价"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr ""
+msgstr "按今日的规则和成本重新定价得到 <0>{0}</0>。"
 
 msgid "Reprint"
 msgstr "重新打印"
@@ -16862,7 +16862,7 @@ msgid "Show available tracking numbers"
 msgstr "显示可用的跟踪号码"
 
 msgid "Show calculation"
-msgstr ""
+msgstr "显示计算"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
@@ -19087,7 +19087,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr ""
+msgstr "此价格为手动输入，未应用定价规则。"
 
 msgid "this purchase order"
 msgstr "此采购订单"

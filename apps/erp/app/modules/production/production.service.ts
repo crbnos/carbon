@@ -14,6 +14,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  chunkArray,
   groupBy,
   nameSimilarity,
   scrapAllowance,
@@ -2289,7 +2290,7 @@ export async function getProductionPlanning(
     actionTypes?: string[];
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
-    actionAssignee?: string;
+    actionAssignees?: string[];
   }
 ) {
   // The grid RPC wraps get_production_planning: same rows and projection, plus the
@@ -2305,7 +2306,7 @@ export async function getProductionPlanning(
       periods,
       as_of: args.asOf,
       action_types: args.actionTypes,
-      action_assignee: args.actionAssignee
+      action_assignees: args.actionAssignees
     },
     {
       count: LIST_COUNT
@@ -10116,15 +10117,22 @@ export async function completeOperation(
 // ── Planning actions (spec §P1) ────────────────────────────────────────────
 // Persisted MRP action messages (Order/Make/Expedite/Defer/Cancel/Increase/
 // Decrease). Written diff-write by generatePlanningActions (@carbon/planning);
-// these are the app-side reads and worklist mutations. planningAction carries
-// no FKs to item/PO-line/job, so enrichment is flat queries + a JS merge
-// (the items-module G6 pattern), never PostgREST embeds.
+// these are the app-side reads and worklist mutations.
+
+// Item ids per request. `.in()` writes every id into the URL, and the gateway
+// rejects a request line it cannot buffer (HTTP 431) — 100 ids is about 3 kB.
+const PLANNING_ACTION_ITEM_CHUNK = 100;
 
 /**
  * The open and dismissed planning actions of the given items at a location —
  * the rows behind a planning grid PAGE. The grid decides which items are on the
  * page (its RPC owns the Actions filter); this loads their actions in full, so
  * there is no cap to fall off the end of.
+ *
+ * The item, the purchase order behind a line and the job come back as embeds
+ * of the same read. Looking them up afterwards by `.in("id", …)` put one id per
+ * ACTION in the URL: a page of busy items (2,000+ actions) overran the gateway
+ * and the whole read failed, leaving the grid with no actions at all.
  */
 export async function getPlanningActions(
   client: SupabaseClient<Database>,
@@ -10141,101 +10149,64 @@ export async function getPlanningActions(
     return { data: [], count: 0, error: null };
   }
 
-  // Paged: a page of busy items can hold more actions than PostgREST's
-  // max_rows, and a bare select would silently drop the tail.
-  const actions = await fetchAllRecords(() => {
-    const query = client
-      .from("planningAction")
-      .select("*")
-      .eq("companyId", companyId)
-      .eq("locationId", locationId)
-      .neq("status", "Actioned")
-      .in("itemId", pageItemIds);
+  const chunks = await Promise.all(
+    chunkArray(pageItemIds, PLANNING_ACTION_ITEM_CHUNK).map((itemIds) =>
+      // Paged: a page of busy items can hold more actions than PostgREST's
+      // max_rows, and a bare select would silently drop the tail.
+      fetchAllRecords(() => {
+        const query = client
+          .from("planningAction")
+          .select(
+            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, purchaseOrder(purchaseOrderId, status)), job(jobId, status)"
+          )
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .neq("status", "Actioned")
+          .in("itemId", itemIds);
 
-    // Buy worklist = new purchase suggestions + change actions on PO lines;
-    // Make worklist = new job suggestions + change actions on jobs.
-    return (
-      kind === "Buy"
-        ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-        : query.or("type.eq.Make,jobId.not.is.null")
+        // Buy worklist = new purchase suggestions + change actions on PO lines;
+        // Make worklist = new job suggestions + change actions on jobs.
+        return (
+          kind === "Buy"
+            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
+            : query.or("type.eq.Make,jobId.not.is.null")
+        )
+          .order("suggestedDate", { ascending: true })
+          .order("id", { ascending: true });
+      })
     )
-      .order("suggestedDate", { ascending: true })
-      .order("id", { ascending: true });
-  });
-  if (actions.error) {
-    return { data: null, count: 0, error: actions.error };
-  }
-
-  const rows = actions.data ?? [];
-  const itemIds = [...new Set(rows.map((r) => r.itemId))];
-  const poLineIds = [
-    ...new Set(
-      rows.flatMap((r) =>
-        r.purchaseOrderLineId ? [r.purchaseOrderLineId] : []
-      )
-    )
-  ];
-  const jobIds = [...new Set(rows.flatMap((r) => (r.jobId ? [r.jobId] : [])))];
-
-  const [items, poLines, jobs] = await Promise.all([
-    itemIds.length > 0
-      ? client
-          .from("item")
-          .select("id, readableIdWithRevision, name")
-          .eq("companyId", companyId)
-          .in("id", itemIds)
-      : Promise.resolve({ data: [], error: null }),
-    poLineIds.length > 0
-      ? client
-          .from("purchaseOrderLine")
-          .select("id, purchaseOrderId, purchaseOrder(purchaseOrderId, status)")
-          .eq("companyId", companyId)
-          .in("id", poLineIds)
-      : Promise.resolve({ data: [], error: null }),
-    jobIds.length > 0
-      ? client
-          .from("job")
-          .select("id, jobId, status")
-          .eq("companyId", companyId)
-          .in("id", jobIds)
-      : Promise.resolve({ data: [], error: null })
-  ]);
-
-  // A failed enrichment must not degrade to empty lookups: a committed row
-  // with a null purchaseOrderId/jobId loses its review link and falls through
-  // to an Apply button that does nothing.
-  const enrichmentError = items.error ?? poLines.error ?? jobs.error;
-  if (enrichmentError) {
-    return { data: null, count: 0, error: enrichmentError };
-  }
-
-  const itemById = new Map((items.data ?? []).map((i) => [i.id, i] as const));
-  const poLineById = new Map(
-    (poLines.data ?? []).map((l) => [l.id, l] as const)
   );
-  const jobById = new Map((jobs.data ?? []).map((j) => [j.id, j] as const));
 
-  const enriched = rows.map((row) => {
-    const item = itemById.get(row.itemId);
-    const poLine = row.purchaseOrderLineId
-      ? poLineById.get(row.purchaseOrderLineId)
-      : undefined;
-    const job = row.jobId ? jobById.get(row.jobId) : undefined;
-    return {
+  // One failed chunk fails the read: a grid missing some parts' actions looks
+  // exactly like a grid where those parts need nothing.
+  const failed = chunks.find((chunk) => chunk.error);
+  if (failed?.error) {
+    return { data: null, count: 0, error: failed.error };
+  }
+
+  const enriched = chunks
+    .flatMap((chunk) => chunk.data ?? [])
+    .map(({ item, purchaseOrderLine, job, ...row }) => ({
       ...row,
       itemReadableId: item?.readableIdWithRevision ?? null,
       itemName: item?.name ?? null,
       // navigation target: the PARENT purchase order id — the stored value is
       // the LINE id and would 404 in path.to.purchaseOrder
-      purchaseOrderId: poLine?.purchaseOrderId ?? null,
-      purchaseOrderReadableId: poLine?.purchaseOrder?.purchaseOrderId ?? null,
+      purchaseOrderId: purchaseOrderLine?.purchaseOrderId ?? null,
+      purchaseOrderReadableId:
+        purchaseOrderLine?.purchaseOrder?.purchaseOrderId ?? null,
       // why the row offers Review instead of Apply: shown as an icon beside
       // the document number
-      purchaseOrderStatus: poLine?.purchaseOrder?.status ?? null,
+      purchaseOrderStatus: purchaseOrderLine?.purchaseOrder?.status ?? null,
       jobReadableId: job?.jobId ?? null,
       jobStatus: job?.status ?? null
-    };
-  });
+    }))
+    // the chunks are each in order; the page as a whole is not
+    .sort(
+      (a, b) =>
+        a.suggestedDate.localeCompare(b.suggestedDate) ||
+        a.id.localeCompare(b.id)
+    );
 
   return {
     data: enriched,

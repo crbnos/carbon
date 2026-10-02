@@ -15,7 +15,6 @@ import {
   Loading,
   PulsingDot,
   Status,
-  Switch,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -48,10 +47,12 @@ import {
   LuGroup,
   LuListTodo,
   LuSquareChartGantt,
-  LuTrendingDown
+  LuTrendingDown,
+  LuUserCheck
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import {
+  EmployeeAvatarGroup,
   exportOnlyColumn,
   ItemThumbnail,
   MethodItemTypeIcon,
@@ -62,7 +63,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
@@ -74,9 +75,9 @@ import {
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction } from "~/modules/production";
 import {
+  actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
-  PLANNING_ACTIONS_SCOPE_MINE,
-  PLANNING_ACTIONS_SCOPE_PARAM
+  PLANNING_ASSIGNEE_COLUMN
 } from "~/modules/production";
 import {
   LatestOrderDateCell,
@@ -106,7 +107,7 @@ import {
 } from "~/modules/production/ui/Planning/planning-fence";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
-import { useItems } from "~/stores";
+import { useItems, usePeople } from "~/stores";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../purchasing.models";
@@ -122,6 +123,9 @@ type PlanningTableProps = {
    *  rendered as the Actions column + each item's expanded row. Every action
    *  is here whatever its date; the row's time fence decides what shows. */
   planningActions: PlanningAction[];
+  /** The Actions-column filter in effect; null when the grid is not filtered
+   *  by action type. */
+  actionTypes: string[] | null;
   /** Today on the location's calendar (ISO date). */
   locationToday: string;
 };
@@ -133,6 +137,7 @@ const PlanningTable = memo(
     locationId,
     periods,
     planningActions,
+    actionTypes,
     locationToday
   }: PlanningTableProps) => {
     const { t } = useLingui();
@@ -149,9 +154,9 @@ const PlanningTable = memo(
 
     // ── Planning actions (the MRP worklist) ──────────────────────────────────
     const user = useUser();
-    const [params, setParams] = useUrlParams();
     const canUpdateActions = permissions.can("update", "purchasing");
     const actionTypeOptions = usePlanningActionTypeOptions("Buy");
+    const [people] = usePeople();
     const actionsFetcher = useFetcher<{
       success?: boolean;
       message?: string;
@@ -184,19 +189,30 @@ const PlanningTable = memo(
     // re-filters what is already loaded and never touches the item.
     const timeFence = useTimeFenceOverrides();
 
-    const visibleActionsByItemId = useMemo(() => {
+    const fencedActionsByItemId = useMemo(() => {
       const map = new Map<string, PlanningAction[]>();
       for (const row of data) {
         const actions = actionsByItemId.get(row.id);
         if (!actions) continue;
-        const visible = actionsInsideFence(
-          actions,
-          timeFence.fenceDateFor(row)
-        );
-        if (visible.length > 0) map.set(row.id, visible);
+        const fenced = actionsInsideFence(actions, timeFence.fenceDateFor(row));
+        if (fenced.length > 0) map.set(row.id, fenced);
       }
       return map;
     }, [data, actionsByItemId, timeFence]);
+
+    // What the GRID shows and acts on: under the Actions-column filter, only
+    // the filtered types. The order drawer keeps every fenced action — it
+    // lists the item's open orders, and one shown without its pending
+    // suggestion would read as "nothing to do".
+    const visibleActionsByItemId = useMemo(() => {
+      if (!actionTypes) return fencedActionsByItemId;
+      const map = new Map<string, PlanningAction[]>();
+      for (const [itemId, actions] of fencedActionsByItemId) {
+        const visible = actionsOfTypes(actions, actionTypes);
+        if (visible.length > 0) map.set(itemId, visible);
+      }
+      return map;
+    }, [fencedActionsByItemId, actionTypes]);
 
     // ONE batched request per click: the route derives each row's behaviour
     // from its persisted type, and a fetcher holds a single in-flight submission.
@@ -210,9 +226,6 @@ const PlanningTable = memo(
       },
       [actionsFetcher, locationId]
     );
-
-    const isAssignedToMe =
-      params.get(PLANNING_ACTIONS_SCOPE_PARAM) === PLANNING_ACTIONS_SCOPE_MINE;
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
@@ -491,11 +504,11 @@ const PlanningTable = memo(
     const selectedActions = useMemo(
       () =>
         selectedItem?.id
-          ? (visibleActionsByItemId.get(selectedItem.id) ?? []).filter(
+          ? (fencedActionsByItemId.get(selectedItem.id) ?? []).filter(
               (action) => !isNewSupplyAction(action)
             )
           : [],
-      [selectedItem, visibleActionsByItemId]
+      [selectedItem, fencedActionsByItemId]
     );
 
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
@@ -629,6 +642,44 @@ const PlanningTable = memo(
               planningActionsExportValue(
                 visibleActionsByItemId.get(row.id) ?? []
               )
+          }
+        },
+        {
+          id: PLANNING_ASSIGNEE_COLUMN,
+          header: t`Assignee`,
+          cell: ({ row }) => (
+            <EmployeeAvatarGroup
+              employeeIds={[
+                ...new Set(
+                  (visibleActionsByItemId.get(row.original.id) ?? []).flatMap(
+                    (action) => (action.assignee ? [action.assignee] : [])
+                  )
+                )
+              ]}
+            />
+          ),
+          meta: {
+            icon: <LuUserCheck />,
+            pluralHeader: t`Assignees`,
+            filter: {
+              type: "static",
+              options: people.map((employee) => ({
+                value: employee.id,
+                label: employee.name
+              }))
+            },
+            exportValue: (row: PurchasingPlanningItem) =>
+              [
+                ...new Set(
+                  (visibleActionsByItemId.get(row.id) ?? []).flatMap(
+                    (action) => (action.assignee ? [action.assignee] : [])
+                  )
+                )
+              ]
+                .map(
+                  (id) => people.find((person) => person.id === id)?.name ?? id
+                )
+                .join(", ")
           }
         },
         {
@@ -894,6 +945,7 @@ const PlanningTable = memo(
       isDisabled,
       visibleActionsByItemId,
       actionTypeOptions,
+      people,
       itemPostingGroups,
       ordersByItemId,
       timeFence,
@@ -995,24 +1047,9 @@ const PlanningTable = memo(
       ]
     );
 
-    const headerActions = (
-      <Switch
-        variant="small"
-        label={t`Assigned to me`}
-        checked={isAssignedToMe}
-        onCheckedChange={(checked) =>
-          setParams({
-            [PLANNING_ACTIONS_SCOPE_PARAM]: checked
-              ? PLANNING_ACTIONS_SCOPE_MINE
-              : null,
-            // the result set changes — reset paging like SearchFilter does
-            offset: null
-          })
-        }
-      />
-    );
-
     const defaultColumnVisibility = {
+      // carries the Assignee filter; the avatars are opt-in
+      [PLANNING_ASSIGNEE_COLUMN]: false,
       active: false,
       type: false
     };
@@ -1068,7 +1105,6 @@ const PlanningTable = memo(
           renderActions={renderActions}
           renderExpandedRow={renderExpandedRow}
           canExpandRow={canExpandRow}
-          headerActions={headerActions}
           title={t`Material Planning`}
           table="planning"
           withSavedView

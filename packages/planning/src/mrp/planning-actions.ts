@@ -39,11 +39,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
+import { purchaseOrderLineArrivalDate } from "./supply-date.ts";
 
 const logger = getFunctionLogger("planning-actions");
 
 const KEY_SEP = "\x1f";
 const WEEKS_TO_PLAN = 48;
+/** Planning periods are weeks. */
+const DAYS_PER_PERIOD = 7;
 const BATCH_SIZE = 500;
 
 export type PlanningActionType =
@@ -197,7 +200,18 @@ export function deriveChangeActions(
     return match ?? { id: "", startDate: dateIso };
   };
 
+  // An order due after the last planning week is outside what this walk can
+  // judge: the demand it was raised for is not loaded (MRP plans further out
+  // than the reschedule check looks), so every such order would read as
+  // "nothing needs it" and be offered for Cancel. It gets no verdict instead —
+  // and is not pulled in to cover an earlier need either.
+  const lastPeriod = periods[periods.length - 1];
+  const isInsideHorizon = (order: OpenSupplyOrder) =>
+    !lastPeriod ||
+    daysBetween(order.dueDate, lastPeriod.startDate) < DAYS_PER_PERIOD;
+
   const orders = openOrders
+    .filter(isInsideHorizon)
     .map((order) => ({
       order,
       consumed: 0,
@@ -740,15 +754,8 @@ export async function generatePlanningActions(
     if (!line.id || !line.itemId || !line.locationId) continue;
     const quantity = Number(line.quantityToReceive) || 0;
     if (quantity <= 0) continue;
-    const dueDate =
-      line.dueDate ??
-      line.promisedDate ??
-      (line.orderDate
-        ? parseDate(line.orderDate)
-            .add({ days: Number(line.leadTime) || 0 })
-            .toString()
-        : null);
-    if (!dueDate) continue;
+    // the same arrival date the projection buckets this line on
+    const dueDate = purchaseOrderLineArrivalDate(line, todayDate);
     pushOrder(`${line.itemId}${KEY_SEP}${line.locationId}`, {
       purchaseOrderLineId: line.id,
       quantity,
@@ -775,17 +782,30 @@ export async function generatePlanningActions(
   const candidates: PlanningActionCandidate[] = [];
 
   for (const location of locations) {
+    // Paged like every other read in the run: a bare RPC call stops at
+    // PostgREST's max_rows, and an item missing from these rows has no
+    // candidates — the diff below would then DELETE its existing actions,
+    // dismissals and assignee overrides included. `id` is the item id, unique
+    // per row, so the pages neither overlap nor skip.
     const [purchasing, production] = await Promise.all([
-      client.rpc("get_purchasing_planning", {
-        company_id: companyId,
-        location_id: location.id,
-        periods: periodIds
-      }),
-      client.rpc("get_production_planning", {
-        company_id: companyId,
-        location_id: location.id,
-        periods: periodIds
-      })
+      fetchAll<RpcPlanningRow>(() =>
+        client
+          .rpc("get_purchasing_planning", {
+            company_id: companyId,
+            location_id: location.id,
+            periods: periodIds
+          })
+          .order("id")
+      ),
+      fetchAll<ProductionPlanningRow>(() =>
+        client
+          .rpc("get_production_planning", {
+            company_id: companyId,
+            location_id: location.id,
+            periods: periodIds
+          })
+          .order("id")
+      )
     ]);
     if (purchasing.error) throw new Error(purchasing.error.message);
     if (production.error) throw new Error(production.error.message);

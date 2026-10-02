@@ -157,6 +157,63 @@ describe("deriveChangeActions", () => {
     });
   });
 
+  it("gives no verdict on an order due after the last planning week", () => {
+    // PERIODS ends with the week of 2026-11-02. Demand beyond it is not
+    // loaded, so an order out there is not "unneeded" — it is unjudged.
+    const actions = deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-far",
+          quantity: 25,
+          dueDate: "2026-11-09", // first day past the horizon
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toEqual([]);
+  });
+
+  it("still judges an order due on the last day of the last planning week", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-edge",
+          quantity: 25,
+          dueDate: "2026-11-08",
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toMatchObject([
+      { type: "Cancel", purchaseOrderLineId: "pol-edge" }
+    ]);
+  });
+
+  it("does not pull an order from beyond the horizon in to cover an earlier need", () => {
+    const actions = deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 10 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-far",
+          quantity: 10,
+          dueDate: "2026-12-14",
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toEqual([]);
+  });
+
   it("raises Cancel for an order with no remaining requirement", () => {
     const actions = deriveChangeActions({
       ...base,

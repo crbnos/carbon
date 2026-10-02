@@ -2814,14 +2814,14 @@ msgstr "Atanmış"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} öğesi hafta boyunca {targetName} için atandı"
 
-msgid "Assigned to me"
-msgstr "Bana Atandı"
-
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
 
 msgid "Assignee"
 msgstr "Atan"
+
+msgid "Assignees"
+msgstr "Atananlar"
 
 msgid "Assignment"
 msgstr "Görevlendirme"
@@ -8832,7 +8832,7 @@ msgid "Hide Again"
 msgstr "Tekrar Gizle"
 
 msgid "Hide calculation"
-msgstr ""
+msgstr "Hesaplamayı gizle"
 
 msgid "Hide raw"
 msgstr "Ham verileri gizle"
@@ -9006,7 +9006,7 @@ msgid "How the sample size is decided — Inspect All, Inspect First N, Percenta
 msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele, İlk N'yi İncele, Lot'un Yüzdesi veya AQL (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
 
 msgid "How the unit price of each quantity was calculated."
-msgstr ""
+msgstr "Her miktar için birim fiyatın nasıl hesaplandığı."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu ölçüm aletinin nasıl kullanıldığı — Normal (düzenli kontroller) veya Mastar (diğer ölçüm aletlerini kalibre eder)."
@@ -12057,7 +12057,7 @@ msgid "No pricing options found"
 msgstr "Fiyatlandırma seçeneği bulunamadı"
 
 msgid "No pricing rules apply to this quantity."
-msgstr ""
+msgstr "Bu miktara hiçbir fiyatlandırma kuralı uygulanmıyor."
 
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
@@ -13763,7 +13763,7 @@ msgid "Price override"
 msgstr "Fiyat geçersiz kılma"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr ""
+msgstr "Fiyatlandırma izleri kaydedilmeden önce fiyatlandırılmış — bu bugünün hesaplaması."
 
 msgid "Prices"
 msgstr "Fiyatlar"
@@ -14303,7 +14303,7 @@ msgstr "Miktar"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
-msgstr ""
+msgstr "Miktar {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Gelecek miktar — açık satın alma siparişlerinde ve üretim (üretme) siparişlerinde."
@@ -15090,11 +15090,11 @@ msgid "Reports"
 msgstr "Raporlar"
 
 msgid "Reprice with current rules"
-msgstr ""
+msgstr "Geçerli kurallarla yeniden fiyatlandır"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr ""
+msgstr "Bugünün kuralları ve maliyetleriyle yeniden fiyatlandırma <0>{0}</0> sonucunu verir."
 
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
@@ -16862,7 +16862,7 @@ msgid "Show available tracking numbers"
 msgstr "Kullanılabilir izleme numaralarını göster"
 
 msgid "Show calculation"
-msgstr ""
+msgstr "Hesaplamayı göster"
 
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
@@ -19087,7 +19087,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr ""
+msgstr "Bu fiyat el ile girilmiş, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
 
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"

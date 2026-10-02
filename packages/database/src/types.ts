@@ -84870,7 +84870,7 @@ export type Database = {
       }
       get_production_planning_grid: {
         Args: {
-          action_assignee?: string
+          action_assignees?: string[]
           action_types?: string[]
           as_of?: string
           company_id: string
@@ -85129,7 +85129,7 @@ export type Database = {
       }
       get_purchasing_planning_grid: {
         Args: {
-          action_assignee?: string
+          action_assignees?: string[]
           action_types?: string[]
           as_of?: string
           company_id: string
