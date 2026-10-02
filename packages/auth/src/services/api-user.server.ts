@@ -22,7 +22,7 @@ import {
   verifyOperatorToken
 } from "./console-token.server";
 import { userHasVerifiedTotpFactor } from "./mfa.server";
-import { getClaims, makePermissionsFromClaims } from "./users";
+import { getClaims, getCompanies, makePermissionsFromClaims } from "./users";
 
 const log = getLogger("auth");
 
@@ -150,6 +150,20 @@ export type ApiPermissions = {
 export type ApiOperator = StoredConsolePinIn;
 
 export type ApiUserDeps = {
+  /**
+   * Resolve the company from the signed-in user when the `x-carbon-company`
+   * header is absent, instead of refusing the request.
+   *
+   * For `/me` ONLY, and it is not a convenience: `/me` is how the app LEARNS
+   * which companies it may send. A fresh install has signed in and has no
+   * company yet, so requiring the header there made first sign-in impossible —
+   * the app asked which companies it had and was told to name one first.
+   *
+   * Every other endpoint still requires the header. The caller has been to
+   * `/me` by then, and a request that forgot to say which tenant it means must
+   * be refused rather than guessed at.
+   */
+  companyOptional?: boolean;
   getUser?: typeof getAuthAccountByAccessToken;
   getClaims?: (userId: string, companyId: string) => Promise<ApiClaims>;
   hasTotp?: typeof userHasVerifiedTotpFactor;
@@ -322,7 +336,13 @@ export async function requireApiUser(
     throw new ApiError(401, "token_expired", "Your session expired");
   }
 
-  const companyId = request.headers.get("x-carbon-company")?.trim();
+  let companyId = request.headers.get("x-carbon-company")?.trim();
+  if (!companyId && deps.companyOptional) {
+    // The user's own companies, ordered by name, so the fallback is stable
+    // rather than whichever row the database happened to return first.
+    const companies = await getCompanies(getCarbonServiceRole(), user.id);
+    companyId = companies.data?.[0]?.companyId ?? undefined;
+  }
   if (!companyId) {
     throw new ApiError(400, "company_required", "No company was selected");
   }
