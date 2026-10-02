@@ -33,6 +33,13 @@ const DEFAULT_COLOR: [f32; 3] = [0.65, 0.65, 0.65];
 const VIEW_DIRECTION: [f32; 3] = [1.0, -1.0, 1.0];
 /// A malformed scene whose nodes form a cycle would otherwise never finish.
 const MAX_NODE_VISITS: usize = 1_000_000;
+/// Ceilings on what one render holds in memory. The counts in a GLB are the
+/// uploader's to choose (a decoded view's size, how many times a mesh is
+/// instanced), and an allocation that fails aborts the whole service rather than
+/// this job. Far above anything the optimiser's own size gates let through.
+const MAX_VIEW_BYTES: usize = 1 << 30;
+const MAX_VERTICES: usize = 8_000_000;
+const MAX_TRIANGLES: usize = 16_000_000;
 
 #[derive(Debug)]
 pub struct ThumbnailError(pub String);
@@ -53,10 +60,10 @@ pub fn render_png(glb: &[u8], size: u32) -> Result<Vec<u8>, ThumbnailError> {
     let size = size.clamp(MIN_SIZE, MAX_SIZE) as usize;
     let doc = Doc::parse(glb)?;
     let triangles = doc.triangles()?;
-    if triangles.positions.is_empty() {
+    if triangles.indices.is_empty() {
         return err("GLB has no triangles to render");
     }
-    let rgba = rasterize(&triangles, size);
+    let rgba = rasterize(&triangles, size)?;
     Ok(encode_png(&rgba, size))
 }
 
@@ -74,6 +81,11 @@ fn u32_le(bytes: &[u8], offset: usize) -> usize {
         bytes[offset + 2],
         bytes[offset + 3],
     ]) as usize
+}
+
+/// `bytes[offset..offset + length]`, or `None` when that runs past the end.
+fn range(bytes: &[u8], offset: usize, length: usize) -> Option<&[u8]> {
+    bytes.get(offset..offset.checked_add(length)?)
 }
 
 fn index_of(value: &Value) -> Option<usize> {
@@ -125,9 +137,7 @@ impl<'a> Doc<'a> {
             }
             let offset = index_of(&view["byteOffset"]).unwrap_or(0);
             let length = index_of(&view["byteLength"]).unwrap_or(0);
-            let bytes = self
-                .bin
-                .get(offset..offset + length)
+            let bytes = range(self.bin, offset, length)
                 .ok_or_else(|| ThumbnailError(format!("bufferView {index} is out of range")))?;
             return Ok((Cow::Borrowed(bytes), index_of(&view["byteStride"])));
         }
@@ -144,9 +154,7 @@ impl<'a> Doc<'a> {
         let stride = index_of(&meshopt["byteStride"]).unwrap_or(0);
         let count = index_of(&meshopt["count"]).unwrap_or(0);
         let mode = meshopt["mode"].as_str().unwrap_or("ATTRIBUTES");
-        let source = self
-            .bin
-            .get(offset..offset + length)
+        let source = range(self.bin, offset, length)
             .ok_or_else(|| ThumbnailError(format!("bufferView {index} is out of range")))?;
 
         // The C decoders assert on these instead of returning an error.
@@ -159,7 +167,11 @@ impl<'a> Doc<'a> {
         if !valid {
             return err(format!("bufferView {index}: invalid meshopt {mode} view"));
         }
-        let mut decoded = vec![0u8; count * stride];
+        let size = count
+            .checked_mul(stride)
+            .filter(|size| *size <= MAX_VIEW_BYTES)
+            .ok_or_else(|| ThumbnailError(format!("bufferView {index} is too large")))?;
+        let mut decoded = vec![0u8; size];
         // SAFETY: `decoded` holds exactly `count * stride` bytes, which is what
         // each decoder writes for the validated stride, and `source` is a live
         // slice of the given length.
@@ -222,7 +234,12 @@ impl<'a> Doc<'a> {
         let stride = view_stride.filter(|s| *s >= element).unwrap_or(element);
         let offset = index_of(&accessor["byteOffset"]).unwrap_or(0);
         let count = index_of(&accessor["count"]).unwrap_or(0);
-        if count > 0 && offset + (count - 1) * stride + element > data.len() {
+        let end = count
+            .saturating_sub(1)
+            .checked_mul(stride)
+            .and_then(|last| last.checked_add(offset))
+            .and_then(|start| start.checked_add(element));
+        if count > 0 && end.is_none_or(|end| end > data.len()) {
             return err(format!("accessor {index} runs past its bufferView"));
         }
         Ok(Accessor {
@@ -330,6 +347,13 @@ impl<'a> Doc<'a> {
                 })
                 .unwrap_or(DEFAULT_COLOR);
 
+            let index_count = indices.as_ref().map_or(positions.count, |i| i.count);
+            if out.positions.len() + positions.count > MAX_VERTICES
+                || out.indices.len() + index_count / 3 > MAX_TRIANGLES
+            {
+                return err("model is too large to render a thumbnail");
+            }
+
             let base = out.positions.len() as u32;
             for i in 0..positions.count {
                 out.positions.push(transform_point(
@@ -354,7 +378,6 @@ impl<'a> Doc<'a> {
             }
 
             let vertex_count = positions.count as u32;
-            let index_count = indices.as_ref().map_or(positions.count, |i| i.count);
             let at = |i: usize| match &indices {
                 Some(indices) => indices.get_index(i),
                 None => i as u32,
@@ -524,7 +547,7 @@ fn normalize(v: [f32; 3]) -> [f32; 3] {
 // ---- Rasteriser ---------------------------------------------------------------
 
 /// Orthographic z-buffer render to straight-alpha RGBA, `size`×`size`.
-fn rasterize(triangles: &Triangles, size: usize) -> Vec<u8> {
+fn rasterize(triangles: &Triangles, size: usize) -> Result<Vec<u8>, ThumbnailError> {
     let toward = normalize(VIEW_DIRECTION);
     let right = normalize(cross([0.0, 0.0, 1.0], toward));
     let up = cross(toward, right);
@@ -556,6 +579,10 @@ fn rasterize(triangles: &Triangles, size: usize) -> Vec<u8> {
             min[axis] = min[axis].min(p[axis]);
             max[axis] = max[axis].max(p[axis]);
         }
+    }
+
+    if !(min[0] <= max[0] && min[1] <= max[1]) {
+        return err("GLB has no finite geometry to render");
     }
 
     let side = size * SUPERSAMPLE;
@@ -670,7 +697,7 @@ fn rasterize(triangles: &Triangles, size: usize) -> Vec<u8> {
             }
         }
     }
-    rgba
+    Ok(rgba)
 }
 
 fn sub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
@@ -768,7 +795,7 @@ mod tests {
     }
 
     fn render(glb: &[u8], size: usize) -> Vec<u8> {
-        rasterize(&Doc::parse(glb).unwrap().triangles().unwrap(), size)
+        rasterize(&Doc::parse(glb).unwrap().triangles().unwrap(), size).unwrap()
     }
 
     #[test]
@@ -840,6 +867,84 @@ mod tests {
             .read_to_end(&mut scanlines)
             .unwrap();
         assert_eq!(scanlines.len(), (64 * 4 + 1) * 64);
+    }
+
+    /// A GLB of `vertices / 3` copies of one triangle, whose JSON the test can rewrite.
+    fn triangle_glb(vertices: usize, edit: impl Fn(&mut Value)) -> Vec<u8> {
+        let mut bin = Vec::new();
+        for _ in 0..vertices / 3 {
+            for value in [0.0f32, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0] {
+                bin.extend_from_slice(&value.to_le_bytes());
+            }
+        }
+        let mut root = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "scene": 0,
+            "scenes": [{ "nodes": [0] }],
+            "nodes": [{ "mesh": 0 }],
+            "meshes": [{ "primitives": [{ "attributes": { "POSITION": 0 } }] }],
+            "accessors": [{
+                "bufferView": 0, "componentType": 5126, "count": vertices, "type": "VEC3"
+            }],
+            "bufferViews": [{ "buffer": 0, "byteLength": bin.len() }],
+            "buffers": [{ "byteLength": bin.len() }],
+        });
+        edit(&mut root);
+        let mut json = serde_json::to_vec(&root).unwrap();
+        while json.len() % 4 != 0 {
+            json.push(b' ');
+        }
+        let mut glb = Vec::from(*b"glTF");
+        glb.extend_from_slice(&2u32.to_le_bytes());
+        glb.extend_from_slice(&((28 + json.len() + bin.len()) as u32).to_le_bytes());
+        glb.extend_from_slice(&(json.len() as u32).to_le_bytes());
+        glb.extend_from_slice(b"JSON");
+        glb.extend_from_slice(&json);
+        glb.extend_from_slice(&(bin.len() as u32).to_le_bytes());
+        glb.extend_from_slice(b"BIN\0");
+        glb.extend_from_slice(&bin);
+        glb
+    }
+
+    fn message(glb: &[u8]) -> String {
+        render_png(glb, 64).unwrap_err().0
+    }
+
+    #[test]
+    fn counts_the_file_cannot_back_are_errors_not_allocations() {
+        assert!(render_png(&triangle_glb(3, |_| {}), 64).is_ok());
+
+        // An accessor claiming more elements than its view holds.
+        let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = u64::MAX.into());
+        assert!(message(&glb).contains("runs past its bufferView"));
+
+        // A compressed view claiming a decoded size no machine has.
+        let glb = triangle_glb(3, |root| {
+            root["bufferViews"][0]["extensions"] = serde_json::json!({
+                "EXT_meshopt_compression": {
+                    "buffer": 0, "byteLength": 36, "byteStride": 12,
+                    "count": u64::MAX / 16, "mode": "ATTRIBUTES"
+                }
+            });
+        });
+        assert!(message(&glb).contains("too large"));
+
+        // A mesh instanced past the vertex ceiling.
+        let glb = triangle_glb(9_000, |root| {
+            let instances = MAX_VERTICES / 9_000 + 1;
+            root["nodes"] = Value::Array(vec![serde_json::json!({ "mesh": 0 }); instances]);
+            root["scenes"][0]["nodes"] = (0..instances).collect::<Vec<_>>().into();
+        });
+        assert!(message(&glb).contains("too large to render"));
+
+        // Geometry with no finite coordinate to frame.
+        let glb = triangle_glb(3, |root| {
+            root["nodes"] = serde_json::json!([
+                { "children": [1], "scale": [f32::MAX, f32::MAX, f32::MAX] },
+                { "mesh": 0, "scale": [f32::MAX, f32::MAX, f32::MAX] }
+            ]);
+        });
+        assert!(message(&glb).contains("no finite geometry"));
     }
 
     #[test]
