@@ -27,7 +27,13 @@ const TYPESCRIPT_ROOTS = [
   "packages/files/src",
   "packages/form/src",
   "packages/react/src",
-  "packages/printing/src"
+  "packages/printing/src",
+  // The MES mobile wire contract. In scope because its zod schemas carry the
+  // quantities and money the mobile app parses, so the precision rules apply.
+  // apps/mobile is NOT listed: it is outside the pnpm workspace (see
+  // pnpm-workspace.yaml) and `walk()` below has no existsSync guard, so a root
+  // whose directory can be absent would throw ENOENT for every contributor.
+  "packages/mes-core/src"
   // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 

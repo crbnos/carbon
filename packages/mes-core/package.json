@@ -1,0 +1,29 @@
+{
+  "name": "@carbon/mes-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./contract": "./src/contract.ts",
+    "./locales": "./src/locales.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

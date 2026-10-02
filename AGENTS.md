@@ -192,8 +192,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Framework**: React Router v7 (NOT Remix), flat routes via `remix-flat-routes`
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
-- **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example), `mobile` (Carbon MES for iOS/Android — Expo, deliberately OUTSIDE the pnpm workspace, see `apps/mobile/AGENTS.md`)
+- **Packages**: 27 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, planning, viewer, workflows-core, mes-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
