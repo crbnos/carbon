@@ -3090,12 +3090,6 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.80.0
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.2

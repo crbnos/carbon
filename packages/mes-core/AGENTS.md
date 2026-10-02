@@ -10,9 +10,10 @@ API conventions: `.claude/rules/mes-mobile-api.md`.
 
 ## Always
 
-- Keep this package importable by **Hermes** (React Native). It may depend on
-  `zod` and on TYPES from `@carbon/database` / `@supabase/supabase-js` — nothing
-  else.
+- Keep this package importable by **Hermes** (React Native). Its only runtime
+  dependency is `zod`. It MAY add a type-only dependency (`import type` from
+  `@carbon/database`) if a schema ever needs a generated DB type — nothing else,
+  and nothing at runtime.
 - Give every endpoint a schema here before writing the route, and have the route
   `parse` its own response with it. A server that cannot satisfy the schema fails
   its own test instead of the app's zod at runtime.
