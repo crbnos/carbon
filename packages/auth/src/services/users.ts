@@ -43,7 +43,7 @@ export async function getCompanies(
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .order("name");
 
@@ -52,9 +52,8 @@ export async function getCompanies(
   }
 
   return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
+    data: companies.data.map((company) => ({
       ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
       logoLightIcon: company.logoLightIcon
         ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
         : null,

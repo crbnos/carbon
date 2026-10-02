@@ -366,12 +366,8 @@ describe("storage(client).company", () => {
       id,
       metadata: { size: 1 }
     });
-    const folder = (key: string) => ({
-      key,
-      name: `co1/docs/${key}/`,
-      id: null,
-      metadata: null
-    });
+    // The paged endpoint's folder shape: no id, no metadata.
+    const folder = (key: string) => ({ key, name: `co1/docs/${key}/` });
 
     it("returns the folder's entries by their own names, sorted", async () => {
       const listV2 = vi.fn(() =>

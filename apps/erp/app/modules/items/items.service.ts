@@ -738,10 +738,13 @@ export async function getItemDemand(
       .in("periodId", periods)
   ]);
 
+  // A failed read is reported, not folded into an empty series: an item with
+  // no demand yet has empty series too, and the two must not look alike.
   return {
     actuals: actuals.data ?? [],
     forecasts: forecasts.data ?? [],
-    projections: projections.data ?? []
+    projections: projections.data ?? [],
+    error: actuals.error ?? forecasts.error ?? projections.error ?? null
   };
 }
 

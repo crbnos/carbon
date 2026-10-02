@@ -53,3 +53,27 @@ describe("selectCompaniesForMrp", () => {
     expect(result).toEqual([]);
   });
 });
+
+describe("selectCompaniesForMrp with a planning-work lookup", () => {
+  it("leaves out a company a run could change nothing for", () => {
+    const result = selectCompaniesForMrp(
+      companies,
+      null,
+      new Set(["c1", "c3"])
+    );
+    expect(result.map((c) => c.id)).toEqual(["c1", "c3"]);
+  });
+
+  it("plans for every company when the lookup failed", () => {
+    expect(selectCompaniesForMrp(companies, null, null)).toEqual(companies);
+  });
+
+  it("still skips a cancelled company that has planning work", () => {
+    const result = selectCompaniesForMrp(
+      companies,
+      [{ id: "c1", stripeSubscriptionStatus: "Canceled" }],
+      new Set(["c1", "c2"])
+    );
+    expect(result.map((c) => c.id)).toEqual(["c2"]);
+  });
+});

@@ -210,7 +210,7 @@ const lastSegment = (path: string) =>
   path.replace(/\/+$/, "").split("/").pop() ?? "";
 
 type ListedEntry =
-  | SearchV2Result["folders"][number]
+  | (SearchV2Result["folders"][number] & { id: null })
   | SearchV2Result["objects"][number];
 
 /**
@@ -235,7 +235,12 @@ async function listFolder(bucket: Bucket, prefix: string) {
       cursor
     });
     if (error) return { data: null, error };
-    entries.push(...data.folders, ...data.objects);
+    // The paged endpoint gives a folder no `id`; the old one, and every
+    // caller, mark a folder with `id: null`.
+    entries.push(
+      ...data.folders.map((folder) => ({ ...folder, id: null })),
+      ...data.objects
+    );
     cursor = data.hasNext ? data.nextCursor : undefined;
   } while (cursor);
   return { data: toFileObjects(entries), error: null };

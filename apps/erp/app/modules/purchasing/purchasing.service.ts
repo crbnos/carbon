@@ -3198,7 +3198,24 @@ export async function getDefaultAttachmentsForPO(
       path: `${companyId}/default-attachments/supplier/${supplierId}`
     });
   }
+  // One listing of the item folder says which items have default attachments
+  // at all, so only those are listed. A listing per PO line item, almost
+  // always empty, was most of the storage calls a PO page made. A failed
+  // listing falls back to checking every item.
+  const bucket = storage(client).company(companyId);
+  const itemFolders =
+    itemIds.length === 0
+      ? null
+      : await bucket.list(`${companyId}/default-attachments/item`);
+  const withAttachments = itemFolders?.error
+    ? null
+    : new Set(
+        (itemFolders?.data ?? [])
+          .filter((entry) => entry.id === null)
+          .map((entry) => entry.name)
+      );
   for (const id of itemIds ?? []) {
+    if (withAttachments && !withAttachments.has(id)) continue;
     prefixes.push({
       source: "item",
       path: `${companyId}/default-attachments/item/${id}`
@@ -3206,7 +3223,7 @@ export async function getDefaultAttachmentsForPO(
   }
 
   const results = await Promise.all(
-    prefixes.map(({ path }) => storage(client).company(companyId).list(path))
+    prefixes.map(({ path }) => bucket.list(path))
   );
 
   return results.flatMap((result, idx) => {
