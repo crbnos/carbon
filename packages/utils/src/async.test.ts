@@ -171,6 +171,33 @@ describe("async.limit", () => {
     expect(g.peak()).toBe(2);
   });
 
+  it("hands a freed slot to the queued call, not to one made while it resumes", async () => {
+    const limit = async.limit(1);
+    const order: string[] = [];
+    let release!: () => void;
+    const first = limit(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        })
+    );
+    const second = limit(async () => {
+      order.push("second");
+    });
+    await Promise.resolve();
+    release();
+    // Runs after the first call has freed its slot, before the second resumes.
+    let third: Promise<void> | undefined;
+    queueMicrotask(() => {
+      third = limit(async () => {
+        order.push("third");
+      });
+    });
+    await Promise.all([first, second]);
+    await third;
+    expect(order).toEqual(["second", "third"]);
+  });
+
   it("frees the slot when a call fails", async () => {
     const limit = async.limit(1);
     await expect(

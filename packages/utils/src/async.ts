@@ -134,15 +134,19 @@ function limit(concurrency = DEFAULT_CONCURRENCY) {
   assertConcurrency(concurrency);
   let active = 0;
   const queue: (() => void)[] = [];
+  // A freed slot passes straight to the next queued call, so a call made
+  // before that one resumes cannot take it.
   const next = () => {
-    active--;
-    queue.shift()?.();
+    const waiter = queue.shift();
+    if (waiter) waiter();
+    else active--;
   };
   return async <R>(fn: () => MaybePromise<R>): Promise<R> => {
     if (active >= concurrency) {
       await new Promise<void>((resolve) => queue.push(resolve));
+    } else {
+      active++;
     }
-    active++;
     try {
       return await fn();
     } finally {

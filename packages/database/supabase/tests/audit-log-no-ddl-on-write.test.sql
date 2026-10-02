@@ -54,8 +54,12 @@ BEGIN
   EXECUTE format('DROP TRIGGER "append_only" ON %I', tbl);
   EXECUTE format('DROP POLICY "SELECT" ON %I', tbl);
   EXECUTE format('GRANT INSERT ON %I TO authenticated', tbl);
+  EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', tbl);
 
   PERFORM insert_audit_log_batch(company, ARRAY[entry]);
+
+  ASSERT (SELECT relrowsecurity FROM pg_class WHERE oid = format('public.%I', tbl)::regclass),
+    'row level security is enabled again on the next write';
 
   ASSERT EXISTS (
     SELECT 1 FROM pg_trigger

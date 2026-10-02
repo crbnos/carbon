@@ -29,12 +29,13 @@ const REQUEST_CONCURRENCY = 8;
 
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
-// A select, an RPC, or a storage read. A write to a table is not: some GET
-// routes write (an OAuth callback saving its tokens), and that must finish.
+// A select (or an RPC called with `{ get: true }`) or a storage read. Not a
+// POST RPC: some write, and a write cut off mid-call may or may not have
+// committed. Not a table write either: some GET routes write (an OAuth
+// callback saving its tokens), and that must finish.
 const isRead = (url: string, method: string) =>
   isStorageRead(url, method) ||
-  (url.includes("/rest/v1/") &&
-    (READ_METHODS.has(method) || url.includes("/rest/v1/rpc/")));
+  (url.includes("/rest/v1/") && READ_METHODS.has(method));
 
 /**
  * The fetch for a client built while handling `request` (by default the one
@@ -43,8 +44,9 @@ const isRead = (url: string, method: string) =>
  * - Every call waits for one of REQUEST_CONCURRENCY slots, shared by all the
  *   clients of the request, so `Promise.all` over a page's queries cannot take
  *   every connection. A call never waits on another, so this cannot deadlock.
- * - On a read request (GET/HEAD), reads stop when `request.signal` aborts — the
- *   browser has gone. Table writes, auth and edge function calls run to the end.
+ * - On a read request (GET/HEAD), selects and storage reads stop when
+ *   `request.signal` aborts — the browser has gone. RPCs, table writes, auth
+ *   and edge function calls run to the end.
  */
 export function requestFetch(
   request = currentRequest()

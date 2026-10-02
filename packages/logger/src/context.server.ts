@@ -78,10 +78,9 @@ export function currentRequest(): Request | undefined {
  * server aborts it when the client goes away before the response is done.
  */
 export function readRequestSignal(): AbortSignal | undefined {
-  const request = currentRequest();
-  return request && READ_METHODS.has(request.method)
-    ? request.signal
-    : undefined;
+  const provider = storage.getStore();
+  if (!provider?.get(isReadRequestContext)) return undefined;
+  return provider.get(requestContext)?.signal;
 }
 
 /** Whether the client of the current read request has gone away. */
@@ -173,7 +172,11 @@ export function runInRequestContext<T>(
   fn: () => T,
   options?: { isRead?: boolean; request?: Request }
 ): T {
-  provider.set(isReadRequestContext, options?.isRead ?? true);
-  if (options?.request) provider.set(requestContext, options.request);
+  // As the middleware decides it: from the request's method, when there is one.
+  const isRead =
+    options?.isRead ??
+    (options?.request ? READ_METHODS.has(options.request.method) : true);
+  provider.set(isReadRequestContext, isRead);
+  provider.set(requestContext, options?.request ?? null);
   return storage.run(provider, fn);
 }

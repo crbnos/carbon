@@ -25,7 +25,7 @@ describe("ensureLoggingConfigured (server)", () => {
 
   // A cancelled query comes back to its loader as an error. With the client
   // gone it is not a failure, and logging it would bury the real ones.
-  it("drops errors logged for a read whose client has gone", () => {
+  it("drops cancellation errors logged for a read whose client has gone, and nothing else", () => {
     const write = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
@@ -34,17 +34,32 @@ describe("ensureLoggingConfigured (server)", () => {
     const request = new Request("http://erp.test/x", {
       signal: controller.signal
     });
-    const fail = () => getLogger("erp").error("Failed to load part");
+    // What supabase-js returns for a cancelled call, as a loader logs it.
+    const cancelled = {
+      error: { message: "AbortError: This operation was aborted", code: "" }
+    };
+    const fail = (properties = {}) =>
+      getLogger("erp").error("Failed to load part", properties);
+    const inRequest = (properties?: object) =>
+      runInRequestContext(new RouterContextProvider(), () => fail(properties), {
+        request
+      });
 
-    runInRequestContext(new RouterContextProvider(), fail, { request });
+    inRequest(cancelled);
     expect(write).toHaveBeenCalledTimes(1);
 
     controller.abort();
-    runInRequestContext(new RouterContextProvider(), fail, { request });
+    inRequest(cancelled);
+    inRequest({ result: cancelled });
     expect(write).toHaveBeenCalledTimes(1);
 
-    fail();
+    // A real failure after the client left, e.g. a write, is still logged.
+    inRequest({ error: new Error("duplicate key") });
     expect(write).toHaveBeenCalledTimes(2);
+
+    // Outside the request, the same AbortError is a timeout, not a departure.
+    fail(cancelled);
+    expect(write).toHaveBeenCalledTimes(3);
     write.mockRestore();
   });
 });

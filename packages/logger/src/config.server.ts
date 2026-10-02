@@ -19,6 +19,20 @@ import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
 
+/**
+ * A cancelled call: the AbortError itself, or supabase-js's error for it
+ * (`message: "AbortError: …"`), possibly under a result's `error`.
+ */
+function isAbortError(value: unknown, depth = 0): boolean {
+  if (!value || typeof value !== "object" || depth > 2) return false;
+  const { name, message, error } = value as Record<string, unknown>;
+  return (
+    name === "AbortError" ||
+    (typeof message === "string" && message.startsWith("AbortError")) ||
+    isAbortError(error, depth + 1)
+  );
+}
+
 export type ConfigureLoggingOptions = {
   /** Override the env-derived level. */
   level?: CarbonLogLevel;
@@ -69,13 +83,14 @@ export function ensureLoggingConfigured(
     contextLocalStorage: new AsyncLocalStorage(),
     sinks: { console: sink, httpConsole: httpSink },
     filters: {
-      // Once the client of a read has gone, its database calls are cancelled
-      // and every one of them comes back as an error. Those are not failures,
-      // the same stance `handleError` takes on an aborted request.
+      // Once the client of a read has gone, its database reads are cancelled
+      // and each comes back as an AbortError. Those are not failures, the same
+      // stance `handleError` takes on an aborted request. Anything else logged
+      // after the client left (a write that failed) still gets through.
       liveRequest: (record) =>
         !(
-          (record.level === "error" || record.level === "warning") &&
-          isAbandonedRead()
+          isAbandonedRead() &&
+          Object.values(record.properties).some((value) => isAbortError(value))
         )
     },
     loggers: [

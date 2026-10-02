@@ -114,11 +114,11 @@ describe("a client bound to a request", () => {
     expect(first.error?.message).toContain("AbortError");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    const second = await client.rpc("get_part_details", { item_id: "x" });
+    const second = await client.from("job").select("id");
     expect(second.error?.message).toContain("AbortError");
   });
 
-  it("leaves table writes, auth and edge function calls alone, and every call of an action", async () => {
+  it("leaves RPCs, table writes, auth and edge function calls alone, and every call of an action", async () => {
     const fetchMock = vi.fn(
       async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response("{}", { status: 200 })
@@ -136,6 +136,8 @@ describe("a client bound to a request", () => {
     expect(invoked.error).toBeNull();
     const written = await read.from("item").update({ name: "x" }).eq("id", "1");
     expect(written.error).toBeNull();
+    const rpc = await read.rpc("get_part_details", { item_id: "x" });
+    expect(rpc.error).toBeNull();
 
     const action = getCarbonClient(
       "anon",
@@ -148,7 +150,7 @@ describe("a client bound to a request", () => {
     for (const [, init] of fetchMock.mock.calls) {
       expect(init?.signal?.aborted ?? false).toBe(false);
     }
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
 

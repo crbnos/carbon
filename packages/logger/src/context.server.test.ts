@@ -62,6 +62,21 @@ describe("currentRequest and readRequestSignal", () => {
     expect(readRequestSignal()).toBeUndefined();
   });
 
+  it("never hand an earlier read's signal to a write in a reused context", () => {
+    const p = provider();
+    const read = load(new AbortController());
+    runInRequestContext(p, readRequestSignal, { request: read });
+    expect(
+      runInRequestContext(p, readRequestSignal, { isRead: false })
+    ).toBeUndefined();
+    expect(
+      runInRequestContext(p, readRequestSignal, {
+        isRead: false,
+        request: read
+      })
+    ).toBeUndefined();
+  });
+
   it("report a read whose client has gone", () => {
     const controller = new AbortController();
     const request = load(controller);
