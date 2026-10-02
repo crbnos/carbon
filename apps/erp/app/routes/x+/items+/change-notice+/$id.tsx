@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -31,7 +30,6 @@ import {
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getPart,
-  getPartUsedIn,
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
@@ -48,8 +46,6 @@ import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "change-notice");
 
 export const handle: Handle = {
   // Leaf crumb: show the CO's readable number (from loader data), not a second
@@ -125,26 +121,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : null;
 
   const affectedRows = affected.data ?? [];
-
-  // Impact = where each affected item is used across the system (jobs, POs,
-  // sales, receipts, methods, NCRs, …) — the same "Used In" data the part detail
-  // page loads, one entry per affected item. Streamed: only the impact panel
-  // reads it.
-  const impactUsedIn = Promise.all(
-    affectedRows.map(async (a) => ({
-      itemId: a.itemId,
-      readableIdWithRevision: a.item?.readableIdWithRevision ?? a.itemId,
-      itemName: a.item?.name ?? null,
-      usedIn: await getPartUsedIn(client, a.itemId, companyId)
-    }))
-  ).catch((error) => {
-    logger.error("Failed to load change notice impact", {
-      companyId,
-      changeNoticeId: id,
-      error
-    });
-    return [];
-  });
 
   const diffByAffectedId = new Map(
     (diff.data?.items ?? []).map((entry) => [entry.affectedItemId, entry])
@@ -307,7 +283,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     diff: diff.data ?? { items: [] },
     actions: actions.data ?? [],
     requiredActions,
-    impactUsedIn,
     nonConformanceOptions,
     linkedNonConformance: linkedNonConformance
       ? {

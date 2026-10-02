@@ -17,6 +17,14 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         changeType: "Version",
         sortOrder: 1
       }
+    ],
+    impactJobs: [
+      {
+        job: "floor-termbox",
+        rationale:
+          "Review the in-progress TRM-BOX-9000 build for cable gland clearance before continuing assembly.",
+        taskName: "Review TRM-BOX-9000 traveler for cable gland relocation"
+      }
     ]
   },
   {

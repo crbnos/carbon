@@ -6,8 +6,16 @@ import { resolveDate } from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { addBomLine, createItem } from "../helpers/items.ts";
 import { copyMethodToMethod } from "../helpers/method-copy.ts";
-import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
-import type { Ctx, ItemRef } from "../types.ts";
+import {
+  insertId,
+  insertRow,
+  need,
+  nextSequence,
+  one,
+  RICH,
+  rows
+} from "../sql.ts";
+import type { ChangeOrderSpec, Ctx, ItemRef } from "../types.ts";
 
 // The item's current (highest-version) make method — what a change notice clones
 // its draft from, and what the release diff reads as the base.
@@ -23,6 +31,118 @@ async function baseMakeMethod(
      LIMIT 1`,
     [item.id, ctx.companyId]
   );
+}
+
+// Assess an actual producing Job, not a hand-written approximation of its
+// snapshot. The same source fields and root method are read by the ERP writer.
+async function seedImpactJob(
+  ctx: Ctx,
+  changeNoticeId: string,
+  affectedIds: Map<string, string>,
+  impact: NonNullable<ChangeOrderSpec["impactJobs"]>[number],
+  sortOrder: number
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${impact.job}`, "job");
+  const matches = await rows<{
+    sourceItemId: string;
+    affectedItemLabel: string;
+    snapshot: Record<string, unknown>;
+  }>(
+    ctx.client,
+    `SELECT j."itemId" AS "sourceItemId",
+            COALESCE(i."readableIdWithRevision", i."readableId", i.name)
+              AS "affectedItemLabel",
+            jsonb_build_object(
+              'schema', 'JOB_SNAPSHOT_V1',
+              'jobId', j.id,
+              'itemId', j."itemId",
+              'itemRevision', i.revision,
+              'status', j.status,
+              'plannedQuantity', j.quantity,
+              'completedQuantity', j."quantityComplete",
+              'remainingQuantity', GREATEST(j.quantity - j."quantityComplete", 0),
+              'quantityShipped', j."quantityShipped",
+              'quantityReceivedToInventory', j."quantityReceivedToInventory",
+              'dueDate', j."dueDate"::text,
+              'effectiveMethodId', root.id,
+              'effectiveMethodVersion', root.version,
+              'unitOfMeasureCode', j."unitOfMeasureCode",
+              'eligibilityBasis', 'activeProducingJob'
+            ) AS snapshot
+     FROM job j
+     JOIN item i ON i.id = j."itemId" AND i."companyId" = j."companyId"
+     JOIN "jobMakeMethod" root ON root."jobId" = j.id
+       AND root."companyId" = j."companyId"
+       AND root."itemId" = j."itemId" AND root."parentMaterialId" IS NULL
+     WHERE j.id = $1 AND j."companyId" = $2
+       AND j.status IN ('Ready', 'In Progress')`,
+    [jobId, ctx.companyId]
+  );
+  const source = matches[0];
+  if (matches.length !== 1 || !source) {
+    throw new Error(`Seed: expected one eligible root for job:${impact.job}`);
+  }
+  const affectedItemId = affectedIds.get(source.sourceItemId);
+  if (!affectedItemId) {
+    throw new Error(
+      `Seed: job:${impact.job} item is not affected by this notice`
+    );
+  }
+  const snapshot = JSON.stringify(source.snapshot);
+  const decisionId = await insertId(ctx, "changeOrderImpactDecision", {
+    changeNoticeId,
+    targetType: "job",
+    targetId: jobId,
+    decisionStatus: "Action required",
+    rationale: impact.rationale,
+    assessmentSnapshot: snapshot,
+    assessedBy: ctx.userId
+  });
+  await insertRow(ctx, "changeOrderImpactDecisionAffectedItem", {
+    decisionId,
+    affectedItemId,
+    affectedItemSourceId: source.sourceItemId,
+    affectedItemLabel: source.affectedItemLabel,
+    startedBy: ctx.userId
+  });
+  await insertRow(ctx, "changeOrderImpactDecisionHistory", {
+    decisionId,
+    targetType: "job",
+    targetId: jobId,
+    eventType: "Decision created",
+    newStatus: "Action required",
+    newSnapshot: snapshot,
+    rationale: impact.rationale
+  });
+  await insertRow(ctx, "changeOrderImpactDecisionHistory", {
+    decisionId,
+    targetType: "job",
+    targetId: jobId,
+    eventType: "Provenance started",
+    newStatus: "Action required",
+    newSnapshot: snapshot,
+    rationale: impact.rationale,
+    relatedAffectedItemId: affectedItemId
+  });
+  const taskId = await insertId(ctx, "changeOrderActionTask", {
+    changeOrderId: changeNoticeId,
+    name: impact.taskName,
+    status: "Pending",
+    actionTypeId: null,
+    taskOrigin: "Impact follow-up",
+    sortOrder
+  });
+  await insertRow(ctx, "changeOrderImpactDecisionActionTask", {
+    decisionId,
+    actionTaskId: taskId
+  });
+  await insertRow(ctx, "changeOrderImpactDecisionHistory", {
+    decisionId,
+    targetType: "job",
+    targetId: jobId,
+    eventType: "Task linked",
+    relatedActionTaskId: taskId
+  });
 }
 
 export async function runTier8(ctx: Ctx): Promise<void> {
@@ -85,6 +205,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
       });
     }
 
+    const affectedIds = new Map<string, string>();
     for (const affected of spec.affectedItems) {
       const item = need(ctx.refs.items, affected.item);
       const base = await baseMakeMethod(ctx, item);
@@ -244,7 +365,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
         }
       }
 
-      await insertId(ctx, "changeOrderAffectedItem", {
+      const affectedId = await insertId(ctx, "changeOrderAffectedItem", {
         changeOrderId: changeOrder,
         itemId: item.id,
         changeType: affected.changeType,
@@ -262,6 +383,17 @@ export async function runTier8(ctx: Ctx): Promise<void> {
             : resolveDate(ctx.anchor, affected.successorEffectivityOffset),
         sortOrder: affected.sortOrder
       });
+      affectedIds.set(item.id, affectedId);
+    }
+
+    for (const [impactIndex, impact] of (spec.impactJobs ?? []).entries()) {
+      await seedImpactJob(
+        ctx,
+        changeOrder,
+        affectedIds,
+        impact,
+        (spec.actionTasks?.length ?? 0) + impactIndex + 1
+      );
     }
 
     ctx.refs.documents[spec.ref] = changeOrder;

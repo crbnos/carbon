@@ -17,6 +17,14 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         changeType: "Version",
         sortOrder: 1
       }
+    ],
+    impactJobs: [
+      {
+        job: "floor-manifold",
+        rationale:
+          "Check the ready MCH-MANI-BLK build against the revised customer port location before machining.",
+        taskName: "Review MCH-MANI-BLK traveler for port relocation"
+      }
     ]
   },
   {

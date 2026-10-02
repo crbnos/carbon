@@ -30,7 +30,6 @@ import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Combobox, CreatableCombobox } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import { useResolved } from "~/hooks/useResolved";
 import type { action } from "~/routes/x+/items+/change-notice+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -39,7 +38,7 @@ import { changeNoticePriority, isChangeNoticeLocked } from "../../items.models";
 import type { ChangeNotice } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeNoticeReleaseMerge from "./ChangeNoticeReleaseMerge";
-import ImpactPanel, { type ChangeNoticeImpactItem } from "./ImpactPanel";
+import ImpactPanel from "./ImpactPanel";
 
 // One CO-centric section — the xxs uppercase heading + content used by the
 // PurchaseOrder / SalesOrder / Quote property sidebars. Sections are separated by
@@ -73,8 +72,6 @@ function PropertiesSection({
 // route.) Self-contained: reads everything from the $id route loader so
 // ResizablePanels can render it with only a `key` (mirrors SalesOrderProperties).
 // Owns its own width / scroll / border / padding.
-const NO_IMPACT: ChangeNoticeImpactItem[] = [];
-
 const ChangeNoticeProperties = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
@@ -87,7 +84,6 @@ const ChangeNoticeProperties = () => {
     changeNotice: ChangeNotice;
     types: ListItem[];
     affectedItems: AffectedItemDraft[];
-    impactUsedIn: Promise<ChangeNoticeImpactItem[]>;
     nonConformanceOptions: {
       id: string;
       nonConformanceId: string;
@@ -103,7 +99,6 @@ const ChangeNoticeProperties = () => {
   const changeNotice = routeData?.changeNotice;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
-  const impactUsedIn = useResolved(routeData?.impactUsedIn, NO_IMPACT, id);
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);
@@ -364,7 +359,7 @@ const ChangeNoticeProperties = () => {
       {/* Reason for change, description, and the action tasks now live on the
           top-level detail route ($id.details), not here. */}
       <PropertiesSection title={<Trans>Impact</Trans>}>
-        <ImpactPanel embedded items={impactUsedIn} />
+        <ImpactPanel embedded changeNoticeId={id} />
       </PropertiesSection>
     </VStack>
   );

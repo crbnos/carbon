@@ -1649,6 +1649,12 @@ export type ChangeOrderSpec = {
   reasonForChange?: string;
   nonConformance?: string;
   actionTasks?: ChangeOrderActionTaskSpec[];
+  /** Assessed live Jobs for affected items, with an Impact follow-up task. */
+  impactJobs?: {
+    job: string;
+    rationale: string;
+    taskName: string;
+  }[];
 };
 
 export type ChangeOrderData = {
