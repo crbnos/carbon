@@ -15,6 +15,65 @@ vi.mock("../../config/env", () => ({
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
 
+// A loader's client carries its request's signal: once the browser has gone,
+// what the loader still wants from the database is not worth fetching.
+describe("a client tied to a request's signal", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  // Resolves only when its signal aborts, as a slow query would.
+  const hangingFetch = () =>
+    vi.fn(
+      (_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          const fail = () =>
+            reject(
+              new DOMException("This operation was aborted", "AbortError")
+            );
+          if (init?.signal?.aborted) return fail();
+          init?.signal?.addEventListener("abort", fail);
+        })
+    );
+
+  it("stops a query in flight, does not retry it, and fails later ones at once", async () => {
+    const fetchMock = hangingFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const request = new AbortController();
+    const client = getCarbonClient("anon", "user-jwt", request.signal);
+
+    const pending = client.from("item").select("id");
+    setTimeout(() => request.abort(), 5);
+    const first = await pending;
+    expect(first.error?.message).toContain("AbortError");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const second = await client.rpc("get_part_details", { item_id: "x" });
+    expect(second.error?.message).toContain("AbortError");
+  });
+
+  it("leaves table writes, auth and edge function calls alone", async () => {
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response("{}", { status: 200 })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const request = new AbortController();
+    request.abort();
+    const client = getCarbonClient("anon", "user-jwt", request.signal);
+
+    const invoked = await client.functions.invoke("create", { body: {} });
+    expect(invoked.error).toBeNull();
+    const written = await client
+      .from("item")
+      .update({ name: "x" })
+      .eq("id", "1");
+    expect(written.error).toBeNull();
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init?.signal?.aborted ?? false).toBe(false);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
 // Edge functions recognise a service-role caller by the Authorization bearer.
 // supabase-js stops sending a new-format key as that bearer on function calls,
 // so the client must set it itself for either key format.

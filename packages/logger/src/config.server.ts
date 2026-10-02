@@ -9,6 +9,7 @@ import {
   getJsonLinesFormatter
 } from "@logtape/logtape";
 import { redactByField } from "@logtape/redaction";
+import { isAbandonedRead } from "./context.server";
 import { devFormatter } from "./dev-formatter";
 import { readEnv } from "./env";
 import { httpDevFormatter } from "./http-formatter";
@@ -67,11 +68,22 @@ export function ensureLoggingConfigured(
     reset: true,
     contextLocalStorage: new AsyncLocalStorage(),
     sinks: { console: sink, httpConsole: httpSink },
+    filters: {
+      // Once the client of a read has gone, its database calls are cancelled
+      // and every one of them comes back as an error. Those are not failures,
+      // the same stance `handleError` takes on an aborted request.
+      liveRequest: (record) =>
+        !(
+          (record.level === "error" || record.level === "warning") &&
+          isAbandonedRead()
+        )
+    },
     loggers: [
       {
         category: [CARBON_ROOT_CATEGORY],
         lowestLevel: level,
-        sinks: ["console"]
+        sinks: ["console"],
+        filters: ["liveRequest"]
       },
       {
         category: [CARBON_ROOT_CATEGORY, "http"],

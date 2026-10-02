@@ -7,8 +7,10 @@ import { describe, expect, it } from "vitest";
 import {
   getRequestContext,
   getRouterContext,
+  isAbandonedRead,
   oncePerRead,
   oncePerRequest,
+  readRequestSignal,
   requestMemoSize,
   runInRequestContext
 } from "./context.server";
@@ -35,6 +37,35 @@ describe("request context", () => {
 
     expect(runInRequestContext(p, service)).toBe("req_123");
     expect(service()).toBeUndefined(); // outside a request
+  });
+});
+
+describe("readRequestSignal", () => {
+  it("is the request's signal on a read, and absent on a write or outside a request", () => {
+    const { signal } = new AbortController();
+    expect(runInRequestContext(provider(), readRequestSignal, { signal })).toBe(
+      signal
+    );
+    expect(
+      runInRequestContext(provider(), readRequestSignal, {
+        isRead: false,
+        signal
+      })
+    ).toBeUndefined();
+    expect(readRequestSignal()).toBeUndefined();
+  });
+
+  it("reports a read whose client has gone", () => {
+    const request = new AbortController();
+    const p = provider();
+    expect(
+      runInRequestContext(p, isAbandonedRead, { signal: request.signal })
+    ).toBe(false);
+    request.abort();
+    expect(
+      runInRequestContext(p, isAbandonedRead, { signal: request.signal })
+    ).toBe(true);
+    expect(isAbandonedRead()).toBe(false);
   });
 });
 

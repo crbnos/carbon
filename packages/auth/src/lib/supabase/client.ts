@@ -32,11 +32,15 @@ const isStorageRead = (url: string, method: string) =>
     method === "HEAD" ||
     (method === "POST" && url.includes("/storage/v1/object/list")));
 
-export const storageReadFetch: typeof fetch = async (input, init) => {
-  const url = input instanceof Request ? input.url : String(input);
-  const method = (
+const urlAndMethod = (input: RequestInfo | URL, init?: RequestInit) => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: (
     init?.method ?? (input instanceof Request ? input.method : "GET")
-  ).toUpperCase();
+  ).toUpperCase()
+});
+
+export const storageReadFetch: typeof fetch = async (input, init) => {
+  const { url, method } = urlAndMethod(input, init);
   if (!isStorageRead(url, method)) return fetch(input, init);
 
   for (let attempt = 0; ; attempt++) {
@@ -61,9 +65,37 @@ export const storageReadFetch: typeof fetch = async (input, init) => {
   }
 };
 
+// A select, an RPC, or a storage read. A write to a table is not: some GET
+// routes write (an OAuth callback saving its tokens), and that must finish.
+const isRead = (url: string, method: string) =>
+  isStorageRead(url, method) ||
+  (url.includes("/rest/v1/") &&
+    (method === "GET" || method === "HEAD" || url.includes("/rest/v1/rpc/")));
+
+/**
+ * Database reads and storage reads stop when `signal` aborts. Table writes,
+ * auth and edge function calls are left alone: a saved row, a token refresh or
+ * an invoked function must not be cut off half way.
+ */
+export const abortableFetch =
+  (signal: AbortSignal): typeof fetch =>
+  (input, init) => {
+    const { url, method } = urlAndMethod(input, init);
+    if (!isRead(url, method)) return storageReadFetch(input, init);
+    return storageReadFetch(input, {
+      ...init,
+      signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal
+    });
+  };
+
+/**
+ * `signal` is the request's, for a client that lives for one read request
+ * (`readRequestSignal()`): its calls are cancelled once the client has gone.
+ */
 export const getCarbonClient = (
   supabaseKey: string,
-  accessToken?: string
+  accessToken?: string,
+  signal?: AbortSignal
 ): SupabaseClient<Database, "public"> => {
   // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
   // not sent as the bearer on Edge Function calls, and those functions tell a
@@ -79,7 +111,10 @@ export const getCarbonClient = (
         autoRefreshToken: false,
         persistSession: false
       },
-      global: { headers, fetch: storageReadFetch }
+      global: {
+        headers,
+        fetch: signal ? abortableFetch(signal) : storageReadFetch
+      }
     }
   );
 
@@ -122,9 +157,10 @@ export const createCarbonWithAuthGetter = (
 };
 
 export const getCarbon = (
-  accessToken?: string
+  accessToken?: string,
+  signal?: AbortSignal
 ): SupabaseClient<Database, "public"> => {
-  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken);
+  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken, signal);
 };
 
 export const carbonClient = getCarbon();

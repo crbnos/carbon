@@ -81,7 +81,7 @@ pnpm --filter @carbon/logger test
 | `.` | `getLogger`, `LOG_LEVELS`, `parseLogLevel`, `CarbonLogLevel`, `Logger` type — isomorphic, safe everywhere |
 | `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod, ALS) |
 | `./config.client` | `ensureLoggingConfigured()` (plain console sink, no ALS) |
-| `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER`, plus the request-context API re-exported from `context.server`: `requestContextMiddleware`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead` |
+| `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER`, plus the request-context API re-exported from `context.server`: `requestContextMiddleware`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead`, `readRequestSignal` (the abort signal of a GET/HEAD request, undefined on a mutating one; `requirePermissions` ties its Supabase client to it, and the `liveRequest` log filter drops errors and warnings once it has aborted) |
 | `./tracing.server` | `createTracing({ serviceName, afterRequest })` — React Router `instrumentations` (OpenTelemetry); `annotateRequestSpan(attributes)`; `nameRequestSpan(name)`; `namedMiddleware(list)`; `withSpan(name, attributes, run)`; `queryLog` — Kysely `log` hook, `undefined` when tracing is off |
 | `./inngest` | `createInngestLogger()` — adapter passed to `new Inngest({ logger })` |
 

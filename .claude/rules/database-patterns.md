@@ -35,6 +35,20 @@ dropped connection; uploads, deletes, auth and function calls pass straight thro
 re-create this config ad hoc, and do not widen that wrapper to database calls: it would multiply
 the SDK's retries.
 
+**A read request's client stops when the browser leaves.** On a GET/HEAD request the client
+`requirePermissions` returns (user-scoped or `bypassRls`) carries the request's abort signal
+(`readRequestSignal()` from `@carbon/logger`, set by `requestContextMiddleware`;
+`abortableFetch` in `client.ts`). When the client disconnects before the response is done — a
+navigation that supersedes this one, a closed tab — queries in flight are cancelled and later
+ones fail at once with an `AbortError` in `{ error }`, never retried. So a loader that runs its
+queries in stages stops at the stage it was on. Tied to the signal: selects, RPCs and storage
+reads. NOT tied to it: actions (a mutating request's writes run to the end), table writes even
+on a GET (an OAuth callback saving its tokens), auth and edge-function calls, clients built outside
+`requirePermissions` (`getCarbonServiceRole()` called directly, jobs), and Kysely. Error and
+warning logs from such an abandoned read are dropped (`liveRequest` filter in
+`@carbon/logger`'s `config.server.ts`), the stance `handleError` already takes. Passing the same signal to
+`async.map` / `async.all` (`{ signal: request.signal }`) also stops queued work from starting.
+
 ### Getting a client in a route
 
 Loaders/actions never construct a client directly. They call `requirePermissions`

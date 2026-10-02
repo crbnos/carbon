@@ -50,7 +50,9 @@ export const requestContextMiddleware: MiddlewareFunction<Response> = (
   { context, request },
   next
 ) => {
-  context.set(isReadRequestContext, READ_METHODS.has(request.method));
+  const isRead = READ_METHODS.has(request.method);
+  context.set(isReadRequestContext, isRead);
+  if (isRead) context.set(readSignalContext, request.signal);
   return storage.run(context, () => next());
 };
 
@@ -58,6 +60,28 @@ const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /** Whether this request only reads — see `oncePerRead`. */
 const isReadRequestContext = createContext<boolean>(false);
+
+const readSignalContext = createContext<AbortSignal | null>(null);
+
+/**
+ * The current request's abort signal, when the request only reads.
+ *
+ * The server aborts it when the client goes away before the response is done
+ * (a navigation that supersedes this one, a closed tab). Reads made for a
+ * response nobody will receive can stop; `requirePermissions` ties the Supabase
+ * client it hands out to this.
+ *
+ * Undefined on a mutating request — an action's writes must run to the end
+ * whether or not the client waits — and outside a request.
+ */
+export function readRequestSignal(): AbortSignal | undefined {
+  return storage.getStore()?.get(readSignalContext) ?? undefined;
+}
+
+/** Whether the client of the current read request has gone away. */
+export function isAbandonedRead(): boolean {
+  return readRequestSignal()?.aborted ?? false;
+}
 
 /** The current request's context provider, or undefined outside a request. */
 export function getRouterContext(): RequestContext | undefined {
@@ -141,8 +165,12 @@ export function requestMemoSize(): number {
 export function runInRequestContext<T>(
   provider: RequestContext,
   fn: () => T,
-  options?: { isRead?: boolean }
+  options?: { isRead?: boolean; signal?: AbortSignal }
 ): T {
-  provider.set(isReadRequestContext, options?.isRead ?? true);
+  const isRead = options?.isRead ?? true;
+  provider.set(isReadRequestContext, isRead);
+  if (isRead && options?.signal) {
+    provider.set(readSignalContext, options.signal);
+  }
   return storage.run(provider, fn);
 }
