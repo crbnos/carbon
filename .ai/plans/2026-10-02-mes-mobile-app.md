@@ -7,74 +7,49 @@
 
 ## Progress
 
-**Session of 2026-10-02 (second pass).** Tasks 23, 31, 34–43, 45–48 and 52's
-groundwork are done; the branch is `sid/carbon-mobile`, PR crbnos/carbon#1811.
-Not done: Task 44 (the shared-terminal UI on top of Task 23's endpoints),
-Task 49 (TestFlight / Play builds — needs the user's own Apple and Google
-accounts and `expo-dev-client`, which is an Ask First native module), Task 50
-(the store-review account on Carbon Cloud), Task 51 (the acceptance matrix —
-needs the three devices), and Task 52's docs page and changelog entry.
-Translations for the 339 newly-extracted strings need `pnpm translate`, which
-calls an external LLM service, so it is left for the user to run.
+**Session of 2026-10-02.** Phases 0-3 are complete and Phase 4 is complete
+except for the parts that need the user's own accounts and hardware. Branch
+`sid/carbon-mobile`, PR crbnos/carbon#1811.
 
-Three bugs found while building, all recorded in the commits: the supabase
-client never had a session set (so every direct read returned zero rows, not an
-error); the instance cache key was a server-chosen display name rather than the
-local uuid; and `typecheck` depended on a gitignored Uniwind declaration, which
-is now a lesson in `.ai/lessons.md`.
+Done: Tasks 1-48, 50 (server side) and 52.
 
-- [x] Task 1: Record the spec corrections found during planning
-- [x] Task 2: Scope the React pin to the packages that need it
-- [x] Task 3: Create `packages/mes-core`
-- [x] Task 4: Create the Expo app at `apps/mobile`
-- [x] Task 5: Styling — Uniwind, Carbon tokens, React Native Reusables
-- [x] Task 6: Lingui on Metro (shared `mes` catalog)
-- [x] Task 7: App shell — providers and the Expo Router skeleton
-- [x] Task 8: Developer loop — LAN env, Expo Go on the three devices, `apps/mobile/AGENTS.md`
-- [x] Task 9: `@carbon/env` — `APP_REVIEW_EMAILS` and `CARBON_DEPLOYMENT_MODE`
-- [x] Task 10: `@carbon/mes-core` contract for the Phase 1 endpoints
-- [x] Task 11: `@carbon/auth` — `requireApiUser` and the API error helpers
-- [x] Task 12: Shared sign-in gates — `apps/mes/app/services/auth.server.ts`
-- [x] Task 13: Public auth endpoints — `auth/code`, `auth/verify`, `auth/mfa`, `auth/password`
-- [x] Task 14: `GET /api/v1/me`
-- [x] Task 15: Extract the operations list screen and expose `GET /api/v1/operations`
-- [x] Task 16: Magic-link email template — add the 6-digit code
-- [x] Task 17: Web "Connect mobile app" QR page (MES + ERP Settings)
-- [x] Task 18: App — instance store, Connect screen, Instances screen
-- [x] Task 19: App — API client, session storage, sign-in / verify / two-factor / password screens
-- [x] Task 20: App — context picker, Operations list, Phase 1 parity check
-- [x] Task 21: Re-check the routes to move; JSON schemas in `@carbon/mes-core/models`
-- [x] Task 22: Idempotency keys and request plumbing for every POST
-- [ ] Task 23: Terminal and operator tokens; `/console/*` endpoints — NOT STARTED. The app has no shared-terminal mode yet; `requireApiUser` already has the operator hook, so this is the token signing plus the three `/console/*` endpoints.
-- [x] Task 24: Commands — time events (`event.tsx`, `start.$operationId.tsx`, `end.$operationId.tsx`)
-- [x] Task 25: Commands — quantities (`complete.tsx`, `scrap.tsx`, `rework.tsx`, `finish.tsx`)
-- [x] Task 26: Commands — materials (`issue.tsx`, `issue-tracked-entity.tsx`, `unconsume.tsx`)
-- [x] Task 27: Commands — step records and notes
-- [x] Task 28: Commands — quality issue and print
-- [x] Task 29: Commands — picking
-- [x] Task 30: Commands — timecard
-- [~] Task 31: Screens — operation detail, rework targets, picking, tracked options, timecard — PARTIAL. `getOperationScreen` and `getReworkTargetsScreen` are extracted and exposed; the picking, tracked-options and timecard screen reads are not.
-- [~] Task 32: API route tests and the web regression pass — PARTIAL. Every route has a test (194 in apps/mes) and the command chain was verified live against seeded data; the manual web regression pass through the browser has NOT been run.
-- [x] Task 33: Docs — `.claude/rules/mes-mobile-api.md`, AGENTS.md rows, spec changelog
-- [ ] Task 34: Design primitives — tokens, `ActionDock`, `HeroButton`, `StatusBadge`, `OperationCard`
-- [ ] Task 35: Operation detail — Details tab and the dock (start / pause, work type, times)
-- [ ] Task 36: Report good / scrap / rework / finish / end
-- [ ] Task 37: Materials tab — issue by scan, tracked entities, undo
-- [ ] Task 38: Instructions tab — steps, step records, photos
-- [ ] Task 39: Notes tab, quality issue, print labels
-- [ ] Task 40: Picking list and picking detail
-- [ ] Task 41: Timecard — clock in, clock out, end shift
-- [ ] Task 42: Scan tab — camera and keyboard wedge, Carbon URLs navigate
-- [ ] Task 43: Outbox — ordered per-operation queue, offline banner, needs-attention
-- [ ] Task 44: Shared terminal — terminal mode, PIN screen, operator header
-- [ ] Task 45: More screen — instances, language, theme, outbox, sign out; idle lock; analytics gating
-- [ ] Task 46: Tablet split layout, keep-awake, phone polish
-- [ ] Task 47: Lingui extraction and translations for the app's strings
-- [ ] Task 48: Store configuration — `app.json`, icons, `eas.json`, EAS Update channels
-- [ ] Task 49: Internal testing builds — TestFlight and Play internal testing
-- [ ] Task 50: Store-review account path on Carbon Cloud
-- [ ] Task 51: Acceptance matrix on iPad, Android tablet and phones
-- [ ] Task 52: Docs and changelog — reference page, `/changelog-entry`, AGENTS.md refresh
+Remaining, and all of it is blocked on something only the user has:
+
+- **Task 49** - TestFlight and Play internal testing. Needs an Expo account
+  (`eas init`, `eas update:configure`), an Apple Developer Program membership
+  and a Google Play service account. `eas.json` carries `REPLACE_ME_*`
+  placeholders for the four values; `apps/mobile/AGENTS.md` lists them. The
+  `development` profile additionally needs `expo-dev-client`, which is a native
+  module and therefore an Ask First item - adding it ends Expo Go compatibility,
+  which is the current device loop.
+- **Task 50** - the review ACCOUNT. The endpoint, the allow-list and the rate
+  limiting are done and tested; what is left is creating the account on Carbon
+  Cloud and setting `APP_REVIEW_EMAILS` there.
+- **Task 51** - the acceptance matrix. Needs the three devices.
+- **Translations** - 339 newly-extracted strings. `pnpm translate` sends them to
+  an external LLM service, so it is the user's call to run. Until then
+  `fallbackLocales.default: "en"` renders them in English.
+
+**Nothing in this app has run on hardware.** That is the largest untested
+surface by far. The parts I would exercise first, because they are native or
+RLS boundaries that no test here can reach: the camera and the keyboard-wedge
+scanner, the direct PostgREST reads (scrap reasons, the operator list, notes,
+the scanned-code lookup), the step-photo upload, and the PIN flow - which also
+needs a company with console mode entitled and an employee with a PIN set.
+
+Verification at the end of the session: mobile typecheck 0 errors, 271 tests,
+biome clean, `expo export` bundles iOS and Android; mes/auth/mes-core typecheck
+3 successful (forced), mes 235 tests, mes-core 51 tests, auth 136 tests;
+`pnpm --filter docs typecheck` 0.
+
+Four bugs were found while building, each recorded in its own commit: the
+supabase client never had a session set, so every direct read was anonymous and
+returned zero rows rather than an error; the instance cache key was a
+server-chosen display name rather than the local uuid, so two Carbons with the
+same name would have shared a cache; `typecheck` depended on a gitignored
+Uniwind declaration, which is now a lesson in `.ai/lessons.md`; and
+`StatusBadge` had no icon for four picking statuses, which silently reduced it
+to colour-only for the two a kitter most needs to tell apart.
 
 ## Deviations (recorded as they happened)
 
