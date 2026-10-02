@@ -83,7 +83,7 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 | `WEBHOOK` | `carbon/event-webhook` | `webhook.ts` | `axios.post(config.url, toWebhookBody(...), { headers })` — customer-facing webhooks; see below |
 | `WORKFLOW` | `carbon/event-workflow` | `workflow.ts` | customer-workflow matcher — announcement → catalog event ids → subscribed workflows → one `workflowRun` each (see `workflow-matcher.md`) |
 | `SYNC` | `carbon/event-sync` | `sync.ts` | accounting sync (Xero); maps table→entity, calls `@carbon/ee/accounting` |
-| `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` per entity config (`search-config.ts`): last event per record wins, one read per related table for the whole batch, then one delete and one upsert statement over Kysely. A failed read or write throws so the step retries |
+| `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` per entity config (`search-config.ts`): last event per record wins, one read per related table for the whole batch, then one delete and one upsert statement over Kysely. A failed read or write throws so the step retries; the one exception is a missing search table whose company no longer exists (deleting a company drops the table while its events may still be queued), which is skipped with a warning |
 | `AUDIT` | `carbon/event-audit` | `audit.ts` | writes per-company audit log (uses `actorId`, `audit.config`) |
 | `EMBEDDING` | `carbon/event-embedding` | `embedding.ts` | invokes `embed` edge fn for `item/customer/supplier` name/description changes |
 
