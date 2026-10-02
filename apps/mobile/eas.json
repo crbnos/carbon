@@ -1,0 +1,60 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "preview": {
+      "ios": {
+        "appleId": "REPLACE_ME_APPLE_ID_EMAIL",
+        "ascAppId": "REPLACE_ME_APP_STORE_CONNECT_APP_ID",
+        "appleTeamId": "REPLACE_ME_APPLE_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "REPLACE_ME_PATH_TO_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+        "track": "internal"
+      }
+    },
+    "production": {
+      "ios": {
+        "appleId": "REPLACE_ME_APPLE_ID_EMAIL",
+        "ascAppId": "REPLACE_ME_APP_STORE_CONNECT_APP_ID",
+        "appleTeamId": "REPLACE_ME_APPLE_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "REPLACE_ME_PATH_TO_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+        "track": "internal"
+      }
+    }
+  }
+}

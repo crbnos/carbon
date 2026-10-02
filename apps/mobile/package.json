@@ -15,7 +15,7 @@
     "prestart": "pnpm run catalogs && pnpm run artifacts",
     "prebuild:check": "pnpm run catalogs && pnpm run artifacts",
     "build:check": "expo export --platform ios --platform android --output-dir .expo-export --clear",
-    "doctor": "expo-doctor",
+    "doctor": "npx -y expo-doctor@latest",
     "typecheck": "pnpm run catalogs && pnpm run artifacts && tsc --noEmit",
     "lint": "biome lint --write .",
     "test": "vitest run",

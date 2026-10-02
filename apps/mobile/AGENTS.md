@@ -62,6 +62,49 @@ reload, then check the database after EVERY action. `.ai/lessons.md`
 ("Browser-testing MES flows that write data") was written about exactly this and
 applies to devices too.
 
+## Builds and store submission
+
+`app.json` is the store configuration and `eas.json` the build configuration.
+Neither takes a license header.
+
+Three build profiles, each pinned to the EAS Update channel of the same name —
+`development`, `preview`, `production`. The channel names are the contract: an
+update published to `preview` reaches preview builds and nothing else.
+`cli.appVersionSource` is `remote`, so EAS owns the build number and
+`production` increments it; never hand-write `ios.buildNumber` or
+`android.versionCode` into `app.json`.
+
+`runtimeVersion` is the `fingerprint` policy — it hashes the native project, so
+an OTA update can never land on a binary whose native side has moved. Expo Go
+ignores it and uses `sdkVersion`, so the device loop above is unaffected.
+`updates.checkAutomatically` is `NEVER`: the app checks only for connected
+instances, from the More screen, never for an air-gapped or controlled one.
+
+**Four account values are deliberately absent.** They belong to the user's Expo,
+Apple and Google accounts, so they are generated rather than written by hand:
+
+1. `extra.eas.projectId` and `updates.url` in `app.json` — run
+   `npx eas-cli@latest init` then `npx eas-cli@latest update:configure` in this
+   directory. Both commands write the real values; a placeholder left in either
+   key makes them skip, so the keys stay out of the file until then.
+2. `submit.*.ios.{appleId,ascAppId,appleTeamId}` and
+   `submit.*.android.serviceAccountKeyPath` in `eas.json` — these are
+   `REPLACE_ME_*` placeholders. Replace them, or delete the key and let
+   `eas submit` prompt.
+
+The `development` profile also needs `expo-dev-client` as a dependency before it
+builds anything useful — that is a native module, so it ends Expo Go
+compatibility and is an **Ask First** item.
+
+Icons and splash are generated vector art, not photographs: the three-hexagon
+Carbon mark from web MES (`apps/mes/public/icons/`) in `#00B0FF` on the `#09090B`
+field. `icon.png` and `favicon.png` carry **no alpha channel** — App Store
+Connect rejects an icon that does. The Android foreground sits inside the
+66/108 adaptive-icon safe circle, which is why the mark is smaller there than on
+iOS. Do not block the `maxSdkVersion="32"` storage permissions
+`expo-image-picker` declares; the pilot Zebra devices run Android 11 and still
+need them.
+
 ## Always
 
 - Every user-facing string, including every `accessibilityLabel`, goes through
@@ -112,6 +155,14 @@ applies to devices too.
   only because `expo-router` needs it for `expo start --web`.
 
 ## Validation Commands
+
+`pnpm --dir apps/mobile --ignore-workspace run doctor` reports **one expected
+failure**, and it must stay failing: `expo-doctor` objects to
+`resolver.disableHierarchicalLookup` and the narrowed `resolver.nodeModulesPaths`
+in `metro.config.js`. Those two overrides are exactly what keeps this app off the
+root `node_modules` and its React 18 — see "This app is NOT in the pnpm workspace"
+above. Adopting doctor's "recommended values" reintroduces the dual-major crash.
+Everything else doctor checks should pass; a SECOND failure is a real one.
 
 ```bash
 pnpm run mobile:typecheck        # catalogs + tsc --noEmit

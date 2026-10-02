@@ -4,22 +4,23 @@
     "slug": "carbon-mes",
     "version": "1.0.0",
     "scheme": "carbon-mes",
+    "description": "The Carbon shop-floor app. Start and pause work, report good, scrap and rework, issue material by scan, follow work instructions, pick lists and clock in and out.",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#09090B"
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "checkAutomatically": "NEVER"
     },
     "ios": {
       "bundleIdentifier": "ms.carbon.mes",
       "supportsTablet": true,
       "requireFullScreen": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Scan barcodes and QR codes on the shop floor.",
-        "NSPhotoLibraryUsageDescription": "Attach a photo to a work instruction step.",
+        "NSCameraUsageDescription": "Carbon MES uses the camera to scan job, material and location barcodes on the shop floor, to read the QR code that links this device to your company's Carbon server, and to take photos you attach to a work instruction step.",
+        "NSPhotoLibraryUsageDescription": "Carbon MES opens your photo library when you choose an existing photo to attach to a work instruction step. Only the photo you pick is read, and it is uploaded to your company's own Carbon server.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -45,15 +46,12 @@
         {
           "backgroundColor": "#09090B",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120
+          "imageWidth": 180
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "updates": {
-      "checkAutomatically": "NEVER"
     }
   }
 }
