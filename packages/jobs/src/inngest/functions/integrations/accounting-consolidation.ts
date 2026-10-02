@@ -14,6 +14,7 @@ import {
   getPostingSyncSourceTypeSkipReason,
   getProviderIntegration,
   getSyncOperations,
+  isAccountingSyncEnabled,
   JournalEntrySyncError,
   type JournalEntrySyncer,
   mapJournalEntryToManualJournal,
@@ -734,6 +735,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
 
         return (integrations.data ?? [])
           .filter((row) => {
+            if (!isAccountingSyncEnabled(row.metadata)) return false;
             const settings = resolvePostingSyncSettings(row.metadata);
             return (
               settings.consolidation === "daily" ||

@@ -4,7 +4,7 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ProviderID } from "@carbon/ee/accounting";
+import { isAccountingSyncEnabled, ProviderID } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -75,6 +75,18 @@ export async function action({ request }: ActionFunctionArgs) {
   if (integration.error || !integration.data?.active) {
     return data(
       { error: `${provider} integration not found or inactive` },
+      { status: 400 }
+    );
+  }
+
+  // Importing only writes into Carbon, and is part of setting an integration
+  // up; pushing sends records to the provider, so it waits for sync.
+  if (
+    direction === "push-to-accounting" &&
+    !isAccountingSyncEnabled(integration.data.metadata)
+  ) {
+    return data(
+      { error: "Turn on sync for this integration first" },
       { status: 400 }
     );
   }

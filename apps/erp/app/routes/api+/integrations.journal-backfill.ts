@@ -4,7 +4,7 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ProviderID } from "@carbon/ee/accounting";
+import { isAccountingSyncEnabled, ProviderID } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -47,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const integration = await client
     .from("companyIntegration")
-    .select("active")
+    .select("active, metadata")
     .eq("companyId", companyId)
     .eq("id", provider)
     .single();
@@ -55,6 +55,13 @@ export async function action({ request }: ActionFunctionArgs) {
   if (integration.error || !integration.data?.active) {
     return data(
       { error: `${provider} integration not found or inactive` },
+      { status: 400 }
+    );
+  }
+
+  if (!isAccountingSyncEnabled(integration.data.metadata)) {
+    return data(
+      { error: "Turn on sync for this integration first" },
       { status: 400 }
     );
   }

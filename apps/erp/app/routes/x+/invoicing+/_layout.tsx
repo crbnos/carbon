@@ -13,7 +13,6 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -22,10 +21,16 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Invoicing" }];
 };
 
+function InvoicingSidebar() {
+  const { groups } = useInvoicingSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Invoicing`,
   to: path.to.invoicing,
-  module: "invoicing"
+  module: "invoicing",
+  sidebar: InvoicingSidebar
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
@@ -40,16 +45,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InvoicingRoute() {
-  const { groups } = useInvoicingSubmodules();
-
   return (
-    <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full">
-        <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="h-full">
-          <Outlet />
-        </VStack>
-      </div>
-    </CollapsibleSidebarProvider>
+    <VStack spacing={0} className="h-full">
+      <Outlet />
+    </VStack>
   );
 }

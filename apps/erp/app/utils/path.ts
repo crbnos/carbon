@@ -143,6 +143,10 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      integrationSyncActivityCsv: (id: string, status?: string | null) =>
+        `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
+          status ? `?${new URLSearchParams({ status })}` : ""
+        }`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,

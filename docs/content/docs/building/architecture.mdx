@@ -3,80 +3,57 @@ title: Architecture
 description: "One journey from a button click, through the server, into Postgres, out to background jobs, and back to the screen."
 ---
 
-Carbon is software that runs a manufacturing business: what it buys, what it holds in stock, what it
-builds, what it ships, and whether the quality held up. Two separate apps do that. The **ERP** is the
-office app, where people quote, purchase, plan and invoice. The **MES** is the shop floor app, used on
-tablets next to the machines to run and record the actual work.
+Carbon uses two applications over one manufacturing data model. The **ERP** manages quoting, purchasing,
+planning, inventory, accounting, and shipping. The **MES** records and controls shop-floor work, typically
+from tablets at work centers.
 
-This page follows one journey. A user clicks a button, something is saved, other things happen because
-of it, and the screen updates. Everything else hangs off that spine. [Part 1](#part-1-the-map) and
-[Part 2](#part-2-follow-one-click-all-the-way-down) are the ones to read in order; the rest stands on
-its own, so take it in any order you like.
+This page traces a write from the UI through validation, authorization, persistence, background work, and
+UI refresh. Read [Part 1](#part-1-the-map) and [Part 2](#part-2-follow-one-click-all-the-way-down) in order.
+The remaining sections are independent references.
 
-Any term you might not know is marked with a number the first time it appears, like this:
-Postgres [[17]](#g17). The number links to a one-line definition in the [Glossary](#glossary) at the
-end. Nothing is assumed.
+Numbered references such as Postgres [[17]](#g17) link to definitions in the [Glossary](#glossary).
 
 <Callout type="note" title="A snapshot, not a contract">
-  The file paths, line numbers and counts throughout are accurate as of August
-  2026. They will drift as the repository moves; the ideas they illustrate
-  outlast them.
+  File paths, line numbers, and counts are accurate as of August 2026 and may change as the repository evolves.
 </Callout>
 
 ---
 
 ## Part 1: The map
 
-Carbon is a monorepo [[10]](#g10): one Git repository holding several applications and
-about twenty-five shared libraries, built together by pnpm workspaces and
-Turborepo [[25]](#g25). Two of those applications are the products people log into, the
-ERP and the MES. Everything else exists to serve them.
+Carbon is a monorepo [[10]](#g10) containing several applications and approximately 25 shared libraries,
+managed with pnpm workspaces and Turborepo [[25]](#g25). ERP and MES are the primary user-facing applications.
 
-The center of gravity is a single Postgres [[17]](#g17) database. Almost every arrow in
-this doc eventually points at it. Unusually for a web app, a lot of logic that you might
-expect to live in application code lives _inside_ the database instead: permissions,
-computed totals, and the "something changed" notifications. That is the single most
-important thing to understand about Carbon, and [Part 3](#part-3-layer-by-layer) explains why.
+One Postgres [[17]](#g17) database is the system of record. It also enforces row-level permissions,
+computes derived values, and emits change events. [Part 3](#part-3-layer-by-layer) describes these responsibilities.
 
 <Diagram
   name="map"
   caption="Everything Carbon runs. The loop on the right is the surprise: Inngest is a timer and a queue, but the job itself executes back inside the ERP."
 />
 
-Color is used sparingly in these diagrams, and it means the same thing in all of them:
-**blue** is our own apps, **pink** is stored state, **amber** is work that happens in the
-background. Everything else is left plain on purpose.
+In each diagram, **blue** represents Carbon applications, **pink** represents stored state, and **amber** represents background work.
 
-**The five things worth taking from that picture:**
+Key properties:
 
-1. **The ERP app is the hub.** It serves pages, and it is also where background jobs
-   execute. Inngest [[5]](#g5) does not run our code on its own machines; it calls back
-   into the ERP container: it is a timer and a queue that POSTs to `/api/inngest` saying
-   "run this job now", and our own code does the work. See
+1. **The ERP app is the hub.** It serves pages and executes background jobs. Inngest [[5]](#g5)
+   schedules work and sends requests to `/api/inngest`; the ERP container executes the code. See
    [Part 4](#part-4-what-happens-after-the-write).
 2. **Most database access is not raw SQL.** It goes through PostgREST [[18]](#g18), a
-   service that turns `client.from("purchaseOrder").select(...)` into a SQL query. We use
-   the `supabase-js` library to talk to it.
-3. **The database enforces permissions itself.** Even if application code forgets a
-   filter, Postgres will not return another company's rows. (Except on one specific
-   escape hatch: see [Part 3](#part-3-layer-by-layer).)
-4. **Writes on the right tables cause events automatically.** Around ninety tables opt
-   in to a database trigger, and where a company has subscribed to one, search indexing,
-   webhooks, audit logs and customer automations all happen without the code that did the
-   write knowing about them.
-5. **The Rust service is optional.** It turns uploaded CAD files into 3D models the
-   browser can show, and works out the order parts come apart in for assembly
-   instructions. Carbon runs fine without it.
+   service that translates `client.from("purchaseOrder").select(...)` into SQL. Application code accesses it through `supabase-js`.
+3. **The database enforces tenant access.** Row-level security prevents access to another company's rows,
+   except when code explicitly uses the service-role client. See [Part 3](#part-3-layer-by-layer).
+4. **Selected writes emit events automatically.** Approximately 90 tables use database triggers to initiate
+   subscribed search indexing, webhooks, audit logs, and customer workflows.
+5. **The Rust service is optional.** It converts CAD files to browser-renderable 3D models and plans
+   disassembly sequences for assembly instructions. Core Carbon functions without it.
 
 ---
 
 ## Part 2: Follow one click all the way down
 
-Here is the whole system in one story: **a buyer creates a Purchase Order.**
-
-Pick this one apart and you have seen every layer: a form, validation, a permission
-check, a database write, logic living in Postgres, a background side effect, and the
-screen updating. Every other feature in Carbon is a variation on it.
+This section follows a buyer creating a purchase order through the form, validation, permission check,
+database write, Postgres logic, background side effect, and UI refresh.
 
 ### The short version
 
@@ -85,12 +62,11 @@ screen updating. Every other feature in Carbon is a variation on it.
   caption="One click, all the way down. Every hop crosses a layer, and everything above the dashed line happens while the user waits."
 />
 
-Notice the shape: the user's request finishes as soon as the row is written. The search
-indexing happens afterwards, on its own, and nobody waited for it.
+The request completes after the row is written. Search indexing runs asynchronously.
 
 ### The same story, with real files
 
-Every path below is real. Open them in your editor as you read.
+The following paths point to the implementation as of August 2026.
 
 **1. The button.** It is a link, not a submit button.
 
@@ -104,10 +80,8 @@ primaryAction={
 }
 ```
 
-Two conventions in three lines. `permissions.can(...)` hides UI the user is not allowed
-to use; this is _cosmetic only_, the real check happens on the server. And the URL comes
-from `path.to.*`, a single registry of every URL in the app
-(`apps/erp/app/utils/path.ts`, ~2,200 lines). **Never hardcode a URL string.**
+`permissions.can(...)` hides actions the user cannot perform, but the server performs the authoritative
+permission check. `path.to.*` references the route registry in `apps/erp/app/utils/path.ts`; do not hardcode application URLs.
 
 **2. The form.** `apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderForm.tsx:116`
 
@@ -119,11 +93,9 @@ from `path.to.*`, a single registry of every URL in the app
 >
 ```
 
-`ValidatedForm` is our wrapper around a plain HTML form. You hand it a schema; it blocks
-submission and shows inline field errors if the data is wrong, and it re-displays server
-errors in the same place. Fields (`<Input name="...">`, `<Supplier name="...">`) come
-from `~/components/Form`, which re-exports generic inputs plus about ninety
-Carbon-specific pickers (Customer, Supplier, Item, Location, Currency…).
+`ValidatedForm` wraps an HTML form with schema-based client and server error display. Fields such as
+`<Input name="...">` and `<Supplier name="...">` come from `~/components/Form`, which exports generic inputs
+and Carbon-specific selectors.
 
 **3. The schema.** `apps/erp/app/modules/purchasing/purchasing.models.ts:127`
 
@@ -139,14 +111,10 @@ export const purchaseOrderValidator = z.object({
 });
 ```
 
-zod [[28]](#g28) is a schema library: you describe the shape of the data once, and get
-both runtime validation and a TypeScript type from it. `zfd` (`zod-form-data`) handles the
-fact that HTML forms send everything as strings: `zfd.text()` turns an empty field into
-`undefined` rather than `""`.
+zod [[28]](#g28) provides runtime validation and inferred TypeScript types. `zod-form-data` (`zfd`)
+normalizes HTML form values; for example, `zfd.text()` converts an empty field from `""` to `undefined`.
 
-**One schema, used in three places:** the browser validates against it, the server
-re-validates against it, and the service function's argument type is derived from it. That
-is why the three can never drift apart.
+The browser and server validate against the same schema, and the service argument type is derived from it.
 
 **4. The route.** `apps/erp/app/routes/x+/purchase-order+/new.tsx:29`
 
@@ -186,7 +154,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 ```
 
-This is the shape of _every_ write in Carbon:
+Carbon writes follow this sequence:
 
 > **assert the method → check permissions → validate → call a service → redirect.**
 
@@ -198,16 +166,11 @@ A file under `apps/erp/app/routes/` can export up to three things that matter he
 | `action` [[1]](#g1) | server only                | handle a form submission    |
 | `export default`    | server first, then browser | the React component         |
 
-`loader` and `action` are stripped out of the JavaScript sent to the browser, so it is
-safe to use secrets and database clients in them. This is the same idea as Next.js
-server components or a traditional controller; the file just happens to hold both
-halves.
+`loader` and `action` are excluded from browser JavaScript, so they can use secrets and server-only database clients.
 
 **5. The service function.** `apps/erp/app/modules/purchasing/purchasing.service.ts:1393`
 
-Routes never talk to the database directly. They call a _service function_: a plain
-function whose first argument is a database client and which returns Supabase's raw
-`{ data, error }` without throwing.
+Routes call service functions instead of accessing the database directly. A service function accepts a database client as its first argument and returns Supabase's `{ data, error }` result.
 
 ```ts
 const seq = await client.rpc("get_next_sequence", {
@@ -242,32 +205,24 @@ if (delivery.error || payment.error) {
 }
 ```
 
-That last block is the honest, ugly truth about `supabase-js`: **three `.insert()` calls
-are three separate HTTP requests, so they are not a transaction.** If the second fails,
-the first is already committed, and we have to undo it by hand. When you need a real
-transaction, use Kysely [[6]](#g6) instead. See
+Each `supabase-js` `.insert()` call is a separate HTTP request, not part of a transaction. If a later write
+fails, earlier writes remain committed unless explicitly reversed. Use Kysely [[6]](#g6) when writes require a transaction. See
 [Part 3.3](#33-the-service-layer-four-doors-to-the-database).
 
-**6. What Postgres does by itself.** Two things happened that no TypeScript asked for.
+**6. Database-side behavior.** Postgres performs two additional operations.
 
 _The order number._ `client.rpc("get_next_sequence", ...)` calls an RPC [[21]](#g21), a
 function that lives _inside_ the database
 (`packages/database/supabase/migrations/20241115101526_rpc-get-next-sequence.sql`). It
-reads and bumps a counter and formats the result (`PO` + zero-padding + optional date
-tokens) in a single atomic step. Doing this in application code would hand two
-simultaneous buyers the same number.
+atomically increments a counter and formats the result with `PO`, zero-padding, and optional date tokens.
 
-_The event._ Every insert into `purchaseOrder` fires a Postgres **trigger**, a function
-the database runs automatically on a write. It drops a small JSON message onto a queue
-that lives in a database table. Nothing in the route knows this is happening. [Part 4](#part-4-what-happens-after-the-write)
-follows that message to the end.
+_The event._ Every `purchaseOrder` insert invokes a Postgres trigger. If the company has an active subscription
+for that table and operation, the trigger queues a JSON message. The route does not initiate this behavior.
+[Part 4](#part-4-what-happens-after-the-write) traces the event.
 
-**7. The screen updates.** The action ends with `throw redirect(...)`. React Router
-follows the redirect and runs the destination's `loader`, which re-reads from the
-database and renders the finished page. There is no client-side cache to invalidate and
-no "add the new row to the list in state" code. **After any non-GET submission, React
-Router automatically re-runs the loaders for the current page.** That is the whole
-refresh mechanism.
+**7. The screen updates.** The action ends with `throw redirect(...)`. React Router follows the redirect,
+runs the destination `loader`, reads current database state, and renders the page. After any non-GET submission,
+React Router automatically revalidates the current page's loaders.
 
 ---
 
@@ -275,10 +230,9 @@ refresh mechanism.
 
 ### 3.1 The browser and the route file
 
-The apps are **React Router v7** in framework mode: server-rendered React, where a
-single file owns both a URL's data-loading and its UI. (It is not Remix and not Next.js,
-though it is the direct descendant of Remix.) Vite [[27]](#g27) builds it; Tailwind v4
-styles it.
+The applications use **React Router v7** in framework mode with server-rendered React. A route file can
+define both data loading and UI. Carbon does not use Remix or Next.js for ERP and MES. Vite [[27]](#g27)
+builds the applications, and Tailwind v4 provides styling.
 
 **Routes are files on disk.** `apps/erp/app/routes/` has about 1,400 of them, and the
 folder structure _is_ the URL structure, with a few conventions:
@@ -293,48 +247,37 @@ folder structure _is_ the URL structure, with a few conventions:
 | `_index.tsx`    | the page for the folder's own URL                                                  |
 | `*.server.ts`   | ignored by the router; a helper file that never reaches the browser                |
 
-Top-level namespaces: `x+` is the logged-in app (66 module folders), `api+` holds JSON
-endpoints with no UI, `_public+` is login/logout, and `share+` is the _unauthenticated_
-surface: links you email to a customer to view a quote.
+At the top level, `x+` contains authenticated application routes, `api+` contains JSON endpoints,
+`_public+` contains authentication routes, and `share+` contains token-authenticated public links.
 
-**Getting data in.** A `loader` runs on the server, calls service functions, and returns
-plain JSON; the component reads it with `useLoaderData<typeof loader>()`. Data shared by
-the whole app (the current user, their company, their permissions, feature flags) is
-loaded once in `apps/erp/app/routes/x+/_layout.tsx` (about eighteen parallel queries) and
-read anywhere via hooks like `useUser()`, `usePermissions()`, `useCompanySettings()`.
-Those hooks read the layout route's loader data, not a React context.
+**Getting data in.** A server-side `loader` calls service functions and returns JSON. The component reads it with
+`useLoaderData<typeof loader>()`. `apps/erp/app/routes/x+/_layout.tsx` loads shared user, company, permission,
+and feature-flag data. Hooks such as `useUser()`, `usePermissions()`, and `useCompanySettings()` read this loader data.
 
-**Getting data out.** Forms post to an `action`, as in [Part 2](#part-2-follow-one-click-all-the-way-down). For writes that should
-_not_ navigate (reordering rows, an inline edit, a delete button), use `useFetcher()`,
-which posts in the background and still triggers the automatic revalidation.
+**Getting data out.** Forms post to an `action`, as shown in [Part 2](#part-2-follow-one-click-all-the-way-down). Use `useFetcher()` for writes that should not navigate,
+such as reordering, inline edits, or deletion. Fetcher submissions still trigger automatic revalidation.
 
-**Shared UI.** Look in two places before writing a component:
+**Shared UI.** Check these locations before adding a component:
 
 - `packages/react/`: the design system (`@carbon/react`). Buttons, modals, comboboxes,
-  menus, layout primitives. Built on Radix UI [[19]](#g19) and Tailwind.
+  menus, and layout primitives built on Radix UI [[19]](#g19) and Tailwind.
 - `apps/erp/app/components/`: app-level pieces. The big one is
-  `components/Table/Table.tsx`, a single generic table (~1,500 lines, built on TanStack
-  Table) that every list screen uses. It handles sorting, filtering, pagination, saved
-  views, CSV import/export, column visibility and inline editing. You pass `data`,
-  `columns` and `count`; the server does the paging via URL search params.
+  `components/Table/Table.tsx`, a generic TanStack Table implementation used by list screens. It handles sorting,
+  filtering, pagination, saved views, CSV import and export, column visibility, and inline editing. The server
+  performs pagination from URL search parameters.
 
-**Client state** is deliberately small. Reference lists that everything needs (items,
-customers, suppliers, people) live in nanostores [[13]](#g13) and are kept fresh by
-`RealtimeDataProvider`. Ephemeral UI state (is the search modal open) uses
-zustand [[29]](#g29). User and permission data lives in _neither_; it comes from the
-route loader.
+**Client state** is limited. Shared reference lists use nanostores [[13]](#g13) and are refreshed by
+`RealtimeDataProvider`. Ephemeral UI state uses zustand [[29]](#g29). User and permission data comes from route loaders.
 
-**Translations** use Lingui [[7]](#g7): wrap a string in `` t`...`  `` or `<Trans>`, run
-`pnpm lingui:extract`, and translators fill in thirteen locale files.
+**Translations** use Lingui [[7]](#g7). Mark strings with `` t`...` `` or `<Trans>`, then run `pnpm lingui:extract`.
 
-**MES is the same stack, simpler.** No `modules/` folder: services sit flat in
+**MES uses the same stack with a flatter structure.** It has no `modules/` folder: services are in
 `apps/mes/app/services/`, all validators in one `models.ts`, routes are one flat level,
 and the UI is built for gloved hands on a tablet.
 
 ### 3.2 The gate: who is allowed to do what
 
-Every server-side entry point in Carbon starts with the same call. There are about 1,600
-of them.
+Server-side entry points use `requirePermissions` for authentication and authorization.
 
 ```ts
 const { client, companyId, userId } = await requirePermissions(request, {
@@ -342,27 +285,20 @@ const { client, companyId, userId } = await requirePermissions(request, {
 });
 ```
 
-Defined at `packages/auth/src/services/auth.server.ts:195`. It does four jobs at once:
+Defined at `packages/auth/src/services/auth.server.ts:195`, it performs four operations:
 
-1. **Identifies the caller.** Either from the session cookie (a browser) or from a
-   `carbon-key` header (our public API, which additionally gets rate-limited and scope-checked).
+1. **Identifies the caller** from a browser session cookie or the public API's rate-limited, scope-checked `carbon-key` header.
 2. **Loads their permissions.** Permissions are stored as `<module>_<action>` keys such
    as `purchasing_create` or `sales_view`, each mapping to the list of companies where the
    user holds it. They are fetched by a Postgres function called `get_claims` and cached
    in Redis for an hour. They are _not_ in the JWT.
-3. **Refuses if they lack it.** Redirect to login if not signed in at all, or an "Access
-   Denied" toast otherwise.
-4. **Hands back a database client already scoped to this user**, plus their `companyId`
-   and `userId`.
+3. **Rejects unauthorized requests.** Unauthenticated users are redirected to login; unauthorized users receive an **Access Denied** message.
+4. **Returns a user-scoped database client**, `companyId`, and `userId`.
 
-**Multi-tenancy** [[12]](#g12) is the reason for a lot of what follows: Carbon is one
-database serving many customer companies. Nearly every table has a `companyId` column and
-a composite primary key `("id", "companyId")`. Which company you are acting as is read
-from your session cookie, never from the URL.
+Carbon uses **multi-tenancy** [[12]](#g12): one database serves multiple companies. Nearly every table has a
+`companyId` and composite primary key `("id", "companyId")`. The active company comes from the session, not the URL.
 
-**RLS (Row Level Security)** [[20]](#g20) is the part worth understanding even if you
-never write SQL. It is a Postgres feature where each table carries a rule that is silently
-`AND`ed onto every query the database receives. Ours look like this:
+**Row-level security (RLS)** [[20]](#g20) adds each table's access policy to database queries. For example:
 
 ```sql
 CREATE POLICY "SELECT" ON "public"."reportPin"
@@ -371,30 +307,22 @@ FOR SELECT USING (
 );
 ```
 
-So if a query for another company's purchase orders reaches Postgres, it returns zero
-rows. The tenant boundary is enforced by the database, not by us remembering a `.eq()`.
-Service functions still filter by `companyId` anyway, as a second line of defense.
+Queries for another company's records return no rows. Service functions also filter by `companyId` for defense in depth.
 
-**The escape hatch.** Notice `bypassRls: true` in the Purchase Order action. RLS costs
-real query time on hot paths, so for trusted employee requests we hand back a service-role
-[[22]](#g22) client that skips it entirely. That is a deliberate trade, and it moves the
-responsibility back to us: any loader using `bypassRls` must re-check the tenant by hand,
-as the PO detail route does:
+**The escape hatch.** `bypassRls: true` returns a service-role [[22]](#g22) client for trusted employee
+requests on performance-sensitive paths. Because this client bypasses RLS, each loader must verify tenant ownership explicitly:
 
 ```ts
 if (purchaseOrder.data?.companyId !== companyId)
   throw redirect(path.to.purchaseOrders);
 ```
 
-**Three kinds of user** share one login system, distinguished by a `role` on their
-company membership: `employee`, `customer`, `supplier`. Portal users get much narrower
-permission sets, and routes can demand `{ role: "employee" }`. Separately, `share+/`
-routes are fully unauthenticated; a long unguessable token in the URL is the credential.
+Company membership assigns one of three roles: `employee`, `customer`, or `supplier`. Portal users have narrower
+permissions, and routes can require `{ role: "employee" }`. `share+/` routes use an unguessable URL token instead of login authentication.
 
 ### 3.3 The service layer: four doors to the database
 
-A service function's first argument is always a client, and there is more than one kind.
-Picking the wrong one is the most common mistake made here.
+A service function accepts a database client as its first argument. Select the client based on the required security and transaction behavior.
 
 <Diagram
   name="doors"
@@ -404,10 +332,8 @@ Picking the wrong one is the most common mistake made here.
 **1. The user-scoped client.** What `requirePermissions` normally returns. Every query
 runs as that user with RLS applied. Use it unless you have a reason not to.
 
-**2. The service-role client** (`getCarbonServiceRole()`) ignores RLS entirely. Needed
-by background jobs (which have no logged-in user), by `share+/` routes, and by
-`bypassRls: true` requests. **You are now the only thing standing between a bug and a
-cross-tenant data leak.**
+**2. The service-role client** (`getCarbonServiceRole()`) bypasses RLS. Background jobs, `share+/` routes,
+and `bypassRls: true` requests use it. Every query must enforce `companyId` explicitly.
 
 **3. Kysely** is a TypeScript SQL query builder that holds a real connection to Postgres,
 so it can open a real transaction. This is the answer to the "three inserts aren't
@@ -430,18 +356,11 @@ await db.transaction().execute(async (trx) => {
 });
 ```
 
-Four warnings. Kysely **throws** on failure rather than returning `{ error }`, so wrap it
-in `try/catch`. It applies **no** RLS, so authorize before you call it, and then scope
-**every** statement yourself: `companyId` always, plus the parent document's id whenever
-the row ids come from the request. Without the parent filter, a request sent through one
-quote's URL could reorder the lines of any other quote in the company, including one
-that is already closed. Write one statement for the whole set rather than a query per row
-inside a loop. And the pool it
-draws from is small (edge functions ask for exactly one connection,
-`getConnectionPool(1)`): if code inside a transaction reaches for a second connection from
-the same pool, that second request queues behind a transaction that cannot finish until it
-is served, and the whole thing hangs until the timeout. Do all the work of a transaction
-on the `trx` handle you were given, never on `db`.
+Kysely **throws** on failure and applies no RLS. Wrap calls in `try/catch`, authorize before execution, and scope
+every statement by `companyId` and, when row IDs come from a request, the parent document ID. Update sets in one
+statement instead of querying in a loop. Connection pools can contain only one connection, especially in edge
+functions using `getConnectionPool(1)`. Inside a transaction, use only the provided `trx` handle; requesting another
+connection through `db` can deadlock until timeout.
 
 **4. Edge functions** are small programs written for Deno [[2]](#g2), deployed next to the
 database and called over HTTP [[4]](#g4). There are about forty in
@@ -455,30 +374,21 @@ const { data, error } = await client.functions.invoke("post-shipment", {
 });
 ```
 
-They exist for two reasons: they can hold a database connection and run a big
-multi-thousand-row transaction properly, and they are callable from anywhere (the ERP,
-the MES, a background job, the public API), not just from a route handler.
+Edge functions can run large database transactions and are callable from ERP, MES, background jobs, and the public API.
 
-"Heavy" here means heavy in SQL, not heavy in the function. Supabase caps an edge function
-tightly, a couple of hundred megabytes of memory and a short processor-time budget, far
-below a normal server or an ordinary Lambda, so the useful pattern is to let Postgres do
-the lifting and keep the function itself thin. Work that is heavy in JavaScript, or that
-runs for minutes, belongs in an Inngest job instead; work that needs real computing power,
-like CAD geometry, belongs in the Rust service.
+Edge functions are appropriate for SQL-intensive work but have limited memory and CPU time. Keep function code thin
+and perform set-based work in Postgres. Use Inngest for long-running JavaScript and the Rust service for compute-intensive CAD geometry.
 
-There is also a fifth, narrower door: **RPCs**, plain Postgres functions called with
-`client.rpc("name", args)`. About 85 call sites. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one.
+**RPCs** are a narrower fifth path: Postgres functions called with `client.rpc("name", args)`. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one example.
 
 ### 3.4 The database
 
-Postgres 15, wrapped by Supabase [[24]](#g24), an open-source bundle that adds an
-auto-generated REST API (PostgREST), user authentication, file storage, a realtime change
-feed, and the edge function runtime, all on top of one ordinary Postgres database.
+Carbon uses Postgres 15 through Supabase [[24]](#g24), which adds PostgREST, authentication, file storage,
+realtime changes, and an edge-function runtime.
 
-Rough size, for a sense of scale: **923 migration files**, 362 tables,
-101 views, 238 database functions, 154 enum types.
+As of August 2026, the schema contains **923 migration files**, 362 tables, 101 views, 238 database functions, and 154 enum types.
 
-**Migrations** [[9]](#g9). Every schema change is a timestamped SQL file in
+Each **migration** [[9]](#g9) is a timestamped SQL file in
 `packages/database/supabase/migrations/`, named `YYYYMMDDHHMMSS_kebab-name.sql`. Create
 one with `pnpm db:migrate:new <name>`, apply with `pnpm db:migrate`. They are applied in
 filename order and never edited after merge.
@@ -499,42 +409,30 @@ CREATE TABLE "itarCertification" (
 ALTER TABLE "public"."itarCertification" ENABLE ROW LEVEL SECURITY;
 ```
 
-`id('itc')` generates a prefixed, sortable, URL-safe id such as `itc_3xK9...`. The prefix tells
-you what an id refers to at a glance.
+`id('itc')` generates a prefixed, sortable, URL-safe ID such as `itc_3xK9...`.
 
-**Views** [[26]](#g26) **are the read path.** This is the second-most-important idea in
-Carbon after RLS.
-
-We **write to tables** but **read from views**. A view is a saved query that behaves like
-a table. `purchaseOrders` (plural, that is the naming convention) joins in the supplier
-name, sums the line amounts into `orderTotal`, converts currency, counts received
-quantities, and fetches a thumbnail. So the create path never calculates a total: it
-inserts a header, and the view derives everything else on read.
+**Views** [[26]](#g26) are the primary read path. Carbon **writes to tables** and **reads from views**.
+For example, the plural `purchaseOrders` view joins the supplier name, calculates `orderTotal`, converts
+currency, counts received quantities, and retrieves a thumbnail. The write path inserts source data; the view derives display values.
 
 <Diagram
   name="paths"
   caption="Writes land in tables; reads come back through views, which is where computed values like order totals live."
 />
 
-When a list screen shows a number you cannot find in any table, look for the view. They
-are defined in migrations, always with `WITH (security_invoker = true)` so the caller's
-RLS still applies.
+Views are defined in migrations with `WITH (security_invoker = true)` so the caller's RLS policies apply.
 
-**Types are generated, never written.** `pnpm run generate:types` points the Supabase CLI
-at your local database and writes `packages/database/src/types.ts`, about 80,000 lines
-describing every table, view, function and enum. App code imports from it:
+**Database types are generated.** `pnpm run generate:types` reads the local schema and writes
+`packages/database/src/types.ts`, which describes each table, view, function, and enum. Application code imports from it:
 
 ```ts
 import type { Database } from "@carbon/database";
 type PurchaseOrderRow = Database["public"]["Tables"]["purchaseOrder"]["Row"];
 ```
 
-**Run `pnpm run generate:types` after pulling migrations or writing one, before you
-typecheck.** Half of all "this property doesn't exist" errors are a stale types file.
+Run `pnpm run generate:types` after pulling or creating migrations and before typechecking. Do not edit generated types directly.
 
-**Logic that lives in Postgres.** We push logic into the database when it must hold true
-for _every_ writer: the ERP, the MES, an edge function, a background job, the public
-API, or someone running SQL by hand. Two examples:
+**Database logic** enforces invariants across ERP, MES, edge functions, background jobs, the public API, and direct SQL. Examples:
 
 - `update_picking_list_status()` is a trigger that recomputes a picking list's header
   status whenever one of its lines changes. Written from four different places;
@@ -551,30 +449,20 @@ per company and `temp-staging` for large CAD uploads.
 
 ## Part 4: What happens after the write
 
-Back to that queued event. This chain is the piece most likely to surprise you, because
-none of it is visible from the code that did the write.
-
-It is not every write, though. A table only emits events once a migration has opted it in
-with `attach_event_trigger('tableName')` — about ninety have — and even then the trigger
-enqueues nothing unless that company has an **active subscription** matching the table and
-the operation. So the same `UPDATE` can fan out to six handlers for one company and do
-absolutely nothing for another.
+Event processing is independent of the code that performs a write. A table emits events only after a migration
+registers it with `attach_event_trigger('tableName')`. The trigger enqueues work only when the company has an
+active subscription for the table and operation. The same `UPDATE` can therefore invoke several handlers for one company and none for another.
 
 <Diagram
   name="events"
   caption="A subscribed write becomes up to six side effects, none of them visible from the code that did the write."
 />
 
-Three unfamiliar pieces in that chain: PGMQ [[16]](#g16) is the queue, which lives in
-ordinary Postgres tables so a trigger can write to it inside the same transaction;
-pg_net [[15]](#g15) is what lets the database make the outbound HTTP ping after that
-transaction commits; and Inngest [[5]](#g5) is the background job runner.
+PGMQ [[16]](#g16) stores the queue in Postgres so triggers can enqueue work in the same transaction.
+After commit, pg_net [[15]](#g15) sends an HTTP request to Inngest [[5]](#g5), the background job runner.
 
-In plain terms, Inngest works like this: you send it a named event, it calls one of your
-registered functions over HTTP, and it remembers how far that function got. Each
-`step.run("id", fn)` inside a function is a checkpoint: if step four fails and retries,
-steps one to three are not re-executed; their saved results are handed back. That is why
-it is used for anything that must survive a crash.
+Inngest maps named events to registered HTTP functions and persists step results. Each `step.run("id", fn)`
+is a checkpoint; a retry resumes after completed steps instead of executing them again.
 
 The wiring is three files:
 
@@ -584,12 +472,9 @@ The wiring is three files:
 | The list of all 55 job functions | `packages/jobs/src/inngest/index.ts`  |
 | The HTTP endpoint Inngest calls  | `apps/erp/app/routes/api+/inngest.ts` |
 
-That last row is the surprising one: **background jobs run inside the ERP container.**
-Inngest is a scheduler and a memory, not a compute host.
+**Background jobs run inside the ERP container.** Inngest schedules requests and persists execution state; it does not host Carbon's job code.
 
-**Firing a job on purpose.** The automatic trigger path above is for row changes. When
-code wants to _deliberately_ kick something off, it calls the typed helper `trigger()`
-(about 108 call sites):
+**Firing a job on purpose.** For explicit job initiation, call the typed `trigger()` helper:
 
 ```ts
 await trigger("notify", {
@@ -599,17 +484,15 @@ await trigger("notify", {
 
 Event names are always `carbon/<something>`.
 
-**Scheduled work** comes from two places. Inngest crons handle app-level jobs: MRP every
+**Scheduled work** has two sources. Inngest cron schedules run application jobs: MRP every
 three hours, notification digests every fifteen minutes, exchange rates and audit
 archiving nightly, workflow-run cleanup at 04:00. All of them are UTC, and any job that
 needs a company's local day computes it inside the run. Database-level maintenance uses
 pg_cron [[14]](#g14) instead, for refreshing cached aggregate tables and sweeping the event
 queue.
 
-**Notifications** fan out from one job (`packages/jobs/.../notifications/notify.ts`) to
-three destinations: in-app rows (which the topbar picks up live over Realtime), email via
-Resend, and Slack. `packages/notifications` itself is only the list of event types; it
-sends nothing.
+**Notifications** originate in `packages/jobs/.../notifications/notify.ts` and target in-app records, Resend email,
+and Slack. The top bar receives in-app records through Realtime. `packages/notifications` defines event types but does not send messages.
 
 ---
 
@@ -617,9 +500,7 @@ sends nothing.
 
 ### Workflows: the customer's own automations
 
-Carbon ships a drag-and-drop canvas where a _customer_ builds "when a quote is accepted,
-notify the account manager and create a job". Confusingly these are also called
-workflows, and they are a completely different thing from Inngest jobs:
+Customers configure workflows on a drag-and-drop canvas. These workflows are separate from Inngest jobs:
 
 |            | Inngest jobs                  | Workflows                                |
 | ---------- | ----------------------------- | ---------------------------------------- |
@@ -628,12 +509,9 @@ workflows, and they are a completely different thing from Inngest jobs:
 | Runs as    | service role, sees everything | **the workflow's owner**, with their RLS |
 | Changed by | a deploy                      | the customer, at any moment              |
 
-They reuse the event pipeline from [Part 4](#part-4-what-happens-after-the-write), the `WORKFLOW` branch. A matcher takes the
-row change, works out which catalog events it corresponds to, finds subscribed workflows,
-and queues one run each. `packages/workflows` holds the pure definition/validation logic
-and touches nothing; `packages/jobs/src/workflows/` holds the runtime that actually does
-things. Every run and every step is recorded, so a customer can open a run and see what
-happened.
+The `WORKFLOW` branch of the [Part 4](#part-4-what-happens-after-the-write) event pipeline maps row changes to catalog events,
+finds subscribed workflows, and queues a run for each. `packages/workflows` contains pure definition and validation logic.
+`packages/jobs/src/workflows/` contains the runtime. Carbon records every run and step for inspection.
 
 ### The Assembler: the Rust service
 
@@ -641,21 +519,17 @@ happened.
 web-renderable 3D (GLB) and plans a collision-free disassembly sequence for assembly
 instructions. It wraps two C++ libraries (OpenCASCADE for geometry, FCL for collision).
 `packages/viewer` renders its output in the browser.
-It is entirely optional; everything else boots without it.
+The service is optional; other components start without it.
 
-It is not a call-and-wait service. A job is submitted and answered later: the caller posts
-the work and gets a job id back, then waits for a callback, with polling as a fallback.
-Files never travel through the ERP. The caller hands over signed URLs, one to read the CAD
-file from and one to write the result to, and the Rust service streams straight to and
-from the storage bucket itself; it holds no database credentials and can see nothing else.
-Redis is where job state and finished-result pointers live, which is why the service
-refuses to start without it.
+The API is asynchronous. A caller submits work, receives a job ID, and waits for a callback or polls as a fallback.
+The service reads input and writes output through signed storage URLs, without routing files through ERP or holding
+database credentials. Redis stores job state and result pointers and is required at startup.
 
 ---
 
 ## Part 6: The repo map
 
-**Applications** (`apps/`, plus `docs/` at the root):
+**Applications** are under `apps/`, except for the root `docs/` application:
 
 | App         | What it is                                                                  | Dev port |
 | ----------- | --------------------------------------------------------------------------- | -------- |
@@ -666,7 +540,7 @@ refuses to start without it.
 | `assembler` | The Rust CAD/3D service.                                                    | varies   |
 | `docs`      | Public documentation site. The only Next.js app here.                       | 3002     |
 
-**Libraries** (`packages/`). The ones you will actually touch are near the top:
+**Libraries** are under `packages/`:
 
 | Package         | What it does                                                                                                     |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -712,9 +586,8 @@ purchasing/
 
 ## Part 7: Where it all runs
 
-The same code base runs in three shapes: on a laptop, on the cloud Carbon operates for
-customers, and on a server a customer owns. Nothing in the application knows which one it
-is in; the difference is entirely in configuration.
+The same codebase runs locally, in Carbon-operated cloud environments, and on customer-managed servers.
+Environment configuration determines the deployment model.
 
 <Diagram
   name="runs"
@@ -723,48 +596,32 @@ is in; the difference is entirely in configuration.
 
 ### 7.1 On a laptop
 
-`pnpm dev` runs `crbn up`, a custom CLI that boots an eleven-container Docker stack, waits
-for Postgres, applies migrations, regenerates the database types, seeds a test user, and
-starts the apps. The apps themselves run as ordinary Node processes on the host, not in
-containers, which is what makes hot reload fast.
+`pnpm dev` runs `crbn up`. The CLI starts an eleven-container service stack, waits for Postgres, applies
+migrations, regenerates database types, seeds a test user, and starts the applications as host Node processes for hot reload.
 
-Each Git worktree (a second checkout of the same repository) gets its own ports, its own
-database and its own freshly minted keys, so several branches can run at once. Redis is
-the one exception: a single shared container, with each worktree given its own numbered
-slot inside it.
+Each Git worktree receives isolated ports, a database, and credentials. Worktrees share one Redis container but use separate numbered databases.
 
 ### 7.2 The cloud Carbon runs
 
-There are **two hosting paths, and both are live**: the shared cloud on Vercel, and
-dedicated per-customer installations on AWS.
+Carbon operates a shared cloud on Vercel and dedicated customer installations on AWS.
 
-**The shared cloud runs on Vercel.** `app.carbon.ms` (ERP), `mes.carbon.ms` (MES),
+**The shared cloud runs on Vercel.** `app.carbon.ms` for ERP, `mes.carbon.ms` for MES,
 `learn.carbon.ms` (academy) and `docs.carbon.ms` all resolve to Vercel, as does a separate
 EU region (`app.eu.carbon.ms`, `mes.eu.carbon.ms`) served by its own pair of projects. Each
 React Router app opts in through its `react-router.config.ts`, which enables
 `vercelPreset()` from `@vercel/react-router` when the `VERCEL` environment variable is
-present and is a no-op everywhere else — so the same source builds for Vercel or for a
-container without a branch in the code. Deploys are driven by Vercel's own Git integration
-rather than by a workflow in this repository.
+present and otherwise does nothing. The same source therefore builds for Vercel and containers. Vercel's Git integration performs deployment.
 
-**Dedicated installations run on AWS.** The ERP and MES are also packaged as Docker images
-that run on ECS Fargate [[3]](#g3), which is Amazon running your container for you without
-any server to look after. Each service sits behind its own load balancer on port 3000, is
-checked for life at `/health`, and scales between one and ten copies on processor and
-memory pressure. All of that is described in `sst.config.ts` (SST [[23]](#g23) is
-infrastructure-as-code, where you write cloud resources in TypeScript instead of clicking
-in a console). The [AWS with SST](/docs/platform/self-hosting/aws-sst) recipe is the same
-stack, run by you. `itar.carbon.ms` is one of these: it resolves to a load balancer in AWS
-GovCloud, not to Vercel.
+**Dedicated installations run on AWS.** ERP and MES Docker images run on ECS Fargate [[3]](#g3).
+Each service uses a load balancer on port 3000, a `/health` check, and autoscaling from one to ten tasks based
+on CPU and memory. `sst.config.ts` defines this infrastructure with SST [[23]](#g23). The
+[AWS with SST](/docs/platform/self-hosting/aws-sst) recipe deploys the same stack. `itar.carbon.ms` runs in AWS GovCloud.
 
-The part that surprises people: **that path is not one big shared installation.** There is
-a `workspaces` table, and on every deploy `ci/src/deploy.ts` walks it and runs
+**Each AWS customer has a separate installation.** On each deployment, `ci/src/deploy.ts` reads the `workspaces` table and runs
 `sst deploy --stage prod` once per row, each with that customer's own AWS account, region,
-domain, certificates, Supabase project and Redis. So Carbon separates customers twice
-over: by `companyId` on every row inside one installation ([Part 3](#part-3-layer-by-layer)), and by giving a
-customer their own installation entirely. Adding a customer means adding a workspace row.
-A row missing a required field is skipped with a log line rather than failing the deploy,
-so a tenant can silently not deploy.
+domain, certificates, Supabase project, and Redis. Customers are isolated by `companyId` within an installation ([Part 3](#part-3-layer-by-layer))
+and by separate infrastructure. Adding an AWS customer requires a workspace row. If required workspace fields
+are missing, deployment skips that row and logs the omission.
 
 Postgres is managed Supabase on both paths. There is one Lambda: the Assembler ships as a
 single image that runs either as a Lambda function behind an API gateway (the default) or
@@ -773,13 +630,12 @@ the main stack.
 
 ### 7.3 On a customer's own server
 
-`contrib/deploying/simple-docker-caddy/` holds a complete [self-hosted stack](/docs/platform/self-hosting/docker-caddy): a Docker
+`contrib/deploying/simple-docker-caddy/` contains a complete [self-hosted stack](/docs/platform/self-hosting/docker-caddy): a Docker
 Swarm file that brings up Postgres, the Supabase services, Redis, Inngest and both apps on
 one machine, with Caddy in front as the only thing exposed to the internet. Secrets are
 Swarm secrets rather than environment variables in a file. Migrations run as a throwaway
-one-shot container before the apps roll. `scripts/backup.sh` takes a database dump plus
-the uploaded files (see [backups](/docs/platform/backups)), and `scripts/harden.sh` does the
-basic firewall setup.
+one-shot container before the apps roll. `scripts/backup.sh` creates a database dump and uploaded-file archive,
+and `scripts/harden.sh` configures the firewall. See [Backups](/docs/platform/backups).
 
 Which features exist is decided by one variable, `CARBON_EDITION`: `community`,
 `cloud`, `enterprise` or `test`. What each of those buys you is the
@@ -788,10 +644,7 @@ sets `enterprise`.
 
 ### 7.4 How a merge becomes production
 
-The Vercel side deploys itself: pushing to `main` triggers a build in each Vercel project
-through its Git integration, with no workflow in this repository involved. Everything
-below is the AWS side — four GitHub Actions workflows, deliberately independent of each
-other rather than one pipeline:
+Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deployment uses four independent GitHub Actions workflows:
 
 | Workflow       | Fires when                                                    | What it does                                                                                                                                               |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -800,11 +653,8 @@ other rather than one pipeline:
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
 | `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
 
-Two consequences worth knowing. First, `check.yml` never builds the apps, so a pull
-request can go green and still break the image build on merge. Second, migrations and app
-code deploy in parallel with no ordering between them, so a migration and the code that
-depends on it can land seconds apart in either order; write migrations that are safe
-against the previous version of the code.
+`check.yml` does not build application images, so a successful pull request can still fail during image build.
+Database and application deployments run without ordering, so migrations must remain compatible with the previous application version.
 
 There is no version tagging and no rollback button. An image is identified by its commit,
 so rolling back means redeploying an older commit. Configuration is not held in a secrets
@@ -813,26 +663,22 @@ environment variables on the container.
 
 ### 7.5 Knowing what is happening
 
-Observability is deliberately thin. Logs go through LogTape: color on a laptop, one JSON
-line per entry in production, with sensitive field names blanked out and a request id
-threaded through everything so one page load can be followed end to end. There is no log
-shipping of its own, so logs are whatever the platform collects: CloudWatch on AWS,
-`docker service logs` when self-hosted. PostHog covers product analytics and is switched
-off entirely in controlled (ITAR) environments. There is no Sentry and no distributed
-tracing.
+LogTape emits colored local logs and newline-delimited JSON in production. It redacts sensitive fields and
+propagates request IDs. Carbon does not provide separate log shipping; use CloudWatch on AWS or `docker service logs`
+when self-hosted. PostHog provides product analytics and is disabled in controlled environments. Carbon does not use Sentry or distributed tracing.
 
 ---
 
 ## Part 8: There's a bug, where do I look?
 
-Start from what the user saw and walk inwards. This mirrors the order things happen.
+Start with the observed behavior and follow the request path inward.
 
 <Diagram
   name="triage"
   caption="Start from what the user saw, then read down the one column that matches."
 />
 
-**A few specific traps, each of which has caught someone out:**
+Common failure modes:
 
 - _TypeScript says a column doesn't exist._ Run `pnpm run generate:types`. Your generated
   types are behind your migrations.
@@ -840,14 +686,13 @@ Start from what the user saw and walk inwards. This mirrors the order things hap
   is wrong or you are using a user-scoped client where you needed service role.
 - _A write half-succeeded._ Chained `supabase-js` calls are not a transaction. Look for a
   manual rollback that didn't cover the failure.
-- _A number on a list screen is wrong._ It is almost certainly computed in a view.
+- _A number on a list screen is wrong._ Check the view that computes it.
 
 ---
 
 ## Part 9: House rules
 
-The full list is in `AGENTS.md` at the repo root. The ones that cause
-the most damage when broken:
+The root `AGENTS.md` contains the complete rules. Key constraints:
 
 - **`pnpm`, never `npm`.**
 - **Never use JavaScript `Date`** for parsing, formatting or arithmetic. Use
@@ -872,13 +717,13 @@ pnpm run lint                                   # Biome
 pnpm run test                                   # unit tests
 ```
 
-Typechecking the whole repo at once runs out of memory, so always use `--filter`.
+Typecheck a scoped package with `--filter`; whole-repository typechecking can exhaust memory.
 
 ---
 
 ## Glossary
 
-Numbered so the body can point at them. Alphabetical.
+Numbered references used throughout this page, in alphabetical order.
 
 <a id="g1"></a>
 **1. Action:** the function a route file exports to handle a form submission.
@@ -1020,6 +865,6 @@ state, like whether a modal is open.
     What Community, Enterprise and Cloud each include.
   </Card>
   <Card title="Backups" href="/docs/platform/backups">
-    Dumping the database and the uploaded files.
+    Snapshot and restore company data and uploaded files.
   </Card>
 </Cards>

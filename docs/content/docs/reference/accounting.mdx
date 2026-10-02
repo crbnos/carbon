@@ -3,19 +3,19 @@ title: Accounting & the ledger
 description: "How operations become journal entries: accounts, periods, and the postings behind every flow."
 ---
 
-Carbon's flows all end the same way: shipping, receiving, finishing a job, depreciating an asset each post to the **<Term id="general-ledger">general ledger</Term>**. This page covers the machinery they share.
+Shipping, receiving, job completion, and asset depreciation can each post to the **<Term id="general-ledger">general ledger</Term>**. This page describes their shared accounting behavior.
 
 ## Accounting is a switch
 
-A company setting, **accounting enabled**, is **off by default**. With it off, the physical world still moves (the item ledger records quantities, orders and jobs change status), but no journal entries are written. Every posting below is gated on it.
+The company setting **accounting enabled** is off by default. When disabled, operational transactions still update quantities and document statuses, but they do not create journal entries. All postings described below require this setting.
 
 <Callout type="warn">
-A shop can run operationally (receiving, building, shipping) before it keeps books. Turn accounting on and those same actions begin posting to the ledger; until then the financial entries are simply skipped.
+Receiving, production, and shipping can operate without accounting. After accounting is enabled, those actions begin posting to the ledger. Carbon does not create entries retroactively for earlier activity.
 </Callout>
 
 ## The journal
 
-Every <Term id="posting">posting</Term> is a **<Term>journal</Term>** with balanced **journal lines**: debits positive, credits negative. The journal carries a **source type** naming what produced it; each line carries an account and can be tagged with dimensions. A journal is *Posted* (the normal state), *Draft*, or *Reversed* — voiding writes a reversing journal rather than deleting one.
+Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with balanced **journal lines**: debits are positive and credits are negative. The journal records its source type. Each line references an account and can include dimensions. Journals can be *Draft*, *Posted*, or *Reversed*. Voiding a posted journal creates a reversing journal instead of deleting the original.
 
 | Source type | Posted by |
 | --- | --- |
@@ -30,7 +30,7 @@ Every <Term id="posting">posting</Term> is a **<Term>journal</Term>** with balan
 
 ## Accounts come from one place
 
-Carbon resolves the accounts to post to from a **single company-level set of defaults**. There are no per-group posting groups. The ones that recur across the flows:
+Carbon resolves posting accounts from one set of company defaults. It does not use per-group posting groups. These defaults recur across accounting flows:
 
 | Account | Used for |
 | --- | --- |
@@ -43,15 +43,15 @@ Carbon resolves the accounts to post to from a **single company-level set of def
 | Goods received, not invoiced | The accrual between receiving goods and being billed for them. |
 | Variance | Differences swept at job close or from purchase price. |
 
-A sales invoice line splits its charge three ways rather than folding everything into revenue: the line's own shipping plus its share of any header-level shipping credits the **shipping revenue** account, tax credits **sales tax payable**, and merchandise and add-ons credit the **sales** account. The two revenue defaults must be distinct accounts — posting refuses a line that would credit shipping to the sales account. A new company seeds account **4040 "Shipping Revenue"** under Revenue and points the default at it; a company joining an existing group inherits that group's shipping default instead.
+A sales invoice line separates shipping, tax, and merchandise. Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **sales tax payable**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
 
 ## Dimensions
 
-A journal line can be tagged with **dimensions**: location, department, cost center, item posting group, work center, process, fixed-asset class. The same handful of accounts can then be sliced for reporting without multiplying the chart of accounts.
+A journal line can include dimensions for location, department, cost center, item posting group, work center, process, or fixed-asset class. Dimensions support segmented reporting without expanding the chart of accounts.
 
 ## Periods
 
-Every posting lands in an **<Term id="accounting-period">accounting period</Term>**, created and activated on demand as you post. Each period also carries a close status — **Open**, **Closed**, or **Locked** — and operational documents (receipts, shipments, invoices, payments) can't post into a Closed or Locked period. Reopen or unlock the period first, or move the posting date into an open one.
+Every posting belongs to an **<Term id="accounting-period">accounting period</Term>**, which Carbon creates and activates as needed. A period can be **Open**, **Closed**, or **Locked**. Receipts, shipments, invoices, and payments cannot post to a Closed or Locked period. Reopen or unlock the period, or change the posting date to an open period.
 
 ## Related
 

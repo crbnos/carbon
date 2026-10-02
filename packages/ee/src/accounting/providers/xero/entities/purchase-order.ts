@@ -12,6 +12,7 @@ import {
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 import type { XeroProvider } from "../provider";
+import { xeroItemCode } from "./item";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "purchaseOrder"
@@ -54,7 +55,8 @@ type PurchaseOrderLineRow = {
   extendedPrice: number | null;
   quantityReceived: number | null;
   quantityInvoiced: number | null;
-  itemCode: string | null;
+  itemReadableId: string | null;
+  itemReadableIdWithRevision: string | null;
 };
 
 // Status mapping between Carbon and Xero
@@ -168,7 +170,8 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         "purchaseOrderLine.extendedPrice",
         "purchaseOrderLine.quantityReceived",
         "purchaseOrderLine.quantityInvoiced",
-        "item.readableId as itemCode",
+        "item.readableId as itemReadableId",
+        "item.readableIdWithRevision as itemReadableIdWithRevision",
         "account.number as accountNumber"
       ])
       .where("purchaseOrderLine.purchaseOrderId", "in", orderIds)
@@ -236,7 +239,12 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           quantity: Number(line.purchaseQuantity) || 0,
           unitPrice: Number(line.unitPrice) || 0,
           itemId: line.itemId,
-          itemCode: line.itemCode,
+          itemCode: line.itemReadableId
+            ? xeroItemCode({
+                readableId: line.itemReadableId,
+                readableIdWithRevision: line.itemReadableIdWithRevision
+              })
+            : null,
           accountNumber: line.accountNumber,
           taxPercent: line.taxPercent != null ? Number(line.taxPercent) : null,
           taxAmount: line.taxAmount != null ? Number(line.taxAmount) : null,
@@ -330,10 +338,10 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           if (!itemCode) {
             const item = await this.database
               .selectFrom("item")
-              .select("readableId")
+              .select(["readableId", "readableIdWithRevision"])
               .where("id", "=", line.itemId)
               .executeTakeFirst();
-            itemCode = item?.readableId ?? null;
+            itemCode = item ? xeroItemCode(item) : null;
           }
         }
 

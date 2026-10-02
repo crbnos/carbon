@@ -15,7 +15,7 @@ export type ModelUploadProgress = {
 /**
  * Shared resumable (TUS) model-upload logic — the single source of truth for
  * every CAD upload surface (CadModel, PartForm, ToolForm). Owns the progress
- * state (render it with `<ModelUploadProgress {...upload} />`) and swallows the
+ * state (render it with `<UploadProgress {...upload} />`) and swallows the
  * upload into a `{ error }` result so callers keep their existing flow.
  */
 export function useModelUpload() {

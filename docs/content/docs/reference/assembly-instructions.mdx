@@ -3,9 +3,9 @@ title: Assembly instructions
 description: Step-by-step 3D build guides for a made part, authored in the ERP from its CAD model and played to operators on the shop floor.
 ---
 
-An assembly instruction is a 3D build guide for one made part. It breaks the part's CAD model into ordered steps, each naming the components it installs and how they move into place, and plays them to the operator in the shop floor's [guided assembly view](/docs/reference/mes#the-guided-assembly-view).
+An assembly instruction is a 3D build guide for a made part. It divides the part's CAD model into ordered steps that identify installed components and their motion paths. Operators follow these steps in the shop floor's [guided assembly view](/docs/reference/mes#the-guided-assembly-view).
 
-You author instructions under **Production → Assemblies**. Pressing **"Add Assembly Instruction"** asks for a single field, the **Part**: a part made in-house that already has a 3D model on its **Model** tab (a STEP file). Carbon converts the model for 3D viewing if it needs to, opens the editor, and starts working out draft steps straight away.
+Create instructions under **Production → Assemblies**. Select **Add Assembly Instruction**, then choose a made-in-house **Part** with a STEP file on its **Model** tab. Carbon converts the model for 3D viewing when required, opens the editor, and begins generating draft steps.
 
 <Screenshot label="The assembly instruction editor: the Steps list on the left, the 3D model in the middle, and the selected step's Details tab on the right with Components and the Playback box" caption="Steps on the left, the model in the middle, the selected step's settings on the right." />
 
@@ -17,7 +17,7 @@ You author instructions under **Production → Assemblies**. Pressing **"Add Ass
   <Status name="Archived" terminal>A version that was active before a newer one took over. Read-only.</Status>
 </StatusFlow>
 
-Each version is its own copy of the instruction. On a published instruction, **"New Version"** makes an editable draft copy of it, steps and all. On a draft, **"Make Active"** publishes it and archives the version that was active before.
+Each version is an independent copy of the instruction. On a published instruction, **New Version** creates an editable draft containing the existing steps. On a draft, **Make Active** publishes it and archives the previously active version.
 
 <Callout type="warn" title="Making a version active updates jobs in progress.">
 Every job operation that points at another version of this instruction is moved to the new one and has its steps synced, as long as the operation isn't done or canceled and its job isn't locked. Operations on finished jobs keep the steps they were built with.
@@ -25,7 +25,7 @@ Every job operation that points at another version of this instruction is moved 
 
 ## Steps
 
-A new instruction starts empty. **"Generate Steps"** runs the motion planner over the model: it works out a build order and a collision-free path for each part, which usually takes one to three minutes. **"Add step manually"** starts from a blank step instead. Once steps exist, **"Add Step"** in the list footer adds another, and dragging a row by its handle reorders the list.
+A new instruction starts without steps. **Generate Steps** runs the motion planner to determine a build order and collision-free path for each part. Planning usually takes one to three minutes. **Add step manually** creates a blank step. After steps exist, use **Add Step** to create another or drag a row handle to reorder it.
 
 Each step carries a status you change from the icon at the end of its row:
 
@@ -35,9 +35,9 @@ Each step carries a status you change from the icon at the end of its row:
   <Status name="Done" accent>An author has checked the step.</Status>
 </StatusFlow>
 
-The planner menu next to **"Add Step"** can recompute the motions in the current order (**"Run Motion Planning"**) or replace every step from a fresh plan (**"Regenerate Steps"**). Regenerating is refused while any step was added by hand or is marked "Done", so checked work is never overwritten.
+The planner menu next to **Add Step** can recompute motion paths without changing step order (**Run Motion Planning**) or replace all steps with a new plan (**Regenerate Steps**). Regeneration is blocked when any step was added manually or has status **Done**.
 
-Two icons in the step list flag steps worth a second look. A warning triangle means the planner found no collision-free path, so the step's parts fade in at their final position instead of moving in. A hand means a part may tip once placed, so the step may need a fixture or a second person.
+Step-list icons identify planning concerns. A warning triangle means the planner found no collision-free path; the parts fade into their final position instead of moving. A hand means a placed part may tip and could require a fixture or a second person.
 
 ## Step details
 
@@ -56,7 +56,7 @@ These fields save with **"Save"** at the bottom of the panel (or ⌘/Ctrl+Enter)
 
 **Components** lists what the step installs. Press **"Add"**, click parts in the 3D view (shift-click adds several), then **"Done Adding"**. Remove a part with the ✕ on its row.
 
-Some steps are hard to see because of parts that are in the way, such as a fixture or a cover fitted earlier. The eye on a row in the **Components** tab hides that part on the selected step only. The step's **<Term id="assembly-step-hidden-components">Hidden on this step</Term>** list shows what is hidden and brings parts back. A step can never hide its own components, and hidden parts are hidden for operators too.
+To expose obstructed work, select the eye on a row in the **Components** tab. This hides the part only for the selected step. The **<Term id="assembly-step-hidden-components">Hidden on this step</Term>** list shows hidden parts and restores them. A step cannot hide its own components. Parts hidden by an author are also hidden from operators.
 
 ## Playback settings
 

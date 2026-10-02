@@ -16,7 +16,6 @@ import type {
 } from "react-router";
 import { Outlet, redirect } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import {
   getAccountsList,
   getBaseCurrency,
@@ -31,10 +30,16 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Accounting" }];
 };
 
+function AccountingSidebar() {
+  const { groups } = useAccountingSubmodules();
+  return <GroupedContentSidebar groups={groups} />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
   to: path.to.accounting,
-  module: "accounting"
+  module: "accounting",
+  sidebar: AccountingSidebar
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
@@ -83,17 +88,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AccountingRoute() {
-  const { groups } = useAccountingSubmodules();
-
   return (
-    <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full bg-card">
-        <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="relative h-full">
-          <Outlet />
-          <AccountingBetaGate />
-        </VStack>
-      </div>
-    </CollapsibleSidebarProvider>
+    <VStack spacing={0} className="relative h-full">
+      <Outlet />
+      <AccountingBetaGate />
+    </VStack>
   );
 }

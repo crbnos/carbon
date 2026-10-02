@@ -28,6 +28,9 @@ vi.mock("@carbon/ee/accounting", () => ({
   getProviderIntegration: (...args: unknown[]) =>
     getProviderIntegration(...args),
   ProviderID: { XERO: "xero" },
+  isAccountingSyncEnabled: (metadata: unknown) =>
+    (metadata as { settings?: { syncEnabled?: unknown } } | null)?.settings
+      ?.syncEnabled !== false,
   parseStoredCredentials: (raw: unknown) => raw,
   // Real composite-id shape (the syncer's contract): ACCREC prefix-less AR,
   // ACCPAY `bill:`-prefixed AP.

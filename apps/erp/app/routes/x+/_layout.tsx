@@ -64,7 +64,11 @@ import {
 } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
-import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import {
+  ModuleSidebarLayout,
+  PrimaryNavigation,
+  Topbar
+} from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import ShortcutHelp from "~/components/ShortcutHelp";
@@ -537,7 +541,9 @@ export default function AuthenticatedRoute() {
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                      <Outlet />
+                      <ModuleSidebarLayout>
+                        <Outlet />
+                      </ModuleSidebarLayout>
                     </main>
                   </div>
                 </SidebarProvider>

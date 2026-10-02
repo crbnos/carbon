@@ -46,7 +46,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
-import { ModelUploadProgress } from "~/components/ModelUploadProgress";
+import { UploadProgress } from "~/components/UploadProgress";
 import {
   useCompanySettings,
   useCurrencyDecimals,
@@ -386,7 +386,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 >
                   <input id="model-upload" {...getInputProps()} />
                   {upload !== null ? (
-                    <ModelUploadProgress
+                    <UploadProgress
+                      label={t`Uploading model`}
+                      description={t`Uploading the CAD file`}
                       percent={upload.percent}
                       uploaded={upload.uploaded}
                       total={upload.total}

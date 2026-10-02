@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} partiye alınabilir operasyon partide de�
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# sayılmamış satır} other {# sayılmamış satırlar}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} planlanmıyor"
 
@@ -3002,8 +3005,14 @@ msgstr "İzlenebilirliğe geri dön"
 msgid "Backflush"
 msgstr "Geriye dönük tüketim"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Yedekleme başarısız oldu"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Yedeklemeler"
@@ -3791,6 +3800,9 @@ msgstr "Kontrol Noktası ·"
 
 msgid "Checkpoints"
 msgstr "Kontrol Noktaları"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Bir parti numarası seçin"
@@ -8142,6 +8154,9 @@ msgstr "PDF yüklenemedi"
 msgid "Failed to upload thumbnail"
 msgstr "Küçük resim yüklenemedi"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Başarısızlık"
 
@@ -8802,6 +8817,9 @@ msgstr "Planlanmayan operasyonları var"
 msgid "Headers"
 msgstr "Başlıklar"
 
+msgid "healthy"
+msgstr ""
+
 msgid "Help"
 msgstr "Yardım"
 
@@ -9237,6 +9255,9 @@ msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta v
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta aracılığıyla sizi ulaştıracağını seçin."
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "Pasif"
@@ -11279,6 +11300,9 @@ msgstr "Net Gelir"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Asla"
 
@@ -12353,6 +12377,12 @@ msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
 
@@ -12414,6 +12444,9 @@ msgstr "adet"
 msgid "of {0}h"
 msgstr "başında {0}s"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "Kapalı — senkronizasyon dışında işlenir"
 
@@ -12428,6 +12461,9 @@ msgstr "Tamam"
 
 msgid "Oldest first"
 msgstr "En eski önce"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Geçiş gününde, aşağıdaki kontrol listesini sırayla çalışın. Kabul testleri kapsam içi gerekliliklerinizden gelir. Destek ayrıntıları altta yer alır."
@@ -12446,6 +12482,9 @@ msgstr "Eldeki"
 
 msgid "On Hand"
 msgstr "Stokta"
+
+msgid "On hand {before} to {after}"
+msgstr "Eldeki: {before} değerinden {after} değerine"
 
 msgid "On Hold"
 msgstr "Askıda"
@@ -12601,6 +12640,9 @@ msgstr "Aç"
 
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
+
+msgid "Open Account Mapping"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
@@ -13662,6 +13704,9 @@ msgstr "Tercih Edilen Tedarikçi"
 msgid "Prefix"
 msgstr "Ön Ek"
 
+msgid "Preparing the backup for restore…"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Avanslar"
 
@@ -14708,6 +14753,9 @@ msgstr "Bu kalibrasyon sırasında ölçüm aletinin ayarlandığı kaydedildi; 
 
 msgid "Records"
 msgstr "Kayıtlar"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
 
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
@@ -16097,6 +16145,9 @@ msgstr "Değişkenleri ara…"
 msgid "Search..."
 msgstr "Ara..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Tamamlanmak için gereken saniye"
 
@@ -16126,6 +16177,9 @@ msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
 
 msgid "Select"
 msgstr "Seç"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Bir atanan seçin"
@@ -17806,6 +17860,9 @@ msgstr "Senkronize Et"
 
 msgid "Sync Activity"
 msgstr "Senkronizasyon Etkinliği"
+
+msgid "sync off"
+msgstr ""
 
 msgid "Sync operation"
 msgstr "Senkronizasyon işlemi"
@@ -19777,6 +19834,9 @@ msgstr "Geri Al"
 msgid "Ungroup"
 msgstr ""
 
+msgid "unhealthy"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Kaldır"
 
@@ -20079,6 +20139,9 @@ msgstr "CSV Yükle"
 msgid "Upload failed. Please try again."
 msgstr "Yükleme başarısız oldu. Lütfen tekrar deneyin."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Yüklenen model"
 
@@ -20095,6 +20158,18 @@ msgstr "Yükleniyor {0}"
 
 msgid "Uploading {fileName}"
 msgstr "{\"fileName\"} yükleniyor"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Yükleniyor..."
@@ -21322,6 +21397,9 @@ msgstr "{hoursElapsed} saattir işte idiniz. İş bitişini unuttunuz mu?"
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Oturum açma bilgileriniz çalınsa bile hesabınız güvenli kalır"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."

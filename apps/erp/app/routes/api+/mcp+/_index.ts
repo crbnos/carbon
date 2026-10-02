@@ -74,8 +74,8 @@ async function authenticateOAuthToken(
 }
 
 /**
- * OAuth (connector) callers get the same allowance an API key gets by default —
- * 60 requests/minute — but through the app's Redis limiter rather than the
+ * OAuth (connector) callers get 60 requests/minute — what a company's API keys
+ * get in total — but through the app's Redis limiter rather than the
  * Postgres one: `apiKeyRateLimit` has an FK to `apiKey`, so it cannot count a
  * synthetic per-user id, and this route only exists in the Node app where Redis
  * is the house tool (the login limiter is the precedent). Keyed by USER, not by

@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} 个可分组的工序不在生产批次�
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# 未计数行} other {# 未计数行}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
 
@@ -3002,8 +3005,14 @@ msgstr "返回可追溯性"
 msgid "Backflush"
 msgstr "倒冲"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "备份失败"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "备份"
@@ -3791,6 +3800,9 @@ msgstr "检查点 ·"
 
 msgid "Checkpoints"
 msgstr "检查点"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "选择批号"
@@ -8142,6 +8154,9 @@ msgstr "上传 PDF 失败"
 msgid "Failed to upload thumbnail"
 msgstr "上传缩略图失败"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "故障"
 
@@ -8802,6 +8817,9 @@ msgstr "有无法排程的工序"
 msgid "Headers"
 msgstr "标头"
 
+msgid "healthy"
+msgstr ""
+
 msgid "Help"
 msgstr "帮助"
 
@@ -9237,6 +9255,9 @@ msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件发送给您。"
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "已停用"
@@ -11279,6 +11300,9 @@ msgstr "净收益"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "永不"
 
@@ -12353,6 +12377,12 @@ msgstr "没有与您的搜索和过滤条件匹配的内容。"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
 
@@ -12414,6 +12444,9 @@ msgstr "的"
 msgid "of {0}h"
 msgstr "共 {0}h"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "关闭 — 在同步外处理"
 
@@ -12428,6 +12461,9 @@ msgstr "确定"
 
 msgid "Oldest first"
 msgstr "最早优先"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在转换日，按顺序完成下列检查清单。验收测试来自您范围内的要求。支持详情见下方。"
@@ -12446,6 +12482,9 @@ msgstr "现有"
 
 msgid "On Hand"
 msgstr "现有"
+
+msgid "On hand {before} to {after}"
+msgstr "现有：从 {before} 到 {after}"
 
 msgid "On Hold"
 msgstr "搁置"
@@ -12601,6 +12640,9 @@ msgstr "未结"
 
 msgid "Open a change notice"
 msgstr "打开变更通知"
+
+msgid "Open Account Mapping"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "未结操作"
@@ -13662,6 +13704,9 @@ msgstr "首选供应商"
 msgid "Prefix"
 msgstr "前缀"
 
+msgid "Preparing the backup for restore…"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "预付款（默认）"
 
@@ -14708,6 +14753,9 @@ msgstr "记录在此校准期间调整了量具；影响校准周期的重新计
 
 msgid "Records"
 msgstr "记录"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
 
 msgid "Recovery Period"
 msgstr "注册"
@@ -16097,6 +16145,9 @@ msgstr "搜索变量…"
 msgid "Search..."
 msgstr "搜索..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完成秒数"
 
@@ -16126,6 +16177,9 @@ msgstr "驱动客户定价和条款的细分市场"
 
 msgid "Select"
 msgstr "选择"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "选择经办人"
@@ -17806,6 +17860,9 @@ msgstr "同步"
 
 msgid "Sync Activity"
 msgstr "同步活动"
+
+msgid "sync off"
+msgstr ""
 
 msgid "Sync operation"
 msgstr "同步操作"
@@ -19777,6 +19834,9 @@ msgstr "撤销"
 msgid "Ungroup"
 msgstr ""
 
+msgid "unhealthy"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "卸载"
 
@@ -20079,6 +20139,9 @@ msgstr "上传 CSV"
 msgid "Upload failed. Please try again."
 msgstr "上传失败。请重试。"
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "已上传模型"
 
@@ -20095,6 +20158,18 @@ msgstr "正在上传 {0}"
 
 msgid "Uploading {fileName}"
 msgstr "正在上传 {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "上传中..."
@@ -21326,6 +21401,9 @@ msgstr "你已打卡{hoursElapsed}小时。你忘记收工了吗?"
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "即使您的登录被盗，您的账户也保持安全"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"

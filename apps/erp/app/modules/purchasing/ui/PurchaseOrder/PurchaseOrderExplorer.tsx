@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -336,9 +337,8 @@ function PurchaseOrderLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.purchaseOrderLine(orderId, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -437,7 +437,7 @@ function PurchaseOrderLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
       {receivingDisclosure.isOpen && (
         <Confirm
           action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}

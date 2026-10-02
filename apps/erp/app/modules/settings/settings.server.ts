@@ -7,10 +7,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
   getIntegrationConfigById,
+  getIntegrationIdsByRole,
   type IntegrationID,
   resolveIntegrationSecrets,
   splitSecrets
 } from "@carbon/ee";
+import { isAccountingSyncEnabled } from "@carbon/ee/accounting";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { redis } from "@carbon/kv";
@@ -469,7 +471,36 @@ export async function updateCustomFieldsSortOrder(
   }
 }
 
+export type IntegrationHealthStatus =
+  | "healthy"
+  | "unhealthy"
+  | "inactive"
+  | "sync-off";
+
+/**
+ * Connection health, plus `sync-off` for an accounting integration whose
+ * connection works but whose sync switch is off (a new connection still being
+ * set up, or one switched off since). A broken connection still reads
+ * `unhealthy` — that is the more urgent thing to show.
+ */
 export async function getIntegrationHealth(
+  companyId: string,
+  integration: Integration
+): Promise<Integration & { health: IntegrationHealthStatus }> {
+  const result = await getConnectionHealth(companyId, integration);
+  if (
+    result.health === "healthy" &&
+    (getIntegrationIdsByRole("accounting") as string[]).includes(
+      integration.id ?? ""
+    ) &&
+    !isAccountingSyncEnabled(integration.metadata)
+  ) {
+    return { ...result, health: "sync-off" };
+  }
+  return result;
+}
+
+async function getConnectionHealth(
   companyId: string,
   integration: Integration
 ): Promise<Integration & { health: "healthy" | "unhealthy" | "inactive" }> {

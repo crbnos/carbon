@@ -7,7 +7,7 @@ import type { VirtualItem, Virtualizer } from "@tanstack/react-virtual";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion } from "framer-motion";
 import type { MutableRefObject, RefObject } from "react";
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { NodeState, NodesState } from "./reducer";
 import { reducer } from "./reducer";
 import { concreteStateFromInput, selectedIdFromState } from "./utils";
@@ -62,6 +62,13 @@ export function TreeView<TData>({
   }, [autoFocus, parentRef?.current]);
 
   const virtualItems = virtualizer.getVirtualItems();
+
+  // Rows re-render on every scroll frame; a linear `tree.find` per visible row
+  // made each frame O(rows × nodes).
+  const nodesById = useMemo(
+    () => new Map(tree.map((node) => [node.id, node])),
+    [tree]
+  );
 
   const scrollCallback = useCallback(
     (event: Event) => {
@@ -119,7 +126,7 @@ export function TreeView<TData>({
           }}
         >
           {virtualItems.map((virtualItem) => {
-            const node = tree.find((node) => node.id === virtualItem.key);
+            const node = nodesById.get(virtualItem.key as string);
             if (!node) return null;
             const state = nodes[node.id];
             if (!state) return null;

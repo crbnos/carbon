@@ -8,48 +8,48 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-The [make-to-order tour](/guides/order) built satellites. This flow follows the money those jobs spend. As a job is worked, Carbon accumulates its cost (materials consumed, plus labor, machine, and overhead time) into <Term id="wip">work-in-process</Term>, then releases that cost into finished-goods inventory when the job completes. Every figure here is grounded in real ledger postings, so it's worth being precise about what posts, when, and to which account.
+As production proceeds, Carbon accumulates consumed material and labor, machine, and overhead costs in <Term id="wip">work-in-process</Term>. Job completion transfers that cost to finished-goods inventory. This guide describes the ledger entries, timing, and accounts for that flow.
 
 ## Accounting is a switch
 
-The first thing to know is that costing is gated. A company setting, **accounting enabled**, is **off by default**. With it off, the physical world still moves: the item ledger records quantities, job and operation statuses advance, material gets issued. But no general-ledger entries and no cost layers are written. Turn it on and the same operations also post money.
+The company-level **accounting enabled** setting is **off by default**. When disabled, Carbon still updates item-ledger quantities, job and operation statuses, and material issues, but it does not create general-ledger entries or cost layers. When enabled, the same operations also post financial entries.
 
 <Callout tone="amber" badge="OFF BY DEFAULT" title="Quantities always move; money only moves when accounting is on.">
-Receiving, issuing, completing: the physical and status changes happen regardless. The GL postings described in this flow are written only when accounting is enabled for the company, so a shop can run operationally before it runs its books.
+Receiving, issuing, and completion always update physical inventory and status. The GL postings in this guide occur only when accounting is enabled.
 </Callout>
 
 ## Cost lands in WIP
 
-As the job runs, cost flows **into** its work-in-process. Two streams feed it.
+Two cost streams enter a job's work-in-process balance.
 
 <Figure illustration="wip-inflow" caption="Two streams feed a job's WIP: material out of inventory, plus labor, machine, and overhead time at the work center's rates." />
 
-**Material.** When a job consumes a part (<Term id="material-issue">issued</Term> to an operation, or <Term id="backflush">backflushed</Term> at completion), Carbon moves that part's cost out of inventory and into WIP. The ledger entry is a debit to the work-in-process account and a credit to inventory, tagged *Job Consumption*.
+**Material.** When a job consumes a part through <Term id="material-issue">issue</Term> or completion <Term id="backflush">backflush</Term>, Carbon moves its cost from inventory to WIP. The *Job Consumption* entry debits work-in-process and credits inventory.
 
-**Labor, machine, and overhead.** Every production event a worker or machine logs carries a duration. Carbon prices it against the **work center's** rates and posts it in real time: a debit to WIP, a credit to an absorption account, tagged *Production Event*. Labor and machine time each post at their own rate (hours times the rate); if the work center also carries an overhead rate, the event books a second pair, a debit to WIP and a credit to an overhead-absorption account, at that rate. All three rates come from the <Term>work center</Term>, not from the operation's estimate.
+**Labor, machine, and overhead.** Each production event has a duration that Carbon prices at the **work center's** rates and posts in real time. The *Production Event* entry debits WIP and credits the applicable absorption account. Labor and machine time post at their respective hourly rates. If the work center has an overhead rate, Carbon also debits WIP and credits overhead absorption. All rates come from the <Term>work center</Term>, not the operation estimate.
 
 <Callout tone="blue" badge="WHAT LANDS IN WIP" title="WIP collects real material plus labor, machine, and overhead time.">
-WIP is the sum of consumed material and the priced production events. Each event posts labor and machine at the work center's rates, and when the work center has an overhead rate, that too is absorbed into WIP alongside the time, gated on the overhead-absorption account being configured. WIP is real material plus real time, not a standard estimate.
+WIP consists of consumed material and production events priced at work-center labor, machine, and overhead rates. Overhead posts only when the overhead-absorption account is configured. These are actual costs, not standard estimates.
 </Callout>
 
 <Screenshot src="/screens/job-production-events.png" label="Job — production events" caption="Production events on J000001 — setup, labor, and machine time logged against each work center — priced into WIP at that work center's rates." ratio="wide" />
 
 ## Issued or backflushed
 
-That material reaches WIP one of two ways, and the difference is *when*. **Issuing** pushes a part to an operation as the work happens, the same move the picking list drives when it stages material to the line. **Backflushing** waits for the finish: when the job completes, Carbon consumes whatever the method called for that wasn't already issued, in a single sweep.
+Material reaches WIP through **issue** or **backflush**. Issuing consumes a part during the operation, including after a picking list stages it at the line. At job completion, backflush consumes required material that has not already been issued.
 
-The posting is identical either way (cost out of inventory, into WIP), so the choice is about floor discipline, not accounting. Issue as you go when you need tight control over what's consumed; lean on backflush for the routine material you'd rather not hand-count.
+Both methods credit inventory and debit WIP. Use issue for explicit consumption control and backflush for routine material.
 
 <Callout tone="neutral" badge="SCRAP LEAVES WIP" title="Ruined cost is relieved to a scrap account, not carried to close.">
-<Term>Scrap</Term> and <Term>rework</Term> are recorded as their own production quantities. Scrapping a tracked part relieves its cost from the job: debited to a dedicated scrap account and credited out of WIP (or straight out of inventory, for a part still in stock), tagged with the reason, work center, and operator. The ruined value leaves the job rather than riding along to close, and the scrap reopens the routing so a replacement gets built. See [scrap and unscrap](/docs/reference/scrap).
+<Term>Scrap</Term> and <Term>rework</Term> are separate production quantities. Scrapping a tracked part debits the scrap account and credits WIP, or inventory if the part remains in stock. The entry includes the reason, work center, and operator. Scrap removes the cost from the job and reopens the routing for a replacement. See [scrap and unscrap](/docs/reference/scrap).
 </Callout>
 
 ## WIP isn't a table
 
-Here's the part most ERPs hide. In Carbon, work-in-process is not a column or a table you can read off a job. It's a **balance in the [general ledger](/docs/reference/accounting)**, the sum of every posting against the work-in-process account that carries this job's id. A job's WIP is a query, not a field.
+Work-in-process is not stored as a job field or separate table. It is the **[general-ledger](/docs/reference/accounting) balance** of entries posted to the work-in-process account with the job ID.
 
-The cost itself lives in the **cost ledger**, where each inbound entry opens a layer with a remaining quantity. How a consumed part is priced depends on the item's <Term>costing method</Term>: **FIFO** or **LIFO** walk the open layers, **Average** uses the running unit cost, **Standard** uses the standard cost. That choice changes the *amount* of the WIP entry, but the shape never changes: cost in from inventory, cost out to finished goods.
+The **cost ledger** stores each inbound cost layer and its remaining quantity. The item's <Term>costing method</Term> determines consumption value: **FIFO** and **LIFO** select open layers, **Average** uses the running unit cost, and **Standard** uses the standard cost. The method changes the amount but not the flow from inventory to WIP and then finished goods.
 
 <Callout tone="neutral" badge="COST LAYERS" title="A layer is a cost-ledger row with quantity left on it.">
-There is no separate cost-layer table. Open layers are cost-ledger rows that still have remaining quantity. Consuming walks those layers by date for FIFO or LIFO; the costing method only decides which cost a consumption picks up, never whether WIP is tracked.
+An open cost layer is a cost-ledger row with remaining quantity; there is no separate layer table. FIFO and LIFO traverse these rows by date. The costing method selects the consumption cost but does not affect WIP tracking.
 </Callout>

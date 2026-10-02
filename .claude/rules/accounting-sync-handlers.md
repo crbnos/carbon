@@ -43,6 +43,36 @@ These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/syn
 | `accounting-reconciliation` | — | `accounting-reconciliation.ts` | cron `0 3 * * 1` (Mondays 03:00 UTC) — presence drift check + `accountingSyncTieOut` writer; see the tie-out section below |
 | `event-handler-sync` | `carbon/event-sync` | `events/sync.ts` | the SYNC event-system handler (see event-system.md) — DB writes -> push to the provider |
 
+### The sync switch — off until accounts are mapped
+
+`metadata.settings.syncEnabled`, read ONLY through `isAccountingSyncEnabled` (`core/models.ts`).
+Absent reads as ON (rows that predate the switch were already syncing); every connect path writes
+an explicit value. A new connection starts OFF so the customer can map accounts first: the
+OAuth callbacks (`integrations.{xero,quickbooks}.oauth.ts`) use `syncEnabledOnConnect`, which
+keeps the existing value only for a reconnect to the SAME tenant/realm (a dead-grant reconnect
+must not pause a live integration), and the form install (Rillet) writes `false` when
+`!wasInstalled`. It is NOT `companyIntegration.active` — the role trigger, topology, Installed
+badge and account-mapping tabs all key on `active`, and they must keep working while sync is off.
+
+The drawer header's `AccountingSyncControl` posts intent `update-sync-enabled`; the action
+refuses ON while `getUnmappedRequiredAccounts` (`core/account-mapping.ts`) is non-empty. The
+"required" set — `selectRequiredMappingAccountIds`: every `accountDefault` account plus every
+Expense account, among active leaf accounts — is the same one the Account Mapping tab badges.
+
+While off, nothing moves: `events/sync.ts` skips before reconciling, the four crons filter their
+targets, `sync-external-accounting` enqueues nothing, a master-data PUSH and the journal backfill
+refuse (route) and no-op (job), the three webhooks acknowledge before any provider call, and
+`drainSyncOperations` returns before claiming — the backstop for a Retry clicked in Sync
+Activity, which then drains once sync is on. The one thing that runs is **Import customers &
+vendors**: it only writes into Carbon, and the mapping rows it creates are what stop the first
+push after sync is on from duplicating contacts in the ledger. Its drain passes
+`only: { entityTypes: [<customer|vendor>], direction: "pull-from-accounting" }`
+(`claimPendingOperations` filters on both), and that scoped pull is the drain's single exception —
+so the import never flushes a Retry or anything else that is waiting. Period close's external-GL check treats a sync-off
+integration like a disconnected one (it inlines the flag read — `accounting.service.ts` cannot
+import the barrel). Turning sync on starts the pull cursor from `integration.updatedAt` (the
+toggle bumps it); the outbound sweep covers the last 7 days and the journal backfill the rest.
+
 ### Per-tenant isolation and dead OAuth grants
 
 The four crons (`pull-sweep`, `outbound-sweep`, `reconciliation`, `consolidation`) walk every active integration with one `step.run` per company, through `runIsolatedCompanyStep` (`accounting-auth-failure.ts`). Two invariants: a tenant that exhausts its step retries returns `{ error }` and the loop continues — it never fails the run for every tenant after it (it used to: one company with a dead token skipped every later company on every sweep); and an `AccountingAuthError` (the provider's token endpoint answered 400/401 — `invalid_grant` "Refresh token not found", revoked, rotated-and-lost) is NOT retried, because nothing retries a dead grant back to life. It returns `{ authFailed }`, `recordIntegrationAuthFailure` increments a redis counter (`integrations:<companyId>:<providerId>:auth-failures`, cleared by any successful pass), notifies the configurer (`integration.updatedBy`, `NotificationEvent.IntegrationSync`, deduped to one per day), and at `AUTH_FAILURE_DISABLE_THRESHOLD` (12 consecutive ≈ 3 h across both sweeps — `drainSyncOperations` rethrows `AccountingAuthError` like `RatelimitError` instead of parking it as Failed rows, so drain-path auth failures count too) sets `companyIntegration.active = false`, clears the integration cache keys, and notifies "disabled — reconnect". The OAuth callback routes upsert `active: true`, so reconnecting is the whole recovery. Note a deactivated accounting integration makes the period-close "External GL sync complete" blocker auto-pass (it only checks ACTIVE integrations) — that is the trade-off the user chose over an integration that sits active and silently syncs nothing.

@@ -407,12 +407,22 @@ writer is the 30s TTL. Then:
 - Rate-limit via `checkApiKeyRateLimit` (`@carbon/database/ratelimit`, Postgres function
   `check_api_key_rate_limit`) using per-key `rateLimit` + `rateLimitWindow`
   (`"1m"|"1h"|"1d"`). 429 with `X-RateLimit-*` + `Retry-After` headers on exceed.
-- Fire-and-forget `lastUsedAt` update.
+  The same function also holds a company to **60/minute across all its keys** (constant
+  in the function, migration `20261002153217`): it sums the keys' counters for the
+  current minute, each capped at its own limit so requests refused on one key do not
+  lock out the others. No separate table — so deleting a key drops its share, and a key
+  on an hourly/daily window is not counted (none exist). A company refusal returns
+  `limit: 60`. Pinned by `supabase/tests/api-key-rate-limit.test.sql`.
+- `lastUsedAt` is written by `check_api_key_rate_limit` itself, at most once a minute per
+  key, so the Node path and the edge functions both record it. (The app used to build
+  this update with `void client.from(…).update(…)`, which never sends: a supabase-js
+  builder only runs when awaited.)
 - Scope check: `scopes` is JSONB `{ "<permission>_<action>": [companyIds] }`; required
   perms must be present and include the active company. `{}` is NOT full access here —
   an empty scope set fails the check. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
-  except `STRIPE_BYPASS_COMPANY_IDS`.
+  except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
+  (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
 - Returns a `getCarbonAPIKeyClient(apiKey)` client (RLS resolves company via header).
 
 Key hashing: `hashApiKey` = `createHash("sha256")` hex (same in Node ERP and Deno edge
@@ -454,7 +464,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `status` (`ssoDomainStatus` enum: `pending|verified`), `verifiedAt`. Same RLS split as
   `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
-  JSONB, `rateLimit` (default **60**), `rateLimitWindow` (default `'1m'`), `expiresAt`,
+  JSONB, `rateLimit` (default **20**; keys created before `20261002153217` keep 60), `rateLimitWindow` (default `'1m'`), `expiresAt`,
   `lastUsedAt`. The old plaintext `key` column was dropped.
 - `apiKeyRateLimit` — UNLOGGED, PK `(apiKeyId, windowStart)`, `requestCount`.
 - RLS/RPC functions: `get_claims`, `get_company_id_from_api_key`, `get_api_key_scopes`,

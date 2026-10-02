@@ -25,6 +25,19 @@ type ItemRow = {
   unitSalePrice: number | null;
 };
 
+/**
+ * The `Code` an item is pushed to Xero under. Any document line that names
+ * the item by `ItemCode` must use this too — Xero rejects a code it has no
+ * item for ("Item code 'X' is not valid"), so a revised item pushed as
+ * `PRT-1.A` cannot be referenced as `PRT-1`.
+ */
+export function xeroItemCode(item: {
+  readableId: string;
+  readableIdWithRevision: string | null;
+}): string {
+  return item.readableIdWithRevision ?? item.readableId;
+}
+
 export class ItemSyncer extends BaseEntitySyncer<
   Accounting.Item,
   Xero.Item,
@@ -105,7 +118,7 @@ export class ItemSyncer extends BaseEntitySyncer<
 
       result.set(row.id, {
         id: row.id,
-        code: row.readableIdWithRevision ?? row.readableId,
+        code: xeroItemCode(row),
         name: row.name,
         description: row.description,
         companyId: row.companyId!,

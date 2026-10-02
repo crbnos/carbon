@@ -61,6 +61,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 
 - `getInventoryItems` / `getInventoryItemsCount` — calls `get_inventory_quantities` RPC for on-hand quantities
 - `getItemLedgerPage` / `getItemLedgerActivity` — paginated ledger history
+- `getItemLedgerBalance` — `get_item_ledger_balance` RPC: on-hand right after one ledger entry, on the `quantityOnHand` definition (Rejected tracked stock counts zero). The item Activity feed fetches it ONCE for its newest loaded row; `withRunningBalance` (`ui/Inventory/ledgerFeed.ts`) derives every row's before → after from it as pages load, so paging adds no queries. Run it on raw rows, before `collapseTransferPairs`
 - `insertManualInventoryAdjustment` — adjustments with tracked entity handling; wraps the `post-inventory-adjustment` edge function, which also maintains cost layers and posts GL journals (5310 vs RM/FG) in one transaction when accounting is enabled
 - `correctStockMovement` — wraps the `correct-stock-movement` edge function: fixes a posted `itemLedger` row by booking ONE opposite (delta) movement linked via `correctionOfItemLedgerId`, dated with the original's `postingDate` and posted into the original's accounting period (fails if Locked/Closed). The delta is derived against the movement's current effective quantity (original + prior corrections), so repeat corrections converge
 - `getStorageUnit(s)` / `getStorageUnitTree` / `getStorageUnitsTreeForLocation` — storage hierarchy

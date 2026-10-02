@@ -98,6 +98,23 @@ really a rename silently discards their rows and still reports success. So an un
 missing table refuses the restore outright, and `pnpm db:check:backups` fails your commit
 until the entry exists.
 
+### 3c. A column that holds a row id with no FK? Record it for backups
+
+If the migration adds a TEXT / TEXT[] column that stores another tenant row's id
+**without a foreign key** — usually a generic ref that can point at one of several
+tables (`inspection."sourceDocumentLineId"` is a receipt line OR a job operation), or an
+`...Ids` array — add it to `ID_REF_COLUMNS` in `packages/jobs/src/backups/id-refs.ts`
+in the SAME commit.
+
+A restore into a different company gives every row a new id and rewrites FK columns
+to match. It cannot see a column with no FK, so that column keeps the SOURCE
+company's ids — dangling at best, and a unique-index collision with the source
+company's live rows when the column is indexed (`inspection_sourceDocumentLineId_key`
+fails a cross-company restore this way). Listing it makes the restore rewrite it through
+the old→new id map. Readable numbers (`quote."quoteId"`), external ids and user refs are
+not row ids — leave them out. The map is typed against the generated row types, so a
+column you rename or drop fails `typecheck` until you update its entry.
+
 ### 4. Update the Zod validators
 
 Update the module's `apps/erp/app/modules/{module}/{module}.models.ts` to match
@@ -140,6 +157,8 @@ pre-commit hook runs it anyway. Details: `onboarding-company-templates.md`.
       `pnpm --filter @carbon/database authz migration <name>` (no `CREATE POLICY` in migrations)
 - [ ] Renamed/dropped a tenant-scoped table? `TABLE_RENAMES` entry added
       (`packages/jobs/src/backups/renames.ts`) — new name, or `null` if dropped with its feature
+- [ ] New TEXT/TEXT[] column holding a tenant row id with no FK? Listed in `ID_REF_COLUMNS`
+      (`packages/jobs/src/backups/id-refs.ts`)
 - [ ] Zod validators updated in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`
 - [ ] Demo data updated for the new/changed tables, and `pnpm db:check:datasets` ✓×4

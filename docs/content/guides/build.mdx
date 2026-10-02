@@ -1,57 +1,57 @@
 ---
-title: Inside the build
-description: How each satellite part is made or bought.
+title: Define the build method
+description: Configure how each component is made, purchased, or issued from inventory.
 label: "(II)"
 index: 1
 ---
 
-Open the job you just released and look at what it actually takes to build a satellite bus. This is where the product structure you set up in PLM meets the reality of the floor.
+Open the released job to inspect the product structure and the process used to build it.
 
-> PLM specifies the parts. The method adds the clarity: how each part is obtained, and whether it's built, bought, or pulled from the shelf.
+> PLM defines the parts. The method defines how each part is supplied: manufactured, purchased, or issued from inventory.
 
 ## The bill of materials
 
-A satellite bus's <Term id="bom">bill of materials</Term> (BoM) is a tree. SAT-1000 is built from subassemblies — the BUS-STR-001 structural frame, the EPS-001 electrical power subsystem, ADCS-001, COMMS-001 and the rest — and each of those is built from parts of its own: the power subsystem from solar array wings and a battery pack, the frame from aluminium plate and fasteners. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
+A <Term id="bom">bill of materials</Term> (BoM) is hierarchical. SAT-1000 contains subassemblies such as the BUS-STR-001 structural frame and EPS-001 electrical power subsystem. Each subassembly contains its own components. Carbon displays the complete structure and identifies how each node is supplied.
 
 <Figure illustration="bom-tree" caption="The robot BoM: made parts in blue, bought parts in amber, every leaf pulled from stock." />
 
 ## Method types
 
-Every item in that tree carries a <Term>method type</Term>, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
+Each item has one of three <Term>method types</Term>. The value determines how Carbon supplies the item:
 
 <Figure illustration="method-types" caption="One field, three values: Make to Order becomes a job, Purchase to Order a PO, Pull from Inventory a stock pull." />
 
-- <Term>Make to Order</Term>: you manufacture it. The structural frame and the solar array wings are built in-house, so each becomes its own <Term>job</Term> with its own operations.
-- <Term>Purchase to Order</Term>: you purchase it. The battery packs come from a supplier, so they flow through [purchasing](/guides/rfq-to-po) as a <Term>purchase order</Term>, never touching the floor.
-- <Term>Pull from Inventory</Term>: you pull it from stock when the parent is built, whether you originally made it or bought it.
+- <Term>Make to Order</Term>: manufacture the item on a <Term>job</Term> with its own operations.
+- <Term>Purchase to Order</Term>: buy the item through a [purchase order](/guides/rfq-to-po).
+- <Term>Pull from Inventory</Term>: issue existing stock when building the parent, regardless of how that stock was replenished.
 
-You don't tag this on each BoM line by hand. The method type lives on [the item itself](/docs/reference/items), and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
+The method type is defined on [the item](/docs/reference/items), not independently on each BoM line. Changing it updates every BoM that uses the item.
 
 <Callout tone="blue" badge="TWO DIFFERENT QUESTIONS" title="Method type and replenishment system aren't the same axis.">
-Method type answers "how does this part get into its parent?": Make to Order, Purchase to Order, or Pull from Inventory. The <Term>replenishment system</Term>, Buy, Make, or Buy and Make, answers "how is this part stocked overall, and which planning queue does it land in?" A part can be made for one parent and pulled from stock for another.
+Method type determines how a component enters its parent: Make to Order, Purchase to Order, or Pull from Inventory. The <Term>replenishment system</Term> determines how the item is stocked and which planning queue receives demand: Buy, Make, or Buy and Make. A part can be manufactured for one parent and issued from stock for another.
 </Callout>
 
 ## Kits & subassemblies
 
-Because the structural frame and the power subsystem are Make to Order parts, they aren't just line items — they're built things. But Carbon gives a made item in a BoM two flavors, and the choice changes how the floor handles it:
+A Make to Order component can be configured as a subassembly or a kit:
 
 <Figure illustration="kit-vs-subassembly" caption="Same frame, two treatments: a Subassembly builds as its own job; a Kit is issued straight into the parent." />
 
-- <Term>Subassembly</Term>: built as its own job, with its own <Term>routing</Term> and its own completion. You can release the structural frame independently of the final satellite, and Carbon keeps the hierarchy in sync.
-- <Term>Kit</Term>: not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
+- <Term>Subassembly</Term>: built and completed on a separate job with its own <Term>routing</Term>. It can be released independently of the parent job.
+- <Term>Kit</Term>: a group of components issued directly to the parent job. Carbon creates no separate job or operation for the kit.
 
-Reach for a subassembly when the thing is genuinely manufactured and worth tracking on its own. Reach for a kit when a cluster of parts always goes in together and a separate build would just be ceremony.
+Use a subassembly when the component requires an independently tracked build. Use a kit when grouped components should be issued together without a separate build.
 
 <Screenshot src="/screens/build-subassembly-kit-toggle.png" label="BoM — Subassembly / Kit toggle" caption="Switching the BUS-STR-001 structural frame on the SAT-1000 BoM between a tracked Subassembly and an issued-together Kit." ratio="wide" />
 
 ## Methods on the job
 
-Back on the job, you're looking at that working copy of the method from the last chapter, and you can drill the whole way down. The bus's method lists the structural frame, the power subsystem, and their siblings; open the power subsystem and you're in its method, its solar array wings set to Make to Order and its battery pack set to Purchase to Order. The tree is as deep as the product.
+The job contains a working copy of the method. Expand any component to inspect its nested method and supply type. The hierarchy can contain as many levels as the product requires.
 
-Methods are versioned, which is what keeps a busy shop sane. A method is Draft, Active, or Archived, and only a Draft can be edited. An Active method is frozen, the jobs running against it won't shift under anyone's feet, so you revise by publishing a new version, not by editing a live one.
+Methods are versioned as **Draft**, **Active**, or **Archived**. Only a Draft can be edited. To change an Active method, create and publish a new version. Existing jobs retain the version copied when they were created.
 
 <Callout tone="amber" badge="FROZEN WHEN ACTIVE" title="Live work builds against a version that can't change mid-stream.">
-Draft is the workbench; Active is the published, locked recipe; Archived is history. Changes flow forward into the next version and the next job — never backward into a build that's already moving.
+Draft is editable, Active is published and locked, and Archived is retained for history. New versions affect future jobs, not jobs already in progress.
 </Callout>
 
 <Screenshot src="/screens/build-job-method-explorer.png" label="Job method explorer" caption="Job J000001's method expanded: the SAT-1000's subassemblies — structural frame, power subsystem, ADCS and the rest — each with its own materials and operations." ratio="wide" />

@@ -3,7 +3,7 @@ title: Custom fields
 description: Company-defined extra fields that attach to core records like customers, parts, and orders.
 ---
 
-Carbon ships a fixed schema for every entity, but your process almost always needs one more field: a customer's "PPAP level", a part's "RoHS status", a job's internal "line number". <Term id="custom-field">Custom fields</Term> let each company add its own fields to a core record without a schema change. Define one under **Settings → Custom Fields** and every record of that entity shows it on its form, saves it alongside the built-in fields, and exposes it through the API.
+<Term id="custom-field">Custom fields</Term> add company-specific data to supported records without database schema changes. Define a field under **Settings → Custom Fields**. Carbon adds it to the entity's form, stores it with built-in fields, and exposes it through the API.
 
 ## Defining a field
 
@@ -17,10 +17,10 @@ Carbon ships a fixed schema for every entity, but your process almost always nee
   <Field name="Tags" type="text[]">Scopes the field to records carrying a matching tag; leave empty to show it on every record of the table.</Field>
 </FieldTable>
 
-The nine data types each render a specific input: **Boolean** (toggle), **Date** (date picker), **List** (dropdown of your options), **Numeric**, **Text**, **File**, and three reference types (**User**, **Customer**, and **Supplier**) that store a pointer to an existing Carbon record rather than free text.
+The nine data types are **Boolean**, **Date**, **List**, **Numeric**, **Text**, **File**, **User**, **Customer**, and **Supplier**. The three reference types store a reference to an existing Carbon record rather than free text.
 
 <Callout type="note" title="The data type is permanent">
-Existing values are stored as-is, so Carbon locks the type after creation. Picked Text and need Numeric? Create a new field and migrate the values; there is no in-place conversion.
+Carbon locks the data type after creation. To change it, create a replacement field and migrate existing values.
 </Callout>
 
 ## Which entities support custom fields
@@ -29,7 +29,7 @@ The catalog is curated, not universal — the settings page lists one row per el
 
 ## How values save, and where they reach
 
-Custom inputs render below the built-in fields on the record's form and save into a single `customFields` JSON column that every core table carries — no schema change per field. That column is exposed on the API like any other: readable and filterable on the entity's endpoint, with the caveat that its keys are field IDs, not display names, so pair an API read with the definitions from the settings catalog.
+Custom inputs appear below built-in fields and save to the entity's `customFields` JSON column. The API exposes this column for reads and filters. Its keys are field IDs, not display names, so use the settings catalog to resolve definitions.
 
 <Callout type="warn" title="CSV import and export skip custom fields">
 The CSV flows map built-in fields only; neither import nor the table download touches the `customFields` column. Populate custom fields on the form or through the API; see [import and export](/docs/reference/import-export) for what CSV does cover.

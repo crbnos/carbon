@@ -3,9 +3,7 @@ title: Create a change notice
 description: The entry points that open a change notice, the fields on the create form, and how change notices surface back on a part or tool page.
 ---
 
-There's no single "new change notice" button tucked in one menu. Carbon lets you start a change notice from
-wherever you notice the change is needed — a standalone form, the part you're looking at, its method version
-menu, or a quality issue. Every path lands on the same change-notice detail page.
+Create a change notice from the standalone form, an item, a method version, or a quality issue. Every entry point opens the same change-notice detail page.
 
 ## Entry points
 
@@ -25,7 +23,7 @@ starts with no affected items — you add them on the detail page.
 
 ## The create form
 
-The header form is short — the substance is in the affected items you edit later.
+The header form describes and assigns the change. Add affected items after creation.
 
 <FieldTable>
   <Field name="Name" required>What this change is, in a line.</Field>
@@ -38,10 +36,7 @@ The header form is short — the substance is in the affected items you edit lat
   <Field name="Due Date">Optional target.</Field>
 </FieldTable>
 
-The form has no affected-items field — you add those on the detail page after creating. When you start from a
-part, tool, or quality issue, that source is carried silently onto the new change notice (the part or tool as a
-pre-attached affected item, the non-conformance as the linked issue). Submitting creates the change notice,
-attaches any pre-selected item, and redirects to its detail page at **"Draft"**.
+The form does not include affected items. Add them on the detail page. Item-based entry points pre-attach the selected item; the quality-issue entry point links the non-conformance. Submission creates the change notice in **Draft** and opens its detail page.
 
 <Callout type="note" title="There's no separate change-notice permission.">
 Change notices are gated by the **Parts** permission: creating one needs create access on Parts, and
@@ -50,8 +45,7 @@ advancing or releasing needs update access. If someone can manage parts, they ca
 
 ## Where change notices surface on a part
 
-Change notices don't just live in their own list — they show up on the parts and tools they touch, so nobody
-edits a design that's mid-change without seeing it.
+Parts and tools display the change notices that affect them:
 
 - **Open change notice alert.** When a part is on one or more change notices that haven't reached **"Done"**,
   its detail page shows a warning: *"This part is on 1 open change notice"* (or *"…# open change notices"*),

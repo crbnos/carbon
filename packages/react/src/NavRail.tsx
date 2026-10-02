@@ -19,6 +19,7 @@ import {
 import type { LinkProps } from "react-router";
 import { Link, useLocation } from "react-router";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
+import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
 import { useSidebar } from "./Sidebar";
 import { cn } from "./utils/cn";
@@ -47,6 +48,11 @@ export const navRailItemClasses = [
  * icon rail that grows to 208px while a mouse hovers it or while it is pinned
  * open (a `SidebarTrigger`, or ⌘B where the provider binds it), and a left drawer below `md`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
+ *
+ * Hovering expands the rail OVER the page; only a pinned rail takes layout
+ * space. A hover is transient and usually ends in a navigation, so resizing
+ * the page for it re-laid-out every table twice, the second time while the
+ * destination was rendering.
  */
 // A pointer only passing over the rail (on its way to the page) shouldn't open it.
 const HOVER_OPEN_DELAY_MS = 150;
@@ -74,6 +80,7 @@ export function NavRail({
   const { pathname } = useLocation();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const hoverCardRef = useRef<HTMLSpanElement>(null);
   const lastPointerType = useRef<string>();
   const openTimer = useRef<ReturnType<typeof setTimeout>>();
   const cancelHoverOpen = useCallback(() => {
@@ -81,6 +88,31 @@ export function NavRail({
     openTimer.current = undefined;
   }, []);
   useEffect(() => cancelHoverOpen, [cancelHoverOpen]);
+
+  // One hover card for the whole rail, moved with a transform to the item
+  // under the pointer, so the highlight travels between items instead of
+  // each item fading its own. Written straight to the element: a hover must
+  // not re-render the rail.
+  const moveHoverCard = useCallback((item: HTMLElement | null) => {
+    const card = hoverCardRef.current;
+    const nav = navRef.current;
+    if (!card || !nav) return;
+    if (!item) {
+      card.style.opacity = "0";
+      return;
+    }
+    const top =
+      item.getBoundingClientRect().top -
+      nav.getBoundingClientRect().top +
+      nav.scrollTop;
+    // Entering the rail: appear on the item rather than slide in from
+    // wherever the card was last.
+    card.style.transitionProperty = card.style.opacity === "1" ? "" : "opacity";
+    card.style.transform = `translateY(${top}px)`;
+    card.dataset.tone = item.dataset.hoverTone ?? "";
+    card.style.opacity = "1";
+  }, []);
+
   const [holds, setHolds] = useState(0);
   const hold = useCallback(() => {
     setHolds((n) => n + 1);
@@ -105,7 +137,10 @@ export function NavRail({
   }, [disableHover]);
   useEffect(() => {
     cancelHoverOpen();
-    if (hoverBlocked) return;
+    if (hoverBlocked) {
+      moveHoverCard(null);
+      return;
+    }
     // Touch browsers leave `:hover` stuck on the last tapped element, so only
     // a mouse's `:hover` counts.
     const raf = requestAnimationFrame(() =>
@@ -115,7 +150,7 @@ export function NavRail({
       )
     );
     return () => cancelAnimationFrame(raf);
-  }, [hoverBlocked, cancelHoverOpen]);
+  }, [hoverBlocked, cancelHoverOpen, moveHoverCard]);
 
   const content = (
     <NavRailHoldContext.Provider value={hold}>
@@ -151,30 +186,46 @@ export function NavRail({
     );
   }
 
-  const state = forceExpanded || open || hovered ? "expanded" : "collapsed";
+  const pinned = forceExpanded || open;
+  const state = pinned || hovered ? "expanded" : "collapsed";
 
   return (
-    // The wrapper (not just the inner nav) grows on expand, so the rail pushes
-    // the rest of the layout right instead of floating over it. Sticky so it
-    // stays in view in shells whose page scrolls as a whole.
+    // The wrapper is the rail's footprint in the layout: it grows only when
+    // pinned, pushing the page right. The nav inside is out of flow, so a
+    // hover widens it without moving anything else. Sticky so it stays in
+    // view in shells whose page scrolls as a whole.
     <div
-      data-state={state}
+      data-pinned={pinned}
       className={cn(
-        "sticky top-0 h-svh flex-col z-50 hidden md:flex shrink-0",
-        "w-14 data-[state=expanded]:w-[13rem]",
-        "transition-[width] duration-200"
+        "sticky top-0 h-svh z-50 hidden md:block shrink-0",
+        "w-14 data-[pinned=true]:w-[13rem]",
+        "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
         data-state={state}
+        data-floating={!pinned && hovered}
+        data-sliding-hover=""
         className={cn(
-          "bg-background py-2 group z-10 h-full w-full",
+          "absolute inset-y-0 left-0 bg-background py-2 group",
+          "w-14 data-[state=expanded]:w-[13rem]",
+          "transition-[width,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+          "data-[floating=true]:shadow-xl data-[floating=true]:ring-1 data-[floating=true]:ring-border",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;
+        }}
+        // The gaps between items are not items: the card stays where it is
+        // while the pointer crosses one, and only leaves with the pointer.
+        onPointerOver={(event) => {
+          if (hoverBlocked || event.pointerType !== "mouse") return;
+          const item = (event.target as HTMLElement).closest<HTMLElement>(
+            "[data-nav-item]"
+          );
+          if (item) moveHoverCard(item);
         }}
         // Mouse only: a tap on a touch tablet must not expand the rail.
         onPointerMove={(event) => {
@@ -199,8 +250,18 @@ export function NavRail({
           if (document.body.style.pointerEvents === "none") return;
           cancelHoverOpen();
           setHovered(false);
+          moveHoverCard(null);
         }}
       >
+        <span
+          ref={hoverCardRef}
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
+            "bg-active/60 data-[tone=accent]:bg-accent",
+            "transition-[transform,opacity,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          )}
+        />
         {content}
       </nav>
     </div>
@@ -256,12 +317,15 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
         ref={ref}
         type={asChild ? undefined : "button"}
         aria-label={label}
+        data-nav-item=""
         {...props}
         className={cn(
           navRailItemClasses,
           isActive
             ? "bg-active text-active-foreground dark:shadow-button-base"
-            : "hover:bg-active/60 hover:text-active-foreground",
+            : // On the desktop rail one card slides between the hovered
+              // items instead; the active item keeps its own background.
+              "hover:bg-active/60 hover:text-active-foreground group-data-[sliding-hover]:hover:bg-transparent",
           className
         )}
       >
@@ -324,6 +388,7 @@ export function NavRailLink({
   target?: LinkProps["target"];
   rel?: string;
 }) {
+  const Anchor = external ? Link : PrefetchLink;
   return (
     <NavRailItem
       asChild
@@ -333,12 +398,11 @@ export function NavRailLink({
       tag={tag}
       trailing={trailing}
     >
-      <Link
+      <Anchor
         to={to}
         target={target}
         rel={rel}
         aria-current={isActive ? "page" : undefined}
-        prefetch={external ? "none" : "intent"}
       />
     </NavRailItem>
   );

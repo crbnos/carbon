@@ -13,6 +13,7 @@ import type {
   Violation
 } from "./check";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -45,7 +46,8 @@ import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
 import {
   loadTypescriptFiles,
-  REQUEST_HANDLING_ROOTS
+  REQUEST_HANDLING_ROOTS,
+  ROUTE_ROOTS
 } from "./sources/typescript";
 
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
@@ -148,6 +150,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders
+    ]),
+    ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
+      indexRedirectBeforeLoaders
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader])

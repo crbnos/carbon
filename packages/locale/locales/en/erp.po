@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} batchable operations are not in a batch �
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
 
@@ -3002,8 +3005,14 @@ msgstr "Back to traceability"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backup"
+msgstr "Backup"
+
 msgid "Backup failed"
 msgstr "Backup failed"
+
+msgid "Backup uploaded"
+msgstr "Backup uploaded"
 
 msgid "Backups"
 msgstr "Backups"
@@ -3791,6 +3800,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoints"
+
+msgid "Choose a backup"
+msgstr "Choose a backup"
 
 msgid "Choose a batch number"
 msgstr "Choose a batch number"
@@ -8142,6 +8154,9 @@ msgstr "Failed to upload PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Failed to upload thumbnail"
 
+msgid "Failed to upload: {reason}"
+msgstr "Failed to upload: {reason}"
+
 msgid "Failure"
 msgstr "Failure"
 
@@ -8802,6 +8817,9 @@ msgstr "Has operations that can't be scheduled"
 msgid "Headers"
 msgstr "Headers"
 
+msgid "healthy"
+msgstr "healthy"
+
 msgid "Help"
 msgstr "Help"
 
@@ -9237,6 +9255,9 @@ msgstr "In-app notifications are always delivered. Choose which topics also reac
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email."
+
+msgid "inactive"
+msgstr "inactive"
 
 msgid "Inactive"
 msgstr "Inactive"
@@ -11279,6 +11300,9 @@ msgstr "Net Income"
 msgid "Net Unit Price"
 msgstr "Net Unit Price"
 
+msgid "Network error"
+msgstr "Network error"
+
 msgid "Never"
 msgstr "Never"
 
@@ -12353,6 +12377,12 @@ msgstr "Nothing here matches your search and filters."
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr "Nothing is synced until you turn sync on."
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr "Nothing is synced until you turn sync on. Every required account is mapped."
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
 
@@ -12414,6 +12444,9 @@ msgstr "of"
 msgid "of {0}h"
 msgstr "of {0}h"
 
+msgid "Off"
+msgstr "Off"
+
 msgid "Off — handled outside the sync"
 msgstr "Off — handled outside the sync"
 
@@ -12428,6 +12461,9 @@ msgstr "OK"
 
 msgid "Oldest first"
 msgstr "Oldest first"
+
+msgid "On"
+msgstr "On"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
@@ -12446,6 +12482,9 @@ msgstr "On hand"
 
 msgid "On Hand"
 msgstr "On Hand"
+
+msgid "On hand {before} to {after}"
+msgstr "On hand {before} to {after}"
 
 msgid "On Hold"
 msgstr "On Hold"
@@ -12601,6 +12640,9 @@ msgstr "Open"
 
 msgid "Open a change notice"
 msgstr "Open a change notice"
+
+msgid "Open Account Mapping"
+msgstr "Open Account Mapping"
 
 msgid "Open Actions"
 msgstr "Open Actions"
@@ -13662,6 +13704,9 @@ msgstr "Preferred Supplier"
 msgid "Prefix"
 msgstr "Prefix"
 
+msgid "Preparing the backup for restore…"
+msgstr "Preparing the backup for restore…"
+
 msgid "Prepayments"
 msgstr "Prepayments"
 
@@ -14708,6 +14753,9 @@ msgstr "Recorded that the gauge was adjusted during this calibration; affects ho
 
 msgid "Records"
 msgstr "Records"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr "Records and posted journals are being sent to and received from this provider."
 
 msgid "Recovery Period"
 msgstr "Recovery Period"
@@ -16097,6 +16145,9 @@ msgstr "Search variables…"
 msgid "Search..."
 msgstr "Search..."
 
+msgid "Search…"
+msgstr "Search…"
+
 msgid "Seconds to complete"
 msgstr "Seconds to complete"
 
@@ -16126,6 +16177,9 @@ msgstr "Segments that drive customer pricing and terms"
 
 msgid "Select"
 msgstr "Select"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr "Select a .carbon.tar.gz backup"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
@@ -17806,6 +17860,9 @@ msgstr "Sync"
 
 msgid "Sync Activity"
 msgstr "Sync Activity"
+
+msgid "sync off"
+msgstr "sync off"
 
 msgid "Sync operation"
 msgstr "Sync operation"
@@ -19777,6 +19834,9 @@ msgstr "Undo"
 msgid "Ungroup"
 msgstr "Ungroup"
 
+msgid "unhealthy"
+msgstr "unhealthy"
+
 msgid "Uninstall"
 msgstr "Uninstall"
 
@@ -20079,6 +20139,9 @@ msgstr "Upload CSV"
 msgid "Upload failed. Please try again."
 msgstr "Upload failed. Please try again."
 
+msgid "Upload new backup…"
+msgstr "Upload new backup…"
+
 msgid "Uploaded model"
 msgstr "Uploaded model"
 
@@ -20095,6 +20158,18 @@ msgstr "Uploading {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Uploading {fileName}"
+
+msgid "Uploading backup"
+msgstr "Uploading backup"
+
+msgid "Uploading model"
+msgstr "Uploading model"
+
+msgid "Uploading the backup file"
+msgstr "Uploading the backup file"
+
+msgid "Uploading the CAD file"
+msgstr "Uploading the CAD file"
 
 msgid "Uploading..."
 msgstr "Uploading..."
@@ -21326,6 +21401,9 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Your account stays safe even if your login is stolen"
+
+msgid "Your backups"
+msgstr "Your backups"
 
 msgid "Your books and how money flows."
 msgstr "Your books and how money flows."

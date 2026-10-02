@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} группируемые операции
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
 
@@ -3002,8 +3005,14 @@ msgstr "Вернуться к прослеживаемости"
 msgid "Backflush"
 msgstr "Ретроградное списание"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Ошибка резервной копии"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Резервные копии"
@@ -3791,6 +3800,9 @@ msgstr "Контрольная точка ·"
 
 msgid "Checkpoints"
 msgstr "Контрольные точки"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Выберите номер партии"
@@ -8142,6 +8154,9 @@ msgstr "Ошибка загрузки PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Не удалось загрузить миниатюру"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Сбой"
 
@@ -8802,6 +8817,9 @@ msgstr "Имеет операции, которые не могут быть с�
 msgid "Headers"
 msgstr "Заголовки"
 
+msgid "healthy"
+msgstr ""
+
 msgid "Help"
 msgstr "Справка"
 
@@ -9237,6 +9255,9 @@ msgstr "Уведомления в приложении всегда достав
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте."
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "Неактивно"
@@ -11279,6 +11300,9 @@ msgstr "Чистый доход"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Никогда"
 
@@ -12353,6 +12377,12 @@ msgstr "Здесь нет ничего, соответствующего ваш�
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
 
@@ -12414,6 +12444,9 @@ msgstr "из"
 msgid "of {0}h"
 msgstr "из {0}ч"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "Отключено — обработано вне синхронизации"
 
@@ -12428,6 +12461,9 @@ msgstr "ОК"
 
 msgid "Oldest first"
 msgstr "Сначала самые старые"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
@@ -12446,6 +12482,9 @@ msgstr "На складе"
 
 msgid "On Hand"
 msgstr "На складе"
+
+msgid "On hand {before} to {after}"
+msgstr "На складе: с {before} до {after}"
 
 msgid "On Hold"
 msgstr "Приостановлено"
@@ -12601,6 +12640,9 @@ msgstr "Открыть"
 
 msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
+
+msgid "Open Account Mapping"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "Открытые действия"
@@ -13662,6 +13704,9 @@ msgstr "Основной поставщик"
 msgid "Prefix"
 msgstr "Префикс"
 
+msgid "Preparing the backup for restore…"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Предоплаты"
 
@@ -14708,6 +14753,9 @@ msgstr "Зафиксировано, что средство измерения �
 
 msgid "Records"
 msgstr "Записи"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
@@ -16097,6 +16145,9 @@ msgstr "Поиск переменных…"
 msgid "Search..."
 msgstr "Поиск..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Секунды для завершения"
 
@@ -16126,6 +16177,9 @@ msgstr "Сегменты, которые определяют ценообраз
 
 msgid "Select"
 msgstr "Выбрать"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
@@ -17806,6 +17860,9 @@ msgstr "Синхронизация"
 
 msgid "Sync Activity"
 msgstr "Активность синхронизации"
+
+msgid "sync off"
+msgstr ""
 
 msgid "Sync operation"
 msgstr "Операция синхронизации"
@@ -19777,6 +19834,9 @@ msgstr "Отменить"
 msgid "Ungroup"
 msgstr ""
 
+msgid "unhealthy"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Удалить"
 
@@ -20079,6 +20139,9 @@ msgstr "Загрузить CSV"
 msgid "Upload failed. Please try again."
 msgstr "Не удалось загрузить файл. Попробуйте ещё раз."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Модель загружена"
 
@@ -20095,6 +20158,18 @@ msgstr "Загрузка {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Загрузка {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Загрузка..."
@@ -21322,6 +21397,9 @@ msgstr "Вы в работе уже {hoursElapsed} часов. Вы забыли
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Ваша учетная запись остается в безопасности, даже если ваше имя входа украдено"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."

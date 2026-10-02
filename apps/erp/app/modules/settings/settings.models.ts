@@ -616,6 +616,16 @@ export const postingSyncSettingsValidator = z.object({
 });
 
 /**
+ * Turns an accounting integration's sync on or off (the switch in the
+ * integration drawer header). The action refuses "on" while any required
+ * account is unmapped.
+ */
+export const syncEnabledValidator = z.object({
+  intent: z.literal("update-sync-enabled"),
+  syncEnabled: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+/**
  * Saves the dimension-slot configuration (Dimensions tab): which Carbon
  * dimensions ride along on pushed journals and which provider analytics
  * target each one maps to. `slots` is a repeated JSON-encoded hidden field

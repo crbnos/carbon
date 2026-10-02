@@ -294,6 +294,31 @@ export async function getItemLedgerActivity(
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
 }
 
+/**
+ * On-hand quantity of an item at a location right after ledger entry
+ * `entryNumber` (omit it for on-hand now), on the same definition as the
+ * inventory table's On Hand column. The Activity panel fetches this once for
+ * its newest loaded entry and derives every other row's balance from the
+ * contiguous pages — see `withRunningBalance`.
+ * @mcp read
+ */
+export async function getItemLedgerBalance(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    entryNumber?: number;
+  }
+) {
+  return client.rpc("get_item_ledger_balance", {
+    company_id: args.companyId,
+    location_id: args.locationId,
+    item_id: args.itemId,
+    entry_number: args.entryNumber
+  });
+}
+
 /** @mcp read */
 export async function getBatchProperties(
   client: SupabaseClient<Database>,

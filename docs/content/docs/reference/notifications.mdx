@@ -3,7 +3,7 @@ title: Notifications
 description: Assignments, approvals, expirations, and reminders reach the right people over in-app, email, and Slack, with per-user channel opt-outs by topic.
 ---
 
-A <Term>notification</Term> tells one person that something needs their attention: a job was assigned to them, an approval is waiting, a gauge's calibration lapsed. Carbon fans each one out to up to three channels: the **in-app inbox** (the bell in the top bar), **email**, and **Slack**. In-app is always on; email and Slack are extras a user can mute per topic. One rule holds everywhere: Carbon never notifies you about your own action.
+A <Term>notification</Term> alerts one person to an assignment, approval, expiration, or other event. Carbon can deliver it through the **in-app inbox** (the bell in the top bar), **email**, and **Slack**. In-app delivery is always enabled; users can mute email and Slack by topic. Carbon does not notify users about their own actions.
 
 ## What raises a notification
 
@@ -11,16 +11,16 @@ A <Term>notification</Term> tells one person that something needs their attentio
   <Field name="Assignments">Someone is put on a record (job, order, RFQ, invoice, issue, risk, procedure, picking list, stock transfer, dispatch, training). The assignee is the recipient.</Field>
   <Field name="State changes & responses">An approval was **requested**, **approved**, or **rejected**; a job **completed**; a change notice entered a new stage; a quote **expired**; a customer or supplier responded to a digital or supplier quote.</Field>
   <Field name="Expirations & reminders">Time-driven, raised by scheduled jobs: a **gauge calibration expired**, a **maintenance dispatch** was auto-created, or the weekly **training reminder** rolls up a person's outstanding trainings.</Field>
-  <Field name="Workflow">A [workflow](/docs/reference/workflows) reached a **"Notify someone"** step, the only path where you compose the wording yourself. Lands under the **General** topic.</Field>
+  <Field name="Workflow">A [workflow](/docs/reference/workflows) reached a **"Notify someone"** step. This is the only notification with user-defined wording, and it uses the **General** topic.</Field>
 </FieldTable>
 
 <Callout type="note">
-Notifications are informational, never an approval step. Marking one read changes no record; the action lives on the underlying document, and the notification just points you there.
+Notifications are informational. Marking one as read does not change the underlying record or complete an approval.
 </Callout>
 
 ## Topics and channels
 
-Every event maps to exactly one **topic**, the grouping key for the inbox and for muting: Approval, Job, Sales, Quote, Purchasing, Inventory, Quality, Maintenance, Training, Suggestion, Items, and General. Eleven are user-facing on the settings page; only **Items** has no toggle.
+Every event maps to one **topic**, which controls inbox grouping and channel preferences: Approval, Job, Sales, Quote, Purchasing, Inventory, Quality, Maintenance, Training, Suggestion, Items, or General. The settings page exposes eleven topics; **Items** has no toggle.
 
 The channels differ in what they require:
 
@@ -40,11 +40,11 @@ Each user controls their own email and Slack delivery under **Account → Notifi
 
 <Screenshot label="Account → Notifications preferences grid: topic rows, Email and Slack columns, switches per cell" caption="Muting is per topic, per channel, per company. The in-app inbox always gets everything." />
 
-The default is **on**; flipping a switch off mutes that one topic on that one channel, scoped to the current company. Muting Purchasing on Slack still leaves Purchasing emails, still leaves Slack DMs for Sales, and doesn't carry to another company you belong to. The Slack column appears only when Slack is connected; the email column always shows, with a note when the plan won't deliver it.
+Each channel is enabled by default. Turning off a switch mutes only that topic and channel for the current company. For example, muting Purchasing in Slack does not mute Purchasing email, other Slack topics, or notifications in another company. The Slack column appears only when Slack is connected. The email column always appears and indicates when the plan does not support delivery.
 
 ## Who receives an expiration or reminder
 
-Assignments have an obvious recipient. The time-driven events resolve their own audience: a lapsed gauge calibration notifies a company-configured user list (set under [calibration](/docs/reference/calibration) settings), an auto-created dispatch notifies every employee on that work center, and the training reminder is a weekly per-person digest. There is no general "notification group" entity — only gauge-calibration expiry uses a configured list; everything else derives recipients from the record itself.
+Assignment events notify the assignee. Time-driven events derive recipients as follows: an expired gauge calibration notifies the user list in [calibration](/docs/reference/calibration) settings, an automatically created dispatch notifies all employees at its work center, and the weekly training reminder sends each person a digest. Carbon has no general notification-group entity; only calibration expiration uses a configured list.
 
 ## The inbox
 
@@ -82,7 +82,7 @@ Slack needs an active integration and a matching Slack account for the recipient
 Expected: in-app is always written and cannot be turned off. Mutes affect only email and Slack.
 
 ### I turned a channel on but it still doesn't deliver
-On just removes the mute; it doesn't override the channel's preconditions (plan feature for email, integration + account for Slack).
+Enabling a channel removes the mute but does not bypass its prerequisites: the plan feature for email, or the integration and account mapping for Slack.
 
 ### I did something myself and got no notification
 The sender is filtered out of the recipient list. Self-assignments notify nobody.

@@ -3,9 +3,9 @@ title: Getting started
 description: The first-run setup wizard that creates your company, seeds its baseline configuration, and hands you a working tenant.
 ---
 
-A brand-new account has no company yet, so Carbon holds you in the setup wizard at `/onboarding` until one exists. Onboarding counts as complete when the company has a **name** and at least **one location**; those two facts are the gate, and finishing the Company step supplies both.
+A new account remains in the `/onboarding` wizard until it belongs to a company. Onboarding is complete when the company has a **name** and at least **one location**. Submitting the Industry step creates both.
 
-<Screenshot label="The setup wizard's Company step: name, address, base currency, and website fields" caption="The one step that creates a working tenant." />
+<Screenshot label="The setup wizard's Company step: name, address, base currency, and website fields" caption="Company details are saved for tenant provisioning on the next step." />
 
 <Steps>
 <Step>
@@ -22,15 +22,15 @@ A brand-new account has no company yet, so Carbon holds you in the setup wizard 
 </Step>
 </Steps>
 
-One step appears conditionally: **Plan** (Carbon Cloud only: Stripe checkout; self-hosted installs go straight to the app).
+The **Plan** step appears only in Carbon Cloud and opens Stripe checkout. Self-hosted installations skip it.
 
-<Callout type="note" title="Creating the company does a lot of quiet work">
-Creating the company also creates a **"Headquarters"** location from your address, links you as an employee, and seeds the baseline: chart of accounts, posting accounts, numbering sequences, payment terms, units of measure. Fiscal year, periods, and sequences are deliberately *not* asked for — they come pre-seeded and you tune them later under [company settings](/docs/reference/company-settings).
+<Callout type="note" title="Company provisioning">
+Creating the company also creates a **"Headquarters"** location from its address, links you as an employee, and seeds the chart of accounts, posting accounts, numbering sequences, payment terms, and units of measure. Fiscal year, periods, and sequences use seeded defaults that you can change under [company settings](/docs/reference/company-settings).
 </Callout>
 
 ## Where to go next
 
-The wizard's job is a working tenant, not a configured one. Refine the seeded settings under [company settings](/docs/reference/company-settings), set up your document numbering under [sequences](/docs/reference/sequences), add your team under [people](/docs/reference/people), and read the [guides](/guides) for how work flows through Carbon once you're set up.
+After onboarding, review [company settings](/docs/reference/company-settings), configure document numbering under [sequences](/docs/reference/sequences), add users under [people](/docs/reference/people), and use the [guides](/guides) for end-to-end workflows.
 
 <AgentContext>
 ## Internals and troubleshooting
@@ -38,7 +38,7 @@ The wizard's job is a working tenant, not a configured one. Refine the seeded se
 The completion gate is the layout loader (`routes/onboarding+/_layout.tsx:33-44`); step order is `utils/path.ts:2103-2109`; conditional steps at `_layout.tsx:49-53`. Theme validator `settings.models.ts:306-311`; profile `onboardingUserValidator` (`account.models.ts:12-17`); company `addressValidator` (`settings.models.ts:95-107`). Provisioning runs `provisionOnboardingCompany` (`services/onboarding.server.ts`) with the seed via `seedCompany` (`settings.service.ts:751-765`).
 
 ### Stuck in the setup wizard / keeps redirecting to /onboarding
-The company lacks a name or a location — there is no `onboarded` flag. Complete the Company and Industry steps; the Industry step creates both at once.
+The company lacks a name or a location — there is no `onboarded` flag. Complete the Company step, then submit the Industry step; the Industry step creates both at once.
 
 ### "Restore from a backup" isn't offered on the Industry step
 Internal Carbon staff accounts only. Its absence for regular sign-ups is expected.

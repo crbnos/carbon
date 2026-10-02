@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} operaciones agrupables no están en un lo
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# línea sin contar} other {# líneas sin contar}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} no puede ser programado"
 
@@ -3002,8 +3005,14 @@ msgstr "Volver a trazabilidad"
 msgid "Backflush"
 msgstr "Consumo retroactivo"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Falló la copia de seguridad"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Copias de seguridad"
@@ -3791,6 +3800,9 @@ msgstr "Punto de control ·"
 
 msgid "Checkpoints"
 msgstr "Puntos de control"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Elige un número de lote"
@@ -8142,6 +8154,9 @@ msgstr "No se pudo subir PDF"
 msgid "Failed to upload thumbnail"
 msgstr "No se pudo subir miniatura"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Fallo"
 
@@ -8802,6 +8817,9 @@ msgstr "Tiene operaciones que no pueden ser programadas"
 msgid "Headers"
 msgstr "Encabezados"
 
+msgid "healthy"
+msgstr ""
+
 msgid "Help"
 msgstr "Ayuda"
 
@@ -9237,6 +9255,9 @@ msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué tem
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico."
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "Inactivo"
@@ -11279,6 +11300,9 @@ msgstr "Ingreso Neto"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Nunca"
 
@@ -12353,6 +12377,12 @@ msgstr "Nada aquí coincide con tu búsqueda y filtros."
 msgid "Nothing in the archive"
 msgstr "Nada en el archivo"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Nada programado — agrega una estación a continuación."
 
@@ -12414,6 +12444,9 @@ msgstr "de"
 msgid "of {0}h"
 msgstr "de {0}h"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "Off — manejado fuera de la sincronización"
 
@@ -12428,6 +12461,9 @@ msgstr "Aceptar"
 
 msgid "Oldest first"
 msgstr "Más antiguo primero"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "En el día de la migración, trabaja la lista de verificación a continuación en orden. Las pruebas de aceptación provienen de tus requisitos dentro del alcance. Los detalles de soporte están en la parte inferior."
@@ -12446,6 +12482,9 @@ msgstr "En existencia"
 
 msgid "On Hand"
 msgstr "En Stock"
+
+msgid "On hand {before} to {after}"
+msgstr "En existencia: de {before} a {after}"
 
 msgid "On Hold"
 msgstr "Suspendido"
@@ -12601,6 +12640,9 @@ msgstr "Abrir"
 
 msgid "Open a change notice"
 msgstr "Abrir un aviso de cambio"
+
+msgid "Open Account Mapping"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "Acciones Abiertas"
@@ -13662,6 +13704,9 @@ msgstr "Proveedor Preferido"
 msgid "Prefix"
 msgstr "Prefijo"
 
+msgid "Preparing the backup for restore…"
+msgstr ""
+
 msgid "Prepayments"
 msgstr "Anticipos (predeterminado)"
 
@@ -14708,6 +14753,9 @@ msgstr "Registrado que el instrumento de medición fue ajustado durante esta cal
 
 msgid "Records"
 msgstr "Registros"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
 
 msgid "Recovery Period"
 msgstr "Registrar"
@@ -16097,6 +16145,9 @@ msgstr "Buscar variables…"
 msgid "Search..."
 msgstr "Buscar..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Segundos para completar"
 
@@ -16126,6 +16177,9 @@ msgstr "Segmentos que determinan los precios y términos del cliente"
 
 msgid "Select"
 msgstr "Seleccionar"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Seleccionar un asignado"
@@ -17806,6 +17860,9 @@ msgstr "Sincronizar"
 
 msgid "Sync Activity"
 msgstr "Actividad de sincronización"
+
+msgid "sync off"
+msgstr ""
 
 msgid "Sync operation"
 msgstr "Operación de sincronización"
@@ -19777,6 +19834,9 @@ msgstr "Deshacer"
 msgid "Ungroup"
 msgstr ""
 
+msgid "unhealthy"
+msgstr ""
+
 msgid "Uninstall"
 msgstr "Desinstalar"
 
@@ -20079,6 +20139,9 @@ msgstr "Subir CSV"
 msgid "Upload failed. Please try again."
 msgstr "Error al subir el archivo. Inténtalo de nuevo."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Modelo cargado"
 
@@ -20095,6 +20158,18 @@ msgstr "Cargando {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Cargando {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Cargando..."
@@ -21322,6 +21397,9 @@ msgstr "Has estado fichado durante {hoursElapsed} horas. ¿Olvidaste fichar sali
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Tu cuenta permanece segura incluso si tu inicio de sesión es robado"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Tus libros y cómo fluye el dinero."

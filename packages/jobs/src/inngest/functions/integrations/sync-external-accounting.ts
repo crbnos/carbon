@@ -9,6 +9,7 @@ import {
   createMappingService,
   getAccountingIntegration,
   getProviderIntegration,
+  isAccountingSyncEnabled,
   type SyncOperationTrigger
 } from "@carbon/ee/accounting";
 import { getLogger } from "@carbon/logger";
@@ -92,6 +93,18 @@ export const syncExternalAccountingFunction = inngest.createFunction(
           payload.companyId,
           payload.provider
         );
+
+        // Sync is turned off (the integration is still being set up): a
+        // webhook must not queue work that runs the moment it is turned on.
+        if (!isAccountingSyncEnabled(integration.metadata)) {
+          log.info("Sync is turned off for this integration, skipping");
+          return {
+            enqueued: 0,
+            cooldownSkipped: 0,
+            disabled: [...new Set(payload.entities.map((e) => e.entityType))],
+            errors: []
+          } satisfies EnqueueStepSummary;
+        }
 
         const provider = getProviderIntegration(
           client,
