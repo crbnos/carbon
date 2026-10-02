@@ -102,15 +102,16 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         } else {
                             conv.glb
                         };
-                        let entry = Arc::new(CachedConvert {
-                            glb: glb.into(),
-                            graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
-                            component_count: conv.component_count,
-                            triangles: conv.triangles,
-                            unit: conv.graph["unit"].clone(),
-                        });
-                        cache_ins.insert(key, Arc::clone(&entry));
-                        entry
+                        cache_ins.insert(
+                            key,
+                            CachedConvert {
+                                glb: glb.into(),
+                                graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
+                                component_count: conv.component_count,
+                                triangles: conv.triangles,
+                                unit: conv.graph["unit"].clone(),
+                            },
+                        )
                     })
                 })
                 .await;

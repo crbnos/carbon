@@ -86,7 +86,10 @@ pub async fn build_state() -> AppState {
     AppState {
         admission: admission::Admission::from_env(),
         jobs: jobs::JobStore::from_env().await,
-        cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
+        cache: Arc::new(cache::ResultCache::new(
+            config::cache_dir(),
+            config::cache_bytes(),
+        )),
         progress: progress::ProgressStore::default(),
     }
 }

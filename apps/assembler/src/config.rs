@@ -28,9 +28,19 @@ pub fn shutdown_grace() -> std::time::Duration {
     std::time::Duration::from_secs(600)
 }
 
-/// Result-cache budget.
-pub fn cache_bytes() -> usize {
-    512 * 1024 * 1024
+/// Convert result-cache budget, on disk under [`cache_dir`]. Off on Lambda: a
+/// worker invocation runs one job, and its /tmp is small and also holds the
+/// downloaded source.
+pub fn cache_bytes() -> u64 {
+    if std::env::var("AWS_LAMBDA_FUNCTION_NAME").is_ok() {
+        0
+    } else {
+        2 * 1024 * 1024 * 1024
+    }
+}
+
+pub fn cache_dir() -> std::path::PathBuf {
+    std::env::temp_dir().join("asm-cache")
 }
 
 /// Wall-clock budget (seconds) for the optimize simplify ladder. When active, a
