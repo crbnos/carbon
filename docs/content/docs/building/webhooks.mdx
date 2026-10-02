@@ -37,7 +37,7 @@ Carbon sends a JSON body to the configured URL. `type` identifies the operation,
 }
 ```
 
-`old` appears only for updates. For deletes, `record` contains the last state of the deleted row. Requests include only the `Content-Type: application/json` header.
+`old` appears only for updates. For deletes, `record` contains the last state of the deleted row. Carbon sets `Content-Type: application/json`, then applies any headers in the delivery configuration.
 
 `eventId` identifies one change. It remains stable across delivery retries and differs for each new change, including repeated updates to the same record. Use it as the idempotency key.
 

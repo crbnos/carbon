@@ -3,9 +3,9 @@ title: Getting started
 description: The first-run setup wizard that creates your company, seeds its baseline configuration, and hands you a working tenant.
 ---
 
-A new account remains in the `/onboarding` wizard until it belongs to a company. Onboarding is complete when the company has a **name** and at least **one location**. Completing the Company step creates both.
+A new account remains in the `/onboarding` wizard until it belongs to a company. Onboarding is complete when the company has a **name** and at least **one location**. Submitting the Industry step creates both.
 
-<Screenshot label="The setup wizard's Company step: name, address, base currency, and website fields" caption="The one step that creates a working tenant." />
+<Screenshot label="The setup wizard's Company step: name, address, base currency, and website fields" caption="Company details are saved for tenant provisioning on the next step." />
 
 <Steps>
 <Step>
@@ -38,7 +38,7 @@ After onboarding, review [company settings](/docs/reference/company-settings), c
 The completion gate is the layout loader (`routes/onboarding+/_layout.tsx:33-44`); step order is `utils/path.ts:2103-2109`; conditional steps at `_layout.tsx:49-53`. Theme validator `settings.models.ts:306-311`; profile `onboardingUserValidator` (`account.models.ts:12-17`); company `addressValidator` (`settings.models.ts:95-107`). Provisioning runs `provisionOnboardingCompany` (`services/onboarding.server.ts`) with the seed via `seedCompany` (`settings.service.ts:751-765`).
 
 ### Stuck in the setup wizard / keeps redirecting to /onboarding
-The company lacks a name or a location — there is no `onboarded` flag. Complete the Company and Industry steps; the Industry step creates both at once.
+The company lacks a name or a location — there is no `onboarded` flag. Complete the Company step, then submit the Industry step; the Industry step creates both at once.
 
 ### "Restore from a backup" isn't offered on the Industry step
 Internal Carbon staff accounts only. Its absence for regular sign-ups is expected.

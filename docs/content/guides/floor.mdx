@@ -67,10 +67,12 @@ Carbon prices logged hours at the work center's labor and machine rates and post
 
 ## Backflush & issue
 
-The bill of materials assigns one of two inventory-consumption methods to each component:
+Carbon consumes tracked and non-tracked bill-of-material components differently:
 
-- Issued: tracked material is issued to the operation or picked to the line, preserving its serial or batch identity.
+- Issued: operators explicitly issue tracked material when it is consumed, recording its serial or batch identity against the operation. Picking is separate: it transfers material from a warehouse shelf to the lineside shelf without consuming it.
 - <Term id="backflush">Backflushed</Term>: Carbon automatically consumes non-tracked material when the operation or job reports completion.
+
+Picked material that remains unconsumed returns to its warehouse source when the operation or job completes, according to the company's inventory setting.
 
 <Callout tone="green" badge="BACKFLUSH" title="The everyday consumables update themselves as the floor builds.">
 When an operation reports completion, Carbon removes backflushed material from stock and posts [its cost to the job](/guides/job-costing). Tracked parts remain explicitly issued.

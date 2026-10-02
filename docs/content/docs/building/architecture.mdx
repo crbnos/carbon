@@ -216,8 +216,9 @@ function that lives _inside_ the database
 (`packages/database/supabase/migrations/20241115101526_rpc-get-next-sequence.sql`). It
 atomically increments a counter and formats the result with `PO`, zero-padding, and optional date tokens.
 
-_The event._ Every `purchaseOrder` insert invokes a Postgres trigger that places a JSON message on a
-database-backed queue. The route does not initiate this behavior. [Part 4](#part-4-what-happens-after-the-write) traces the event.
+_The event._ Every `purchaseOrder` insert invokes a Postgres trigger. If the company has an active subscription
+for that table and operation, the trigger queues a JSON message. The route does not initiate this behavior.
+[Part 4](#part-4-what-happens-after-the-write) traces the event.
 
 **7. The screen updates.** The action ends with `throw redirect(...)`. React Router follows the redirect,
 runs the destination `loader`, reads current database state, and renders the page. After any non-GET submission,
