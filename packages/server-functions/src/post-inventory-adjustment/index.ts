@@ -21,7 +21,7 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import { inOrder, many, maybeSingle, rpcRows, single } from "../lib/rows";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost";
 
 // settleQuantity needs the lot's CURRENT status to know whether to preserve it
@@ -183,7 +183,7 @@ export const postInventoryAdjustment = defineServerFn({
       shelfLife
     ] = await inOrder([
       () =>
-        client.rpc("get_item_quantities_by_tracking_id", {
+        rpcRows(db, "get_item_quantities_by_tracking_id", {
           item_id: itemId,
           company_id: companyId,
           location_id: locationId ?? ""

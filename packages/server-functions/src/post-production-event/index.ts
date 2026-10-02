@@ -11,7 +11,15 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
-import { inOrder, many, single } from "../lib/rows";
+import {
+  inOrder,
+  many,
+  maybeSingle,
+  notNull,
+  single,
+  type Tables,
+  updateRows
+} from "../lib/rows";
 
 export const postProductionEventInput = z.object({
   productionEventId: z.string(),
@@ -71,12 +79,29 @@ export const postProductionEvent = defineServerFn({
 
     const [productionEvent, accountDefaults, dimensions] = await inOrder([
       () =>
-        client
-          .from("productionEvent")
-          .select("*, jobOperation!inner(jobId, processId)")
-          .eq("id", productionEventId)
-          .eq("companyId", companyId)
-          .maybeSingle(),
+        // `jobOperation!inner`: only an event that belongs to an operation.
+        maybeSingle<
+          "productionEvent",
+          Tables["productionEvent"]["Row"] & {
+            jobOperation: Pick<
+              Tables["jobOperation"]["Row"],
+              "jobId" | "processId"
+            > | null;
+          }
+        >(
+          db,
+          "productionEvent",
+          { id: productionEventId, companyId, jobOperationId: notNull },
+          {
+            embed: {
+              jobOperation: {
+                table: "jobOperation",
+                via: "jobOperationId",
+                columns: ["jobId", "processId"]
+              }
+            }
+          }
+        ),
       () => getDefaultPostingGroup(db, companyId),
       () =>
         companyRecord.data.companyGroupId
@@ -237,11 +262,12 @@ export const postProductionEvent = defineServerFn({
     if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
       // Nothing to post and nothing to reverse. On a reversal this clears the
       // flag so the event can be deleted; on a post it marks it done.
-      await client
-        .from("productionEvent")
-        .update({ postedToGL: !reverse })
-        .eq("id", productionEventId)
-        .eq("companyId", companyId);
+      await updateRows(
+        db,
+        "productionEvent",
+        { postedToGL: !reverse },
+        { id: productionEventId, companyId }
+      );
       return { success: true } as PostProductionEventResult;
     }
 

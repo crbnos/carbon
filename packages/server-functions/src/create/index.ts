@@ -3,16 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  contains,
+  inOrder,
+  many,
+  maybeSingle,
+  neq,
+  rpcValue,
+  single,
+  type Tables
+} from "../lib/rows";
 
 const logger = getLogger("server-functions", "create");
 
@@ -22,25 +31,24 @@ const logger = getLogger("server-functions", "create");
 // earliest-created location. Only safe where locationId does not scope which
 // source-document lines are shipped (i.e. shipmentDefault).
 async function getFallbackLocationId(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string
 ): Promise<string | null> {
-  const employeeJob = await client
-    .from("employeeJob")
-    .select("locationId")
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const employeeJob = await maybeSingle(
+    db,
+    "employeeJob",
+    { id: userId, companyId },
+    { columns: ["locationId"] }
+  );
   if (employeeJob.data?.locationId) return employeeJob.data.locationId;
 
-  const location = await client
-    .from("location")
-    .select("id")
-    .eq("companyId", companyId)
-    .order("createdAt", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const location = await maybeSingle(
+    db,
+    "location",
+    { companyId },
+    { columns: ["id"], orderBy: ["createdAt"], limit: 1 }
+  );
   return location.data?.id ?? null;
 }
 
@@ -170,8 +178,6 @@ export const create = defineServerFn({
     const { db, companyId, userId } = ctx;
     const payload = { ...input, companyId, userId };
     const { type } = payload;
-
-    const client = await ctx.supabase();
 
     // Every receipt/shipment type writes the body's locationId onto the new
     // document (and its lines); the FK alone accepts another company's location.
@@ -428,11 +434,28 @@ export const create = defineServerFn({
         const [job, jobOperations] = await inOrder([
           () => maybeSingle(db, "job", { id: jobId, companyId }),
           () =>
-            client
-              .from("jobOperation")
-              .select("*, jobMakeMethod(itemId)")
-              .eq("jobId", jobId)
-              .eq("companyId", companyId)
+            many<
+              "jobOperation",
+              Tables["jobOperation"]["Row"] & {
+                jobMakeMethod: Pick<
+                  Tables["jobMakeMethod"]["Row"],
+                  "itemId"
+                > | null;
+              }
+            >(
+              db,
+              "jobOperation",
+              { jobId, companyId },
+              {
+                embed: {
+                  jobMakeMethod: {
+                    table: "jobMakeMethod",
+                    via: "jobMakeMethodId",
+                    columns: ["itemId"]
+                  }
+                }
+              }
+            )
         ]);
 
         if (job.error) throw new Error(job.error.message);
@@ -614,7 +637,7 @@ export const create = defineServerFn({
           // must fail the operation rather than default the rate.
           const exchangeRates = await Promise.all(
             Array.from(currencyCodes).map(async (currencyCode) => {
-              const exchangeRate = await client.rpc("get_exchange_rate", {
+              const exchangeRate = await rpcValue(db, "get_exchange_rate", {
                 p_company_id: companyId,
                 p_currency_code: currencyCode
               });
@@ -1651,11 +1674,10 @@ export const create = defineServerFn({
         const [receiptLine, trackedEntities] = await inOrder([
           () => single(db, "receiptLine", { companyId, id: receiptLineId }),
           () =>
-            client
-              .from("trackedEntity")
-              .select("*")
-              .eq("companyId", companyId)
-              .contains("attributes", { "Receipt Line": receiptLineId })
+            many(db, "trackedEntity", {
+              companyId,
+              attributes: contains({ "Receipt Line": receiptLineId })
+            })
         ]);
 
         logger.debug({ trackedEntities });
@@ -1718,7 +1740,7 @@ export const create = defineServerFn({
                 string,
                 unknown
               >;
-              const { ["Receipt Line Index"]: _ignored, ...rest } = attrs;
+              const { "Receipt Line Index": _ignored, ...rest } = attrs;
               const newAttributes = {
                 ...rest,
                 "Receipt Line": newReceiptLineId
@@ -1769,8 +1791,7 @@ export const create = defineServerFn({
         const { locationId } = payload;
         logger.info({ type, companyId, locationId, userId });
         const effectiveLocationId =
-          locationId ??
-          (await getFallbackLocationId(client, companyId, userId));
+          locationId ?? (await getFallbackLocationId(db, companyId, userId));
 
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "shipment", companyId);
@@ -2290,11 +2311,32 @@ export const create = defineServerFn({
         // shipment's tracked entities, so the shipment already knows what to
         // send back (post-shipment reads entities via attributes ->> Shipment).
         const returnLineIds = purchaseReturnOrderLines.data.map((l) => l.id);
-        const lineTrackedEntities = await client
-          .from("purchaseReturnOrderLineTrackedEntity")
-          .select("purchaseReturnOrderLineId, trackedEntity(id, attributes)")
-          .in("purchaseReturnOrderLineId", returnLineIds)
-          .eq("companyId", companyId);
+        const lineTrackedEntities = await many<
+          "purchaseReturnOrderLineTrackedEntity",
+          Pick<
+            Tables["purchaseReturnOrderLineTrackedEntity"]["Row"],
+            "purchaseReturnOrderLineId"
+          > & {
+            trackedEntity: Pick<
+              Tables["trackedEntity"]["Row"],
+              "id" | "attributes"
+            > | null;
+          }
+        >(
+          db,
+          "purchaseReturnOrderLineTrackedEntity",
+          { purchaseReturnOrderLineId: returnLineIds, companyId },
+          {
+            columns: ["purchaseReturnOrderLineId"],
+            embed: {
+              trackedEntity: {
+                table: "trackedEntity",
+                via: "trackedEntityId",
+                columns: ["id", "attributes"]
+              }
+            }
+          }
+        );
         if (lineTrackedEntities.error)
           throw new Error(lineTrackedEntities.error.message);
 
@@ -2317,11 +2359,15 @@ export const create = defineServerFn({
         // Re-source path: clear the shipment tag off any entity previously
         // stamped for this shipment before re-stamping the current selection.
         const staleEntities = hasShipment
-          ? await client
-              .from("trackedEntity")
-              .select("id, attributes")
-              .eq("companyId", companyId)
-              .contains("attributes", { Shipment: shipment.data!.id })
+          ? await many(
+              db,
+              "trackedEntity",
+              {
+                companyId,
+                attributes: contains({ Shipment: shipment.data!.id })
+              },
+              { columns: ["id", "attributes"] }
+            )
           : { data: [], error: null };
         if (staleEntities.error) throw new Error(staleEntities.error.message);
 
@@ -2388,7 +2434,7 @@ export const create = defineServerFn({
             const attrs = {
               ...((entity.attributes as Record<string, unknown> | null) ?? {})
             };
-            delete attrs["Shipment"];
+            delete attrs.Shipment;
             delete attrs["Shipment Line"];
             delete attrs["Shipment Line Index"];
             await trx
@@ -2679,12 +2725,11 @@ export const create = defineServerFn({
           () =>
             maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
           () =>
-            client
-              .from("job")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("salesOrderId", salesOrderId)
-              .neq("status", "Cancelled")
+            many(db, "job", {
+              companyId,
+              salesOrderId,
+              status: neq("Cancelled")
+            })
         ]);
 
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
@@ -2876,18 +2921,17 @@ export const create = defineServerFn({
                       .executeTakeFirst();
 
                     if (jobMakeMethod?.id) {
-                      const trackedEntities = await client
-                        .from("trackedEntity")
-                        .select("*")
-                        .eq("companyId", companyId)
-                        .contains("attributes", {
-                          "Job Make Method": jobMakeMethod.id
-                        })
-                        // Unit-axis order, so "Shipment Line Index" follows serial order
-                        // instead of the physical order of tied `createdAt` rows.
-                        .order("createdAt", { ascending: true })
-                        .order("readableId", { ascending: true })
-                        .order("id", { ascending: true });
+                      const trackedEntities = await many(
+                        trx,
+                        "trackedEntity",
+                        {
+                          companyId,
+                          attributes: contains({
+                            "Job Make Method": jobMakeMethod.id
+                          })
+                        },
+                        { orderBy: ["createdAt", "readableId", "id"] }
+                      );
 
                       let index = 0;
                       for await (const trackedEntity of trackedEntities?.data ??
@@ -3026,12 +3070,11 @@ export const create = defineServerFn({
           () =>
             maybeSingle(db, "shipment", { companyId, id: existingShipmentId! }),
           () =>
-            client
-              .from("job")
-              .select("*")
-              .eq("companyId", companyId)
-              .eq("salesOrderLineId", salesOrderLineId)
-              .neq("status", "Cancelled")
+            many(db, "job", {
+              companyId,
+              salesOrderLineId,
+              status: neq("Cancelled")
+            })
         ]);
 
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
@@ -3180,18 +3223,17 @@ export const create = defineServerFn({
                     .executeTakeFirst();
 
                   if (jobMakeMethod?.id) {
-                    const trackedEntities = await client
-                      .from("trackedEntity")
-                      .select("*")
-                      .eq("companyId", companyId)
-                      .contains("attributes", {
-                        "Job Make Method": jobMakeMethod.id
-                      })
-                      // Unit-axis order, so "Shipment Line Index" follows serial order
-                      // instead of the physical order of tied `createdAt` rows.
-                      .order("createdAt", { ascending: true })
-                      .order("readableId", { ascending: true })
-                      .order("id", { ascending: true });
+                    const trackedEntities = await many(
+                      trx,
+                      "trackedEntity",
+                      {
+                        companyId,
+                        attributes: contains({
+                          "Job Make Method": jobMakeMethod.id
+                        })
+                      },
+                      { orderBy: ["createdAt", "readableId", "id"] }
+                    );
 
                     let index = 0;
                     for await (const trackedEntity of trackedEntities?.data ??

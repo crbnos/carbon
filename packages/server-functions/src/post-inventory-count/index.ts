@@ -13,7 +13,7 @@ import {
   bookAdjustment,
   createAdjustmentJournal
 } from "../lib/post-adjustment";
-import { many, single } from "../lib/rows";
+import { many, notNull, single } from "../lib/rows";
 import { resolveCountedEntity } from "./count-guards";
 import { planInventoryCountPost } from "./plan-post";
 
@@ -77,12 +77,11 @@ export const postInventoryCount = defineServerFn({
     if (inventoryCount.error)
       throw new NotFoundError("Inventory count not found");
 
-    const lines = await client
-      .from("inventoryCountLine")
-      .select("*")
-      .eq("inventoryCountId", inventoryCountId)
-      .eq("companyId", companyId)
-      .not("countedQuantity", "is", null);
+    const lines = await many(db, "inventoryCountLine", {
+      inventoryCountId,
+      companyId,
+      countedQuantity: notNull
+    });
 
     if (lines.error) throw new Error(lines.error.message);
 

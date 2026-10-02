@@ -26,7 +26,7 @@ import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { issue } from "../issue";
-import { many } from "../lib/rows";
+import { many, neq, updateRows } from "../lib/rows";
 import { postProductionEvent } from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";
 
@@ -790,12 +790,12 @@ async function completeBatch(
   // Flip members Done — sync_finish_job_operation readies each member job's next
   // operation and completes the job independently. Skip already-Done so a resume
   // does not re-fire the trigger.
-  const done = await client
-    .from("jobOperation")
-    .update({ status: "Done", updatedBy: userId })
-    .eq("jobOperationBatchId", batchId)
-    .eq("companyId", companyId)
-    .neq("status", "Done");
+  const done = await updateRows(
+    db,
+    "jobOperation",
+    { status: "Done", updatedBy: userId },
+    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
+  );
   if (done.error) {
     throw new Error(`Failed to finish batch operations: ${done.error.message}`);
   }
@@ -815,12 +815,12 @@ async function completeBatch(
   }
 
   // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
-  const finalized = await client
-    .from("jobOperationBatch")
-    .update({ status: "Completed", updatedBy: userId, updatedAt: now })
-    .eq("id", batchId)
-    .eq("companyId", companyId)
-    .eq("status", "Completing");
+  const finalized = await updateRows(
+    db,
+    "jobOperationBatch",
+    { status: "Completed", updatedBy: userId, updatedAt: now },
+    { id: batchId, companyId, status: "Completing" }
+  );
   if (finalized.error) {
     throw new Error(
       `Failed to finalize batch completion: ${finalized.error.message}`

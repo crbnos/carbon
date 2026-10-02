@@ -31,7 +31,14 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  inOrder,
+  many,
+  maybeSingle,
+  single,
+  type Tables,
+  updateRows
+} from "../lib/rows";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid
@@ -60,12 +67,15 @@ export const postPurchaseInvoice = defineServerFn({
         .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
-      const accountingEnabled = await client
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single()
-        .then((r) => r.data?.accountingEnabled ?? false);
+      const accountingEnabled =
+        (
+          await single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["accountingEnabled"] }
+          )
+        ).data?.accountingEnabled ?? false;
 
       if (type === "void") {
         // The client is service-role: authorization proved the caller may
@@ -1650,26 +1660,59 @@ export const postPurchaseInvoice = defineServerFn({
                     { columns: ["id", "acquisitionCost"] }
                   );
                   if (!assetRecord.error) {
-                    await client
-                      .from("fixedAsset")
-                      .update({
+                    await updateRows(
+                      db,
+                      "fixedAsset",
+                      {
                         acquisitionCost:
                           Number(assetRecord.data.acquisitionCost) + variance,
                         updatedBy: userId
-                      })
-                      .eq("id", invoiceLine.assetId);
+                      },
+                      { id: invoiceLine.assetId }
+                    );
                   }
                 }
                 faFixedAssetClassId = faClassId;
               } else {
                 // Direct invoice (no prior receipt) — full acquisition
-                const assetRecord = await client
-                  .from("fixedAsset")
-                  .select(
-                    "id, status, acquisitionDate, depreciationStartDate, acquisitionCost, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
-                  )
-                  .eq("id", invoiceLine.assetId)
-                  .single();
+                const assetRecord = await single<
+                  "fixedAsset",
+                  Pick<
+                    Tables["fixedAsset"]["Row"],
+                    | "id"
+                    | "status"
+                    | "acquisitionDate"
+                    | "depreciationStartDate"
+                    | "acquisitionCost"
+                    | "fixedAssetClassId"
+                  > & {
+                    fixedAssetClass: Pick<
+                      Tables["fixedAssetClass"]["Row"],
+                      "assetAccountId"
+                    > | null;
+                  }
+                >(
+                  db,
+                  "fixedAsset",
+                  { id: invoiceLine.assetId },
+                  {
+                    columns: [
+                      "id",
+                      "status",
+                      "acquisitionDate",
+                      "depreciationStartDate",
+                      "acquisitionCost",
+                      "fixedAssetClassId"
+                    ],
+                    embed: {
+                      fixedAssetClass: {
+                        table: "fixedAssetClass",
+                        via: "fixedAssetClassId",
+                        columns: ["assetAccountId"]
+                      }
+                    }
+                  }
+                );
 
                 if (assetRecord.error)
                   throw new Error("Failed to fetch fixed asset");
@@ -1739,10 +1782,9 @@ export const postPurchaseInvoice = defineServerFn({
                   updateData.locationId = invoiceLine.locationId;
                 }
 
-                await client
-                  .from("fixedAsset")
-                  .update(updateData)
-                  .eq("id", invoiceLine.assetId);
+                await updateRows(db, "fixedAsset", updateData, {
+                  id: invoiceLine.assetId
+                });
               }
 
               const faJlCount = journalLineInserts.length - jlStartIdxFa;
@@ -2334,11 +2376,12 @@ export const postPurchaseInvoice = defineServerFn({
     } catch (err) {
       // A failed VOID leaves the invoice Posted: its rows still stand.
       if (type !== "void") {
-        await client
-          .from("purchaseInvoice")
-          .update({ status: "Draft" })
-          .eq("id", invoiceId)
-          .eq("companyId", companyId);
+        await updateRows(
+          db,
+          "purchaseInvoice",
+          { status: "Draft" },
+          { id: invoiceId, companyId }
+        );
       }
       throw err;
     }

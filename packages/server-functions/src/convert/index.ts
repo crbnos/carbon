@@ -18,7 +18,15 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getMethod } from "../get-method";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  inOrder,
+  insertRows,
+  many,
+  maybeSingle,
+  rpcValue,
+  single,
+  type Tables
+} from "../lib/rows";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");
@@ -1086,7 +1094,7 @@ export const convert = defineServerFn({
         // get_exchange_rate returns 1 for the base currency, prefers a
         // company override, falls back to the global store, and raises on a
         // missing rate -- a foreign-currency customer is never quoted at par.
-        const exchangeRateResult = await client.rpc("get_exchange_rate", {
+        const exchangeRateResult = await rpcValue(db, "get_exchange_rate", {
           p_company_id: companyId,
           p_currency_code: currencyCode
         });
@@ -1597,11 +1605,21 @@ export const convert = defineServerFn({
         const [quote, quoteLines, company, employeeJob] = await inOrder([
           () => single(db, "supplierQuote", { id, companyId }),
           () =>
-            client
-              .from("supplierQuoteLine")
-              .select("*, item(type)")
-              .eq("supplierQuoteId", id)
-              .eq("companyId", companyId),
+            many<
+              "supplierQuoteLine",
+              Tables["supplierQuoteLine"]["Row"] & {
+                item: Pick<Tables["item"]["Row"], "type"> | null;
+              }
+            >(
+              db,
+              "supplierQuoteLine",
+              { supplierQuoteId: id, companyId },
+              {
+                embed: {
+                  item: { table: "item", via: "itemId", columns: ["type"] }
+                }
+              }
+            ),
           () => single(db, "company", { id: companyId }),
           () => single(db, "employeeJob", { id: userId, companyId })
         ]);
@@ -1916,7 +1934,9 @@ export const convert = defineServerFn({
         );
 
         if (linkedRfqs && linkedRfqs.length > 0) {
-          await client.from("purchasingRfqToPurchaseOrder").insert(
+          await insertRows(
+            db,
+            "purchasingRfqToPurchaseOrder",
             linkedRfqs.map((rfq) => ({
               purchasingRfqId: rfq.purchasingRfqId,
               purchaseOrderId: insertedPurchaseOrderId,

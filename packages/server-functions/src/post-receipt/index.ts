@@ -37,7 +37,17 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  contains,
+  inOrder,
+  lt,
+  many,
+  maybeSingle,
+  neq,
+  single,
+  type Tables,
+  updateRows
+} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -90,11 +100,10 @@ export const postReceipt = defineServerFn({
           () => maybeSingle(db, "receipt", { id: receiptId, companyId }),
           () => many(db, "receiptLine", { receiptId, companyId }),
           () =>
-            client
-              .from("trackedEntity")
-              .select("*")
-              .contains("attributes", { Receipt: receiptId })
-              .eq("companyId", companyId),
+            many(db, "trackedEntity", {
+              attributes: contains({ Receipt: receiptId }),
+              companyId
+            }),
           () =>
             many(
               db,
@@ -269,12 +278,12 @@ export const postReceipt = defineServerFn({
           // The PO void path blocks voiding an invoiced receipt; the analogous
           // hazard here is a credit memo. Voiding after crediting would leave
           // quantityCredited > quantityReceived with no path to reconcile.
-          const creditMemos = await client
-            .from("memo")
-            .select("id, status")
-            .eq("salesReturnOrderId", salesReturnOrderId)
-            .eq("companyId", companyId)
-            .neq("status", "Voided");
+          const creditMemos = await many(
+            db,
+            "memo",
+            { salesReturnOrderId, companyId, status: neq("Voided") },
+            { columns: ["id", "status"] }
+          );
           if (creditMemos.error)
             throw new Error("Failed to check for credit memos");
           if ((creditMemos.data ?? []).length > 0) {
@@ -714,10 +723,9 @@ export const postReceipt = defineServerFn({
                 faUpdate.acquisitionDate = null;
                 faUpdate.depreciationStartDate = null;
               }
-              await client
-                .from("fixedAsset")
-                .update(faUpdate)
-                .eq("id", faPoLine.assetId!);
+              await updateRows(db, "fixedAsset", faUpdate, {
+                id: faPoLine.assetId!
+              });
             }
           }
         }
@@ -1801,13 +1809,46 @@ export const postReceipt = defineServerFn({
               const unitPrice = faPoLine.unitPrice ?? 0;
               const cost = quantity * unitPrice;
 
-              const assetRecord = await client
-                .from("fixedAsset")
-                .select(
-                  "id, status, acquisitionDate, depreciationStartDate, acquisitionCost, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
-                )
-                .eq("id", faPoLine.assetId!)
-                .single();
+              const assetRecord = await single<
+                "fixedAsset",
+                Pick<
+                  Tables["fixedAsset"]["Row"],
+                  | "id"
+                  | "status"
+                  | "acquisitionDate"
+                  | "depreciationStartDate"
+                  | "acquisitionCost"
+                  | "locationId"
+                  | "fixedAssetClassId"
+                > & {
+                  fixedAssetClass: Pick<
+                    Tables["fixedAssetClass"]["Row"],
+                    "assetAccountId"
+                  > | null;
+                }
+              >(
+                db,
+                "fixedAsset",
+                { id: faPoLine.assetId! },
+                {
+                  columns: [
+                    "id",
+                    "status",
+                    "acquisitionDate",
+                    "depreciationStartDate",
+                    "acquisitionCost",
+                    "locationId",
+                    "fixedAssetClassId"
+                  ],
+                  embed: {
+                    fixedAssetClass: {
+                      table: "fixedAssetClass",
+                      via: "fixedAssetClassId",
+                      columns: ["assetAccountId"]
+                    }
+                  }
+                }
+              );
 
               if (assetRecord.error)
                 throw new Error("Failed to fetch fixed asset");
@@ -1889,10 +1930,9 @@ export const postReceipt = defineServerFn({
                 updateData.locationId = faLineLocationId;
               }
 
-              await client
-                .from("fixedAsset")
-                .update(updateData)
-                .eq("id", faPoLine.assetId!);
+              await updateRows(db, "fixedAsset", updateData, {
+                id: faPoLine.assetId!
+              });
             }
 
             purchaseOrderLineUpdates[faPoLine.id!] = {
@@ -2401,11 +2441,28 @@ export const postReceipt = defineServerFn({
                   companyId
                 }),
               () =>
-                client
-                  .from("salesReturnOrderLine")
-                  .select("*, returnReason(inventoryValueZero)")
-                  .eq("salesReturnOrderId", salesReturnOrderId)
-                  .eq("companyId", companyId),
+                many<
+                  "salesReturnOrderLine",
+                  Tables["salesReturnOrderLine"]["Row"] & {
+                    returnReason: Pick<
+                      Tables["returnReason"]["Row"],
+                      "inventoryValueZero"
+                    > | null;
+                  }
+                >(
+                  db,
+                  "salesReturnOrderLine",
+                  { salesReturnOrderId, companyId },
+                  {
+                    embed: {
+                      returnReason: {
+                        table: "returnReason",
+                        via: "returnReasonId",
+                        columns: ["inventoryValueZero"]
+                      }
+                    }
+                  }
+                ),
               () =>
                 many(
                   db,
@@ -2476,13 +2533,17 @@ export const postReceipt = defineServerFn({
             { quantity: number; cost: number }[]
           >();
           if (shipmentIds.length > 0) {
-            const consumptionRows = await client
-              .from("costLedger")
-              .select("documentId, itemId, quantity, cost")
-              .in("documentId", shipmentIds)
-              .eq("documentType", "Sales Shipment")
-              .eq("companyId", companyId)
-              .lt("quantity", 0);
+            const consumptionRows = await many(
+              db,
+              "costLedger",
+              {
+                documentId: shipmentIds,
+                documentType: "Sales Shipment",
+                companyId,
+                quantity: lt(0)
+              },
+              { columns: ["documentId", "itemId", "quantity", "cost"] }
+            );
             if (consumptionRows.error)
               throw new Error(
                 "Failed to fetch shipment cost layers for original-cost lookup"
@@ -3336,11 +3397,12 @@ export const postReceipt = defineServerFn({
     } catch (err) {
       // A failed VOID leaves the receipt Posted: its rows still stand.
       if (type !== "void") {
-        await client
-          .from("receipt")
-          .update({ status: "Draft" })
-          .eq("id", receiptId)
-          .eq("companyId", companyId);
+        await updateRows(
+          db,
+          "receipt",
+          { status: "Draft" },
+          { id: receiptId, companyId }
+        );
       }
       throw err;
     }

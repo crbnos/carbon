@@ -62,7 +62,7 @@ import {
   createAdjustmentJournal,
   valueMovement
 } from "../lib/post-adjustment";
-import { inOrder, many, single } from "../lib/rows";
+import { contains, inOrder, many, single } from "../lib/rows";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
@@ -2264,16 +2264,17 @@ export const issue = defineServerFn({
         // position here is the `index` step records are stored under, so the
         // tiebreakers are not optional — `createdAt` ties for bulk-minted serials
         // and Postgres breaks a tie by physical row order, which any UPDATE moves.
-        const trackedEntities = await client
-          .from("trackedEntity")
-          .select("*")
-          .contains("attributes", {
-            "Job Make Method": jobOperation.data.jobMakeMethodId
-          })
-          .eq("companyId", companyId)
-          .order("createdAt", { ascending: true })
-          .order("readableId", { ascending: true })
-          .order("id", { ascending: true });
+        const trackedEntities = await many(
+          db,
+          "trackedEntity",
+          {
+            attributes: contains({
+              "Job Make Method": jobOperation.data.jobMakeMethodId
+            }),
+            companyId
+          },
+          { orderBy: ["createdAt", "readableId", "id"] }
+        );
 
         if (!trackedEntities.data || trackedEntities.data.length === 0) {
           throw new NotFoundError("Tracked entities not found");
@@ -2576,13 +2577,17 @@ export const issue = defineServerFn({
               { columns: ["id", "jobId", "locationId"] }
             ),
           () =>
-            client
-              .from("trackedEntity")
-              .select("id")
-              .contains("attributes", {
-                "Job Make Method": operation.jobMakeMethodId
-              })
-              .eq("companyId", companyId),
+            many(
+              db,
+              "trackedEntity",
+              {
+                attributes: contains({
+                  "Job Make Method": operation.jobMakeMethodId
+                }),
+                companyId
+              },
+              { columns: ["id"] }
+            ),
           () =>
             single(
               db,

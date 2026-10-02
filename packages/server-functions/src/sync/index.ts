@@ -9,7 +9,7 @@ import type { Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { many, maybeSingle } from "../lib/rows";
+import { insertRows, many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "sync");
 
@@ -183,8 +183,6 @@ export const sync = defineServerFn({
 
         logger.info({ type, makeMethodId, data, companyId, userId });
 
-        const client = await ctx.supabase();
-
         // Check if top-level make method is Active and find or create a Draft
         const topLevelMakeMethod = await maybeSingle(
           db,
@@ -237,29 +235,32 @@ export const sync = defineServerFn({
 
         if (topLevelMakeMethod.data?.status === "Active") {
           // Check if there's already a Draft version we can use
-          const existingDraft = await client
-            .from("makeMethod")
-            .select("id, version")
-            .eq("itemId", topLevelMakeMethod.data.itemId)
-            .eq("status", "Draft")
-            .eq("companyId", companyId)
-            .order("version", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          const existingDraft = await maybeSingle(
+            db,
+            "makeMethod",
+            {
+              itemId: topLevelMakeMethod.data.itemId,
+              status: "Draft",
+              companyId
+            },
+            {
+              columns: ["id", "version"],
+              orderBy: [{ desc: "version" }],
+              limit: 1
+            }
+          );
 
           if (existingDraft.data) {
             // Use the existing Draft
             activeMakeMethodId = existingDraft.data.id;
           } else {
             // Get max version across ALL make methods for this item
-            const allVersions = await client
-              .from("makeMethod")
-              .select("version")
-              .eq("itemId", topLevelMakeMethod.data.itemId)
-              .eq("companyId", companyId)
-              .order("version", { ascending: false })
-              .limit(1)
-              .maybeSingle();
+            const allVersions = await maybeSingle(
+              db,
+              "makeMethod",
+              { itemId: topLevelMakeMethod.data.itemId, companyId },
+              { columns: ["version"], orderBy: [{ desc: "version" }], limit: 1 }
+            );
 
             const maxVersion = Number(allVersions.data?.version ?? 0);
             const newVersion = maxVersion + 1;
@@ -271,20 +272,17 @@ export const sync = defineServerFn({
               newVersion
             });
 
-            const newTopLevelMakeMethod = await client
-              .from("makeMethod")
-              .insert({
-                itemId: topLevelMakeMethod.data.itemId,
-                version: newVersion,
-                status: "Draft",
-                companyId,
-                createdBy: userId
-              })
-              .select("id")
-              .single();
+            const newTopLevelMakeMethod = await insertRows(db, "makeMethod", {
+              itemId: topLevelMakeMethod.data.itemId,
+              version: newVersion,
+              status: "Draft",
+              companyId,
+              createdBy: userId
+            });
 
-            if (newTopLevelMakeMethod.data) {
-              activeMakeMethodId = newTopLevelMakeMethod.data.id;
+            const inserted = newTopLevelMakeMethod.data[0];
+            if (inserted) {
+              activeMakeMethodId = inserted.id;
               topLevelSourceMakeMethodId = makeMethodId;
             }
           }

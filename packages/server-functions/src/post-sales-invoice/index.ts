@@ -7,7 +7,6 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
-import { fetchAll } from "@carbon/database/fetch-all";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -36,7 +35,14 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  inOrder,
+  many,
+  maybeSingle,
+  single,
+  type Tables,
+  updateRows
+} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-sales-invoice");
 
@@ -365,14 +371,55 @@ export const postSalesInvoice = defineServerFn({
             )
           ];
           const assetQuery = () =>
-            client
-              .from("fixedAsset")
-              .select(
-                "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClass:fixedAssetClassId(id, assetAccountId, accumulatedDepreciationAccountId, writeOffAccountId, gainOnDisposalAccountId, lossOnDisposalAccountId)"
-              )
-              .in("id", assetIds)
-              .eq("companyId", companyId)
-              .order("id");
+            many<
+              "fixedAsset",
+              Pick<
+                Tables["fixedAsset"]["Row"],
+                | "id"
+                | "status"
+                | "acquisitionCost"
+                | "accumulatedDepreciation"
+                | "locationId"
+              > & {
+                fixedAssetClass: Pick<
+                  Tables["fixedAssetClass"]["Row"],
+                  | "id"
+                  | "assetAccountId"
+                  | "accumulatedDepreciationAccountId"
+                  | "writeOffAccountId"
+                  | "gainOnDisposalAccountId"
+                  | "lossOnDisposalAccountId"
+                > | null;
+              }
+            >(
+              db,
+              "fixedAsset",
+              { id: assetIds, companyId },
+              {
+                columns: [
+                  "id",
+                  "status",
+                  "acquisitionCost",
+                  "accumulatedDepreciation",
+                  "locationId"
+                ],
+                embed: {
+                  fixedAssetClass: {
+                    table: "fixedAssetClass",
+                    via: "fixedAssetClassId",
+                    columns: [
+                      "id",
+                      "assetAccountId",
+                      "accumulatedDepreciationAccountId",
+                      "writeOffAccountId",
+                      "gainOnDisposalAccountId",
+                      "lossOnDisposalAccountId"
+                    ]
+                  }
+                },
+                orderBy: ["id"]
+              }
+            );
           type AssetRecord = Pick<
             Database["public"]["Tables"]["fixedAsset"]["Row"],
             | "id"
@@ -399,18 +446,22 @@ export const postSalesInvoice = defineServerFn({
             [
               () =>
                 accountingEnabled && assetIds.length > 0
-                  ? fetchAll<AssetRecord>(assetQuery)
+                  ? assetQuery()
                   : Promise.resolve({ data: [] as AssetRecord[], error: null }),
               () =>
                 accountingEnabled && assetIds.length > 0
-                  ? fetchAll<DisposalRecord>(() =>
-                      client
-                        .from("fixedAssetDisposal")
-                        .select("id, fixedAssetId, netBookValueAtDisposal")
-                        .in("fixedAssetId", assetIds)
-                        .eq("companyId", companyId)
-                        .order("createdAt", { ascending: false })
-                        .order("id", { ascending: false })
+                  ? many<"fixedAssetDisposal", DisposalRecord>(
+                      db,
+                      "fixedAssetDisposal",
+                      { fixedAssetId: assetIds, companyId },
+                      {
+                        columns: [
+                          "id",
+                          "fixedAssetId",
+                          "netBookValueAtDisposal"
+                        ],
+                        orderBy: [{ desc: "createdAt" }, { desc: "id" }]
+                      }
                     )
                   : Promise.resolve({
                       data: [] as DisposalRecord[],
@@ -1647,11 +1698,12 @@ export const postSalesInvoice = defineServerFn({
       // the books and let it be edited and posted a second time. Same guard
       // post-receipt, post-shipment and post-purchase-invoice carry.
       if (type !== "void") {
-        await client
-          .from("salesInvoice")
-          .update({ status: "Draft" })
-          .eq("id", invoiceId)
-          .eq("companyId", companyId);
+        await updateRows(
+          db,
+          "salesInvoice",
+          { status: "Draft" },
+          { id: invoiceId, companyId }
+        );
       }
       throw err;
     }

@@ -33,7 +33,18 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import {
+  contains,
+  deleteRows,
+  inOrder,
+  insertRows,
+  many,
+  maybeSingle,
+  neq,
+  single,
+  type Tables,
+  updateRows
+} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -63,16 +74,25 @@ export const postShipment = defineServerFn({
           // The client is service-role: authorization proved the caller may
           // act in companyId, not that shipmentId belongs to it.
           maybeSingle(db, "shipment", { id: shipmentId, companyId }),
-          client
-            .from("shipmentLine")
-            .select("*, fulfillment(*)")
-            .eq("shipmentId", shipmentId)
-            .eq("companyId", companyId),
-          client
-            .from("trackedEntity")
-            .select("*")
-            .contains("attributes", { Shipment: shipmentId })
-            .eq("companyId", companyId)
+          many<
+            "shipmentLine",
+            Tables["shipmentLine"]["Row"] & {
+              fulfillment: Tables["fulfillment"]["Row"] | null;
+            }
+          >(
+            db,
+            "shipmentLine",
+            { shipmentId, companyId },
+            {
+              embed: {
+                fulfillment: { table: "fulfillment", via: "fulfillmentId" }
+              }
+            }
+          ),
+          many(db, "trackedEntity", {
+            attributes: contains({ Shipment: shipmentId }),
+            companyId
+          })
         ]
       );
 
@@ -625,13 +645,50 @@ export const postShipment = defineServerFn({
 
               for (const faSoLine of faSalesOrderLines) {
                 if (accountingEnabled && accountDefaults?.data) {
-                  const assetRecord = await client
-                    .from("fixedAsset")
-                    .select(
-                      "id, status, acquisitionCost, accumulatedDepreciation, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId, writeOffAccountId)"
-                    )
-                    .eq("id", faSoLine.assetId!)
-                    .single();
+                  const assetRecord = await single<
+                    "fixedAsset",
+                    Pick<
+                      Tables["fixedAsset"]["Row"],
+                      | "id"
+                      | "status"
+                      | "acquisitionCost"
+                      | "accumulatedDepreciation"
+                      | "locationId"
+                      | "fixedAssetClassId"
+                    > & {
+                      fixedAssetClass: Pick<
+                        Tables["fixedAssetClass"]["Row"],
+                        | "assetAccountId"
+                        | "accumulatedDepreciationAccountId"
+                        | "writeOffAccountId"
+                      > | null;
+                    }
+                  >(
+                    db,
+                    "fixedAsset",
+                    { id: faSoLine.assetId! },
+                    {
+                      columns: [
+                        "id",
+                        "status",
+                        "acquisitionCost",
+                        "accumulatedDepreciation",
+                        "locationId",
+                        "fixedAssetClassId"
+                      ],
+                      embed: {
+                        fixedAssetClass: {
+                          table: "fixedAssetClass",
+                          via: "fixedAssetClassId",
+                          columns: [
+                            "assetAccountId",
+                            "accumulatedDepreciationAccountId",
+                            "writeOffAccountId"
+                          ]
+                        }
+                      }
+                    }
+                  );
 
                   if (assetRecord.error)
                     throw new Error("Failed to fetch fixed asset for disposal");
@@ -736,17 +793,19 @@ export const postShipment = defineServerFn({
                       assetRecord.data.fixedAssetClassId ?? null
                   });
 
-                  await client
-                    .from("fixedAsset")
-                    .update({
+                  await updateRows(
+                    db,
+                    "fixedAsset",
+                    {
                       status: "Disposed",
                       disposalDate: today,
                       disposalMethod: "Sale",
                       updatedBy: userId
-                    })
-                    .eq("id", faSoLine.assetId!);
+                    },
+                    { id: faSoLine.assetId! }
+                  );
 
-                  await client.from("fixedAssetDisposal").insert({
+                  await insertRows(db, "fixedAssetDisposal", {
                     fixedAssetId: faSoLine.assetId!,
                     disposalMethod: "Sale",
                     disposalDate: today,
@@ -1046,7 +1105,7 @@ export const postShipment = defineServerFn({
                     // The retained parent is only decremented and LOSES the
                     // shipment attributes — they belong to the shipped child.
                     const retainedAttributes = { ...parentAttributes };
-                    delete retainedAttributes["Shipment"];
+                    delete retainedAttributes.Shipment;
                     delete retainedAttributes["Shipment Line"];
                     delete retainedAttributes["Shipment Line Index"];
 
@@ -1682,7 +1741,7 @@ export const postShipment = defineServerFn({
                     // The retained parent is only decremented and LOSES the
                     // shipment attributes — they belong to the shipped child.
                     const retainedAttributes = { ...parentAttributes };
-                    delete retainedAttributes["Shipment"];
+                    delete retainedAttributes.Shipment;
                     delete retainedAttributes["Shipment Line"];
                     delete retainedAttributes["Shipment Line Index"];
 
@@ -2668,7 +2727,7 @@ export const postShipment = defineServerFn({
                   const retainedAttributes = {
                     ...parentAttributes
                   } as Record<string, unknown>;
-                  delete retainedAttributes["Shipment"];
+                  delete retainedAttributes.Shipment;
                   delete retainedAttributes["Shipment Line"];
                   delete retainedAttributes["Shipment Line Index"];
                   await trx
@@ -3301,21 +3360,22 @@ export const postShipment = defineServerFn({
                     sentDate: null
                   };
 
-                  await client
-                    .from("fixedAsset")
-                    .update({
+                  await updateRows(
+                    db,
+                    "fixedAsset",
+                    {
                       status: "Active",
                       disposalDate: null,
                       disposalMethod: null,
                       updatedBy: userId
-                    })
-                    .eq("id", faSoLine.assetId!);
+                    },
+                    { id: faSoLine.assetId! }
+                  );
 
-                  await client
-                    .from("fixedAssetDisposal")
-                    .delete()
-                    .eq("fixedAssetId", faSoLine.assetId!)
-                    .eq("companyId", companyId);
+                  await deleteRows(db, "fixedAssetDisposal", {
+                    fixedAssetId: faSoLine.assetId!,
+                    companyId
+                  });
                 }
               }
 
@@ -4293,12 +4353,12 @@ export const postShipment = defineServerFn({
               // post-memo recovers the GRNI clearing amount from THIS shipment's
               // costLedger rows, so a void afterwards strands that clearing and
               // leaves GRNI permanently out by the carried cost.
-              const debitMemos = await client
-                .from("memo")
-                .select("id, status")
-                .eq("purchaseReturnOrderId", purchaseReturnOrderId)
-                .eq("companyId", companyId)
-                .neq("status", "Voided");
+              const debitMemos = await many(
+                db,
+                "memo",
+                { purchaseReturnOrderId, companyId, status: neq("Voided") },
+                { columns: ["id", "status"] }
+              );
               if (debitMemos.error)
                 throw new Error("Failed to check for debit memos");
               if ((debitMemos.data ?? []).length > 0) {
@@ -4650,11 +4710,12 @@ export const postShipment = defineServerFn({
       // its ledger/journal rows still stand, so forcing it to Draft would
       // contradict the books and let it be edited and posted a second time.
       if (type !== "void") {
-        await client
-          .from("shipment")
-          .update({ status: "Draft" })
-          .eq("id", shipmentId)
-          .eq("companyId", companyId);
+        await updateRows(
+          db,
+          "shipment",
+          { status: "Draft" },
+          { id: shipmentId, companyId }
+        );
       }
       throw err;
     }

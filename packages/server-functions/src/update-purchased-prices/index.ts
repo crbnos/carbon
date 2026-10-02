@@ -10,7 +10,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { inOrder, many, maybeSingle } from "../lib/rows";
+import { gte, inOrder, many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "update-purchased-prices");
 
@@ -66,8 +66,6 @@ export const updatePurchasedPrices = defineServerFn({
       shouldUpdatePrices,
       shouldUpdateLeadTimes
     });
-
-    const client = await ctx.supabase();
 
     let supplierId: string;
     let lines: PurchaseLineData[];
@@ -280,13 +278,16 @@ export const updatePurchasedPrices = defineServerFn({
     }
 
     if (shouldUpdateLeadTimes && itemIds.length > 0) {
-      const receipts = await client
-        .from("receipt")
-        .select("id,postingDate,sourceDocumentId")
-        .eq("companyId", companyId)
-        .eq("sourceDocument", "Purchase Order")
-        .not("postingDate", "is", null)
-        .gte("postingDate", dateOneYearAgo);
+      const receipts = await many(
+        db,
+        "receipt",
+        {
+          companyId,
+          sourceDocument: "Purchase Order",
+          postingDate: gte(dateOneYearAgo)
+        },
+        { columns: ["id", "postingDate", "sourceDocumentId"] }
+      );
 
       if (receipts.error) {
         throw new Error("Failed to fetch historical receipts");

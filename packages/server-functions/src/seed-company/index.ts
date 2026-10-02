@@ -32,7 +32,7 @@ import type { Insertable, Kysely } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { single } from "../lib/rows";
+import { single, updateRows } from "../lib/rows";
 import { resolveShippingDefault } from "./shipping-default";
 
 const logger = getLogger("server-functions", "seed-company");
@@ -57,8 +57,6 @@ export const seedCompany = defineServerFn({
       identityOnly: identityOnly === true
     });
 
-    const client = await ctx.supabase();
-
     const company = await single(db, "company", { id: companyId });
     if (company.error) throw new Error(company.error.message);
     if (!company.data) throw new NotFoundError("Company not found");
@@ -68,13 +66,14 @@ export const seedCompany = defineServerFn({
     // that retries a seed which already committed would otherwise throw 23505
     // on the identity inserts. If the link already exists, the prior run
     // finished: no-op.
-    const existingLink = await client
-      .from("userToCompany")
-      .select("userId", { count: "exact", head: true })
-      .eq("userId", userId)
-      .eq("companyId", companyId);
+    const existingLink = await db
+      .selectFrom("userToCompany")
+      .select("userId")
+      .where("userId", "=", userId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
 
-    if ((existingLink.count ?? 0) > 0) {
+    if (existingLink) {
       return { success: true, alreadySeeded: true };
     }
 
@@ -553,10 +552,12 @@ export const seedCompany = defineServerFn({
         }
       });
 
-      const { error } = await client
-        .from("userPermission")
-        .update({ permissions: newPermissions })
-        .eq("id", userId);
+      const { error } = await updateRows(
+        trx,
+        "userPermission",
+        { permissions: newPermissions },
+        { id: userId }
+      );
       if (error) throw new Error(error.message);
 
       // For subsidiaries: set companyGroupId + parentCompanyId now that the

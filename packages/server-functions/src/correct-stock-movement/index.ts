@@ -9,7 +9,7 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { getAccountingPeriodForDate } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
-import { inOrder, many, maybeSingle, single } from "../lib/rows";
+import { inOrder, many, maybeSingle, rpcRows, single } from "../lib/rows";
 
 // Corrects a posted stock movement by inserting ONE opposite (delta) movement
 // linked to the original via itemLedger.correctionOfItemLedgerId. The caller
@@ -40,15 +40,26 @@ export const correctStockMovement = defineServerFn({
     const { db, companyId, userId } = ctx;
     const client = await ctx.supabase();
 
-    const ledgerColumns =
-      "id, itemId, locationId, storageUnitId, trackedEntityId, quantity, postingDate, entryType, documentType, documentId, correctionOfItemLedgerId";
+    const ledgerColumns = [
+      "id",
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "trackedEntityId",
+      "quantity",
+      "postingDate",
+      "entryType",
+      "documentType",
+      "documentId",
+      "correctionOfItemLedgerId"
+    ] as const;
 
-    const originalResult = await client
-      .from("itemLedger")
-      .select(ledgerColumns)
-      .eq("id", itemLedgerId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    const originalResult = await maybeSingle(
+      db,
+      "itemLedger",
+      { id: itemLedgerId, companyId },
+      { columns: ledgerColumns }
+    );
     if (originalResult.error) throw new Error("Failed to fetch stock movement");
     if (!originalResult.data) {
       throw new NotFoundError("Stock movement not found");
@@ -62,12 +73,12 @@ export const correctStockMovement = defineServerFn({
       root.correctionOfItemLedgerId && depth < MAX_CORRECTION_CHAIN_DEPTH;
       depth++
     ) {
-      const parent = await client
-        .from("itemLedger")
-        .select(ledgerColumns)
-        .eq("id", root.correctionOfItemLedgerId)
-        .eq("companyId", companyId)
-        .maybeSingle();
+      const parent = await maybeSingle(
+        db,
+        "itemLedger",
+        { id: root.correctionOfItemLedgerId, companyId },
+        { columns: ledgerColumns }
+      );
       if (parent.error) throw new Error("Failed to fetch stock movement");
       // Broken link (no FK on correctionOfItemLedgerId): treat the current row
       // as the root rather than failing the correction.
@@ -147,7 +158,7 @@ export const correctStockMovement = defineServerFn({
           ),
         () =>
           root.locationId
-            ? client.rpc("get_item_quantities_by_tracking_id", {
+            ? rpcRows(db, "get_item_quantities_by_tracking_id", {
                 item_id: root.itemId,
                 company_id: companyId,
                 location_id: root.locationId
