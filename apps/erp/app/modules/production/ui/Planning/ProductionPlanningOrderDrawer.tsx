@@ -13,7 +13,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  Separator,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -420,7 +419,11 @@ export const ProductionPlanningOrderDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             <div className="flex flex-col gap-4  w-full">
-              <VStack spacing={2} className="text-sm border rounded-lg p-4">
+              {/* A line between every row, whichever rows the policy shows. */}
+              <VStack
+                spacing={0}
+                className="text-sm border rounded-lg px-4 py-2 divide-y divide-border [&>*]:py-2"
+              >
                 <HStack className="justify-between w-full">
                   <span className="text-muted-foreground">
                     <Trans>Reorder Policy:</Trans>
@@ -439,7 +442,6 @@ export const ProductionPlanningOrderDrawer = memo(
                     />
                   </div>
                 </HStack>
-                <Separator />
                 {row.reorderingPolicy === "Maximum Quantity" && (
                   <>
                     <HStack className="justify-between w-full">
@@ -490,9 +492,6 @@ export const ProductionPlanningOrderDrawer = memo(
                     </HStack>
                   </>
                 )}
-                {(row.lotSize > 0 ||
-                  row.minimumOrderQuantity > 0 ||
-                  row.maximumOrderQuantity > 0) && <Separator />}
                 {row.lotSize > 0 && (
                   <HStack className="justify-between w-full">
                     <span className="text-muted-foreground">

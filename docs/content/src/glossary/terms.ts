@@ -1121,6 +1121,10 @@ export const terms = {
     term: msg`Maximum Order Quantity`,
     definition: msg`Planning's upper bound on a single suggested replenishment; quantities above this are split into multiple orders.`
   },
+  "item-planning-horizon": {
+    term: msg`Planning Horizon (Days)`,
+    definition: msg`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`
+  },
 
   // ── Items: Supersession (ItemSupersessionForm) ──────────────────────────
   supersession: {

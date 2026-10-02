@@ -13,7 +13,6 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  Separator,
   Table as TableBase,
   Tabs,
   TabsContent,
@@ -725,7 +724,11 @@ export const PurchasingPlanningOrderDrawer = memo(
                   </div>
                 </TabsContent>
                 <TabsContent value="ordering" className="flex flex-col gap-4">
-                  <VStack spacing={2} className="text-sm border rounded-lg p-4">
+                  {/* A line between every row, whichever rows the policy shows. */}
+                  <VStack
+                    spacing={0}
+                    className="text-sm border rounded-lg px-4 py-2 divide-y divide-border [&>*]:py-2"
+                  >
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
                         <Trans>Reorder Policy:</Trans>
@@ -746,14 +749,12 @@ export const PurchasingPlanningOrderDrawer = memo(
                         />
                       </div>
                     </HStack>
-                    <Separator />
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
                         <Trans>Supplier:</Trans>
                       </span>
                       <SupplierAvatar supplierId={selectedSupplier} />
                     </HStack>
-                    <Separator />
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
                         <Trans>Purchase Unit:</Trans>
@@ -784,7 +785,6 @@ export const PurchasingPlanningOrderDrawer = memo(
                         </HStack>
                       ) : null;
                     })()}
-                    <Separator />
                     {selectedItem.reorderingPolicy === "Maximum Quantity" && (
                       <>
                         <HStack className="justify-between w-full">
@@ -841,9 +841,6 @@ export const PurchasingPlanningOrderDrawer = memo(
                         </HStack>
                       </>
                     )}
-                    {(selectedItem.lotSize > 0 ||
-                      selectedItem.minimumOrderQuantity > 0 ||
-                      selectedItem.maximumOrderQuantity > 0) && <Separator />}
                     {selectedItem.lotSize > 0 && (
                       <HStack className="justify-between w-full">
                         <span className="text-muted-foreground">

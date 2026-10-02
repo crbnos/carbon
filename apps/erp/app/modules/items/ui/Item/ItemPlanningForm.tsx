@@ -184,8 +184,8 @@ const ItemPlanningForm = ({
             <Number
               name="planningHorizonDays"
               label={t`Planning Horizon (Days)`}
+              termId="item-planning-horizon"
               minValue={0}
-              helperText={t`Planning shows only the actions and suggested orders due within this many days. Leave empty to use the company default, or enter 0 to show everything for this item.`}
             />
 
             <Employee
