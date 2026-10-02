@@ -6,6 +6,7 @@ import {
   Badge,
   Combobox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status
@@ -241,6 +242,7 @@ const MaintenanceSchedulesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.maintenanceSchedule(row.id!)}?${params.toString()}`
@@ -251,6 +253,7 @@ const MaintenanceSchedulesTable = memo(
               <Trans>Edit Schedule</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "production")}
               onClick={() => {

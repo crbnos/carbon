@@ -5,6 +5,7 @@
 import {
   Button,
   Combobox,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -208,6 +209,11 @@ const StockTransfersTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                row.completedAt
+                  ? MENU_ITEM_SHORTCUTS.view
+                  : MENU_ITEM_SHORTCUTS.edit
+              }
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -221,6 +227,7 @@ const StockTransfersTable = memo(
                 : t`Edit Stock Transfer`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "inventory") ||
                 !!row.completedAt ||

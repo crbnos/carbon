@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   Heading,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   toast,
   useDisclosure,
   VStack
@@ -143,6 +144,7 @@ const WarehouseTransferForm = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     disabled={
                       isLocked ||
                       !permissions.can("delete", "inventory") ||

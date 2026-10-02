@@ -178,3 +178,38 @@ export function parseSortOrderUpdates(
     sortOrder
   }));
 }
+
+// The assembly step list also moves steps in and out of sub-assemblies: each
+// id maps to a sort order, or to `{ sortOrder, parentStepId }` when its
+// sub-assembly changed (`parentStepId: null` = back to the top level).
+const stepOrderUpdatesValidator = z
+  .record(
+    z.string().min(1),
+    z.union([
+      sortOrderValue,
+      z.object({
+        sortOrder: sortOrderValue,
+        parentStepId: z.string().min(1).nullable()
+      })
+    ])
+  )
+  .refine((map) => Object.keys(map).length > 0);
+
+/** `parseSortOrderUpdates` for the assembly step list (see above). */
+export function parseStepOrderUpdates(
+  formData: FormData
+): { id: string; sortOrder: number; parentStepId?: string | null }[] | null {
+  const raw = formData.get("updates");
+  if (typeof raw !== "string" || !raw) return null;
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const parsed = stepOrderUpdatesValidator.safeParse(json);
+  if (!parsed.success) return null;
+  return Object.entries(parsed.data).map(([id, value]) =>
+    typeof value === "number" ? { id, sortOrder: value } : { id, ...value }
+  );
+}

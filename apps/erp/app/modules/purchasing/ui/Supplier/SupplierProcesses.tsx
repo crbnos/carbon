@@ -15,7 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { INPUT_FORMAT, unchecked } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -99,6 +100,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
                     onClick={() =>
                       navigate(
                         path.to.supplierProcess(supplierId, row.original.id!)
@@ -110,6 +112,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                     <Trans>Edit Process</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     onClick={() =>
                       navigate(
                         path.to.deleteSupplierProcess(

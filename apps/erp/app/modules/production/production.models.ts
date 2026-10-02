@@ -1395,60 +1395,71 @@ const optionalTiptapDescription = zfd
     val === undefined || val === "" ? undefined : toTiptapDoc(val)
   );
 
-export const assemblyInstructionStepValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    assemblyInstructionId: z.string().min(1),
-    title: zfd.text(z.string().optional()),
-    // Typed-step fields mirror jobOperationStep so steps can eventually be
-    // copied into job operations
-    type: zfd.text(z.enum(procedureStepType).optional()),
-    description: optionalTiptapDescription,
-    required: zfd.checkbox(),
-    unitOfMeasureCode: zfd.text(z.string().optional()),
-    minValue: zfd.numeric(z.number().min(0).optional()),
-    maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
-    componentNodeIds: jsonField(z.array(z.string()).optional()),
-    motion: jsonField(motionSchema.optional()),
-    camera: jsonField(cameraSchema.nullable().optional()),
-    fastener: jsonField(fastenerSchema.nullable().optional()),
-    durationSeconds: zfd.numeric(z.number().positive().optional())
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === "Measurement" && !data.unitOfMeasureCode) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["unitOfMeasureCode"],
-        message: "Unit of measure is required"
-      });
-    }
-    if (
-      data.type === "List" &&
-      !(
-        Array.isArray(data.listValues) &&
-        data.listValues.length > 0 &&
-        data.listValues.every((option) => option.trim() !== "")
-      )
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["listValues"],
-        message: "List options are required"
-      });
-    }
-    if (
-      data.minValue != null &&
-      data.maxValue != null &&
-      data.maxValue < data.minValue
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["maxValue"],
-        message: "Maximum value must be greater than or equal to minimum value"
-      });
-    }
-  });
+const assemblyInstructionStepFields = z.object({
+  id: zfd.text(z.string().optional()),
+  assemblyInstructionId: z.string().min(1),
+  title: zfd.text(z.string().optional()),
+  // Typed-step fields mirror jobOperationStep so steps can eventually be
+  // copied into job operations
+  type: zfd.text(z.enum(procedureStepType).optional()),
+  description: optionalTiptapDescription,
+  required: zfd.checkbox(),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
+  minValue: zfd.numeric(z.number().min(0).optional()),
+  maxValue: zfd.numeric(z.number().min(0).optional()),
+  listValues: z.array(z.string()).optional(),
+  componentNodeIds: jsonField(z.array(z.string()).optional()),
+  motion: jsonField(motionSchema.optional()),
+  camera: jsonField(cameraSchema.nullable().optional()),
+  fastener: jsonField(fastenerSchema.nullable().optional()),
+  durationSeconds: zfd.numeric(z.number().positive().optional())
+});
+
+function refineAssemblyInstructionStep(
+  data: z.infer<typeof assemblyInstructionStepFields>,
+  ctx: z.RefinementCtx
+) {
+  if (data.type === "Measurement" && !data.unitOfMeasureCode) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["unitOfMeasureCode"],
+      message: "Unit of measure is required"
+    });
+  }
+  if (
+    data.type === "List" &&
+    !(
+      Array.isArray(data.listValues) &&
+      data.listValues.length > 0 &&
+      data.listValues.every((option) => option.trim() !== "")
+    )
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["listValues"],
+      message: "List options are required"
+    });
+  }
+  if (
+    data.minValue != null &&
+    data.maxValue != null &&
+    data.maxValue < data.minValue
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["maxValue"],
+      message: "Maximum value must be greater than or equal to minimum value"
+    });
+  }
+}
+
+export const assemblyInstructionStepValidator =
+  assemblyInstructionStepFields.superRefine(refineAssemblyInstructionStep);
+
+/** A new step; `parentStepId` adds it at the end of that sub-assembly. */
+export const assemblyInstructionStepNewValidator = assemblyInstructionStepFields
+  .extend({ parentStepId: zfd.text(z.string().optional()) })
+  .superRefine(refineAssemblyInstructionStep);
 
 /**
  * Partial update for a step's viewer-authored motion path and/or camera pose,
@@ -1473,9 +1484,14 @@ export const assemblyInstructionStepHiddenComponentsValidator = z.object({
   hiddenComponentNodeIds: jsonField(z.array(z.string()))
 });
 
-/** Sub-assembly staging: the later step this one is built aside for. Empty = built in place. */
-export const assemblyInstructionStepJoinValidator = z.object({
-  joinStepId: zfd.text(z.string().optional())
+export const assemblySubAssemblyNewValidator = z.object({
+  stepId: z.string().min(1)
+});
+
+/** Empty `usedInStepId` = the sub-assembly joins the main build. */
+export const assemblySubAssemblyUpdateValidator = z.object({
+  title: zfd.text(z.string().optional()),
+  usedInStepId: zfd.text(z.string().optional())
 });
 
 export const assemblyStepComponentsReassignValidator = z

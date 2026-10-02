@@ -15,6 +15,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
 } from "@carbon/react";
@@ -311,6 +312,7 @@ const PurchaseInvoiceHeader = () => {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     isPurchaseInvoiceLocked(
                       routeData?.purchaseInvoice?.status

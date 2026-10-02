@@ -14,6 +14,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDebounce,
@@ -152,13 +153,17 @@ const CustomFieldCategoryDetail = ({
   const renderContextMenu = (fieldId: string) => {
     return (
       <>
-        <MenuItem asChild>
+        <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
           <Link to={`${fieldId}?${params.toString()}`}>
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Custom Field</Trans>
           </Link>
         </MenuItem>
-        <MenuItem destructive onClick={() => onDelete(fieldMap[fieldId])}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
+          destructive
+          onClick={() => onDelete(fieldMap[fieldId])}
+        >
           <MenuIcon icon={<LuTrash />} />
           <Trans>Delete Custom Field</Trans>
         </MenuItem>

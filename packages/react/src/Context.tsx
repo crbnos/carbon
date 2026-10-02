@@ -14,7 +14,10 @@ import { forwardRef } from "react";
 import { LuChevronRight, LuCircle } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 
+import { ShortcutKey } from "./ShortcutKey";
+import type { MenuItemShortcut } from "./shortcuts";
 import { cn } from "./utils/cn";
+import { withMenuShortcuts } from "./utils/menuShortcut";
 
 const ContextMenu = ContextMenuPrimitive.Root;
 
@@ -52,9 +55,10 @@ ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
 const ContextMenuSubContent = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.SubContent>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubContent>
->(({ className, ...props }, ref) => (
+>(({ className, onKeyDown, ...props }, ref) => (
   <ContextMenuPrimitive.SubContent
     ref={ref}
+    onKeyDown={withMenuShortcuts(onKeyDown)}
     className={cn(
       "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
       className
@@ -67,10 +71,11 @@ ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
 const ContextMenuContent = forwardRef<
   ElementRef<typeof ContextMenuPrimitive.Content>,
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, onKeyDown, ...props }, ref) => (
   <ContextMenuPrimitive.Portal>
     <ContextMenuPrimitive.Content
       ref={ref}
+      onKeyDown={withMenuShortcuts(onKeyDown)}
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
@@ -86,20 +91,44 @@ const ContextMenuItem = forwardRef<
   ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean;
     destructive?: boolean;
+    /**
+     * Runs this item while its menu is open — use `MENU_ITEM_SHORTCUTS`.
+     * `asChild` items render exactly one child, so they get the key but no keycap.
+     */
+    shortcut?: MenuItemShortcut;
   }
->(({ className, inset, destructive, ...props }, ref) => (
-  <ContextMenuPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      inset && "pl-8",
-      destructive &&
-        "text-red-500 focus:text-red-500 hover:bg-destructive/20 active:bg-destructive/20",
-      className
-    )}
-    {...props}
-  />
-));
+>(
+  (
+    { className, inset, destructive, shortcut, asChild, children, ...props },
+    ref
+  ) => (
+    <ContextMenuPrimitive.Item
+      ref={ref}
+      asChild={asChild}
+      data-menu-shortcut={shortcut}
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        inset && "pl-8",
+        shortcut && !asChild && "whitespace-nowrap",
+        destructive &&
+          "text-red-500 focus:text-red-500 hover:bg-destructive/20 active:bg-destructive/20",
+        className
+      )}
+      {...props}
+    >
+      {asChild || !shortcut ? (
+        children
+      ) : (
+        <>
+          {children}
+          <ContextMenuShortcut className="shrink-0 pl-4">
+            <ShortcutKey shortcut={shortcut} variant="small" className="mx-0" />
+          </ContextMenuShortcut>
+        </>
+      )}
+    </ContextMenuPrimitive.Item>
+  )
+);
 ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName;
 
 const ContextMenuCheckboxItem = forwardRef<

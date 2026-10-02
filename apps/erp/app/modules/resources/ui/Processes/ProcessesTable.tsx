@@ -10,6 +10,7 @@ import {
   Badge,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem
 } from "@carbon/react";
@@ -332,6 +333,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.process(row.id!)}?${params.toString()}`);
             }}
@@ -365,6 +367,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </MenuItem>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {

@@ -105,10 +105,10 @@ export const terms = {
     definition: msg`The view a step plays from; without a saved view the step frames its own components.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
-  "assembly-step-build-aside": {
-    term: msg`Build off to the side`,
-    definition: msg`Builds this step's components beside the model as a group, then carries the group in at a later join step.`,
-    href: "/docs/reference/assembly-instructions#building-a-group-off-to-the-side"
+  "assembly-sub-assembly": {
+    term: msg`Sub-assembly`,
+    definition: msg`Steps built on their own, then fitted as one piece: in the step that uses it, or, when nothing uses it, right after its own steps.`,
+    href: "/docs/reference/assembly-instructions#sub-assemblies"
   },
   "assembly-step-hidden-components": {
     term: msg`Hidden on this step`,

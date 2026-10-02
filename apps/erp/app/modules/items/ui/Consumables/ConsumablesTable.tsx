@@ -17,6 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -554,11 +555,15 @@ const ConsumablesTable = memo(
     const renderContextMenu = useMemo(() => {
       return (row: ConsumableListItem) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.consumable(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             Edit ConsumableListItem
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "parts")}
             destructive
             onClick={() => {

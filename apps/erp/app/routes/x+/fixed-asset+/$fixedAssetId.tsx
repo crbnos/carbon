@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
@@ -164,6 +165,7 @@ export default function FixedAssetDetailRoute() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       disabled={!permissions.can("delete", "accounting")}
                       destructive
                       onClick={deleteModal.onOpen}
@@ -187,7 +189,11 @@ export default function FixedAssetDetailRoute() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled={!canUpdate} asChild>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    disabled={!canUpdate}
+                    asChild
+                  >
                     <Link to={path.to.fixedAssetDetails(fixedAssetId)}>
                       <DropdownMenuIcon icon={<LuPencil />} />
                       Edit

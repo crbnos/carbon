@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -231,6 +232,7 @@ export default function DefaultAttachmentsPanel({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => onDownload(f.name)}
                             >
                               <DropdownMenuIcon icon={<LuDownload />} />

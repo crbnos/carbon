@@ -10,6 +10,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -529,6 +530,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     return (row: SalesOrderListItem) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("view", "sales")}
           onClick={() => edit(row)}
         >
@@ -550,6 +552,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
             Receive
           </MenuItem>*/}
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

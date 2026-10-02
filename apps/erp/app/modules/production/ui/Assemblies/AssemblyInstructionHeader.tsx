@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { useState } from "react";
@@ -131,7 +132,7 @@ const AssemblyInstructionHeader = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {item && itemTypesWithDetails.includes(item.type) && (
-              <DropdownMenuItem asChild>
+              <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                 <Link
                   to={getLinkToItemDetails(
                     item.type as MethodItemType,
@@ -159,6 +160,7 @@ const AssemblyInstructionHeader = () => {
               Re-convert Model
             </DropdownMenuItem>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "production") ||
                 !permissions.is("employee")
