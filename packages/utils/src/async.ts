@@ -155,15 +155,31 @@ function limit(concurrency = DEFAULT_CONCURRENCY) {
   };
 }
 
+let extendLifetime: ((work: Promise<unknown>) => void) | undefined;
+
 /**
  * Starts work nobody waits for. A failure goes to `onError`, which is required:
  * a detached promise with no handler is an unhandled rejection.
+ *
+ * The work is handed to the host's lifetime hook when one is registered (see
+ * `onBackground`), so it is not cut off when the response has been sent.
  */
 function background(
   task: () => Promise<unknown> | unknown,
   onError: (error: unknown) => void
 ): void {
-  Promise.resolve().then(task).catch(onError);
+  const work = Promise.resolve().then(task).catch(onError);
+  extendLifetime?.(work);
+}
+
+/**
+ * Registers what keeps the process alive for background work: on a host that
+ * freezes it once the response is sent, its `waitUntil`. Each app registers it
+ * once at startup. Without one, unawaited work stalls mid-flight until the
+ * next request wakes the instance, or is lost.
+ */
+function onBackground(hook: (work: Promise<unknown>) => void): void {
+  extendLifetime = hook;
 }
 
 /**
@@ -179,6 +195,7 @@ function background(
  *   const rows = await async.map(ids, (id) => load(id), { concurrency: 4 });
  *   const found = await async.map(ids, async (id) => (await find(id)) ?? async.skip);
  *   async.background(() => track(event), (error) => logger.error("…", { error }));
+ *   async.onBackground(waitUntil); // once at startup, on a host that freezes
  */
 export const async = {
   all,
@@ -187,5 +204,6 @@ export const async = {
   map,
   skip,
   limit,
-  background
+  background,
+  onBackground
 } as const;

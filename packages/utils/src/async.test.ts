@@ -293,6 +293,32 @@ describe("async.flow", () => {
   });
 });
 
+describe("async.onBackground", () => {
+  it("hands every piece of background work to the host's hook, failures included", async () => {
+    const kept: Promise<unknown>[] = [];
+    async.onBackground((work) => kept.push(work));
+    const done: string[] = [];
+    async.background(
+      async () => {
+        await tick(10);
+        done.push("slow");
+      },
+      () => undefined
+    );
+    async.background(
+      async () => {
+        throw new Error("lost");
+      },
+      () => done.push("failed")
+    );
+    expect(kept).toHaveLength(2);
+    expect(done).toEqual([]);
+    // What the host waits for settles only when the work has, and never rejects.
+    await Promise.all(kept);
+    expect(done.sort()).toEqual(["failed", "slow"]);
+  });
+});
+
 describe("async.background", () => {
   it("hands a failure to the error handler", async () => {
     const seen: unknown[] = [];
