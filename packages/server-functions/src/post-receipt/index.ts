@@ -181,12 +181,12 @@ export const postReceipt = defineServerFn({
 
       // Receipt-usage inspection document assignments drive per-feature
       // measurement plans on the created lots.
-      const inspectionDocumentAssignments = await (client as any)
-        .from("itemInspectionDocumentAssignment")
-        .select("itemId, inspectionDocumentId")
-        .eq("companyId", companyId)
-        .eq("usage", "Receipt")
-        .in("itemId", itemIds);
+      const inspectionDocumentAssignments = await many(
+        db,
+        "itemInspectionDocumentAssignment",
+        { companyId, usage: "Receipt", itemId: itemIds },
+        { columns: ["itemId", "inspectionDocumentId"] }
+      );
       const assignmentByItemId = new Map<string, string>(
         ((inspectionDocumentAssignments.data as any[]) ?? []).map((a) => [
           a.itemId,
@@ -196,13 +196,24 @@ export const postReceipt = defineServerFn({
       const assignedDocumentIds = [...new Set(assignmentByItemId.values())];
       const inspectionFeaturesByDocumentId = new Map<string, any[]>();
       if (assignedDocumentIds.length > 0) {
-        const inspectionFeatures = await (client as any)
-          .from("inspectionFeature")
-          .select(
-            "id, inspectionDocumentId, type, samplingPlanType, samplingSampleSize, samplingPercentage, samplingAql, samplingInspectionLevel, samplingSeverity"
-          )
-          .in("inspectionDocumentId", assignedDocumentIds)
-          .eq("companyId", companyId);
+        const inspectionFeatures = await many(
+          db,
+          "inspectionFeature",
+          { inspectionDocumentId: assignedDocumentIds, companyId },
+          {
+            columns: [
+              "id",
+              "inspectionDocumentId",
+              "type",
+              "samplingPlanType",
+              "samplingSampleSize",
+              "samplingPercentage",
+              "samplingAql",
+              "samplingInspectionLevel",
+              "samplingSeverity"
+            ]
+          }
+        );
         for (const feature of (inspectionFeatures.data as any[]) ?? []) {
           const list =
             inspectionFeaturesByDocumentId.get(feature.inspectionDocumentId) ??
@@ -220,13 +231,22 @@ export const postReceipt = defineServerFn({
       // default -> All).
       const documentDefaultByDocumentId = new Map<string, any>();
       if (assignedDocumentIds.length > 0) {
-        const assignedDocuments = await (client as any)
-          .from("inspectionDocument")
-          .select(
-            "id, samplingPlanType, samplingSampleSize, samplingPercentage, samplingAql, samplingInspectionLevel, samplingSeverity"
-          )
-          .in("id", assignedDocumentIds)
-          .eq("companyId", companyId);
+        const assignedDocuments = await many(
+          db,
+          "inspectionDocument",
+          { id: assignedDocumentIds, companyId },
+          {
+            columns: [
+              "id",
+              "samplingPlanType",
+              "samplingSampleSize",
+              "samplingPercentage",
+              "samplingAql",
+              "samplingInspectionLevel",
+              "samplingSeverity"
+            ]
+          }
+        );
         for (const doc of (assignedDocuments.data as any[]) ?? []) {
           if (!doc.samplingPlanType) continue;
           documentDefaultByDocumentId.set(doc.id, {
