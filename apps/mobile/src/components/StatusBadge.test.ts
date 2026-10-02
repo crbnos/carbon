@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  INSPECTION_STATUS_COLOR_MAP,
   JOB_OPERATION_STATUS_COLOR_MAP,
   JOB_STATUS_COLOR_MAP,
   PICKING_LIST_LINE_STATUS_COLOR_MAP,
@@ -44,6 +45,7 @@ const iconKeys = (() => {
 })();
 
 const ENTITIES = {
+  inspection: INSPECTION_STATUS_COLOR_MAP,
   job: JOB_STATUS_COLOR_MAP,
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   pickingList: PICKING_LIST_STATUS_COLOR_MAP,

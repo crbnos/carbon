@@ -73,6 +73,11 @@ msgstr ""
 msgid "{0} earlier operation(s) can take this back."
 msgstr ""
 
+#. placeholder {0}: model.tally.fails
+#. placeholder {0}: recorded.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
@@ -98,12 +103,20 @@ msgstr "{0} 个物料"
 msgid "{0} jobs"
 msgstr "{0} 个工作"
 
+#. placeholder {0}: model.remaining
+msgid "{0} left to make"
+msgstr ""
+
+#. placeholder {0}: row.sampleSize
+msgid "{0} needed"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(picked, locale)
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: columns.length
 #. placeholder {1}: formatQuantity(toPick, locale)
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -127,6 +140,11 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} of {1} lines"
 msgstr ""
 
+#. placeholder {0}: recorded.recorded
+#. placeholder {1}: row.sampleSize
+msgid "{0} of {1} recorded"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(target - done, locale)
 #. placeholder {1}: formatQuantity(target, locale)
 msgid "{0} of {1} will not be made"
@@ -134,6 +152,10 @@ msgstr ""
 
 #. placeholder {0}: operations.length
 msgid "{0} operation(s)"
+msgstr ""
+
+#. placeholder {0}: model.tally.passes
+msgid "{0} passed"
 msgstr ""
 
 #. placeholder {0}: rows.length
@@ -165,6 +187,10 @@ msgstr ""
 #. placeholder {0}: commandMessage(error, t`Some material is still unpicked.`)
 #. placeholder {1}: unresolved .map((line) => line.itemName) .join(", ")
 msgid "{0} Still unpicked: {1}"
+msgstr ""
+
+#. placeholder {0}: gaugeLabel(gauge) ?? ""
+msgid "{0}, out of calibration"
 msgstr ""
 
 msgid "{code} is not a material on this operation"
@@ -222,6 +248,10 @@ msgstr ""
 msgid "{worked} so far"
 msgstr ""
 
+#. placeholder {0}: columnIndex + 1
+msgid "#{0}"
+msgstr ""
+
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
@@ -258,11 +288,19 @@ msgstr "关于"
 msgid "Accept"
 msgstr "接受"
 
+#. placeholder {0}: lot.acceptanceNumber
+#. placeholder {1}: lot.rejectionNumber
+msgid "Accept {0} / reject {1}"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "接受批次"
 
 msgid "Accept lot?"
 msgstr "接受批次？"
+
+msgid "Accept the lot"
+msgstr ""
 
 msgid "Account Settings"
 msgstr "账户设置"
@@ -312,6 +350,9 @@ msgstr ""
 
 msgid "All"
 msgstr "全部"
+
+msgid "All {openUnitCount} open units will be scrapped. To send some to rework instead, close this lot in Carbon MES on the web."
+msgstr ""
 
 msgid "All clear"
 msgstr "一切正常"
@@ -375,6 +416,10 @@ msgid "Anything your supervisor should know"
 msgstr ""
 
 msgid "Appearance"
+msgstr ""
+
+#. placeholder {0}: lot.aql
+msgid "AQL {0}"
 msgstr ""
 
 msgid "Are you sure you want to delete this step?"
@@ -526,6 +571,9 @@ msgstr "请查收邮件"
 msgid "Choose"
 msgstr ""
 
+msgid "Choose a gauge"
+msgstr ""
+
 msgid "Choose a job"
 msgstr "选择工单"
 
@@ -539,6 +587,13 @@ msgid "Choose a photo"
 msgstr ""
 
 msgid "Choose a reason"
+msgstr ""
+
+msgid "Choose something else"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Choose the gauge for {0}"
 msgstr ""
 
 msgid "Clear"
@@ -558,6 +613,9 @@ msgstr "清除搜索"
 
 msgid "Clear station default"
 msgstr "清除工作站默认值"
+
+msgid "Clear the gauge"
+msgstr ""
 
 msgid "Clock In"
 msgstr "开工"
@@ -589,6 +647,9 @@ msgstr ""
 
 msgid "Close"
 msgstr "关闭"
+
+msgid "Close the lot"
+msgstr ""
 
 msgid "Cloud has more than one region. If your team gave you a code, scan that instead."
 msgstr ""
@@ -628,6 +689,9 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+msgid "Complete {acceptRemaining} and pass the lot"
+msgstr ""
+
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -640,11 +704,22 @@ msgstr "完成批次"
 msgid "Complete passed"
 msgstr "完成已通过"
 
+#. placeholder {0}: model.completable
+msgid "Complete passed ({0})"
+msgstr ""
+
 msgid "Completed"
 msgstr "已完成"
 
+#. placeholder {0}: result.completed
+msgid "Completed {0}"
+msgstr ""
+
 msgid "Completing"
 msgstr "完成中"
+
+msgid "Condemn {openUnitCount} open units"
+msgstr ""
 
 msgid "Connect"
 msgstr ""
@@ -689,6 +764,9 @@ msgstr "复制到剪贴板"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
 
+msgid "Could not add that unit"
+msgstr ""
+
 msgid "Could not attach that photo"
 msgstr ""
 
@@ -696,6 +774,12 @@ msgid "Could not clock in"
 msgstr ""
 
 msgid "Could not clock out"
+msgstr ""
+
+msgid "Could not close the lot"
+msgstr ""
+
+msgid "Could not complete those units"
 msgstr ""
 
 msgid "Could not end the shift"
@@ -737,6 +821,9 @@ msgstr ""
 msgid "Could not look up that code."
 msgstr ""
 
+msgid "Could not open this inspection"
+msgstr ""
+
 msgid "Could not open this operation"
 msgstr ""
 
@@ -764,6 +851,9 @@ msgstr ""
 msgid "Could not reach the server"
 msgstr ""
 
+msgid "Could not record that gauge"
+msgstr ""
+
 msgid "Could not record that step"
 msgstr ""
 
@@ -774,6 +864,9 @@ msgid "Could not report the rework"
 msgstr ""
 
 msgid "Could not report the scrap"
+msgstr ""
+
+msgid "Could not save that reading"
 msgstr ""
 
 msgid "Could not start"
@@ -1019,6 +1112,9 @@ msgstr ""
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
 
+msgid "Every unit of this lot has been scanned."
+msgstr ""
+
 msgid "Expand characteristics table"
 msgstr "展开特性表格"
 
@@ -1049,6 +1145,13 @@ msgstr ""
 
 msgid "Expiring first"
 msgstr "即将过期优先"
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Fail {0}"
+msgstr ""
 
 msgid "Failed"
 msgstr "失败"
@@ -1229,6 +1332,9 @@ msgstr "检验物品"
 msgid "inspected"
 msgstr "已检验"
 
+msgid "Inspection"
+msgstr ""
+
 msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
 msgstr ""
 
@@ -1263,6 +1369,9 @@ msgstr ""
 
 msgid "Issue Material"
 msgstr "领料"
+
+msgid "Issue type"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "问题类型"
@@ -1404,6 +1513,10 @@ msgstr "登录"
 msgid "Lot"
 msgstr "批次"
 
+#. placeholder {0}: lot.lotSize
+msgid "Lot {0}"
+msgstr ""
+
 msgid "Lot numbers missing"
 msgstr "缺少批次号"
 
@@ -1523,6 +1636,12 @@ msgstr "下一步骤"
 msgid "No"
 msgstr "否"
 
+msgid "No active gauge of the type this characteristic needs."
+msgstr ""
+
+msgid "No active gauges."
+msgstr ""
+
 msgid "No active job at this work center"
 msgstr "此工作中心无活跃工单"
 
@@ -1560,6 +1679,9 @@ msgid "No files"
 msgstr "无文件"
 
 msgid "No filters"
+msgstr ""
+
+msgid "No gauge"
 msgstr ""
 
 msgid "No gauges found."
@@ -1661,6 +1783,9 @@ msgstr ""
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
+msgid "No units scanned yet"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
@@ -1688,11 +1813,17 @@ msgstr "无"
 msgid "Not clocked in"
 msgstr ""
 
+msgid "Not every characteristic has the readings it needs"
+msgstr ""
+
 msgid "Note (optional)"
 msgstr ""
 
 msgid "Notes"
 msgstr "备注"
+
+msgid "Nothing has failed yet"
+msgstr ""
 
 msgid "Nothing left to send"
 msgstr ""
@@ -1870,6 +2001,9 @@ msgstr "可选"
 msgid "or"
 msgstr "或"
 
+msgid "Or choose a unit"
+msgstr ""
+
 msgid "Or type the address"
 msgstr ""
 
@@ -1902,6 +2036,13 @@ msgstr "部分"
 
 msgid "Partial Disposition"
 msgstr "部分处置"
+
+msgid "Pass"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Pass {0}"
+msgstr ""
 
 msgid "Passed inspection"
 msgstr "已通过检验"
@@ -2138,6 +2279,13 @@ msgstr ""
 msgid "Raised {0}"
 msgstr ""
 
+msgid "Reading"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Reading for {0}"
+msgstr ""
+
 msgid "Reason for rework"
 msgstr "返工原因"
 
@@ -2146,6 +2294,9 @@ msgstr "最近"
 
 msgid "Recently used"
 msgstr "最近使用"
+
+msgid "Recently used here"
+msgstr ""
 
 msgid "Record"
 msgstr "记录"
@@ -2175,6 +2326,9 @@ msgstr "拒绝"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
+
+msgid "Reject the lot"
+msgstr ""
 
 msgid "Released"
 msgstr "已下达"
@@ -2236,6 +2390,9 @@ msgstr "返工创建成功"
 msgid "Rework quantity"
 msgstr "返工数量"
 
+msgid "Rework reason"
+msgstr ""
+
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
 
@@ -2247,6 +2404,13 @@ msgstr "销售订单"
 
 msgid "Same for every job"
 msgstr "对所有工单相同"
+
+#. placeholder {0}: lot.sampleSize
+msgid "Sample {0}"
+msgstr ""
+
+msgid "Samples"
+msgstr ""
 
 msgid "Save"
 msgstr "保存"
@@ -2262,6 +2426,12 @@ msgstr ""
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
+
+msgid "Scan a unit"
+msgstr ""
+
+msgid "Scan a unit to start inspecting it."
+msgstr ""
 
 msgid "Scan or enter a lot number"
 msgstr ""
@@ -2314,8 +2484,14 @@ msgstr ""
 msgid "Scrap material"
 msgstr "报废原材料"
 
+msgid "Scrap or rework the failed units"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "报废数量"
+
+msgid "Scrap reason"
+msgstr ""
 
 msgid "Scrap Reason"
 msgstr "报废原因"
@@ -2416,6 +2592,9 @@ msgid "Send code"
 msgstr ""
 
 msgid "Send now"
+msgstr ""
+
+msgid "Send rework back to"
 msgstr ""
 
 msgid "Send to Carbon"
@@ -2572,6 +2751,9 @@ msgstr "大小"
 msgid "Some material is still unpicked."
 msgstr ""
 
+msgid "Some units failed — accept is not available"
+msgstr ""
+
 msgid "Something that limits what they can do here."
 msgstr ""
 
@@ -2684,6 +2866,9 @@ msgstr "标签"
 msgid "Take a photo"
 msgstr ""
 
+msgid "That code is not a unit of this lot"
+msgstr ""
+
 msgid "That code was printed by {host}, which is not the Carbon this tablet is linked to."
 msgstr ""
 
@@ -2708,6 +2893,9 @@ msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+msgid "The drawing for this lot opens in Carbon MES on the web."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"
@@ -2784,6 +2972,10 @@ msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
 
 msgid "This lot is expired. Pick it anyway?"
+msgstr ""
+
+#. placeholder {0}: lot.status
+msgid "This lot was closed as {0}. Nothing here can be changed."
 msgstr ""
 
 msgid "This operation consumes nothing from stock."
@@ -2912,6 +3104,15 @@ msgstr "无法解锁"
 msgid "Unissued serial/batch materials"
 msgstr "未领料的序列号/生产批次物料"
 
+msgid "Unit {label}, {status}"
+msgstr ""
+
+msgid "Unit {label}, not inspected"
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
 msgid "Unknown"
 msgstr "未知"
 
@@ -3031,6 +3232,9 @@ msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"
 
 msgid "What happened?"
+msgstr ""
+
+msgid "What has to be put right"
 msgstr ""
 
 msgid "What is {translatedTerm}?"

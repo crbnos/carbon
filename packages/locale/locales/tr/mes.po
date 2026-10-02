@@ -73,6 +73,11 @@ msgstr ""
 msgid "{0} earlier operation(s) can take this back."
 msgstr ""
 
+#. placeholder {0}: model.tally.fails
+#. placeholder {0}: recorded.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrinde ayarla, sonra Tamamla."
@@ -98,12 +103,20 @@ msgstr "{0} stok kartı"
 msgid "{0} jobs"
 msgstr "{0} iş emri"
 
+#. placeholder {0}: model.remaining
+msgid "{0} left to make"
+msgstr ""
+
+#. placeholder {0}: row.sampleSize
+msgid "{0} needed"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(picked, locale)
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: columns.length
 #. placeholder {1}: formatQuantity(toPick, locale)
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} adet {1}"
 
@@ -127,6 +140,11 @@ msgstr "{0} adet tamamlandı"
 msgid "{0} of {1} lines"
 msgstr ""
 
+#. placeholder {0}: recorded.recorded
+#. placeholder {1}: row.sampleSize
+msgid "{0} of {1} recorded"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(target - done, locale)
 #. placeholder {1}: formatQuantity(target, locale)
 msgid "{0} of {1} will not be made"
@@ -134,6 +152,10 @@ msgstr ""
 
 #. placeholder {0}: operations.length
 msgid "{0} operation(s)"
+msgstr ""
+
+#. placeholder {0}: model.tally.passes
+msgid "{0} passed"
 msgstr ""
 
 #. placeholder {0}: rows.length
@@ -165,6 +187,10 @@ msgstr ""
 #. placeholder {0}: commandMessage(error, t`Some material is still unpicked.`)
 #. placeholder {1}: unresolved .map((line) => line.itemName) .join(", ")
 msgid "{0} Still unpicked: {1}"
+msgstr ""
+
+#. placeholder {0}: gaugeLabel(gauge) ?? ""
+msgid "{0}, out of calibration"
 msgstr ""
 
 msgid "{code} is not a material on this operation"
@@ -222,6 +248,10 @@ msgstr ""
 msgid "{worked} so far"
 msgstr ""
 
+#. placeholder {0}: columnIndex + 1
+msgid "#{0}"
+msgstr ""
+
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
 
@@ -258,11 +288,19 @@ msgstr "Hakkında"
 msgid "Accept"
 msgstr "Kabul Et"
 
+#. placeholder {0}: lot.acceptanceNumber
+#. placeholder {1}: lot.rejectionNumber
+msgid "Accept {0} / reject {1}"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "Lotu Kabul Et"
 
 msgid "Accept lot?"
 msgstr "Lotu kabul et?"
+
+msgid "Accept the lot"
+msgstr ""
 
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
@@ -312,6 +350,9 @@ msgstr ""
 
 msgid "All"
 msgstr "Tümü"
+
+msgid "All {openUnitCount} open units will be scrapped. To send some to rework instead, close this lot in Carbon MES on the web."
+msgstr ""
 
 msgid "All clear"
 msgstr "Tamamen temiz"
@@ -375,6 +416,10 @@ msgid "Anything your supervisor should know"
 msgstr ""
 
 msgid "Appearance"
+msgstr ""
+
+#. placeholder {0}: lot.aql
+msgid "AQL {0}"
 msgstr ""
 
 msgid "Are you sure you want to delete this step?"
@@ -526,6 +571,9 @@ msgstr "E-postanızı kontrol edin"
 msgid "Choose"
 msgstr ""
 
+msgid "Choose a gauge"
+msgstr ""
+
 msgid "Choose a job"
 msgstr "İş emri seç"
 
@@ -539,6 +587,13 @@ msgid "Choose a photo"
 msgstr ""
 
 msgid "Choose a reason"
+msgstr ""
+
+msgid "Choose something else"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Choose the gauge for {0}"
 msgstr ""
 
 msgid "Clear"
@@ -558,6 +613,9 @@ msgstr "Aramayı Temizle"
 
 msgid "Clear station default"
 msgstr "İstasyon varsayılanını temizle"
+
+msgid "Clear the gauge"
+msgstr ""
 
 msgid "Clock In"
 msgstr "İş başlangıcı"
@@ -589,6 +647,9 @@ msgstr ""
 
 msgid "Close"
 msgstr "Kapat"
+
+msgid "Close the lot"
+msgstr ""
 
 msgid "Cloud has more than one region. If your team gave you a code, scan that instead."
 msgstr ""
@@ -628,6 +689,9 @@ msgstr "Şirket"
 msgid "Complete"
 msgstr "Tamamla"
 
+msgid "Complete {acceptRemaining} and pass the lot"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
@@ -640,11 +704,22 @@ msgstr "Partiyi Tamamla"
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
 
+#. placeholder {0}: model.completable
+msgid "Complete passed ({0})"
+msgstr ""
+
 msgid "Completed"
 msgstr "Tamamlandı"
 
+#. placeholder {0}: result.completed
+msgid "Completed {0}"
+msgstr ""
+
 msgid "Completing"
 msgstr "Tamamlanıyor"
+
+msgid "Condemn {openUnitCount} open units"
+msgstr ""
 
 msgid "Connect"
 msgstr ""
@@ -689,6 +764,9 @@ msgstr "Panoya kopyala"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
+msgid "Could not add that unit"
+msgstr ""
+
 msgid "Could not attach that photo"
 msgstr ""
 
@@ -696,6 +774,12 @@ msgid "Could not clock in"
 msgstr ""
 
 msgid "Could not clock out"
+msgstr ""
+
+msgid "Could not close the lot"
+msgstr ""
+
+msgid "Could not complete those units"
 msgstr ""
 
 msgid "Could not end the shift"
@@ -737,6 +821,9 @@ msgstr ""
 msgid "Could not look up that code."
 msgstr ""
 
+msgid "Could not open this inspection"
+msgstr ""
+
 msgid "Could not open this operation"
 msgstr ""
 
@@ -764,6 +851,9 @@ msgstr ""
 msgid "Could not reach the server"
 msgstr ""
 
+msgid "Could not record that gauge"
+msgstr ""
+
 msgid "Could not record that step"
 msgstr ""
 
@@ -774,6 +864,9 @@ msgid "Could not report the rework"
 msgstr ""
 
 msgid "Could not report the scrap"
+msgstr ""
+
+msgid "Could not save that reading"
 msgstr ""
 
 msgid "Could not start"
@@ -1019,6 +1112,9 @@ msgstr ""
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Her birim için bir karar verildi: {passes} geçti ve {fails} başarısız oldu. Lot, her birim kendi sonucuna yönlendirilmek üzere kapanır."
 
+msgid "Every unit of this lot has been scanned."
+msgstr ""
+
 msgid "Expand characteristics table"
 msgstr "Özellikler tablosunu genişlet"
 
@@ -1049,6 +1145,13 @@ msgstr ""
 
 msgid "Expiring first"
 msgstr "İlk süresi dolacak"
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Fail {0}"
+msgstr ""
 
 msgid "Failed"
 msgstr "Başarısız"
@@ -1229,6 +1332,9 @@ msgstr "Ürünü İncele"
 msgid "inspected"
 msgstr "incelendi"
 
+msgid "Inspection"
+msgstr ""
+
 msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
 msgstr ""
 
@@ -1263,6 +1369,9 @@ msgstr ""
 
 msgid "Issue Material"
 msgstr "Malzeme Çıkart"
+
+msgid "Issue type"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Sorun Türü"
@@ -1404,6 +1513,10 @@ msgstr "Giriş Yap"
 msgid "Lot"
 msgstr "Lot"
 
+#. placeholder {0}: lot.lotSize
+msgid "Lot {0}"
+msgstr ""
+
 msgid "Lot numbers missing"
 msgstr "Lot numaraları eksik"
 
@@ -1523,6 +1636,12 @@ msgstr "Sonraki adım"
 msgid "No"
 msgstr "Hayır"
 
+msgid "No active gauge of the type this characteristic needs."
+msgstr ""
+
+msgid "No active gauges."
+msgstr ""
+
 msgid "No active job at this work center"
 msgstr "Bu iş merkezinde etkin iş yok"
 
@@ -1560,6 +1679,9 @@ msgid "No files"
 msgstr "Dosya yok"
 
 msgid "No filters"
+msgstr ""
+
+msgid "No gauge"
 msgstr ""
 
 msgid "No gauges found."
@@ -1661,6 +1783,9 @@ msgstr ""
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
+msgid "No units scanned yet"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
@@ -1688,11 +1813,17 @@ msgstr "Hiçbiri"
 msgid "Not clocked in"
 msgstr ""
 
+msgid "Not every characteristic has the readings it needs"
+msgstr ""
+
 msgid "Note (optional)"
 msgstr ""
 
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing has failed yet"
+msgstr ""
 
 msgid "Nothing left to send"
 msgstr ""
@@ -1870,6 +2001,9 @@ msgstr "İsteğe bağlı"
 msgid "or"
 msgstr "veya"
 
+msgid "Or choose a unit"
+msgstr ""
+
 msgid "Or type the address"
 msgstr ""
 
@@ -1902,6 +2036,13 @@ msgstr "Kısmi"
 
 msgid "Partial Disposition"
 msgstr "Kısmi Karar"
+
+msgid "Pass"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Pass {0}"
+msgstr ""
 
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
@@ -2138,6 +2279,13 @@ msgstr ""
 msgid "Raised {0}"
 msgstr ""
 
+msgid "Reading"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Reading for {0}"
+msgstr ""
+
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
 
@@ -2146,6 +2294,9 @@ msgstr "Son"
 
 msgid "Recently used"
 msgstr "Son kullanılanlar"
+
+msgid "Recently used here"
+msgstr ""
 
 msgid "Record"
 msgstr "Kaydet"
@@ -2175,6 +2326,9 @@ msgstr "Reddet"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
+
+msgid "Reject the lot"
+msgstr ""
 
 msgid "Released"
 msgstr "Serbest bırakıldı"
@@ -2236,6 +2390,9 @@ msgstr "Yeniden işleme başarıyla oluşturuldu"
 msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"
 
+msgid "Rework reason"
+msgstr ""
+
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
 
@@ -2247,6 +2404,13 @@ msgstr "Satış Siparişi"
 
 msgid "Same for every job"
 msgstr "Her iş emri için aynı"
+
+#. placeholder {0}: lot.sampleSize
+msgid "Sample {0}"
+msgstr ""
+
+msgid "Samples"
+msgstr ""
 
 msgid "Save"
 msgstr "Kaydet"
@@ -2262,6 +2426,12 @@ msgstr ""
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
+
+msgid "Scan a unit"
+msgstr ""
+
+msgid "Scan a unit to start inspecting it."
+msgstr ""
 
 msgid "Scan or enter a lot number"
 msgstr ""
@@ -2314,8 +2484,14 @@ msgstr ""
 msgid "Scrap material"
 msgstr "Fire malzemesi"
 
+msgid "Scrap or rework the failed units"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "Fire miktarı"
+
+msgid "Scrap reason"
+msgstr ""
 
 msgid "Scrap Reason"
 msgstr "Fire nedeni"
@@ -2416,6 +2592,9 @@ msgid "Send code"
 msgstr ""
 
 msgid "Send now"
+msgstr ""
+
+msgid "Send rework back to"
 msgstr ""
 
 msgid "Send to Carbon"
@@ -2572,6 +2751,9 @@ msgstr "Boyut"
 msgid "Some material is still unpicked."
 msgstr ""
 
+msgid "Some units failed — accept is not available"
+msgstr ""
+
 msgid "Something that limits what they can do here."
 msgstr ""
 
@@ -2684,6 +2866,9 @@ msgstr "Etiket"
 msgid "Take a photo"
 msgstr ""
 
+msgid "That code is not a unit of this lot"
+msgstr ""
+
 msgid "That code was printed by {host}, which is not the Carbon this tablet is linked to."
 msgstr ""
 
@@ -2708,6 +2893,9 @@ msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+msgid "The drawing for this lot opens in Carbon MES on the web."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
@@ -2784,6 +2972,10 @@ msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
 
 msgid "This lot is expired. Pick it anyway?"
+msgstr ""
+
+#. placeholder {0}: lot.status
+msgid "This lot was closed as {0}. Nothing here can be changed."
 msgstr ""
 
 msgid "This operation consumes nothing from stock."
@@ -2912,6 +3104,15 @@ msgstr "Kilit açılamıyor"
 msgid "Unissued serial/batch materials"
 msgstr "Yayımlanmamış seri/parti malzemeleri"
 
+msgid "Unit {label}, {status}"
+msgstr ""
+
+msgid "Unit {label}, not inspected"
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
 msgid "Unknown"
 msgstr "Bilinmiyor"
 
@@ -3031,6 +3232,9 @@ msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
 
 msgid "What happened?"
+msgstr ""
+
+msgid "What has to be put right"
 msgstr ""
 
 msgid "What is {translatedTerm}?"

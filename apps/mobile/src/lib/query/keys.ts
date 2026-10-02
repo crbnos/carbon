@@ -39,6 +39,13 @@ export const keys = {
     ["operation-queue", s.instanceId, s.companyId, queue] as const,
   reworkTargets: (s: Scope, operationId: string) =>
     ["rework-targets", s.instanceId, s.companyId, operationId] as const,
+  /**
+   * Keyed by the OPERATION, not the lot: the lot is found-or-created by the
+   * read itself, so the operation is the only id the app has before the first
+   * fetch.
+   */
+  inspection: (s: Scope, operationId: string) =>
+    ["inspection", s.instanceId, s.companyId, operationId] as const,
   picking: (s: Scope) => ["picking", s.instanceId, s.companyId] as const,
   pickingList: (s: Scope, listId: string) =>
     ["picking-list", s.instanceId, s.companyId, listId] as const,

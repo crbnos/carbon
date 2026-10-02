@@ -129,6 +129,34 @@ need them.
   `metro.config.js`, `babel.config.js` and `*.d.ts` need the AGPL header too;
   `app.json` and `eas.json` do not.
 
+## The inspection screen is a pivot, not a port
+
+Web MES renders an inspection as characteristics × units — a table — beside the
+drawing. Neither crosses over, so `features/inspection/` deliberately does not
+look like `apps/mes/app/components/Inspection/`:
+
+- **The grid is pivoted.** The unit strip picks ONE unit and the page lists that
+  unit's characteristics. Eight characteristics across five units is forty cells,
+  and at the 48pt floor for a gloved thumb that table is wider than any screen in
+  the building. It is also the order an inspector works in, with one part in hand.
+  Columns are still addressed by INDEX, exactly as the web grid does it, because a
+  non-serial lot pre-offers one spare column whose sample row does not exist until
+  the first reading is written into it.
+- **There is no drawing.** `getInspectionDocumentWithBalloons` feeds `react-konva`
+  + `react-pdf`; the wire carries no `pdfUrl` and no balloon coordinates. The
+  screen says so once, at the top, when the lot has a document.
+- **`Partial` is not offered.** It needs every unit inspected AND, on a serial
+  lot, each unit routed individually to scrap or rework — an allocation table,
+  which is the thing this screen exists to avoid. `DispositionSheet` says where
+  to do it instead of offering a button the server would refuse.
+- **Every rule lives in `logic.ts`**, which imports no React and no
+  `react-native`, so the accept/reject gates are unit-tested against the same
+  numbers the server's own disposition guards use. Put new rules there, not in a
+  component.
+- **Per-cell writes must not refetch.** A reading keeps its own result as a local
+  patch; a refetch would re-seed the cells under the inspector's thumb and lose a
+  half-typed value. Only the lot-level writes invalidate.
+
 ## Ask First
 
 - Adding a native module or a config plugin: it ends Expo Go compatibility, so
@@ -193,6 +221,7 @@ src/
     (auth)/            sign-in, verify, two-factor, password
     (app)/             guarded: session + company + location
       (tabs)/          Operations · Picking · Scan · Timecard · More
+      inspection/      an inspection operation — outside the tabs on purpose
   components/          shared primitives (ActionDock, HeroButton, StatusBadge, …)
   features/<area>/     screen-specific components, queries and commands
   lib/

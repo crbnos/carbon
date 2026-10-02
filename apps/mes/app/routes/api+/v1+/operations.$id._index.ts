@@ -45,14 +45,16 @@ export const loader = apiRoute(
 
     if (!screen.ok) {
       const { failure } = screen;
-      // Assembly and Inspection operations have their own views, which stay on
-      // web MES in v1. Say that, rather than the generic conflict message — the
-      // operator needs to know where to go, not that something went wrong.
+      // Assembly and Inspection operations have their own views. Inspection
+      // now has one here too — `GET /operations/:id/inspection` — and
+      // `details.view` is what tells a client to go there, so the message says
+      // where rather than that something went wrong. Assembly needs a 3D
+      // viewer and stays on web MES.
       const view = (failure.details as { view?: string } | undefined)?.view;
       const message = view
         ? view === "assembly"
           ? "Assembly operations open in Carbon MES on the web"
-          : "Inspections open in Carbon MES on the web"
+          : "This is an inspection — open it at /operations/:id/inspection"
         : failure.message || "This operation is not available";
 
       throw new ApiError(

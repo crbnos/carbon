@@ -85,6 +85,9 @@ const STATUS_ICONS: Record<string, LucideIcon> = {
   Pending: CircleDashed,
   Picked: CircleCheck,
   Short: TriangleAlert,
+  // inspection (the lot) and its samples
+  Passed: CircleCheck,
+  Failed: CircleX,
   // trackedEntity
   Available: CircleCheck,
   Reserved: Clock,

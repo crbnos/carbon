@@ -17,7 +17,7 @@
     "build:check": "expo export --platform ios --platform android --output-dir .expo-export --clear",
     "doctor": "npx -y expo-doctor@latest",
     "typecheck": "pnpm run catalogs && pnpm run artifacts && tsc --noEmit",
-    "lint": "biome lint --write .",
+    "lint": "biome check --write .",
     "test": "vitest run",
     "clean": "rm -rf .expo .expo-export node_modules src/i18n/generated"
   },

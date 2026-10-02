@@ -4,8 +4,9 @@
 
 import { useLingui } from "@lingui/react/macro";
 import { useKeepAwake } from "expo-keep-awake";
+import { router } from "expo-router";
 import { Pause, Play } from "lucide-react-native";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { toast } from "sonner-native";
 import { ActionDock } from "~/components/ActionDock";
@@ -14,6 +15,7 @@ import { HeroButton } from "~/components/HeroButton";
 import { TabBar, type TabDef, TabPanel } from "~/components/Tabs";
 import { Button, ErrorNote, Screen, Skeleton } from "~/components/ui";
 import { useIsTablet } from "~/components/useIsTablet";
+import { ApiClientError } from "~/lib/api/errors";
 import {
   commandMessage,
   useEndEvent,
@@ -150,6 +152,28 @@ export function OperationDetailView({
       );
     }
   };
+
+  // An inspection operation has its own screen, and the operations endpoint
+  // refuses to answer for one — it reports `details.view` instead, which is
+  // what the web loader redirects on. Doing the same here means tapping an
+  // inspection card lands on the inspection rather than on an error telling
+  // the operator to go and find a browser.
+  //
+  // Above the early returns, with the other hooks: this component returns a
+  // skeleton before it ever returns the screen, so a hook below them would be
+  // called on some renders and not others.
+  //
+  // `replace`, not `push`: the operation screen was never a place they chose
+  // to be, so Back must return to the board, not to this error.
+  const wrongView =
+    query.error instanceof ApiClientError
+      ? (query.error.details as { view?: string } | undefined)?.view
+      : undefined;
+  useEffect(() => {
+    if (wrongView === "inspection" && operationId) {
+      router.replace(`/(app)/inspection/${operationId}`);
+    }
+  }, [wrongView, operationId]);
 
   if (query.isLoading) {
     return (

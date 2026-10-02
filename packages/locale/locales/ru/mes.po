@@ -73,6 +73,11 @@ msgstr ""
 msgid "{0} earlier operation(s) can take this back."
 msgstr ""
 
+#. placeholder {0}: model.tally.fails
+#. placeholder {0}: recorded.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} не имеет номера партии. Установите его в серии или производственном заказе в Carbon, затем завершите."
@@ -98,12 +103,20 @@ msgstr "{0} позиций"
 msgid "{0} jobs"
 msgstr "{0} производственные заказы"
 
+#. placeholder {0}: model.remaining
+msgid "{0} left to make"
+msgstr ""
+
+#. placeholder {0}: row.sampleSize
+msgid "{0} needed"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(picked, locale)
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
+#. placeholder {1}: columns.length
 #. placeholder {1}: formatQuantity(toPick, locale)
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -127,6 +140,11 @@ msgstr "{0} из {1} завершено"
 msgid "{0} of {1} lines"
 msgstr ""
 
+#. placeholder {0}: recorded.recorded
+#. placeholder {1}: row.sampleSize
+msgid "{0} of {1} recorded"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(target - done, locale)
 #. placeholder {1}: formatQuantity(target, locale)
 msgid "{0} of {1} will not be made"
@@ -134,6 +152,10 @@ msgstr ""
 
 #. placeholder {0}: operations.length
 msgid "{0} operation(s)"
+msgstr ""
+
+#. placeholder {0}: model.tally.passes
+msgid "{0} passed"
 msgstr ""
 
 #. placeholder {0}: rows.length
@@ -165,6 +187,10 @@ msgstr ""
 #. placeholder {0}: commandMessage(error, t`Some material is still unpicked.`)
 #. placeholder {1}: unresolved .map((line) => line.itemName) .join(", ")
 msgid "{0} Still unpicked: {1}"
+msgstr ""
+
+#. placeholder {0}: gaugeLabel(gauge) ?? ""
+msgid "{0}, out of calibration"
 msgstr ""
 
 msgid "{code} is not a material on this operation"
@@ -222,6 +248,10 @@ msgstr ""
 msgid "{worked} so far"
 msgstr ""
 
+#. placeholder {0}: columnIndex + 1
+msgid "#{0}"
+msgstr ""
+
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
 
@@ -258,11 +288,19 @@ msgstr "О системе"
 msgid "Accept"
 msgstr "Принять"
 
+#. placeholder {0}: lot.acceptanceNumber
+#. placeholder {1}: lot.rejectionNumber
+msgid "Accept {0} / reject {1}"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "Принять партию"
 
 msgid "Accept lot?"
 msgstr "Принять партию?"
+
+msgid "Accept the lot"
+msgstr ""
 
 msgid "Account Settings"
 msgstr "Настройки аккаунта"
@@ -312,6 +350,9 @@ msgstr ""
 
 msgid "All"
 msgstr "Все"
+
+msgid "All {openUnitCount} open units will be scrapped. To send some to rework instead, close this lot in Carbon MES on the web."
+msgstr ""
 
 msgid "All clear"
 msgstr "Все в порядке"
@@ -375,6 +416,10 @@ msgid "Anything your supervisor should know"
 msgstr ""
 
 msgid "Appearance"
+msgstr ""
+
+#. placeholder {0}: lot.aql
+msgid "AQL {0}"
 msgstr ""
 
 msgid "Are you sure you want to delete this step?"
@@ -526,6 +571,9 @@ msgstr "Проверьте вашу электронную почту"
 msgid "Choose"
 msgstr ""
 
+msgid "Choose a gauge"
+msgstr ""
+
 msgid "Choose a job"
 msgstr "Выбрать производственный заказ"
 
@@ -539,6 +587,13 @@ msgid "Choose a photo"
 msgstr ""
 
 msgid "Choose a reason"
+msgstr ""
+
+msgid "Choose something else"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Choose the gauge for {0}"
 msgstr ""
 
 msgid "Clear"
@@ -558,6 +613,9 @@ msgstr "Очистить поиск"
 
 msgid "Clear station default"
 msgstr "Очистить станцию по умолчанию"
+
+msgid "Clear the gauge"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Начало работы"
@@ -589,6 +647,9 @@ msgstr ""
 
 msgid "Close"
 msgstr "Закрыть"
+
+msgid "Close the lot"
+msgstr ""
 
 msgid "Cloud has more than one region. If your team gave you a code, scan that instead."
 msgstr ""
@@ -628,6 +689,9 @@ msgstr "Организация"
 msgid "Complete"
 msgstr "Завершить"
 
+msgid "Complete {acceptRemaining} and pass the lot"
+msgstr ""
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -640,11 +704,22 @@ msgstr "Завершить партию"
 msgid "Complete passed"
 msgstr "Завершить пройденные"
 
+#. placeholder {0}: model.completable
+msgid "Complete passed ({0})"
+msgstr ""
+
 msgid "Completed"
 msgstr "Завершено"
 
+#. placeholder {0}: result.completed
+msgid "Completed {0}"
+msgstr ""
+
 msgid "Completing"
 msgstr "Завершение"
+
+msgid "Condemn {openUnitCount} open units"
+msgstr ""
 
 msgid "Connect"
 msgstr ""
@@ -689,6 +764,9 @@ msgstr "Копировать в буфер обмена"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
+msgid "Could not add that unit"
+msgstr ""
+
 msgid "Could not attach that photo"
 msgstr ""
 
@@ -696,6 +774,12 @@ msgid "Could not clock in"
 msgstr ""
 
 msgid "Could not clock out"
+msgstr ""
+
+msgid "Could not close the lot"
+msgstr ""
+
+msgid "Could not complete those units"
 msgstr ""
 
 msgid "Could not end the shift"
@@ -737,6 +821,9 @@ msgstr ""
 msgid "Could not look up that code."
 msgstr ""
 
+msgid "Could not open this inspection"
+msgstr ""
+
 msgid "Could not open this operation"
 msgstr ""
 
@@ -764,6 +851,9 @@ msgstr ""
 msgid "Could not reach the server"
 msgstr ""
 
+msgid "Could not record that gauge"
+msgstr ""
+
 msgid "Could not record that step"
 msgstr ""
 
@@ -774,6 +864,9 @@ msgid "Could not report the rework"
 msgstr ""
 
 msgid "Could not report the scrap"
+msgstr ""
+
+msgid "Could not save that reading"
 msgstr ""
 
 msgid "Could not start"
@@ -1019,6 +1112,9 @@ msgstr ""
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Каждая единица имеет результат: {passes} пройдено и {fails} отклонено. Партия закрывается с распределением каждой единицы по её результату."
 
+msgid "Every unit of this lot has been scanned."
+msgstr ""
+
 msgid "Expand characteristics table"
 msgstr "Развернуть таблицу характеристик"
 
@@ -1049,6 +1145,13 @@ msgstr ""
 
 msgid "Expiring first"
 msgstr "Истекает первым"
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Fail {0}"
+msgstr ""
 
 msgid "Failed"
 msgstr "Не пройдено"
@@ -1229,6 +1332,9 @@ msgstr "Проверить элемент"
 msgid "inspected"
 msgstr "проверенный"
 
+msgid "Inspection"
+msgstr ""
+
 msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
 msgstr ""
 
@@ -1263,6 +1369,9 @@ msgstr ""
 
 msgid "Issue Material"
 msgstr "Выдать материал"
+
+msgid "Issue type"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Тип проблемы"
@@ -1404,6 +1513,10 @@ msgstr "Вход"
 msgid "Lot"
 msgstr "Партия"
 
+#. placeholder {0}: lot.lotSize
+msgid "Lot {0}"
+msgstr ""
+
 msgid "Lot numbers missing"
 msgstr "Номера партий отсутствуют"
 
@@ -1523,6 +1636,12 @@ msgstr "Следующий шаг"
 msgid "No"
 msgstr "Нет"
 
+msgid "No active gauge of the type this characteristic needs."
+msgstr ""
+
+msgid "No active gauges."
+msgstr ""
+
 msgid "No active job at this work center"
 msgstr "Нет активной работы на этом рабочем центре"
 
@@ -1560,6 +1679,9 @@ msgid "No files"
 msgstr "Нет файлов"
 
 msgid "No filters"
+msgstr ""
+
+msgid "No gauge"
 msgstr ""
 
 msgid "No gauges found."
@@ -1661,6 +1783,9 @@ msgstr ""
 msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
+msgid "No units scanned yet"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -1688,11 +1813,17 @@ msgstr "Нет"
 msgid "Not clocked in"
 msgstr ""
 
+msgid "Not every characteristic has the readings it needs"
+msgstr ""
+
 msgid "Note (optional)"
 msgstr ""
 
 msgid "Notes"
 msgstr "Примечания"
+
+msgid "Nothing has failed yet"
+msgstr ""
 
 msgid "Nothing left to send"
 msgstr ""
@@ -1870,6 +2001,9 @@ msgstr "Опционально"
 msgid "or"
 msgstr "или"
 
+msgid "Or choose a unit"
+msgstr ""
+
 msgid "Or type the address"
 msgstr ""
 
@@ -1902,6 +2036,13 @@ msgstr "Частичный"
 
 msgid "Partial Disposition"
 msgstr "Частичное решение"
+
+msgid "Pass"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Pass {0}"
+msgstr ""
 
 msgid "Passed inspection"
 msgstr "Прошла контроль"
@@ -2138,6 +2279,13 @@ msgstr ""
 msgid "Raised {0}"
 msgstr ""
 
+msgid "Reading"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Reading for {0}"
+msgstr ""
+
 msgid "Reason for rework"
 msgstr "Причина доработки"
 
@@ -2146,6 +2294,9 @@ msgstr "Недавние"
 
 msgid "Recently used"
 msgstr "Недавно использованные"
+
+msgid "Recently used here"
+msgstr ""
 
 msgid "Record"
 msgstr "Записать"
@@ -2175,6 +2326,9 @@ msgstr "Отклонить"
 
 msgid "Reject Lot"
 msgstr "Отклонить партию"
+
+msgid "Reject the lot"
+msgstr ""
 
 msgid "Released"
 msgstr "Запущено"
@@ -2236,6 +2390,9 @@ msgstr "Доработка успешно создана"
 msgid "Rework quantity"
 msgstr "Количество для доработки"
 
+msgid "Rework reason"
+msgstr ""
+
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
 
@@ -2247,6 +2404,13 @@ msgstr "Заказ покупателя"
 
 msgid "Same for every job"
 msgstr "То же самое для всех производственных заказов"
+
+#. placeholder {0}: lot.sampleSize
+msgid "Sample {0}"
+msgstr ""
+
+msgid "Samples"
+msgstr ""
 
 msgid "Save"
 msgstr "Сохранить"
@@ -2262,6 +2426,12 @@ msgstr ""
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Сканировать отслеживаемый объект, чтобы добавить первый столбец образца."
+
+msgid "Scan a unit"
+msgstr ""
+
+msgid "Scan a unit to start inspecting it."
+msgstr ""
 
 msgid "Scan or enter a lot number"
 msgstr ""
@@ -2314,8 +2484,14 @@ msgstr ""
 msgid "Scrap material"
 msgstr "Браковка материала"
 
+msgid "Scrap or rework the failed units"
+msgstr ""
+
 msgid "Scrap quantity"
 msgstr "Количество брака"
+
+msgid "Scrap reason"
+msgstr ""
 
 msgid "Scrap Reason"
 msgstr "Причина брака"
@@ -2416,6 +2592,9 @@ msgid "Send code"
 msgstr ""
 
 msgid "Send now"
+msgstr ""
+
+msgid "Send rework back to"
 msgstr ""
 
 msgid "Send to Carbon"
@@ -2572,6 +2751,9 @@ msgstr "Размер"
 msgid "Some material is still unpicked."
 msgstr ""
 
+msgid "Some units failed — accept is not available"
+msgstr ""
+
 msgid "Something that limits what they can do here."
 msgstr ""
 
@@ -2684,6 +2866,9 @@ msgstr "Тег"
 msgid "Take a photo"
 msgstr ""
 
+msgid "That code is not a unit of this lot"
+msgstr ""
+
 msgid "That code was printed by {host}, which is not the Carbon this tablet is linked to."
 msgstr ""
 
@@ -2708,6 +2893,9 @@ msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
+
+msgid "The drawing for this lot opens in Carbon MES on the web."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."
@@ -2784,6 +2972,10 @@ msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
 msgid "This lot is expired. Pick it anyway?"
+msgstr ""
+
+#. placeholder {0}: lot.status
+msgid "This lot was closed as {0}. Nothing here can be changed."
 msgstr ""
 
 msgid "This operation consumes nothing from stock."
@@ -2912,6 +3104,15 @@ msgstr "Не удалось разблокировать"
 msgid "Unissued serial/batch materials"
 msgstr "Невыданные серийные/партионные материалы"
 
+msgid "Unit {label}, {status}"
+msgstr ""
+
+msgid "Unit {label}, not inspected"
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
 msgid "Unknown"
 msgstr "Неизвестно"
 
@@ -3031,6 +3232,9 @@ msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."
 
 msgid "What happened?"
+msgstr ""
+
+msgid "What has to be put right"
 msgstr ""
 
 msgid "What is {translatedTerm}?"
