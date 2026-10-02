@@ -2,37 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
-import { activeJobStatuses } from "@carbon/database";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
-import {
-  getNextIncompleteSerialEntity,
-  getOperationEligibility,
-  getTrackedEntitiesByMakeMethodId,
-  startProductionEvent
-} from "~/services/operations.service";
+import { startOperationFromScan } from "~/services/commands.time.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("mes", "start-operation");
-
+/**
+ * The QR traveller: a GET that WRITES, which is why `rejectCrossSiteNavigation`
+ * guards it. The work is in the `startOperationFromScan` command
+ * (`~/services/commands.time.server`), which `/api/v1` calls too — including
+ * the floor gate that must run BEFORE the timer re-opens.
+ *
+ * A failed command carries the redirect it belongs to in `failure.redirectTo`
+ * and the exact `Result` to flash in `failure.details`, so this loader throws
+ * precisely the redirects it threw before the extraction.
+ */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, sessionUserId, companyId } = await requirePermissions(
+    request,
+    {}
+  );
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
   const url = new URL(request.url);
-  let trackedEntityId = url.searchParams.get("trackedEntityId");
+  const trackedEntityId = url.searchParams.get("trackedEntityId");
 
   let type = (url.searchParams.get("type") ?? "Labor") as
     | "Setup"
@@ -43,229 +44,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const jobOperation = await serviceRole
-    .from("jobOperation")
-    .select("*")
-    .eq("id", operationId)
-    .maybeSingle();
-
-  if (jobOperation.error || !jobOperation.data) {
-    throw redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error(jobOperation.error, "Failed to fetch job operation")
-      )
-    );
-  }
-
-  if (jobOperation.data?.companyId !== companyId) {
-    logger.warn("Job operation does not belong to company", {
-      companyId,
-      operationId
-    });
-    throw redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error("You are not authorized to start this operation", "Unauthorized")
-      )
-    );
-  }
-
-  // Floor rule: an operation is startable iff it is floor-visible — a batched
-  // op needs its batch released (not Planned); an unbatched op needs its job
-  // released (Ready/In Progress/Paused). These guards must run BEFORE the
-  // productionEvent re-open below so a not-released op never mutates timers.
-  if (jobOperation.data.jobOperationBatchId) {
-    const batch = await serviceRole
-      .from("jobOperationBatch")
-      .select("status")
-      .eq("id", jobOperation.data.jobOperationBatchId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (batch.data?.status === "Planned") {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(
-            null,
-            "This operation is part of a batch that has not been released to the floor"
-          )
-        )
-      );
-    }
-  } else {
-    const job = await serviceRole
-      .from("job")
-      .select("status")
-      .eq("id", jobOperation.data.jobId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (
-      !job.data?.status ||
-      !(activeJobStatuses as readonly string[]).includes(job.data.status)
-    ) {
-      throw redirect(
-        path.to.operations,
-        await flash(
-          request,
-          error(null, "This operation's job has not been released to the floor")
-        )
-      );
-    }
-  }
-
-  // Re-open any still-running timers for this operation (touches updatedBy so
-  // realtime subscribers refresh).
-  await serviceRole
-    .from("productionEvent")
-    .update({
-      endTime: null,
-      updatedBy: userId
-    })
-    .eq("jobOperationId", operationId)
-    .is("endTime", null);
-
-  // Check if work center is blocked for maintenance
-  if (jobOperation.data.workCenterId) {
-    const workCenterStatus = await getWorkCenterWithBlockingStatus(
-      serviceRole,
-      jobOperation.data.workCenterId
-    );
-
-    if (workCenterStatus.data?.isBlocked) {
-      throw redirect(
-        path.to.operation(operationId),
-        await flash(
-          request,
-          error(
-            `Work center is blocked for maintenance (${workCenterStatus.data.blockingDispatchReadableId})`,
-            "Work Center Blocked"
-          )
-        )
-      );
-    }
-  }
-
-  // Check if the operator is qualified for the operation's required abilities
-  const eligibility = await getOperationEligibility(serviceRole, {
+  const started = await startOperationFromScan(serviceRole, {
+    companyId,
+    userId,
+    sessionUserId,
     operationId,
-    employeeId: userId,
-    companyId
+    type,
+    trackedEntityId: trackedEntityId ?? undefined,
+    acknowledged: url.searchParams.get("acknowledged") === "true",
+    source: "mes_qr"
   });
 
-  if (!eligibility.eligible) {
+  if (!started.ok) {
     throw redirect(
-      path.to.operation(operationId),
-      await flash(
-        request,
-        error(null, eligibility.reason ?? "Not qualified to start operation")
-      )
-    );
-  }
-
-  // Get tracked entities if jobMakeMethodId exists
-  if (!trackedEntityId && jobOperation.data.jobMakeMethodId) {
-    const trackedEntities = await getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      jobOperation.data.jobMakeMethodId,
-      companyId
-    );
-
-    // Start the next incomplete serial unit for this operation (createdAt asc),
-    // falling back to the last entity when every unit is already complete.
-    const nextTrackedEntity = getNextIncompleteSerialEntity(
-      trackedEntities.data ?? [],
-      operationId
-    );
-    if (nextTrackedEntity) {
-      trackedEntityId = nextTrackedEntity.id;
-    }
-  }
-
-  // Business-rule pre-flight (workCenter target, operationStart surface).
-  // Hard errors abort; warnings flash but allow (loader-only flow has no
-  // modal to ack against).
-  if (jobOperation.data.workCenterId) {
-    const acknowledged = url.searchParams.get("acknowledged") === "true";
-    const ruleEval = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "workCenter",
-      surface: "operationStart",
-      lines: [
-        {
-          lineId: operationId,
-          itemId: null,
-          workCenterId: jobOperation.data.workCenterId,
-          operation: {
-            id: operationId,
-            itemId: null,
-            quantity: jobOperation.data.operationQuantity ?? null,
-            workInstructionId:
-              (jobOperation.data as { workInstructionId?: string | null })
-                .workInstructionId ?? null
-          },
-          quantity: jobOperation.data.operationQuantity ?? 0
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, acknowledged)
-    ) {
-      throw redirect(
-        path.to.operation(operationId),
-        await flash(
-          request,
-          error(
-            ruleEval.violations[0]?.message ?? "Rule violation",
-            "Cannot start operation"
-          )
-        )
-      );
-    }
-  }
-
-  // If type is Machine, cancel all setup and labor production events for this operation
-  if (type === "Machine") {
-    const currentTime = datetime.timestamp();
-
-    await serviceRole
-      .from("productionEvent")
-      .update({
-        endTime: currentTime,
-        updatedAt: currentTime,
-        updatedBy: userId
-      })
-      .eq("jobOperationId", operationId)
-      .in("type", ["Setup", "Labor"])
-      .is("endTime", null);
-  }
-
-  const startEvent = await startProductionEvent(
-    serviceRole,
-    {
-      type,
-      jobOperationId: operationId,
-      workCenterId: jobOperation.data.workCenterId!,
-      startTime: datetime.timestamp(),
-      employeeId: userId,
-      companyId,
-      createdBy: userId
-    },
-    trackedEntityId || undefined,
-    undefined,
-    "mes_qr"
-  );
-
-  if (startEvent.error) {
-    throw redirect(
-      path.to.operations,
-      await flash(request, error(startEvent.error, "Failed to start event"))
+      started.failure.redirectTo ?? path.to.operations,
+      await flash(request, started.failure.details as Result)
     );
   }
 

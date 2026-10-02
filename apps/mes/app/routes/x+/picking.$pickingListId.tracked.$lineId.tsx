@@ -8,12 +8,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
+import { pickTrackedEntity } from "~/services/commands.picking.server";
 import {
   getAvailableTrackedEntities,
   getCompanySettings,
   getPickOrder
 } from "~/services/inventory.service";
-import { setPickingListLineTrackedEntity } from "~/services/picking.service";
 
 const logger = getLogger("mes", "picking-tracked-line");
 
@@ -91,44 +91,22 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
-  if (!lineId) return { success: false, message: "Missing line" };
-
   const formData = await request.formData();
-  const trackedEntityId = formData.get("trackedEntityId") as string;
-  const fromStorageUnitId =
-    (formData.get("fromStorageUnitId") as string) || null;
-  const quantity = Number(formData.get("quantity") ?? 0);
-  const unpick = formData.get("unpick") === "true";
 
-  if (!trackedEntityId) {
-    return { success: false, message: "Missing tracked entity" };
-  }
+  const result = await pickTrackedEntity(
+    serviceRole,
+    { companyId, userId: effectiveUserId },
+    {
+      pickingListLineId: params.lineId,
+      trackedEntityId: formData.get("trackedEntityId") as string,
+      fromStorageUnitId: (formData.get("fromStorageUnitId") as string) || null,
+      quantity: Number(formData.get("quantity") ?? 0),
+      unpick: formData.get("unpick") === "true"
+    }
+  );
 
-  const result = await setPickingListLineTrackedEntity(serviceRole, {
-    pickingListLineId: lineId,
-    trackedEntityId,
-    fromStorageUnitId,
-    quantity,
-    unpick,
-    userId: effectiveUserId,
-    companyId
-  });
-
-  if (result.error) {
-    logger.error("Failed to pick tracked entity", {
-      companyId,
-      lineId,
-      trackedEntityId,
-      error: result.error
-    });
-    return {
-      success: false,
-      message:
-        typeof result.error === "string"
-          ? result.error
-          : (result.error.message ?? "Failed to pick line")
-    };
+  if (!result.ok) {
+    return { success: false, message: result.failure.message };
   }
 
   return { success: true, data: result.data };

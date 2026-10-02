@@ -4,9 +4,9 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { trigger } from "@carbon/jobs";
 import { manualPrintValidator } from "@carbon/printing";
 import type { ActionFunctionArgs } from "react-router";
+import { printLabel } from "~/services/commands.steps.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -27,21 +27,16 @@ export async function action({ request }: ActionFunctionArgs) {
     printerRouteId
   } = validation.data;
 
-  try {
-    await trigger("print-job", {
-      sourceDocument,
-      sourceDocumentId,
-      companyId,
-      userId,
-      locationId,
-      workCenterId,
-      printerRouteId
-    });
-    return { success: true, message: "Print job queued" };
-  } catch (e) {
-    return {
-      success: false,
-      message: e instanceof Error ? e.message : "Failed to queue print job"
-    };
+  // The web form carries the location in its body; the API reads it from
+  // `x-carbon-location`, so the command takes it as an argument either way.
+  const result = await printLabel(
+    { companyId, userId, locationId },
+    { sourceDocument, sourceDocumentId, workCenterId, printerRouteId }
+  );
+
+  if (!result.ok) {
+    return { success: false, message: result.failure.message };
   }
+
+  return { success: true, message: "Print job queued" };
 }

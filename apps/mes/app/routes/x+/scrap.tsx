@@ -2,18 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
+import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { reportScrap } from "~/services/commands.quantities.server";
 import { scrapQuantityValidator } from "~/services/models";
 
+/**
+ * Record scrap. The work is in the `reportScrap` command
+ * (`~/services/commands.quantities.server`), which `/api/v1` calls too — and
+ * which stays ONE transactional `issue` `jobOperationScrap` invoke.
+ */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(scrapQuantityValidator).validate(formData);
@@ -22,52 +31,19 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const {
-    trackedEntityId,
-    trackingType,
-    jobOperationId,
-    quantity,
-    scrapReasonId,
-    notes,
-    setupProductionEventId,
-    laborProductionEventId,
-    machineProductionEventId
-  } = validation.data;
+  const scrapped = await reportScrap(
+    { companyId, userId, sessionUserId, source: "mes" },
+    validation.data
+  );
 
-  // One transactional edge-function call: Scrap productionQuantity row, BOM
-  // backflush, tracked-entity terminal status + replacement serial spawn
-  // (serial parents), Done-operation reopen / capacity top-up beyond the
-  // planned allowance, and the WIP→scrap journal.
-  const issue = await getCarbonServiceRole().functions.invoke("issue", {
-    body: {
-      type: "jobOperationScrap",
-      jobOperationId,
-      quantity,
-      scrapReasonId,
-      notes,
-      setupProductionEventId,
-      laborProductionEventId,
-      machineProductionEventId,
-      trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined,
-      companyId,
-      userId
-    }
-  });
-
-  if (issue.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(issue.error, "Failed to record scrap quantity")
-      )
-    );
+  if (!scrapped.ok) {
+    return data({}, await flash(request, scrapped.failure.details as Result));
   }
 
   // The client (useOperation / AssemblyView) advances to the spawned
   // replacement serial the same way the complete flow does.
   return data(
-    { scrapped: true, newTrackedEntityId: issue.data?.newTrackedEntityId },
+    scrapped.data,
     await flash(request, success("Scrap quantity recorded successfully"))
   );
 }

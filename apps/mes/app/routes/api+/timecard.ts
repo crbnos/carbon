@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { clockIn, clockOut } from "~/services/people.service";
+import {
+  clockInCommand,
+  clockOutCommand
+} from "~/services/commands.timecard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -13,23 +16,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent");
 
   if (intent === "clockIn") {
-    const result = await clockIn(client, {
-      employeeId: userId,
-      companyId,
-      createdBy: userId
-    });
-    return { success: !result.error, error: result.error?.message };
+    const result = await clockInCommand(client, { companyId, userId });
+    return result.ok
+      ? { success: true, error: undefined }
+      : { success: false, error: result.failure.message };
   }
 
   if (intent === "clockOut") {
     const note = formData.get("note") as string | null;
-    const result = await clockOut(client, {
-      employeeId: userId,
-      companyId,
-      updatedBy: userId,
-      note: note ?? undefined
-    });
-    return { success: !result.error, error: result.error?.message };
+    const result = await clockOutCommand(
+      client,
+      { companyId, userId },
+      { note: note ?? undefined }
+    );
+    return result.ok
+      ? { success: true, error: undefined }
+      : { success: false, error: result.failure.message };
   }
 
   return { success: false, error: "Unknown intent" };

@@ -33,6 +33,9 @@
  *   - scrap stays ONE `issue` `jobOperationScrap` invoke;
  *   - the picking-list policies stay server-side.
  */
-// Area modules are re-exported here as they land. Import a command from this
-// barrel, not from a sibling directly.
-export {};
+export * from "./commands.materials.server";
+export * from "./commands.picking.server";
+export * from "./commands.quantities.server";
+export * from "./commands.steps.server";
+export * from "./commands.time.server";
+export * from "./commands.timecard.server";

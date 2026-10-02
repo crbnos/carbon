@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { createQualityIssue } from "~/services/quality.server";
+import { raiseQualityIssue } from "~/services/commands.steps.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -43,25 +43,25 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await createQualityIssue(serviceRole, {
-    companyId,
-    userId,
-    jobOperationId,
-    trackedEntityId,
-    // The operator's free-text description doubles as the issue name (the
-    // original MES behavior — the description body stays empty).
-    name: userDescription,
-    nonConformanceTypeId,
-    priority,
-    quantity
-  });
+  const result = await raiseQualityIssue(
+    serviceRole,
+    { companyId, userId },
+    {
+      jobOperationId,
+      trackedEntityId,
+      description: userDescription,
+      nonConformanceTypeId,
+      priority,
+      quantity
+    }
+  );
 
-  if (result.error || !result.data) {
+  if (!result.ok) {
     throw redirect(
       requestReferrer(request) ?? path.to.active,
       await flash(
         request,
-        error(result.error, result.message ?? "Failed to create quality issue")
+        error(result.failure.details, result.failure.message)
       )
     );
   }

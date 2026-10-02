@@ -2,24 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Result } from "@carbon/auth";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { endEvent, startEvent } from "~/services/commands.time.server";
 import { productionEventValidator } from "~/services/models";
-import {
-  endProductionEvent,
-  getOperationEligibility,
-  startProductionEvent
-} from "~/services/operations.service";
 
+/**
+ * The in-app Start/Stop button. The work is in the `startEvent` / `endEvent`
+ * commands (`~/services/commands.time.server`), which `/api/v1` calls too;
+ * this route only parses the form and renders the outcome as a flash.
+ *
+ * Note this path is deliberately NOT the QR-traveller path: `startEvent` runs
+ * the ability gate and nothing else, while `x+/start.$operationId.tsx` carries
+ * the floor gate, the blocked-work-center check and the `operationStart` rules.
+ */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(productionEventValidator).validate(
@@ -40,112 +47,43 @@ export async function action({ request }: ActionFunctionArgs) {
   } = validation.data;
 
   if (productionAction === "Start") {
-    // Ability gate: the shop-floor Start button posts here, so the
-    // qualification check must run on this path (not only in the
-    // start.$operationId loader)
-    const serviceRole = await getCarbonServiceRole();
-    const eligibility = await getOperationEligibility(serviceRole, {
-      operationId: d.jobOperationId,
-      employeeId: userId,
-      companyId
-    });
-    if (!eligibility.eligible) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(
-            null,
-            eligibility.reason ?? "Not qualified to start this operation"
-          )
-        )
-      );
-    }
-
-    // Single-phase (assembly) clocking: end any other open work type for this
-    // operator on this operation before starting, so Setup and Labor can never
-    // run simultaneously. Post each ended event so its cost still books.
-    if (exclusive === "true") {
-      const openOthers = await client
-        .from("productionEvent")
-        .select("id")
-        .eq("jobOperationId", d.jobOperationId)
-        .eq("employeeId", userId)
-        .is("endTime", null)
-        .neq("type", d.type);
-      if (openOthers.data && openOthers.data.length > 0) {
-        const serviceRole = await getCarbonServiceRole();
-        const endTime = datetime.timestamp();
-        for (const ev of openOthers.data) {
-          const ended = await endProductionEvent(client, {
-            id: ev.id,
-            endTime,
-            employeeId: userId
-          });
-          if (ended.data && ended.data.length > 0) {
-            await serviceRole.functions.invoke("post-production-event", {
-              body: { productionEventId: ended.data[0].id, userId, companyId }
-            });
-          }
-        }
-      }
-    }
-    const startEvent = await startProductionEvent(
-      client,
-      {
+    const started = await startEvent(client, {
+      companyId,
+      userId,
+      sessionUserId,
+      source: "mes",
+      body: {
         ...d,
-        startTime: datetime.timestamp(),
-        employeeId: userId,
-        companyId,
-        createdBy: userId
-      },
-      trackedEntityId,
-      unitIndex
-    );
+        trackedEntityId,
+        unitIndex,
+        exclusive: exclusive === "true"
+      }
+    });
 
-    if (startEvent.error) {
-      return data(
-        {},
-        await flash(request, error(startEvent.error, "Failed to start event"))
-      );
+    if (!started.ok) {
+      return data({}, await flash(request, started.failure.details as Result));
     }
 
     return data(
-      startEvent.data,
+      started.data,
       await flash(request, success(`Started ${d.type.toLowerCase()} operation`))
     );
   } else {
     if (!id) {
       return data({}, await flash(request, error("No event id provided")));
     }
-    const endEvent = await endProductionEvent(client, {
-      id,
-      endTime: datetime.timestamp(),
-      employeeId: userId
+    const ended = await endEvent(client, {
+      companyId,
+      userId,
+      sessionUserId,
+      eventId: id,
+      source: "mes"
     });
-    if (endEvent.error) {
-      return data(
-        {},
-        await flash(request, error(endEvent.error, "Failed to end event"))
-      );
-    }
-    if (endEvent.data && endEvent.data.length > 0) {
-      // Batch timers post cost at batch completion, when the aggregate event is
-      // sliced per member (batch-operations edge fn). Posting it here too would
-      // double-book the cost, so skip post-production-event for a batch event.
-      if (!endEvent.data[0].jobOperationBatchId) {
-        const serviceRole = await getCarbonServiceRole();
-        await serviceRole.functions.invoke("post-production-event", {
-          body: {
-            productionEventId: endEvent.data[0].id,
-            userId,
-            companyId
-          }
-        });
-      }
+    if (!ended.ok) {
+      return data({}, await flash(request, ended.failure.details as Result));
     }
     return data(
-      endEvent.data,
+      ended.data,
       await flash(request, success(`Ended ${d.type.toLowerCase()} operation`))
     );
   }
