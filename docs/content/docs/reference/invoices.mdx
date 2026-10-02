@@ -3,7 +3,7 @@ title: Invoices
 description: The billing documents — what you charge customers, and what suppliers charge you.
 ---
 
-An **invoice** records money owed. Carbon has two kinds that behave almost identically: a **sales invoice** is what you bill a customer, and a **purchase invoice** is the bill a supplier sends you. Both are drawn from an upstream document, both post to the ledger, and both are settled by a **separate posted transaction** — a <Term id="payment">payment</Term> or a <Term id="credit-memo">credit or debit memo</Term> applied to the invoice, not a field you flip.
+An **invoice** records an amount owed. A **sales invoice** bills a customer; a **purchase invoice** records a supplier bill. Both originate from upstream documents, post to the ledger, and are settled by a separate posted <Term id="payment">payment</Term> or <Term id="credit-memo">credit or debit memo</Term>.
 
 ## Where they come from
 
@@ -15,7 +15,7 @@ A purchase invoice reconciles on the **purchase order line**, not on a <Term id=
 
 ## Status lifecycle
 
-Both start at **Draft** and lock the moment they leave it — numbers that have entered the books can't be edited in place. The two sides share a shape but name a few states differently.
+Both invoice types start in **Draft** and become read-only after leaving it. Their lifecycles are equivalent but use different names for some states.
 
 | | Sales invoice | Purchase invoice |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ The posted state has a different name on each side, **Submitted** for sales and 
 
 ## Line types
 
-An invoice line is one of a handful of types, most of which pull an item's details in for you. The two sides differ in one place:
+Most invoice line types populate details from an item. Sales and purchase invoices differ in these supported types:
 
 | Type | Sales invoice | Purchase invoice |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ A **G/L Account** line lets a purchase invoice book a cost directly to a ledger 
 
 ## Posting
 
-<Term id="posting">Posting</Term> an invoice writes its general-ledger entries, but only when accounting is enabled for the company: receivables against sales for a sale, payables against inventory or WIP for a purchase. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
+When accounting is enabled, <Term id="posting">posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Posting also updates invoiced quantities on order lines and records the posting date.
 
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
@@ -51,7 +51,7 @@ Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open*
 
 ## Settling an invoice
 
-A posted invoice is settled by a separate posted document applied to it, never by flipping a field. Two kinds of document do the settling, and an **invoice settlement** is the row that links one to an invoice for a given amount.
+A posted invoice is settled by applying another posted document. An **invoice settlement** links that document to the invoice for a specified amount.
 
 A **<Term id="payment">payment</Term>** moves cash. A **Receipt** is money in from a customer (it settles sales invoices); a **Disbursement** is money out to a supplier (it settles purchase invoices). A payment carries a bank account, a date, a currency, and a total, and moves **Draft → Posted → Voided** like the invoice itself. While it's **Draft** you stage which invoices it applies to and for how much; posting it books the cash to the ledger — bank against the receivables or payables control account — and freezes those applications.
 

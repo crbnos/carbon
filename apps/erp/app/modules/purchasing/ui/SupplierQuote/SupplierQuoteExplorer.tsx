@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -288,9 +289,8 @@ function SupplierQuoteLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.supplierQuoteLine(id, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -371,7 +371,7 @@ function SupplierQuoteLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

@@ -277,6 +277,7 @@ import {
   PopoverHeader,
   PopoverTrigger
 } from "./Popover";
+import { PrefetchLink } from "./PrefetchLink";
 import { Progress } from "./Progress";
 import { PulsingDot } from "./PulsingDot";
 import { RadioGroup, RadioGroupButton, RadioGroupItem } from "./Radio";
@@ -581,6 +582,7 @@ export {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  PrefetchLink,
   Progress,
   PulsingDot,
   RadioGroup,

@@ -75,6 +75,14 @@ export const REQUEST_HANDLING_ROOTS = [
   "packages/utils/src"
 ];
 
+// The route trees of every React Router app: index-redirect-before-loaders.
+export const ROUTE_ROOTS = [
+  "apps/erp/app/routes",
+  "apps/mes/app/routes",
+  "apps/academy/app/routes",
+  "apps/starter/app/routes"
+];
+
 export function loadTypescriptFiles(
   root: string,
   roots: string[] = TYPESCRIPT_ROOTS

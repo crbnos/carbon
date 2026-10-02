@@ -3,9 +3,9 @@ title: People
 description: The HR master data a company sets up — employees, departments, shifts, holidays, custom attributes, and time cards.
 ---
 
-**People** is where you manage the human side of a company: the employees who work there, how they're organized, when they're scheduled, and the custom fields you track against each one. It sits alongside identity and access — an employee record is the org-and-scheduling layer, while login, roles, and what someone is *allowed* to do live in [permissions](/docs/reference/permissions).
+**People** manages employees, organizational structure, schedules, and employee attributes. An employee record defines company membership and work assignments. Login methods, roles, and access grants are managed through [permissions](/docs/reference/permissions).
 
-A person in Carbon is one record split across three tables. The `user` is the global login identity. The `employee` is that user's membership in *this* company. The `employeeJob` holds their org placement — title, location, department, shift, and manager. They share the same id and are always scoped to a company, so the same person can be an employee of more than one company with a different title and manager in each.
+Carbon represents a person across three tables. `user` is the global login identity. `employee` represents membership in one company. `employeeJob` stores the person's title, location, department, shift, and manager. The records share an ID and are company-scoped, so one user can have different employment details in multiple companies.
 
 ## Employees
 
@@ -56,7 +56,7 @@ A **shift** is a named work schedule tied to a location: a start time, an end ti
 Shifts schedule both people and machines. A shift assigned to an employee defines when that person can be scheduled; a shift assigned to a [work center](/docs/reference/work-centers) defines that station's operating hours. And for operations whose process requires an ability, who's on shift *is* the binding constraint — no qualified operator on shift means the operation waits.
 </Callout>
 
-Deleting a shift is a soft delete — the record is marked inactive rather than removed, so historical assignments stay intact.
+Deleting a shift marks it inactive instead of removing it, preserving historical assignments.
 
 ## Holidays
 

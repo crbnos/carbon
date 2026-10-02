@@ -35,6 +35,7 @@ export * from "./object";
 export * from "./payment-funding";
 export * from "./precision";
 export * from "./receiving";
+export * from "./redirect";
 export * from "./revalidate";
 export * from "./rule-filters";
 export * from "./rules";

@@ -3,7 +3,7 @@ title: Fixed assets
 description: "Capital equipment on the books: acquired, depreciated, and retired."
 ---
 
-A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense: a press, a CNC, a forklift. It's an accounting record of value over time, distinct from the <Term>work center</Term> that represents the same machine on the floor. Every asset belongs to an **<Term>asset class</Term>**, which supplies the general-ledger accounts it posts to.
+A **fixed asset** represents capital equipment that is capitalized and depreciated instead of expensed, such as a press, CNC, or forklift. It is separate from the <Term>work center</Term> used to schedule the same equipment. Every asset belongs to an **<Term>asset class</Term>** that defines its general-ledger accounts.
 
 ## Lifecycle
 
@@ -16,7 +16,7 @@ A **fixed asset** is a piece of capital equipment you capitalize and depreciate 
 
 ## Acquiring
 
-An asset comes onto the books two ways, both starting at **Draft**:
+Assets start in **Draft** and enter the books in either of two ways:
 
 - **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No money posts; you're recording something you have.
 - **Buy** one through purchasing: a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**.
@@ -27,7 +27,7 @@ The purchase-receipt path activates the asset and posts its acquisition entry **
 
 ## Depreciating
 
-<Term id="depreciation">Depreciation</Term> runs as a **monthly batch you trigger**. There's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. Carbon keeps a separate **tax** book too, including <Term>MACRS</Term>, when tax depreciation is enabled. When an asset's <Term id="net-book-value">net book value</Term> reaches its residual, posting flips it to **Fully Depreciated**.
+<Term id="depreciation">Depreciation</Term> runs as a manually triggered monthly batch; it is not posted in the background. Create a run for a period, review Carbon's calculated charges, then post them. Posting debits depreciation expense and credits accumulated depreciation. When enabled, Carbon maintains a separate **tax** book, including <Term>MACRS</Term>. When <Term id="net-book-value">net book value</Term> reaches residual value, the asset becomes **Fully Depreciated**.
 
 Book depreciation follows the asset's method: <Term id="straight-line">straight line</Term>, <Term id="declining-balance">declining balance</Term>, or units of production.
 

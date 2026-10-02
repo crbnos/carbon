@@ -3,10 +3,7 @@ title: Environment variables
 description: Every variable that configures a Carbon instance, grouped by concern. The source of truth is packages/env.
 ---
 
-Carbon reads its configuration from environment variables. The registry lives in `packages/env`;
-`.env.example` is the template; infrastructure-only variables are read by `sst.config.ts`. A minimal
-instance needs the Supabase connection, a session secret, and Redis. Everything else activates features
-as you need them.
+Carbon reads configuration from environment variables registered in `packages/env`. Use `.env.example` as the template. `sst.config.ts` reads infrastructure-only variables. A minimal instance requires Supabase, a session secret, and Redis; other variables enable optional features.
 
 ## Core
 
@@ -53,12 +50,7 @@ Enterprise [SAML single sign-on](/docs/reference/single-sign-on) adds two more:
 <EnvVar name="SAML_PRIVATE_KEY" type="string">SAML signing key — base64-encoded PKCS#1 DER RSA, minimum 2048-bit; the generation command is in `.env.example`.</EnvVar>
 </EnvVars>
 
-Sign-in bot protection is Cloudflare Turnstile off Vercel: set both
-`CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` and every login form
-shows the widget and verifies its token. With neither set there is no bot check, and the
-per-IP rate limit and per-account lockout are all that apply. `BOT_PROTECTION`
-chooses explicitly: `turnstile`, or `botid` for Vercel BotID, which is invisible but runs
-only on Vercel.
+Outside Vercel, set both `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` to enable Cloudflare Turnstile on login forms. Without them, only per-IP rate limits and per-account lockouts apply. Set `BOT_PROTECTION` to `turnstile`, or to `botid` for invisible Vercel BotID protection. BotID runs only on Vercel.
 
 ## Jobs & cache
 
@@ -70,7 +62,7 @@ only on Vercel.
 </EnvVars>
 
 <Callout type="warn" title="Inngest keys are required in production">
-`INNGEST_SIGNING_KEY` and `INNGEST_EVENT_KEY` are only optional in development, where `INNGEST_DEV=1` is set. Without `INNGEST_DEV`, the app fails to boot if either is missing, and no background jobs (MRP, scheduling, notifications, integration syncs) or queued events run. A self-hosted Inngest server supplies both. The Docker with Caddy recipe generates them for you.
+`INNGEST_SIGNING_KEY` and `INNGEST_EVENT_KEY` are optional only when `INNGEST_DEV=1`. In other environments, the application does not start if either is missing. A self-hosted Inngest server supplies both; the Docker with Caddy recipe generates them.
 </Callout>
 
 ## Email & billing
@@ -131,6 +123,5 @@ Read by `sst.config.ts` at deploy time, not by the app.
 </EnvVars>
 
 <Callout type="warn">
-Older notes list `TRIGGER_*` (Trigger.dev) and `UPSTASH_REDIS_*` variables. Those are gone. Jobs run on
-Inngest and the cache uses a plain `REDIS_URL`.
+`TRIGGER_*` and `UPSTASH_REDIS_*` variables are obsolete. Jobs use Inngest, and the cache uses `REDIS_URL`.
 </Callout>

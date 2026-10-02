@@ -3,9 +3,9 @@ title: Permissions and access
 description: How Carbon decides who can see and change what, from the module-action model to employee types, groups, invites, and shop-floor PIN accounts.
 ---
 
-Everyone who works in Carbon signs in against one company, and Carbon decides what they can do from a set of small, explicit grants. A grant is a pair: a **module** (a slice of the app, like Sales or Inventory) and an **action** on it (view, create, update, or delete). Grant someone `sales_view` and they can read sales orders; grant `inventory_update` and they can edit inventory. Nothing is implied and nothing is global. A person with no grants can sign in and see nothing.
+Carbon authorizes each user through explicit grants scoped to a company. Each grant combines a **module**, such as Sales or Inventory, with an **action**: view, create, update, or delete. For example, `sales_view` permits reading sales records, and `inventory_update` permits editing inventory. Grants do not imply other grants; a user with none can sign in but cannot access any module.
 
-You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/building/api-keys). Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see [two-factor authentication](/docs/reference/two-factor).
+An **employee type** provides a grant template, with per-employee exceptions. See [People](/docs/reference/people) for employee records, [API keys](/docs/building/api-keys) for programmatic access under the same model, and [two-factor authentication](/docs/reference/two-factor) for sign-in security.
 
 ## The module-action model
 
@@ -49,7 +49,7 @@ Every other type is yours to create, rename, and delete. A company can hold at m
 
 ## Per-person overrides and bulk edits
 
-A type gives everyone the same start; real people need exceptions. Open a single employee under **Settings → Users → Accounts** and their permission matrix is pre-filled from their type. Check or uncheck any cell to override just that person. Their type stays the same as a label. Switching the type from the person's screen doesn't silently rewrite their grants either — Carbon asks first whether you want to overwrite the current set with the new type's template or keep what they have.
+An employee's permission matrix under **Settings → Users → Accounts** starts with the grants from their employee type. Checking or clearing a cell creates a per-employee exception without changing the type. When you switch types, Carbon asks whether to replace the current grants with the new template or preserve them.
 
 When a change needs to reach many people at once, use the **bulk permission editor**. Select the users, pick a mode, then set the matrix:
 
@@ -80,7 +80,7 @@ An invite is a company-scoped record keyed by email, and it carries the permissi
 
 ## Shop-floor PIN accounts
 
-Not everyone who needs to touch Carbon has an email inbox. A machinist on the floor signs in to the [MES](/docs/reference/mes) with a **4-digit PIN** on a shared station tablet, not a magic link. These are **console operators**, and they're a distinct kind of account.
+**Console operators** sign in to [MES](/docs/reference/mes) on a shared station with a **4-digit PIN** instead of an email-based login. They are a separate account type.
 
 Add one under **Settings → Users → Operators** (visible only when console mode is enabled for the company) with a name and a location. Carbon creates a lightweight account with no email login, assigns it the **Console Operator** employee type automatically, and generates a 4-digit PIN that is shown once, when the operator is created — Carbon stores only a hash of it, so copy it then. On the shop floor the operator taps their name and enters the PIN, which Carbon checks before starting their session. If a PIN is lost, reset it from the same screen to generate a new one; the old PIN stops working immediately. Resetting an operator's PIN takes `users_update`; setting a console PIN for any other employee (from the **Accounts** list) also takes `settings_update`.
 
@@ -122,7 +122,7 @@ The person has no PIN on record, and PINs are never chosen on the floor: an admi
 A bulk action — bulk permission edit, group edit, deactivate, resend/revoke invite — was submitted with no users selected. Select at least one user first.
 
 ### A user can sign in but sees nothing / can't open a module
-Permissions are explicit grants; nothing is implied. A person with no `<module>_view` grant can't see that module's pages at all. Grant the needed `<module>_<action>` via their employee type or a per-person override. The database enforces the same grants through row-level security, so this holds even for API access, not just hidden buttons.
+Permissions are explicit. Without `<module>_view`, a user cannot access the module's pages. Assign the required `<module>_<action>` through an employee type or per-user override. Row-level security enforces the same grants for API access.
 
 ### Editing an employee type didn't change existing people's access
 Changing a type's permissions only sets the defaults for people assigned *after* the change; employees already on that type keep their current grants. To push the change to existing staff, use the bulk permission editor (**Update** mode to overwrite, **Add** to layer on).

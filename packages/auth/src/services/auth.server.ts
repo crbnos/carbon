@@ -36,7 +36,7 @@ import { path } from "../utils/path";
 import { error } from "../utils/result";
 import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
 import { logAuthEvent } from "./auth-events.server";
-import { isCarbonOwnedCompany } from "./company.server";
+import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
 import {
   destroyAuthSession,
@@ -271,12 +271,6 @@ export async function requirePermissions(
         });
       }
 
-      // Update lastUsedAt (fire-and-forget)
-      void serviceRole
-        .from("apiKey")
-        .update({ lastUsedAt: new Date().toISOString() } as any)
-        .eq("id" as any, apiKeyData.id);
-
       // Check scopes against required permissions
       const scopes = apiKeyData.scopes ?? {};
       const scopeCheckPassed = Object.entries(requiredPermissions).every(
@@ -319,14 +313,8 @@ export async function requirePermissions(
           : false;
 
         if (!isBypass) {
-          const { data: planData } = await serviceRole
-            .from("companyPlan")
-            .select("planId")
-            .eq("id", companyId)
-            .single();
-
           if (
-            planData?.planId === Plan.Starter &&
+            (await getCompanyPlanId(companyId)) === Plan.Starter &&
             !(await isCarbonOwnedCompany(companyId))
           ) {
             throw new Response(

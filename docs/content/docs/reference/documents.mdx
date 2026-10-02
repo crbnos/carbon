@@ -3,13 +3,13 @@ title: Documents
 description: A shared file library with favorites, labels, search, and AI extraction that reads PDFs and fills a form for you.
 ---
 
-Every file your team uploads lands in one place: the **document explorer**. It is a flat, searchable library of files, not a folder tree on disk. A file can be a loose upload someone dropped in, or it can be **attached to a record** (a job, a purchase order, an RFQ) and show up both there and in the explorer. On top of the library sit three conveniences: personal **pins** and **labels**, full-text-ish **search**, and an AI **extraction** pass that reads a PDF and pre-fills the form you would otherwise type by hand.
+The **document explorer** is a flat, searchable library for uploaded files. A file can be standalone or **attached to a record**, such as a job, purchase order, or RFQ. Attached files appear on both the record and in the explorer. The library supports personal pins and labels, name and description search, and AI extraction that reads supported PDFs and prefills forms.
 
 Open the explorer from **Documents** in the sidebar. It defaults to the `All Documents` view (`useDocumentsSubmodules.tsx:15-45`).
 
 ## The explorer
 
-The table lists every file you can see, one row per document, sorted with your pinned files first (`documents.service.ts:86-88`). Each row carries the file's **name**, its linked **source document** (if any), your **labels**, **size**, **type**, **extension**, and the usual created/updated audit columns (`DocumentsTable.tsx:174-405`).
+The table lists accessible files with pinned files first (`documents.service.ts:86-88`). Each row shows the **name**, linked **source document**, personal **labels**, **size**, **type**, **extension**, and created and updated metadata (`DocumentsTable.tsx:174-405`).
 
 Five views scope the list, switched by the tab rail down the left (`useDocumentsSubmodules.tsx:15-45`):
 
@@ -29,11 +29,11 @@ Five views scope the list, switched by the tab rail down the left (`useDocuments
 
 ### Uploading
 
-**Upload** in the explorer header takes any file. The browser uploads it straight into the private storage bucket under `{companyId}/{random}.{ext}`, then posts the path, name, and size to create the document row (`DocumentCreateForm.tsx:22-69`). The upload records itself as a transaction, and every later action (download, edit, favorite, label) logs one too — that activity trail is what drives the **Recent** view (`useDocument.ts:44-57`, `20230423023136_documents.sql:117-146`).
+**Upload** accepts any file. The browser uploads it to private storage at `{companyId}/{random}.{ext}`, then creates a document row with its path, name, and size (`DocumentCreateForm.tsx:22-69`). Uploads, downloads, edits, favorites, and label changes create activity transactions that drive the **Recent** view (`useDocument.ts:44-57`, `20230423023136_documents.sql:117-146`).
 
 ## Who can see a file
 
-Visibility is by **group**, not by role alone. Every document carries a `readGroups` and a `writeGroups` array, and a file is only visible to a user who belongs to one of its read groups (and holds the `documents` view permission). Editing or deleting needs membership in a write group plus the matching permission (`20230423023136_documents.sql:40-66`, `useDocument.ts:22-42`). The same rule guards the underlying stored file in the private bucket, so a link to a file you are not in the read groups for resolves to nothing (`20230423023136_documents.sql:68-119`).
+Visibility depends on group membership and permissions. A user can view a document only when they belong to one of its `readGroups` and have `documents` view permission. Editing or deleting also requires membership in a `writeGroups` entry and the corresponding permission (`20230423023136_documents.sql:40-66`, `useDocument.ts:22-42`). Private storage applies the same read-group rule, so unauthorized links do not resolve (`20230423023136_documents.sql:68-119`).
 
 <Callout type="note" title="Groups are Carbon's company groups">
 Read and write groups are drawn from your <Term>company group</Term> membership, the same groups used elsewhere for scoping. Set them when you edit a document's properties; a file with no matching read group for a user is simply invisible to that user.
@@ -48,7 +48,7 @@ Two personal organizers sit on top of the shared library, and both are **per-use
 
 ## Search
 
-The explorer search box does a case-insensitive substring match across a file's **name** and **description** (`documents.service.ts:72-76`). It is a filename/description search, not a full-text search of the file's contents. Combine it with the column filters (source document, label, type, extension, creator) to narrow a large library, and with the view tabs to scope to your own, recent, or pinned files. The current result set is exactly what the table's **Download CSV** button exports, each row carrying a signed download link (`search.tsx`, `DocumentsTable.tsx:393-405`).
+Search performs a case-insensitive substring match on **name** and **description**, not file contents (`documents.service.ts:72-76`). Combine search with filters for source document, label, type, extension, or creator and with the view tabs. **Download CSV** exports the current result set with a signed download link for each row (`search.tsx`, `DocumentsTable.tsx:393-405`).
 
 ## How documents attach to records
 
@@ -66,7 +66,7 @@ The attachment is stored as a `sourceDocument` (the type) plus a `sourceDocument
 
 ## AI extraction
 
-Extraction is the one place documents stop being passive files. Upload a PDF into a supported flow and Carbon reads it, pulls out the fields, and hands them to the form so you can accept them instead of retyping. Two document kinds are supported today (`document-extraction.ts:9-13`, `documents.models.ts:126`):
+In supported workflows, Carbon can extract fields from a PDF and prefill a form. Two document types are supported (`document-extraction.ts:9-13`, `documents.models.ts:126`):
 
 - a **Request for Quote** PDF, on the sales side, and
 - a **Purchase Invoice** PDF, on the purchasing side.

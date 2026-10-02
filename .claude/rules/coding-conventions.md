@@ -112,6 +112,11 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- An index route that only redirects (`/x/issue/:id` → `…/details`, a module root →
+  its first page) also exports `middleware = [redirectBeforeLoaders(loader)]` from
+  `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
+  parent loader runs for a request that is about to be redirected. Enforced by the
+  `index-redirect-before-loaders` check (`@carbon/checks`).
 - On success an action throws a redirect (`throw redirect(...)`), not `return`.
   Cached entities add a `clientAction`/`clientLoader` for cache control.
 

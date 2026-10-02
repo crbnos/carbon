@@ -6,8 +6,7 @@ description: Pull quotes and bills of material from Paperless Parts into Carbon.
 
 ## Paperless Parts
 
-Connect with an **API key** plus a **webhook signing secret** (Paperless calls Carbon when something
-changes, and the secret verifies those calls).
+Connect with an **API key** and a **webhook signing secret**. The API key authenticates Carbon to Paperless Parts; the signing secret verifies inbound webhooks.
 
 <Steps>
   <Step>
@@ -18,12 +17,12 @@ changes, and the secret verifies those calls).
   <Step>
   ### Set the webhook signing secret
 
-  Add the **webhook signing secret** — Paperless calls Carbon when something changes, and the secret verifies those calls.
+  Enter the secret used to verify Paperless Parts webhook signatures.
   </Step>
   <Step>
   ### Set import defaults
 
-  On connect you also set the defaults Carbon applies to items it imports: **material method type**, **material tracking type**, and whether to use the Paperless order number (below).
+  Set the default **material method type**, **material tracking type**, and Paperless order-number behavior for imported items.
   </Step>
 </Steps>
 
@@ -35,7 +34,7 @@ changes, and the secret verifies those calls).
   <Field name="Use Paperless order number">Whether to carry the Paperless order number onto the Carbon document.</Field>
 </FieldTable>
 
-Imported <Term id="quote">quotes</Term> and <Term id="bom">BOMs</Term> land as Carbon records, ready to turn into <Term id="sales-order">sales orders</Term> and <Term id="job">jobs</Term>.
+Carbon stores imported <Term id="quote">quotes</Term> and <Term id="bom">BOMs</Term> as records that can be converted into <Term id="sales-order">sales orders</Term> and <Term id="job">jobs</Term>.
 
 ## Related
 

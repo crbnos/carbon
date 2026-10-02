@@ -3,15 +3,15 @@ title: Scrap and unscrap
 description: Writing off defective or lost material, and restoring it if the write-off was a mistake.
 ---
 
-<Term id="scrap">Scrap</Term> is how Carbon records material you can't recover: a unit ruined at an operation, a subcomponent that failed, or stock lost in the warehouse. Every scrap names a **reason**, moves the value off inventory or out of <Term id="wip">work-in-process</Term>, and (when accounting is on) posts a journal. If you scrapped in error, **Unscrap** puts it back exactly as it was.
+<Term id="scrap">Scrap</Term> records unrecoverable material, such as a damaged unit, failed component, or lost stock. Each transaction includes a **reason**, removes value from inventory or <Term id="wip">work-in-process</Term>, and posts a journal when accounting is enabled. **Unscrap** reverses an erroneous scrap.
 
-There are three places you can scrap, and they behave differently. What they share: the affected <Term id="tracked-entity">tracked entity</Term> ends at status **"Scrapped"**, which keeps its quantity as the record of what was lost and, unlike **"Consumed"** or **"Rejected"**, can be reversed.
+Carbon supports three scrap contexts with different behavior. In each, the affected <Term id="tracked-entity">tracked entity</Term> receives status **"Scrapped"** and retains the lost quantity. Unlike **"Consumed"** or **"Rejected"**, this status is reversible.
 
 ## Scrapping a unit on the floor
 
 When the unit you're building goes bad, an operator taps **"Log Scrap"** on the operation, enters a quantity, and picks a required **"Scrap Reason"**. For a <Term id="serial">Serial</Term> part the currently selected serial is the one scrapped.
 
-Carbon records a **Scrap** production quantity, <Term id="backflush">backflushes</Term> the unit's bill of material into WIP (the material really was consumed making the ruined unit), flips the serial to **"Scrapped"**, and spawns a fresh replacement serial for you to keep working.
+Carbon records a **Scrap** production quantity, <Term id="backflush">backflushes</Term> the unit's bill of material into WIP, marks the serial **"Scrapped"**, and creates a replacement serial for continued production.
 
 <Callout type="info" title="Scrapping reopens the routing instead of counting against the target.">
 A scrapped unit is not treated as output. Its quantity never counts toward the operation's target, completed operations reopen to **"Ready"**, and a replacement serial is spawned automatically, so the job keeps producing until the *good* quantity meets the target. The planned quantity itself is never rewritten; Carbon only tops up the operation's run quantity when cumulative scrap runs past the allowance you planned for.
@@ -51,7 +51,7 @@ Scrap posts to the ledger only when [accounting](/docs/reference/accounting) is 
 | Unscrap | Inventory | Scrap |
 
 <Callout type="note" title="There's one scrap account, sliced by dimension tags.">
-Carbon deliberately posts all scrap to one account rather than a per-reason chart of accounts. It tags each scrap journal line with **ScrapReason**, **WorkCenter**, and **Employee** <Term id="reporting-dimension">dimensions</Term> (work center only where there's an operation behind the scrap), so you slice scrap by reason, cell, or operator in reporting without proliferating accounts. The ScrapReason dimension reads its values live from your scrap-reason list, so a new reason is immediately reportable.
+Carbon posts all scrap to one account and tags each journal line with **ScrapReason**, **WorkCenter**, and **Employee** <Term id="reporting-dimension">dimensions</Term>. WorkCenter applies only when the scrap has an operation. These dimensions support reporting by reason, cell, or operator without separate accounts. ScrapReason values come directly from the scrap-reason list, so new reasons are immediately available for reporting.
 </Callout>
 
 This scrap is distinct from a quality **disposition** of *Scrap*: closing a quality [issue](/docs/reference/issues) with a Scrap disposition writes the material off to a cost-of-quality account and flips the entity to **"Rejected"**, not **"Scrapped"**.

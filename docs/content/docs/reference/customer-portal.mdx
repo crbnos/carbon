@@ -4,13 +4,13 @@ description: A standing, read-only link where a customer watches their open orde
 plan: Business
 ---
 
-The customer portal is a **standing, read-only window** into one customer's work. Where a [digital quote](/docs/reference/quotes#digital-quotes) closes a deal, the portal is what the buyer watches afterward: their sales order lines with status, the buyer and engineer contacts, order and due dates, part number and revision, quantity complete, quantity shipped, and per-operation job progress. There are no forms — the customer can look, not act.
+The customer portal provides read-only access to one customer's work. It shows sales-order line status, buyer and engineer contacts, order and due dates, part number and revision, completed and shipped quantities, and per-operation job progress. Customers cannot modify data in the portal.
 
 ## Creating a portal
 
 <Screenshot label="Sales → Portals: the portal list with per-row URL copy control and the new-portal drawer with the customer picker" caption="One portal per customer, each with its own private URL." />
 
-Open **Sales → Portals** and create a portal for the customer. Each row carries the portal's private URL with a copy control; send that link to your customer contact. The link needs no login, so whoever holds the URL can open it — treat it like a password and send it only to the right person.
+Open **Sales → Portals** and create a portal for the customer. Copy the private URL from its row and send it to the customer contact. The link does not require authentication. Treat it as a credential and share it only with authorized recipients.
 
 <Callout type="note" title="One portal, one customer">
 A portal is scoped to a single customer record: it lists that customer's orders and nothing else. Files attached to their job operations can be downloaded from the portal, limited to the customer's own jobs and rate-limited per visitor.

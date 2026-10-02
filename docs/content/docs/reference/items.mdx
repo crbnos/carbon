@@ -3,9 +3,9 @@ title: Items
 description: "The master record for everything you make, buy, or stock: parts, materials, tools, and more."
 ---
 
-An **item** is the master record for anything Carbon tracks: a finished part, a raw material, a tool, a consumable. Orders, <Term id="method">methods</Term>, <Term id="job">jobs</Term>, and inventory all point back to it. Its human-facing **part number** is the readable id. The underlying id is an internal key you rarely see.
+An **item** is the master record for a finished part, raw material, tool, consumable, fixture, or service. Orders, <Term id="method">methods</Term>, <Term id="job">jobs</Term>, and inventory reference it. The **part number** is its readable ID; Carbon uses a separate internal key.
 
-An item's type, how it's replenished, and how it's tracked decide how it behaves everywhere downstream: whether it can be made or only bought, whether stock is counted, whether each unit needs a <Term id="serial">serial</Term>. Get the item right and the rest of the system follows.
+Item type, replenishment system, and tracking type determine whether the item is made or purchased, whether it contributes to stock, and whether units require <Term id="serial">serial</Term> or batch identifiers.
 
 ## Fields
 
@@ -29,7 +29,7 @@ The tracking type sets how units are counted. *Inventory* items are quantity-tra
 
 ## Revisions
 
-Each revision of a part is its **own item record**, sharing the same part number but a different revision. A design change creates a new revision rather than rewriting the old one, so jobs built against an earlier revision keep their history.
+Each part revision is a separate item record with the same part number and a different revision. Creating a revision preserves the item used by existing jobs.
 
 <Callout type="info">
 An item's <Term>costing method</Term>, one of *Standard*, *Average*, *FIFO*, or *LIFO*, lives on its cost record, not the item itself, and decides how consumption is valued.

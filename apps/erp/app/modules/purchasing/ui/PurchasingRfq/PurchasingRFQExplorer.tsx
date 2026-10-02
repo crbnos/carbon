@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -267,9 +268,8 @@ function PurchasingRFQLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         className="w-full"
-        prefetch="intent"
         to={path.to.purchasingRfqLine(rfqId, line.id!)}
       >
         <HStack
@@ -347,7 +347,7 @@ function PurchasingRFQLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

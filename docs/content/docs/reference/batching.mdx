@@ -3,27 +3,27 @@ title: Operation batching
 description: Group identical operations from several jobs to run as one setup and one timer at a work center, with time and cost split back per job by quantity.
 ---
 
-Some processes physically run several jobs at once: a laser table nests parts from many work orders on one sheet, a furnace treats many jobs in one cycle, a plating bath coats whatever fits. An <Term>operation batch</Term> models that run. It groups unstarted <Term id="job-operation">job operations</Term> from different jobs, all on the same batchable process, to run together at one <Term id="work-center">work center</Term>, with one shared setup and one shared timer.
+An <Term>operation batch</Term> groups unstarted <Term id="job-operation">job operations</Term> from multiple jobs into one production run. All members use the same batchable process and <Term id="work-center">work center</Term>, with one shared setup and timer. Typical uses include nested laser cutting, furnace cycles, and plating baths.
 
-The jobs are never merged and no BOM changes: each member stays a first-class operation on its own job, and at completion the shared time is sliced back per member in proportion to its quantity, so job costing and the GL post per job with nothing special-cased.
+Batching does not merge jobs or change their BOMs. Each member remains an operation on its original job. At completion, Carbon allocates shared time to members in proportion to quantity, then posts job costs and ledger entries per job.
 
 <Callout type="note" title="Not the same as batch tracking">
-An operation batch (`BAT000001`) is a production-run concept. It is unrelated to the lot/batch **numbers** that trace quantities through inventory — see [traceability](/docs/reference/traceability). Same word, different feature.
+An operation batch (`BAT000001`) represents a production run. It is separate from lot or batch numbers used for inventory [traceability](/docs/reference/traceability).
 </Callout>
 
 ## Making a process batchable
 
-Batching is switched on per **process**, not per item or method. On the process form (**Resources → Processes**), turn on **"Batchable"** and pick a **"Batch type"**: **"Sequential"** (parts run one after another, like a saw or laser table) or **"Simultaneous"** (parts run together in one load, like a furnace, oven, or plating bath). The type drives the run-time estimate: sequential sums the members' times, simultaneous takes the longest.
+Enable batching per **process**, not per item or method. On **Resources → Processes**, enable **Batchable** and select a **Batch type**. **Sequential** processes run parts one after another and sum member times. **Simultaneous** processes run parts together and use the longest member time.
 
 The same card holds the **"Compatibility rules"**: how strictly each dimension must match for operations to share a batch. Six describe the material consumed (material, substance, grade, dimension, form, finish) and a seventh, **"Produced item"**, describes what each job makes. Each is set to **"Require Match"**, **"Suggest Match"**, or **"Ignore"**. By default substance, grade, and dimension suggest a match and the rest are ignored. Requiring a match on "Produced item" keeps a run to a single output item, which is what makes its [output lots](#completing-the-batch) mergeable afterwards.
 
-Only "Require Match" ever blocks anything; a suggested mismatch just warns. A work center can additionally carry an advisory **"Batch Capacity"** and **"Minimum Batch Quantity"**; the builder shows a fill bar against them but never refuses a batch over them.
+Only **Require Match** blocks selection; **Suggest Match** produces a warning. A work center can also define advisory **Batch Capacity** and **Minimum Batch Quantity** values. The builder displays capacity usage but does not enforce either limit.
 
 ## Building a batch
 
-Open **Production → Batches** and press **"New Batch"** (the production dashboard's **"Unbatched Operations"** card and a job header's *"N awaiting batching"* badge lead to the same place). Pick a **Location** and a **Batchable process**, and the builder lists every eligible operation: unstarted, not already in a batch, on that process, with no production recorded.
+Open **Production → Batches** and select **New Batch**. The **Unbatched Operations** dashboard card and a job header's *N awaiting batching* badge open the same builder. Select a **Location** and **Batchable process**. The builder lists operations that are unstarted, use that process, are not already batched, and have no recorded production.
 
-Operations whose "Require Match" dimensions clash with your selection stay visible but locked, and mixed "Suggest Match" materials get an amber tag plus a warning to confirm they nest together on this run.
+Operations that conflict with a **Require Match** rule remain visible but cannot be selected. **Suggest Match** conflicts display an amber tag and warning.
 
 <Screenshot label="The batch builder at Production → Batches → New Batch: scope pickers, the eligible-operations list grouped by material with suggestion banner, and the Review & create panel with setup-saving chip" caption="Suggestions group by material signature and due window; the review panel shows one shared setup instead of one per operation." />
 
@@ -31,7 +31,7 @@ The builder also proposes ready-made groupings: operations sharing a material si
 
 When the selected operations produce a lot-tracked item, the review panel adds an **"Output"** section: this is where the run's lot numbers are decided, not on the shop floor. Each job gets its own lot number, pre-filled from the job's current one. When every selected operation makes the same lot-tracked item, **"Combine output into one lot"** replaces them with a single lot number for the whole run. Creating is disabled until every lot number is filled in and no two jobs share one.
 
-Finish with **"Create batch"** (the batch waits as **"Planned"**) or **"Create & Release"** (it goes straight to the floor). A work center is optional at this point: leave it blank and the scheduler auto-assigns the earliest-finishing candidate on release, writing it to the batch and every member.
+Select **Create batch** to save the batch as **Planned**, or **Create & Release** to send it to the shop floor. A work center is optional. If omitted, the scheduler assigns the candidate with the earliest finish time on release and applies it to the batch and its members.
 
 ## Lifecycle
 
@@ -45,7 +45,7 @@ Finish with **"Create batch"** (the batch waits as **"Planned"**) or **"Create &
 There is no cancelled state: **"Dissolve Batch"** returns the members to the schedule un-run and deletes the batch, and removing the last member does the same. **"Unrelease Batch"** puts a released batch back to "Planned".
 
 <Callout type="warn" title="Recorded production freezes the batch">
-The moment a single timer event is recorded against the batch, membership is permanent: adding, removing, changing the work center, unreleasing, and dissolving are all refused, and the only exit is completing it. Decide the composition before work starts.
+After the first timer event, membership and work-center assignment are fixed. The batch can no longer be unreleased or dissolved; it must be completed.
 </Callout>
 
 <Callout type="note" title="Releasing a batch releases its jobs">
@@ -62,7 +62,7 @@ On the [schedule board](/docs/reference/scheduling), the batch renders as one ca
 
 ## On the shop floor
 
-There is no separate batch page in the shop floor app: any member's operation view *is* the batch UI. A batch chip shows the `BAT…` number, the member jobs, and a **"Print batch list"** action; the timer is shared, so starting it runs one clock for the whole batch, and planned time shows the batch total.
+The shop floor app has no separate batch page. Open any member operation to access the batch UI. A batch chip shows the `BAT…` number, member jobs, and **Print batch list** action. Starting the timer starts one clock for the entire batch, and planned time shows the batch total.
 
 Beside the chip, a **Batch | job** switch picks what the page shows. **"Batch"** (the default) is the whole run: completed quantity across every job, materials issued, scrap, the output lot, one materials table with batch totals, and the list of member jobs. The job switch shows the member's own steps, parameters, materials, and files, as for any operation.
 
@@ -84,7 +84,7 @@ Materials that are not lot-tracked show a batch total for reference only. They a
 
 <Screenshot label="The Complete Batch modal in the shop floor app: one row per member job with Quantity and Scrap inputs, the planned output lot stated above them, and the footnote about leaving a row at zero" caption="Time and cost split across jobs proportionally to quantity; the output lot was set when the batch was planned." />
 
-Completion happens once, for the whole batch, in the **"Complete Batch"** modal: one row per member with **Quantity** and **Scrap**, pre-filled with each operation's remaining quantity. Leave a row at zero to skip that operation, which detaches it and returns it to the schedule un-run, with no time or quantity recorded.
+Complete the entire batch from the **Complete Batch** modal. Each member has **Quantity** and **Scrap** fields, prefilled with the operation's remaining quantity. Set quantity to zero to detach that member and return it to the schedule without recording time or quantity.
 
 The operator never enters a lot number. A combined run states its lot above the rows (*"All output goes to lot …"*); otherwise a read-only **"Lot"** column shows each job's planned lot. A batch created before lot planning existed, with a lot-tracked member that has no lot number, cannot complete: the modal names those jobs, and the fix is the lot number in the job's properties sidebar.
 
