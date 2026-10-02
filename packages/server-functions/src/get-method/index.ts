@@ -50,6 +50,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { selectRow, selectRows } from "../lib/rows";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
@@ -94,7 +95,6 @@ const normalizeOperationType = (value: unknown) =>
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
-  client: SupabaseClient<Database>,
   sourceSteps: Array<{ id?: string | null }>,
   insertedStepIds: Array<{ id: string }>,
   sourceTable:
@@ -113,14 +113,14 @@ async function copyStepSlides(
     .filter((id): id is string => !!id);
   if (sourceStepIds.length === 0) return;
 
-  const { data: srcSlides } = await client
-    .from(sourceTable)
-    .select(
-      "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations"
-    )
-    .in("stepId", sourceStepIds);
+  // The three slide tables share these columns; one name stands for all.
+  const srcSlides = await selectRows(
+    trx,
+    sourceTable as "methodOperationStepSlide",
+    { stepId: sourceStepIds }
+  );
 
-  const inserts = (srcSlides ?? []).flatMap((sl) => {
+  const inserts = srcSlides.flatMap((sl) => {
     const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
     const newStepId = insertedStepIds[idx]?.id;
     if (!newStepId) return [];
@@ -478,7 +478,6 @@ export const getMethod = defineServerFn({
 
                   await copyStepSlides(
                     trx,
-                    client,
                     methodOperationStep,
                     insertedSteps,
                     "methodOperationStepSlide",
@@ -582,22 +581,16 @@ export const getMethod = defineServerFn({
         const supersessionRedirect = supersessionContext.redirect;
 
         const hydratedConfiguration = await hydrateConfiguration(
-          client,
+          db,
           configuration,
           itemId,
           companyId
         );
 
-        const [methodTrees, configurationRules] = await Promise.all([
-          getMethodTree(db, makeMethodId),
-          isConfigured
-            ? client
-                .from("configurationRule")
-                .select("*")
-                .eq("itemId", itemId)
-                .eq("companyId", companyId)
-            : Promise.resolve({ data: [] })
-        ]);
+        const methodTrees = await getMethodTree(db, makeMethodId);
+        const configurationRules = isConfigured
+          ? await selectRows(db, "configurationRule", { itemId, companyId })
+          : [];
 
         const methodTree = methodTrees.data?.[0] as MethodTreeItem;
         if (!methodTree) throw new NotFoundError("Method tree not found");
@@ -622,27 +615,6 @@ export const getMethod = defineServerFn({
         const defaultStorageUnitByItemId = new Map<string, string>();
         const jobLocationId = job.locationId;
 
-        // makeMethodId is globally unique (makeMethod's PK is "id" alone), so
-        // the companyId filter cannot drop a legitimate row — it only closes a
-        // cross-tenant read.
-        const selectMethodOperations = (ids: string[]) =>
-          client
-            .from("methodOperation")
-            .select(
-              "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
-            )
-            .in("makeMethodId", ids)
-            .eq("companyId", companyId)
-            // Stable order is a precondition of paging, not cosmetic: without
-            // it PostgREST may return rows in a different order per page and
-            // fetchAll would drop or duplicate operations.
-            .order("order")
-            .order("id");
-
-        type MethodOperationRow = NonNullable<
-          Awaited<ReturnType<typeof selectMethodOperations>>["data"]
-        >[number];
-
         const operationsByMakeMethodId = new Map<
           string,
           MethodOperationRow[]
@@ -659,14 +631,6 @@ export const getMethod = defineServerFn({
         // so two trees never share node objects. Also stops corrupt/cyclic
         // tree data from looping the walk.
         const seenTreeNodes = new Set<MethodTreeItem>();
-
-        const chunk = <T>(arr: T[], size: number): T[][] => {
-          const out: T[][] = [];
-          for (let i = 0; i < arr.length; i += size) {
-            out.push(arr.slice(i, i + size));
-          }
-          return out;
-        };
 
         // `reader` is `db` before the transaction opens and `trx` inside it.
         // On a one-connection pool a `db` query issued while the transaction is
@@ -751,34 +715,27 @@ export const getMethod = defineServerFn({
           for (const id of missing) prefetchedItemIds.add(id);
         }
 
-        // The embeds force PostgREST, so chunk conservatively for URL length
-        // (see .ai/lessons.md — 200 ids blew the gateway's request-line limit),
-        // and page each chunk: max_rows caps a response at 1000 rows and
-        // truncates silently, which the local stack does not reproduce.
-        async function ensureMakeMethodsPrefetched(makeMethodIds: string[]) {
+        // One read over the direct connection: no URL length to chunk for and
+        // no row cap to page around.
+        async function ensureMakeMethodsPrefetched(
+          reader: typeof db,
+          makeMethodIds: string[]
+        ) {
           const missing = [...new Set(makeMethodIds)].filter(
             (id) => id && !prefetchedMakeMethodIds.has(id)
           );
           if (missing.length === 0) return;
 
-          const operationChunks = await Promise.all(
-            chunk(missing, 50).map((ids) =>
-              fetchAll<MethodOperationRow>(() => selectMethodOperations(ids))
-            )
-          );
-          for (const res of operationChunks) {
-            if (res.error) {
-              throw new Error(
-                `Failed to get method operations: ${res.error.message}`
-              );
-            }
-            for (const op of res.data ?? []) {
-              const list = operationsByMakeMethodId.get(op.makeMethodId);
-              if (list) {
-                list.push(op);
-              } else {
-                operationsByMakeMethodId.set(op.makeMethodId, [op]);
-              }
+          for (const op of await readMethodOperations(
+            reader,
+            missing,
+            companyId
+          )) {
+            const list = operationsByMakeMethodId.get(op.makeMethodId);
+            if (list) {
+              list.push(op);
+            } else {
+              operationsByMakeMethodId.set(op.makeMethodId, [op]);
             }
           }
           for (const id of missing) prefetchedMakeMethodIds.add(id);
@@ -822,16 +779,14 @@ export const getMethod = defineServerFn({
             if (to) redirectTargets.push(to);
           }
 
-          // Kysely and PostgREST are separate transports — safe to overlap.
-          await Promise.all([
-            ensureItemsPrefetched(reader, [
-              ...nodes.map((n) => n.data.itemId),
-              ...redirectTargets
-            ]),
-            ensureMakeMethodsPrefetched(
-              nodes.map((n) => n.data.materialMakeMethodId)
-            )
+          await ensureItemsPrefetched(reader, [
+            ...nodes.map((n) => n.data.itemId),
+            ...redirectTargets
           ]);
+          await ensureMakeMethodsPrefetched(
+            reader,
+            nodes.map((n) => n.data.materialMakeMethodId)
+          );
         }
 
         await ensurePrefetched(db, methodTree);
@@ -841,7 +796,7 @@ export const getMethod = defineServerFn({
           getRatesFromSupplierProcesses(supplierProcesses);
 
         // Get configuration code by field
-        const configurationCodeByField = configurationRules.data?.reduce<
+        const configurationCodeByField = configurationRules.reduce<
           Record<string, string>
         >((acc, rule) => {
           acc[rule.field] = rule.code;
@@ -1232,7 +1187,7 @@ export const getMethod = defineServerFn({
                         // material ↔ step links are flushed after the
                         // jobMaterial rows exist.
                         assemblyToolIds =
-                          await insertAssemblyDataForJobOperation(trx, client, {
+                          await insertAssemblyDataForJobOperation(trx, {
                             operationId,
                             assemblyInstructionId:
                               operation.assemblyInstructionId,
@@ -1288,7 +1243,6 @@ export const getMethod = defineServerFn({
                         );
                         await copyStepSlides(
                           trx,
-                          client,
                           methodOperationStep,
                           insertedSteps,
                           "methodOperationStepSlide",
@@ -1478,25 +1432,20 @@ export const getMethod = defineServerFn({
                 ]) {
                   itemId = candidate;
                   if (candidate === child.data.itemId) break;
-                  const item = await client
-                    .from("item")
-                    .select(
-                      "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
-                    )
-                    .eq("id", candidate)
-                    .eq("companyId", companyId)
-                    .single();
-                  if (item.data) {
-                    itemType = item.data.type;
+                  const item = await readItemWithCost(
+                    trx,
+                    candidate,
+                    companyId
+                  );
+                  if (item) {
+                    itemType = item.type;
                     unitCost =
-                      item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                      item.itemCost[0]?.unitCost ?? child.data.unitCost;
                     if (description === child.data.description) {
-                      description = item.data.name;
+                      description = item.name;
                     }
-                    requiresSerialTracking =
-                      item.data.itemTrackingType === "Serial";
-                    requiresBatchTracking =
-                      item.data.itemTrackingType === "Batch";
+                    requiresSerialTracking = item.itemTrackingType === "Serial";
+                    requiresBatchTracking = item.itemTrackingType === "Batch";
                     break;
                   }
                 }
@@ -1750,7 +1699,6 @@ export const getMethod = defineServerFn({
                   // (not the old part's). A Make -> Buy successor is a structural
                   // flip we leave on the old part (handled/flagged elsewhere).
                   const madeSwapHandled = await swapMadeSubAssembly({
-                    client,
                     trx,
                     companyId,
                     child,
@@ -1827,13 +1775,11 @@ export const getMethod = defineServerFn({
 
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
-            client,
             assemblyOperationsToLink,
             companyId
           );
 
           await settleConsumeFirstLines({
-            client,
             trx,
             companyId,
             jobId: jobId,
@@ -1906,7 +1852,7 @@ export const getMethod = defineServerFn({
         // behavior change for its own PR.
         // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
         const hydratedConfiguration = await hydrateConfiguration(
-          client,
+          db,
           configuration,
           itemId,
           companyId
@@ -2167,7 +2113,7 @@ export const getMethod = defineServerFn({
                         // material ↔ step links are flushed after the
                         // jobMaterial rows exist.
                         assemblyToolIds =
-                          await insertAssemblyDataForJobOperation(trx, client, {
+                          await insertAssemblyDataForJobOperation(trx, {
                             operationId,
                             assemblyInstructionId:
                               operation.assemblyInstructionId,
@@ -2211,7 +2157,6 @@ export const getMethod = defineServerFn({
                         );
                         await copyStepSlides(
                           trx,
-                          client,
                           methodOperationStep,
                           insertedSteps,
                           "methodOperationStepSlide",
@@ -2323,7 +2268,7 @@ export const getMethod = defineServerFn({
                   pulledFrom && pulledFrom.itemId === child.data.itemId
                     ? null
                     : await resolveJobMaterialSupersession(
-                        client,
+                        trx,
                         companyId,
                         pulledFrom
                           ? new Map([
@@ -2533,7 +2478,6 @@ export const getMethod = defineServerFn({
                   // made, point the job material at the successor and explode the
                   // SUCCESSOR's method instead of the old part's.
                   const madeSwapHandled = await swapMadeSubAssembly({
-                    client,
                     trx,
                     companyId,
                     child,
@@ -2614,13 +2558,11 @@ export const getMethod = defineServerFn({
 
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
-            client,
             assemblyOperationsToLink,
             companyId
           );
 
           await settleConsumeFirstLines({
-            client,
             trx,
             companyId,
             jobId: jobMakeMethod.data.jobId,
@@ -2739,7 +2681,7 @@ export const getMethod = defineServerFn({
         }
 
         const hydratedConfiguration = await hydrateConfiguration(
-          client,
+          db,
           configuration,
           itemId,
           companyId
@@ -3156,7 +3098,6 @@ export const getMethod = defineServerFn({
 
                           await copyStepSlides(
                             trx,
-                            client,
                             methodOperationStep,
                             insertedSteps,
                             "methodOperationStepSlide",
@@ -3452,7 +3393,7 @@ export const getMethod = defineServerFn({
         }
 
         const hydratedConfiguration = await hydrateConfiguration(
-          client,
+          db,
           configuration,
           itemId,
           companyId
@@ -3707,7 +3648,6 @@ export const getMethod = defineServerFn({
 
                         await copyStepSlides(
                           trx,
-                          client,
                           methodOperationStep,
                           insertedSteps,
                           "methodOperationStepSlide",
@@ -4130,7 +4070,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         jobOperationStep,
                         insertedSteps,
                         "jobOperationStepSlide",
@@ -4465,7 +4404,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         jobOperationStep,
                         insertedSteps,
                         "jobOperationStepSlide",
@@ -4794,7 +4732,7 @@ export const getMethod = defineServerFn({
                 // source job's structure (their successors' methods would have
                 // to be re-exploded from the item side).
                 const supersession = await resolveJobMaterialSupersession(
-                  client,
+                  trx,
                   companyId,
                   supersessionRedirect,
                   {
@@ -5059,7 +4997,6 @@ export const getMethod = defineServerFn({
                       // after the jobMaterial rows exist.
                       assemblyToolIds = await insertAssemblyDataForJobOperation(
                         trx,
-                        client,
                         {
                           operationId,
                           assemblyInstructionId:
@@ -5111,7 +5048,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         jobOperationStep,
                         insertedSteps,
                         "jobOperationStepSlide",
@@ -5246,13 +5182,11 @@ export const getMethod = defineServerFn({
           // assembly material ↔ step links can flush immediately.
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
-            client,
             assemblyOperationsToLink,
             companyId
           );
 
           await settleConsumeFirstLines({
-            client,
             trx,
             companyId,
             jobId: targetJobId,
@@ -5454,7 +5388,6 @@ export const getMethod = defineServerFn({
 
                   await copyStepSlides(
                     trx,
-                    client,
                     methodOperationStep,
                     insertedSteps,
                     "methodOperationStepSlide",
@@ -5921,7 +5854,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         quoteOperationStep,
                         insertedSteps,
                         "quoteOperationStepSlide",
@@ -6256,7 +6188,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         quoteOperationStep,
                         insertedSteps,
                         "quoteOperationStepSlide",
@@ -6514,7 +6445,7 @@ export const getMethod = defineServerFn({
                 // swapped on the quote path at all (their successors' methods
                 // would have to be re-exploded from the item side).
                 const supersession = await resolveJobMaterialSupersession(
-                  client,
+                  trx,
                   companyId,
                   supersessionRedirect,
                   {
@@ -6801,7 +6732,7 @@ export const getMethod = defineServerFn({
                       // instruction (the quote only carries the pointer);
                       // material ↔ step links are flushed after the jobMaterial
                       // rows exist.
-                      await insertAssemblyDataForJobOperation(trx, client, {
+                      await insertAssemblyDataForJobOperation(trx, {
                         operationId,
                         assemblyInstructionId: operation.assemblyInstructionId,
                         companyId,
@@ -6834,7 +6765,6 @@ export const getMethod = defineServerFn({
 
                       await copyStepSlides(
                         trx,
-                        client,
                         quoteOperationStep,
                         insertedSteps,
                         "quoteOperationStepSlide",
@@ -6853,13 +6783,11 @@ export const getMethod = defineServerFn({
           // assembly material ↔ step links can flush immediately.
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
-            client,
             assemblyOperationsToLink,
             companyId
           );
 
           await settleConsumeFirstLines({
-            client,
             trx,
             companyId,
             jobId: jobId,
@@ -7200,7 +7128,6 @@ export const getMethod = defineServerFn({
 
                     await copyStepSlides(
                       trx,
-                      client,
                       quoteOperationStep,
                       insertedSteps,
                       "quoteOperationStepSlide",
@@ -7748,7 +7675,6 @@ export const getMethod = defineServerFn({
 
                     await copyStepSlides(
                       trx,
-                      client,
                       quoteOperationStep,
                       insertedSteps,
                       "quoteOperationStepSlide",
@@ -7952,7 +7878,6 @@ async function loadSupersessionRedirect(
 // the method type, which this function has no view of. It returns the scrap RATE
 // and lets the caller derive the allowance.
 async function itemDerivedJobMaterialFields(opts: {
-  client: SupabaseClient<Database>;
   trx: Transaction<KyselyDatabase>;
   companyId: string;
   itemId: string;
@@ -7960,16 +7885,10 @@ async function itemDerivedJobMaterialFields(opts: {
   /** An explicit bin on the BOM line still wins over the item's default. */
   lineStorageUnitId?: string;
 }) {
-  const { client, trx, companyId, itemId, locationId, lineStorageUnitId } =
-    opts;
+  const { trx, companyId, itemId, locationId, lineStorageUnitId } = opts;
 
   const [item, replenishment, storageUnitId] = await Promise.all([
-    client
-      .from("item")
-      .select("type, name, itemTrackingType, itemCost(unitCost)")
-      .eq("id", itemId)
-      .eq("companyId", companyId)
-      .single(),
+    readItemWithCost(trx, itemId, companyId),
     trx
       .selectFrom("itemReplenishment")
       .select("scrapPercentage")
@@ -7979,15 +7898,15 @@ async function itemDerivedJobMaterialFields(opts: {
     getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
   ]);
 
-  if (!item.data) return null;
+  if (!item) return null;
 
   return {
     itemId,
-    itemType: item.data.type,
-    description: item.data.name,
-    unitCost: item.data.itemCost?.[0]?.unitCost ?? 0,
-    requiresSerialTracking: item.data.itemTrackingType === "Serial",
-    requiresBatchTracking: item.data.itemTrackingType === "Batch",
+    itemType: item.type,
+    description: item.name,
+    unitCost: item.itemCost?.[0]?.unitCost ?? 0,
+    requiresSerialTracking: item.itemTrackingType === "Serial",
+    requiresBatchTracking: item.itemTrackingType === "Batch",
     itemScrapPercentage: Number(replenishment?.scrapPercentage ?? 0),
     storageUnitId
   };
@@ -8000,7 +7919,6 @@ async function itemDerivedJobMaterialFields(opts: {
 // structural flip we leave on the old part (handled elsewhere). Returns true when
 // the swap was applied, so the caller can skip the default traversal.
 async function swapMadeSubAssembly(opts: {
-  client: SupabaseClient<Database>;
   trx: Transaction<KyselyDatabase>;
   companyId: string;
   child: MethodTreeItem;
@@ -8023,7 +7941,6 @@ async function swapMadeSubAssembly(opts: {
   ) => Promise<unknown>;
 }): Promise<boolean> {
   const {
-    client,
     trx,
     companyId,
     child,
@@ -8038,13 +7955,13 @@ async function swapMadeSubAssembly(opts: {
   const madeRedirect = supersessionRedirect.get(child.data.itemId);
   if (!madeRedirect) return false;
 
-  const successorMakeMethod = await client
-    .from("activeMakeMethods")
-    .select("id")
-    .eq("itemId", madeRedirect.to)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (!successorMakeMethod.data) return false;
+  const successorMakeMethod = await trx
+    .selectFrom("activeMakeMethods")
+    .select(["id"])
+    .where("itemId", "=", madeRedirect.to)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!successorMakeMethod?.id) return false;
 
   // Every item-dependent field, restated for the successor in ONE step. Spread,
   // never hand-listed: this row is being repointed at a different item, so all
@@ -8052,7 +7969,6 @@ async function swapMadeSubAssembly(opts: {
   // automatically. `itemScrapPercentage` going missing from a hand-written list
   // is exactly how a swapped line ended up costing the predecessor's scrap.
   const itemFields = await itemDerivedJobMaterialFields({
-    client,
     trx,
     companyId,
     itemId: madeRedirect.to,
@@ -8089,10 +8005,7 @@ async function swapMadeSubAssembly(opts: {
     .where("companyId", "=", companyId)
     .execute();
 
-  const successorTree = await getMethodTree(
-    client,
-    successorMakeMethod.data.id!
-  );
+  const successorTree = await getMethodTree(trx, successorMakeMethod.id);
   const successorRoot = successorTree.data?.[0];
   if (successorRoot) {
     // The SAME total the row above was written with — not the predecessor's,
@@ -8105,7 +8018,6 @@ async function swapMadeSubAssembly(opts: {
 }
 
 async function settleConsumeFirstLines(opts: {
-  client: SupabaseClient<Database>;
   trx: Transaction<KyselyDatabase>;
   companyId: string;
   jobId: string;
@@ -8113,15 +8025,7 @@ async function settleConsumeFirstLines(opts: {
   locationId: string | null | undefined;
   asOfDate: string;
 }) {
-  const {
-    client,
-    trx,
-    companyId,
-    jobId,
-    jobMaterialIds,
-    locationId,
-    asOfDate
-  } = opts;
+  const { trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await trx
@@ -8199,7 +8103,6 @@ async function settleConsumeFirstLines(opts: {
     }
   ) => {
     const fields = await itemDerivedJobMaterialFields({
-      client,
       trx,
       companyId,
       itemId: toItemId,
@@ -8254,7 +8157,7 @@ async function settleConsumeFirstLines(opts: {
 // or this returns null for them. The line's unit of measure and methodType are
 // intentionally preserved — the conversion factor translates the quantity.
 async function resolveJobMaterialSupersession(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   redirect: Map<string, { to: string; factor: number }>,
   line: { itemId: string; methodType: string }
@@ -8271,22 +8174,17 @@ async function resolveJobMaterialSupersession(
   if (line.methodType === "Make to Order") return null;
   const r = redirect.get(line.itemId);
   if (!r) return null;
-  const successor = await client
-    .from("item")
-    .select("type, name, itemTrackingType, itemCost(unitCost)")
-    .eq("id", r.to)
-    .eq("companyId", companyId)
-    .single();
-  if (!successor.data) return null;
+  const successor = await readItemWithCost(db, r.to, companyId);
+  if (!successor) return null;
   return {
     itemId: r.to,
     factor: r.factor,
     substitutedFromItemId: line.itemId,
-    itemType: successor.data.type,
-    description: successor.data.name,
-    unitCost: successor.data.itemCost?.[0]?.unitCost ?? null,
-    requiresSerialTracking: successor.data.itemTrackingType === "Serial",
-    requiresBatchTracking: successor.data.itemTrackingType === "Batch"
+    itemType: successor.type,
+    description: successor.name,
+    unitCost: successor.itemCost?.[0]?.unitCost ?? null,
+    requiresSerialTracking: successor.itemTrackingType === "Serial",
+    requiresBatchTracking: successor.itemTrackingType === "Batch"
   };
 }
 
@@ -8327,6 +8225,69 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   }
 
   return rootItems.map((item) => traverseAndRenameIds(item));
+}
+
+type Tables = Database["public"]["Tables"];
+
+/** A method operation with its tools (and their step links), parameters and steps. */
+type MethodOperationRow = Tables["methodOperation"]["Row"] & {
+  methodOperationTool: (Tables["methodOperationTool"]["Row"] & {
+    methodOperationToolStep: Tables["methodOperationToolStep"]["Row"][];
+  })[];
+  methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
+  methodOperationStep: Tables["methodOperationStep"]["Row"][];
+};
+
+// makeMethodId is globally unique (makeMethod's PK is "id" alone), so the
+// companyId filter cannot drop a legitimate row — it only closes a
+// cross-tenant read.
+function readMethodOperations(
+  db: Kysely<KyselyDatabase>,
+  makeMethodIds: string[],
+  companyId: string
+) {
+  return selectRows<"methodOperation", MethodOperationRow>(
+    db,
+    "methodOperation",
+    { makeMethodId: makeMethodIds, companyId },
+    {
+      orderBy: ["order", "id"],
+      embed: {
+        methodOperationTool: {
+          table: "methodOperationTool",
+          on: "operationId",
+          embed: {
+            methodOperationToolStep: {
+              table: "methodOperationToolStep",
+              on: "methodOperationToolId"
+            }
+          }
+        },
+        methodOperationParameter: {
+          table: "methodOperationParameter",
+          on: "operationId"
+        },
+        methodOperationStep: { table: "methodOperationStep", on: "operationId" }
+      }
+    }
+  );
+}
+
+/** An item with its cost row, as the job-material mappers read it. */
+function readItemWithCost(
+  db: Kysely<KyselyDatabase>,
+  itemId: string,
+  companyId: string
+) {
+  return selectRow<
+    "item",
+    Tables["item"]["Row"] & { itemCost: Tables["itemCost"]["Row"][] }
+  >(
+    db,
+    "item",
+    { id: itemId, companyId },
+    { embed: { itemCost: { table: "itemCost", on: "itemId" } } }
+  );
 }
 
 function getFieldKey(field: string, id: string) {
@@ -8433,7 +8394,6 @@ async function insertProcedureDataForJobOperation(
 // rows exist (operations are inserted before materials in every direction).
 async function insertAssemblyDataForJobOperation(
   trx: Transaction<KyselyDatabase>,
-  client: SupabaseClient<Database>,
   args: {
     operationId: string;
     assemblyInstructionId: string;
@@ -8442,46 +8402,53 @@ async function insertAssemblyDataForJobOperation(
   }
 ) {
   const { operationId, assemblyInstructionId, companyId, userId } = args;
-  const instruction = await client
-    .from("assemblyInstruction")
-    .select("id, modelUploadId, assemblyInstructionStep(*)")
-    .eq("id", assemblyInstructionId)
-    .eq("companyId", companyId)
-    .single();
+  const instruction = await selectRow<
+    "assemblyInstruction",
+    Tables["assemblyInstruction"]["Row"] & {
+      assemblyInstructionStep: Tables["assemblyInstructionStep"]["Row"][];
+    }
+  >(
+    trx,
+    "assemblyInstruction",
+    { id: assemblyInstructionId, companyId },
+    {
+      embed: {
+        assemblyInstructionStep: {
+          table: "assemblyInstructionStep",
+          on: "assemblyInstructionId"
+        }
+      }
+    }
+  );
 
-  if (instruction.error) return new Set<string>();
+  if (!instruction) return new Set<string>();
 
   // A sub-assembly (header) row is not a build action, so it never becomes a
   // job step; its member steps are copied in play order like any other.
-  const sourceSteps = (instruction.data?.assemblyInstructionStep ?? [])
+  const sourceSteps = (instruction.assemblyInstructionStep ?? [])
     .filter((step) => !step.isSubAssembly)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   if (sourceSteps.length === 0) return new Set<string>();
 
   const sourceStepIds = sourceSteps.map((step) => step.id);
-  const [sourceSlides, sourceTools] = await Promise.all([
-    client
-      .from("assemblyInstructionStepSlide")
-      .select(
-        "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations"
-      )
-      .in("stepId", sourceStepIds)
-      .eq("companyId", companyId)
-      .order("sortOrder", { ascending: true }),
-    client
-      .from("assemblyInstructionStepTool")
-      .select("stepId, itemId, quantity")
-      .in("stepId", sourceStepIds)
-      .eq("companyId", companyId)
-  ]);
-  const slidesByStep = new Map<string, NonNullable<typeof sourceSlides.data>>();
-  for (const slide of sourceSlides.data ?? []) {
+  const sourceSlides = await selectRows(
+    trx,
+    "assemblyInstructionStepSlide",
+    { stepId: sourceStepIds, companyId },
+    { orderBy: ["sortOrder"] }
+  );
+  const sourceTools = await selectRows(trx, "assemblyInstructionStepTool", {
+    stepId: sourceStepIds,
+    companyId
+  });
+  const slidesByStep = new Map<string, typeof sourceSlides>();
+  for (const slide of sourceSlides) {
     const list = slidesByStep.get(slide.stepId) ?? [];
     list.push(slide);
     slidesByStep.set(slide.stepId, list);
   }
   const toolsByStep = new Map<string, { itemId: string; quantity: number }[]>();
-  for (const tool of sourceTools.data ?? []) {
+  for (const tool of sourceTools) {
     const list = toolsByStep.get(tool.stepId) ?? [];
     list.push({ itemId: tool.itemId, quantity: tool.quantity ?? 1 });
     toolsByStep.set(tool.stepId, list);
@@ -8543,7 +8510,7 @@ async function insertAssemblyDataForJobOperation(
     const targetStepId = targetIdBySource.get(source.id);
     if (!targetStepId) continue;
     const authored = slidesByStep.get(source.id) ?? [];
-    const modelUploadId = instruction.data?.modelUploadId;
+    const modelUploadId = instruction.modelUploadId;
     if (
       modelUploadId &&
       !authored.some((slide) => slide.modelUploadId === modelUploadId)
@@ -8659,7 +8626,6 @@ async function insertAssemblyDataForJobOperation(
 // those rows are uncommitted at this point.
 async function linkAssemblyStepMaterialsForJobOperations(
   trx: Transaction<KyselyDatabase>,
-  client: SupabaseClient<Database>,
   operations: Array<{ operationId: string; assemblyInstructionId: string }>,
   companyId: string
 ) {
@@ -8682,14 +8648,13 @@ async function linkAssemblyStepMaterialsForJobOperations(
     const sourceStepIds = steps.map(
       (step) => step.assemblyInstructionStepId as string
     );
-    const stepMaterials = await client
-      .from("assemblyInstructionStepMaterial")
-      .select("stepId, itemId, quantity")
-      .in("stepId", sourceStepIds)
-      .eq("companyId", companyId);
-    if (stepMaterials.error || (stepMaterials.data ?? []).length === 0) {
-      continue;
-    }
+    const stepMaterials = await trx
+      .selectFrom("assemblyInstructionStepMaterial")
+      .select(["stepId", "itemId", "quantity"])
+      .where("stepId", "in", sourceStepIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (stepMaterials.length === 0) continue;
 
     const jobMaterials = await trx
       .selectFrom("jobMaterial")
@@ -8704,7 +8669,7 @@ async function linkAssemblyStepMaterialsForJobOperations(
       steps.map((step) => [step.assemblyInstructionStepId as string, step.id])
     );
 
-    const linkRows = (stepMaterials.data ?? []).flatMap((link) => {
+    const linkRows = stepMaterials.flatMap((link) => {
       const jobOperationStepId = jobStepBySourceStep.get(link.stepId);
       const jobMaterialId = link.itemId
         ? materialIdByItemId.get(link.itemId)
@@ -8731,7 +8696,7 @@ async function linkAssemblyStepMaterialsForJobOperations(
 }
 
 async function hydrateConfiguration(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   configuration: Record<string, unknown> | undefined,
   itemId: string | undefined | null,
   companyId: string
@@ -8741,16 +8706,15 @@ async function hydrateConfiguration(
       return configuration;
     }
 
-    const materialParams = await client
-      .from("configurationParameter")
-      .select("key")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .eq("dataType", "material");
+    const materialParams = await db
+      .selectFrom("configurationParameter")
+      .select(["key"])
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .where("dataType", "=", "material")
+      .execute();
 
-    if (materialParams.error) return configuration;
-
-    const materialKeys = new Set((materialParams.data ?? []).map((p) => p.key));
+    const materialKeys = new Set(materialParams.map((p) => p.key));
 
     if (materialKeys.size === 0) return configuration;
 
@@ -8764,35 +8728,36 @@ async function hydrateConfiguration(
     const itemIds = entries.map(([, value]) => value as string);
 
     // Get items that correspond to the item IDs
-    const items = await client
-      .from("item")
-      .select("id, readableId")
-      .in("id", itemIds)
-      .eq("companyId", companyId);
-
-    if (items.error) return configuration;
+    const items = await db
+      .selectFrom("item")
+      .select(["id", "readableId"])
+      .where("id", "in", itemIds)
+      .where("companyId", "=", companyId)
+      .execute();
 
     // Create map of itemId to readableId (which is the materialId)
-    const itemIdToMaterialId = new Map(
-      items.data?.map((i) => [i.id, i.readableId]) ?? []
-    );
+    const itemIdToMaterialId = new Map(items.map((i) => [i.id, i.readableId]));
 
-    const materialIds = items.data?.map((i) => i.readableId) ?? [];
+    const materialIds = items.map((i) => i.readableId);
+    if (materialIds.length === 0) return configuration;
 
     // Get material details using the readableIds (which are the material IDs)
-    const materials = await client
-      .from("material")
-      .select(
-        "id, materialFormId, materialSubstanceId, materialTypeId, dimensionId, finishId, gradeId"
-      )
-      .in("id", materialIds)
-      .eq("companyId", companyId);
+    const materials = await db
+      .selectFrom("material")
+      .select([
+        "id",
+        "materialFormId",
+        "materialSubstanceId",
+        "materialTypeId",
+        "dimensionId",
+        "finishId",
+        "gradeId"
+      ])
+      .where("id", "in", materialIds)
+      .where("companyId", "=", companyId)
+      .execute();
 
-    if (materials.error) return configuration;
-
-    const materialsByMaterialId = new Map(
-      materials.data?.map((m) => [m.id, m]) ?? []
-    );
+    const materialsByMaterialId = new Map(materials.map((m) => [m.id, m]));
 
     const transformed: Record<string, unknown> = { ...configuration };
 
