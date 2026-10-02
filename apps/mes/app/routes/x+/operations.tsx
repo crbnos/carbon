@@ -5,8 +5,6 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getLocationTimeZone } from "@carbon/database";
-import { getLogger } from "@carbon/logger";
 import {
   Button,
   CarbonPulse,
@@ -27,7 +25,6 @@ import {
   useRealtimeChannel,
   VStack
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -42,95 +39,16 @@ import { data, redirect, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
-import type { Column, DisplaySettings, Item } from "~/components/Kanban";
+import type { DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useUrlParams, useUser } from "~/hooks";
 import { getFilters, setFilters } from "~/services/operation.server";
-import {
-  getActiveJobOperationsByLocation,
-  getCustomers,
-  getJobOperationBatchMembers,
-  getMyPeopleAssignment,
-  getProcessesList,
-  getWorkCentersByLocation
-} from "~/services/operations.service";
 import { getPeopleOverride } from "~/services/people.server";
+import { getOperationsScreen } from "~/services/screens.server";
 import { usePeople } from "~/stores";
-import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
-
-const log = getLogger("mes");
-
-type BatchTotals = {
-  size: number;
-  quantity: number;
-  targetQuantity: number;
-  jobReadableIds: string[];
-};
-
-function getBatchTotals(
-  members: NonNullable<
-    Awaited<ReturnType<typeof getJobOperationBatchMembers>>["data"]
-  >
-): Map<string, BatchTotals> {
-  const totals = new Map<string, BatchTotals>();
-  for (const member of members) {
-    if (!member.jobOperationBatchId) continue;
-    const total = totals.get(member.jobOperationBatchId) ?? {
-      size: 0,
-      quantity: 0,
-      targetQuantity: 0,
-      jobReadableIds: []
-    };
-    total.size += 1;
-    total.quantity += member.operationQuantity ?? 0;
-    total.targetQuantity +=
-      member.targetQuantity ?? member.operationQuantity ?? 0;
-    if (member.job?.jobId) total.jobReadableIds.push(member.job.jobId);
-    totals.set(member.jobOperationBatchId, total);
-  }
-  return totals;
-}
-
-// Collapse operations sharing a jobOperationBatchId into one card: keep the first
-// as the card, tag it with the member count and summed quantities.
-function collapseBatches(
-  items: Item[],
-  batchTotals: Map<string, BatchTotals>
-): Item[] {
-  const byBatch = new Map<string, Item[]>();
-  const result: Item[] = [];
-  for (const item of items) {
-    // Require a resolvable batch (readableId comes from the join to
-    // jobOperationBatch): a stale batchId whose header is gone must not suppress
-    // the op — render it as an individual card, mirroring the ERP board.
-    if (item.batchId && item.batchReadableId) {
-      const arr = byBatch.get(item.batchId);
-      if (arr) arr.push(item);
-      else byBatch.set(item.batchId, [item]);
-    } else {
-      result.push(item);
-    }
-  }
-  for (const [batchId, members] of byBatch) {
-    const total = batchTotals.get(batchId);
-    result.push({
-      ...members[0],
-      batchSize: total?.size ?? members.length,
-      batchJobReadableIds:
-        total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
-      quantity:
-        total?.quantity ??
-        members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
-      targetQuantity:
-        total?.targetQuantity ??
-        members.reduce((sum, m) => sum + (m.targetQuantity ?? 0), 0)
-    });
-  }
-  return result;
-}
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -174,253 +92,23 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     }
   }
 
-  let selectedWorkCenterIds: string[] = [];
-  let selectedProcessIds: string[] = [];
-  let selectedSalesOrderIds: string[] = [];
-  let selectedTags: string[] = [];
-  let selectedAssignee: string[] = [];
-
-  if (filterParam) {
-    for (const filter of filterParam) {
-      const [key, operator, value] = filter.split(":");
-      if (key === "workCenterId") {
-        if (operator === "in") {
-          selectedWorkCenterIds = value.split(",");
-        } else if (operator === "eq") {
-          selectedWorkCenterIds = [value];
-        }
-      } else if (key === "processId") {
-        if (operator === "in") {
-          selectedProcessIds = value.split(",");
-        } else if (operator === "eq") {
-          selectedProcessIds = [value];
-        }
-      } else if (key === "salesOrderId") {
-        if (operator === "in") {
-          selectedSalesOrderIds = value.split(",");
-        } else if (operator === "eq") {
-          selectedSalesOrderIds = [value];
-        }
-      } else if (key === "tag") {
-        if (operator === "in") {
-          selectedTags = value.split(",");
-        } else if (operator === "eq") {
-          selectedTags = [value];
-        }
-      } else if (key === "assignee") {
-        if (operator === "in") {
-          selectedAssignee = value.split(",");
-        } else if (operator === "eq") {
-          selectedAssignee = [value];
-        }
-      }
-    }
-  }
-
-  const locationId = context.get(userContext)?.locationId;
-
-  // People-assignment station default: when the operator has a manning-board
-  // assignment for today and no explicit work-center filter (and hasn't
-  // dismissed the default this session), open on their station.
-  const effectiveUserId = context.get(userContext)?.effectiveUserId;
-  let peopleStation: { workCenterId: string; name: string } | null = null;
-  let peopleDate: string | null = null;
-  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
-    const today = datetime
-      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
-      .toString();
-    peopleDate = today;
-    const dismissed = await getPeopleOverride(request);
-    if (dismissed !== today) {
-      const myAssignment = await getMyPeopleAssignment(serviceRole, {
-        companyId,
-        employeeId: effectiveUserId,
-        date: today
-      });
-      const assignment = myAssignment.data?.[0];
-      if (assignment) {
-        selectedWorkCenterIds = [assignment.workCenterId];
-        peopleStation = { workCenterId: assignment.workCenterId, name: "" };
-      }
-    }
-  }
-
-  const [workCenters, processes, operations] = await Promise.all([
-    getWorkCentersByLocation(serviceRole, locationId),
-    getProcessesList(serviceRole, companyId),
-    getActiveJobOperationsByLocation(
-      serviceRole,
-      locationId,
-      selectedWorkCenterIds
-    )
-  ]);
-
-  if (operations.error) {
-    log.error("Failed to load operations", { error: operations.error });
-  }
-
-  const activeWorkCenters = new Set();
-  operations.data?.forEach((op) => {
-    if (op.operationStatus === "In Progress") {
-      activeWorkCenters.add(op.workCenterId);
-    }
+  // The read itself lives in `~/services/screens.server` so this screen and
+  // `GET /api/v1/operations` cannot drift. Cookies, the saved-filter redirect
+  // and userContext stay here — the API has none of them.
+  const screen = await getOperationsScreen(serviceRole, {
+    companyId,
+    locationId: context.get(userContext)?.locationId as string,
+    effectiveUserId: context.get(userContext)?.effectiveUserId,
+    filters: filterParam,
+    search,
+    peopleOverrideDate: (await getPeopleOverride(request)) ?? null
   });
 
-  let filteredOperations = selectedWorkCenterIds.length
-    ? (operations.data?.filter((op) =>
-        selectedWorkCenterIds.includes(op.workCenterId)
-      ) ?? [])
-    : (operations.data ?? []);
-
-  if (selectedSalesOrderIds.length) {
-    filteredOperations = filteredOperations.filter((op) =>
-      selectedSalesOrderIds.includes(op.salesOrderId)
-    );
+  if (!screen.ok) {
+    throw redirect(screen.failure.redirectTo ?? path.to.authenticatedRoot);
   }
 
-  if (selectedTags.length) {
-    filteredOperations = filteredOperations.filter((op) =>
-      op.tags?.some((tag) => selectedTags.includes(tag))
-    );
-  }
-
-  if (selectedAssignee.length) {
-    filteredOperations = filteredOperations.filter((op) =>
-      selectedAssignee.includes(op.assignee)
-    );
-  }
-
-  if (selectedProcessIds.length) {
-    filteredOperations = filteredOperations.filter((op) =>
-      selectedProcessIds.includes(op.processId)
-    );
-  }
-
-  if (search) {
-    const term = search.toLowerCase();
-    filteredOperations = filteredOperations.filter(
-      (op) =>
-        op.jobReadableId?.toLowerCase().includes(term) ||
-        op.itemReadableId?.toLowerCase().includes(term) ||
-        op.itemDescription?.toLowerCase().includes(term) ||
-        op.description?.toLowerCase().includes(term) ||
-        op.batchReadableId?.toLowerCase().includes(term)
-    );
-  }
-
-  const batchIds = Array.from(
-    new Set(
-      filteredOperations
-        .map((op) => op.jobOperationBatchId)
-        .filter((id): id is string => Boolean(id))
-    )
-  );
-  const batchMembers = batchIds.length
-    ? await getJobOperationBatchMembers(serviceRole, batchIds, companyId)
-    : null;
-  if (batchMembers?.error) {
-    log.error("Failed to load batch members", { error: batchMembers.error });
-  }
-  const batchTotals = getBatchTotals(batchMembers?.data ?? []);
-
-  const filteredWorkCenters =
-    workCenters.data?.filter((wc: any) => {
-      if (selectedWorkCenterIds.length && selectedProcessIds.length) {
-        return (
-          selectedWorkCenterIds.includes(wc.id!) &&
-          wc.processes?.some((p: string) => selectedProcessIds.includes(p))
-        );
-      } else if (selectedWorkCenterIds.length) {
-        return selectedWorkCenterIds.includes(wc.id!);
-      } else if (selectedProcessIds.length) {
-        return wc.processes?.some((p: string) =>
-          selectedProcessIds.includes(p)
-        );
-      }
-      return true;
-    }) ?? [];
-
-  const customerIds = filteredOperations.map((op) => op.jobCustomerId);
-  const customers = await getCustomers(serviceRole, companyId, customerIds);
-
-  // Get unique tags and assignees for filters
-  const availableTags = Array.from(
-    new Set(filteredOperations.flatMap((op) => op.tags || []))
-  ).sort();
-
-  if (peopleStation) {
-    peopleStation.name =
-      workCenters.data?.find((wc: any) => wc.id === peopleStation?.workCenterId)
-        ?.name ?? "";
-  }
-
-  return data(
-    {
-      peopleStation,
-      peopleDate,
-      columns: filteredWorkCenters
-        .map((wc: any) => ({
-          id: wc.id!,
-          title: wc.name!,
-          type: wc.processes ?? [],
-          active: activeWorkCenters.has(wc.id),
-          isBlocked: wc.isBlocked ?? false,
-          blockingDispatchId: wc.blockingDispatchId ?? undefined,
-          blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
-        }))
-        .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-      items: collapseBatches(
-        (filteredOperations.map((op) => {
-          const operation = makeDurations(op);
-          return {
-            id: op.id,
-            assignee: op.assignee,
-            tags: op.tags,
-            columnId: op.workCenterId,
-            columnType: op.processId,
-            priority: op.priority,
-            title: op.jobReadableId,
-            subtitle: op.itemReadableId,
-            description: op.description,
-            dueDate: op.operationDueDate,
-            duration:
-              operation.setupDuration +
-              Math.max(operation.laborDuration, operation.machineDuration),
-            deadlineType: op.jobDeadlineType,
-            customerId: op.jobCustomerId,
-            operationQuantity: op.operationQuantity,
-            targetQuantity: op.targetQuantity ?? op.operationQuantity,
-            jobReadableId: op.jobReadableId,
-            itemReadableId: op.itemReadableId,
-            itemDescription: op.itemDescription,
-            salesOrderReadableId: op.salesOrderReadableId,
-            salesOrderId: op.salesOrderId,
-            salesOrderLineId: op.salesOrderLineId,
-            status: op.operationStatus,
-            thumbnailPath: op.thumbnailPath,
-            quantity: op.operationQuantity,
-            quantityCompleted: op.quantityComplete,
-            quantityReworked: op.quantityReworked,
-            quantityScrapped: op.quantityScrapped,
-            reworkId: op.reworkId,
-            setupDuration: operation.setupDuration,
-            laborDuration: operation.laborDuration,
-            machineDuration: operation.machineDuration,
-            batchId: op.jobOperationBatchId,
-            batchReadableId: op.batchReadableId,
-            hasConflict: op.hasConflict ?? undefined,
-            conflictReason: op.conflictReason ?? undefined
-          };
-        }) ?? []) satisfies Item[],
-        batchTotals
-      ),
-      processes: processes.data ?? [],
-      workCenters: workCenters.data ?? [],
-      customers: customers.data ?? [],
-      availableTags
-    },
-    { headers }
-  );
+  return data(screen.data, { headers });
 }
 
 export default function ScheduleRoute() {

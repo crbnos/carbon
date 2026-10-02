@@ -800,6 +800,9 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "Bu adımda yerleştirildikten sonra bir parça devrilebilir — bir bağlama aparatı veya ikinci bir kişi göz önünde bulundurun."
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "Operatörün bu adımda gördüğü bir fotoğraf veya PDF"
 
@@ -4304,6 +4307,9 @@ msgstr "Jira sorununu bağla"
 msgid "Connect Linear issue"
 msgstr "Linear sorununu bağla"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Önce Ayarlar → Entegrasyonlar altında Slack'i bağlayın."
 
@@ -4657,6 +4663,9 @@ msgstr "Satış siparişi benzersiz tanıtıcısını kopyala"
 
 msgid "Copy sales return order unique identifier"
 msgstr "Satış iade siparişi benzersiz tanıtıcısını kopyala"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Hizmet numarasını kopyala"
@@ -9160,6 +9169,9 @@ msgstr "{0} içinde"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshape'te bu OAuth uygulamasının izinlerini düzenleyerek \"Uygulama belgelerinize yazabilir\" izni ekleyin, ardından yeniden bağlanın."
 
@@ -9385,6 +9397,9 @@ msgstr "Muayeneler: Farklı Müfettiş Gereklidir"
 
 msgid "Install"
 msgstr "Yükle"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Install mode"
 msgstr "Kurulum Modu"
@@ -12849,6 +12864,9 @@ msgstr "VEYA"
 msgid "Or enter this secret manually:"
 msgstr "Veya bu sırrı manuel olarak girin:"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Order"
 msgstr "Sipariş"
 
@@ -13548,6 +13566,9 @@ msgstr "PO Numarası"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Point the Carbon MES app at this server so the shop floor can clock in, pick and report from a phone or tablet."
+msgstr ""
+
 msgid "Policy"
 msgstr "Politika"
 
@@ -14188,6 +14209,9 @@ msgstr "Muhasebede gönder"
 
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"
+
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -15874,6 +15898,9 @@ msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanız (örn. Google Authentica
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Bunu doğrulayıcı uygulamanızla tarayın, ardından gösterdiği 6 haneli kodu girin."
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"

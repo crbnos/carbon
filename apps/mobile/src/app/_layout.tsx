@@ -14,6 +14,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Toaster } from "sonner-native";
 import { I18nRoot } from "~/i18n";
+import { AuthProvider } from "~/lib/auth/AuthProvider";
+import { InstanceProvider } from "~/lib/instances/InstanceProvider";
 import { createQueryClient } from "~/lib/query/client";
 
 export default function RootLayout() {
@@ -22,19 +24,34 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        {/* QueryClient is above InstanceProvider on purpose: switching
+            instance clears the cache, so the provider needs the client. */}
         <QueryClientProvider client={queryClient}>
-          <I18nRoot>
-            <Stack screenOptions={{ headerShown: false }} />
-            {/*
-              Web MES puts toasts bottom-LEFT because its dock sits
-              bottom-right. sonner-native only offers top-center,
-              bottom-center and center, and on a phone the dock is a full
-              bottom bar anyway — so bottom-center, lifted clear of the dock,
-              is the mobile equivalent of the same rule: never over the
-              primary action.
-            */}
-            <Toaster position="bottom-center" offset={96} />
-          </I18nRoot>
+          <InstanceProvider>
+            <AuthProvider>
+              <I18nRoot>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen
+                    name="(app)/scan"
+                    options={{ presentation: "modal" }}
+                  />
+                  <Stack.Screen
+                    name="(app)/pin"
+                    options={{ presentation: "fullScreenModal" }}
+                  />
+                </Stack>
+                {/*
+                  Web MES puts toasts bottom-LEFT because its dock sits
+                  bottom-right. sonner-native offers only top-center,
+                  bottom-center and center, and on a phone the dock is a full
+                  bottom bar anyway — so bottom-center, lifted clear of the
+                  dock, keeps the rule it serves: never cover the primary
+                  action.
+                */}
+                <Toaster position="bottom-center" offset={96} />
+              </I18nRoot>
+            </AuthProvider>
+          </InstanceProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

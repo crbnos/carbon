@@ -37,6 +37,8 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      APP_REVIEW_EMAILS: string;
+      CARBON_DEPLOYMENT_MODE: string;
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
@@ -506,6 +508,32 @@ export const BOT_PROTECTION = getEnv("BOT_PROTECTION", {
   isRequired: false,
   isSecret: false
 });
+
+// Store-review accounts that sign in with a PASSWORD instead of an emailed
+// code, because an App Store / Google Play reviewer cannot receive the email.
+// Set only on Carbon Cloud; empty everywhere else, which turns the path off.
+// Server-only: never added to getBrowserEnv() or the Window.env interface, so
+// the review account list cannot leak to the browser by construction.
+export const APP_REVIEW_EMAILS: readonly string[] = (
+  getEnv("APP_REVIEW_EMAILS", { isRequired: false, isSecret: false }) ?? ""
+)
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+// "airgapped" turns off every outbound call the MES mobile app would otherwise
+// make (analytics, store update checks). Validated here at module load rather
+// than at the call site BOT_PROTECTION uses, because a typo must fail boot
+// instead of silently phoning home from an airgapped install.
+const deploymentMode =
+  getEnv("CARBON_DEPLOYMENT_MODE", { isRequired: false, isSecret: false }) ??
+  "connected";
+if (deploymentMode !== "connected" && deploymentMode !== "airgapped") {
+  throw new Error(
+    `CARBON_DEPLOYMENT_MODE must be "connected" or "airgapped", got "${deploymentMode}"`
+  );
+}
+export const CARBON_DEPLOYMENT_MODE: "connected" | "airgapped" = deploymentMode;
 
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false

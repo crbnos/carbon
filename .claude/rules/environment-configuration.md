@@ -120,7 +120,15 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (required, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
-(default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
+(default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`,
+`APP_REVIEW_EMAILS` (optional, server-only, comma-separated and lowercased into
+a `readonly string[]` — the store-review accounts that sign in with a password
+because an App Store / Google Play reviewer cannot receive an emailed code; set
+only on Carbon Cloud, empty everywhere else, which turns the path off),
+`CARBON_DEPLOYMENT_MODE` (optional, server-only, `connected` (default) |
+`airgapped` — `airgapped` turns off every outbound call the MES mobile app
+would otherwise make, and an unrecognised value throws at module load rather
+than silently phoning home).
 
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or

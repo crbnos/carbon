@@ -3,21 +3,38 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Trans } from "@lingui/react/macro";
-import { Text, View } from "react-native";
+import { Redirect } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
+import { Muted, Screen } from "~/components/ui";
+import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
- * Phase 0 placeholder. Phase 1 replaces this with the instance/session guard
- * that routes to (setup)/connect, (auth)/sign-in or (app).
+ * The only decision this screen makes: which of the three worlds the app is in.
+ *
+ *   no instance linked  → (setup)/connect
+ *   linked, not signed in → (auth)/sign-in
+ *   signed in            → (app)
  */
 export default function Index() {
-  return (
-    <View className="flex-1 items-center justify-center gap-2 bg-background px-4">
-      <Text className="text-2xl font-semibold text-foreground">
-        <Trans>Carbon MES</Trans>
-      </Text>
-      <Text className="text-base text-muted-foreground">
-        <Trans>Shop floor execution</Trans>
-      </Text>
-    </View>
-  );
+  const { state } = useAuth();
+
+  if (state === "loading") {
+    return (
+      <Screen>
+        <View className="flex-1 items-center justify-center gap-3">
+          <ActivityIndicator />
+          <Muted>
+            <Trans>Carbon MES</Trans>
+          </Muted>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (state === "no_instance") return <Redirect href="/(setup)/connect" />;
+  if (state === "ready") return <Redirect href="/(app)/(tabs)/operations" />;
+  if (state === "mfa_required") return <Redirect href="/(auth)/two-factor" />;
+  if (state === "code_sent") return <Redirect href="/(auth)/verify" />;
+  if (state === "needs_password") return <Redirect href="/(auth)/password" />;
+  return <Redirect href="/(auth)/sign-in" />;
 }

@@ -26,6 +26,7 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
+  LuSmartphone,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -182,6 +183,12 @@ export default function useSettingsSubmodules() {
             to: path.to.backups,
             role: "employee",
             icon: <LuDatabase />
+          },
+          {
+            name: t`Connect Mobile App`,
+            to: path.to.connectMobile,
+            role: "employee",
+            icon: <LuSmartphone />
           },
           {
             name: t`Custom Fields`,

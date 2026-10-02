@@ -5,3 +5,20 @@
 <p>
   <a href="{{ .SiteURL }}/magic-link?token={{ .TokenHash }}">Log In</a>
 </p>
+
+<p>Or enter this code in the Carbon MES app:</p>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td
+      style="font-family: monospace; font-size: 28px; font-weight: bold; letter-spacing: 8px; padding: 8px 0"
+    >
+      {{ .Token }}
+    </td>
+  </tr>
+</table>
+
+<p style="font-size: 12px; color: #666666">
+  This code expires shortly and can only be used once. If you did not request
+  it, you can ignore this email.
+</p>

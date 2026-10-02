@@ -20,7 +20,9 @@ export default defineConfig({
       "@carbon/mes-core": new URL(
         "../../packages/mes-core/src/index.ts",
         import.meta.url
-      ).pathname
+      ).pathname,
+      "@carbon/utils": new URL("../../packages/utils/src", import.meta.url)
+        .pathname
     }
   }
 });

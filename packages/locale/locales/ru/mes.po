@@ -96,6 +96,9 @@ msgstr "{recorded}/{0} производственных заказов"
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
@@ -369,6 +372,9 @@ msgstr "Завершено"
 msgid "Completing"
 msgstr "Завершение"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connecting"
 msgstr "Подключение"
 
@@ -389,6 +395,9 @@ msgstr "Скопировано!"
 
 msgid "Copy"
 msgstr "Копировать"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy to clipboard"
 msgstr "Копировать в буфер обмена"
@@ -721,6 +730,9 @@ msgstr "через {0}"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Progress"
 msgstr "В работе"
 
@@ -729,6 +741,9 @@ msgstr "Проверить элемент"
 
 msgid "inspected"
 msgstr "проверенный"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Instructions"
 msgstr "Инструкции"
@@ -1170,6 +1185,9 @@ msgstr "Опционально"
 msgid "or"
 msgstr "или"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Out of calibration"
 msgstr "Вне калибровки"
 
@@ -1305,6 +1323,9 @@ msgstr "Прогресс"
 msgid "Proj. {0}"
 msgstr "Прогноз. {0}"
 
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
+
 msgid "Quality Issue"
 msgstr "Проблема качества"
 
@@ -1429,6 +1450,9 @@ msgstr "Сканировать или найти серийный номер..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "Schedule"
 msgstr "Расписание"

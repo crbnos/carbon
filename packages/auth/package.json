@@ -27,7 +27,8 @@
     "./verification.server": "./src/services/verification.server.ts",
     "./middleware/flash.server": "./src/middleware/flash.server.ts",
     "./middleware/security.server": "./src/middleware/security.server.ts",
-    "./middleware/flash.client": "./src/middleware/flash.client.ts"
+    "./middleware/flash.client": "./src/middleware/flash.client.ts",
+    "./api-user.server": "./src/services/api-user.server.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -800,6 +800,9 @@ msgstr "零件包含可以购买或制造的特定项目的信息。"
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "此步骤中的零件放置后可能会翻倒 — 考虑使用工装夹具或另一个人员。"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "操作员在此步骤中看到的照片或 PDF"
 
@@ -4304,6 +4307,9 @@ msgstr "连接 Jira 问题"
 msgid "Connect Linear issue"
 msgstr "连接 Linear 问题"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "先在设置 → 集成中连接 Slack。"
 
@@ -4657,6 +4663,9 @@ msgstr "复制销售订单唯一标识符"
 
 msgid "Copy sales return order unique identifier"
 msgstr "复制销售退货订单唯一标识符"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "复制服务编号"
@@ -9160,6 +9169,9 @@ msgstr "{0} 后"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "在Onshape中编辑此OAuth应用程序的权限以包括\"应用程序可以写入您的文档\"，然后重新连接。"
 
@@ -9385,6 +9397,9 @@ msgstr "检验：需要不同的检验员"
 
 msgid "Install"
 msgstr "安装"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Install mode"
 msgstr "安装模式"
@@ -12849,6 +12864,9 @@ msgstr "或"
 msgid "Or enter this secret manually:"
 msgstr "或手动输入此密码:"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Order"
 msgstr "订单"
 
@@ -13548,6 +13566,9 @@ msgstr "采购订单号"
 msgid "PO PDF"
 msgstr "采购订单 PDF"
 
+msgid "Point the Carbon MES app at this server so the shop floor can clock in, pick and report from a phone or tablet."
+msgstr ""
+
 msgid "Policy"
 msgstr "政策"
 
@@ -14188,6 +14209,9 @@ msgstr "推送到会计系统"
 
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
+
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -15874,6 +15898,9 @@ msgstr "用你的身份验证应用程序（如 Google Authenticator 或 1Passwo
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "用你的身份验证应用程序扫描此代码，然后输入它显示的 6 位数代码。"
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"

@@ -96,6 +96,9 @@ msgstr "{recorded}/{0} जॉब्स"
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
@@ -369,6 +372,9 @@ msgstr "पूर्ण"
 msgid "Completing"
 msgstr "पूर्ण हो रहा है"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connecting"
 msgstr "जुड़ रहा है"
 
@@ -389,6 +395,9 @@ msgstr "कॉपी हो गया!"
 
 msgid "Copy"
 msgstr "कॉपी करें"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy to clipboard"
 msgstr "क्लिपबोर्ड पर कॉपी करें"
@@ -721,6 +730,9 @@ msgstr "{0} में"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Progress"
 msgstr "प्रगति में"
 
@@ -729,6 +741,9 @@ msgstr "आइटम का निरीक्षण करें"
 
 msgid "inspected"
 msgstr "निरीक्षण किया गया"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Instructions"
 msgstr "निर्देश"
@@ -1170,6 +1185,9 @@ msgstr "वैकल्पिक"
 msgid "or"
 msgstr "या"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Out of calibration"
 msgstr "अंशांकन से बाहर"
 
@@ -1305,6 +1323,9 @@ msgstr "प्रगति"
 msgid "Proj. {0}"
 msgstr "प्रोज. {0}"
 
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
+
 msgid "Quality Issue"
 msgstr "गुणवत्ता समस्या"
 
@@ -1429,6 +1450,9 @@ msgstr "सीरियल नंबर स्कैन करें या ख�
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "Schedule"
 msgstr "शेड्यूल"

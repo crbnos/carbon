@@ -253,3 +253,61 @@ export const operationsQuery = z.object({
   filter: z.array(z.string()).default([])
 });
 export type OperationsQuery = z.infer<typeof operationsQuery>;
+
+/**
+ * The operations list, as the app reads it.
+ *
+ * Deliberately a SUBSET of what the web loader returns: the web feeds a Kanban
+ * board with columns, processes, customers and filter metadata, while the app
+ * renders cards. Every field here is one an operator scans for on a card
+ * (`apps/mes/app/components/OperationsList.tsx`), and `.passthrough()` keeps a
+ * newer server's extra fields from failing an older app build — `/api/v1` is
+ * additive-only.
+ */
+export const operationCard = z
+  .object({
+    id: z.string(),
+    jobReadableId: z.string().nullable().optional(),
+    itemReadableId: z.string().nullable().optional(),
+    itemDescription: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    dueDate: z.string().nullable().optional(),
+    deadlineType: z.string().nullable().optional(),
+    quantity: z.number().nullable().optional(),
+    targetQuantity: z.number().nullable().optional(),
+    quantityCompleted: z.number().nullable().optional(),
+    quantityScrapped: z.number().nullable().optional(),
+    quantityReworked: z.number().nullable().optional(),
+    columnId: z.string().nullable().optional(),
+    thumbnailPath: z.string().nullable().optional(),
+    salesOrderReadableId: z.string().nullable().optional(),
+    batchId: z.string().nullable().optional(),
+    batchReadableId: z.string().nullable().optional(),
+    batchSize: z.number().nullable().optional()
+  })
+  .passthrough();
+export type OperationCard = z.infer<typeof operationCard>;
+
+export const workCenterColumn = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    active: z.boolean().optional(),
+    isBlocked: z.boolean().optional()
+  })
+  .passthrough();
+export type WorkCenterColumn = z.infer<typeof workCenterColumn>;
+
+export const operationsScreen = z
+  .object({
+    items: z.array(operationCard),
+    columns: z.array(workCenterColumn),
+    /** The operator's manning-board station, when they have one for today. */
+    peopleStation: z
+      .object({ workCenterId: z.string(), name: z.string() })
+      .nullable(),
+    availableTags: z.array(z.string())
+  })
+  .passthrough();
+export type OperationsScreen = z.infer<typeof operationsScreen>;

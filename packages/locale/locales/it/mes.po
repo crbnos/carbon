@@ -96,6 +96,9 @@ msgstr "Registrato/{0} ordini di produzione"
 msgid "+{overflow} more"
 msgstr "+{overflow} altri"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Un completamento precedente non è terminato. Riprovare riprende i passaggi rimanenti — le quantità non vengono conteggiate due volte."
 
@@ -369,6 +372,9 @@ msgstr "Completato"
 msgid "Completing"
 msgstr "Completamento in corso"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connecting"
 msgstr "Collegamento in corso"
 
@@ -389,6 +395,9 @@ msgstr "Copiato!"
 
 msgid "Copy"
 msgstr "Copia"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy to clipboard"
 msgstr "Copia negli appunti"
@@ -721,6 +730,9 @@ msgstr "tra {0}"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Progress"
 msgstr "In Corso"
 
@@ -729,6 +741,9 @@ msgstr "Ispeziona Articolo"
 
 msgid "inspected"
 msgstr "ispezionato"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Instructions"
 msgstr "Istruzioni"
@@ -1170,6 +1185,9 @@ msgstr "Facoltativo"
 msgid "or"
 msgstr "o"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Out of calibration"
 msgstr "Fuori dalla taratura"
 
@@ -1305,6 +1323,9 @@ msgstr "Avanzamento"
 msgid "Proj. {0}"
 msgstr "Prev. {0}"
 
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
+
 msgid "Quality Issue"
 msgstr "Problema di qualità"
 
@@ -1429,6 +1450,9 @@ msgstr "Scansiona o cerca numero di serie..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione, quindi registra il suo risultato nella griglia."
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "Schedule"
 msgstr "Pianificazione"

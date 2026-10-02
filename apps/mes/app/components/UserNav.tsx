@@ -37,6 +37,7 @@ import {
   LuMonitor,
   LuMoon,
   LuShieldCheck,
+  LuSmartphone,
   LuSun,
   LuUser,
   LuUsers
@@ -156,6 +157,12 @@ export function UserNav({
                 <Link to={path.to.accountSettings}>
                   <DropdownMenuIcon icon={<LuUser />} />
                   <Trans>Account Settings</Trans>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={path.to.connectMobile}>
+                  <DropdownMenuIcon icon={<LuSmartphone />} />
+                  <Trans>Connect Mobile App</Trans>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

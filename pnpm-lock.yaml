@@ -1183,6 +1183,9 @@ importers:
       '@carbon/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@carbon/mes-core':
+        specifier: workspace:*
+        version: link:../../packages/mes-core
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
