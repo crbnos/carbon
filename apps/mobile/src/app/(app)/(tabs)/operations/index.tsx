@@ -27,6 +27,7 @@ import {
 import { useLayout } from "~/components/useLayout";
 import { useThemeColors } from "~/components/useThemeColor";
 import { OperationCard } from "~/features/operations/OperationCard";
+import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
@@ -185,6 +186,13 @@ export default function Operations() {
         </Heading>
         <Muted className="text-sm">{locationName}</Muted>
       </View>
+
+      {/*
+        The board is one of web MES's four OPERATIONS items; the other three are
+        this operator's own queues. The switcher is how they are reached without
+        a sixth bottom tab — see `QueueSwitcher`.
+      */}
+      <QueueSwitcher current="board" />
 
       {/*
         Web's "Your station: <name> ✕" chip. An operator with a manning-board

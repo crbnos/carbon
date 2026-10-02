@@ -7,6 +7,7 @@
     "description": "The Carbon shop-floor app. Start and pause work, report good, scrap and rework, issue material by scan, follow work instructions, pick lists and clock in and out.",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#09090B",
     "icon": "./assets/images/icon.png",
     "runtimeVersion": {
       "policy": "fingerprint"

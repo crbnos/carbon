@@ -26,6 +26,17 @@ export const keys = {
     ] as const,
   operation: (s: Scope, operationId: string) =>
     ["operation", s.instanceId, s.companyId, operationId] as const,
+  /**
+   * One of the three personal operation queues — Assigned / Active / Recent.
+   *
+   * Deliberately NOT location-keyed, unlike `operations`: these RPCs answer
+   * "what is on THIS employee's name", which is company-wide, and the Active
+   * badge in the queue switcher has to agree with the Active screen itself —
+   * two keys for one answer would let them disagree on a tablet whose location
+   * was changed mid-shift.
+   */
+  operationQueue: (s: Scope, queue: "assigned" | "active" | "recent") =>
+    ["operation-queue", s.instanceId, s.companyId, queue] as const,
   reworkTargets: (s: Scope, operationId: string) =>
     ["rework-targets", s.instanceId, s.companyId, operationId] as const,
   picking: (s: Scope) => ["picking", s.instanceId, s.companyId] as const,

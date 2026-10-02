@@ -4,7 +4,6 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getLogger } from "@carbon/logger";
 import {
   Button,
   CarbonPulse,
@@ -37,40 +36,21 @@ import { OperationsList } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import { userContext } from "~/context";
-import {
-  getJobOperationsAssignedToEmployee,
-  getWorkCentersByCompany
-} from "~/services/operations.service";
-import { makeDurations } from "~/utils/durations";
-
-const log = getLogger("mes");
+import { getAssignedScreen } from "~/services/screens.server";
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
 
-  const serviceRole = getCarbonServiceRole();
-  const locationId = context.get(userContext)?.locationId;
+  // The read itself lives in `screens.server.ts` so the MES mobile API runs
+  // exactly this query, with exactly this client — see
+  // `.claude/rules/mes-mobile-api.md`.
+  const screen = await getAssignedScreen(getCarbonServiceRole(), {
+    companyId,
+    userId,
+    locationId: context.get(userContext)?.locationId
+  });
 
-  const [operations, workCenters] = await Promise.all([
-    getJobOperationsAssignedToEmployee(serviceRole, userId, companyId),
-    getWorkCentersByCompany(serviceRole, companyId)
-  ]);
-
-  if (operations.error) {
-    log.error("Failed to load assigned operations", {
-      error: operations.error
-    });
-  }
-
-  if (workCenters.error) {
-    log.error("Failed to load work centers", { error: workCenters.error });
-  }
-
-  return {
-    operations: operations?.data?.map(makeDurations) ?? [],
-    workCenters: workCenters?.data ?? [],
-    locationId
-  };
+  return screen.data;
 }
 
 type AssignedView = "board" | "list";

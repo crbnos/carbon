@@ -22,6 +22,7 @@ import {
   getPickOrder
 } from "~/services/inventory.service";
 import {
+  getActiveJobOperationsByEmployee,
   getActiveJobOperationsByLocation,
   getBatchMaterialTotals,
   getBatchWorkInstructions,
@@ -36,6 +37,7 @@ import {
   getJobOperationById,
   getJobOperationForCompany,
   getJobOperationProcedure,
+  getJobOperationsAssignedToEmployee,
   getKanbanByJobId,
   getMyPeopleAssignment,
   getNextIncompleteSerialEntity,
@@ -44,10 +46,12 @@ import {
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getRecentJobOperationsByEmployee,
   getThumbnailPathByItemId,
   getTrackedEntitiesByMakeMethodId,
   getUpstreamOperations,
   getWorkCenter,
+  getWorkCentersByCompany,
   getWorkCentersByLocation,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
@@ -416,6 +420,136 @@ export async function getOperationsScreen(
     availableTags
   });
 }
+
+// ---------------------------------------------------------------------------
+// Operation queues — Assigned / Active / Recent
+// ---------------------------------------------------------------------------
+
+/**
+ * The three PERSONAL operation queues, extracted from `x+/assigned.tsx`,
+ * `x+/active.tsx` and `x+/recent.tsx`.
+ *
+ * They are three different questions about one employee, not one query under
+ * three filters, and each has its own RPC:
+ *
+ *  - ASSIGNED (`get_assigned_job_operations`) — what a planner put on this
+ *    person's name, whatever its status.
+ *  - ACTIVE (`get_active_job_operations_by_employee`) — what this person has
+ *    an open production event on. This is the number web MES badges in its
+ *    sidebar.
+ *  - RECENT (`get_recent_job_operations_by_employee`) — what they last
+ *    touched, so picking a job back up is one tap instead of a search.
+ *
+ * All three RPCs return the SAME row shape, so the three functions differ only
+ * in which one they call — but the CLIENT is deliberately not shared. The web
+ * `assigned` loader reads with the service role (it also loads every work
+ * center, for its board's empty columns) while `active` and `recent` read as
+ * the signed-in user, so the client stays the caller's argument and neither
+ * the web nor the app can widen what the other sees.
+ *
+ * Each returns an `Ok` rather than a `ScreenResult`: every one of the three web
+ * loaders reads `?? []` and cannot fail, so no caller has to narrow a branch
+ * that does not exist — `getPickingScreen` does the same.
+ */
+export type OperationQueueScreenArgs = {
+  companyId: string;
+  /**
+   * Whose queue this is. The web page passes its signed-in user; the API
+   * passes `user.userId` — the pinned operator on a shared terminal — so a
+   * tablet shows the work of whoever is standing at it, which is also whose
+   * name the start/stop commands write.
+   */
+  userId: string;
+};
+
+export type AssignedScreenArgs = OperationQueueScreenArgs & {
+  /**
+   * Which location's work centers may appear as EMPTY board columns. The web
+   * reads it from `userContext` (null under `api+/`). It filters NOTHING here —
+   * it is echoed back for the client to compare against `workCenter.locationId`
+   * — so passing null only costs the board's "empty work centers" toggle.
+   */
+  locationId: string | null | undefined;
+};
+
+/** `x+/assigned.tsx`'s loader. */
+export async function getAssignedScreen(
+  client: SupabaseClient<Database>,
+  args: AssignedScreenArgs
+) {
+  const [operations, workCenters] = await Promise.all([
+    getJobOperationsAssignedToEmployee(client, args.userId, args.companyId),
+    getWorkCentersByCompany(client, args.companyId)
+  ]);
+
+  if (operations.error) {
+    log.error("Failed to load assigned operations", {
+      companyId: args.companyId,
+      error: operations.error
+    });
+  }
+
+  if (workCenters.error) {
+    log.error("Failed to load work centers", {
+      companyId: args.companyId,
+      error: workCenters.error
+    });
+  }
+
+  return ok({
+    operations: operations?.data?.map(makeDurations) ?? [],
+    workCenters: workCenters?.data ?? [],
+    locationId: args.locationId
+  });
+}
+
+export type AssignedScreen = Awaited<
+  ReturnType<typeof getAssignedScreen>
+>["data"];
+
+/** `x+/active.tsx`'s loader. */
+export async function getActiveScreen(
+  client: SupabaseClient<Database>,
+  args: OperationQueueScreenArgs
+) {
+  const operations = await getActiveJobOperationsByEmployee(client, {
+    employeeId: args.userId,
+    companyId: args.companyId
+  });
+
+  if (operations.error) {
+    log.error("Failed to load active operations", {
+      companyId: args.companyId,
+      error: operations.error
+    });
+  }
+
+  return ok({ operations: operations?.data?.map(makeDurations) ?? [] });
+}
+
+export type ActiveScreen = Awaited<ReturnType<typeof getActiveScreen>>["data"];
+
+/** `x+/recent.tsx`'s loader. */
+export async function getRecentScreen(
+  client: SupabaseClient<Database>,
+  args: OperationQueueScreenArgs
+) {
+  const operations = await getRecentJobOperationsByEmployee(client, {
+    employeeId: args.userId,
+    companyId: args.companyId
+  });
+
+  if (operations.error) {
+    log.error("Failed to load recent operations", {
+      companyId: args.companyId,
+      error: operations.error
+    });
+  }
+
+  return ok({ operations: operations?.data?.map(makeDurations) ?? [] });
+}
+
+export type RecentScreen = Awaited<ReturnType<typeof getRecentScreen>>["data"];
 
 // ---------------------------------------------------------------------------
 // Operation detail

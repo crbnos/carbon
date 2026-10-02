@@ -13,6 +13,7 @@ import type { SheetHandle } from "~/components/BottomSheet";
 import { HeroButton } from "~/components/HeroButton";
 import { TabBar, type TabDef, TabPanel } from "~/components/Tabs";
 import { Button, ErrorNote, Screen, Skeleton } from "~/components/ui";
+import { useIsTablet } from "~/components/useIsTablet";
 import {
   commandMessage,
   useEndEvent,
@@ -70,6 +71,7 @@ export function OperationDetailView({
   onBack?: () => void;
 }) {
   const { t } = useLingui();
+  const isTablet = useIsTablet();
   useKeepAwake();
 
   // Null means "whichever unit the server auto-selects". It only becomes a
@@ -196,7 +198,18 @@ export function OperationDetailView({
   const eventIds = eventIdsFrom(open);
 
   return (
-    <View className="flex-1 flex-row bg-background">
+    /*
+     * Row on a tablet, COLUMN on a phone.
+     *
+     * `ActionDock` already switches itself between a right-hand column and a
+     * bottom bar — but this parent was `flex-row` unconditionally, so on a
+     * phone the bar became a row SIBLING of the content, took the width it
+     * wanted, and left the operation itself with none. The screen rendered as
+     * a dock floating on an empty background.
+     */
+    <View
+      className={`flex-1 bg-background ${isTablet ? "flex-row" : "flex-col"}`}
+    >
       <View className="flex-1">
         <Screen
           title={detail.job.jobId ?? t`Operation`}

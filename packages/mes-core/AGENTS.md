@@ -63,6 +63,7 @@ pnpm exec turbo run typecheck --filter=@carbon/mes-core
 | `authSessionResponse` | `./contract` | Tokens plus `mfaRequired` |
 | `meResponse`, `MeInstance`, `MePermissions` | `./contract` | What the app learns about an instance |
 | `operationsQuery`, `operationsScreen`, `operationCard` | `./contract` | The operations list query and its response |
+| `operationQueueScreen`, `operationQueueItem` | `./contract` | The Assigned / Active / Recent personal queues |
 | `operationDetail`, `productionEvent` | `./contract` | One operation and its time events |
 | `pickingScreen`, `pickingListCard` | `./contract` | The picking lists assigned to a kitter |
 | `pickingListDetail`, `pickingListLine` | `./contract` | One picking list with its lines and recommended lots |

@@ -314,6 +314,74 @@ export const operationsScreen = z
 export type OperationsScreen = z.infer<typeof operationsScreen>;
 
 /**
+ * One row of a PERSONAL operation queue — Assigned, Active or Recent.
+ *
+ * One schema for three endpoints because there is one row shape: the three
+ * RPCs behind them (`get_assigned_job_operations`,
+ * `get_active_job_operations_by_employee`,
+ * `get_recent_job_operations_by_employee`) are column-for-column identical, and
+ * `makeDurations` adds the same four durations to each.
+ *
+ * The field names here are the SERVER's, not the card's — `operationStatus`
+ * rather than `status`, `jobDueDate` AND `operationDueDate` rather than one
+ * `dueDate`. That mirrors what the shared `getAssignedScreen` /
+ * `getActiveScreen` / `getRecentScreen` return, the way `pickingListCard`
+ * mirrors the `pickingLists` view, and it keeps the CHOICE of which due date a
+ * queue card shows in the app (`features/operations/queues.ts`) — web MES's own
+ * card and its board disagree about that, so the wire must carry both.
+ *
+ * Every field but `id` is nullable: these are RPC rows the generated types
+ * declare non-null, and a queue of thirty operations must not fail to render
+ * because one of them has no description. `.passthrough()` for the usual
+ * reason — `/api/v1` is additive-only, so an older app build keeps working
+ * when a newer server adds a column.
+ */
+export const operationQueueItem = z
+  .object({
+    id: z.string(),
+    jobReadableId: z.string().nullable().optional(),
+    itemReadableId: z.string().nullable().optional(),
+    itemDescription: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    operationStatus: z.string().nullable().optional(),
+    /** The JOB's deadline and due date — what web MES's operation card reads. */
+    jobDeadlineType: z.string().nullable().optional(),
+    jobDueDate: z.string().nullable().optional(),
+    /** The OPERATION's own due date — what the Kanban board reads. */
+    operationDueDate: z.string().nullable().optional(),
+    operationQuantity: z.number().nullable().optional(),
+    targetQuantity: z.number().nullable().optional(),
+    quantityComplete: z.number().nullable().optional(),
+    quantityScrapped: z.number().nullable().optional(),
+    workCenterId: z.string().nullable().optional(),
+    thumbnailPath: z.string().nullable().optional(),
+    assignee: z.string().nullable().optional(),
+    tags: z.array(z.string()).nullable().optional(),
+    salesOrderReadableId: z.string().nullable().optional(),
+    /** Milliseconds, already summed by `makeDurations` on the server. */
+    duration: z.number().nullable().optional(),
+    setupDuration: z.number().nullable().optional(),
+    laborDuration: z.number().nullable().optional(),
+    machineDuration: z.number().nullable().optional()
+  })
+  .passthrough();
+export type OperationQueueItem = z.infer<typeof operationQueueItem>;
+
+/**
+ * The response of `GET /operations/{assigned,active,recent}`.
+ *
+ * `operations` only. The web `assigned` loader also returns every work center
+ * and its location, for the board's "empty work centers" columns; the app
+ * renders a flat list, so the endpoint does not ship them.
+ */
+export const operationQueueScreen = z
+  .object({
+    operations: z.array(operationQueueItem)
+  })
+  .passthrough();
+export type OperationQueueScreen = z.infer<typeof operationQueueScreen>;
+
+/**
  * One operation, as the app reads it.
  *
  * A deliberate SUBSET with `.passthrough()`: the web payload carries ~21 keys
