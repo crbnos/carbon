@@ -302,6 +302,48 @@ describe("mcp tool-metadata generator", () => {
   // always stamped updatedBy and every create was forced down the UPDATE branch
   // (0 rows → PGRST116, silent no-op). The rule is what lets the dispatcher stamp
   // exactly one audit field without the caller saying which.
+  // `assignee: null | undefined` published as a REQUIRED null on the status
+  // tools, so every status change had to send `assignee: null` and cleared it.
+  it("does not require a field whose type admits undefined", () => {
+    expect(get("sales_updateQuoteStatus").schema.required).toEqual([
+      "id",
+      "status"
+    ]);
+    expect(get("quality_updateIssueStatus").schema.required).toEqual([
+      "id",
+      "status"
+    ]);
+  });
+
+  // The rpc advances `sequence.next`, so calling it consumes a document number.
+  // It was published as a READ gated on `settings:view`.
+  it("publishes getNextSequence as a write gated on settings:update", () => {
+    const t = get("settings_getNextSequence") as Tool & {
+      permission: { module: string; actions: string[] };
+    };
+    expect(t.classification).toBe("WRITE");
+    expect(t.permission).toEqual({ module: "settings", actions: ["update"] });
+  });
+
+  it("never requires a property that can only be null", () => {
+    const offenders: string[] = [];
+    const walk = (name: string, schema: any, path: string) => {
+      if (!schema || typeof schema !== "object") return;
+      const properties = schema.properties ?? {};
+      for (const required of schema.required ?? []) {
+        if (properties[required]?.type === "null") {
+          offenders.push(`${name}: ${path}${required}`);
+        }
+      }
+      for (const [key, value] of Object.entries(properties)) {
+        walk(name, value, `${path}${key}.`);
+      }
+      walk(name, schema.items, `${path}[].`);
+    };
+    for (const t of tools) walk(t.name, t.schema, "");
+    expect(offenders).toEqual([]);
+  });
+
   it("gives an upsert rule to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
     // Inverted (`"updatedBy" in`), id decides.
     expect(get("production_upsertJob").upsert).toEqual({ keys: ["id"] });

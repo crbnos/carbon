@@ -519,6 +519,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   left out of the published schema. The digest shows a mapping only where the
   source differs from the name (`"context":"updatedBy=userId"`). Pinned by
   `apps/erp/test/mcp-service-ast.test.ts`.
+- **A field whose type admits `undefined` is optional**, with or without `?`
+  (inline object types). `assignee: null | undefined` used to publish as a
+  required `null` on eight status tools, so every status change had to send
+  `assignee: null` and cleared it. `mcp-tool-metadata.test.ts` also refuses any
+  required property that can only be null, across the whole manifest.
 - **injectAuth** starts from the verb's audit fields (table above) plus
   `companyId`, then is checked against the schema (`withoutAbsentAuditColumns`):
   when the function names exactly ONE relation and that relation has no

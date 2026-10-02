@@ -671,11 +671,18 @@ function parseInlineObjectType(
       .replace(/;$/, "")
       .trim();
 
+    // A type that admits `undefined` is optional whether or not it is written
+    // with `?`. `assignee: null | undefined` used to publish as required, so a
+    // caller had to send `assignee: null` and every status change cleared it.
+    const admitsUndefined = splitAtTopLevel(fieldType, "|").some(
+      (part) => part.trim() === "undefined"
+    );
+
     const fieldSchema = typeToJsonSchema(fieldType, ctx);
     properties[fieldName] = description
       ? { ...fieldSchema, description }
       : fieldSchema;
-    if (!optional) required.push(fieldName);
+    if (!optional && !admitsUndefined) required.push(fieldName);
   }
 
   const schema: Record<string, unknown> = { type: "object", properties };

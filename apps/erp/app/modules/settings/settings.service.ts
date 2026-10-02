@@ -383,7 +383,10 @@ export async function getKanbanOutputSetting(
     .single();
 }
 
-/** @mcp read */
+/**
+ * Takes the next number of a sequence, which advances it.
+ * @mcp action
+ */
 export async function getNextSequence(
   client: SupabaseClient<Database>,
   table: string,
