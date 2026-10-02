@@ -21,6 +21,14 @@ describe("getCurrentPath", () => {
       "/x/parts"
     );
   });
+
+  it("drops React Router's single-fetch param", () => {
+    expect(
+      getCurrentPath(
+        new Request("https://app.carbon.ms/x/parts?tab=open&_routes=root")
+      )
+    ).toBe("/x/parts?tab=open");
+  });
 });
 
 describe("makeRedirectToFromHere", () => {

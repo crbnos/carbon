@@ -9,6 +9,10 @@ const log = getLogger("auth");
 
 export function getCurrentPath(request: Request) {
   const url = new URL(request.url);
+  // `_routes` is React Router's single-fetch transport param. Loaders never
+  // see it, but middleware does (MES runs auth there), and a page URL that
+  // carries it limits which loaders later data requests run.
+  url.searchParams.delete("_routes");
   return `${url.pathname}${url.search}`;
 }
 
