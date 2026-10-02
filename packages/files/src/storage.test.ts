@@ -397,6 +397,15 @@ describe("storage(client).company", () => {
         ["zeta", null]
       ]);
       expect(data?.[0]?.metadata).toEqual({ size: 1 });
+      expect(data?.[1]).toEqual({
+        key: "alpha",
+        name: "alpha",
+        id: null,
+        updated_at: null,
+        created_at: null,
+        last_accessed_at: null,
+        metadata: null
+      });
     });
 
     it("unions both buckets with the company bucket winning ties", async () => {

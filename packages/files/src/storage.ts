@@ -209,8 +209,18 @@ export async function isStorageNotFound(error: unknown): Promise<boolean> {
 const lastSegment = (path: string) =>
   path.replace(/\/+$/, "").split("/").pop() ?? "";
 
+// What the old endpoint returned for a folder, and every caller checks:
+// the paged endpoint gives a folder only its name and key.
+const FOLDER_FIELDS = {
+  id: null,
+  updated_at: null,
+  created_at: null,
+  last_accessed_at: null,
+  metadata: null
+};
+
 type ListedEntry =
-  | (SearchV2Result["folders"][number] & { id: null })
+  | (SearchV2Result["folders"][number] & typeof FOLDER_FIELDS)
   | SearchV2Result["objects"][number];
 
 /**
@@ -235,10 +245,8 @@ async function listFolder(bucket: Bucket, prefix: string) {
       cursor
     });
     if (error) return { data: null, error };
-    // The paged endpoint gives a folder no `id`; the old one, and every
-    // caller, mark a folder with `id: null`.
     entries.push(
-      ...data.folders.map((folder) => ({ ...folder, id: null })),
+      ...data.folders.map((folder) => ({ ...FOLDER_FIELDS, ...folder })),
       ...data.objects
     );
     cursor = data.hasNext ? data.nextCursor : undefined;
