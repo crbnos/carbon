@@ -177,3 +177,20 @@ describe("async.onBackground", () => {
     expect(done.sort()).toEqual(["failed", "slow"]);
   });
 });
+
+describe("async.background", () => {
+  it("contains a failure of the error handler itself", async () => {
+    const kept: Promise<unknown>[] = [];
+    async.onBackground((work) => kept.push(work));
+    async.background(
+      () => {
+        throw new Error("task failed");
+      },
+      () => {
+        throw new Error("handler failed");
+      }
+    );
+    await expect(kept[0]).resolves.toBeUndefined();
+    async.onBackground(undefined);
+  });
+});

@@ -121,7 +121,12 @@ function background(
   task: () => Promise<unknown> | unknown,
   onError: (error: unknown) => void
 ): void {
-  const work = Promise.resolve().then(task).catch(onError);
+  // `onError` is the last resort: if it throws too, there is nowhere left to
+  // report it, and an unhandled rejection can take the process down.
+  const work = Promise.resolve()
+    .then(task)
+    .catch(onError)
+    .catch(() => {});
   extendLifetime?.(work);
 }
 
