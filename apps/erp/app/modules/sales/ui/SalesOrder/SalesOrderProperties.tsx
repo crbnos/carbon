@@ -34,6 +34,7 @@ import {
   EmployeeAvatar,
   useOptimisticAssignment
 } from "~/components";
+import { DelayAnalysis } from "~/components/DelayAnalysis";
 import {
   Currency,
   Customer,
@@ -480,6 +481,11 @@ const SalesOrderProperties = () => {
         table="salesOrder"
         tags={[]}
         onUpdate={onUpdateCustomFields}
+      />
+      <DelayAnalysis
+        key={`sales-order:${orderId}`}
+        type="sales-order"
+        id={orderId}
       />
     </VStack>
   );

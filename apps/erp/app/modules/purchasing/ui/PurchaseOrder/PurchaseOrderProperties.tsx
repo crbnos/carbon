@@ -39,6 +39,7 @@ import {
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
+import { DelayAnalysis } from "~/components/DelayAnalysis";
 import {
   Currency,
   Location,
@@ -501,6 +502,11 @@ const PurchaseOrderProperties = () => {
         table="purchaseOrder"
         tags={[]}
         onUpdate={onUpdateCustomFields}
+      />
+      <DelayAnalysis
+        key={`purchase-order:${orderId}`}
+        type="purchase-order"
+        id={orderId}
       />
     </VStack>
   );

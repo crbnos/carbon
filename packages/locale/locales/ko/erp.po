@@ -155,6 +155,10 @@ msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -330,6 +340,9 @@ msgstr "{done}개 중 {total}개 단계 완료"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
@@ -405,6 +418,9 @@ msgstr "권한 {scopeCount}개"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "회사를 Carbon에 가동시키기 위한 {total}개 단계. 각 단계는 체크포인트에서 종료됩니다."
@@ -4098,6 +4114,9 @@ msgstr "완료 날짜"
 msgid "Completed Date"
 msgstr "완료일"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "완료 수량"
 
@@ -4822,6 +4841,9 @@ msgstr "Onshape 연결을 완료할 수 없습니다"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government 연동을 완료 처리할 수 없습니다."
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
@@ -5779,6 +5801,9 @@ msgstr "모듈별 세밀한 권한으로 사용자 정의 역할을 정의하고
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "다단계 BOM 및 공정 목록(생산 방법) 정의"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "삭제"
@@ -9304,6 +9329,12 @@ msgstr "간접 자재 및 서비스"
 msgid "Indirect Materials & Services (default)"
 msgstr "간접 자재 및 서비스(기본값)"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "인프라"
 
@@ -10068,6 +10099,12 @@ msgstr "마지막 사용"
 
 msgid "Late in the evening, {name}."
 msgstr "{name}님, 저녁이 늦어가는군요."
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
@@ -12286,6 +12323,9 @@ msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 msgid "Not feasible"
 msgstr "불가능"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -12352,6 +12392,9 @@ msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
@@ -12765,6 +12808,12 @@ msgstr "공정작업 순서"
 msgid "Operation quantity"
 msgstr "작업 수량"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "공정 공급업체 공법"
 
@@ -12964,6 +13013,12 @@ msgstr "산출물은 절대 원자재를 초과할 수 없습니다. 입력물�
 
 msgid "Outside operation"
 msgstr "외주 공정작업"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "초과 적용액"
@@ -14255,6 +14310,9 @@ msgstr "품질 문서 승인 규칙"
 
 msgid "Quality Documents"
 msgstr "품질 문서"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "품질 유형"
@@ -16704,6 +16762,9 @@ msgstr "출하"
 
 msgid "Shipped"
 msgstr "배송됨"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "이 고객의 배송 라인 중 반품할 수량이 남아 있는 라인"

@@ -44,6 +44,7 @@ import {
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
+import { DelayAnalysis } from "~/components/DelayAnalysis";
 import {
   Customer,
   Item,
@@ -629,6 +630,8 @@ const JobProperties = () => {
         tags={routeData?.job.tags ?? []}
         onUpdate={onUpdateCustomFields}
       />
+
+      <DelayAnalysis key={`job:${jobId}`} type="job" id={jobId} />
 
       {unlinkDisclosure.isOpen && (
         <Modal

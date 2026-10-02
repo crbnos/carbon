@@ -155,6 +155,10 @@ msgstr "{0}库存；剩余的{1}将按{2}拣货"
 msgid "{0} jobs created"
 msgstr "已创建{0}个工单"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} 行待映射"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -330,6 +340,9 @@ msgstr "{done}个/{total}个阶段已完成"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} 个权限"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
@@ -4098,6 +4114,9 @@ msgstr "完成日期"
 msgid "Completed Date"
 msgstr "完成日期"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "已完成数量"
 
@@ -4822,6 +4841,9 @@ msgstr "无法完成 Onshape 连接"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "无法完成 Onshape Government 连接"
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
@@ -5779,6 +5801,9 @@ msgstr "定义具有细粒度、按模块权限的自定义角色，并将其分
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "定义多级BOM和工序清单（制造方法）"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "删除"
@@ -9304,6 +9329,12 @@ msgstr "间接原材料及服务"
 msgid "Indirect Materials & Services (default)"
 msgstr "间接原材料及服务（默认）"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "基础设施"
 
@@ -10068,6 +10099,12 @@ msgstr "最后使用"
 
 msgid "Late in the evening, {name}."
 msgstr "傍晚晚些时候，{name}。"
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "最新操作结束"
@@ -12286,6 +12323,9 @@ msgstr "工单数量不足以覆盖所需数量"
 msgid "Not feasible"
 msgstr "不可行"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -12352,6 +12392,9 @@ msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
@@ -12765,6 +12808,12 @@ msgstr "操作顺序"
 msgid "Operation quantity"
 msgstr "操作数量"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "工序供应商工艺"
 
@@ -12964,6 +13013,12 @@ msgstr "产出的有效期永远不会超过其原材料的有效期。当没有
 
 msgid "Outside operation"
 msgstr "间接费用差异"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "超额应用"
@@ -14255,6 +14310,9 @@ msgstr "质量文件审批规则"
 
 msgid "Quality Documents"
 msgstr "质量文档"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "质量类型"
@@ -16704,6 +16762,9 @@ msgstr "发货单"
 
 msgid "Shipped"
 msgstr "已发货"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "该客户已发货行项中剩余待退货的数量"

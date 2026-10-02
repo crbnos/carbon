@@ -155,6 +155,10 @@ msgstr "{0} स्टॉक में है; शेष {1} को {2} के �
 msgid "{0} jobs created"
 msgstr "{0} जॉब बनाए गए"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# शेष राशि वाला खाता}
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -330,6 +340,9 @@ msgstr "{done} में से {total} चरण पूर्ण"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# पंक्ति बाहर रखी गई} other {# पंक्तियाँ बाहर रखी गईं}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} में से {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} अनुमतियाँ"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "आपकी कंपनी को Carbon पर लाइव करने के लिए {total} चरण। प्रत्येक एक चेकपॉइंट पर समाप्त होता है।"
@@ -4098,6 +4114,9 @@ msgstr "पूर्ण तारीख"
 msgid "Completed Date"
 msgstr "पूर्ण तारीख"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
@@ -4822,6 +4841,9 @@ msgstr "Onshape कनेक्शन पूरा नहीं हो सका
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government कनेक्शन को पूर्ण नहीं किया जा सका"
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
@@ -5779,6 +5801,9 @@ msgstr "अपनी टीम को असाइन करने के लि
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "बहु-स्तरीय BOMs और प्रक्रिया सूची (निर्माण विधि) को परिभाषित करें"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "हटाएं"
@@ -9304,6 +9329,12 @@ msgstr "अप्रत्यक्ष सामग्री और सेवा
 msgid "Indirect Materials & Services (default)"
 msgstr "अप्रत्यक्ष सामग्री और सेवाएं (डिफ़ॉल्ट)"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "बुनियादी ढांचा"
 
@@ -10068,6 +10099,12 @@ msgstr "अंतिम उपयोग"
 
 msgid "Late in the evening, {name}."
 msgstr "शाम को देर में, {name}।"
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
@@ -12286,6 +12323,9 @@ msgstr "मात्रा को कवर करने के लिए पर
 msgid "Not feasible"
 msgstr "संभव नहीं"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -12352,6 +12392,9 @@ msgstr "यहां कुछ भी आपकी खोज और फ़िल
 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "कुछ भी शेड्यूल नहीं किया गया — नीचे एक स्टेशन जोड़ें।"
@@ -12765,6 +12808,12 @@ msgstr "ऑपरेशन क्रम"
 msgid "Operation quantity"
 msgstr "ऑपरेशन मात्रा"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "ऑपरेशन आपूर्तिकर्ता प्रक्रिया"
 
@@ -12964,6 +13013,12 @@ msgstr "आउटपुट कभी भी इसके कच्चे मा�
 
 msgid "Outside operation"
 msgstr "ओवरहेड विचरण"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "अत्यधिक लागू किया गया"
@@ -14255,6 +14310,9 @@ msgstr "गुणवत्ता दस्तावेज़ अनुमोद�
 
 msgid "Quality Documents"
 msgstr "गुणवत्ता दस्तावेज़"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "गुणवत्ता प्रकार"
@@ -16704,6 +16762,9 @@ msgstr "शिपमेंट"
 
 msgid "Shipped"
 msgstr "भेजी गई"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"

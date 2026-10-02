@@ -155,6 +155,10 @@ msgstr "{0} stokta; kalan {1} {2} olarak toplanacak"
 msgid "{0} jobs created"
 msgstr "{0} İş emirleri oluşturuldu"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -330,6 +340,9 @@ msgstr "{done} / {total} aşama tamamlandı"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} izinleri"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her biri bir kontrol noktasında sona erer."
@@ -4098,6 +4114,9 @@ msgstr "Tamamlanma tarihi"
 msgid "Completed Date"
 msgstr "Tamamlanma Tarihi"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
 
@@ -4822,6 +4841,9 @@ msgstr "Onshape bağlantısı tamamlanamadı"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government bağlantısı tamamlanamadı"
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
@@ -5779,6 +5801,9 @@ msgstr "Özel roller tanımlayın ve bunları modüle özel, ayrıntılı izinle
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Çok seviyeli BOM'lar ve Operasyon listesi (üretim yöntemleri) tanımlayın"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "Sil"
@@ -9304,6 +9329,12 @@ msgstr "Dolaylı Malzemeler ve Hizmetler"
 msgid "Indirect Materials & Services (default)"
 msgstr "Dolaylı Malzemeler ve Hizmetler (varsayılan)"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Altyapı"
 
@@ -10068,6 +10099,12 @@ msgstr "Son Kullanılan"
 
 msgid "Late in the evening, {name}."
 msgstr "Akşamın geç saatlerinde, {name}."
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
@@ -12286,6 +12323,9 @@ msgstr "Miktarı karşılamak için yeterli İş emri yok"
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -12352,6 +12392,9 @@ msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
@@ -12765,6 +12808,12 @@ msgstr "Operasyon Sırası"
 msgid "Operation quantity"
 msgstr "İşlem miktarı"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "Operasyon tedarikçi prosesi"
 
@@ -12964,6 +13013,12 @@ msgstr "Ürün asla hammaddelerinden daha uzun sürmez. Hiçbir girdinin son kul
 
 msgid "Outside operation"
 msgstr "Genel Gider Sapması"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Fazla uygulandı"
@@ -14255,6 +14310,9 @@ msgstr "Kalite Belgesi onay kuralı"
 
 msgid "Quality Documents"
 msgstr "Kalite Belgeleri"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "Kalite Türü"
@@ -16704,6 +16762,9 @@ msgstr "Sevkiyatlar"
 
 msgid "Shipped"
 msgstr "Gönderildi"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Bu müşteriye gönderilen ve iade edilecek miktar kalan satırlar"

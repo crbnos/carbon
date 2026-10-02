@@ -155,6 +155,10 @@ msgstr "{0} в наличии; остаток {1} будет отобран ка
 msgid "{0} jobs created"
 msgstr "{0} производственных заказов создано"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} строк для сопоставления"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}д"
 
@@ -330,6 +340,9 @@ msgstr "{done} из {total} этапов завершено"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} из {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} прав доступа"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} этапов для запуска вашей организации на Carbon. Каждый завершается контрольной точкой."
@@ -4098,6 +4114,9 @@ msgstr "Дата завершения"
 msgid "Completed Date"
 msgstr "Дата завершения"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
@@ -4822,6 +4841,9 @@ msgstr "Не удалось завершить подключение к Onshape
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Не удалось завершить подключение Onshape Government"
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
@@ -5779,6 +5801,9 @@ msgstr "Определить пользовательские роли с дет
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Определите многоуровневые BOM и перечни операций (методы производства)"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "Удалить"
@@ -9304,6 +9329,12 @@ msgstr "Косвенные материалы и услуги"
 msgid "Indirect Materials & Services (default)"
 msgstr "Косвенные материалы и услуги (по умолчанию)"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "Инфраструктура"
 
@@ -10068,6 +10099,12 @@ msgstr "Последний раз использован"
 
 msgid "Late in the evening, {name}."
 msgstr "Поздно вечером, {name}."
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "Конец последней операции"
@@ -12286,6 +12323,9 @@ msgstr "Недостаточно производственных заказов
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "Не достигнуто"
 
@@ -12352,6 +12392,9 @@ msgstr "Здесь нет ничего, соответствующего ваш�
 
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
@@ -12765,6 +12808,12 @@ msgstr "Порядок операции"
 msgid "Operation quantity"
 msgstr "Количество операций"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
 
@@ -12964,6 +13013,12 @@ msgstr "Готовая продукция никогда не превышает
 
 msgid "Outside operation"
 msgstr "Отклонение косвенных затрат"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Переприменено на"
@@ -14255,6 +14310,9 @@ msgstr "Правило утверждения документа качеств�
 
 msgid "Quality Documents"
 msgstr "Документы качества"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "Тип качества"
@@ -16704,6 +16762,9 @@ msgstr "Отгрузки"
 
 msgid "Shipped"
 msgstr "Отправлено"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Отгруженные строки для этого покупателя с количеством, оставшимся для возврата"

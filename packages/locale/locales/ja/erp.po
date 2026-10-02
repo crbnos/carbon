@@ -155,6 +155,10 @@ msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 msgid "{0} jobs created"
 msgstr "{0} 件の製造指図が作成されました"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{count} day"
+msgstr ""
+
+msgid "{count} days"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -330,6 +340,9 @@ msgstr "{done} / {total} フェーズ完了"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr ""
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} 個の権限"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr ""
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "あなたの会社を Carbon に本格運用するまでの {total} つのフェーズがあります。それぞれがチェックポイントで終わります。"
@@ -4098,6 +4114,9 @@ msgstr "完了日"
 msgid "Completed Date"
 msgstr "完了日"
 
+msgid "Completed late"
+msgstr ""
+
 msgid "Completed Qty"
 msgstr "完了数量"
 
@@ -4822,6 +4841,9 @@ msgstr "Onshape 接続を完了できませんでした"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Onshape Government接続を完了できませんでした"
+
+msgid "Couldn't load delay analysis."
+msgstr ""
 
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
@@ -5779,6 +5801,9 @@ msgstr "細粒度で、モジュール単位の権限を持つカスタムロー
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "多階層BOMおよび工程表（製造方法）を定義"
+
+msgid "Delay analysis"
+msgstr ""
 
 msgid "Delete"
 msgstr "削除"
@@ -9304,6 +9329,12 @@ msgstr "間接材料とサービス"
 msgid "Indirect Materials & Services (default)"
 msgstr "間接材料とサービス（デフォルト）"
 
+msgid "inferred"
+msgstr ""
+
+msgid "Inferred."
+msgstr ""
+
 msgid "Infrastructure"
 msgstr "インフラストラクチャ"
 
@@ -10068,6 +10099,12 @@ msgstr "最後に使用"
 
 msgid "Late in the evening, {name}."
 msgstr "夜遅く、{name}さん。"
+
+msgid "Late supply"
+msgstr ""
+
+msgid "Late, with enough slack"
+msgstr ""
 
 msgid "Latest operation end"
 msgstr "最終操作終了"
@@ -12286,6 +12323,9 @@ msgstr "数量をカバーするのに十分な製造指図がありません"
 msgid "Not feasible"
 msgstr "実現不可能"
 
+msgid "Not late."
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -12352,6 +12392,9 @@ msgstr "検索と絞り込み条件に一致するものがありません"
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
+
+msgid "Nothing open is pushed past its date."
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "スケジュールがありません。以下にステーションを追加してください。"
@@ -12765,6 +12808,12 @@ msgstr "操作順序"
 msgid "Operation quantity"
 msgstr "オペレーション数量"
 
+msgid "Operation ran long"
+msgstr ""
+
+msgid "Operation started late"
+msgstr ""
+
 msgid "Operation supplier process"
 msgstr "工程仕入先工法"
 
@@ -12964,6 +13013,12 @@ msgstr "製品は原材料より長く保持されることはありません。
 
 msgid "Outside operation"
 msgstr "間接費差異"
+
+msgid "Outside processing"
+msgstr ""
+
+msgid "Outside processing returned late"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "超過適用額"
@@ -14255,6 +14310,9 @@ msgstr "品質文書承認ルール"
 
 msgid "Quality Documents"
 msgstr "品質ドキュメント"
+
+msgid "Quality hold"
+msgstr ""
 
 msgid "Quality Type"
 msgstr "品質タイプ"
@@ -16704,6 +16762,9 @@ msgstr "出荷"
 
 msgid "Shipped"
 msgstr "出荷済み"
+
+msgid "Shipped late"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "この得意先の出荷済明細のうち、返品待ち数量がある行"

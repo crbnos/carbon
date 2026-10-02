@@ -155,6 +155,10 @@ msgstr "{0} in stock; the remaining {1} will be picked as {2}"
 msgid "{0} jobs created"
 msgstr "{0} jobs created"
 
+#. placeholder {0}: days(report.lateDays)
+msgid "{0} late"
+msgstr "{0} late"
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} lines to map"
@@ -319,6 +323,12 @@ msgstr "{count, plural, one {# account with a balance} other {# accounts with a 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{count} day"
+msgstr "{count} day"
+
+msgid "{count} days"
+msgstr "{count} days"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -330,6 +340,9 @@ msgstr "{done} of {total} phases complete"
 
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+
+msgid "{from} and {to} depend on each other."
+msgstr "{from} and {to} depend on each other."
 
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
@@ -405,6 +418,9 @@ msgstr "{scopeCount} permissions"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
+
+msgid "{successor} is planned {span} before {predecessor}."
+msgstr "{successor} is planned {span} before {predecessor}."
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
@@ -4098,6 +4114,9 @@ msgstr "Completed date"
 msgid "Completed Date"
 msgstr "Completed Date"
 
+msgid "Completed late"
+msgstr "Completed late"
+
 msgid "Completed Qty"
 msgstr "Completed Qty"
 
@@ -4822,6 +4841,9 @@ msgstr "Couldn't complete the Onshape connection"
 
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Couldn't complete the Onshape Government connection"
+
+msgid "Couldn't load delay analysis."
+msgstr "Couldn't load delay analysis."
 
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
@@ -5779,6 +5801,9 @@ msgstr "Define custom roles with fine-grained, per-module permissions and assign
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Define multi-level BOMs and Bill of Process (make methods)"
+
+msgid "Delay analysis"
+msgstr "Delay analysis"
 
 msgid "Delete"
 msgstr "Delete"
@@ -9304,6 +9329,12 @@ msgstr "Indirect Materials & Services"
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirect Materials & Services (default)"
 
+msgid "inferred"
+msgstr "inferred"
+
+msgid "Inferred."
+msgstr "Inferred."
+
 msgid "Infrastructure"
 msgstr "Infrastructure"
 
@@ -10068,6 +10099,12 @@ msgstr "Last used"
 
 msgid "Late in the evening, {name}."
 msgstr "Late in the evening, {name}."
+
+msgid "Late supply"
+msgstr "Late supply"
+
+msgid "Late, with enough slack"
+msgstr "Late, with enough slack"
 
 msgid "Latest operation end"
 msgstr "Latest operation end"
@@ -12286,6 +12323,9 @@ msgstr "Not enough jobs to cover quantity"
 msgid "Not feasible"
 msgstr "Not feasible"
 
+msgid "Not late."
+msgstr "Not late."
+
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -12352,6 +12392,9 @@ msgstr "Nothing here matches your search and filters."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
+
+msgid "Nothing open is pushed past its date."
+msgstr "Nothing open is pushed past its date."
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
@@ -12765,6 +12808,12 @@ msgstr "Operation Order"
 msgid "Operation quantity"
 msgstr "Operation quantity"
 
+msgid "Operation ran long"
+msgstr "Operation ran long"
+
+msgid "Operation started late"
+msgstr "Operation started late"
+
 msgid "Operation supplier process"
 msgstr "Operation supplier process"
 
@@ -12964,6 +13013,12 @@ msgstr "Output never outlasts its raw materials. Falls back to the fixed duratio
 
 msgid "Outside operation"
 msgstr "Outside operation"
+
+msgid "Outside processing"
+msgstr "Outside processing"
+
+msgid "Outside processing returned late"
+msgstr "Outside processing returned late"
 
 msgid "Over-applied by"
 msgstr "Over-applied by"
@@ -14255,6 +14310,9 @@ msgstr "Quality Document approval rule"
 
 msgid "Quality Documents"
 msgstr "Quality Documents"
+
+msgid "Quality hold"
+msgstr "Quality hold"
 
 msgid "Quality Type"
 msgstr "Quality Type"
@@ -16704,6 +16762,9 @@ msgstr "Shipments"
 
 msgid "Shipped"
 msgstr "Shipped"
+
+msgid "Shipped late"
+msgstr "Shipped late"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Shipped lines for this customer with quantity remaining to return"
