@@ -27,6 +27,7 @@ import {
   stepIsRecorded
 } from "./logic";
 import { richTextToPlain } from "./richText";
+import { StepPhoto } from "./StepPhoto";
 
 /**
  * The work instructions, in order, with what has been recorded against each.
@@ -157,6 +158,12 @@ function StepCard({
             );
           })}
         </View>
+      ) : step.type === "File" ? (
+        <StepPhoto
+          step={step}
+          unitIndex={unitIndex}
+          operationId={operationId}
+        />
       ) : recordable ? (
         <View className="gap-2">
           <Field
@@ -213,10 +220,10 @@ function StepCard({
       ) : (
         <WarningNote>
           {/*
-            File, Timestamp, Person and Inspection steps each need something
-            this screen does not have — a camera upload, a signed clock, a
-            people picker, an inspection view. They stay VISIBLE so the
-            operator can read the instruction and knows where to record it.
+            Timestamp, Person and Inspection steps each need something this
+            screen does not have — a signed clock, a people picker, an
+            inspection view. They stay VISIBLE so the operator can read the
+            instruction and knows where to record it.
           */}
           {t`Record this step in Carbon MES in a browser.`}
         </WarningNote>
