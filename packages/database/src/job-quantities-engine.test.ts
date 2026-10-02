@@ -115,6 +115,38 @@ it("root has no jobMaterial row: hasJobMaterial false, fallback scrap", () => {
   expect(computed[0]!.scrapQuantity).toEqual(1); // scrapAllowance(4, 0.25)
 });
 
+it("a recalculated sub-assembly does not report its own quantity per parent", () => {
+  // The sub-assembly's parent needs 2 of it. Recalculated alone, it is the
+  // tree's root, whose row carries a placeholder quantity of 1.
+  const tree = node(
+    "sub",
+    {
+      isRoot: true,
+      quantity: 1,
+      methodType: "Make to Order",
+      jobMaterialMakeMethodId: "mm-sub"
+    },
+    [
+      node("child", {
+        quantity: 3,
+        methodType: "Make to Order",
+        jobMaterialMakeMethodId: "mm-child"
+      })
+    ]
+  );
+  const { computed } = computeJobQuantities({
+    tree,
+    parentEstimatedQuantity: 10,
+    storedScrapById: new Map([["child", 0]]),
+    replenishmentScrapByItemId: new Map()
+  });
+
+  const byId = new Map(computed.map((c) => [c.id, c]));
+  expect(byId.get("sub")!.quantityPerParent).toBeNull();
+  expect(byId.get("sub")!.targetQuantity).toEqual(10);
+  expect(byId.get("child")!.quantityPerParent).toEqual(3);
+});
+
 it("a cyclic tree is reported and skipped, not recursed forever", () => {
   const a = node("a", { isRoot: true });
   const b = node("b", { quantity: 2 });

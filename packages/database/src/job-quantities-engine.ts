@@ -27,7 +27,10 @@ export type ComputedJobQuantityNode = {
   id: string;
   hasJobMaterial: boolean;
   jobMaterialMakeMethodId: string | null;
-  quantityPerParent: number;
+  // Null for the tree's root: its row carries a placeholder quantity of 1
+  // (get_job_methods_by_method_id), not how many of it its parent needs. A
+  // sub-assembly recalculated on its own must keep the value it already has.
+  quantityPerParent: number | null;
   targetQuantity: number;
   scrapQuantity: number;
   estimatedQuantity: number;
@@ -117,7 +120,7 @@ export function computeJobQuantities(
       id: node.id,
       hasJobMaterial: storedScrapById.has(node.id),
       jobMaterialMakeMethodId: node.data.jobMaterialMakeMethodId ?? null,
-      quantityPerParent: node.data.quantity,
+      quantityPerParent: node.data.isRoot ? null : node.data.quantity,
       targetQuantity,
       scrapQuantity,
       estimatedQuantity,

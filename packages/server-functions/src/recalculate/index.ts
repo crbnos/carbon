@@ -238,16 +238,21 @@ const updateJobQuantities = async (
       c.jobMaterialMakeMethodId !== null
   );
   if (makeNodes.length > 0) {
-    await sql`
-      UPDATE "jobMakeMethod" AS jmm
-      SET "quantityPerParent" = v.qpp::numeric
-      FROM (VALUES ${sql.join(
-        makeNodes.map(
-          (c) => sql`(${c.jobMaterialMakeMethodId}, ${c.quantityPerParent})`
-        )
-      )}) AS v(id, qpp)
-      WHERE jmm.id = v.id
-    `.execute(trx);
+    // Not the tree's root: the tree does not know how many of it its parent
+    // needs, and writing its placeholder reset a sub-assembly to 1.
+    const perParent = makeNodes.filter((c) => c.quantityPerParent !== null);
+    if (perParent.length > 0) {
+      await sql`
+        UPDATE "jobMakeMethod" AS jmm
+        SET "quantityPerParent" = v.qpp::numeric
+        FROM (VALUES ${sql.join(
+          perParent.map(
+            (c) => sql`(${c.jobMaterialMakeMethodId}, ${c.quantityPerParent})`
+          )
+        )}) AS v(id, qpp)
+        WHERE jmm.id = v.id
+      `.execute(trx);
+    }
 
     await sql`
       UPDATE "jobOperation" AS op
