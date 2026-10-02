@@ -467,6 +467,30 @@ export function dbWrites(fn: ServiceFunctionNode): DbWrite[] {
   return writes;
 }
 
+/**
+ * The SQL functions a body calls through `.rpc("name", …)`. A name that is not a
+ * string literal is reported as `null`: the call is there, but which function
+ * it reaches cannot be read.
+ */
+export function rpcCalls(fn: ServiceFunctionNode): Array<string | null> {
+  const names: Array<string | null> = [];
+  for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    if (memberName(call) !== "rpc") continue;
+    const callee = unwrap(call.getExpression());
+    if (!callee || !Node.isPropertyAccessExpression(callee)) continue;
+    // The name may sit under a cast: `.rpc("a" as unknown as "b", …)`.
+    const name = unwrap(call.getArguments()[0]);
+    names.push(
+      name &&
+        (Node.isStringLiteral(name) ||
+          Node.isNoSubstitutionTemplateLiteral(name))
+        ? name.getLiteralText()
+        : null
+    );
+  }
+  return names;
+}
+
 /** Columns that record who wrote a row. */
 const AUDIT_COLUMNS = new Set(["createdBy", "updatedBy"]);
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { sqlFunctionEffects } from "../../../packages/database/src/sql-effects";
 import { resultShapeOf } from "../../../scripts/lib/result-shape";
 import {
   auditParams,
@@ -10,9 +11,11 @@ import {
   dbWrites,
   namedTables,
   paginates,
-  parseServiceSource
+  parseServiceSource,
+  rpcCalls
 } from "../../../scripts/lib/service-ast";
 import {
+  assertReadCallsOnlyReads,
   contextParamsOf,
   declarationOf,
   upsertRule,
@@ -533,5 +536,72 @@ describe("how a service reports failure in its result", () => {
   it("refuses a result dispatch could not read one way", () => {
     expect(() => shape("mixedList")).toThrow(/list whose items/);
     expect(() => shape("twoSignals")).toThrow(/cannot tell which reports failure/);
+  });
+});
+
+describe("a read tool and the SQL functions it calls", () => {
+  const fns = parse(`
+    export async function getDetails(client: Client, id: string) {
+      return client.rpc("get_details", { item_id: id });
+    }
+    export async function getCast(client: Client, id: string) {
+      return client.rpc("get_details" as unknown as "other", { item_id: id });
+    }
+    export async function getNextNumber(client: Client, table: string) {
+      return client.rpc("take_number", { sequence_name: table });
+    }
+    export async function getUsage(client: Client) {
+      return client.rpc("usage_by_table");
+    }
+    export async function getAnything(client: Client, name: string) {
+      return client.rpc(name);
+    }
+    export async function getRows(client: Client) {
+      return client.from("job").select("*");
+    }
+  `);
+
+  const effects = sqlFunctionEffects([
+    {
+      name: "functions.sql",
+      sql: `
+        CREATE FUNCTION get_details(item_id text) RETURNS text LANGUAGE sql AS $$
+          SELECT name FROM item WHERE id = item_id;
+        $$;
+        CREATE FUNCTION take_number(sequence_name text) RETURNS int LANGUAGE sql AS $$
+          UPDATE sequence SET next = next + 1 WHERE "table" = sequence_name RETURNING next;
+        $$;
+        CREATE FUNCTION usage_by_table() RETURNS void LANGUAGE plpgsql AS $$
+        BEGIN
+          EXECUTE format('SELECT count(*) FROM %I', 'job');
+        END $$;`
+    }
+  ]);
+
+  it("reads the function name, through a cast, and reports one it cannot read", () => {
+    expect(rpcCalls(fns.getDetails.node)).toEqual(["get_details"]);
+    expect(rpcCalls(fns.getCast.node)).toEqual(["get_details"]);
+    expect(rpcCalls(fns.getAnything.node)).toEqual([null]);
+    expect(rpcCalls(fns.getRows.node)).toEqual([]);
+  });
+
+  it("lets a read call functions that only read", async () => {
+    const sql = await effects;
+    expect(() => assertReadCallsOnlyReads(fns.getDetails, sql)).not.toThrow();
+    expect(() => assertReadCallsOnlyReads(fns.getRows, sql)).not.toThrow();
+  });
+
+  it("refuses a read that writes through a function, or that cannot be told", async () => {
+    const sql = await effects;
+    // settings_getNextSequence, in miniature.
+    expect(() => assertReadCallsOnlyReads(fns.getNextNumber, sql)).toThrow(
+      /calls the SQL function take_number, which writes \(public\.take_number: UPDATE sequence\)/
+    );
+    expect(() => assertReadCallsOnlyReads(fns.getUsage, sql)).toThrow(
+      /cannot be told: public\.usage_by_table has dynamic SQL/
+    );
+    expect(() => assertReadCallsOnlyReads(fns.getAnything, sql)).toThrow(
+      /not a string literal/
+    );
   });
 });

@@ -504,6 +504,25 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
+- **A `read` tool may only call SQL functions that read**
+  (`assertReadCallsOnlyReads`). The generator sees every `.rpc("name")`
+  (`rpcCalls`, through casts) but not the SQL behind it, so the function's own
+  definition answers: `packages/database/src/sql-effects.ts` parses every
+  migration in timestamp order, then the managed function files, with Postgres's
+  parser (`libpg-query`), keeps each function's CURRENT definition (a later
+  `CREATE OR REPLACE` replaces, another signature is an overload, `DROP` removes)
+  and walks its body, following calls into other functions. It answers `reads`,
+  `writes` (with the statement) or `unknown` (with why): dynamic `EXECUTE`, a
+  language it does not read, an extension function absent from
+  `EXTERNAL_READS` / `EXTERNAL_WRITES`, or no definition at all. `writes` and
+  `unknown` both fail generation for a `read` tool. Dynamic SQL a person has
+  read goes in `REVIEWED_DYNAMIC_READS`, pinned to the migration that holds the
+  definition, so a later redefinition is `unknown` again. This is how
+  `settings_getNextSequence` (its rpc runs `UPDATE sequence`) was a READ gated
+  on `settings:view`; it is now `@mcp action`. Migrations are an input of
+  `//#generate:mcp` and of the pre-commit manifest check, so a function that
+  starts writing re-runs the check. Pinned by `sql-effects.test.ts` and
+  `apps/erp/test/mcp-service-ast.test.ts`.
 - **contextParams** (`contextParamsOf`) says which positional params the
   dispatcher fills and with what, and is the only place that is decided. Two
   sources: the positional contract `POSITIONAL_CONTEXT`

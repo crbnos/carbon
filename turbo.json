@@ -87,6 +87,7 @@
         "apps/erp/tsconfig.json",
         "packages/{api,database,documents,files,locale,logger,notifications,printing,utils}/src/**",
         "packages/database/supabase/functions/shared/**",
+        "packages/database/supabase/migrations/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"
       ],

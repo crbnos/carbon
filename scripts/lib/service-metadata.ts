@@ -42,6 +42,10 @@ import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
 } from "./response-schema";
+import {
+  loadSqlFunctionEffects,
+  type SqlFunctionEffects
+} from "../../packages/database/src/sql-effects";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
   auditParams,
@@ -50,6 +54,7 @@ import {
   dbWrites,
   idDistinguishesUpdate,
   namedTables,
+  rpcCalls,
   paginates as bodyPaginates,
   type ServiceAst,
   type ServiceFunction
@@ -1005,6 +1010,39 @@ export function contextParamsOf(
   return out;
 }
 
+/**
+ * A tool declared `read` may only call SQL functions that read.
+ *
+ * The compiler sees the `.rpc()` call but not the SQL behind it, so a read
+ * that writes through a function went unnoticed: `settings_getNextSequence`
+ * advanced a sequence while published as a READ gated on `settings:view`. The
+ * function's own definition answers it (`sql-effects.ts`, Postgres's parser).
+ * "Cannot tell" refuses too — a read is a promise, not a default.
+ */
+export function assertReadCallsOnlyReads(
+  fn: Pick<ServiceFunction, "node" | "toolName">,
+  effects: Pick<SqlFunctionEffects, "effectOf">
+): void {
+  for (const name of rpcCalls(fn.node)) {
+    if (name === null) {
+      throw new Error(
+        `${fn.toolName} is declared \`${MCP_EXPOSURE_TAG} read\` but calls .rpc() with a name that is not a string literal, so what it runs cannot be read. Name the function, or declare a write verb.`
+      );
+    }
+    const effect = effects.effectOf(name);
+    if (effect.kind === "writes") {
+      throw new Error(
+        `${fn.toolName} is declared \`${MCP_EXPOSURE_TAG} read\` but calls the SQL function ${name}, which writes (${effect.reason}). Declare the verb that says what it does.`
+      );
+    }
+    if (effect.kind === "unknown") {
+      throw new Error(
+        `${fn.toolName} is declared \`${MCP_EXPOSURE_TAG} read\` but calls the SQL function ${name}, and whether that writes cannot be told: ${effect.reason}. Resolve it in packages/database/src/sql-effects.ts, or declare a write verb.`
+      );
+    }
+  }
+}
+
 export function withPayloadUserId(
   fields: AuthField[],
   func: Pick<ServiceFunction, "params">
@@ -1442,6 +1480,8 @@ export interface BuildOptions {
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
   responses?: ResponseSchemaIndex;
+  /** What each SQL function does. Absent = `read` tools' rpc calls go unchecked. */
+  sqlEffects?: SqlFunctionEffects;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -1518,6 +1558,9 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const classification: Classification = declared.destructive
         ? "DESTRUCTIVE"
         : verb.classification;
+      if (classification === "READ" && opts.sqlEffects) {
+        assertReadCallsOnlyReads(func, opts.sqlEffects);
+      }
       // The dispatcher fills one positional argument per parameter from a JSON
       // object; a variadic tail has no such slot.
       const rest = func.params.find((p) => p.rest);
@@ -1629,6 +1672,7 @@ export async function buildAllToolMetadataWithValidators(
   const validators = await buildValidatorRegistry(MODULE_LIST);
   const ast = opts.ast ?? buildServiceAst(MODULE_LIST);
   const responses = buildResponseSchemaIndex(ast);
+  const sqlEffects = await loadSqlFunctionEffects();
   const resolutions: ValidatorResolutionRecord[] = [];
 
   const tools = buildAllToolMetadata({
@@ -1636,6 +1680,7 @@ export async function buildAllToolMetadataWithValidators(
     ast,
     validators,
     responses,
+    sqlEffects,
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);
