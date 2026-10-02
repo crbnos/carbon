@@ -160,8 +160,19 @@ Built to sit as a small always-on pod beside other workloads.
   is bounded separately by the blocking pool (cores + 2).
 - **The estimate is not a limit.** Nothing stops a job from using more than it
   was admitted for, and geometry can be far heavier than its file size: a
-  5 MB plate with 1,200 drilled holes peaked at the 6 GiB limit in the Linux
-  image. Such a job can still get the pod OOM-killed.
+  5 MB plate with 1,200 drilled holes still peaks at 840 MB, thirteen times its
+  estimate. Such a job can still get the pod OOM-killed.
+- **Flat faces with many holes are meshed lean** (`mesh()` in
+  `crates/occt-bridge/src/occt.cc`). BRepMesh's default algorithm for a plane
+  runs an interior-node pass whose memory grows with the square of the hole
+  count; that 1,200-hole plate peaked at 6.2 GB. A part with more than 64 wires
+  on one face is meshed with that pass off for planes only: 840 MB, and faster.
+  The vertices are the same, so graph.json, nodeIds and geometry hashes do not
+  change; the triangle wiring in the GLB can (co-circular ties on a regular hole
+  pattern), which is why parts under the threshold keep the default path and
+  stay byte-identical. `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
+  mesher (Delabella) is not an answer: lean on memory, but minutes on the same
+  plates.
 - **The allocator** on Linux is jemalloc for the whole process (unprefixed, so
   OCCT and FCL use it too) with a background thread that returns freed pages
   after a second (`malloc_conf` in `main.rs`). `MALLOC_CONF=stats_print:true`

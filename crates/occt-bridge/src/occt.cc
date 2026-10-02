@@ -12,7 +12,10 @@
 #include <cstdlib>
 #include <BinXCAFDrivers.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
+#include <BRepMesh_Context.hxx>
+#include <BRepMesh_FaceDiscret.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepMesh_MeshAlgoFactory.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRep_Builder.hxx>
@@ -20,6 +23,7 @@
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <IFSelect_ReturnStatus.hxx>
+#include <IMeshTools_Parameters.hxx>
 #include <Interface_Static.hxx>
 #include <PCDM_ReaderStatus.hxx>
 #include <PCDM_StoreStatus.hxx>
@@ -151,11 +155,74 @@ static double adaptive_deflection(const TopoDS_Shape &shape, double lin) {
   return std::min(lin, std::max(diag * 5e-4, lin * 0.05));
 }
 
+// A flat face with many holes is where BRepMesh's memory goes: its default
+// algorithm for a plane runs an interior-node pass whose bookkeeping grows with
+// the square of the hole count (1,200 holes on one face: 5.6 GB), although a
+// plane has no interior nodes to add. Past this many wires on one face the part
+// is meshed with that pass off for planes only. The vertices are the same, so
+// nodeIds and geometry hashes do not move; the triangle wiring can differ where
+// a face's points are co-circular (a disc, a regular hole pattern), which is why
+// smaller parts keep the default path and stay byte-identical.
+static const int LEAN_PLANE_MIN_WIRES = 64;
+
+// ASSEMBLER_LEAN_PLANES=0 turns it off (every part takes the default path).
+// Read per call, not cached, so a test can flip it.
+static bool lean_planes_enabled() {
+  const char *e = std::getenv("ASSEMBLER_LEAN_PLANES");
+  return !(e && e[0] == '0');
+}
+
+static bool has_perforated_face(const TopoDS_Shape &shape) {
+  for (TopExp_Explorer face(shape, TopAbs_FACE); face.More(); face.Next()) {
+    int wires = 0;
+    for (TopExp_Explorer wire(face.Current(), TopAbs_WIRE); wire.More();
+         wire.Next()) {
+      if (++wires > LEAN_PLANE_MIN_WIRES) return true;
+    }
+  }
+  return false;
+}
+
+// OCCT's default factory, except a plane gets the algorithm without the
+// interior-node pass. Every other surface keeps the caller's parameters.
+class LeanPlaneAlgoFactory : public IMeshTools_MeshAlgoFactory {
+public:
+  Handle(IMeshTools_MeshAlgo)
+  GetAlgo(const GeomAbs_SurfaceType type,
+          const IMeshTools_Parameters &params) const override {
+    if (type != GeomAbs_Plane) return base->GetAlgo(type, params);
+    IMeshTools_Parameters lean = params;
+    lean.InternalVerticesMode = false;
+    return base->GetAlgo(type, lean);
+  }
+
+private:
+  Handle(BRepMesh_MeshAlgoFactory) base = new BRepMesh_MeshAlgoFactory;
+};
+
+static void mesh(const TopoDS_Shape &shape, double lin, double ang) {
+  const double deflection = adaptive_deflection(shape, lin);
+  if (!lean_planes_enabled() || !has_perforated_face(shape)) {
+    BRepMesh_IncrementalMesh(shape, deflection, Standard_False, ang,
+                             mesh_parallel() ? Standard_True : Standard_False);
+    return;
+  }
+  // The same four parameters the constructor above sets.
+  BRepMesh_IncrementalMesh mesher;
+  mesher.SetShape(shape);
+  IMeshTools_Parameters &params = mesher.ChangeParameters();
+  params.Deflection = deflection;
+  params.Relative = false;
+  params.Angle = ang;
+  params.InParallel = mesh_parallel();
+  Handle(BRepMesh_Context) context = new BRepMesh_Context(params.MeshAlgo);
+  context->SetFaceDiscret(new BRepMesh_FaceDiscret(new LeanPlaneAlgoFactory));
+  mesher.Perform(context);
+}
+
 static void tessellate(const TopoDS_Shape &shape, double lin, double ang,
                        std::vector<float> &verts, std::vector<uint32_t> &indices) {
-  BRepMesh_IncrementalMesh(shape, adaptive_deflection(shape, lin),
-                           Standard_False, ang,
-                           mesh_parallel() ? Standard_True : Standard_False);
+  mesh(shape, lin, ang);
   uint32_t offset = 0;
   for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
     TopoDS_Face face = TopoDS::Face(exp.Current());
