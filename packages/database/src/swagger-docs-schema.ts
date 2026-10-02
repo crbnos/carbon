@@ -103672,6 +103672,96 @@ export default {
         tags: ["(rpc) sync_insert_company_related_records"]
       }
     },
+    "/rpc/get_item_ledger_balance": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "entry_number",
+            required: false,
+            type: "integer"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                entry_number: {
+                  format: "integer",
+                  type: "integer"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "item_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
+      }
+    },
     "/rpc/sync_add_employee_to_type_group": {
       post: {
         parameters: [

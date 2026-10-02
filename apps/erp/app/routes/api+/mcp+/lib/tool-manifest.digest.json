@@ -1,5 +1,5 @@
 {
-  "totalTools": 1482,
+  "totalTools": 1483,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -186,6 +186,7 @@
     {"name":"inventory_getInventoryValuation","classification":"READ","paramCount":2,"schema":"288f0d29701b","response":"4005e935f8f1","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getInventoryValuationTieOut","classification":"READ","paramCount":1,"schema":"cb789596bf56","response":"20aee38c95a3","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getItemLedgerActivity","classification":"READ","paramCount":5,"schema":"b898b72c5939","response":"8d500cb0a03f","injectAuth":"companyId","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getItemLedgerBalance","classification":"READ","paramCount":3,"schema":"33e76470e057","response":"cddf8275afa1","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getItemLedgerPage","classification":"READ","paramCount":4,"schema":"7ef5489d0abf","response":"8d500cb0a03f","injectAuth":"companyId","permission":"inventory:view","paginates":true},
     {"name":"inventory_getKanban","classification":"READ","paramCount":1,"schema":"369f807bc840","response":"c5aa7a081ed4","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getKanbans","classification":"READ","paramCount":2,"schema":"68cb4a73d5a9","response":"fa96e94d8dda","injectAuth":"companyId","permission":"inventory:view","paginates":true},

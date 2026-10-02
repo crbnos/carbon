@@ -433,6 +433,9 @@ msgstr "{unbatchedBatchableOperations} operazioni raggruppabili non sono in un l
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# riga non conteggiata} other {# righe non conteggiate}}"
 
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
+
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} non può essere programmato"
 
@@ -8805,6 +8808,9 @@ msgstr "Ha operazioni che non possono essere programmate"
 msgid "Headers"
 msgstr "Intestazioni"
 
+msgid "healthy"
+msgstr ""
+
 msgid "Help"
 msgstr "Aiuto"
 
@@ -9237,6 +9243,9 @@ msgstr "Le notifiche in-app vengono sempre consegnate. Scegli quali argomenti vu
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Le notifiche in-app vengono sempre consegnate. Scegli quali argomenti vuoi ricevere anche per e-mail."
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "Inattivo"
@@ -12353,6 +12362,12 @@ msgstr "Niente qui corrisponde alla tua ricerca e ai tuoi filtri."
 msgid "Nothing in the archive"
 msgstr "Niente nell'archivio"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "Niente programmato — aggiungi una stazione di seguito."
 
@@ -12414,6 +12429,9 @@ msgstr "di"
 msgid "of {0}h"
 msgstr "di {0}h"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "Disattivato — gestito al di fuori della sincronizzazione"
 
@@ -12428,6 +12446,9 @@ msgstr "OK"
 
 msgid "Oldest first"
 msgstr "Più vecchio prima"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Nel giorno del cutover, esegui la checklist sottostante in ordine. I test di accettazione provengono dai tuoi requisiti in ambito. I dettagli di supporto sono in fondo."
@@ -12446,6 +12467,9 @@ msgstr "A portata di mano"
 
 msgid "On Hand"
 msgstr "In Magazzino"
+
+msgid "On hand {before} to {after}"
+msgstr "Giacenza: da {before} a {after}"
 
 msgid "On Hold"
 msgstr "In Sospeso"
@@ -12601,6 +12625,9 @@ msgstr "Apri"
 
 msgid "Open a change notice"
 msgstr "Apri un avviso di modifica"
+
+msgid "Open Account Mapping"
+msgstr ""
 
 msgid "Open Actions"
 msgstr "Azioni Aperte"
@@ -14702,6 +14729,9 @@ msgstr "Registrato che lo strumento di misura è stato regolato durante questa t
 
 msgid "Records"
 msgstr "Registri"
+
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
 
 msgid "Recovery Period"
 msgstr "Registrare"
@@ -17804,6 +17834,9 @@ msgstr "Sincronizza"
 msgid "Sync Activity"
 msgstr "Attività di sincronizzazione"
 
+msgid "sync off"
+msgstr ""
+
 msgid "Sync operation"
 msgstr "Operazione di sincronizzazione"
 
@@ -19772,6 +19805,9 @@ msgid "Undo"
 msgstr "Annulla"
 
 msgid "Ungroup"
+msgstr ""
+
+msgid "unhealthy"
 msgstr ""
 
 msgid "Uninstall"
