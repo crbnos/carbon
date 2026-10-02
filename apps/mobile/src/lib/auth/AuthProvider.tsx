@@ -135,6 +135,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [api, current, update]);
 
   // Restore a stored session when the instance changes.
+  //
+  // `loadMe` is deliberately not a dependency: it closes over `api`, which is
+  // rebuilt whenever the company or location changes, so including it would
+  // re-fetch /me on every picker change. This effect only restores a stored
+  // session when the INSTANCE changes.
+  //
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     if (instancesLoading) return;
     let cancelled = false;
@@ -170,10 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: loadMe closes
-    // over `api`, which is rebuilt whenever the company or location changes.
-    // Including it would re-fetch /me on every picker change; this effect is
-    // only meant to restore a stored session when the INSTANCE changes.
   }, [instanceId, instancesLoading]);
 
   const value = useMemo<AuthContextValue>(

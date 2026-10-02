@@ -43,6 +43,9 @@ import { useIsTablet } from "~/components/useIsTablet";
  * end of Phase 3 — a gallery that outlives its phase becomes a second place
  * where the primitives are defined.
  */
+/** These controls exist to be looked at and pressed, not to do anything. */
+const noop = () => undefined;
+
 export default function Gallery() {
   const { t } = useLingui();
   const isTablet = useIsTablet();
@@ -99,17 +102,17 @@ export default function Gallery() {
               <Trans>Buttons</Trans>
             </Heading>
             <View className="flex-row flex-wrap gap-3">
-              <Button onPress={() => {}}>{t`Primary`}</Button>
-              <Button variant="secondary" onPress={() => {}}>
+              <Button onPress={noop}>{t`Primary`}</Button>
+              <Button variant="secondary" onPress={noop}>
                 {t`Secondary`}
               </Button>
-              <Button variant="destructive" onPress={() => {}}>
+              <Button variant="destructive" onPress={noop}>
                 {t`Destructive`}
               </Button>
-              <Button loading onPress={() => {}}>
+              <Button loading onPress={noop}>
                 {t`Loading`}
               </Button>
-              <Button disabled onPress={() => {}}>
+              <Button disabled onPress={noop}>
                 {t`Disabled`}
               </Button>
             </View>
@@ -156,7 +159,7 @@ export default function Gallery() {
           tone={running ? "stop" : "start"}
           onPress={() => setRunning((was) => !was)}
         />
-        <Button variant="secondary" onPress={() => {}}>
+        <Button variant="secondary" onPress={noop}>
           {t`Log Completed`}
         </Button>
         <Button variant="ghost" onPress={() => sheet.current?.open()}>
@@ -184,7 +187,7 @@ export default function Gallery() {
         <SheetRow
           icon={Printer}
           label={t`Maintenance request`}
-          onPress={() => {}}
+          onPress={noop}
           disabled
           disabledReason={t`Use Carbon MES in a browser for this.`}
         />

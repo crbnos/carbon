@@ -95,7 +95,8 @@ export function SheetRow({
   icon: LucideIcon;
   label: string;
   description?: string;
-  onPress: () => void;
+  /** Optional: a row that is disabled has nothing to do. */
+  onPress?: () => void;
   tone?: "default" | "destructive";
   disabled?: boolean;
   disabledReason?: string;
