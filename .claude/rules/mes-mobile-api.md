@@ -193,6 +193,35 @@ behind the app, so the checks run both ways: the app refuses a server whose
 app below `MIN_APP_VERSION`. A newer app never enables a feature from its own
 version number — only from what `/me` reports.
 
+## Why the company is not in the token, and why not Better Auth
+
+The web keeps the chosen company in a signed session cookie. A native app has
+no cookie, and a Bearer token carries only the Supabase claims — `aal`, the
+user id, expiry. A token is minted at SIGN-IN, before a multi-company user has
+chosen anything, so the company cannot be in it. That is why `/me` exists and
+why it is the ONE endpoint allowed to run without `x-carbon-company`: it is how
+the app learns which companies it may name. Requiring the header there once made
+first sign-in impossible on every install.
+
+This comes up as "could an auth library with session storage replace all this".
+It could not, for a reason that has nothing to do with sessions: the company is
+application state, not auth state. A session would still carry a user and no
+company, and `/me` would still be needed to list them.
+
+The cost side is the decisive part. Nine RLS helper functions call `auth.uid()`
+— Supabase's own function over the Supabase-signed JWT — and every policy in
+the authz manifest is built on them, so a session issued by anything else makes
+PostgREST see no user and RLS deny everything. `@carbon/auth` additionally
+builds passkeys, MFA, API keys, SSO, bot protection, self-signup and the console
+PIN on GoTrue. An "adapter" cannot shrink that: to satisfy RLS it would have to
+mint a Supabase-signed JWT, which is Supabase Auth with an extra dependency in
+front.
+
+Moving off Supabase Auth is a credible PRODUCT decision — own the user table,
+escape GoTrue's limits — but it is a schema-wide migration touching RLS, every
+app and the public API, and it is planned on its own. It is not a fix for a
+mobile endpoint.
+
 ## Store review account (runbook)
 
 App Store and Google Play reviewers must be able to sign in, and they cannot
