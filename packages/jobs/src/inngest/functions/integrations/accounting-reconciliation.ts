@@ -9,6 +9,7 @@ import {
   getJournalEntrySyncEntityId,
   getProviderIntegration,
   getSyncOperations,
+  isAccountingSyncEnabled,
   ProviderID,
   parseJournalEntrySyncEntityId,
   RatelimitError,
@@ -993,7 +994,11 @@ export const accountingReconciliationFunction = inngest.createFunction(
       }
 
       return (integrations.data ?? [])
-        .filter((row) => resolvePostingSyncSettings(row.metadata).enabled)
+        .filter(
+          (row) =>
+            isAccountingSyncEnabled(row.metadata) &&
+            resolvePostingSyncSettings(row.metadata).enabled
+        )
         .map((row) => ({
           companyId: row.companyId,
           providerId: row.id,

@@ -8,6 +8,7 @@ import {
   createMappingService,
   getAccountingIntegration,
   getProviderIntegration,
+  isAccountingSyncEnabled,
   ProviderID,
   providerSupportsMasterDataImport,
   type SyncContext,
@@ -161,6 +162,17 @@ export const accountingMasterSyncFunction = inngest.createFunction(
       integration.metadata
     ) as AccountingProvider;
     const database = getJobDatabaseClient();
+
+    // The API route refuses while sync is off; this covers an event sent
+    // some other way, or sync turned off after the route accepted it.
+    if (!isAccountingSyncEnabled(integration.metadata)) {
+      return {
+        provider: payload.provider,
+        direction: payload.direction,
+        entities: {},
+        skippedReason: "sync is turned off for this integration"
+      };
+    }
 
     const createdBy = getSyncOperationActor(integration);
     const result: Record<string, EntityCounts> = {};

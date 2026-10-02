@@ -957,6 +957,52 @@ export const ProviderIntegrationMetadataSchema = z.object({
   defaultPurchaseAccountCode: z.string().optional()
 });
 
+/**
+ * Whether an accounting integration may move data. A new connection starts
+ * OFF so the customer can map accounts and choose posting settings before
+ * anything reaches the provider; it is turned on from the integration drawer,
+ * and only once every required account is mapped. Stored at
+ * `metadata.settings.syncEnabled`. A row with no flag predates the switch and
+ * was already syncing, so absent reads as on — every connect path writes an
+ * explicit value.
+ */
+export function isAccountingSyncEnabled(metadata: unknown): boolean {
+  const settings =
+    metadata && typeof metadata === "object"
+      ? (metadata as { settings?: unknown }).settings
+      : undefined;
+  if (!settings || typeof settings !== "object") return true;
+  return (settings as Record<string, unknown>).syncEnabled !== false;
+}
+
+/**
+ * The sync switch for an OAuth (re)connection. A reconnect to the SAME
+ * provider organization (a Xero tenant, a QuickBooks realm) keeps the switch
+ * where it was — an expired grant must not pause an integration that was
+ * live. A first connection, or one to a different organization, starts off.
+ */
+export function syncEnabledOnConnect(
+  existingMetadata: unknown,
+  organizationId: string
+): boolean {
+  if (!existingMetadata || typeof existingMetadata !== "object") return false;
+  const credentials = (existingMetadata as { credentials?: unknown })
+    .credentials as Record<string, unknown> | undefined;
+  const providerMetadata = credentials?.providerMetadata as
+    | Record<string, unknown>
+    | undefined;
+  // Legacy rows kept the organization id directly on credentials.
+  const previousOrganizationId =
+    providerMetadata?.tenantId ??
+    providerMetadata?.realmId ??
+    credentials?.tenantId ??
+    credentials?.realmId;
+  return (
+    previousOrganizationId === organizationId &&
+    isAccountingSyncEnabled(existingMetadata)
+  );
+}
+
 // /********************************************************\
 // *              Sync Operation Schemas                    *
 // \********************************************************/

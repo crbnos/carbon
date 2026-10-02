@@ -22,6 +22,9 @@ vi.mock("@carbon/ee/accounting", () => ({
     getProviderIntegration(...args),
   parseStoredCredentials: (raw: unknown) => raw,
   ProviderID: { QUICKBOOKS: "quickbooks" },
+  isAccountingSyncEnabled: (metadata: unknown) =>
+    (metadata as { settings?: { syncEnabled?: unknown } } | null)?.settings
+      ?.syncEnabled !== false,
   // Faithful minimal version of the real helper: first LinkedTxn of the
   // family's TxnType → canonical composite.
   buildQboPaymentSyncChange: (
@@ -159,6 +162,26 @@ describe("webhook.quickbooks payment accelerator", () => {
         operation: "update"
       }
     ]);
+  });
+
+  it("acks and ignores a signed delivery while sync is turned off", async () => {
+    getAccountingIntegration.mockResolvedValue({
+      companyId: "company-1",
+      active: true,
+      metadata: {
+        settings: { syncEnabled: false },
+        credentials: {
+          type: "oauth2",
+          providerMetadata: { webhookVerifierToken: TOKEN, realmId: "realm-1" }
+        }
+      }
+    });
+
+    const result = await run(makeRequest(billPaymentEvent));
+
+    expect(result).toEqual({ success: true, ignored: true });
+    expect(trigger).not.toHaveBeenCalled();
+    expect(getProviderIntegration).not.toHaveBeenCalled();
   });
 
   it("enqueues the prefix-less AR composite for a Payment", async () => {

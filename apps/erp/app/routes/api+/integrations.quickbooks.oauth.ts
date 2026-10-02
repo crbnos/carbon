@@ -13,13 +13,15 @@ import { QuickBooks } from "@carbon/ee";
 import {
   DEFAULT_SYNC_CONFIG,
   getProviderIntegration,
-  ProviderID
+  ProviderID,
+  syncEnabledOnConnect
 } from "@carbon/ee/accounting";
 import { quickbooksOnInstall } from "@carbon/ee/quickbooks/hooks.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
+import { getIntegration } from "~/modules/settings/settings.service";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 
@@ -104,6 +106,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
+    // Sync starts off on a new connection so accounts can be mapped first; a
+    // reconnect to the same organization keeps the switch where it was.
+    const existing = await getIntegration(client, QuickBooks.id, companyId);
+    const syncEnabled = syncEnabledOnConnect(existing.data?.metadata, realmId);
+
     const createdQuickBooksIntegration = await upsertCompanyIntegration(
       client,
       {
@@ -112,6 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         // @ts-ignore
         metadata: {
           syncConfig: DEFAULT_SYNC_CONFIG,
+          settings: { syncEnabled },
           // Provider-specific fields live under providerMetadata (new
           // credential shape) — legacy rows are upgraded on read
           credentials: {

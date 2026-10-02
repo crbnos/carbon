@@ -4,7 +4,11 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { EventSchema } from "@carbon/database/event";
-import { ProviderID, SpendProviderID } from "@carbon/ee/accounting";
+import {
+  isAccountingSyncEnabled,
+  ProviderID,
+  SpendProviderID
+} from "@carbon/ee/accounting";
 import { groupBy } from "@carbon/utils";
 import { z } from "zod";
 /**
@@ -142,6 +146,17 @@ export const syncFunction = inngest.createFunction(
                 stepSummary.skipped.push({
                   recordId: r.event.recordId,
                   reason: `Integration '${provider}' is not connected`
+                });
+              }
+              return stepSummary;
+            }
+            // Sync is still off on this integration (it is being set up):
+            // record nothing, so turning it on starts from a clean ledger.
+            if (!isAccountingSyncEnabled(resolved.metadata)) {
+              for (const r of records) {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
+                  reason: `Sync is turned off for '${provider}'`
                 });
               }
               return stepSummary;

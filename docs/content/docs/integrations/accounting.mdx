@@ -17,9 +17,9 @@ and its automated **GL journals** to the ledger. **Carbon is the source of truth
 every record is matched to the same external record each time, so a customer or invoice never duplicates.
 Payments recorded in the ledger flow **back** into Carbon to settle the matching invoice or bill.
 
-<Callout type="note" title="Journal mirroring is automatic, and always on">
-Connecting a ledger means every automated GL posting Carbon makes is mirrored to it. There is no toggle to
-turn that off. Journals you post by hand (`Manual` source) never sync — only automated postings do.
+<Callout type="note" title="Journal mirroring is automatic while sync is on">
+Once **Sync** is on, every automated GL posting Carbon makes is mirrored to the ledger. There is no per-journal
+toggle. Journals you post by hand (`Manual` source) never sync — only automated postings do.
 </Callout>
 
 Payment write-back settles the Carbon document from the ledger side: a payment recorded against an invoice in
@@ -41,7 +41,15 @@ Xero and QuickBooks Online connect over **OAuth** — no keys to paste. Rillet u
   <Step>
   ### Configure the sync
 
-  Set the account mapping, dimensions, and posting-sync options (below) before the first push.
+  A new connection starts with **Sync** off, so nothing reaches the ledger while you set it up. Set the
+  account mapping, dimensions, and posting-sync options (below).
+  </Step>
+  <Step>
+  ### Turn on sync
+
+  Turn on the **Sync** switch at the top of the integration. It stays locked until every account marked
+  **Required** on the Account Mapping tab is mapped. Turning it off later pauses the sync again; a reconnect
+  to the same organization keeps it where it was.
   </Step>
   <Step>
   ### Run the initial sync

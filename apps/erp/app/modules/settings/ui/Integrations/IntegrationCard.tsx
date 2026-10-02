@@ -15,7 +15,7 @@ import {
   cn,
   useRouteData
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
@@ -23,10 +23,17 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import { InstallModeDialog } from "./InstallModeDialog";
 
+/** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
+type IntegrationHealthStatus =
+  | "healthy"
+  | "unhealthy"
+  | "inactive"
+  | "sync-off";
+
 export type IntegrationHealth = {
   id: string;
   active: boolean;
-  health: "healthy" | "unhealthy" | "inactive";
+  health: IntegrationHealthStatus;
   /**
    * Which install mode this one is in, resolved SERVER-side.
    *
@@ -245,21 +252,30 @@ export function IntegrationCard({
   );
 }
 
-const StatusBadge = ({
-  status
-}: {
-  status: "healthy" | "unhealthy" | "inactive";
-}) => {
+const StatusBadge = ({ status }: { status: IntegrationHealthStatus }) => {
+  const { t } = useLingui();
+
   const colors = {
     healthy: "bg-green-500",
     unhealthy: "bg-red-500",
-    inactive: "bg-gray-400"
+    inactive: "bg-gray-400",
+    "sync-off": "bg-orange-500"
   } as const;
 
   const badgeVariants = {
     healthy: "green",
     unhealthy: "red",
-    inactive: "gray"
+    inactive: "gray",
+    "sync-off": "orange"
+  } as const;
+
+  const labels = {
+    healthy: t`healthy`,
+    unhealthy: t`unhealthy`,
+    inactive: t`inactive`,
+    // Connected, but the accounting sync switch is off — a new connection
+    // still being set up, or one switched off since.
+    "sync-off": t`sync off`
   } as const;
 
   const ping = colors[status] || "text-gray-400";
@@ -269,17 +285,20 @@ const StatusBadge = ({
       className="flex items-center mr-auto gap-x-2 py-0.5"
     >
       <span className="relative flex size-2">
-        <span
-          className={cn(
-            "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-            ping
-          )}
-        />
+        {/* Nothing is moving while sync is off, so the dot holds still. */}
+        {status !== "sync-off" && (
+          <span
+            className={cn(
+              "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+              ping
+            )}
+          />
+        )}
         <span
           className={cn("relative inline-flex size-2 rounded-full", ping)}
         />
       </span>
-      {status}
+      {labels[status]}
     </Badge>
   );
 };

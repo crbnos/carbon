@@ -44,6 +44,7 @@ import {
   getJournalEntrySyncEntityId,
   getJournalPostingPolicyDecision,
   insertTerminalSyncOperation,
+  isAccountingSyncEnabled,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
   type PostingSyncSettings,
@@ -957,6 +958,12 @@ export async function drainSyncOperations(args: {
     skipped: 0,
     groups: []
   };
+
+  // Sync is turned off (an accounting integration still being set up): leave
+  // every row Pending. The entry points already skip enqueueing; this is the
+  // backstop for a Retry clicked in Sync Activity, which the first drain after
+  // sync is turned on then picks up.
+  if (!isAccountingSyncEnabled(args.integrationMetadata)) return summary;
 
   const postingSyncSettings = resolvePostingSyncSettings(
     args.integrationMetadata
