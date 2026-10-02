@@ -154,6 +154,11 @@ need them.
   `mode: "airgapped"`.
 - Never store the operator token (shared-tablet PIN session) anywhere but
   memory, and never in the query cache.
+- Never put a `className` on a component that is not React Native's own.
+  Uniwind patches core components only; a third-party one ignores the prop in
+  silence, which is how every screen in this app once rendered into a
+  zero-height box with no error. Use `withUniwind()`, or the core equivalent —
+  `View` + `useSafeAreaInsets()` rather than `SafeAreaView`.
 - Never add `react-dom` usage: this is React Native. `react-dom` is present
   only because `expo-router` needs it for `expo start --web`.
 

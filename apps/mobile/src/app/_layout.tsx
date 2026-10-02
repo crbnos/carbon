@@ -62,10 +62,9 @@ function Themed() {
                     the provider that hosts them has to sit above the Stack. */}
               <BottomSheetModalProvider>
                 <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen
-                    name="(app)/scan"
-                    options={{ presentation: "modal" }}
-                  />
+                  {/* Scan is a TAB, not a modal route — there is no
+                      `(app)/scan.tsx`, and declaring one here only produced an
+                      Expo Router warning about a route that does not exist. */}
                   <Stack.Screen
                     name="(app)/pin"
                     options={{ presentation: "fullScreenModal" }}

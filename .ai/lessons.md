@@ -2934,3 +2934,30 @@ file, or install into an empty `node_modules` — and run it again.
 
 **Applies to:** `apps/mobile/package.json` scripts, `apps/mobile/.gitignore`, the
 `Mobile` job in `.github/workflows/check.yml`.
+
+## Uniwind only styles React Native's own components
+
+**Context:** Every screen in `apps/mobile` is built on a shared `Screen`, whose root
+was `SafeAreaView` from `react-native-safe-area-context` carrying
+`className="flex-1 bg-background"`.
+
+**Problem:** Uniwind applies `className` to React Native's core components. A
+third-party component is not patched and silently ignores the prop — so that
+`SafeAreaView` had no flex and no height, every screen rendered into a
+zero-height box, and the whole app was blank from its first frame. Nothing threw,
+so there was no error to find, and the empty screen showed iOS's own `#F2F2F7`,
+which is one shade from this theme's `--background`. Typecheck passed (the prop
+is valid TypeScript), all 271 tests passed (they are pure logic), and
+`expo export` bundled cleanly. Reading the bundle was misleading too: the theme
+tokens ARE compiled into it, which makes Uniwind look like it is working.
+
+**Rule:** Only give `className` to a component from `react-native` itself. For a
+third-party one, either wrap it in `withUniwind()` from `uniwind`, or use the
+core equivalent — `View` plus `useSafeAreaInsets()` instead of `SafeAreaView`,
+which is what `Screen` does now. When a React Native screen is blank with no
+error, bisect with an entry that renders an inline-styled `View` and no
+`className`: if that shows and the real screen does not, the fault is a class
+that was never applied, not a crash.
+
+**Applies to:** `apps/mobile/src/components/ui.tsx`, any new component wrapping a
+third-party one, `apps/mobile/AGENTS.md`.

@@ -15,7 +15,7 @@ import {
   View,
   type ViewProps
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * The shop-floor primitives.
@@ -43,8 +43,19 @@ export function Screen({
   onBack?: () => void;
   headerRight?: ReactNode;
 }) {
+  // `flex-1` ONLY when this is not scrolling. A `flex: 1` child of a
+  // ScrollView's content container has no parent height to take a fraction of,
+  // so on native it collapses to ZERO HEIGHT and every child becomes
+  // invisible — a blank screen in the right background colour, with no error.
+  // That is what `(setup)/connect` did on a fresh install, which is the first
+  // screen the app ever shows. On web it happens to lay out, so a browser
+  // never reveals it.
+  const insets = useSafeAreaInsets();
+
   const body = (
-    <View className={`flex-1 px-4 ${className ?? ""}`}>{children}</View>
+    <View className={`${scroll ? "" : "flex-1"} px-4 ${className ?? ""}`}>
+      {children}
+    </View>
   );
   // Sticky rather than scrolling away: on a tablet clamped to a machine, the
   // only way back out of a screen must not depend on scroll position.
@@ -76,12 +87,26 @@ export function Screen({
     ) : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    /*
+     * A plain `View` plus `useSafeAreaInsets()`, NOT `SafeAreaView`.
+     *
+     * Uniwind only gives `className` to React Native's own components.
+     * `SafeAreaView` comes from react-native-safe-area-context, which is third
+     * party, so it silently IGNORED `className="flex-1 bg-background"` — no
+     * flex, no height, and every screen in the app rendered into a zero-height
+     * box. Nothing threw, so there was no error to find: just a blank screen in
+     * iOS's own default grey, which is a shade away from this theme's.
+     *
+     * `withUniwind()` from uniwind would also fix it, but the inset is a number
+     * and a core `View` is the component this app is styled on everywhere else —
+     * one less thing that can quietly stop honouring a class.
+     */
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {header}
       {scroll ? (
         <ScrollView
           className="flex-1"
-          contentContainerClassName="pb-8"
+          contentContainerClassName="grow pb-8"
           keyboardShouldPersistTaps="handled"
         >
           {body}
@@ -89,7 +114,7 @@ export function Screen({
       ) : (
         body
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
