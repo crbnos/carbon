@@ -64,13 +64,13 @@ import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = namedMiddleware([
+export const middleware = namedMiddleware({
   // First: publishes the request context so server code can reach it via ALS.
-  requestContextMiddleware,
-  requestIdMiddleware,
-  securityMiddleware,
-  flashMiddleware
-]);
+  requestContext: requestContextMiddleware,
+  requestId: requestIdMiddleware,
+  security: securityMiddleware,
+  flash: flashMiddleware
+});
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [

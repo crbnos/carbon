@@ -91,7 +91,7 @@ pnpm --filter @carbon/logger test
 - `entry.client.tsx`: same from `@carbon/logger/config.client`.
 - `entry.server.tsx` also exports
   `instrumentations = createTracing({ serviceName: "carbon-erp", afterRequest })`.
-- `root.tsx`: `export const middleware = namedMiddleware([requestContextMiddleware, requestIdMiddleware, securityMiddleware, flashMiddleware])`
+- `root.tsx`: `export const middleware = namedMiddleware({ requestContext: requestContextMiddleware, requestId: requestIdMiddleware, security: securityMiddleware, flash: flashMiddleware })`
   (request context FIRST so every downstream middleware and handler runs inside
   the AsyncLocalStorage scope, then request id so downstream logs carry it).
 
@@ -133,8 +133,9 @@ One trace per request:
   on `inngest.function.id` / `carbon.operation` for grouping.
 - **`middleware|loader|action <routeId>`** spans, one per route handler. React
   Router reports a middleware by its route alone, so the apps wrap the root list
-  in `namedMiddleware([...])`, which renames each span after its function
-  (`middleware requestIdMiddleware`). Each one contains everything after it.
+  in `namedMiddleware({ name: fn, ... })`, which renames each span after its
+  key (`middleware requestId`). A key, not `fn.name`: the production build
+  minifies function names. Each one contains everything after it.
 - **Fetch spans** from `@opentelemetry/instrumentation-undici`, only for fetches
   made inside a request (`requireParentforSpans`). `fetchSpanName` names a
   Supabase call by what it does — `GET /rest/v1/methodMaterial`,

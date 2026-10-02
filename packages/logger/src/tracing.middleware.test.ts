@@ -19,7 +19,7 @@ provider.register();
 
 beforeEach(() => exporter.reset());
 
-it("names each middleware span after its function", async () => {
+it("names each middleware span after its key, whatever the function is called", async () => {
   const { namedMiddleware, routerInstrumentation } = await import(
     "./tracing.server"
   );
@@ -34,9 +34,10 @@ it("names each middleware span after its function", async () => {
     }
   } as never);
 
-  const requestIdMiddleware = async () => undefined;
-  const flashMiddleware = async () => undefined;
-  for (const run of namedMiddleware([requestIdMiddleware, flashMiddleware])) {
+  // As a production build leaves them: minified.
+  const VZe = async () => undefined;
+  const yrt = async () => undefined;
+  for (const run of namedMiddleware({ requestId: VZe, flash: yrt })) {
     await wrap(
       async () => {
         await run();
@@ -47,8 +48,8 @@ it("names each middleware span after its function", async () => {
   }
 
   expect(exporter.getFinishedSpans().map((span) => span.name)).toEqual([
-    "middleware requestIdMiddleware",
-    "middleware flashMiddleware"
+    "middleware requestId",
+    "middleware flash"
   ]);
 });
 

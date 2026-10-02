@@ -162,18 +162,19 @@ export function fetchSpanName(method: string, origin: string, path: string) {
 
 /**
  * React Router reports a middleware by its route alone, so four root
- * middleware are four spans named `middleware root`. Wrapping the list names
- * each span after its function.
+ * middleware are four spans named `middleware root`. This names each span
+ * after its key, in the order given. A key, not the function's `name`: the
+ * production build minifies function names (`middleware VZe`).
  */
 export function namedMiddleware<
   Middleware extends (...args: never[]) => unknown
->(middleware: Middleware[]): Middleware[] {
-  if (!enabled) return middleware;
-  return middleware.map(
-    (run) =>
+>(middleware: Record<string, Middleware>): Middleware[] {
+  const entries = Object.entries(middleware);
+  if (!enabled) return entries.map(([, run]) => run);
+  return entries.map(
+    ([name, run]) =>
       ((...args) => {
-        if (run.name)
-          trace.getActiveSpan()?.updateName(`middleware ${run.name}`);
+        trace.getActiveSpan()?.updateName(`middleware ${name}`);
         return run(...args);
       }) as Middleware
   );
