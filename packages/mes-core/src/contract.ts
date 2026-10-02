@@ -598,6 +598,11 @@ export const operationMaterial = z
     id: z.string().nullable(),
     itemId: z.string().nullable(),
     itemReadableId: z.string().nullable().optional(),
+    /**
+     * The id without its revision suffix. A label printed before a revision
+     * bump still names the same shelf part, so a scan matches on either.
+     */
+    itemReadableIdWithoutRevision: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     methodType: z.string().nullable().optional(),
     /** What the job plans to consume, including its scrap allowance. */

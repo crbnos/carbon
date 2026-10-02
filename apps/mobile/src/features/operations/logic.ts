@@ -169,9 +169,7 @@ export function matchMaterialToScan(
   return (
     materials.find((material) => {
       const readable = material.itemReadableId?.trim().toLowerCase();
-      const withoutRevision = (
-        material as { itemReadableIdWithoutRevision?: string | null }
-      ).itemReadableIdWithoutRevision
+      const withoutRevision = material.itemReadableIdWithoutRevision
         ?.trim()
         .toLowerCase();
       return (

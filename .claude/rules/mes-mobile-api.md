@@ -193,6 +193,37 @@ behind the app, so the checks run both ways: the app refuses a server whose
 app below `MIN_APP_VERSION`. A newer app never enables a feature from its own
 version number — only from what `/me` reports.
 
+## Store review account (runbook)
+
+App Store and Google Play reviewers must be able to sign in, and they cannot
+receive a 6-digit code sent to someone else's mailbox. `POST /auth/password`
+exists for exactly that, and it refuses every address not in
+`APP_REVIEW_EMAILS` — which is set only on Carbon Cloud's `mes` and `mes-us`
+Vercel projects and is empty everywhere else, so on every other install the
+endpoint is dead. `POST /auth/code` answers
+`{ ok: true, method: "password" }` for a listed address and a bare
+`{ ok: true }` for anything else, so the app knows to show a password field for
+that one account and nobody can probe which addresses are listed.
+
+To provision one:
+
+1. Create a demo company on Carbon Cloud (Settings → Demo Data, dataset
+   `satellite`). The reviewer must never land in a real tenant.
+2. Invite the reviewer address as an employee with PRODUCTION permissions only.
+   It is an ordinary employee account, not an admin one.
+3. Set a password for it from the ERP account page.
+4. Add the address to `APP_REVIEW_EMAILS` on both `mes` and `mes-us`.
+5. Confirm the split: `POST /api/v1/auth/code` returns `method: "password"` for
+   the reviewer and omits it for any other address.
+
+To rotate: remove the address from `APP_REVIEW_EMAILS` first, then disable the
+employee. In that order — the reverse leaves an address the endpoint still
+accepts for an account that no longer resolves, which reads as a server fault
+rather than a revoked account.
+
+The account is held to the same IP rate limit and the same per-email lockout as
+a code sign-in, so listing an address does not exempt it from either.
+
 ## No enumeration surface
 
 There is deliberately no public document describing a Carbon. The whole public

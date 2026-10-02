@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Redirect } from "expo-router";
 import {
   CircleCheck,
   Pause,
@@ -39,14 +40,27 @@ import { useIsTablet } from "~/components/useIsTablet";
  * light and dark, both dock shapes, and every target measured against the 44pt
  * floor with the Expo element inspector.
  *
- * It is reachable only from the More screen's dev section and is deleted at the
- * end of Phase 3 — a gallery that outlives its phase becomes a second place
- * where the primitives are defined.
+ * It is reachable only from the More screen's dev section, which is
+ * `__DEV__`-gated — but that gate hides the BUTTON, not the route. Expo Router
+ * special-cases only `_layout`, so a leading underscore does NOT keep a file
+ * out of the route tree: `/_gallery` is a real path in a production bundle, and
+ * the generated router types list it. Hence the redirect below, which is what
+ * actually keeps a dev screen out of a store build.
+ *
+ * It outlives Phase 3 on purpose, against the plan's own note to delete it: it
+ * IS the Task 34 and Task 51 device check — every primitive in both themes and
+ * both dock shapes — and that pass has not happened yet. Delete it once it has.
  */
 /** These controls exist to be looked at and pressed, not to do anything. */
 const noop = () => undefined;
 
 export default function Gallery() {
+  // Before any hook, so a production build cannot render a frame of this.
+  if (!__DEV__) return <Redirect href="/(app)/(tabs)/operations" />;
+  return <GalleryScreen />;
+}
+
+function GalleryScreen() {
   const { t } = useLingui();
   const isTablet = useIsTablet();
   const sheet = useRef<SheetHandle>(null);
