@@ -72,6 +72,7 @@ describe("lookups", () => {
         table: "item",
         column: "name",
         matchOn: "id",
+        companyScoped: true,
         ids: ["item_1"]
       },
       {
@@ -79,6 +80,7 @@ describe("lookups", () => {
         table: "customer",
         column: "name",
         matchOn: "id",
+        companyScoped: true,
         ids: ["cust_1"]
       },
       {
@@ -86,8 +88,21 @@ describe("lookups", () => {
         table: "customerTax",
         column: "taxId",
         matchOn: "customerId",
+        companyScoped: true,
         ids: ["cust_1"]
       }
+    ]);
+  });
+
+  it("limits every lookup to the company except the global user table", () => {
+    const employee = planIndexWrites([
+      event("employee", "INSERT", "u_1", { id: "u_1", employeeTypeId: "et_1" })
+    ]).upserts;
+    expect(
+      planLookups(employee).map((plan) => [plan.table, plan.companyScoped])
+    ).toEqual([
+      ["user", false],
+      ["employeeType", true]
     ]);
   });
 

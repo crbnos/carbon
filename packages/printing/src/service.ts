@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   PrinterRoute,
@@ -155,7 +154,7 @@ export async function updatePrintJobStatus(
   status: PrintJobStatus,
   opts?: { error?: string }
 ) {
-  const update: Record<string, unknown> = {
+  const update: Database["public"]["Tables"]["printJob"]["Update"] = {
     status,
     updatedAt: new Date().toISOString()
   };
@@ -172,7 +171,7 @@ export async function updatePrintJobStatus(
 
   return client
     .from("printJob")
-    .update(unchecked(update))
+    .update(update)
     .eq("id", printJobId)
     .eq("companyId", companyId);
 }

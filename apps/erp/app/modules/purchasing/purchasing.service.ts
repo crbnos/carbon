@@ -12,8 +12,7 @@ import {
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
-  round,
-  unchecked
+  round
 } from "@carbon/utils";
 import type {
   PostgrestError,
@@ -1394,9 +1393,16 @@ export async function updateSupplierContact(
       return customFieldUpdate;
     }
   }
+  // The contact id is the row key and the location is set on supplierContact
+  // above; neither is a contact column.
+  const {
+    contactId: _contactId,
+    supplierLocationId: _supplierLocationId,
+    ...contact
+  } = supplierContact.contact;
   return client
     .from("contact")
-    .update(unchecked(sanitize(supplierContact.contact)))
+    .update(sanitize(contact))
     .eq("id", supplierContact.contactId)
     .select("id")
     .single();
@@ -1788,9 +1794,16 @@ export async function upsertPurchaseOrder(
   receiptRequestedDate?: string
 ) {
   if ("id" in purchaseOrder) {
+    // locationId belongs on the delivery record, as in the insert below, and
+    // notes are stored as internalNotes/externalNotes.
+    const {
+      locationId: _locationId,
+      notes: _notes,
+      ...orderUpdate
+    } = purchaseOrder;
     return client
       .from("purchaseOrder")
-      .update(unchecked(sanitize(purchaseOrder)))
+      .update(sanitize(orderUpdate))
       .eq("id", purchaseOrder.id)
       .select("id, purchaseOrderId");
   }
@@ -2433,8 +2446,12 @@ export async function upsertSupplierQuote(
 
     if (supplierInteraction.error) return supplierInteraction;
 
-    const { companyGroupId: _companyGroupId, ...supplierQuoteData } =
-      supplierQuote;
+    // supplierQuote stores notes as internalNotes/externalNotes, not `notes`.
+    const {
+      companyGroupId: _companyGroupId,
+      notes: _notes,
+      ...supplierQuoteData
+    } = supplierQuote;
     const insert = await client
       .from("supplierQuote")
       .insert([
@@ -2506,22 +2523,23 @@ export async function upsertSupplierQuote(
       supplierQuote.exchangeRate = rate.data;
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
-    const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
-      supplierQuote;
+    const {
+      companyGroupId: _companyGroupId2,
+      notes: _notes,
+      ...supplierQuoteUpdateData
+    } = supplierQuote;
     const companyTz = await getCompanyTimeZone(client, companyId);
     return client
       .from("supplierQuote")
-      .update(
-        unchecked({
-          ...sanitize(supplierQuoteUpdateData),
-          status:
-            supplierQuote.expirationDate &&
-            datetime.today(companyTz).toString() > supplierQuote.expirationDate
-              ? "Expired"
-              : (supplierQuote.status ?? existingStatus ?? "Draft"),
-          updatedAt: datetime.timestamp()
-        })
-      )
+      .update({
+        ...sanitize(supplierQuoteUpdateData),
+        status:
+          supplierQuote.expirationDate &&
+          datetime.today(companyTz).toString() > supplierQuote.expirationDate
+            ? "Expired"
+            : (supplierQuote.status ?? existingStatus ?? "Draft"),
+        updatedAt: datetime.timestamp()
+      })
       .eq("id", supplierQuote.id);
   }
 }

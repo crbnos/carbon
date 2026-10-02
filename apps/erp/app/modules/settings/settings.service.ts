@@ -22,7 +22,6 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
-import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -853,8 +852,9 @@ export async function insertSubsidiary(
     isEliminationEntity?: boolean;
   }
 ) {
-  const { id: _, ...data } = subsidiary;
-  return client.from("company").insert(unchecked(data)).select("id").single();
+  // company has no createdBy column.
+  const { id: _, createdBy: _createdBy, ...data } = subsidiary;
+  return client.from("company").insert(data).select("id").single();
 }
 
 /** @mcp update */

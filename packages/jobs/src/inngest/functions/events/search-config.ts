@@ -4,7 +4,9 @@
 
 /**
  * A related name copied onto the index row: `field` is set to `table.column`
- * of the row whose `matchOn` (default `id`) equals `record[from]`.
+ * of the row whose `matchOn` (default `id`) equals `record[from]`. The read is
+ * limited to the record's company unless the table is `global` (has no
+ * companyId).
  */
 export type SearchLookup = {
   field: string;
@@ -12,6 +14,7 @@ export type SearchLookup = {
   column: string;
   from: string;
   matchOn?: string;
+  global?: true;
 };
 
 // Configuration for each entity type's search indexing
@@ -34,7 +37,13 @@ export const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
     getTags: (r) => [r.employeeTypeName].filter(Boolean),
     getMetadata: (r) => ({ active: r.active }),
     lookups: [
-      { field: "fullName", table: "user", column: "fullName", from: "id" },
+      {
+        field: "fullName",
+        table: "user",
+        column: "fullName",
+        from: "id",
+        global: true
+      },
       {
         field: "employeeTypeName",
         table: "employeeType",
@@ -376,6 +385,7 @@ export function planLookups(upserts: PendingUpsert[]) {
       table: string;
       column: string;
       matchOn: string;
+      companyScoped: boolean;
       ids: Set<string>;
     }
   >();
@@ -393,6 +403,7 @@ export function planLookups(upserts: PendingUpsert[]) {
           table: lookup.table,
           column: lookup.column,
           matchOn: lookup.matchOn ?? "id",
+          companyScoped: !lookup.global,
           ids: new Set()
         };
         plans.set(key, plan);

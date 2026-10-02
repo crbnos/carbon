@@ -70,10 +70,14 @@ export const searchFunction = inngest.createFunction(
           const resolved = new Map(
             await Promise.all(
               planLookups(upserts).map(async (lookup) => {
-                const { data, error } = await client
+                let query = client
                   .from(lookup.table)
                   .select(`${lookup.matchOn}, ${lookup.column}`)
                   .in(lookup.matchOn, lookup.ids);
+                if (lookup.companyScoped) {
+                  query = query.eq("companyId", companyId);
+                }
+                const { data, error } = await query;
 
                 if (error) {
                   logger.error("Failed to read search index lookup", {

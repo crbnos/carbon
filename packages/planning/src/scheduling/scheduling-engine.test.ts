@@ -46,4 +46,16 @@ describe("isDistinctFromAny", () => {
       null
     ]);
   });
+
+  it("lets the write through when there is nothing to compare", () => {
+    const query = db
+      .updateTable("jobOperation")
+      .set({ updatedBy: "u_1" })
+      .where(isDistinctFromAny({ priority: undefined }))
+      .compile();
+
+    expect(query.sql).toBe(
+      'update "jobOperation" set "updatedBy" = $1 where true'
+    );
+  });
 });

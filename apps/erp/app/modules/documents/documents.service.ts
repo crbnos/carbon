@@ -6,7 +6,6 @@ import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
-import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -202,18 +201,16 @@ export async function upsertDocument(
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { extension, ...data } = document;
+  // Labels live in documentLabel, not on the document row.
+  const { extension: _extension, labels: _labels, ...data } = document;
   return client
     .from("document")
     .update(
-      unchecked(
-        sanitize({
-          ...data,
-          type,
-          updatedAt: new Date().toISOString()
-        })
-      )
+      sanitize({
+        ...data,
+        type,
+        updatedAt: new Date().toISOString()
+      })
     )
     .eq("id", document.id);
 }

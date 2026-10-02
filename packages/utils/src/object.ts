@@ -53,8 +53,9 @@ export const get = <T extends Record<string, any>, K extends keyof T>(
 };
 
 /**
- * Passes a value TypeScript cannot check to a typed parameter — a patch whose
- * column is only known at runtime, or a payload wider than the table. PostgREST
- * still rejects an unknown column; this only says the compiler was not asked.
+ * Passes a value TypeScript cannot check to a typed parameter: a patch or
+ * filter whose column or table is only known at runtime. Never use it for a
+ * typed payload that carries keys the table lacks — strip those instead, or
+ * PostgREST rejects the write (PGRST204) and the compiler no longer warns.
  */
 export const unchecked = (value: unknown) => value as never;

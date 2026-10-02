@@ -135,7 +135,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-webhooks-${pass}-${i}`, chunks[i]!);
+          await step.sendEvent(`dispatch-webhooks-${pass}-${i}`, chunks[i]!);
         }
       }
 
@@ -154,7 +154,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-workflows-${pass}-${i}`, chunks[i]!);
+          await step.sendEvent(`dispatch-workflows-${pass}-${i}`, chunks[i]!);
         }
       }
 
@@ -168,7 +168,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-syncs-${pass}-${i}`, {
+          await step.sendEvent(`dispatch-syncs-${pass}-${i}`, {
             name: "carbon/event-sync" as const,
             data: { records: chunks[i] }
           });
@@ -184,7 +184,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-searches-${pass}-${i}`, {
+          await step.sendEvent(`dispatch-searches-${pass}-${i}`, {
             name: "carbon/event-search" as const,
             data: { records: chunks[i] }
           });
@@ -202,7 +202,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-audits-${pass}-${i}`, {
+          await step.sendEvent(`dispatch-audits-${pass}-${i}`, {
             name: "carbon/event-audit" as const,
             data: { records: chunks[i] }
           });
@@ -218,7 +218,7 @@ export const eventQueueFunction = inngest.createFunction(
 
         const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`send-embeddings-${pass}-${i}`, {
+          await step.sendEvent(`dispatch-embeddings-${pass}-${i}`, {
             name: "carbon/event-embedding" as const,
             data: { records: chunks[i] }
           });

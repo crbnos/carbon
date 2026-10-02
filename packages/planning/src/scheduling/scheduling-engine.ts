@@ -77,16 +77,16 @@ const log = getFunctionLogger("schedule");
 /**
  * True when writing `values` would change the row. Compared in Postgres so a
  * stored DATE or timestamptz is matched in its own type, not as a JS string.
+ * With nothing to compare it is true, so the write goes ahead.
  */
 export function isDistinctFromAny(values: Record<string, unknown>) {
-  return sql<boolean>`(${sql.join(
-    Object.entries(values)
-      .filter(([, value]) => value !== undefined)
-      .map(
-        ([column, value]) => sql`${sql.ref(column)} is distinct from ${value}`
-      ),
-    sql` or `
-  )})`;
+  const comparisons = Object.entries(values)
+    .filter(([, value]) => value !== undefined)
+    .map(
+      ([column, value]) => sql`${sql.ref(column)} is distinct from ${value}`
+    );
+  if (comparisons.length === 0) return sql<boolean>`true`;
+  return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
 }
 
 /**

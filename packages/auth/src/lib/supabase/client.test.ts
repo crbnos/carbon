@@ -12,7 +12,8 @@ vi.mock("../../config/env", () => ({
   SUPABASE_URL: "http://supabase.test"
 }));
 
-const { getCarbonAPIKeyClient, getCarbonClient } = await import("./client");
+const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
+  await import("./client");
 
 // Edge functions recognise a service-role caller by the Authorization bearer.
 // supabase-js stops sending a new-format key as that bearer on function calls,
@@ -58,5 +59,76 @@ describe("Edge Function calls carry the Authorization bearer", () => {
       body: {}
     });
     expect(sent()).toBe("Bearer sb_publishable_anon");
+  });
+});
+
+describe("storage reads are retried, everything else passes through", () => {
+  const storage = "http://supabase.internal.test/storage/v1";
+
+  const respond = (...statuses: number[]) => {
+    const fetchMock = vi.fn();
+    for (const status of statuses) {
+      fetchMock.mockResolvedValueOnce(new Response("{}", { status }));
+    }
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  };
+
+  const settle = async <T>(promise: Promise<T>) => {
+    await vi.runAllTimersAsync();
+    return promise;
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("retries a download after a 5xx", async () => {
+    vi.useFakeTimers();
+    const fetchMock = respond(503, 200);
+    const response = await settle(
+      storageReadFetch(`${storage}/object/co_1/a.pdf`, { method: "GET" })
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries a listing, which is a POST", async () => {
+    vi.useFakeTimers();
+    const fetchMock = respond(502, 502, 200);
+    const response = await settle(
+      storageReadFetch(`${storage}/object/list-v2/co_1`, { method: "POST" })
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("gives up after two retries and returns the last answer", async () => {
+    vi.useFakeTimers();
+    const fetchMock = respond(500, 500, 500);
+    const response = await settle(
+      storageReadFetch(`${storage}/object/co_1/a.pdf`)
+    );
+    expect(response.status).toBe(500);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("never replays an upload", async () => {
+    const fetchMock = respond(500);
+    const response = await storageReadFetch(`${storage}/object/co_1/a.pdf`, {
+      method: "POST",
+      body: "bytes"
+    });
+    expect(response.status).toBe(500);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves database reads to supabase-js", async () => {
+    const fetchMock = respond(503);
+    await storageReadFetch("http://supabase.internal.test/rest/v1/item", {
+      method: "GET"
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

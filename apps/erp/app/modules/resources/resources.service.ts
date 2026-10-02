@@ -6,8 +6,7 @@ import type { Database, Json } from "@carbon/database";
 import {
   type BatchRules,
   compactBatchRules,
-  resolveBatchRules,
-  unchecked
+  resolveBatchRules
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -1340,7 +1339,10 @@ export async function updateAbility(
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client.from("ability").update(unchecked(ability)).eq("id", id);
+  return client
+    .from("ability")
+    .update({ recertifyEveryDays: ability.recertifyEveryDays })
+    .eq("id", id);
 }
 
 /**
@@ -1547,17 +1549,15 @@ export async function upsertFailureMode(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in failureMode) {
-    return client
-      .from("maintenanceFailureMode")
-      .insert([unchecked(failureMode)])
-      .select("id");
-  } else {
-    return client
-      .from("maintenanceFailureMode")
-      .update(unchecked(sanitize(failureMode)))
-      .eq("id", failureMode.id);
+  // maintenanceFailureMode has no customFields column.
+  const { customFields: _customFields, ...mode } = failureMode;
+  if ("createdBy" in mode) {
+    return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
+  return client
+    .from("maintenanceFailureMode")
+    .update(sanitize(mode))
+    .eq("id", mode.id);
 }
 
 /** @mcp upsert */

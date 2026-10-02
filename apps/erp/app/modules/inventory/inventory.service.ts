@@ -12,7 +12,7 @@ import {
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -2190,10 +2190,9 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("batchProperty")
-    .update(unchecked(sanitize(data)))
-    .eq("id", data.id);
+  // batchProperty has no group column; the group is not stored.
+  const { batchPropertyGroupId: _group, ...order } = data;
+  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
 /** @mcp update */
@@ -2227,28 +2226,28 @@ export async function upsertBatchProperty(
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  const {
+    userId,
+    configurationParameterGroupId: _group,
+    ...data
+  } = batchProperty;
   if (batchProperty.id) {
     return client
       .from("batchProperty")
       .update(
-        unchecked(
-          sanitize({
-            ...data,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
+        sanitize({
+          ...data,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
       )
       .eq("id", batchProperty.id);
   }
 
-  return client.from("batchProperty").insert(
-    unchecked({
-      ...data,
-      createdBy: userId
-    })
-  );
+  return client.from("batchProperty").insert({
+    ...data,
+    createdBy: userId
+  });
 }
 
 /** @mcp upsert */
@@ -2266,26 +2265,18 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in kanban) {
-    return client
-      .from("kanban")
-      .insert(
-        unchecked({
-          ...kanban
-        })
-      )
-      .select("id")
-      .single();
+  // kanban has no customFields column.
+  const { customFields: _customFields, ...row } = kanban;
+  if ("createdBy" in row) {
+    return client.from("kanban").insert(row).select("id").single();
   }
   return client
     .from("kanban")
-    .update(
-      unchecked({
-        ...sanitize(kanban),
-        updatedAt: datetime.timestamp()
-      })
-    )
-    .eq("id", kanban.id)
+    .update({
+      ...sanitize(row),
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", row.id)
     .select("id")
     .single();
 }

@@ -7,7 +7,7 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -2142,11 +2142,18 @@ export async function upsertIssue(
 
     return result;
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { items, ...data } = nonConformance;
+    // The link fields live on their own tables, as in the insert above.
+    const {
+      items: _items,
+      jobOperationId: _jobOperationId,
+      customerId: _customerId,
+      salesOrderLineId: _salesOrderLineId,
+      operationSupplierProcessId: _operationSupplierProcessId,
+      ...data
+    } = nonConformance;
     return client
       .from("nonConformance")
-      .update(unchecked(sanitize(data)))
+      .update(sanitize(data))
       .eq("id", nonConformance.id);
   }
 }

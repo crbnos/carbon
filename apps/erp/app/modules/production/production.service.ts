@@ -4940,17 +4940,15 @@ export async function upsertFailureMode(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in failureMode) {
-    return client
-      .from("maintenanceFailureMode")
-      .insert([unchecked(failureMode)])
-      .select("id");
-  } else {
-    return client
-      .from("maintenanceFailureMode")
-      .update(unchecked(sanitize(failureMode)))
-      .eq("id", failureMode.id);
+  // maintenanceFailureMode has no customFields column.
+  const { customFields: _customFields, ...mode } = failureMode;
+  if ("createdBy" in mode) {
+    return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
+  return client
+    .from("maintenanceFailureMode")
+    .update(sanitize(mode))
+    .eq("id", mode.id);
 }
 
 export async function upsertMaintenanceDispatch(
@@ -10373,15 +10371,13 @@ export async function completeOperation(
   const insertProduction = await client
     .from("productionQuantity")
     .insert(
-      unchecked(
-        sanitize({
-          jobOperationId: args.operationId,
-          quantity: args.quantity,
-          type: "Production",
-          companyId,
-          createdBy: userId
-        })
-      )
+      sanitize({
+        jobOperationId: args.operationId,
+        quantity: args.quantity,
+        type: "Production" as const,
+        companyId,
+        createdBy: userId
+      })
     )
     .select("id")
     .single();
