@@ -39,7 +39,7 @@ type SalesRuleRowView = {
   surfaces?: SalesRuleSurface[];
 };
 
-const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
+export const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
   quoteLine: "Quote line",
   salesOrderLine: "Sales order line",
   salesInvoiceLine: "Sales invoice line"
