@@ -20,6 +20,7 @@ import { annotateRequestSpan } from "./tracing.server";
 // package's `exports` and repoint the four importers (both apps' root.tsx,
 // auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
 export {
+  currentRequest,
   describeRequest,
   getRequestContext,
   getRouterContext,

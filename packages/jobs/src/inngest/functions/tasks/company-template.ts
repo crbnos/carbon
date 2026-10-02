@@ -4,7 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { getPostgresConnectionPool } from "@carbon/database/client";
+import { getProcessPool } from "@carbon/database/client";
 import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
@@ -251,7 +251,7 @@ export const companyTemplateFunction = inngest.createFunction(
       // throws on its 10s acquisition timeout — outside this try, either would
       // leave the marker stuck on `running` forever. The snapshot is inside for
       // the same reason.
-      const pool = getPostgresConnectionPool(2);
+      const pool = getProcessPool();
       let pgClient: Parameters<typeof applyDataset>[0] | null = null;
       try {
         let snapshotPath = existing?.metadata.snapshotPath ?? undefined;
@@ -259,7 +259,7 @@ export const companyTemplateFunction = inngest.createFunction(
           // IDEMPOTENT: a prior attempt's snapshot is reused, never retaken — a
           // retry after the apply committed would otherwise capture the SEEDED
           // state and overwrite the user's real pre-apply copy.
-          const db = getJobDatabaseClient(1);
+          const db = getJobDatabaseClient();
           const { includeGroup } = await resolveRestoreScope(client, companyId);
           snapshotPath = `_pre-template-${templateRunId}`;
           const snap = await buildCompanyBackup(client, db, {
@@ -458,7 +458,7 @@ export const companyTemplateRevertFunction = inngest.createFunction(
 
     return await step.run("revert-template", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       const marker = await readTemplateMarker(client, companyId);
       const snapshotPath = marker?.metadata.snapshotPath;

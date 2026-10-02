@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { async } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import type { MutableRefObject } from "react";
@@ -27,13 +26,13 @@ const STORAGE_BACKOFF_MS = [500, 1000];
 // response headers and two retries on a 5xx or a dropped connection. The body
 // itself is not timed, so a large download is never cut off. Uploads, deletes
 // and everything outside storage pass straight through.
-const isStorageRead = (url: string, method: string) =>
+export const isStorageRead = (url: string, method: string) =>
   url.includes("/storage/v1/") &&
   (method === "GET" ||
     method === "HEAD" ||
     (method === "POST" && url.includes("/storage/v1/object/list")));
 
-const urlAndMethod = (input: RequestInfo | URL, init?: RequestInit) => ({
+export const urlAndMethod = (input: RequestInfo | URL, init?: RequestInit) => ({
   url: input instanceof Request ? input.url : String(input),
   method: (
     init?.method ?? (input instanceof Request ? input.method : "GET")
@@ -66,48 +65,11 @@ export const storageReadFetch: typeof fetch = async (input, init) => {
   }
 };
 
-// How many calls a client serving one request has in flight at once — the
-// request's share of PostgREST's connections, like an HTTP agent's maxSockets.
-const REQUEST_CONCURRENCY = 8;
-
-const READ_METHODS = new Set(["GET", "HEAD"]);
-
-// A select, an RPC, or a storage read. A write to a table is not: some GET
-// routes write (an OAuth callback saving its tokens), and that must finish.
-const isRead = (url: string, method: string) =>
-  isStorageRead(url, method) ||
-  (url.includes("/rest/v1/") &&
-    (READ_METHODS.has(method) || url.includes("/rest/v1/rpc/")));
-
-/**
- * The fetch of a client that serves one request. Every call waits for one of
- * REQUEST_CONCURRENCY slots, so `Promise.all` over a page's queries cannot take
- * every connection. On a read request (GET/HEAD) its reads also stop when
- * `request.signal` aborts — the browser has gone — while table writes, auth and
- * edge function calls run to the end.
- */
-export function requestFetch(request: Request): typeof fetch {
-  const limit = async.limit(REQUEST_CONCURRENCY);
-  const signal = READ_METHODS.has(request.method) ? request.signal : undefined;
-  return (input, init) =>
-    limit(() => {
-      const { url, method } = urlAndMethod(input, init);
-      if (!signal || !isRead(url, method)) return storageReadFetch(input, init);
-      return storageReadFetch(input, {
-        ...init,
-        signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal
-      });
-    });
-}
-
-/**
- * `request` is given for a client that lives for one request: see
- * `requestFetch`. Clients for jobs and scripts have neither limit nor signal.
- */
+/** `fetch` replaces `storageReadFetch` — on the server, `requestFetch()`. */
 export const getCarbonClient = (
   supabaseKey: string,
   accessToken?: string,
-  request?: Request
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
   // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
   // not sent as the bearer on Edge Function calls, and those functions tell a
@@ -123,10 +85,7 @@ export const getCarbonClient = (
         autoRefreshToken: false,
         persistSession: false
       },
-      global: {
-        headers,
-        fetch: request ? requestFetch(request) : storageReadFetch
-      }
+      global: { headers, fetch }
     }
   );
 
@@ -134,12 +93,13 @@ export const getCarbonClient = (
 };
 
 export const getCarbonAPIKeyClient = (
-  apiKey: string
+  apiKey: string,
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
   const client = createClient(SUPABASE_INTERNAL_URL!, SUPABASE_ANON_KEY!, {
     db,
     global: {
-      fetch: storageReadFetch,
+      fetch,
       headers: {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         "carbon-key": apiKey
@@ -169,10 +129,9 @@ export const createCarbonWithAuthGetter = (
 };
 
 export const getCarbon = (
-  accessToken?: string,
-  request?: Request
+  accessToken?: string
 ): SupabaseClient<Database, "public"> => {
-  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken, request);
+  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken);
 };
 
 export const carbonClient = getCarbon();

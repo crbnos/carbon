@@ -30,18 +30,17 @@ describe("ensureLoggingConfigured (server)", () => {
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
     ensureLoggingConfigured({ level: "debug", pretty: false });
-    const request = new AbortController();
+    const controller = new AbortController();
+    const request = new Request("http://erp.test/x", {
+      signal: controller.signal
+    });
     const fail = () => getLogger("erp").error("Failed to load part");
 
-    runInRequestContext(new RouterContextProvider(), fail, {
-      signal: request.signal
-    });
+    runInRequestContext(new RouterContextProvider(), fail, { request });
     expect(write).toHaveBeenCalledTimes(1);
 
-    request.abort();
-    runInRequestContext(new RouterContextProvider(), fail, {
-      signal: request.signal
-    });
+    controller.abort();
+    runInRequestContext(new RouterContextProvider(), fail, { request });
     expect(write).toHaveBeenCalledTimes(1);
 
     fail();

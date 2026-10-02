@@ -22,10 +22,7 @@
  * it is the explicit backfill's job, never a silent mass-push.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import {
   createMappingService,
   ensureProviderSubscriptions,
@@ -704,7 +701,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
         fn: async () => {
           // Process-lifetime cached pool shared with events/sync.ts and the
           // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
+          const pool = getProcessPool();
           const database = getPostgresClient(pool, PostgresDriver);
           return await sweepCompanyProvider({
             companyId: target.companyId,

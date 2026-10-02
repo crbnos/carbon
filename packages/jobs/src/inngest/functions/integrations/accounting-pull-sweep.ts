@@ -44,10 +44,7 @@
  * ledger row is the durable record of the change.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import {
   type AccountingEntityType,
   enqueueSyncOperation,
@@ -460,11 +457,11 @@ export const accountingPullSweepFunction = inngest.createFunction(
         id: `sweep-${target.providerId}-${target.companyId}`,
         target,
         fn: async () => {
-          // getPostgresConnectionPool returns a process-lifetime singleton
+          // getProcessPool returns a process-lifetime singleton
           // (cached, shared with any other caller requesting the same size) —
           // never end it here, or a concurrent invocation queries an ended pool
           // (matches events/sync.ts).
-          const pool = getPostgresConnectionPool(5);
+          const pool = getProcessPool();
           const database = getPostgresClient(pool, PostgresDriver);
           return await sweepCompanyProvider({
             companyId: target.companyId,

@@ -34,7 +34,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
   const rampIds: string[] = [];
 
   beforeAll(async () => {
-    db = getJobDatabaseClient(2);
+    db = getJobDatabaseClient();
     const company = await db
       .selectFrom("company")
       .innerJoin("employeeJob", "employeeJob.companyId", "company.id")

@@ -23,10 +23,7 @@
  * operations and runs the entity syncers.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import {
   type AccountingEntityType,
   AccountingSyncSchema,
@@ -77,9 +74,9 @@ export const syncExternalAccountingFunction = inngest.createFunction(
     // reuse the same event id (absorbed), later deliveries get fresh keys
     const enqueueScope = event.id ?? runId;
 
-    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
+    // NOTE: the pool from getProcessPool is a process-lifetime
     // singleton (see lib/postgres) — do NOT end it per invocation.
-    const pool = getPostgresConnectionPool(10);
+    const pool = getProcessPool();
     const kysely = getPostgresClient(pool, PostgresDriver);
 
     // Step 1: resolve each entity's effective direction and enqueue one

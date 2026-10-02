@@ -34,10 +34,7 @@
  * edit here.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import {
   type AccountingProvider,
   createMappingService,
@@ -164,10 +161,7 @@ export const accountingMasterSyncFunction = inngest.createFunction(
       integration.id,
       integration.metadata
     ) as AccountingProvider;
-    const database = getPostgresClient(
-      getPostgresConnectionPool(5),
-      PostgresDriver
-    );
+    const database = getPostgresClient(getProcessPool(), PostgresDriver);
 
     const createdBy = getSyncOperationActor(integration);
     const result: Record<string, EntityCounts> = {};

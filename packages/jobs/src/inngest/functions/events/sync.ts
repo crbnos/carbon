@@ -24,10 +24,7 @@
  * deleted row also reconciles to nothing by construction).
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import { EventSchema } from "@carbon/database/event";
 import { ProviderID, SpendProviderID } from "@carbon/ee/accounting";
 import { groupBy } from "@carbon/utils";
@@ -99,11 +96,11 @@ export const syncFunction = inngest.createFunction(
       return `${companyId}:${provider}`;
     });
 
-    const pool = getPostgresConnectionPool(10);
+    const pool = getProcessPool();
     const kysely = getPostgresClient(pool, PostgresDriver);
     const client = getCarbonServiceRole();
 
-    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
+    // NOTE: the pool from getProcessPool is a process-lifetime
     // singleton (see lib/postgres) — do NOT end it per invocation.
     for (const [key, records] of Object.entries(byCompanyProvider)) {
       const [companyId, provider] = key.split(":");

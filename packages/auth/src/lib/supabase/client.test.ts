@@ -14,6 +14,11 @@ vi.mock("../../config/env", () => ({
 
 const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
   await import("./client");
+const { requestFetch } = await import("./client.server");
+const { requestContextMiddleware } = await import(
+  "@carbon/logger/middleware.server"
+);
+const { RouterContextProvider } = await import("react-router");
 
 // A loader's client carries its request's signal: once the browser has gone,
 // what the loader still wants from the database is not worth fetching.
@@ -46,7 +51,11 @@ describe("a client bound to a request", () => {
     const fetchMock = hangingFetch();
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
-    const client = getCarbonClient("anon", "user-jwt", pageLoad(controller));
+    const client = getCarbonClient(
+      "anon",
+      "user-jwt",
+      requestFetch(pageLoad(controller))
+    );
 
     const calls = Array.from({ length: 12 }, () =>
       client.from("item").select("id")
@@ -58,11 +67,46 @@ describe("a client bound to a request", () => {
     await Promise.all(calls);
   });
 
+  it("shares the limit between every client built during the request", async () => {
+    const fetchMock = hangingFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+    await requestContextMiddleware(
+      {
+        request: pageLoad(controller),
+        context: new RouterContextProvider(),
+        params: {},
+        unstable_pattern: ""
+      } as never,
+      async () => {
+        // A user client and a service-role client, each built without the
+        // request in hand, as a service deep in a loader would.
+        const user = getCarbonClient("anon", "user-jwt", requestFetch());
+        const service = getCarbonClient("service", undefined, requestFetch());
+        const calls = Array.from({ length: 6 }, () => [
+          user.from("item").select("id"),
+          service.from("item").select("id")
+        ])
+          .flat()
+          .map((query) => query.then((result) => result));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        expect(fetchMock).toHaveBeenCalledTimes(8);
+        controller.abort();
+        await Promise.all(calls);
+        return new Response();
+      }
+    );
+  });
+
   it("stops a read in flight when the browser leaves, without retrying, and fails later ones at once", async () => {
     const fetchMock = hangingFetch();
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
-    const client = getCarbonClient("anon", "user-jwt", pageLoad(controller));
+    const client = getCarbonClient(
+      "anon",
+      "user-jwt",
+      requestFetch(pageLoad(controller))
+    );
 
     const pending = client.from("item").select("id");
     setTimeout(() => controller.abort(), 5);
@@ -83,7 +127,11 @@ describe("a client bound to a request", () => {
     const controller = new AbortController();
     controller.abort();
 
-    const read = getCarbonClient("anon", "user-jwt", pageLoad(controller));
+    const read = getCarbonClient(
+      "anon",
+      "user-jwt",
+      requestFetch(pageLoad(controller))
+    );
     const invoked = await read.functions.invoke("create", { body: {} });
     expect(invoked.error).toBeNull();
     const written = await read.from("item").update({ name: "x" }).eq("id", "1");
@@ -92,7 +140,7 @@ describe("a client bound to a request", () => {
     const action = getCarbonClient(
       "anon",
       "user-jwt",
-      pageLoad(controller, "POST")
+      requestFetch(pageLoad(controller, "POST"))
     );
     const selected = await action.from("item").select("id");
     expect(selected.error).toBeNull();

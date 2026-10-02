@@ -23,7 +23,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { PoolClient } from "pg";
-import { getPostgresConnectionPool } from "./client.ts";
+import { getProcessPool } from "./client.ts";
 import { loadEnv } from "./datasets/cli.ts";
 import { datasetKeys, getDataset } from "./datasets/index.ts";
 import { validateDataset } from "./datasets/validate.ts";
@@ -129,14 +129,14 @@ async function main() {
   }
 
   // No connection string configured at all (fresh worktree, no .env.local).
-  // getPostgresConnectionPool dereferences it before any connect() can fail,
+  // getProcessPool dereferences it before any connect() can fail,
   // so without this the hook blocks the commit on "Cannot read properties of
   // undefined (reading 'includes')" — the least actionable message there is.
   if (!process.env.SUPABASE_DB_URL) {
     skip("SUPABASE_DB_URL is not set (no .env.local in this worktree?)");
   }
 
-  const pool = getPostgresConnectionPool(1);
+  const pool = getProcessPool();
   let client: PoolClient;
   try {
     client = await pool.connect();

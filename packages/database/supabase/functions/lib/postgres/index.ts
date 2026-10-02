@@ -127,86 +127,103 @@ function registerNodeTypeParsers(): void {
 }
 registerNodeTypeParsers();
 
+/**
+ * An edge function's pool of `connections`, cached per size. Edge functions
+ * only: on Node every caller shares `getProcessPool()`.
+ */
 export function getPostgresConnectionPool(connections: number): Pool {
+  if (getRuntime() !== "deno") {
+    throw new Error(
+      "getPostgresConnectionPool is for edge functions; on Node use getProcessPool()"
+    );
+  }
   const cached = poolCache.get(connections);
-  // An ended pool can never serve connections again ("Cannot use a pool after
-  // calling end on the pool") — evict it so callers get a live pool instead of
-  // a permanently broken process. `ending` is node-postgres only; on Deno it's
-  // undefined and the cached pool is always reused.
-  if (cached && !(cached as { ending?: boolean }).ending) return cached;
-
-  const pool = createPostgresConnectionPool(connections);
+  if (cached) return cached;
+  const pool = createDenoPool(connections);
   poolCache.set(connections, pool);
   return pool;
 }
 
-function createPostgresConnectionPool(connections: number): Pool {
-  const runtime = getRuntime();
+/** Connections in a Node process's one pool. The pools it replaced (10, 5 and
+ *  1, one per size asked for) held up to 16 between them. */
+const PROCESS_POOL_SIZE = 16;
+let processPool: Pool | undefined;
 
-  switch (runtime) {
-    case "deno": {
-      // @ts-expect-error -- Deno global is only available in Deno runtime
-      const url = Deno.env.get("SUPABASE_DB_URL")!;
-      const connectionPoolerUrl = url.includes("supabase.co")
-        ? url.replace("5432", "6543")
-        : url;
-      // deno-postgres accepts EITHER a URI string OR a ClientOptions object —
-      // the NUMERIC decoder (`controls`) only fits on the object form, so
-      // parse the URL ourselves. sslmode mapping mirrors the driver's own:
-      // disable -> off; require/verify-* -> enforce; otherwise attempt TLS
-      // and fall back (its default).
-      const u = new URL(connectionPoolerUrl);
-      const sslmode = u.searchParams.get("sslmode");
-      const DenoPool = Pool as unknown as DenoPoolConstructor;
-      const options: DenoClientOptions = {
-        user: decodeURIComponent(u.username),
-        password: decodeURIComponent(u.password),
-        hostname: u.hostname,
-        port: u.port || 5432,
-        database: u.pathname.replace(/^\//, "") || undefined,
-        controls: {
-          // The driver applies these element-wise to array types via the
-          // base-type fallback, so arrays decode too. Must mirror
-          // `registerNodeTypeParsers` exactly.
-          decoders: { [NUMERIC_OID]: Number, [DATE_OID]: identity },
-        },
-      };
-      if (sslmode) {
-        options.tls = {
-          enabled: sslmode !== "disable",
-          enforce: ["require", "verify-ca", "verify-full"].includes(sslmode),
-        };
-      }
-      return new DenoPool(options, connections);
-    }
-    case "node": {
-      const url = process.env.SUPABASE_DB_URL!;
-      const connectionPoolerUrl = url.includes("supabase.co")
-        ? url.replace("5432", "6543")
-        : url;
-      const pool = new Pool({
-        connectionString: connectionPoolerUrl,
-        max: connections,
-        // Fail fast instead of queueing forever when the DB/pooler is
-        // unreachable or the pool is saturated.
-        connectionTimeoutMillis: 10_000,
-        // Rotate connections so direct (non-Supavisor) connections can't rot
-        // through NAT/firewall idle limits.
-        maxLifetimeSeconds: 1800,
-      });
-      // pg-pool purges the broken client before emitting 'error'; the listener
-      // exists because an unlistened EventEmitter 'error' crashes the process.
-      pool.on("error", (err) => {
-        console.error("postgres pool: idle client error", err);
-      });
-      return pool;
-    }
-
-    default:
-      throw new Error(
-        "getPostgresConnectionPool is not supported in non-server environments"
-      );
+/**
+ * The Node process's one connection pool, shared by the app's Kysely client,
+ * the jobs and the scripts. Only a script about to exit ends it. A pool per
+ * caller let one process hold several, and a caller that ended its pool broke
+ * everyone else holding it.
+ */
+export function getProcessPool(): Pool {
+  if (getRuntime() !== "node") {
+    throw new Error("getProcessPool is Node-only");
   }
+  // An ended pool can never serve again ("Cannot use a pool after calling end
+  // on the pool"): a script that ended it and carries on gets a new one.
+  if (!processPool || (processPool as { ending?: boolean }).ending) {
+    processPool = createNodePool(PROCESS_POOL_SIZE);
+  }
+  return processPool;
+}
+
+function createDenoPool(connections: number): Pool {
+  // @ts-expect-error -- Deno global is only available in Deno runtime
+  const url = Deno.env.get("SUPABASE_DB_URL")!;
+  const connectionPoolerUrl = url.includes("supabase.co")
+    ? url.replace("5432", "6543")
+    : url;
+  // deno-postgres accepts EITHER a URI string OR a ClientOptions object —
+  // the NUMERIC decoder (`controls`) only fits on the object form, so
+  // parse the URL ourselves. sslmode mapping mirrors the driver's own:
+  // disable -> off; require/verify-* -> enforce; otherwise attempt TLS
+  // and fall back (its default).
+  const u = new URL(connectionPoolerUrl);
+  const sslmode = u.searchParams.get("sslmode");
+  const DenoPool = Pool as unknown as DenoPoolConstructor;
+  const options: DenoClientOptions = {
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    hostname: u.hostname,
+    port: u.port || 5432,
+    database: u.pathname.replace(/^\//, "") || undefined,
+    controls: {
+      // The driver applies these element-wise to array types via the
+      // base-type fallback, so arrays decode too. Must mirror
+      // `registerNodeTypeParsers` exactly.
+      decoders: { [NUMERIC_OID]: Number, [DATE_OID]: identity },
+    },
+  };
+  if (sslmode) {
+    options.tls = {
+      enabled: sslmode !== "disable",
+      enforce: ["require", "verify-ca", "verify-full"].includes(sslmode),
+    };
+  }
+  return new DenoPool(options, connections);
+}
+
+function createNodePool(connections: number): Pool {
+  const url = process.env.SUPABASE_DB_URL!;
+  const connectionPoolerUrl = url.includes("supabase.co")
+    ? url.replace("5432", "6543")
+    : url;
+  const pool = new Pool({
+    connectionString: connectionPoolerUrl,
+    max: connections,
+    // Fail fast instead of queueing forever when the DB/pooler is
+    // unreachable or the pool is saturated.
+    connectionTimeoutMillis: 10_000,
+    // Rotate connections so direct (non-Supavisor) connections can't rot
+    // through NAT/firewall idle limits.
+    maxLifetimeSeconds: 1800,
+  });
+  // pg-pool purges the broken client before emitting 'error'; the listener
+  // exists because an unlistened EventEmitter 'error' crashes the process.
+  pool.on("error", (err) => {
+    console.error("postgres pool: idle client error", err);
+  });
+  return pool;
 }
 
 interface PgDriverConstructor {

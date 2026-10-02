@@ -5,6 +5,7 @@
 import { createContext, RouterContextProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 import {
+  currentRequest,
   getRequestContext,
   getRouterContext,
   isAbandonedRead,
@@ -40,31 +41,37 @@ describe("request context", () => {
   });
 });
 
-describe("readRequestSignal", () => {
-  it("is the request's signal on a read, and absent on a write or outside a request", () => {
-    const { signal } = new AbortController();
-    expect(runInRequestContext(provider(), readRequestSignal, { signal })).toBe(
-      signal
-    );
+describe("currentRequest and readRequestSignal", () => {
+  const load = (controller: AbortController, method = "GET") =>
+    new Request("http://erp.test/x", { method, signal: controller.signal });
+
+  it("hand over the request, and its signal only when it reads", () => {
+    const controller = new AbortController();
+    const get = load(controller);
+    const post = load(controller, "POST");
     expect(
-      runInRequestContext(provider(), readRequestSignal, {
-        isRead: false,
-        signal
-      })
+      runInRequestContext(provider(), currentRequest, { request: get })
+    ).toBe(get);
+    expect(
+      runInRequestContext(provider(), readRequestSignal, { request: get })
+    ).toBe(get.signal);
+    expect(
+      runInRequestContext(provider(), readRequestSignal, { request: post })
     ).toBeUndefined();
+    expect(currentRequest()).toBeUndefined();
     expect(readRequestSignal()).toBeUndefined();
   });
 
-  it("reports a read whose client has gone", () => {
-    const request = new AbortController();
-    const p = provider();
-    expect(
-      runInRequestContext(p, isAbandonedRead, { signal: request.signal })
-    ).toBe(false);
-    request.abort();
-    expect(
-      runInRequestContext(p, isAbandonedRead, { signal: request.signal })
-    ).toBe(true);
+  it("report a read whose client has gone", () => {
+    const controller = new AbortController();
+    const request = load(controller);
+    expect(runInRequestContext(provider(), isAbandonedRead, { request })).toBe(
+      false
+    );
+    controller.abort();
+    expect(runInRequestContext(provider(), isAbandonedRead, { request })).toBe(
+      true
+    );
     expect(isAbandonedRead()).toBe(false);
   });
 });

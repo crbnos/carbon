@@ -50,9 +50,8 @@ export const requestContextMiddleware: MiddlewareFunction<Response> = (
   { context, request },
   next
 ) => {
-  const isRead = READ_METHODS.has(request.method);
-  context.set(isReadRequestContext, isRead);
-  if (isRead) context.set(readSignalContext, request.signal);
+  context.set(isReadRequestContext, READ_METHODS.has(request.method));
+  context.set(requestContext, request);
   return storage.run(context, () => next());
 };
 
@@ -61,17 +60,28 @@ const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 /** Whether this request only reads — see `oncePerRead`. */
 const isReadRequestContext = createContext<boolean>(false);
 
-const readSignalContext = createContext<AbortSignal | null>(null);
+const requestContext = createContext<Request | null>(null);
 
 /**
- * The current request's abort signal, when the request only reads; undefined
- * on a mutating request and outside a request. The server aborts it when the
- * client goes away before the response is done, and the Supabase client
- * `requirePermissions` hands out cancels its reads then (from `request.signal`
- * directly). Here it is for code that has no request: the log filter.
+ * The request being handled, for code that is not handed it: a Supabase client
+ * built deep in a service binds itself to it (`requestFetch` in
+ * `@carbon/auth`), and the log filter reads its signal. Undefined outside a
+ * request.
+ */
+export function currentRequest(): Request | undefined {
+  return storage.getStore()?.get(requestContext) ?? undefined;
+}
+
+/**
+ * The current request's abort signal when the request only reads; undefined on
+ * a mutating request, whose writes run to the end, and outside a request. The
+ * server aborts it when the client goes away before the response is done.
  */
 export function readRequestSignal(): AbortSignal | undefined {
-  return storage.getStore()?.get(readSignalContext) ?? undefined;
+  const request = currentRequest();
+  return request && READ_METHODS.has(request.method)
+    ? request.signal
+    : undefined;
 }
 
 /** Whether the client of the current read request has gone away. */
@@ -161,12 +171,9 @@ export function requestMemoSize(): number {
 export function runInRequestContext<T>(
   provider: RequestContext,
   fn: () => T,
-  options?: { isRead?: boolean; signal?: AbortSignal }
+  options?: { isRead?: boolean; request?: Request }
 ): T {
-  const isRead = options?.isRead ?? true;
-  provider.set(isReadRequestContext, isRead);
-  if (isRead && options?.signal) {
-    provider.set(readSignalContext, options.signal);
-  }
+  provider.set(isReadRequestContext, options?.isRead ?? true);
+  if (options?.request) provider.set(requestContext, options.request);
   return storage.run(provider, fn);
 }

@@ -45,10 +45,7 @@
  * claimed rows stay In Flight and become re-claimable once stale.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import {
   aggregateJournalEntriesForDate,
   claimPendingOperations,
@@ -772,7 +769,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
         fn: async () => {
           // Process-lifetime cached pool shared with events/sync.ts and the
           // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
+          const pool = getProcessPool();
           const database = getPostgresClient(pool, PostgresDriver);
           return await consolidateCompany({
             companyId: target.companyId,

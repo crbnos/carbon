@@ -54,7 +54,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches` |
-| `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
+| `./client` | `Kysely`, `KyselyDatabase`, `getPostgresClient`, and the pools: `getProcessPool()` (Node: one shared pool per process — never create another, never end it outside an exiting script) and `getPostgresConnectionPool(n)` (edge functions only; throws on Node) |
 | `./datetime` | Node re-export of `supabase/functions/lib/datetime.ts` — the edge-runtime datetime helpers (`datetime`, `getCompanyTimeZone`, `getLocationTimeZone`) for Node consumers |
 | `./methods` | Node re-export of `supabase/functions/lib/methods.ts` — shared make-method helpers |
 | `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |

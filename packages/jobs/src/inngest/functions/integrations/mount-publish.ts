@@ -21,10 +21,7 @@
  * assumes a human started it.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import { runMountPublish } from "@carbon/ee/mount.server";
 import { getLogger } from "@carbon/logger";
 import { PostgresDriver } from "kysely";
@@ -61,7 +58,7 @@ export const mountPublishFunction = inngest.createFunction(
     const result = await step.run("publish", async () =>
       runMountPublish({
         serviceRole: getCarbonServiceRole(),
-        db: getPostgresClient(getPostgresConnectionPool(5), PostgresDriver),
+        db: getPostgresClient(getProcessPool(), PostgresDriver),
         companyId,
         entityTypes
       })

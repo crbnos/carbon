@@ -224,6 +224,47 @@ export function querySpanName(sql: string) {
   return table ? `${operation} ${table}` : operation;
 }
 
+/** The parts of a node-postgres `Pool` that tell whether `connect()` will wait. */
+type ObservablePool = {
+  connect: (...args: never[]) => unknown;
+  idleCount: number;
+  totalCount: number;
+  waitingCount: number;
+  options: { max?: number };
+};
+
+const TRACED_POOL = Symbol.for("carbon.tracing.pool");
+
+/**
+ * Query spans time only the query, so a request waiting for a free connection
+ * looked like a slow request with fast queries. When `connect()` cannot hand
+ * out an idle connection this records the wait as a span: `db pool wait` when
+ * the pool is full and the caller queues, `db connect` when it has to open a
+ * new connection. Taking an idle connection records nothing. Idempotent.
+ */
+export function traceConnectionWaits<P extends ObservablePool>(pool: P): P {
+  if (!enabled || TRACED_POOL in pool) return pool;
+  const connect = pool.connect.bind(pool) as (...args: unknown[]) => unknown;
+  Object.assign(pool, {
+    [TRACED_POOL]: true,
+    // The callback form is pg's own `pool.query`; only the promise form is
+    // awaited by a caller.
+    connect: (...args: unknown[]) => {
+      if (args.length > 0 || pool.idleCount > 0) return connect(...args);
+      const full = pool.totalCount >= (pool.options.max ?? 10);
+      return withSpan(
+        full ? "db pool wait" : "db connect",
+        {
+          "db.client.connection.pool.size": pool.totalCount,
+          "db.client.connection.pool.waiting": pool.waitingCount
+        },
+        () => connect() as Promise<unknown>
+      );
+    }
+  });
+  return pool;
+}
+
 /** Kysely `log` hook. Kysely reports a query after it ran, so the span is back-dated. */
 function traceQuery(event: {
   level: "query" | "error";
