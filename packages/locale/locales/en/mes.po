@@ -296,6 +296,12 @@ msgstr "Add Sample"
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
 
+msgid "After a period of inactivity the pinned operator is signed out."
+msgstr "After a period of inactivity the pinned operator is signed out."
+
+msgid "After a period of inactivity this device signs itself out."
+msgstr "After a period of inactivity this device signs itself out."
+
 msgid "All"
 msgstr "All"
 
@@ -342,6 +348,15 @@ msgstr "Allow the camera"
 msgid "Allow the camera to take a photo for this step"
 msgstr "Allow the camera to take a photo for this step"
 
+msgid "Analytics are off: this is a controlled environment."
+msgstr "Analytics are off: this is a controlled environment."
+
+msgid "Analytics are off: this server has not configured them."
+msgstr "Analytics are off: this server has not configured them."
+
+msgid "Analytics are off: this server is air-gapped."
+msgstr "Analytics are off: this server is air-gapped."
+
 msgid "Anything the next person should know"
 msgstr "Anything the next person should know"
 
@@ -350,6 +365,9 @@ msgstr "Anything you add here is what the next shift reads."
 
 msgid "Anything your supervisor should know"
 msgstr "Anything your supervisor should know"
+
+msgid "Appearance"
+msgstr "Appearance"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
@@ -776,6 +794,9 @@ msgstr "Current work"
 msgid "Customer"
 msgstr "Customer"
 
+msgid "Dark"
+msgstr "Dark"
+
 msgid "Dark Mode"
 msgstr "Dark Mode"
 
@@ -815,11 +836,17 @@ msgstr "Describe what you found"
 msgid "Description"
 msgstr "Description"
 
+msgid "Design primitives (dev)"
+msgstr "Design primitives (dev)"
+
 msgid "Destructive"
 msgstr "Destructive"
 
 msgid "Details"
 msgstr "Details"
+
+msgid "Device language"
+msgstr "Device language"
 
 msgid "Disabled"
 msgstr "Disabled"
@@ -1082,6 +1109,9 @@ msgstr "First due {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Fix the highlighted quantities before completing."
 
+msgid "Follow the device"
+msgstr "Follow the device"
+
 msgid "For now, use Carbon MES in a browser for this."
 msgstr "For now, use Carbon MES in a browser for this."
 
@@ -1258,6 +1288,9 @@ msgstr "Labor"
 msgid "Labor — 01:22:40"
 msgstr "Labor — 01:22:40"
 
+msgid "Language"
+msgstr "Language"
+
 msgid "Last completed"
 msgstr "Last completed"
 
@@ -1272,6 +1305,9 @@ msgstr "Leave this page"
 
 msgid "Let's build something"
 msgstr "Let's build something"
+
+msgid "Light"
+msgstr "Light"
 
 msgid "lines"
 msgstr "lines"
@@ -1954,6 +1990,9 @@ msgstr "Printer Settings"
 
 msgid "Priority"
 msgstr "Priority"
+
+msgid "Privacy"
+msgstr "Privacy"
 
 msgid "Procedure"
 msgstr "Procedure"
@@ -2829,6 +2868,9 @@ msgstr "Uploaded: {0}"
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Uploading {0}"
+
+msgid "Usage analytics are on for this server."
+msgstr "Usage analytics are on for this server."
 
 msgid "Use a different account"
 msgstr "Use a different account"

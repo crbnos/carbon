@@ -54,11 +54,3 @@ export const THEME_COLORS: Record<ColorScheme, Record<Token, string>> = {
     destructive: "#ff4747"
   }
 };
-/**
- * Takes anything `useColorScheme()` can return — React Native's
- * `ColorSchemeName` is a wider string union than this file's two modes, and it
- * is null while the OS preference is still unknown. Light is the fallback.
- */
-export function themeColor(scheme: string | null | undefined, token: Token) {
-  return THEME_COLORS[scheme === "dark" ? "dark" : "light"][token];
-}

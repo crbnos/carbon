@@ -11,10 +11,10 @@ import {
   TriangleAlert,
   WifiOff
 } from "lucide-react-native";
-import { useColorScheme, View } from "react-native";
+import { View } from "react-native";
 import type { OutboxSummary } from "~/lib/outbox/policy";
-import { themeColor } from "./themeColors";
 import { Body, Button, Muted } from "./ui";
+import { useThemeColors } from "./useThemeColor";
 
 /**
  * "3 waiting to send" — the one line that tells an operator their work has not
@@ -54,7 +54,7 @@ export function OutboxBanner({
   onSendNow?: () => void;
 }) {
   const { t, i18n } = useLingui();
-  const scheme = useColorScheme();
+  const colors = useThemeColors();
 
   // Nothing unsent, nothing to say.
   if (summary.total === 0) return null;
@@ -71,9 +71,7 @@ export function OutboxBanner({
   if (needsDecision) Icon = summary.needsAttention > 0 ? TriangleAlert : Clock;
   else if (!online) Icon = WifiOff;
 
-  const iconColor = needsDecision
-    ? themeColor(scheme, "destructive")
-    : themeColor(scheme, "mutedForeground");
+  const iconColor = needsDecision ? colors.destructive : colors.mutedForeground;
 
   // Why Send now cannot be pressed, said in place rather than by vanishing.
   const blockedReason = !online

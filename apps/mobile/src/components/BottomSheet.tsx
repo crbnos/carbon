@@ -16,9 +16,9 @@ import {
   useImperativeHandle,
   useRef
 } from "react";
-import { Pressable, Text, useColorScheme, View } from "react-native";
-import { themeColor } from "./themeColors";
+import { Pressable, Text, View } from "react-native";
 import { Heading } from "./ui";
+import { useThemeColors } from "./useThemeColor";
 
 /**
  * Every secondary action lives in a sheet, never in a context menu — there is
@@ -39,7 +39,7 @@ export const Sheet = forwardRef<
   { title?: string; children: ReactNode }
 >(function Sheet({ title, children }, ref) {
   const sheet = useRef<BottomSheetModal>(null);
-  const scheme = useColorScheme();
+  const colors = useThemeColors();
 
   useImperativeHandle(ref, () => ({
     open: () => sheet.current?.present(),
@@ -68,9 +68,9 @@ export const Sheet = forwardRef<
       // This library takes a style object, not a Uniwind className, so it
       // cannot read `--card` — hence `themeColor`. A sheet that stayed white in
       // dark mode would be the brightest thing on a night-shift tablet.
-      backgroundStyle={{ backgroundColor: themeColor(scheme, "card") }}
+      backgroundStyle={{ backgroundColor: colors.card }}
       handleIndicatorStyle={{
-        backgroundColor: themeColor(scheme, "mutedForeground"),
+        backgroundColor: colors.mutedForeground,
         width: 48
       }}
     >
@@ -102,7 +102,7 @@ export function SheetRow({
   disabledReason?: string;
 }) {
   const destructive = tone === "destructive";
-  const scheme = useColorScheme();
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -116,10 +116,7 @@ export function SheetRow({
     >
       <Icon
         size={24}
-        color={themeColor(
-          scheme,
-          destructive ? "destructive" : "mutedForeground"
-        )}
+        color={destructive ? colors.destructive : colors.mutedForeground}
       />
       <View className="flex-1 gap-0.5">
         <Text

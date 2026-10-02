@@ -296,6 +296,12 @@ msgstr "Agregar muestra"
 msgid "Add Spare Part"
 msgstr "Agregar repuesto"
 
+msgid "After a period of inactivity the pinned operator is signed out."
+msgstr ""
+
+msgid "After a period of inactivity this device signs itself out."
+msgstr ""
+
 msgid "All"
 msgstr "Todos"
 
@@ -342,6 +348,15 @@ msgstr ""
 msgid "Allow the camera to take a photo for this step"
 msgstr ""
 
+msgid "Analytics are off: this is a controlled environment."
+msgstr ""
+
+msgid "Analytics are off: this server has not configured them."
+msgstr ""
+
+msgid "Analytics are off: this server is air-gapped."
+msgstr ""
+
 msgid "Anything the next person should know"
 msgstr ""
 
@@ -349,6 +364,9 @@ msgid "Anything you add here is what the next shift reads."
 msgstr ""
 
 msgid "Anything your supervisor should know"
+msgstr ""
+
+msgid "Appearance"
 msgstr ""
 
 msgid "Are you sure you want to delete this step?"
@@ -776,6 +794,9 @@ msgstr "Trabajo actual"
 msgid "Customer"
 msgstr "Cliente"
 
+msgid "Dark"
+msgstr ""
+
 msgid "Dark Mode"
 msgstr "Modo oscuro"
 
@@ -815,11 +836,17 @@ msgstr ""
 msgid "Description"
 msgstr "Descripción"
 
+msgid "Design primitives (dev)"
+msgstr ""
+
 msgid "Destructive"
 msgstr ""
 
 msgid "Details"
 msgstr "Detalles"
+
+msgid "Device language"
+msgstr ""
 
 msgid "Disabled"
 msgstr ""
@@ -1082,6 +1109,9 @@ msgstr "Primer vencimiento {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Corrija las cantidades resaltadas antes de completar."
 
+msgid "Follow the device"
+msgstr ""
+
 msgid "For now, use Carbon MES in a browser for this."
 msgstr ""
 
@@ -1258,6 +1288,9 @@ msgstr "Mano de obra"
 msgid "Labor — 01:22:40"
 msgstr ""
 
+msgid "Language"
+msgstr ""
+
 msgid "Last completed"
 msgstr "Última finalización"
 
@@ -1272,6 +1305,9 @@ msgstr "Salir de esta página"
 
 msgid "Let's build something"
 msgstr "Construyamos algo"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "líneas"
@@ -1954,6 +1990,9 @@ msgstr "Configuración de impresora"
 
 msgid "Priority"
 msgstr "Prioridad"
+
+msgid "Privacy"
+msgstr ""
 
 msgid "Procedure"
 msgstr "Procedimiento"
@@ -2829,6 +2868,9 @@ msgstr "Subido: {0}"
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Subiendo {0}"
+
+msgid "Usage analytics are on for this server."
+msgstr ""
 
 msgid "Use a different account"
 msgstr "Usar una cuenta diferente"

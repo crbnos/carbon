@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useColorScheme } from "react-native";
+import { usePreferences } from "~/lib/preferences/PreferencesProvider";
 import { THEME_COLORS } from "./themeColors";
 
 /**
@@ -16,6 +16,10 @@ import { THEME_COLORS } from "./themeColors";
  * night-shift tablet.
  */
 export function useThemeColors() {
-  const scheme = useColorScheme();
-  return THEME_COLORS[scheme === "dark" ? "dark" : "light"];
+  // The PREFERENCE, not `useColorScheme()`. An explicit light/dark choice is
+  // applied to classNames through Uniwind's ScopedTheme, which react-native's
+  // own hook knows nothing about — reading the OS here would leave a screen
+  // with dark panels and light-mode icons on it.
+  const { resolvedScheme } = usePreferences();
+  return THEME_COLORS[resolvedScheme];
 }

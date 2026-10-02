@@ -296,6 +296,12 @@ msgstr "サンプルを追加"
 msgid "Add Spare Part"
 msgstr "予備品を追加"
 
+msgid "After a period of inactivity the pinned operator is signed out."
+msgstr ""
+
+msgid "After a period of inactivity this device signs itself out."
+msgstr ""
+
 msgid "All"
 msgstr "すべて"
 
@@ -342,6 +348,15 @@ msgstr ""
 msgid "Allow the camera to take a photo for this step"
 msgstr ""
 
+msgid "Analytics are off: this is a controlled environment."
+msgstr ""
+
+msgid "Analytics are off: this server has not configured them."
+msgstr ""
+
+msgid "Analytics are off: this server is air-gapped."
+msgstr ""
+
 msgid "Anything the next person should know"
 msgstr ""
 
@@ -349,6 +364,9 @@ msgid "Anything you add here is what the next shift reads."
 msgstr ""
 
 msgid "Anything your supervisor should know"
+msgstr ""
+
+msgid "Appearance"
 msgstr ""
 
 msgid "Are you sure you want to delete this step?"
@@ -776,6 +794,9 @@ msgstr "現在の作業"
 msgid "Customer"
 msgstr "得意先"
 
+msgid "Dark"
+msgstr ""
+
 msgid "Dark Mode"
 msgstr "ダークモード"
 
@@ -815,11 +836,17 @@ msgstr ""
 msgid "Description"
 msgstr "説明"
 
+msgid "Design primitives (dev)"
+msgstr ""
+
 msgid "Destructive"
 msgstr ""
 
 msgid "Details"
 msgstr "詳細"
+
+msgid "Device language"
+msgstr ""
 
 msgid "Disabled"
 msgstr ""
@@ -1082,6 +1109,9 @@ msgstr "最初の期日 {0}"
 msgid "Fix the highlighted quantities before completing."
 msgstr "完了する前に、ハイライトされた数量を修正してください。"
 
+msgid "Follow the device"
+msgstr ""
+
 msgid "For now, use Carbon MES in a browser for this."
 msgstr ""
 
@@ -1258,6 +1288,9 @@ msgstr "労務"
 msgid "Labor — 01:22:40"
 msgstr ""
 
+msgid "Language"
+msgstr ""
+
 msgid "Last completed"
 msgstr "最後に完了"
 
@@ -1272,6 +1305,9 @@ msgstr "このページを離れる"
 
 msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "行"
@@ -1954,6 +1990,9 @@ msgstr "プリンター設定"
 
 msgid "Priority"
 msgstr "優先度"
+
+msgid "Privacy"
+msgstr ""
 
 msgid "Procedure"
 msgstr "手順書"
@@ -2829,6 +2868,9 @@ msgstr "アップロード完了: {0}"
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} をアップロード中"
+
+msgid "Usage analytics are on for this server."
+msgstr ""
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"
