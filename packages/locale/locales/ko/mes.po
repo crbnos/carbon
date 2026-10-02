@@ -1287,9 +1287,6 @@ msgstr "작업 상세정보"
 msgid "Job operation"
 msgstr ""
 
-msgid "Job status"
-msgstr ""
-
 msgid "Job Traveler"
 msgstr "작업 이동표"
 
@@ -1909,6 +1906,13 @@ msgstr ""
 msgid "Pause"
 msgstr "일시 중지"
 
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
 msgid "Phone layout: the dock is the bottom bar."
 msgstr ""
 
@@ -2219,9 +2223,6 @@ msgstr "재작업이 생성되었습니다"
 
 msgid "Rework quantity"
 msgstr "재작업 수량"
-
-msgid "Reworked"
-msgstr ""
 
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
@@ -2821,9 +2822,6 @@ msgstr "썸네일"
 msgid "Tick the jobs this was done for."
 msgstr "이것이 수행된 작업 지시를 체크하세요."
 
-msgid "Time"
-msgstr ""
-
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."
 
@@ -3043,9 +3041,6 @@ msgstr ""
 
 msgid "WIP"
 msgstr "재공품"
-
-msgid "Work center"
-msgstr ""
 
 msgid "Work Center"
 msgstr "작업장"

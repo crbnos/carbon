@@ -1287,9 +1287,6 @@ msgstr "Détails de l'ordre de fabrication"
 msgid "Job operation"
 msgstr ""
 
-msgid "Job status"
-msgstr ""
-
 msgid "Job Traveler"
 msgstr "Fiche suiveuse"
 
@@ -1909,6 +1906,13 @@ msgstr ""
 msgid "Pause"
 msgstr "Mettre en pause"
 
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
 msgid "Phone layout: the dock is the bottom bar."
 msgstr ""
 
@@ -2219,9 +2223,6 @@ msgstr "Retouche créée avec succès"
 
 msgid "Rework quantity"
 msgstr "Quantité de retouche"
-
-msgid "Reworked"
-msgstr ""
 
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
@@ -2821,9 +2822,6 @@ msgstr "Miniature"
 msgid "Tick the jobs this was done for."
 msgstr "Cochez les ordres de fabrication pour lesquels c'est effectué."
 
-msgid "Time"
-msgstr ""
-
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Le temps et le coût sont répartis entre les ordres de fabrication proportionnellement à la quantité."
 
@@ -3043,9 +3041,6 @@ msgstr ""
 
 msgid "WIP"
 msgstr "En-cours"
-
-msgid "Work center"
-msgstr ""
 
 msgid "Work Center"
 msgstr "Poste de travail"

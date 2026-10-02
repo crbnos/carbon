@@ -7,20 +7,15 @@ import { formatDate } from "@carbon/utils/date";
 import { useLingui } from "@lingui/react/macro";
 import {
   CalendarDays,
-  Circle,
-  CircleCheck,
   CirclePlay,
-  CircleX,
   ClipboardCheck,
-  type LucideIcon,
-  Pause,
-  Play,
   Timer
 } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Card } from "~/components/ui";
 import { useThemeColors } from "~/components/useThemeColor";
+import { statusColorFor, statusIcon } from "./statusVocabulary";
 
 /**
  * A port of web MES's own operation card
@@ -35,29 +30,6 @@ import { useThemeColors } from "~/components/useThemeColor";
  * the whole card is the press target and nothing is smaller than `text-sm`
  * with a 20pt icon, because this is read standing up, often gloved.
  */
-
-/** `OperationStatusIcon` from `apps/mes/app/components/Icons.tsx`. */
-function statusIcon(status: string | null | undefined): {
-  Icon: LucideIcon;
-  tone: "foreground" | "blue" | "red" | "green" | "orange";
-} {
-  switch (status) {
-    case "Ready":
-      return { Icon: Circle, tone: "blue" };
-    case "Waiting":
-    case "Canceled":
-    case "Cancelled":
-      return { Icon: CircleX, tone: "red" };
-    case "Done":
-      return { Icon: CircleCheck, tone: "green" };
-    case "In Progress":
-      return { Icon: Play, tone: "orange" };
-    case "Paused":
-      return { Icon: Pause, tone: "orange" };
-    default:
-      return { Icon: Circle, tone: "foreground" };
-  }
-}
 
 /** The web's `cardVariants`: the border carries the status too, not just a row. */
 function cardTone(status: string | null | undefined) {
@@ -100,13 +72,6 @@ export function OperationCard({
   const colors = useThemeColors();
 
   const { Icon: StatusIcon, tone } = statusIcon(operation.status);
-  const statusColors: Record<typeof tone, string> = {
-    foreground: colors.foreground,
-    blue: "#2563eb",
-    red: "#dc2626",
-    green: "#16a34a",
-    orange: "#ea580c"
-  };
   const target = operation.targetQuantity ?? operation.quantity ?? 0;
   const due = operation.dueDate ?? null;
 
@@ -161,7 +126,14 @@ export function OperationCard({
           ) : null}
 
           {operation.status ? (
-            <Row icon={<StatusIcon size={16} color={statusColors[tone]} />}>
+            <Row
+              icon={
+                <StatusIcon
+                  size={16}
+                  color={statusColorFor(tone, colors.foreground)}
+                />
+              }
+            >
               {operation.status}
             </Row>
           ) : null}

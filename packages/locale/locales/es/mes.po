@@ -1287,9 +1287,6 @@ msgstr "Detalles del trabajo"
 msgid "Job operation"
 msgstr ""
 
-msgid "Job status"
-msgstr ""
-
 msgid "Job Traveler"
 msgstr "Hoja viajera"
 
@@ -1909,6 +1906,13 @@ msgstr ""
 msgid "Pause"
 msgstr "Pausar"
 
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
 msgid "Phone layout: the dock is the bottom bar."
 msgstr ""
 
@@ -2219,9 +2223,6 @@ msgstr "Retrabajo creado exitosamente"
 
 msgid "Rework quantity"
 msgstr "Cantidad de retrabajo"
-
-msgid "Reworked"
-msgstr ""
 
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
@@ -2821,9 +2822,6 @@ msgstr "Miniatura"
 msgid "Tick the jobs this was done for."
 msgstr "Marca las órdenes de trabajo para las que se hizo esto."
 
-msgid "Time"
-msgstr ""
-
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "El tiempo y el costo se distribuyen entre las órdenes de trabajo proporcionalmente a la cantidad."
 
@@ -3043,9 +3041,6 @@ msgstr ""
 
 msgid "WIP"
 msgstr "Producto en proceso"
-
-msgid "Work center"
-msgstr ""
 
 msgid "Work Center"
 msgstr "Centro de trabajo"

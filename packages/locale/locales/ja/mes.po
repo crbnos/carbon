@@ -1287,9 +1287,6 @@ msgstr "ジョブ詳細"
 msgid "Job operation"
 msgstr ""
 
-msgid "Job status"
-msgstr ""
-
 msgid "Job Traveler"
 msgstr "製造指図現品票"
 
@@ -1909,6 +1906,13 @@ msgstr ""
 msgid "Pause"
 msgstr "一時停止"
 
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
 msgid "Phone layout: the dock is the bottom bar."
 msgstr ""
 
@@ -2219,9 +2223,6 @@ msgstr "手直しが正常に作成されました"
 
 msgid "Rework quantity"
 msgstr "手直し数量"
-
-msgid "Reworked"
-msgstr ""
 
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
@@ -2821,9 +2822,6 @@ msgstr "サムネイル"
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
 
-msgid "Time"
-msgstr ""
-
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"
 
@@ -3043,9 +3041,6 @@ msgstr ""
 
 msgid "WIP"
 msgstr "仕掛品"
-
-msgid "Work center"
-msgstr ""
 
 msgid "Work Center"
 msgstr "作業区"

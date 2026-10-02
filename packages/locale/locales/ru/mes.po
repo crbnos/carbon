@@ -1287,9 +1287,6 @@ msgstr "Детали задания"
 msgid "Job operation"
 msgstr ""
 
-msgid "Job status"
-msgstr ""
-
 msgid "Job Traveler"
 msgstr "Маршрутный лист"
 
@@ -1909,6 +1906,13 @@ msgstr ""
 msgid "Pause"
 msgstr "Приостановить"
 
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
 msgid "Phone layout: the dock is the bottom bar."
 msgstr ""
 
@@ -2219,9 +2223,6 @@ msgstr "Доработка успешно создана"
 
 msgid "Rework quantity"
 msgstr "Количество для доработки"
-
-msgid "Reworked"
-msgstr ""
 
 msgid "Rotate the device to swap the dock between a column and a bar."
 msgstr ""
@@ -2821,9 +2822,6 @@ msgstr "Миниатюра"
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
 
-msgid "Time"
-msgstr ""
-
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."
 
@@ -3043,9 +3041,6 @@ msgstr ""
 
 msgid "WIP"
 msgstr "Незавершенное производство"
-
-msgid "Work center"
-msgstr ""
 
 msgid "Work Center"
 msgstr "Рабочий центр"
