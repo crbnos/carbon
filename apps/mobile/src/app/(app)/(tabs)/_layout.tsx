@@ -41,7 +41,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="operations"
           options={{
-            title: t`Operations`,
+            title: t`Schedule`,
             tabBarIcon: ({ color, size }) => (
               <ClipboardList color={color} size={size} />
             )

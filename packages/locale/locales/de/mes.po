@@ -2509,6 +2509,9 @@ msgstr "Kurzkommissionierung {itemName}"
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
 
+msgid "Show every work center"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Tastaturkürzel anzeigen"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "Ihre Sitzung wurde nach Inaktivität gesperrt."
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Ihre Station: {0}"

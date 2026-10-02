@@ -2509,6 +2509,9 @@ msgstr "短缺拣货 {itemName}"
 msgid "Show description"
 msgstr "显示描述"
 
+msgid "Show every work center"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "您的会话因不活动而被锁定。"
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "您的会话因不活跃而被锁定。"

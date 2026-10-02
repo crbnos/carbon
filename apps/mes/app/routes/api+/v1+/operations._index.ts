@@ -4,7 +4,9 @@
 
 import { ApiError } from "@carbon/auth/api-user.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLocationTimeZone } from "@carbon/database";
 import { HEADERS } from "@carbon/mes-core";
+import { datetime } from "@carbon/utils";
 import { FAILURE_STATUS } from "~/services/api-result.server";
 import { getOperationsScreen } from "~/services/screens.server";
 import { apiRoute } from "./lib/route.server";
@@ -51,9 +53,22 @@ export const loader = apiRoute({ method: "GET" }, async ({ request, user }) => {
     filters,
     search: url.searchParams.get("search"),
     // The web reads a cookie to remember that the operator dismissed their
-    // manning-board station for today. The app has no such cookie, so it always
-    // gets the station default — and overrides it by sending work centers.
-    peopleOverrideDate: null
+    // manning-board station for today; the app has no cookie, so it says so in
+    // the query instead. Without this an operator WITH a manning-board
+    // assignment saw one column and had no way to reach the rest of the board.
+    // The date must be the location's today, because that is what
+    // `getOperationsScreen` compares it against.
+    peopleOverrideDate: url.searchParams.get("allWorkCenters")
+      ? datetime
+          .today(
+            await getLocationTimeZone(
+              getCarbonServiceRole(),
+              locationId,
+              user.companyId
+            )
+          )
+          .toString()
+      : null
   });
 
   if (!screen.ok) {

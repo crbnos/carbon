@@ -5,9 +5,11 @@
 import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { Factory, X } from "lucide-react-native";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -23,6 +25,7 @@ import {
   Skeleton
 } from "~/components/ui";
 import { useLayout } from "~/components/useLayout";
+import { useThemeColors } from "~/components/useThemeColor";
 import { OperationCard } from "~/features/operations/OperationCard";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
@@ -140,7 +143,10 @@ export default function Operations() {
   const { me, locationId } = useAuth();
   const { isTablet } = useLayout();
   const { width: screenWidth } = useWindowDimensions();
-  const query = useOperationsQuery();
+  const colors = useThemeColors();
+  // The manning-board station default, and the operator's way out of it.
+  const [allWorkCenters, setAllWorkCenters] = useState(false);
+  const query = useOperationsQuery([], allWorkCenters);
 
   // The floor moves while the operator is on another screen.
   useFocusEffect(
@@ -175,10 +181,31 @@ export default function Operations() {
     <Screen className="gap-3 px-0 py-4">
       <View className="gap-1 px-4">
         <Heading>
-          <Trans>Operations</Trans>
+          <Trans>Schedule</Trans>
         </Heading>
         <Muted className="text-sm">{locationName}</Muted>
       </View>
+
+      {/*
+        Web's "Your station: <name> ✕" chip. An operator with a manning-board
+        assignment opens on their own station, which is right — but without a
+        way out they see one column of a seven-column board and nothing says
+        why.
+      */}
+      {query.data?.peopleStation && !allWorkCenters ? (
+        <Pressable
+          onPress={() => setAllWorkCenters(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t`Show every work center`}
+          className="mx-4 min-h-[44px] flex-row items-center gap-2 self-start rounded-lg border border-border bg-card px-3 active:opacity-70"
+        >
+          <Factory size={16} color={colors.mutedForeground} />
+          <Text className="text-sm text-foreground">
+            {t`Your station: ${query.data.peopleStation.name}`}
+          </Text>
+          <X size={16} color={colors.mutedForeground} />
+        </Pressable>
+      ) : null}
 
       {query.isError ? (
         <View className="px-4">

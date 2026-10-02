@@ -2509,6 +2509,9 @@ msgstr "Short pick {itemName}"
 msgid "Show description"
 msgstr "Show description"
 
+msgid "Show every work center"
+msgstr "Show every work center"
+
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Your station: {0}"

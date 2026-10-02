@@ -2509,6 +2509,9 @@ msgstr "Prélèvement court {itemName}"
 msgid "Show description"
 msgstr "Afficher la description"
 
+msgid "Show every work center"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Afficher les raccourcis clavier"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "Votre session a été verrouillée après inactivité."
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Votre station : {0}"

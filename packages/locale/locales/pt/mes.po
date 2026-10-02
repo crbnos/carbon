@@ -2509,6 +2509,9 @@ msgstr "Colheita curta {itemName}"
 msgid "Show description"
 msgstr "Mostrar descrição"
 
+msgid "Show every work center"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atalhos de teclado"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "Sua sessão foi bloqueada após inatividade."
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Sua estação: {0}"

@@ -2509,6 +2509,9 @@ msgstr "Kısmi toplama {itemName}"
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
+msgid "Show every work center"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
 
@@ -3106,5 +3109,6 @@ msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."
 
 #. placeholder {0}: peopleStation.name
+#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "İstasyonunuz: {0}"

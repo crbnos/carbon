@@ -16,21 +16,36 @@ import { keys } from "~/lib/query/keys";
  * picture of a shop floor where other people are also working, so a long stale
  * time would show an operator a timer somebody else already stopped.
  */
-export function useOperationsQuery(workCenterIds: string[] = []) {
+export function useOperationsQuery(
+  workCenterIds: string[] = [],
+  /**
+   * Clear the manning-board station default.
+   *
+   * An operator with an assignment for today opens on THEIR station — web does
+   * the same. Web then offers a chip to dismiss it; without this the app had no
+   * escape at all and showed one column of a seven-column board.
+   */
+  allWorkCenters = false
+) {
   const { api, companyId, locationId, instanceId } = useAuth();
 
   return useQuery({
     enabled: Boolean(companyId && locationId),
-    queryKey: keys.operations(
-      { instanceId: instanceId ?? "unknown", companyId: companyId ?? "" },
-      locationId ?? "",
-      workCenterIds
-    ),
+    queryKey: keys
+      .operations(
+        { instanceId: instanceId ?? "unknown", companyId: companyId ?? "" },
+        locationId ?? "",
+        workCenterIds
+      )
+      .concat(allWorkCenters ? "all" : "station"),
     refetchInterval: 30_000,
     queryFn: () => {
-      const query = workCenterIds.length
-        ? `?workCenterIds=${encodeURIComponent(workCenterIds.join(","))}`
-        : "";
+      const params = new URLSearchParams();
+      if (workCenterIds.length) {
+        params.set("workCenterIds", workCenterIds.join(","));
+      }
+      if (allWorkCenters) params.set("allWorkCenters", "1");
+      const query = params.size ? `?${params.toString()}` : "";
       return api.request(`/operations${query}`, { schema: operationsScreen });
     }
   });
