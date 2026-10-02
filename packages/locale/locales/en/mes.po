@@ -65,6 +65,10 @@ msgstr "{0} available"
 msgid "{0} customers"
 msgstr "{0} customers"
 
+#. placeholder {0}: pin.length
+msgid "{0} digits entered"
+msgstr "{0} digits entered"
+
 #. placeholder {0}: (targets.data ?? []).length
 msgid "{0} earlier operation(s) can take this back."
 msgstr "{0} earlier operation(s) can take this back."
@@ -708,6 +712,9 @@ msgstr "Could not load the lots"
 msgid "Could not load the notes."
 msgstr "Could not load the notes."
 
+msgid "Could not load the operator list."
+msgstr "Could not load the operator list."
+
 msgid "Could not load the scrap reasons."
 msgstr "Could not load the scrap reasons."
 
@@ -764,6 +771,9 @@ msgstr "Could not report the scrap"
 
 msgid "Could not start"
 msgstr "Could not start"
+
+msgid "Could not turn it on"
+msgstr "Could not turn it on"
 
 msgid "Could not unpick that lot"
 msgstr "Could not unpick that lot"
@@ -962,6 +972,9 @@ msgstr "Enter a number"
 msgid "Enter a quantity"
 msgstr "Enter a quantity"
 
+msgid "Enter at least {MIN_PIN} digits"
+msgstr "Enter at least {MIN_PIN} digits"
+
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 
@@ -980,6 +993,9 @@ msgstr "Enter your code"
 
 msgid "Enter your password"
 msgstr "Enter your password"
+
+msgid "Enter your PIN"
+msgstr "Enter your PIN"
 
 msgid "Error"
 msgstr "Error"
@@ -1115,9 +1131,6 @@ msgstr "Fix the highlighted quantities before completing."
 msgid "Follow the device"
 msgstr "Follow the device"
 
-msgid "For now, use Carbon MES in a browser for this."
-msgstr "For now, use Carbon MES in a browser for this."
-
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -1187,6 +1200,9 @@ msgstr "In local development the address above is this Mac's own localhost, whic
 
 msgid "In Progress"
 msgstr "In Progress"
+
+msgid "In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account."
+msgstr "In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account."
 
 msgid "In use"
 msgstr "In use"
@@ -1572,6 +1588,9 @@ msgstr "No operations at {selectedName}"
 msgid "No operators"
 msgstr "No operators"
 
+msgid "No operators have a PIN"
+msgstr "No operators have a PIN"
+
 msgid "No option found."
 msgstr "No option found."
 
@@ -1647,6 +1666,9 @@ msgstr "No work centers exist"
 msgid "No work instructions"
 msgstr "No work instructions"
 
+msgid "Nobody is pinned in — tap to pin in"
+msgstr "Nobody is pinned in — tap to pin in"
+
 msgid "None"
 msgstr "None"
 
@@ -1706,6 +1728,9 @@ msgstr "of {0} {1}"
 msgid "of {0} issued"
 msgstr "of {0} issued"
 
+msgid "Off — this device is yours alone"
+msgstr "Off — this device is yours alone"
+
 msgid "Offline · {label} is waiting to send"
 msgstr "Offline · {label} is waiting to send"
 
@@ -1714,6 +1739,13 @@ msgstr "Offline · {waiting, plural, one {# action waiting to send} other {# act
 
 msgid "Oldest first"
 msgstr "Oldest first"
+
+msgid "On — nobody pinned in"
+msgstr "On — nobody pinned in"
+
+#. placeholder {0}: operator.name
+msgid "On — working as {0}"
+msgstr "On — working as {0}"
 
 msgid "On this entry"
 msgstr "On this entry"
@@ -1760,6 +1792,9 @@ msgstr "Open an NCR for MRB disposition"
 
 msgid "Open Jobs"
 msgstr "Open Jobs"
+
+msgid "Open More"
+msgstr "Open More"
 
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
@@ -1809,6 +1844,9 @@ msgstr "Operator"
 
 msgid "Operator Performed"
 msgstr "Operator Performed"
+
+msgid "Operators"
+msgstr "Operators"
 
 msgid "Optional"
 msgstr "Optional"
@@ -1943,11 +1981,31 @@ msgstr "Picking list {0}"
 msgid "Picking started"
 msgstr "Picking started"
 
+msgid "Pin in"
+msgstr "Pin in"
+
+#. placeholder {0}: person.name
+msgid "Pin in as {0}"
+msgstr "Pin in as {0}"
+
 msgid "Pin or unpin"
 msgstr "Pin or unpin"
 
+msgid "Pin out"
+msgstr "Pin out"
+
 msgid "Pin Out"
 msgstr "Pin Out"
+
+#. placeholder {0}: selected.name
+msgid "Pinned in as {0}"
+msgstr "Pinned in as {0}"
+
+msgid "Pinned out"
+msgstr "Pinned out"
+
+msgid "PINs are set per employee in the ERP, under People."
+msgstr "PINs are set per employee in the ERP, under People."
 
 msgid "Planned"
 msgstr "Planned"
@@ -2416,8 +2474,14 @@ msgstr "Setup"
 msgid "Setup — 00:14:02"
 msgstr "Setup — 00:14:02"
 
-msgid "Shared-tablet mode lets several operators pin in with their console PIN on one device. It arrives with the operation screen."
-msgstr "Shared-tablet mode lets several operators pin in with their console PIN on one device. It arrives with the operation screen."
+msgid "Shared terminal"
+msgstr "Shared terminal"
+
+msgid "Shared terminal off"
+msgstr "Shared terminal off"
+
+msgid "Shared-terminal mode is not available on this Carbon."
+msgstr "Shared-terminal mode is not available on this Carbon."
 
 msgid "Sheet and confirmation"
 msgstr "Sheet and confirmation"
@@ -2575,11 +2639,18 @@ msgstr "Suggestion"
 msgid "Support Required"
 msgstr "Support Required"
 
+msgid "Switch"
+msgstr "Switch"
+
 msgid "Switch operator"
 msgstr "Switch operator"
 
 msgid "Switch Operator"
 msgstr "Switch Operator"
+
+#. placeholder {0}: operator.name
+msgid "Switch operator from {0}"
+msgstr "Switch operator from {0}"
 
 msgid "Switch server"
 msgstr "Switch server"
@@ -2608,6 +2679,9 @@ msgstr "That lot is expired and cannot be picked."
 
 msgid "That photo could not be read"
 msgstr "That photo could not be read"
+
+msgid "That PIN was not accepted"
+msgstr "That PIN was not accepted"
 
 msgid "The camera is off"
 msgstr "The camera is off"
@@ -2648,6 +2722,9 @@ msgstr "These work instructions could not be read. Use Carbon MES in a browser f
 
 msgid "This batch has no work instructions."
 msgstr "This batch has no work instructions."
+
+msgid "This Carbon refused to make this device a shared terminal."
+msgstr "This Carbon refused to make this device a shared terminal."
 
 msgid "This Carbon server needs an update before the app can sign in."
 msgstr "This Carbon server needs an update before the app can sign in."
@@ -2718,6 +2795,9 @@ msgstr "This step needs a photo."
 
 msgid "This sub-assembly is built by the job."
 msgstr "This sub-assembly is built by the job."
+
+msgid "This tablet is not a shared terminal yet. Turn it on from More."
+msgstr "This tablet is not a shared terminal yet. Turn it on from More."
 
 msgid "This takes it off the floor."
 msgstr "This takes it off the floor."
@@ -2793,6 +2873,9 @@ msgstr "Tracking"
 
 msgid "Try again"
 msgstr "Try again"
+
+msgid "Turn off shared terminal"
+msgstr "Turn off shared terminal"
 
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
@@ -2890,6 +2973,9 @@ msgstr "Use Carbon Cloud"
 msgid "Use Carbon MES in a browser for this."
 msgstr "Use Carbon MES in a browser for this."
 
+msgid "Use this device as a shared terminal"
+msgstr "Use this device as a shared terminal"
+
 msgid "Used automatically at completion"
 msgstr "Used automatically at completion"
 
@@ -2942,6 +3028,9 @@ msgstr "What should the next person know?"
 msgid "Where are you working?"
 msgstr "Where are you working?"
 
+msgid "Who is working?"
+msgstr "Who is working?"
+
 msgid "Whole batch"
 msgstr "Whole batch"
 
@@ -2966,8 +3055,14 @@ msgstr "Work email"
 msgid "Work instructions"
 msgstr "Work instructions"
 
+msgid "Work is now recorded against this device's account."
+msgstr "Work is now recorded against this device's account."
+
 msgid "Work shows up here as soon as it is scheduled."
 msgstr "Work shows up here as soon as it is scheduled."
+
+msgid "Working as"
+msgstr "Working as"
 
 msgid "Working at"
 msgstr "Working at"

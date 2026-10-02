@@ -65,6 +65,10 @@ msgstr ""
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
 
+#. placeholder {0}: pin.length
+msgid "{0} digits entered"
+msgstr ""
+
 #. placeholder {0}: (targets.data ?? []).length
 msgid "{0} earlier operation(s) can take this back."
 msgstr ""
@@ -708,6 +712,9 @@ msgstr ""
 msgid "Could not load the notes."
 msgstr ""
 
+msgid "Could not load the operator list."
+msgstr ""
+
 msgid "Could not load the scrap reasons."
 msgstr ""
 
@@ -763,6 +770,9 @@ msgid "Could not report the scrap"
 msgstr ""
 
 msgid "Could not start"
+msgstr ""
+
+msgid "Could not turn it on"
 msgstr ""
 
 msgid "Could not unpick that lot"
@@ -962,6 +972,9 @@ msgstr ""
 msgid "Enter a quantity"
 msgstr ""
 
+msgid "Enter at least {MIN_PIN} digits"
+msgstr ""
+
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
 
@@ -979,6 +992,9 @@ msgid "Enter your code"
 msgstr ""
 
 msgid "Enter your password"
+msgstr ""
+
+msgid "Enter your PIN"
 msgstr ""
 
 msgid "Error"
@@ -1115,9 +1131,6 @@ msgstr "पूर्ण करने से पहले हाइलाइट �
 msgid "Follow the device"
 msgstr ""
 
-msgid "For now, use Carbon MES in a browser for this."
-msgstr ""
-
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
@@ -1187,6 +1200,9 @@ msgstr ""
 
 msgid "In Progress"
 msgstr "प्रगति में"
+
+msgid "In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account."
+msgstr ""
 
 msgid "In use"
 msgstr ""
@@ -1572,6 +1588,9 @@ msgstr ""
 msgid "No operators"
 msgstr "कोई ऑपरेटर नहीं"
 
+msgid "No operators have a PIN"
+msgstr ""
+
 msgid "No option found."
 msgstr "कोई विकल्प नहीं मिला।"
 
@@ -1647,6 +1666,9 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 msgid "No work instructions"
 msgstr ""
 
+msgid "Nobody is pinned in — tap to pin in"
+msgstr ""
+
 msgid "None"
 msgstr "कोई नहीं"
 
@@ -1706,6 +1728,9 @@ msgstr ""
 msgid "of {0} issued"
 msgstr ""
 
+msgid "Off — this device is yours alone"
+msgstr ""
+
 msgid "Offline · {label} is waiting to send"
 msgstr ""
 
@@ -1714,6 +1739,13 @@ msgstr ""
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
+
+msgid "On — nobody pinned in"
+msgstr ""
+
+#. placeholder {0}: operator.name
+msgid "On — working as {0}"
+msgstr ""
 
 msgid "On this entry"
 msgstr ""
@@ -1760,6 +1792,9 @@ msgstr "MRB निपटान के लिए एक NCR खोलें"
 
 msgid "Open Jobs"
 msgstr "खुली जॉब्स"
+
+msgid "Open More"
+msgstr ""
 
 #. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
 msgid "Open operation {0}"
@@ -1809,6 +1844,9 @@ msgstr "ऑपरेटर"
 
 msgid "Operator Performed"
 msgstr "ऑपरेटर द्वारा निष्पादित"
+
+msgid "Operators"
+msgstr ""
 
 msgid "Optional"
 msgstr "वैकल्पिक"
@@ -1943,11 +1981,31 @@ msgstr ""
 msgid "Picking started"
 msgstr ""
 
+msgid "Pin in"
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Pin in as {0}"
+msgstr ""
+
 msgid "Pin or unpin"
+msgstr ""
+
+msgid "Pin out"
 msgstr ""
 
 msgid "Pin Out"
 msgstr "पिन आउट"
+
+#. placeholder {0}: selected.name
+msgid "Pinned in as {0}"
+msgstr ""
+
+msgid "Pinned out"
+msgstr ""
+
+msgid "PINs are set per employee in the ERP, under People."
+msgstr ""
 
 msgid "Planned"
 msgstr "नियोजित"
@@ -2416,7 +2474,13 @@ msgstr "सेटअप"
 msgid "Setup — 00:14:02"
 msgstr ""
 
-msgid "Shared-tablet mode lets several operators pin in with their console PIN on one device. It arrives with the operation screen."
+msgid "Shared terminal"
+msgstr ""
+
+msgid "Shared terminal off"
+msgstr ""
+
+msgid "Shared-terminal mode is not available on this Carbon."
 msgstr ""
 
 msgid "Sheet and confirmation"
@@ -2575,11 +2639,18 @@ msgstr "सुझाव"
 msgid "Support Required"
 msgstr "समर्थन आवश्यक"
 
+msgid "Switch"
+msgstr ""
+
 msgid "Switch operator"
 msgstr ""
 
 msgid "Switch Operator"
 msgstr "ऑपरेटर स्विच करें"
+
+#. placeholder {0}: operator.name
+msgid "Switch operator from {0}"
+msgstr ""
 
 msgid "Switch server"
 msgstr ""
@@ -2607,6 +2678,9 @@ msgid "That lot is expired and cannot be picked."
 msgstr ""
 
 msgid "That photo could not be read"
+msgstr ""
+
+msgid "That PIN was not accepted"
 msgstr ""
 
 msgid "The camera is off"
@@ -2648,6 +2722,9 @@ msgstr ""
 
 msgid "This batch has no work instructions."
 msgstr "इस बैच के पास कोई कार्य निर्देश नहीं है।"
+
+msgid "This Carbon refused to make this device a shared terminal."
+msgstr ""
 
 msgid "This Carbon server needs an update before the app can sign in."
 msgstr ""
@@ -2717,6 +2794,9 @@ msgid "This step needs a photo."
 msgstr ""
 
 msgid "This sub-assembly is built by the job."
+msgstr ""
+
+msgid "This tablet is not a shared terminal yet. Turn it on from More."
 msgstr ""
 
 msgid "This takes it off the floor."
@@ -2792,6 +2872,9 @@ msgid "Tracking"
 msgstr "ट्रैकिंग"
 
 msgid "Try again"
+msgstr ""
+
+msgid "Turn off shared terminal"
 msgstr ""
 
 msgid "Two-factor authentication"
@@ -2890,6 +2973,9 @@ msgstr ""
 msgid "Use Carbon MES in a browser for this."
 msgstr ""
 
+msgid "Use this device as a shared terminal"
+msgstr ""
+
 msgid "Used automatically at completion"
 msgstr "पूर्णता पर स्वचालित रूप से उपयोग किया जाता है"
 
@@ -2942,6 +3028,9 @@ msgstr ""
 msgid "Where are you working?"
 msgstr ""
 
+msgid "Who is working?"
+msgstr ""
+
 msgid "Whole batch"
 msgstr "पूरा बैच"
 
@@ -2966,7 +3055,13 @@ msgstr ""
 msgid "Work instructions"
 msgstr "कार्य निर्देश"
 
+msgid "Work is now recorded against this device's account."
+msgstr ""
+
 msgid "Work shows up here as soon as it is scheduled."
+msgstr ""
+
+msgid "Working as"
 msgstr ""
 
 msgid "Working at"

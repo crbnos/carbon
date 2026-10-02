@@ -11,6 +11,8 @@ import {
   PackageCheck,
   ScanLine
 } from "lucide-react-native";
+import { View } from "react-native";
+import { OperatorHeader } from "~/features/console/OperatorHeader";
 
 /**
  * Operations · Picking · Scan · Timecard · More.
@@ -18,59 +20,66 @@ import {
  * Tab bar is 64pt with `text-sm` labels, not the platform default: the floor
  * rule is that every operator target is at least 48pt, and the tab bar is the
  * one control that is always on screen.
+ *
+ * In shared-terminal mode the operator header sits ABOVE the tabs, so whose
+ * name the next write will carry is on screen no matter which tab the operator
+ * is on. It renders nothing on a personal device.
  */
 export default function TabsLayout() {
   const { t } = useLingui();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
-        tabBarLabelStyle: { fontSize: 13 }
-      }}
-    >
-      <Tabs.Screen
-        name="operations"
-        options={{
-          title: t`Operations`,
-          tabBarIcon: ({ color, size }) => (
-            <ClipboardList color={color} size={size} />
-          )
+    <View className="flex-1">
+      <OperatorHeader />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
+          tabBarLabelStyle: { fontSize: 13 }
         }}
-      />
-      <Tabs.Screen
-        name="picking"
-        options={{
-          title: t`Picking`,
-          tabBarIcon: ({ color, size }) => (
-            <PackageCheck color={color} size={size} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name="scan"
-        options={{
-          title: t`Scan`,
-          tabBarIcon: ({ color, size }) => (
-            <ScanLine color={color} size={size} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name="timecard"
-        options={{
-          title: t`Time card`,
-          tabBarIcon: ({ color, size }) => <Clock color={color} size={size} />
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: t`More`,
-          tabBarIcon: ({ color, size }) => <Menu color={color} size={size} />
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="operations"
+          options={{
+            title: t`Operations`,
+            tabBarIcon: ({ color, size }) => (
+              <ClipboardList color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="picking"
+          options={{
+            title: t`Picking`,
+            tabBarIcon: ({ color, size }) => (
+              <PackageCheck color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="scan"
+          options={{
+            title: t`Scan`,
+            tabBarIcon: ({ color, size }) => (
+              <ScanLine color={color} size={size} />
+            )
+          }}
+        />
+        <Tabs.Screen
+          name="timecard"
+          options={{
+            title: t`Time card`,
+            tabBarIcon: ({ color, size }) => <Clock color={color} size={size} />
+          }}
+        />
+        <Tabs.Screen
+          name="more"
+          options={{
+            title: t`More`,
+            tabBarIcon: ({ color, size }) => <Menu color={color} size={size} />
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }

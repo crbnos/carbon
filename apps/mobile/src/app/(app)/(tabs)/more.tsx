@@ -15,6 +15,7 @@ import {
   Screen,
   WarningNote
 } from "~/components/ui";
+import { useBecomeTerminal } from "~/features/console/commands";
 import { analyticsDecision } from "~/lib/analytics/policy";
 import { useAuth } from "~/lib/auth/AuthProvider";
 import { useIdleLock } from "~/lib/idle/useIdleLock";
@@ -90,11 +91,20 @@ function ChoiceRow<T extends string>({
 
 export default function More() {
   const { t } = useLingui();
-  const { me, signOut, companyId, locationId } = useAuth();
+  const {
+    me,
+    signOut,
+    companyId,
+    locationId,
+    terminalToken,
+    setTerminalToken,
+    operator
+  } = useAuth();
   const { current } = useInstances();
   const { locale, theme, setLocale, setTheme } = usePreferences();
   const idle = useIdleLock();
   const analytics = analyticsDecision(me);
+  const becomeTerminal = useBecomeTerminal();
 
   const companyName = me?.companies.find((c) => c.id === companyId)?.name ?? "";
   const locationName =
@@ -150,6 +160,67 @@ export default function More() {
             {t`Change location`}
           </Button>
         </Card>
+
+        {me?.consoleAvailable ? (
+          <Card className="gap-3">
+            <View className="gap-1">
+              <Muted className="text-sm">
+                <Trans>Shared terminal</Trans>
+              </Muted>
+              <Body className="font-semibold">
+                {terminalToken
+                  ? operator
+                    ? t`On — working as ${operator.name}`
+                    : t`On — nobody pinned in`
+                  : t`Off — this device is yours alone`}
+              </Body>
+              <Muted className="text-sm">
+                {t`In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account.`}
+              </Muted>
+            </View>
+            {terminalToken ? (
+              <>
+                <Button
+                  variant="secondary"
+                  onPress={() => router.push("/(app)/pin")}
+                >
+                  {operator ? t`Switch operator` : t`Pin in`}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onPress={() => {
+                    // Turning it off drops the operator with it: the app must
+                    // not keep sending a claim it can no longer re-mint.
+                    setTerminalToken(null);
+                    Alert.alert(
+                      t`Shared terminal off`,
+                      t`Work is now recorded against this device's account.`
+                    );
+                  }}
+                >
+                  {t`Turn off shared terminal`}
+                </Button>
+              </>
+            ) : (
+              <Button
+                loading={becomeTerminal.isPending}
+                onPress={async () => {
+                  try {
+                    await becomeTerminal.mutateAsync();
+                    router.push("/(app)/pin");
+                  } catch {
+                    Alert.alert(
+                      t`Could not turn it on`,
+                      t`This Carbon refused to make this device a shared terminal.`
+                    );
+                  }
+                }}
+              >
+                {t`Use this device as a shared terminal`}
+              </Button>
+            )}
+          </Card>
+        ) : null}
 
         <Card className="gap-3">
           <Muted className="text-sm">

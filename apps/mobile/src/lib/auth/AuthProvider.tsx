@@ -4,6 +4,7 @@
 
 import type {
   AuthSessionResponse,
+  ConsoleOperator,
   MeResponse,
   MesLocale
 } from "@carbon/mes-core";
@@ -77,6 +78,19 @@ type AuthContextValue = {
   locationId: string | null;
   setLocationId: (locationId: string) => void;
   operatorToken: string | null;
+  /**
+   * Who is pinned in, when anyone is. Memory only, like the token itself: a
+   * cold start on a shared tablet must land on the PIN screen, not resume
+   * yesterday's operator.
+   */
+  operator: ConsoleOperator | null;
+  setOperator: (operator: ConsoleOperator | null) => void;
+  /**
+   * The signed terminal token, present once this tablet has been made a shared
+   * terminal. Sent only to `POST /console/pin-in`.
+   */
+  terminalToken: string | null;
+  setTerminalToken: (token: string | null) => void;
   setOperatorToken: (token: string | null) => void;
   locale: MesLocale | null;
 };
@@ -98,6 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshToken = useRef<string | null>(null);
   /** The pinned operator's token NEVER leaves memory (spec, shared tablets). */
   const operatorToken = useRef<string | null>(null);
+  const terminalToken = useRef<string | null>(null);
+  const [terminalTokenState, setTerminalTokenState] = useState<string | null>(
+    null
+  );
+  const [operator, setOperatorState] = useState<ConsoleOperator | null>(null);
   const [operatorTokenState, setOperatorTokenState] = useState<string | null>(
     null
   );
@@ -112,7 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           serverUrl: serverUrl ?? "",
           companyId: companyId ?? undefined,
           locationId: locationId ?? undefined,
-          operatorToken: operatorToken.current ?? undefined
+          operatorToken: operatorToken.current ?? undefined,
+          terminalToken: terminalToken.current ?? undefined
         }),
         getAccessToken: () => accessToken.current,
         refreshSession: async () => null,
@@ -239,6 +259,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       locationId,
       setLocationId,
       operatorToken: operatorTokenState,
+      operator,
+      setOperator: setOperatorState,
+      terminalToken: terminalTokenState,
+      setTerminalToken(token) {
+        terminalToken.current = token;
+        setTerminalTokenState(token);
+        // Leaving terminal mode must take the operator with it, or the app
+        // would keep sending an operator header it can no longer re-mint.
+        if (!token) {
+          operatorToken.current = null;
+          setOperatorTokenState(null);
+          setOperatorState(null);
+        }
+      },
       setOperatorToken: (token) => {
         operatorToken.current = token;
         setOperatorTokenState(token);
@@ -335,6 +369,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshToken.current = null;
         operatorToken.current = null;
         setOperatorTokenState(null);
+        terminalToken.current = null;
+        setTerminalTokenState(null);
+        setOperatorState(null);
         setMe(null);
         setCompanyId(null);
         setLocationId(null);
@@ -351,6 +388,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       companyId,
       locationId,
       operatorTokenState,
+      terminalTokenState,
+      operator,
       applySession,
       loadMe,
       instanceId
