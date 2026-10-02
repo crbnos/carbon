@@ -10,7 +10,6 @@ import {
   type Json
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson, toJsonColumns } from "@carbon/database/json";
 import {
   calculateQuoteLinePrices,
@@ -50,7 +49,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { selectRow, selectRows } from "../lib/rows";
+import { many, selectRow, selectRows, single } from "../lib/rows";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
@@ -1807,37 +1806,20 @@ export const getMethod = defineServerFn({
           assemblyInstructionId: string;
         }> = [];
 
-        const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
-          await Promise.all([
-            // A chosen version overrides the default active-method lookup; it
-            // is re-read under itemId + companyId so a foreign or mismatched
-            // makeMethod id can never be exploded.
-            versionId
-              ? client
-                  .from("makeMethod")
-                  .select("*")
-                  .eq("id", versionId)
-                  .eq("itemId", itemId)
-                  .eq("companyId", companyId)
-                  .single()
-              : client
-                  .from("activeMakeMethods")
-                  .select("*")
-                  .eq("itemId", itemId)
-                  .eq("companyId", companyId)
-                  .single(),
-            client
-              .from("jobMakeMethod")
-              .select("*")
-              .eq("id", jobMakeMethodId)
-              .eq("companyId", companyId)
-              .single(),
-            client.from("workCenters").select("*").eq("companyId", companyId),
-            client
-              .from("supplierProcess")
-              .select("*")
-              .eq("companyId", companyId)
-          ]);
+        // A chosen version overrides the default active-method lookup; it is
+        // re-read under itemId + companyId so a foreign or mismatched
+        // makeMethod id can never be exploded.
+        const makeMethod = versionId
+          ? await single(db, "makeMethod", { id: versionId, itemId, companyId })
+          : await single(db, "activeMakeMethods", { itemId, companyId });
+        const jobMakeMethod = await single(db, "jobMakeMethod", {
+          id: jobMakeMethodId,
+          companyId
+        });
+        const workCenters = await many(db, "workCenters", { companyId });
+        const supplierProcesses = await many(db, "supplierProcess", {
+          companyId
+        });
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -1862,38 +1844,28 @@ export const getMethod = defineServerFn({
         let parentEstimatedQuantity = 1;
         if (jobMakeMethod.data.parentMaterialId) {
           // This is a sub-item - get the parent material's estimated quantity
-          const parentMaterial = await client
-            .from("jobMaterial")
-            .select("estimatedQuantity")
-            .eq("id", jobMakeMethod.data.parentMaterialId)
-            .single();
+          const parentMaterial = await single(db, "jobMaterial", {
+            id: jobMakeMethod.data.parentMaterialId,
+            companyId
+          });
           parentEstimatedQuantity = parentMaterial.data?.estimatedQuantity ?? 1;
         } else {
           // This is the root - get job's quantity
-          const rootJob = await client
-            .from("job")
-            .select("quantity")
-            .eq("id", jobMakeMethod.data.jobId)
-            .single();
+          const rootJob = await single(db, "job", {
+            id: jobMakeMethod.data.jobId,
+            companyId
+          });
           parentEstimatedQuantity = rootJob.data?.quantity ?? 1;
         }
 
-        const [job, methodTrees, configurationRules] = await Promise.all([
-          client
-            .from("job")
-            .select("locationId, startDate, dueDate")
-            .eq("id", jobMakeMethod.data.jobId)
-            .eq("companyId", companyId)
-            .single(),
-          getMethodTree(client, makeMethod.data.id!),
-          isConfigured
-            ? client
-                .from("configurationRule")
-                .select("*")
-                .eq("itemId", itemId)
-                .eq("companyId", companyId)
-            : Promise.resolve({ data: [] })
-        ]);
+        const job = await single(db, "job", {
+          id: jobMakeMethod.data.jobId,
+          companyId
+        });
+        const methodTrees = await getMethodTree(db, makeMethod.data.id!);
+        const configurationRules = isConfigured
+          ? await many(db, "configurationRule", { itemId, companyId })
+          : { data: [] };
 
         if (methodTrees.error) {
           throw new Error("Failed to get method tree");
@@ -1914,6 +1886,10 @@ export const getMethod = defineServerFn({
           job.data
         );
         const supersessionRedirect = supersessionContext.redirect;
+        const itemDefaults = createItemDefaults(
+          companyId,
+          job.data?.locationId
+        );
 
         const getLaborAndOverheadRates = getRatesFromWorkCenters(
           workCenters?.data
@@ -1932,6 +1908,10 @@ export const getMethod = defineServerFn({
         }, {});
 
         await db.transaction().execute(async (trx) => {
+          await itemDefaults.load(
+            trx,
+            treeItemIds(methodTree, supersessionRedirect)
+          );
           const insertedJobMaterialIds: string[] = [];
           // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
           await Promise.all([
@@ -1981,13 +1961,9 @@ export const getMethod = defineServerFn({
               : nodeParentEstimatedQuantity * (node.data.quantity ?? 1);
 
             // Get scrap percentage for this node's item
-            const nodeItemReplenishment = await trx
-              .selectFrom("itemReplenishment")
-              .select("scrapPercentage")
-              .where("itemId", "=", node.data.itemId)
-              .executeTakeFirst();
-            const nodeScrapPercentage = Number(
-              nodeItemReplenishment?.scrapPercentage ?? 0
+            const nodeScrapPercentage = await itemDefaults.scrapPercentage(
+              trx,
+              node.data.itemId
             );
 
             // Calculate quantities:
@@ -2003,12 +1979,13 @@ export const getMethod = defineServerFn({
             const operationQuantity = totalWithScrap;
             const totalQuantityForChildren = totalWithScrap;
 
-            const relatedOperations = await client
-              .from("methodOperation")
-              .select(
-                "*, methodOperationTool(*, methodOperationToolStep(*)), methodOperationParameter(*), methodOperationStep(*)"
+            const relatedOperations = {
+              data: await readMethodOperations(
+                trx,
+                [node.data.materialMakeMethodId],
+                companyId
               )
-              .eq("makeMethodId", node.data.materialMakeMethodId);
+            };
 
             const jobOperationsInserts =
               relatedOperations?.data?.map((op) => ({
@@ -2291,14 +2268,9 @@ export const getMethod = defineServerFn({
                   (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
 
                 // Get scrap percentage for this item
-                const itemReplenishment = await trx
-                  .selectFrom("itemReplenishment")
-                  .select("scrapPercentage")
-                  .where("itemId", "=", itemId)
-                  .where("companyId", "=", companyId)
-                  .executeTakeFirst();
-                const itemScrapPercentage = Number(
-                  itemReplenishment?.scrapPercentage ?? 0
+                const itemScrapPercentage = await itemDefaults.scrapPercentage(
+                  trx,
+                  itemId
                 );
 
                 // Calculate scrap quantities for this material
@@ -2368,10 +2340,9 @@ export const getMethod = defineServerFn({
                   substitutionFactor: supersession?.factor ?? null,
                   // The bin belongs to the item this row is actually for — the
                   // post-swap `itemId`. An explicit bin on the BOM line still wins.
-                  storageUnitId: await getStorageUnitId(
+                  storageUnitId: await itemDefaults.storageUnitId(
                     trx,
                     itemId,
-                    job.data?.locationId ?? "",
                     // @ts-ignore: storageUnitIds is a dynamic field
                     child.data.storageUnitIds?.[job.data.locationId] ??
                       undefined
@@ -4460,62 +4431,63 @@ export const getMethod = defineServerFn({
         // silently copy a subset of a large job. The secondary `.order("id")`
         // makes paging stable across batches. Started here (not awaited) so the
         // reads below run concurrently with them.
-        const sourceMaterialsPromise = fetchAll<SourceJobMaterialRow>(() =>
-          client
-            .from("jobMaterial")
-            .select("*, jobMaterialStep(jobOperationStepId, quantity)")
-            .eq("jobId", sourceJobId)
-            .eq("companyId", companyId)
-            .order("id")
+        const targetJob = await single(db, "job", {
+          id: targetJobId,
+          companyId
+        });
+        const sourceJob = await single(db, "job", {
+          id: sourceJobId,
+          companyId
+        });
+        const targetJobMakeMethod = await single(db, "jobMakeMethod", {
+          jobId: targetJobId,
+          parentMaterialId: null,
+          companyId
+        });
+        const sourceJobMakeMethod = await single(db, "jobMakeMethod", {
+          jobId: sourceJobId,
+          parentMaterialId: null,
+          companyId
+        });
+        const sourceMaterials = await many<"jobMaterial", SourceJobMaterialRow>(
+          db,
+          "jobMaterial",
+          { jobId: sourceJobId, companyId },
+          {
+            orderBy: ["id"],
+            embed: {
+              jobMaterialStep: { table: "jobMaterialStep", on: "jobMaterialId" }
+            }
+          }
         );
-        const sourceOperationsPromise = fetchAll<SourceJobOperationRow>(() =>
-          client
-            .from("jobOperation")
-            .select(
-              "*, jobOperationTool(*, jobOperationToolStep(*)), jobOperationParameter(*), jobOperationStep(*)"
-            )
-            .eq("jobId", sourceJobId)
-            .eq("companyId", companyId)
-            .order("order", { ascending: true })
-            .order("id")
+        const sourceOperations = await many<
+          "jobOperation",
+          SourceJobOperationRow
+        >(
+          db,
+          "jobOperation",
+          { jobId: sourceJobId, companyId },
+          {
+            orderBy: ["order", "id"],
+            embed: {
+              jobOperationTool: {
+                table: "jobOperationTool",
+                on: "operationId",
+                embed: {
+                  jobOperationToolStep: {
+                    table: "jobOperationToolStep",
+                    on: "jobOperationToolId"
+                  }
+                }
+              },
+              jobOperationParameter: {
+                table: "jobOperationParameter",
+                on: "operationId"
+              },
+              jobOperationStep: { table: "jobOperationStep", on: "operationId" }
+            }
+          }
         );
-
-        const [targetJob, sourceJob, targetJobMakeMethod, sourceJobMakeMethod] =
-          await Promise.all([
-            client
-              .from("job")
-              .select("itemId, locationId, quantity, startDate, dueDate")
-              .eq("id", targetJobId)
-              .eq("companyId", companyId)
-              .single(),
-            // The permission check proved the CALLER may act in companyId; it proves
-            // nothing about the record ids in the body. Re-read the source job
-            // under companyId so a foreign job id can never be copied from.
-            client
-              .from("job")
-              .select("id")
-              .eq("id", sourceJobId)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("jobMakeMethod")
-              .select("*")
-              .eq("jobId", targetJobId)
-              .is("parentMaterialId", null)
-              .eq("companyId", companyId)
-              .single(),
-            client
-              .from("jobMakeMethod")
-              .select("*")
-              .eq("jobId", sourceJobId)
-              .is("parentMaterialId", null)
-              .eq("companyId", companyId)
-              .single()
-          ]);
-        const [sourceMaterials, sourceOperations] = await Promise.all([
-          sourceMaterialsPromise,
-          sourceOperationsPromise
-        ]);
 
         if (targetJob.error) {
           throw new Error("Failed to get job");
@@ -4537,7 +4509,7 @@ export const getMethod = defineServerFn({
         }
 
         const jobMethodTrees = await getJobMethodTree(
-          client,
+          db,
           sourceJobMakeMethod.data.id
         );
         if (jobMethodTrees.error) {
@@ -4573,6 +4545,10 @@ export const getMethod = defineServerFn({
         // that became effective since then still redirects the copy.
         const { redirect: supersessionRedirect } =
           await loadSupersessionRedirect(db, companyId, targetJob.data);
+        const itemDefaults = createItemDefaults(
+          companyId,
+          targetJob.data.locationId
+        );
 
         let selfConsumedItem: string | null = null;
         traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
@@ -4616,6 +4592,10 @@ export const getMethod = defineServerFn({
         const sourceOperationIdToJobOperationId: Record<string, string> = {};
 
         await db.transaction().execute(async (trx) => {
+          await itemDefaults.load(
+            trx,
+            treeItemIds(jobMethodTree, supersessionRedirect)
+          );
           // Delete existing jobMakeMethods, jobMaterials, and jobOperations for the target job
           await Promise.all([
             parts.billOfMaterial
@@ -4670,14 +4650,9 @@ export const getMethod = defineServerFn({
               if (node.data.isRoot) {
                 // Root: target = TARGET job quantity — the source job's own
                 // quantity is irrelevant; the tree carries per-parent quantities.
-                const rootItemReplenishment = await trx
-                  .selectFrom("itemReplenishment")
-                  .select("scrapPercentage")
-                  .where("itemId", "=", node.data.itemId)
-                  .where("companyId", "=", companyId)
-                  .executeTakeFirst();
-                const rootScrapPercentage = Number(
-                  rootItemReplenishment?.scrapPercentage ?? 0
+                const rootScrapPercentage = await itemDefaults.scrapPercentage(
+                  trx,
+                  node.data.itemId
                 );
                 const rootTarget = targetJob.data?.quantity ?? 1;
                 // Scrap applies to every method type (mirrors itemToJob)
@@ -4745,14 +4720,9 @@ export const getMethod = defineServerFn({
                   (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
 
                 // Get scrap percentage for this item
-                const itemReplenishment = await trx
-                  .selectFrom("itemReplenishment")
-                  .select("scrapPercentage")
-                  .where("itemId", "=", itemId)
-                  .where("companyId", "=", companyId)
-                  .executeTakeFirst();
-                const itemScrapPercentage = Number(
-                  itemReplenishment?.scrapPercentage ?? 0
+                const itemScrapPercentage = await itemDefaults.scrapPercentage(
+                  trx,
+                  itemId
                 );
 
                 // Calculate scrap quantities for this child material
@@ -4815,10 +4785,9 @@ export const getMethod = defineServerFn({
                     : (sourceMaterial?.unitCost ?? child.data.unitCost ?? 0),
                   // The bin belongs to the post-swap item; an explicit bin on
                   // the source job's line still wins.
-                  storageUnitId: await getStorageUnitId(
+                  storageUnitId: await itemDefaults.storageUnitId(
                     trx,
                     itemId,
-                    targetJob.data.locationId,
                     child.data.storageUnitId ?? undefined
                   ),
                   requiresBatchTracking:
@@ -6222,46 +6191,30 @@ export const getMethod = defineServerFn({
           assemblyInstructionId: string;
         }> = [];
 
-        const [
-          job,
-          jobMakeMethod,
-          quoteMakeMethod,
-          quoteMaterials,
-          quoteOperations
-        ] = await Promise.all([
-          client
-            .from("job")
-            .select("locationId, quantity, startDate, dueDate")
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("jobId", jobId)
-            .is("parentMaterialId", null)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("quoteMakeMethod")
-            .select("*")
-            .is("parentMaterialId", null)
-            .eq("quoteLineId", quoteLineId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("quoteMaterial")
-            .select("*")
-            .eq("quoteLineId", quoteLineId)
-            .eq("companyId", companyId),
-          client
-            .from("quoteOperation")
-            .select(
-              "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
-            )
-            .eq("quoteLineId", quoteLineId)
-            .eq("companyId", companyId)
-        ]);
+        const job = await single(db, "job", { id: jobId, companyId });
+        const jobMakeMethod = await single(db, "jobMakeMethod", {
+          jobId,
+          parentMaterialId: null,
+          companyId
+        });
+        const quoteMakeMethod = await single(db, "quoteMakeMethod", {
+          parentMaterialId: null,
+          quoteLineId,
+          companyId
+        });
+        const quoteMaterials = await many(db, "quoteMaterial", {
+          quoteLineId,
+          companyId
+        });
+        const quoteOperations = await many<
+          "quoteOperation",
+          QuoteOperationWithDetails
+        >(
+          db,
+          "quoteOperation",
+          { quoteLineId, companyId },
+          { embed: quoteOperationDetails }
+        );
 
         if (job.error) {
           throw new Error("Failed to get job");
@@ -6294,9 +6247,10 @@ export const getMethod = defineServerFn({
           throw new Error("Failed to fetch quote data");
         }
 
-        const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(client, quoteMakeMethod.data.id)
-        ]);
+        const quoteMethodTrees = await getQuoteMethodTree(
+          db,
+          quoteMakeMethod.data.id
+        );
 
         if (quoteMethodTrees.error) {
           throw new Error("Failed to get method tree");
@@ -6314,6 +6268,7 @@ export const getMethod = defineServerFn({
         // company and the job's build date, both fixed for the request.
         const { redirect: supersessionRedirect } =
           await loadSupersessionRedirect(db, companyId, job.data);
+        const itemDefaults = createItemDefaults(companyId, job.data.locationId);
 
         const quoteMaterialIdToJobMaterialId: Record<string, string> = {};
         const quoteMakeMethodIdToJobMakeMethodId: Record<string, string> = {};
@@ -6328,6 +6283,10 @@ export const getMethod = defineServerFn({
         > = {};
 
         await db.transaction().execute(async (trx) => {
+          await itemDefaults.load(
+            trx,
+            treeItemIds(quoteMethodTree, supersessionRedirect)
+          );
           // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
           await Promise.all([
             parts.billOfMaterial
@@ -6381,13 +6340,9 @@ export const getMethod = defineServerFn({
               let nodeTotalForChildren: number;
               if (node.data.isRoot) {
                 // Root: target = job quantity, calculate scrap and total
-                const rootItemReplenishment = await trx
-                  .selectFrom("itemReplenishment")
-                  .select("scrapPercentage")
-                  .where("itemId", "=", node.data.itemId)
-                  .executeTakeFirst();
-                const rootScrapPercentage = Number(
-                  rootItemReplenishment?.scrapPercentage ?? 0
+                const rootScrapPercentage = await itemDefaults.scrapPercentage(
+                  trx,
+                  node.data.itemId
                 );
                 const rootTarget = job.data?.quantity ?? 1;
                 // Scrap applies to every method type (mirrors itemToJob)
@@ -6458,14 +6413,9 @@ export const getMethod = defineServerFn({
                   (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
 
                 // Get scrap percentage for this item
-                const itemReplenishment = await trx
-                  .selectFrom("itemReplenishment")
-                  .select("scrapPercentage")
-                  .where("itemId", "=", itemId)
-                  .where("companyId", "=", companyId)
-                  .executeTakeFirst();
-                const itemScrapPercentage = Number(
-                  itemReplenishment?.scrapPercentage ?? 0
+                const itemScrapPercentage = await itemDefaults.scrapPercentage(
+                  trx,
+                  itemId
                 );
 
                 // Calculate scrap quantities for this child material
@@ -6538,10 +6488,9 @@ export const getMethod = defineServerFn({
                     : (child.data.unitCost ?? 0),
                   // The bin belongs to the post-swap item; an explicit bin on the
                   // quote line still wins.
-                  storageUnitId: await getStorageUnitId(
+                  storageUnitId: await itemDefaults.storageUnitId(
                     trx,
                     itemId,
-                    job.data.locationId,
                     child.data.storageUnitId
                   ),
                   requiresBatchTracking:
@@ -8271,6 +8220,143 @@ function readMethodOperations(
       }
     }
   );
+}
+
+/** A quote operation with its tools, parameters and steps. */
+type QuoteOperationWithDetails = Tables["quoteOperation"]["Row"] & {
+  quoteOperationTool: Tables["quoteOperationTool"]["Row"][];
+  quoteOperationParameter: Tables["quoteOperationParameter"]["Row"][];
+  quoteOperationStep: Tables["quoteOperationStep"]["Row"][];
+};
+
+const quoteOperationDetails = {
+  quoteOperationTool: { table: "quoteOperationTool", on: "operationId" },
+  quoteOperationParameter: {
+    table: "quoteOperationParameter",
+    on: "operationId"
+  },
+  quoteOperationStep: { table: "quoteOperationStep", on: "operationId" }
+} as const;
+
+/** Every item a method tree names, plus the successor each would be swapped for. */
+function treeItemIds(
+  root: { data: { itemId: string }; children: unknown[] },
+  redirect?: Map<string, { to: string }>
+): string[] {
+  const ids: string[] = [];
+  const seen = new Set<unknown>();
+  const walk = (node: { data: { itemId: string }; children: unknown[] }) => {
+    if (seen.has(node)) return;
+    seen.add(node);
+    ids.push(node.data.itemId);
+    const successor = redirect?.get(node.data.itemId)?.to;
+    if (successor) ids.push(successor);
+    for (const child of node.children) walk(child as typeof node);
+  };
+  walk(root);
+  return ids;
+}
+
+/**
+ * An item's scrap percentage and its default bin at one location, read for
+ * many items at once and remembered for the request. The copy flows asked for
+ * these one material at a time inside their transaction — three statements
+ * per material, 110 of the 164 a 40-line job copy sent.
+ *
+ * `load` the tree's items up front; an item it did not cover (a successor a
+ * swap lands on) is read when first asked for, so nothing resolves to a
+ * silent 0 or a missing bin.
+ */
+function createItemDefaults(
+  companyId: string,
+  locationId: string | null | undefined
+) {
+  const scrapByItemId = new Map<string, number>();
+  const binByItemId = new Map<string, string>();
+  const loaded = new Set<string>();
+
+  async function load(
+    reader: Kysely<KyselyDatabase>,
+    itemIds: (string | null | undefined)[]
+  ) {
+    const missing = [...new Set(itemIds)].filter(
+      (id): id is string => !!id && !loaded.has(id)
+    );
+    if (missing.length === 0) return;
+
+    const replenishments = await reader
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "scrapPercentage"])
+      .where("itemId", "in", missing)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const row of replenishments) {
+      scrapByItemId.set(row.itemId, Number(row.scrapPercentage ?? 0));
+    }
+
+    // The pick method's default bin wins, else the bin holding the most.
+    if (locationId) {
+      const ledgerTotals = await reader
+        .selectFrom("itemLedger")
+        .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
+        .where("itemId", "in", missing)
+        .where("storageUnitId", "is not", null)
+        .groupBy(["itemId", "storageUnitId"])
+        .select([
+          "itemId",
+          "storageUnitId",
+          (eb) => eb.fn.sum("quantity").as("totalQuantity")
+        ])
+        .having((eb) => eb.fn.sum("quantity"), ">", 0)
+        .orderBy("itemId")
+        .orderBy("totalQuantity", "desc")
+        .orderBy("storageUnitId")
+        .execute();
+      for (const row of ledgerTotals) {
+        // Ordered by quantity: the first row for an item is its fullest bin.
+        if (row.storageUnitId && !binByItemId.has(row.itemId)) {
+          binByItemId.set(row.itemId, row.storageUnitId);
+        }
+      }
+
+      const pickMethods = await reader
+        .selectFrom("pickMethod")
+        .select(["itemId", "defaultStorageUnitId"])
+        .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
+        .where("itemId", "in", missing)
+        .where("defaultStorageUnitId", "is not", null)
+        .execute();
+      for (const pickMethod of pickMethods) {
+        if (pickMethod.defaultStorageUnitId) {
+          binByItemId.set(pickMethod.itemId, pickMethod.defaultStorageUnitId);
+        }
+      }
+    }
+
+    // Marked only after the rows land, so an item never reads as "loaded, no
+    // row" while its read is still in flight.
+    for (const id of missing) loaded.add(id);
+  }
+
+  return {
+    load,
+    async scrapPercentage(reader: Kysely<KyselyDatabase>, itemId: string) {
+      await load(reader, [itemId]);
+      return scrapByItemId.get(itemId) ?? 0;
+    },
+    /** An explicit bin on the line wins over the item's default. */
+    async storageUnitId(
+      reader: Kysely<KyselyDatabase>,
+      itemId: string,
+      lineStorageUnitId?: string | null
+    ) {
+      if (lineStorageUnitId) return lineStorageUnitId;
+      await load(reader, [itemId]);
+      return binByItemId.get(itemId);
+    }
+  };
 }
 
 /** An item with its cost row, as the job-material mappers read it. */

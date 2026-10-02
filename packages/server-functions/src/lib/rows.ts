@@ -94,3 +94,56 @@ function rowExpression(
   );
   return sql`${row} || jsonb_build_object(${sql.join(properties)})`;
 }
+
+type Result<R> = { data: R; error: null } | { data: null; error: Error };
+
+/**
+ * The same read with PostgREST's `.single()` contract, for code written
+ * against `{ data, error }`: exactly one row, otherwise an error and no data.
+ */
+export async function single<T extends RelationName, R = RowOf<T>>(
+  db: Kysely<KyselyDatabase>,
+  table: T,
+  where: Where<T>,
+  options: { embed?: Embed } = {}
+): Promise<Result<R>> {
+  const rows = await selectRows<T, R>(db, table, where, options);
+  const row = rows[0];
+  return rows.length === 1 && row !== undefined
+    ? { data: row, error: null }
+    : {
+        data: null,
+        error: new Error(`Expected one ${table} row, found ${rows.length}`)
+      };
+}
+
+/** `.maybeSingle()`: no row is `data: null` without an error; two is an error. */
+export async function maybeSingle<T extends RelationName, R = RowOf<T>>(
+  db: Kysely<KyselyDatabase>,
+  table: T,
+  where: Where<T>,
+  options: { embed?: Embed } = {}
+): Promise<{ data: R | null; error: Error | null }> {
+  const rows = await selectRows<T, R>(db, table, where, options);
+  return rows.length > 1
+    ? {
+        data: null,
+        error: new Error(
+          `Expected at most one ${table} row, found ${rows.length}`
+        )
+      }
+    : { data: rows[0] ?? null, error: null };
+}
+
+/** A list read in the `{ data, error }` shape. A failure throws instead. */
+export async function many<T extends RelationName, R = RowOf<T>>(
+  db: Kysely<KyselyDatabase>,
+  table: T,
+  where: Where<T>,
+  options: { embed?: Embed; orderBy?: (keyof RowOf<T> & string)[] } = {}
+): Promise<{ data: R[]; error: null }> {
+  return {
+    data: await selectRows<T, R>(db, table, where, options),
+    error: null
+  };
+}

@@ -139,11 +139,22 @@ export type QuoteMethodTreeItem = {
   children: QuoteMethodTreeItem[];
 };
 
+/** A quote's method tree; like {@link getJobMethodTree}, over either handle. */
 export async function getQuoteMethodTree(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   methodId: string,
   parentMaterialId: string | null = null
 ) {
+  if (isKysely(client)) {
+    const { rows } = await sql<QuoteMethod>`
+      SELECT * FROM get_quote_methods_by_method_id(${methodId})
+    `.execute(client);
+    return {
+      data: getQuoteMethodTreeArrayToTree(rows, parentMaterialId),
+      error: null
+    };
+  }
+
   const items = await getQuoteMethodTreeArray(client, methodId);
   if (items.error) return items;
 
