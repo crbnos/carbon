@@ -12,9 +12,11 @@
  *   async c() { return (await this.$.a) + 10 }
  * })
  *
- * At most `concurrency` tasks run at once (default DEFAULT_CONCURRENCY). A task
- * waiting on `this.$.other` gives its slot up while it waits, so a dependency
- * can always start, even with a limit of 1.
+ * The API is better-all's (`this.$`, `this.$signal`, the `signal` option), plus
+ * one thing it does not have: at most `concurrency` tasks run at once (default
+ * DEFAULT_CONCURRENCY). A task waiting on `this.$.other` gives its slot up while
+ * it waits, so a dependency can always start, even with a limit of 1.
+ * better-all's `debug` waterfall and `flow` are not ported.
  *
  * Credits: https://github.com/shuding/better-all/blob/main/lib/index.ts
  */
@@ -23,6 +25,11 @@
 export const DEFAULT_CONCURRENCY = 8;
 
 export type ConcurrencyOptions = { concurrency?: number };
+
+export type ExecutionOptions = ConcurrencyOptions & {
+  /** Aborts `this.$signal` in every task; tasks not started yet never start. */
+  signal?: AbortSignal;
+};
 
 /** A counting semaphore: `acquire` resolves when a slot is free. */
 export function createLimiter(concurrency: number) {
@@ -56,6 +63,7 @@ type DepProxy<T extends Record<string, (...args: any[]) => any>> = {
 // Context available to each task via `this`
 type TaskContext<T extends Record<string, (...args: any[]) => any>> = {
   $: DepProxy<T>;
+  $signal: AbortSignal;
 };
 
 // Result type - all tasks resolved to their return values
@@ -88,11 +96,21 @@ type AllSettledResult<T extends Record<string, (...args: any[]) => any>> = {
 function executeTasksInternal<T extends Record<string, any>>(
   tasks: T,
   handleSettled: boolean,
-  concurrency: number
+  { concurrency = DEFAULT_CONCURRENCY, signal }: ExecutionOptions
 ): Promise<any> {
   const limiter = createLimiter(concurrency);
-  // Set once a task fails under `all`: tasks still queued are not started.
-  let stopped = false;
+  // Aborted by the caller's signal, and under `all` by the first task to fail.
+  // Tasks see it as `this.$signal`; a task still queued is not started.
+  const controller = new AbortController();
+  const stopListening = new AbortController();
+  if (signal?.aborted) {
+    controller.abort(signal.reason);
+  } else {
+    signal?.addEventListener("abort", () => controller.abort(signal.reason), {
+      once: true,
+      signal: stopListening.signal
+    });
+  }
   const taskNames = Object.keys(tasks) as (keyof T)[];
   const results = new Map<keyof T, any>();
   const errors = new Map<keyof T, any>();
@@ -200,16 +218,17 @@ function executeTasksInternal<T extends Record<string, any>>(
       held = false;
     };
 
-    return { context: { $ } as TaskContext<T>, finish };
+    return {
+      context: { $, $signal: controller.signal } as TaskContext<T>,
+      finish
+    };
   };
 
   const promises = taskNames.map(async (name) => {
     await limiter.acquire();
     const { context, finish } = contextFor();
     try {
-      if (stopped) {
-        throw new Error(`Task "${String(name)}" was not started`);
-      }
+      controller.signal.throwIfAborted();
       const taskFn = tasks[name];
       if (typeof taskFn !== "function") {
         throw new Error(`Task "${String(name)}" is not a function`);
@@ -220,7 +239,7 @@ function executeTasksInternal<T extends Record<string, any>>(
     } catch (err) {
       handleError(name, err);
       if (!handleSettled) {
-        stopped = true;
+        controller.abort(err);
         throw err;
       }
     } finally {
@@ -228,13 +247,12 @@ function executeTasksInternal<T extends Record<string, any>>(
     }
   });
 
-  if (handleSettled) {
-    // For allSettled, wait for all promises to settle (never rejects)
-    return Promise.allSettled(promises).then(() => returnValue);
-  } else {
-    // For all, reject on first error (like Promise.all)
-    return Promise.all(promises).then(() => returnValue);
-  }
+  const settled = handleSettled
+    ? // For allSettled, wait for all promises to settle (never rejects)
+      Promise.allSettled(promises).then(() => returnValue)
+    : // For all, reject on first error (like Promise.all)
+      Promise.all(promises).then(() => returnValue);
+  return settled.finally(() => stopListening.abort());
 }
 
 /**
@@ -246,6 +264,13 @@ function executeTasksInternal<T extends Record<string, any>>(
  *   async b() { return 'hello' },
  *   async c() { return (await this.$.a) + 10 }
  * })
+ *
+ * @example
+ * // this.$signal aborts when a sibling fails, or when options.signal does
+ * await all({
+ *   async a() { return fetch(url, { signal: this.$signal }) },
+ *   async b() { throw new Error('fails') }
+ * }, { signal: request.signal, concurrency: 4 })
  */
 export function all<T extends Record<string, any>>(
   tasks: T &
@@ -255,17 +280,17 @@ export function all<T extends Record<string, any>>(
           ? Promise<R>
           : Promise<ReturnType<T[K]>>;
       };
+      $signal: AbortSignal;
     }>,
-  { concurrency = DEFAULT_CONCURRENCY }: ConcurrencyOptions = {}
+  options: ExecutionOptions = {}
 ): Promise<AllResult<T>> {
-  return executeTasksInternal(tasks, false, concurrency) as Promise<
-    AllResult<T>
-  >;
+  return executeTasksInternal(tasks, false, options) as Promise<AllResult<T>>;
 }
 
 /**
  * Execute tasks with automatic dependency resolution, returning settled results for all tasks.
- * Unlike `all`, this will never reject - failed tasks will be included in the result with their error.
+ * Unlike `all`, this will never reject - failed tasks will be included in the result with their error,
+ * and a failure does not abort `this.$signal` (only `options.signal` does).
  *
  * @example
  * const { a, b, c } = await allSettled({
@@ -285,10 +310,11 @@ export function allSettled<T extends Record<string, any>>(
           ? Promise<R>
           : Promise<ReturnType<T[K]>>;
       };
+      $signal: AbortSignal;
     }>,
-  { concurrency = DEFAULT_CONCURRENCY }: ConcurrencyOptions = {}
+  options: ExecutionOptions = {}
 ): Promise<AllSettledResult<T>> {
-  return executeTasksInternal(tasks, true, concurrency) as Promise<
+  return executeTasksInternal(tasks, true, options) as Promise<
     AllSettledResult<T>
   >;
 }
