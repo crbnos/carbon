@@ -493,6 +493,30 @@ describe("storage(client).company", () => {
       expect(data?.map((f) => f.name)).toEqual(["a.pdf", "b.pdf", "c.pdf"]);
     });
 
+    it.each([
+      ["repeats the cursor", "c1"],
+      ["gives no cursor", undefined]
+    ])("fails when a page promises more and %s", async (_, nextCursor) => {
+      const listV2 = vi.fn(() =>
+        ok({
+          hasNext: true,
+          nextCursor,
+          folders: [],
+          objects: [file("a.pdf", "1")]
+        })
+      );
+
+      const { data, error } = await storage(
+        makeClient({ co1: { listV2 }, private: { listV2 } })
+      )
+        .company("co1")
+        .list("co1/docs");
+
+      expect(data).toBeNull();
+      expect(error?.message).toContain("did not advance");
+      expect(listV2.mock.calls.length).toBeLessThanOrEqual(4);
+    });
+
     it("drops a bucket whose later page fails instead of keeping part of it", async () => {
       const listV2 = vi.fn((options: { cursor?: string }) =>
         options.cursor

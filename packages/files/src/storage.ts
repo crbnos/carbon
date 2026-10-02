@@ -249,7 +249,16 @@ async function listFolder(bucket: Bucket, prefix: string) {
       ...data.folders.map((folder) => ({ ...FOLDER_FIELDS, ...folder })),
       ...data.objects
     );
-    cursor = data.hasNext ? data.nextCursor : undefined;
+    if (!data.hasNext) break;
+    // More pages promised with no way to reach them: a repeated cursor would
+    // loop forever, a missing one would pass a partial list off as complete.
+    if (!data.nextCursor || data.nextCursor === cursor) {
+      return {
+        data: null,
+        error: new StorageError(`Listing "${prefix}" did not advance`)
+      };
+    }
+    cursor = data.nextCursor;
   } while (cursor);
   return { data: toFileObjects(entries), error: null };
 }
