@@ -39,6 +39,19 @@ export const keys = {
       listId,
       lineId
     ] as const,
+  /**
+   * `itemTrackingType` for the items on one picking list. Keyed by the list AND
+   * by a fingerprint of the item ids, so a list whose lines change does not
+   * read a tracking map built for the old set of items.
+   */
+  pickingItemTracking: (s: Scope, listId: string, itemFingerprint: string) =>
+    [
+      "picking-item-tracking",
+      s.instanceId,
+      s.companyId,
+      listId,
+      itemFingerprint
+    ] as const,
   timecard: (s: Scope, weekOffset: number) =>
     ["timecard", s.instanceId, s.companyId, weekOffset] as const,
   operators: (s: Scope) => ["operators", s.instanceId, s.companyId] as const,
