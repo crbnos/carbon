@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { activeJobStatuses, getLocationTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type {
@@ -11,7 +15,12 @@ import type {
   SupabaseClient
 } from "@supabase/supabase-js";
 import type { Column, Item } from "~/components/Kanban";
-import { getCompanySettings } from "~/services/inventory.service";
+import {
+  getAvailableTrackedEntities,
+  getCompanySettings,
+  getPickingListRecommendations,
+  getPickOrder
+} from "~/services/inventory.service";
 import {
   getActiveJobOperationsByLocation,
   getBatchMaterialTotals,
@@ -42,6 +51,11 @@ import {
   getWorkCentersByLocation,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { getOpenClockEntry } from "~/services/people.service";
+import {
+  getAssignedPickingLists,
+  getPickingListForExecution
+} from "~/services/picking.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
@@ -724,3 +738,253 @@ export async function getReworkTargetsScreen(
   const operations = await getUpstreamOperations(client, operationId);
   return ok({ operations });
 }
+
+// ---------------------------------------------------------------------------
+// Picking
+// ---------------------------------------------------------------------------
+
+export type PickingScreenArgs = {
+  companyId: string;
+  /** The pinned operator on a shared terminal, else the signed-in user. */
+  effectiveUserId: string;
+};
+
+/**
+ * `x+/picking._index.tsx`'s loader — the lists assigned to this kitter.
+ *
+ * Never fails: the web loader reads the error-tolerant `?? []`, so the shape is
+ * always `ok`. The return type is left inferred (an `Ok`, not a `ScreenResult`)
+ * so neither caller has to narrow a branch that cannot happen, exactly as
+ * `getReworkTargetsScreen` does.
+ */
+export async function getPickingScreen(
+  client: SupabaseClient<Database>,
+  args: PickingScreenArgs
+) {
+  const pickingLists = await getAssignedPickingLists(
+    client,
+    args.effectiveUserId,
+    args.companyId
+  );
+  if (pickingLists.error) {
+    log.error("Failed to load assigned picking lists", {
+      companyId: args.companyId,
+      error: pickingLists.error
+    });
+  }
+  return ok({ pickingLists: pickingLists.data ?? [] });
+}
+
+export type PickingScreen = Awaited<
+  ReturnType<typeof getPickingScreen>
+>["data"];
+
+export type PickingListScreenArgs = {
+  companyId: string;
+  pickingListId: string;
+};
+
+/**
+ * `x+/picking.$pickingListId.tsx`'s loader.
+ *
+ * `recommendations` stays a PROMISE: the web streams it through `Await` so the
+ * at-a-glance lot subtext never blocks first render. The API awaits it.
+ *
+ * `pickingListId` comes from a URL on both clients, so the read is scoped to
+ * `companyId` (inside `getPickingListForExecution`, which is the header read —
+ * no second pre-check query) and a miss is `not_found`, which the web throws as
+ * the 404 it threw before.
+ */
+export async function getPickingListScreen(
+  client: SupabaseClient<Database>,
+  args: PickingListScreenArgs
+) {
+  const { companyId, pickingListId } = args;
+
+  const result = await getPickingListForExecution(
+    client,
+    pickingListId,
+    companyId
+  );
+
+  if (result.error || !result.data) {
+    log.warn("Picking list not found in company", {
+      companyId,
+      pickingListId,
+      error: result.error
+    });
+    return failed({ kind: "not_found", message: "Picking list not found" });
+  }
+
+  return ok({
+    pickingList: result.data,
+    // Deferred (not awaited): recommended serial/batch lots per line, streamed in
+    // after the list paints so the at-a-glance subtext never blocks first render.
+    recommendations: getPickingListRecommendations(client, pickingListId)
+  });
+}
+
+export type PickingListScreen = Extract<
+  Awaited<ReturnType<typeof getPickingListScreen>>,
+  { ok: true }
+>["data"];
+
+export type PickingTrackedOptionsArgs = {
+  companyId: string;
+  /** The list in the URL; the line must belong to it. */
+  pickingListId: string | undefined;
+  lineId: string;
+};
+
+/**
+ * `x+/picking.$pickingListId.tracked.$lineId.tsx`'s loader — the available
+ * tracked lots for one picking line (non-lineside, deduped), smart-ordered for
+ * the `TrackedEntityPicker`.
+ *
+ * Both ids come from a URL, so the line is re-read under `companyId` AND
+ * checked against the list in the path before anything is looked up for it.
+ */
+export async function getPickingTrackedOptionsScreen(
+  client: SupabaseClient<Database>,
+  args: PickingTrackedOptionsArgs
+) {
+  const { companyId, lineId, pickingListId } = args;
+
+  const lineResult = await client
+    .from("pickingListLine")
+    .select(
+      "id, itemId, pickingListId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
+    )
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (lineResult.error || !lineResult.data) {
+    log.warn("Picking line not found for company", {
+      companyId,
+      lineId,
+      error: lineResult.error
+    });
+    return failed({ kind: "not_found", message: "Line not found" });
+  }
+
+  const line = lineResult.data;
+
+  // The line must belong to the list in the path. Both clients always send the
+  // pair together, so this only ever refuses a hand-made URL that pairs one
+  // company's list with another list's line.
+  if (pickingListId && line.pickingListId !== pickingListId) {
+    log.warn("Picking line does not belong to the list in the path", {
+      companyId,
+      lineId,
+      pickingListId
+    });
+    return failed({ kind: "not_found", message: "Line not found" });
+  }
+
+  const locationId = (line.pickingList as { locationId: string } | null)
+    ?.locationId;
+  const trackingType =
+    (line.item as { itemTrackingType: string } | null)?.itemTrackingType ??
+    "Batch";
+
+  const [entities, settings, defaultOrder] = await Promise.all([
+    locationId
+      ? getAvailableTrackedEntities(client, {
+          itemId: line.itemId,
+          companyId,
+          locationId,
+          excludeLineside: true,
+          excludeAllocated: true,
+          excludeLineId: lineId
+        })
+      : { data: [] },
+    getCompanySettings(client, companyId),
+    locationId
+      ? getPickOrder(client, { itemId: line.itemId, locationId, companyId })
+      : ("Default" as const)
+  ]);
+  const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
+    nearExpiryWarningDays?: number | null;
+    expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
+  };
+
+  return ok({
+    entities: entities.data ?? [],
+    trackingType,
+    quantityRequired: Math.max(
+      0,
+      Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0)
+    ),
+    nearExpiryWarningDays: shelfLife.nearExpiryWarningDays ?? 0,
+    expiredEntityPolicy: shelfLife.expiredEntityPolicy ?? "Warn",
+    defaultOrder
+  });
+}
+
+export type PickingTrackedOptionsScreen = Extract<
+  Awaited<ReturnType<typeof getPickingTrackedOptionsScreen>>,
+  { ok: true }
+>["data"];
+
+// ---------------------------------------------------------------------------
+// Time card
+// ---------------------------------------------------------------------------
+
+export type TimecardScreenArgs = {
+  companyId: string;
+  /**
+   * Whose hours these are. The web page passes its signed-in user; the API
+   * passes `user.userId` — the pinned operator on a shared terminal — so the
+   * card shows the hours the clock-in/clock-out commands actually wrote.
+   */
+  userId: string;
+  /** 0 = this week, -1 = last week. The web reads it from `?week=`. */
+  weekOffset: number;
+};
+
+/**
+ * `x+/timecard.tsx`'s loader.
+ *
+ * Never fails (the web reads `?? []` and `openEntry.data`), so like
+ * `getPickingScreen` the return type is an `Ok` and needs no narrowing.
+ */
+export async function getTimecardScreen(
+  client: SupabaseClient<Database>,
+  args: TimecardScreenArgs
+) {
+  const { companyId, userId, weekOffset } = args;
+
+  // Week runs Monday → Sunday on the company calendar (one payroll boundary
+  // per books, not the server's zone).
+  const tz = await getCompanyTimeZone(client, companyId);
+  const { from, to } = datetime.weekBounds(tz, weekOffset);
+  // Calendar days of the window on the COMPANY calendar — the client renders
+  // these directly so the header never shifts a day in a different browser tz.
+  const weekStart = datetime.businessDay(from, tz).toString();
+  const weekEnd = datetime.businessDay(to, tz).toString();
+
+  const [entries, openEntry] = await Promise.all([
+    client
+      .from("timeCardEntry")
+      .select("*")
+      .eq("employeeId", userId)
+      .eq("companyId", companyId)
+      .gte("clockIn", from)
+      .lte("clockIn", to)
+      .order("clockIn", { ascending: false }),
+    getOpenClockEntry(client, userId, companyId)
+  ]);
+
+  return ok({
+    entries: entries.data ?? [],
+    openEntry: openEntry.data,
+    weekOffset,
+    weekStart,
+    weekEnd
+  });
+}
+
+export type TimecardScreen = Awaited<
+  ReturnType<typeof getTimecardScreen>
+>["data"];

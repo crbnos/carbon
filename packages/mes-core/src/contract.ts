@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
+import { pickingListStatus } from "./models";
 
 /**
  * The wire contract between the Carbon MES mobile app and the MES API
@@ -393,3 +394,189 @@ export const operationDetail = z
   })
   .passthrough();
 export type OperationDetail = z.infer<typeof operationDetail>;
+
+// ---------------------------------------------------------------------------
+// Picking
+// ---------------------------------------------------------------------------
+
+/**
+ * One row of the picking screen, from the `pickingLists` view. Every column of
+ * that view is nullable in the generated types, so everything but `id` is
+ * nullable here too — `lineCount` / `completedLineCount` are aggregates and
+ * come back as 0 on an empty list rather than absent.
+ */
+export const pickingListCard = z
+  .object({
+    id: z.string(),
+    pickingListId: z.string().nullable().optional(),
+    status: z.enum(pickingListStatus).nullable().optional(),
+    locationId: z.string().nullable().optional(),
+    locationName: z.string().nullable().optional(),
+    dueDate: z.string().nullable().optional(),
+    lineCount: z.number().nullable().optional(),
+    completedLineCount: z.number().nullable().optional(),
+    assignee: z.string().nullable().optional()
+  })
+  .passthrough();
+export type PickingListCard = z.infer<typeof pickingListCard>;
+
+export const pickingScreen = z
+  .object({
+    pickingLists: z.array(pickingListCard)
+  })
+  .passthrough();
+export type PickingScreen = z.infer<typeof pickingScreen>;
+
+/**
+ * One line of a picking list, as the app reads it.
+ *
+ * `availableQuantity` is computed by `get_picking_list_availability` (warehouse
+ * on-hand including the unassigned bin) and is what drives the "No Stock"
+ * warning — it is not a column. `trackedEntities` are the lots already chosen
+ * for this line, so an unpick knows what to give back.
+ *
+ * A deliberate SUBSET with `.passthrough()`: the web select embeds the job,
+ * operation, supersession and both storage units for a Kanban-era UI, and an
+ * older app build must not fail because a newer server added a field.
+ */
+export const pickingListLine = z
+  .object({
+    id: z.string(),
+    itemId: z.string(),
+    pickingListId: z.string().nullable().optional(),
+    jobOperationId: z.string().nullable().optional(),
+    quantityToPick: z.number(),
+    quantityPicked: z.number(),
+    quantityReturned: z.number().nullable().optional(),
+    status: z
+      .enum(["Pending", "Picked", "Short", "Cancelled"])
+      .nullable()
+      .optional(),
+    storageUnitId: z.string().nullable().optional(),
+    toStorageUnitId: z.string().nullable().optional(),
+    availableQuantity: z.number().nullable().optional(),
+    item: z
+      .object({
+        name: z.string().nullable().optional(),
+        readableId: z.string().nullable().optional(),
+        unitOfMeasureCode: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+    trackedEntities: z
+      .array(
+        z
+          .object({
+            trackedEntityId: z.string(),
+            quantity: z.number(),
+            quantityPicked: z.number().nullable().optional()
+          })
+          .passthrough()
+      )
+      .optional()
+  })
+  .passthrough();
+export type PickingListLine = z.infer<typeof pickingListLine>;
+
+export const pickingListDetail = z
+  .object({
+    pickingList: z
+      .object({
+        id: z.string(),
+        pickingListId: z.string().nullable().optional(),
+        status: z.enum(pickingListStatus).nullable().optional(),
+        locationId: z.string().nullable().optional(),
+        dueDate: z.string().nullable().optional(),
+        /** `lines` is `lines?.map(...)` on the server, so it can be absent. */
+        lines: z.array(pickingListLine).optional()
+      })
+      .passthrough(),
+    /**
+     * Recommended lots per line id, in pick order. The web streams this in
+     * after first paint; the API awaits it, so it is always present — empty
+     * for an untracked list.
+     */
+    recommendations: z.record(
+      z.string(),
+      z.array(
+        z
+          .object({
+            trackedEntityId: z.string(),
+            readableId: z.string().nullable()
+          })
+          .passthrough()
+      )
+    )
+  })
+  .passthrough();
+export type PickingListDetail = z.infer<typeof pickingListDetail>;
+
+/** The expired-lot policy the operator's pick is judged against. */
+export const expiredEntityPolicy = z.enum([
+  "Warn",
+  "Block",
+  "BlockWithOverride"
+]);
+export type ExpiredEntityPolicy = z.infer<typeof expiredEntityPolicy>;
+
+export const pickingTrackedOptions = z
+  .object({
+    entities: z.array(
+      z
+        .object({
+          trackedEntityId: z.string(),
+          readableId: z.string().nullable().optional(),
+          availableQuantity: z.number().nullable().optional(),
+          storageUnitId: z.string().nullable().optional(),
+          storageUnitName: z.string().nullable().optional(),
+          expirationDate: z.string().nullable().optional(),
+          status: z.string().nullable().optional(),
+          createdAt: z.string().nullable().optional()
+        })
+        .passthrough()
+    ),
+    /** Defaults to "Batch" when the item names no tracking type. */
+    trackingType: z.string(),
+    /** What is still owed on the line: `quantityToPick - quantityPicked`, floored at 0. */
+    quantityRequired: z.number(),
+    nearExpiryWarningDays: z.number(),
+    expiredEntityPolicy,
+    /** The configured pick order for the item at the line's location. */
+    defaultOrder: z.enum(["Default", "FEFO", "FIFO", "LIFO"])
+  })
+  .passthrough();
+export type PickingTrackedOptions = z.infer<typeof pickingTrackedOptions>;
+
+// ---------------------------------------------------------------------------
+// Time card
+// ---------------------------------------------------------------------------
+
+export const timeCardEntry = z
+  .object({
+    id: z.string(),
+    employeeId: z.string(),
+    clockIn: z.string(),
+    /** Null while the entry is open — that IS the "clocked in" signal. */
+    clockOut: z.string().nullable(),
+    note: z.string().nullable().optional()
+  })
+  .passthrough();
+export type TimeCardEntry = z.infer<typeof timeCardEntry>;
+
+export const timecardScreen = z
+  .object({
+    entries: z.array(timeCardEntry),
+    /** The entry the operator is currently clocked in on, if any. */
+    openEntry: timeCardEntry.nullable(),
+    /** 0 = this week, -1 = last week. Echoed back so the app can pin its header. */
+    weekOffset: z.number(),
+    /**
+     * The window's Monday and Sunday as calendar days on the COMPANY calendar
+     * (`YYYY-MM-DD`), so the header never shifts a day in another timezone.
+     */
+    weekStart: z.string(),
+    weekEnd: z.string()
+  })
+  .passthrough();
+export type TimecardScreen = z.infer<typeof timecardScreen>;

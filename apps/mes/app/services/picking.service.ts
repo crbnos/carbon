@@ -8,24 +8,32 @@ import { isPickingListLocked } from "~/services/models";
 
 export async function getAssignedPickingLists(
   client: SupabaseClient<Database>,
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   return client
     .from("pickingLists")
     .select("*")
     .eq("assignee", userId)
+    .eq("companyId", companyId)
     .in("status", ["Draft", "In Progress"])
     .order("dueDate", { ascending: true, nullsFirst: false });
 }
 
 export async function getPickingListForExecution(
   client: SupabaseClient<Database>,
-  pickingListId: string
+  pickingListId: string,
+  companyId: string
 ) {
+  // The header read IS the ownership check: `pickingListId` reaches here from a
+  // URL on both clients, and the line/availability reads below trust it. The MES
+  // API takes its company from a per-request header, so RLS alone would let a
+  // user who belongs to two companies read the other one's list.
   const { data: pickingList, error: plError } = await client
     .from("pickingList")
     .select("*, location:location(name)")
     .eq("id", pickingListId)
+    .eq("companyId", companyId)
     .single();
 
   if (plError || !pickingList) return { data: null, error: plError };

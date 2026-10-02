@@ -13,7 +13,11 @@ import {
   HEADERS,
   meResponse,
   operationsQuery,
-  serverSpeaksApiVersion
+  pickingListDetail,
+  pickingScreen,
+  pickingTrackedOptions,
+  serverSpeaksApiVersion,
+  timecardScreen
 } from "./contract";
 
 describe("compareAppVersion", () => {
@@ -144,5 +148,202 @@ describe("operationsQuery", () => {
       workCenterIds: [],
       filter: []
     });
+  });
+});
+
+describe("pickingScreen", () => {
+  it("parses a list the `pickingLists` view returns with its aggregates", () => {
+    const parsed = pickingScreen.safeParse({
+      pickingLists: [
+        {
+          id: "pl_1",
+          pickingListId: "PL000012",
+          status: "In Progress",
+          locationId: "loc_1",
+          locationName: "Plant 1",
+          dueDate: "2026-10-05",
+          lineCount: 4,
+          completedLineCount: 1,
+          assignee: "user_1"
+        }
+      ]
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts the nullable columns the view declares", () => {
+    expect(
+      pickingScreen.safeParse({
+        pickingLists: [
+          { id: "pl_1", dueDate: null, locationName: null, status: null }
+        ]
+      }).success
+    ).toBe(true);
+  });
+
+  it("refuses a status outside `pickingListStatus`", () => {
+    expect(
+      pickingScreen.safeParse({
+        pickingLists: [{ id: "pl_1", status: "Reopened" }]
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("pickingListDetail", () => {
+  const valid = {
+    pickingList: {
+      id: "pl_1",
+      pickingListId: "PL000012",
+      status: "In Progress",
+      locationId: "loc_1",
+      lines: [
+        {
+          id: "pll_1",
+          itemId: "item_1",
+          pickingListId: "pl_1",
+          jobOperationId: "jo_1",
+          quantityToPick: 4,
+          quantityPicked: 1,
+          quantityReturned: 0,
+          status: "Pending",
+          storageUnitId: "su_1",
+          toStorageUnitId: "su_line",
+          availableQuantity: 9,
+          item: {
+            name: "Bracket",
+            readableId: "BRK-100",
+            unitOfMeasureCode: "EA"
+          },
+          trackedEntities: [
+            { trackedEntityId: "te_1", quantity: 1, quantityPicked: 1 }
+          ]
+        }
+      ]
+    },
+    recommendations: {
+      pll_1: [{ trackedEntityId: "te_2", readableId: "LOT-2" }]
+    }
+  };
+
+  it("parses a list with its lines and resolved recommendations", () => {
+    expect(pickingListDetail.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an untracked list — no lots to recommend, no lots picked", () => {
+    expect(
+      pickingListDetail.safeParse({
+        pickingList: {
+          id: "pl_1",
+          lines: [
+            {
+              id: "pll_1",
+              itemId: "item_1",
+              quantityToPick: 4,
+              quantityPicked: 0,
+              item: null
+            }
+          ]
+        },
+        recommendations: {}
+      }).success
+    ).toBe(true);
+  });
+
+  it("refuses a line status outside `pickingListLineStatus`", () => {
+    const bad = structuredClone(valid);
+    (bad.pickingList.lines[0] as { status: string }).status = "Staged";
+    expect(pickingListDetail.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("pickingTrackedOptions", () => {
+  const valid = {
+    entities: [
+      {
+        trackedEntityId: "te_1",
+        readableId: "LOT-1",
+        availableQuantity: 12,
+        storageUnitId: "su_1",
+        storageUnitName: "A-01",
+        expirationDate: "2027-01-31",
+        status: "Available",
+        createdAt: "2026-09-01T00:00:00.000Z"
+      }
+    ],
+    trackingType: "Batch",
+    quantityRequired: 3,
+    nearExpiryWarningDays: 30,
+    expiredEntityPolicy: "Warn",
+    defaultOrder: "FEFO"
+  };
+
+  it("parses what `get_available_tracked_entities` returns", () => {
+    expect(pickingTrackedOptions.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts an item with no lots at the location", () => {
+    expect(
+      pickingTrackedOptions.safeParse({ ...valid, entities: [] }).success
+    ).toBe(true);
+  });
+
+  it("refuses a pick order or expiry policy it does not know", () => {
+    expect(
+      pickingTrackedOptions.safeParse({ ...valid, defaultOrder: "Smart" })
+        .success
+    ).toBe(false);
+    expect(
+      pickingTrackedOptions.safeParse({
+        ...valid,
+        expiredEntityPolicy: "Allow"
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("timecardScreen", () => {
+  const entry = {
+    id: "tce_1",
+    employeeId: "user_1",
+    clockIn: "2026-09-28T13:00:00.000Z",
+    clockOut: "2026-09-28T21:30:00.000Z",
+    note: null
+  };
+
+  it("parses a finished week", () => {
+    expect(
+      timecardScreen.safeParse({
+        entries: [entry],
+        openEntry: null,
+        weekOffset: -1,
+        weekStart: "2026-09-21",
+        weekEnd: "2026-09-27"
+      }).success
+    ).toBe(true);
+  });
+
+  it("accepts an open entry — a null clockOut IS the clocked-in signal", () => {
+    expect(
+      timecardScreen.safeParse({
+        entries: [{ ...entry, clockOut: null }],
+        openEntry: { ...entry, clockOut: null },
+        weekOffset: 0,
+        weekStart: "2026-09-28",
+        weekEnd: "2026-10-04"
+      }).success
+    ).toBe(true);
+  });
+
+  it("refuses an entry with no clockIn — there is nothing to total", () => {
+    expect(
+      timecardScreen.safeParse({
+        entries: [{ id: "tce_1", employeeId: "user_1", clockOut: null }],
+        openEntry: null,
+        weekOffset: 0,
+        weekStart: "2026-09-28",
+        weekEnd: "2026-10-04"
+      }).success
+    ).toBe(false);
   });
 });

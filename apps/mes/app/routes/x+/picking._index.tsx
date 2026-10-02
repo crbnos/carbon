@@ -20,18 +20,18 @@ import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
-import { getAssignedPickingLists } from "~/services/picking.service";
+import { getPickingScreen } from "~/services/screens.server";
 import { path } from "~/utils/path";
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
 
-  const pickingLists = await getAssignedPickingLists(client, effectiveUserId);
+  // The read itself lives in `~/services/screens.server` so this screen and
+  // `GET /api/v1/picking` cannot drift.
+  const screen = await getPickingScreen(client, { companyId, effectiveUserId });
 
-  return {
-    pickingLists: pickingLists.data ?? []
-  };
+  return screen.data;
 }
 
 export default function PickingIndexRoute() {
