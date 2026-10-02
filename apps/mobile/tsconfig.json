@@ -1,0 +1,31 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    // expo/tsconfig.base sets no `types`, and React Native's own types are
+    // resolved through imports — so this only ADDS node globals, which the
+    // vitest files need (they read the web theme and the lingui config off disk).
+    "types": ["node"],
+    "paths": {
+      "~/*": ["./src/*"],
+      "~/assets/*": ["./assets/*"],
+      "@carbon/mes-core": ["../../packages/mes-core/src/index.ts"],
+      "@carbon/mes-core/*": ["../../packages/mes-core/src/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/mes-core/src/**/*.ts",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".expo",
+    ".expo-export",
+    // @carbon/mes-core typechecks its own tests under its own tsconfig.
+    "../../packages/mes-core/src/**/*.test.ts"
+  ]
+}

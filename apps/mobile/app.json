@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Carbon MES",
+    "slug": "carbon-mes",
+    "version": "1.0.0",
+    "scheme": "carbon-mes",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#09090B"
+    },
+    "ios": {
+      "bundleIdentifier": "ms.carbon.mes",
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scan barcodes and QR codes on the shop floor.",
+        "NSPhotoLibraryUsageDescription": "Attach a photo to a work instruction step.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "ms.carbon.mes",
+      "adaptiveIcon": {
+        "backgroundColor": "#09090B",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "permissions": ["android.permission.CAMERA"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#09090B",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "updates": {
+      "checkAutomatically": "NEVER"
+    }
+  }
+}

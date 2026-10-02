@@ -6,6 +6,10 @@
     "includes": [
       "./**/app/**/*.ts*",
       "./**/app/**/*.tsx*",
+      // apps/mobile keeps its sources under src/ (Expo Router convention), so
+      // the app/** globs above do not reach it.
+      "./mobile/src/**/*.ts*",
+      "./mobile/*.ts",
       "!**/mcp*/lib/tools/**",
       "!**/mcp*/lib/server.ts"
     ]

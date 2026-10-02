@@ -114,6 +114,7 @@
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "portless --script dev:app run --force",
     "dev:app": "react-router dev",
+    "dev:lan": "react-router dev --host 0.0.0.0 --port 3001",
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production react-router-serve ./build/server/index.js",
     "test": "vitest run",
