@@ -86,13 +86,20 @@ describe("runConfigurationRule", () => {
   it("a runaway rule is stopped by the time, memory and stack limits", async () => {
     await expect(
       runConfigurationRule(rule("while (true) {}"), {})
-    ).rejects.toThrow();
-    await expect(
-      runConfigurationRule(
-        rule(`const a = []; while (true) a.push("x".repeat(1e5));`),
-        {}
-      )
-    ).rejects.toThrow();
+    ).rejects.toThrow("interrupted");
+    // Stopped by the memory limit itself, not by the time limit catching up.
+    for (const allocate of [
+      `"x".repeat(1e5)`,
+      "new Array(1e4).fill(1)",
+      "new ArrayBuffer(1e6)"
+    ]) {
+      await expect(
+        runConfigurationRule(
+          rule(`const a = []; while (true) a.push(${allocate});`),
+          {}
+        )
+      ).rejects.toThrow("out of memory");
+    }
     await expect(
       runConfigurationRule(rule("const f = () => f(); return f();"), {})
     ).rejects.toThrow();
