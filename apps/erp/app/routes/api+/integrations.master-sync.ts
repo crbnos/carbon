@@ -79,7 +79,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (!isAccountingSyncEnabled(integration.data.metadata)) {
+  // Importing only writes into Carbon, and is part of setting an integration
+  // up; pushing sends records to the provider, so it waits for sync.
+  if (
+    direction === "push-to-accounting" &&
+    !isAccountingSyncEnabled(integration.data.metadata)
+  ) {
     return data(
       { error: "Turn on sync for this integration first" },
       { status: 400 }

@@ -405,6 +405,9 @@ export async function clearResolvedSyncOperations(
  * `entityTypes` is the include-only counterpart (the consolidation cron
  * claims ONLY journalEntry operations). Mutually exclusive with
  * `excludeEntityTypes` — see getClaimEntityTypeFilterError.
+ *
+ * `direction` claims only operations going that way (a master-data import
+ * claims only its own pulls).
  */
 export async function claimPendingOperations(
   client: SupabaseClient<Database>,
@@ -423,6 +426,7 @@ export async function claimPendingOperations(
      * transitional consolidation flag.
      */
     holdDailySummaryJournalEntries?: boolean;
+    direction?: SyncOperationDirection;
   }
 ): Promise<{ data: SyncOperation[]; error: string | null }> {
   const filterError = getClaimEntityTypeFilterError(args);
@@ -454,6 +458,9 @@ export async function claimPendingOperations(
   if (args.holdDailySummaryJournalEntries) {
     pendingQuery = pendingQuery.or(dailySummaryHold);
   }
+  if (args.direction) {
+    pendingQuery = pendingQuery.eq("direction", args.direction);
+  }
 
   const pending = await pendingQuery
     .order("createdAt", { ascending: true })
@@ -475,6 +482,9 @@ export async function claimPendingOperations(
   }
   if (args.holdDailySummaryJournalEntries) {
     staleQuery = staleQuery.or(dailySummaryHold);
+  }
+  if (args.direction) {
+    staleQuery = staleQuery.eq("direction", args.direction);
   }
 
   const stale = await staleQuery

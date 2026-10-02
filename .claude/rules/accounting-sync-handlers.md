@@ -60,10 +60,15 @@ refuses ON while `getUnmappedRequiredAccounts` (`core/account-mapping.ts`) is no
 Expense account, among active leaf accounts — is the same one the Account Mapping tab badges.
 
 While off, nothing moves: `events/sync.ts` skips before reconciling, the four crons filter their
-targets, `sync-external-accounting` enqueues nothing, master-sync and journal-backfill refuse
-(route) and no-op (job), the three webhooks acknowledge before any provider call, and
+targets, `sync-external-accounting` enqueues nothing, a master-data PUSH and the journal backfill
+refuse (route) and no-op (job), the three webhooks acknowledge before any provider call, and
 `drainSyncOperations` returns before claiming — the backstop for a Retry clicked in Sync
-Activity, which then drains once sync is on. Period close's external-GL check treats a sync-off
+Activity, which then drains once sync is on. The one thing that runs is **Import customers &
+vendors**: it only writes into Carbon, and the mapping rows it creates are what stop the first
+push after sync is on from duplicating contacts in the ledger. Its drain passes
+`only: { entityTypes: [<customer|vendor>], direction: "pull-from-accounting" }`
+(`claimPendingOperations` filters on both), and that scoped pull is the drain's single exception —
+so the import never flushes a Retry or anything else that is waiting. Period close's external-GL check treats a sync-off
 integration like a disconnected one (it inlines the flag read — `accounting.service.ts` cannot
 import the barrel). Turning sync on starts the pull cursor from `integration.updatedAt` (the
 toggle bumps it); the outbound sweep covers the last 7 days and the journal backfill the rest.

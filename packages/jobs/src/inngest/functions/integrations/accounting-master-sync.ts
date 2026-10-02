@@ -163,9 +163,15 @@ export const accountingMasterSyncFunction = inngest.createFunction(
     ) as AccountingProvider;
     const database = getJobDatabaseClient();
 
-    // The API route refuses while sync is off; this covers an event sent
-    // some other way, or sync turned off after the route accepted it.
-    if (!isAccountingSyncEnabled(integration.metadata)) {
+    // A push while sync is off is refused by the API route; this covers an
+    // event sent some other way, or sync turned off after the route accepted
+    // it. An import (pull) runs either way — it only writes into Carbon, and
+    // the links it creates are what keep the first push after sync is turned
+    // on from duplicating customers and vendors in the ledger.
+    if (
+      payload.direction === "push-to-accounting" &&
+      !isAccountingSyncEnabled(integration.metadata)
+    ) {
       return {
         provider: payload.provider,
         direction: payload.direction,
@@ -354,13 +360,23 @@ async function syncBatch(args: {
     companyId: args.companyId,
     integration: args.integrationId,
     provider: args.provider,
-    integrationMetadata: args.integrationMetadata
+    integrationMetadata: args.integrationMetadata,
+    // An import drains only its own pulls — which is also what lets it run
+    // while sync is off without flushing anything else that is waiting.
+    ...(args.direction === "pull-from-accounting"
+      ? {
+          only: {
+            entityTypes: [args.entityType],
+            direction: args.direction
+          }
+        }
+      : {})
   });
 
   counts.claimed = drained.claimed;
 
-  // A drain processes every claimable operation for the company, not just this
-  // batch's. Attributing its result to THIS batch is correct only because
+  // A push drain processes every claimable operation for the company, not just
+  // this batch's (an import's is scoped to its own pulls, above). Attributing its result to THIS batch is correct only because
   // `concurrency: { limit: 1 }` plus the sequential batch loop mean earlier
   // batches are already Completed (never re-claimed) and later ones are not
   // enqueued yet — so the only ops in flight for this (direction, entityType)

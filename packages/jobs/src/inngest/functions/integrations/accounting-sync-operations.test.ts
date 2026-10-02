@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
   compareMonthlyTotals,
+  drainSyncOperations,
   getAdvancedPullCursor,
   getDailyConsolidationBatchKey,
   getJournalPostingDecision,
@@ -1803,5 +1804,91 @@ describe("loadChargePolicyInputs", () => {
     });
     expect(result.size).toBe(0);
     expect(queries).toEqual([]);
+  });
+});
+
+describe("drainSyncOperations while sync is turned off", () => {
+  // Records every query-builder call; every query resolves to no rows, so a
+  // drain that claims stops after one empty claim.
+  function recordingClient() {
+    const calls: Array<[string, unknown[]]> = [];
+    const builder: Record<string, unknown> = {};
+    const proxy: unknown = new Proxy(builder, {
+      get(_target, prop) {
+        if (prop === "then") {
+          return (resolve: (value: unknown) => void) =>
+            resolve({ data: [], error: null });
+        }
+        return (...args: unknown[]) => {
+          calls.push([String(prop), args]);
+          return proxy;
+        };
+      }
+    });
+    const client = {
+      from: (table: string) => {
+        calls.push(["from", [table]]);
+        return proxy;
+      }
+    };
+    return {
+      calls,
+      client: client as unknown as SupabaseClient<Database>
+    };
+  }
+
+  const drainArgs = (client: SupabaseClient<Database>) => ({
+    client,
+    database: {} as never,
+    companyId: "company-1",
+    integration: "xero",
+    provider: {} as never,
+    integrationMetadata: { settings: { syncEnabled: false } }
+  });
+
+  it("claims nothing", async () => {
+    const { client, calls } = recordingClient();
+
+    const summary = await drainSyncOperations(drainArgs(client));
+
+    expect(summary.claimed).toBe(0);
+    expect(calls).toEqual([]);
+  });
+
+  it("lets a customer/vendor import drain only its own pulls", async () => {
+    const { client, calls } = recordingClient();
+
+    await drainSyncOperations({
+      ...drainArgs(client),
+      only: { entityTypes: ["customer"], direction: "pull-from-accounting" }
+    });
+
+    // Both claim queries (Pending + stale In Flight) are scoped.
+    const directionFilters = calls.filter(
+      ([method, args]) => method === "eq" && args[0] === "direction"
+    );
+    expect(directionFilters).toEqual([
+      ["eq", ["direction", "pull-from-accounting"]],
+      ["eq", ["direction", "pull-from-accounting"]]
+    ]);
+    expect(
+      calls.filter(
+        ([method, args]) => method === "in" && args[0] === "entityType"
+      )
+    ).toEqual([
+      ["in", ["entityType", ["customer"]]],
+      ["in", ["entityType", ["customer"]]]
+    ]);
+  });
+
+  it("does not let a scoped push through", async () => {
+    const { client, calls } = recordingClient();
+
+    await drainSyncOperations({
+      ...drainArgs(client),
+      only: { entityTypes: ["customer"], direction: "push-to-accounting" }
+    });
+
+    expect(calls).toEqual([]);
   });
 });
