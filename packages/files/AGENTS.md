@@ -96,10 +96,17 @@ and ~2 MB of duplicate code, so `./pdf` resolves the engine per runtime:
 | Node / edge / jobs | unpdf's inlined serverless build | built in — no worker file, no `@ts-ignore` legacy imports (the old `extract-document` hack) |
 
 unpdf still carries `import("unpdf/pdfjs")` as a never-reached fallback, which
-Vite emitted as a 1.5 MB lazy chunk in every deploy. Both apps alias
-`unpdf/pdfjs` to `app/ssr-shims/unpdf-pdfjs-stub.mjs` to keep it out; the ERP
-client build was verified to contain exactly ONE engine chunk (388 KB). Any new
-app that consumes `./pdf` in the browser needs the same alias.
+Vite emitted as a 1.5 MB lazy chunk in every deploy. Both apps resolve
+`unpdf/pdfjs` to `app/ssr-shims/unpdf-pdfjs-stub.mjs` **in the client build
+only**, with `clientOnlyAlias` from `@carbon/dev/vite`; the ERP client build was
+verified to contain exactly ONE engine chunk (388 KB). Any new app that consumes
+`./pdf` in the browser needs the same plugin.
+
+Never put that stub in `resolve.alias`: a top-level alias applies to every
+environment, and on the server `unpdf/pdfjs` IS the engine (the table above). It
+was there once, and every deployed document extraction failed with "Serverless
+PDF.js bundle could not be resolved" while dev worked, because dev leaves
+`unpdf` external and Node resolves the real module.
 - Classify with `getDocumentType`; narrow to preview-capable with
   `isPreviewableDocumentType` (a `@ts-expect-error` on a `DocumentPreview` `type`
   prop means a missing narrow, not a type bug).

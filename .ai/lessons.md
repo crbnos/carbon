@@ -2878,3 +2878,14 @@ tag until proven otherwise.
 **Rule:** A "return to where you were" target is `pathname + search`, never `pathname`. When it is passed on inside another URL, encode it (`encodeURIComponent` / `URLSearchParams`), or its own `&` splits it. Test the round trip with a URL that has a query string. Drop React Router's `_routes` param from it, and only when present: middleware sees that param (loaders do not), a page URL that carries it limits which loaders later data requests run, and `searchParams.delete` re-encodes the whole query even when it removes nothing. Whatever sends the target on must be matched by something that reads it: three of the four callbacks ignored the `redirectTo` their login page sent.
 
 **Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
+
+
+## A `resolve.alias` stub reaches the server bundle too
+
+**Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
+
+**Problem:** A top-level `resolve.alias` applies to every Vite environment. On the server `unpdf/pdfjs` is the only PDF engine, so every deployed document extraction (purchase invoice, sales RFQ) failed with "Serverless PDF.js bundle could not be resolved". Dev and vitest passed: dev leaves `unpdf` external, so Node resolves the real module and the alias never applies.
+
+**Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.
