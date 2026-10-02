@@ -10,7 +10,7 @@ import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { authPasswordRequest } from "@carbon/mes-core";
 import { getClientIp } from "@carbon/utils";
 import { authIpRatelimit, signInLockout } from "./lib/ratelimit.server";
-import { apiRoute } from "./lib/route.server";
+import { apiRoute, methodNotAllowed } from "./lib/route.server";
 
 /**
  * Password sign-in for store-review accounts ONLY.
@@ -95,3 +95,6 @@ export const action = apiRoute(
     };
   }
 );
+
+/** A GET here is a client bug; answer 405 rather than React Router's 400. */
+export const loader = methodNotAllowed();

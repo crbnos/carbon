@@ -33,7 +33,10 @@ vi.mock("@carbon/kv", () => {
 vi.mock("../config/env", () => ({
   SESSION_SECRET: "test-session-secret",
   SUPABASE_URL: "http://localhost:54321",
-  CONTROLLED_ENVIRONMENT: false
+  CONTROLLED_ENVIRONMENT: false,
+  // Default off: the local DEV_BYPASS_EMAIL exemption must not be in play for
+  // the ordinary MFA assertions below.
+  IS_LOCAL_DEV: false
 }));
 
 vi.mock("../lib/supabase/client", () => ({
@@ -246,6 +249,27 @@ describe("requireApiUser — two-factor", () => {
         )
       )
     ).toBe("401:mfa_required");
+  });
+
+  it("still refuses an aal1 token for the bypass email outside local dev", async () => {
+    // IS_LOCAL_DEV is mocked false, so the exemption must not apply even when
+    // the email matches — this is the production shape.
+    const previous = process.env.DEV_BYPASS_EMAIL;
+    process.env.DEV_BYPASS_EMAIL = "op@example.com";
+    try {
+      expect(
+        await codeOf(
+          requireApiUser(
+            request(authed),
+            {},
+            deps({ hasTotp: vi.fn().mockResolvedValue(true) as never })
+          )
+        )
+      ).toBe("401:mfa_required");
+    } finally {
+      if (previous === undefined) delete process.env.DEV_BYPASS_EMAIL;
+      else process.env.DEV_BYPASS_EMAIL = previous;
+    }
   });
 
   it("admits an aal2 token for the same user", async () => {

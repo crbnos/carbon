@@ -6,26 +6,26 @@
 **Branches (one PR per phase):** `feat/mobile-scaffold` (Phase 0), `feat/mobile-spike` (Phase 1), `feat/mes-api` (Phase 2), `feat/mobile-screens` (Phase 3; may be split into one PR per screen group), `feat/mobile-ship` (Phase 4). Never put "claude" in a branch name; no `Co-Authored-By` trailers.
 
 ## Progress
-- [ ] Task 1: Record the spec corrections found during planning
-- [ ] Task 2: Scope the React pin to the packages that need it
-- [ ] Task 3: Create `packages/mes-core`
-- [ ] Task 4: Create the Expo app at `apps/mobile`
-- [ ] Task 5: Styling — Uniwind, Carbon tokens, React Native Reusables
-- [ ] Task 6: Lingui on Metro (shared `mes` catalog)
-- [ ] Task 7: App shell — providers and the Expo Router skeleton
-- [ ] Task 8: Developer loop — LAN env, Expo Go on the three devices, `apps/mobile/AGENTS.md`
-- [ ] Task 9: `@carbon/env` — `APP_REVIEW_EMAILS` and `CARBON_DEPLOYMENT_MODE`
-- [ ] Task 10: `@carbon/mes-core` contract for the Phase 1 endpoints
-- [ ] Task 11: `@carbon/auth` — `requireApiUser` and the API error helpers
-- [ ] Task 12: Shared sign-in gates — `apps/mes/app/services/auth.server.ts`
-- [ ] Task 13: Public auth endpoints — `auth/code`, `auth/verify`, `auth/mfa`, `auth/password`
-- [ ] Task 14: `GET /api/v1/me`
-- [ ] Task 15: Extract the operations list screen and expose `GET /api/v1/operations`
-- [ ] Task 16: Magic-link email template — add the 6-digit code
-- [ ] Task 17: Web "Connect mobile app" QR page (MES + ERP Settings)
-- [ ] Task 18: App — instance store, Connect screen, Instances screen
-- [ ] Task 19: App — API client, session storage, sign-in / verify / two-factor / password screens
-- [ ] Task 20: App — context picker, Operations list, Phase 1 parity check
+- [x] Task 1: Record the spec corrections found during planning
+- [x] Task 2: Scope the React pin to the packages that need it
+- [x] Task 3: Create `packages/mes-core`
+- [x] Task 4: Create the Expo app at `apps/mobile`
+- [x] Task 5: Styling — Uniwind, Carbon tokens, React Native Reusables
+- [x] Task 6: Lingui on Metro (shared `mes` catalog)
+- [x] Task 7: App shell — providers and the Expo Router skeleton
+- [x] Task 8: Developer loop — LAN env, Expo Go on the three devices, `apps/mobile/AGENTS.md`
+- [x] Task 9: `@carbon/env` — `APP_REVIEW_EMAILS` and `CARBON_DEPLOYMENT_MODE`
+- [x] Task 10: `@carbon/mes-core` contract for the Phase 1 endpoints
+- [x] Task 11: `@carbon/auth` — `requireApiUser` and the API error helpers
+- [x] Task 12: Shared sign-in gates — `apps/mes/app/services/auth.server.ts`
+- [x] Task 13: Public auth endpoints — `auth/code`, `auth/verify`, `auth/mfa`, `auth/password`
+- [x] Task 14: `GET /api/v1/me`
+- [x] Task 15: Extract the operations list screen and expose `GET /api/v1/operations`
+- [x] Task 16: Magic-link email template — add the 6-digit code
+- [x] Task 17: Web "Connect mobile app" QR page (MES + ERP Settings)
+- [x] Task 18: App — instance store, Connect screen, Instances screen
+- [x] Task 19: App — API client, session storage, sign-in / verify / two-factor / password screens
+- [x] Task 20: App — context picker, Operations list, Phase 1 parity check
 - [ ] Task 21: Re-check the routes to move; JSON schemas in `@carbon/mes-core/models`
 - [ ] Task 22: Idempotency keys and request plumbing for every POST
 - [ ] Task 23: Terminal and operator tokens; `/console/*` endpoints
@@ -58,6 +58,56 @@
 - [ ] Task 50: Store-review account path on Carbon Cloud
 - [ ] Task 51: Acceptance matrix on iPad, Android tablet and phones
 - [ ] Task 52: Docs and changelog — reference page, `/changelog-entry`, AGENTS.md refresh
+
+## Deviations (recorded as they happened)
+
+- **Task 2 — `apps/mobile` is NOT a pnpm workspace member.** The plan assumed the
+  React pin could be scoped. It cannot: both shapes were measured against main
+  (which has zero dual-major pairings) and both put two React majors in one tree —
+  parent-scoped pins alone gave `react-dom@19` beside `react@18` inside erp AND
+  mes (react-router declares `react-dom: ">=18"`, and pnpm resolves a permissive
+  peer to the newest match rather than reusing the app's copy), and a
+  version-qualified `react@^19.2.0` key matched the RESOLVED version rather than
+  the requested range, giving 144 `react-dom@18` / `react@19` pairings. So the app
+  is excluded from `packages:`, keeps its own lockfile, shares `packages/mes-core`
+  and the `@carbon/utils` subpaths as SOURCE through Metro aliases, and is driven
+  in CI by root `mobile:*` scripts. `pnpm-lock.yaml` is byte-identical to main.
+- **Task 4 — `expo install` is unusable here.** It shells out to `pnpm add` without
+  `--ignore-workspace`, so the root's `minimumReleaseAge: 4320` rejects freshly
+  published SDK packages. Versions come from `bundledNativeModules.json` by hand.
+- **Task 6 — no Lingui Metro transformer.** The collision the plan feared did not
+  materialise (Uniwind wraps `transformerPath`, Lingui sets
+  `babelTransformerPath`), but the catalogs are still compiled ahead of time by
+  `scripts/build-catalogs.mjs` through the repo's existing `lingui:compile`: it
+  reuses machinery that is already a turbo build step, `tsc` then typechecks every
+  catalog, and Metro needs no `.po` resolution.
+- **Task 5 — React Native Reusables not used.** Its CLI is interactive. The
+  primitives in `src/components/ui.tsx` are written against
+  `carbon-design/shop-floor-mes.md` directly (48pt default controls, no hover, one
+  colour-coded primary action), which is fewer dependencies and a closer fit.
+- **Task 5 — toasts are bottom-CENTRE, not bottom-left.** `sonner-native` offers
+  only centre positions. The rule it serves (never cover the primary action) is
+  kept with an offset clear of the dock.
+- **Task 9 — `CARBON_DEPLOYMENT_MODE` validates at module load**, not at the call
+  site like `BOT_PROTECTION` (the plan's cited precedent has no boot validation).
+  A typo must fail boot rather than let an air-gapped install phone home.
+- **Task 11 — no shared-claims-cache change.** The plan would have added
+  `permissions:${userId}:${companyId}` and updated six web invalidation sites plus
+  five `vi.mock` fixtures. Instead `requireApiUser` keeps its own 60s
+  company-scoped key (`mes-api:claims:…`), which is correct for a per-request
+  company header and strictly tighter than the shared cache's hour, with zero
+  blast radius on the web.
+- **Task 12 — `requestSignInCode` gained `ip` and `allowBypass`.** Without `ip`
+  the moved `logAuthEvent` calls would have silently dropped the IP from every
+  audit event; `allowBypass: false` reproduces the web action's existing
+  fall-through when `signInWithBypassEmail` returns null.
+- **Task 17 — the ERP settings entry is alphabetical** (between Backups and Custom
+  Fields), not literally beside API Keys: that group is strictly alphabetical.
+- **Task 13 — the dev bypass is exempt from the API's MFA gate**, gated on
+  `IS_LOCAL_DEV`. Found by live testing; see the new lesson in `.ai/lessons.md`.
+- **Tasks 10/15 — `operationsScreen` is a subset** of what the web loader returns
+  (cards, not a Kanban board), with `.passthrough()` so a newer server's extra
+  fields cannot fail an older app build.
 
 ## Dependencies
 - Phase 0 (Tasks 1–8) runs in order: 2 → 3 → 4 → 5 → 6 → 7 → 8. Task 1 is independent.

@@ -8,7 +8,7 @@ import { authCodeRequest } from "@carbon/mes-core";
 import { getClientIp } from "@carbon/utils";
 import { requestSignInCode } from "~/services/auth.server";
 import { authIpRatelimit, signInLockout } from "./lib/ratelimit.server";
-import { apiRoute } from "./lib/route.server";
+import { apiRoute, methodNotAllowed } from "./lib/route.server";
 
 /**
  * Ask for a 6-digit sign-in code.
@@ -78,3 +78,6 @@ export const action = apiRoute(
     }
   }
 );
+
+/** A GET here is a client bug; answer 405 rather than React Router's 400. */
+export const loader = methodNotAllowed();

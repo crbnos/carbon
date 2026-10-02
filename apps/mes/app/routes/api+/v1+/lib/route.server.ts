@@ -127,6 +127,20 @@ async function parseBody<Body>(
   return result.data;
 }
 
+/**
+ * A GET to a route that exports only an `action` is answered 400 by React
+ * Router before `apiRoute` runs, which tells a client nothing. Export this as
+ * the route's `loader` so a wrong method gets a real 405.
+ */
+export const methodNotAllowed = (method: "POST" = "POST") =>
+  apiRoute({ method, public: true }, async () => {
+    throw new ApiError(
+      405,
+      "validation_failed",
+      `Use ${method} for this endpoint`
+    );
+  });
+
 export function apiRoute<Body = undefined>(
   options: ApiRouteOptions<Body>,
   handler: Handler<Body>

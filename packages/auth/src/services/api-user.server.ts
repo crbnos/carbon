@@ -7,6 +7,7 @@ import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decodeJwt } from "jose";
+import { IS_LOCAL_DEV } from "../config/env";
 import { getCarbon } from "../lib/supabase/client";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission } from "../types";
@@ -323,7 +324,26 @@ export async function requireApiUser(
 
   // Mirrors the web's mfaVerified bounce in `requireAuthSession`: a user who
   // enrolled a TOTP factor must clear it before any call succeeds.
-  if (tokenAssuranceLevel(bearer) !== "aal2" && (await hasTotp(user.id))) {
+  //
+  // The DEV_BYPASS_EMAIL account is exempt, as it is from the SSO-required gate
+  // (`.claude/rules/authentication-system.md`). The web bypass mints a session
+  // with `mfaVerified: true` and carries that in a cookie; the API has no
+  // cookie and can only read the token's `aal`, which the bypass leaves at
+  // `aal1` — so without this a developer whose local test user happens to have
+  // a TOTP factor could never call the API at all. Gated on IS_LOCAL_DEV, the
+  // same flag `signInWithBypassEmail` itself refuses to run without, so it
+  // cannot exist in a deployed environment.
+  const isLocalBypassUser =
+    IS_LOCAL_DEV &&
+    !!process.env.DEV_BYPASS_EMAIL &&
+    user.email?.toLowerCase() ===
+      process.env.DEV_BYPASS_EMAIL.trim().toLowerCase();
+
+  if (
+    !isLocalBypassUser &&
+    tokenAssuranceLevel(bearer) !== "aal2" &&
+    (await hasTotp(user.id))
+  ) {
     throw new ApiError(401, "mfa_required", "Enter your two-factor code");
   }
 

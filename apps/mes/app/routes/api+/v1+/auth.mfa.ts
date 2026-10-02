@@ -11,7 +11,7 @@ import { getTotpFactors, verifyTotpChallenge } from "@carbon/auth/mfa.server";
 import { authMfaRequest } from "@carbon/mes-core";
 import { getClientIp } from "@carbon/utils";
 import { authIpRatelimit, signInLockout } from "./lib/ratelimit.server";
-import { apiRoute } from "./lib/route.server";
+import { apiRoute, methodNotAllowed } from "./lib/route.server";
 
 /**
  * Clear the TOTP challenge and exchange the aal1 tokens for aal2 ones.
@@ -76,3 +76,6 @@ export const action = apiRoute(
     throw new ApiError(401, "invalid_code", "That code did not work");
   }
 );
+
+/** A GET here is a client bug; answer 405 rather than React Router's 400. */
+export const loader = methodNotAllowed();

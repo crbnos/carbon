@@ -249,6 +249,38 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `crates/planner/src` (`FASTENER_NAME_RE`, `_classify_fasteners`, `removal_priority`, `_reselect_base`); future classification heuristics.
 
+## A cookie carries `mfaVerified`; a Bearer token only carries `aal`
+
+**Context:** The MES mobile API (`apps/mes/app/routes/api+/v1+/`,
+`requireApiUser` in `@carbon/auth`) mirrors the web's MFA bounce: refuse a token
+that is not `aal2` when the user has a verified TOTP factor. The first live
+call with a `DEV_BYPASS_EMAIL` session answered `401 mfa_required` and no
+endpoint was reachable at all.
+
+**Problem:** The web and the API learn "this session already satisfied MFA" from
+different places. `signInWithBypassEmail` mints an `AuthSession` with
+`mfaVerified: true` and the web carries that bit in the signed `carbon` cookie,
+so `requireAuthSession` never challenges it. A native client has no cookie — the
+only thing it presents is the Supabase access token, whose `aal` claim the
+bypass leaves at `aal1` because no TOTP challenge ever ran. So any API that
+infers MFA from the token alone locks out the dev bypass the moment the local
+test user happens to have enrolled a factor, which is invisible until someone
+runs a real request (typecheck and unit tests both pass).
+
+**Rule:** When porting a cookie-session gate to a Bearer-token API, list what
+the cookie carried that the token does not — `mfaVerified`, `console`,
+`companyId`, `lastActiveAt` are all session-only — and decide each one
+explicitly. For the bypass specifically, exempt it in the token path too, gated
+on `IS_LOCAL_DEV` (the same flag `signInWithBypassEmail` itself refuses to run
+without, so the exemption cannot exist in a deployed environment), exactly as
+`DEV_BYPASS_EMAIL` is already exempt from the SSO-required gate. Pin it with a
+test that asserts the exemption does NOT apply when `IS_LOCAL_DEV` is false.
+
+**Applies to:** `packages/auth/src/services/api-user.server.ts`; any future
+Bearer-token surface that reimplements a `requireAuthSession` check; the
+`consolePinMaxAgeMs` / idle-lock rules, which are cookie-based for the same
+reason.
+
 ## Client-side entity caches must be company-keyed in a multi-tenant app
 
 **Context:** A prod company export failed its closure guard: a `salesOrder` (and its `opportunity`) in one company referenced another company's customer. Root cause chain: `RealtimeDataProvider` (ERP + MES) cached the customer/item/supplier/people lists in IndexedDB under **global** keys (`"customers"`), and company switching is a client-side navigation — so after a switch, the previous company's cached list could hydrate the pickers before the properly-scoped server fetch landed. Nothing downstream caught the bad pick: zod validated `customerId` as a bare string, services inserted it blindly, RLS only checks the row's own `companyId`, and the FK was single-column (`customerId → customer(id)`).

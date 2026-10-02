@@ -9,7 +9,7 @@ import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { authVerifyRequest } from "@carbon/mes-core";
 import { getClientIp } from "@carbon/utils";
 import { authIpRatelimit, signInLockout } from "./lib/ratelimit.server";
-import { apiRoute } from "./lib/route.server";
+import { apiRoute, methodNotAllowed } from "./lib/route.server";
 
 /**
  * Exchange the emailed 6-digit code for a session.
@@ -111,3 +111,6 @@ export const action = apiRoute(
     };
   }
 );
+
+/** A GET here is a client bug; answer 405 rather than React Router's 400. */
+export const loader = methodNotAllowed();
