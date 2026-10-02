@@ -4,10 +4,16 @@
 
 import type {
   FinishBody,
+  IssueMaterialBody,
+  IssueTrackedBody,
+  PrintBody,
+  QualityIssueBody,
   QuantityBody,
   ReworkBody,
   ScrapBody,
-  StartEventBody
+  StartEventBody,
+  StepRecordBody,
+  UnconsumeBody
 } from "@carbon/mes-core/models";
 import { useMutation } from "@tanstack/react-query";
 import { newIdempotencyKey } from "~/lib/api/client";
@@ -152,5 +158,150 @@ export function useFinishOperation(operationId: string) {
         }
       ),
     onSuccess: invalidate
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Materials, instructions, notes
+// ---------------------------------------------------------------------------
+
+export function useIssueMaterial(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    mutationFn: async (body: Omit<IssueMaterialBody, "jobOperationId">) =>
+      api.request<{ ok: true }>(`/operations/${operationId}/materials/issue`, {
+        method: "POST",
+        body: { ...body, jobOperationId: operationId },
+        idempotencyKey: newIdempotencyKey()
+      }),
+    onSuccess: invalidate
+  });
+}
+
+export function useIssueTracked(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    mutationFn: async (body: Omit<IssueTrackedBody, "jobOperationId">) =>
+      api.request<{ ok: true }>(
+        `/operations/${operationId}/materials/issue-tracked`,
+        {
+          method: "POST",
+          body: { ...body, jobOperationId: operationId },
+          idempotencyKey: newIdempotencyKey()
+        }
+      ),
+    onSuccess: invalidate
+  });
+}
+
+export function useUnconsume(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    mutationFn: async (body: Omit<UnconsumeBody, "jobOperationId">) =>
+      api.request<{ ok: true }>(
+        `/operations/${operationId}/materials/unconsume`,
+        {
+          method: "POST",
+          body: { ...body, jobOperationId: operationId },
+          idempotencyKey: newIdempotencyKey()
+        }
+      ),
+    onSuccess: invalidate
+  });
+}
+
+export function useRecordStep(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    mutationFn: async (body: StepRecordBody) =>
+      api.request<{ ok: true; id?: string }>(
+        `/operations/${operationId}/step-records`,
+        {
+          method: "POST",
+          body,
+          idempotencyKey: newIdempotencyKey()
+        }
+      ),
+    onSuccess: invalidate
+  });
+}
+
+export function useDeleteStepRecord(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    // A POST, not a DELETE, matching the web route it mirrors — so the
+    // idempotency window applies and an operator on a dropped connection
+    // cannot delete a second record by retrying.
+    mutationFn: async (recordId: string) =>
+      api.request<{ ok: true }>(`/step-records/${recordId}/delete`, {
+        method: "POST",
+        idempotencyKey: newIdempotencyKey()
+      }),
+    onSuccess: invalidate
+  });
+}
+
+export function useAddNote(operationId: string) {
+  const { api } = useAuth();
+
+  return useMutation({
+    mutationFn: async (note: string) =>
+      api.request<{ ok: true; id?: string }>(
+        `/operations/${operationId}/notes`,
+        {
+          method: "POST",
+          body: { note },
+          idempotencyKey: newIdempotencyKey()
+        }
+      )
+  });
+}
+
+export function useRaiseQualityIssue(operationId: string) {
+  const { api } = useAuth();
+  const invalidate = useInvalidateOperation(operationId);
+
+  return useMutation({
+    mutationFn: async (body: Omit<QualityIssueBody, "jobOperationId">) =>
+      api.request<{ ok: true; id?: string; readableId?: string }>(
+        "/quality-issues",
+        {
+          method: "POST",
+          body: { ...body, jobOperationId: operationId },
+          idempotencyKey: newIdempotencyKey()
+        }
+      ),
+    onSuccess: invalidate
+  });
+}
+
+/**
+ * Queue a label print.
+ *
+ * Nothing is printed from the device: mobile operating systems make raw
+ * network and Bluetooth printing hard, and the server already knows the
+ * printers. This reaches the same printers through the same Inngest event the
+ * web's print button fires.
+ */
+export function usePrintLabel() {
+  const { api } = useAuth();
+
+  return useMutation({
+    mutationFn: async (body: PrintBody) =>
+      api.request<{ ok: true }>("/print", {
+        method: "POST",
+        body,
+        idempotencyKey: newIdempotencyKey()
+      })
   });
 }

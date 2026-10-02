@@ -17,20 +17,27 @@ import { Button, ErrorNote, Screen, Skeleton } from "~/components/ui";
 import {
   commandMessage,
   useEndEvent,
+  usePrintLabel,
   useStartEvent
 } from "~/features/operations/commands";
 import { DetailsTab } from "~/features/operations/DetailsTab";
 import { FinishDialog } from "~/features/operations/FinishDialog";
+import { InstructionsTab } from "~/features/operations/InstructionsTab";
 import {
   availableWorkTypes,
   eventIdsFrom,
   openEvents as findOpenEvents,
   type OpenEvents,
+  parseMaterials,
+  parseSteps,
   WORK_TYPES,
   type WorkType
 } from "~/features/operations/logic";
+import { MaterialsTab } from "~/features/operations/MaterialsTab";
 import { MoreActionsSheet } from "~/features/operations/MoreActionsSheet";
+import { NotesTab } from "~/features/operations/NotesTab";
 import { OperationHeader } from "~/features/operations/OperationHeader";
+import { QualityIssueSheet } from "~/features/operations/QualityIssueSheet";
 import {
   QuantitySheet,
   ReworkSheet,
@@ -75,9 +82,11 @@ export default function OperationDetail() {
   const scrapSheet = useRef<SheetHandle>(null);
   const reworkSheet = useRef<SheetHandle>(null);
   const moreSheet = useRef<SheetHandle>(null);
+  const qualitySheet = useRef<SheetHandle>(null);
 
   const start = useStartEvent(operationId);
   const end = useEndEvent(operationId);
+  const print = usePrintLabel();
 
   const types = useMemo(
     () =>
@@ -159,26 +168,25 @@ export default function OperationDetail() {
     );
   }
 
+  // The counts are on the tab so an operator can see there are six materials
+  // without opening the tab to find out — and an empty tab is distinguishable
+  // from one they have not looked at yet.
+  const materialCount = parseMaterials(detail.materials).materials.length;
+  const stepCount = parseSteps(detail.procedure).steps.length;
+
   const tabs: TabDef<Tab>[] = [
     { value: "details", label: t`Details` },
     {
       value: "instructions",
       label: t`Instructions`,
-      disabled: true,
-      disabledReason: t`Work instructions arrive in the next release. Use Carbon MES in a browser for them.`
+      badge: stepCount ? String(stepCount) : undefined
     },
     {
       value: "materials",
       label: t`Materials`,
-      disabled: true,
-      disabledReason: t`Issuing material arrives in the next release. Use Carbon MES in a browser for it.`
+      badge: materialCount ? String(materialCount) : undefined
     },
-    {
-      value: "notes",
-      label: t`Notes`,
-      disabled: true,
-      disabledReason: t`Notes arrive in the next release. Use Carbon MES in a browser for them.`
-    }
+    { value: "notes", label: t`Notes` }
   ];
 
   const eventIds = eventIdsFrom(open);
@@ -197,6 +205,15 @@ export default function OperationDetail() {
           <TabBar tabs={tabs} value={tab} onChange={setTab} />
           <TabPanel active={tab === "details"}>
             <DetailsTab detail={detail} openEvents={open} />
+          </TabPanel>
+          <TabPanel active={tab === "instructions"}>
+            <InstructionsTab detail={detail} />
+          </TabPanel>
+          <TabPanel active={tab === "materials"}>
+            <MaterialsTab detail={detail} />
+          </TabPanel>
+          <TabPanel active={tab === "notes"}>
+            <NotesTab detail={detail} />
           </TabPanel>
         </Screen>
       </View>
@@ -255,6 +272,28 @@ export default function OperationDetail() {
       <MoreActionsSheet
         ref={moreSheet}
         disabledReason={blockedReason}
+        printing={print.isPending}
+        onQualityIssue={() => {
+          moreSheet.current?.close();
+          qualitySheet.current?.open();
+        }}
+        onPrint={async () => {
+          moreSheet.current?.close();
+          try {
+            // "Operation" + the operation id is the product-label pair in
+            // `@carbon/printing`'s own document registry. Nothing prints from
+            // the device: the server already knows the printers, and mobile
+            // operating systems make raw network printing hard.
+            await print.mutateAsync({
+              sourceDocument: "Operation",
+              sourceDocumentId: operationId,
+              workCenterId: detail.operation.workCenterId ?? undefined
+            });
+            toast.success(t`Sent to the printer`);
+          } catch (error) {
+            toast.error(commandMessage(error, t`Could not print that label`));
+          }
+        }}
         onScrap={() => {
           moreSheet.current?.close();
           scrapSheet.current?.open();
@@ -267,6 +306,11 @@ export default function OperationDetail() {
           moreSheet.current?.close();
           setFinishing(true);
         }}
+      />
+      <QualityIssueSheet
+        ref={qualitySheet}
+        detail={detail}
+        onClose={() => qualitySheet.current?.close()}
       />
       <FinishDialog
         open={finishing}

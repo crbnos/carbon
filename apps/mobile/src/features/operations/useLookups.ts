@@ -82,3 +82,39 @@ export function useReworkTargets(operationId: string, enabled: boolean) {
     }
   });
 }
+
+export type QualityIssueType = { id: string; name: string };
+
+/**
+ * Non-conformance types, for the quality-issue sheet.
+ *
+ * `nonConformanceTypeId` is optional in the request body, so an issue can be
+ * raised without one — but an untyped non-conformance is one a quality manager
+ * has to go back and classify, so the picker is offered rather than skipped.
+ * Note `companyId` is nullable on this table: the global rows are shared, so
+ * the filter matches this company OR no company at all.
+ */
+export function useQualityIssueTypes(enabled: boolean) {
+  const supabase = useSupabase();
+  const { companyId, instanceId } = useAuth();
+
+  return useQuery({
+    enabled: enabled && Boolean(supabase && companyId),
+    queryKey: [
+      "quality-issue-types",
+      instanceId ?? "unknown",
+      companyId ?? ""
+    ] as const,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<QualityIssueType[]> => {
+      if (!supabase || !companyId) return [];
+      const { data, error } = await supabase
+        .from("nonConformanceType")
+        .select("id, name")
+        .or(`companyId.eq.${companyId},companyId.is.null`)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as QualityIssueType[];
+    }
+  });
+}
