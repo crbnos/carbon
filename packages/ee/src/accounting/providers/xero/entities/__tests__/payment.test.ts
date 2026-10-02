@@ -2,6 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+// The syncer loads this lazily when it posts a payment. Loaded here so that cost
+// lands at import time, not inside the first test's timeout.
+import "@carbon/server-functions";
 import { describe, expect, it, vi } from "vitest";
 import type { NormalizedPayment } from "../../../../core/payment-application";
 import { SyncFactory } from "../../../../core/sync";
