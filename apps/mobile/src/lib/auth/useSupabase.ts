@@ -20,11 +20,16 @@ import { getSupabase } from "./supabase";
  * skipped.
  */
 export function useSupabase() {
-  const { me } = useAuth();
-  const instanceId = me?.instance.name ?? null;
+  const { me, instanceId } = useAuth();
 
   return useMemo(() => {
     if (!me || !instanceId) return null;
+    // `instanceId` — the linked instance's local uuid — and NOT
+    // `me.instance.name`. `getSupabase` memoizes one client per
+    // `(instanceId, url)` and replaces it when either changes, so a caller
+    // passing a different id would build a fresh, session-less client and
+    // throw away the session `AuthProvider` set. It is also the id the
+    // provider's own handoff uses, and the only one that is unique.
     return getSupabase(instanceId, me.instance);
   }, [me, instanceId]);
 }

@@ -26,9 +26,11 @@ export function useOperationQuery(
   operationId: string,
   trackedEntityId?: string | null
 ) {
-  const { api, companyId, me } = useAuth();
-  const instanceId = me?.instance.name ?? "unknown";
-  const scope = { instanceId, companyId: companyId ?? "" };
+  const { api, companyId, instanceId } = useAuth();
+  const scope = {
+    instanceId: instanceId ?? "unknown",
+    companyId: companyId ?? ""
+  };
 
   return useQuery({
     enabled: Boolean(companyId && operationId),
@@ -60,20 +62,20 @@ export function useOperationQuery(
  */
 export function useInvalidateOperation(operationId: string) {
   const queryClient = useQueryClient();
-  const { companyId, me } = useAuth();
-  const instanceId = me?.instance.name ?? "unknown";
+  const { companyId, instanceId } = useAuth();
+  const instance = instanceId ?? "unknown";
   const company = companyId ?? "";
 
   // The scope object is built INSIDE the callback: as a dependency it would be
   // a new literal on every render, so the callback identity would change every
   // render and every mutation holding it would resubscribe.
   return useCallback(async () => {
-    const scope = { instanceId, companyId: company };
+    const scope = { instanceId: instance, companyId: company };
     await Promise.all([
       queryClient.invalidateQueries({
         queryKey: keys.operation(scope, operationId)
       }),
-      queryClient.invalidateQueries({ queryKey: ["operations", instanceId] })
+      queryClient.invalidateQueries({ queryKey: ["operations", instance] })
     ]);
-  }, [queryClient, instanceId, company, operationId]);
+  }, [queryClient, instance, company, operationId]);
 }

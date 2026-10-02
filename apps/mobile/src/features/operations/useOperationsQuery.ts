@@ -17,13 +17,12 @@ import { keys } from "~/lib/query/keys";
  * time would show an operator a timer somebody else already stopped.
  */
 export function useOperationsQuery(workCenterIds: string[] = []) {
-  const { api, companyId, locationId, me } = useAuth();
-  const instanceId = me?.instance.name ?? "unknown";
+  const { api, companyId, locationId, instanceId } = useAuth();
 
   return useQuery({
     enabled: Boolean(companyId && locationId),
     queryKey: keys.operations(
-      { instanceId, companyId: companyId ?? "" },
+      { instanceId: instanceId ?? "unknown", companyId: companyId ?? "" },
       locationId ?? "",
       workCenterIds
     ),

@@ -26,6 +26,7 @@ import { type ApiClient, createApiClient } from "~/lib/api/client";
 import { ApiClientError } from "~/lib/api/errors";
 import { useInstances } from "~/lib/instances/InstanceProvider";
 import { clearSession, loadSession, saveSession } from "./session";
+import { getSupabase } from "./supabase";
 
 /**
  * Sign-in runs entirely through the MES server, never straight to Supabase
@@ -48,6 +49,18 @@ export type AuthState =
 type AuthContextValue = {
   state: AuthState;
   api: ApiClient;
+  /**
+   * The linked instance's LOCAL id — the uuid `addInstance` generated, not
+   * `me.instance.name`.
+   *
+   * Every piece of per-instance state keys off this: the stored session, the
+   * supabase client's own session store, every query key, the outbox. It has to
+   * be the local uuid because `me.instance.name` is a server-chosen DISPLAY
+   * name and is not unique — two linked Carbons may both answer "Carbon", and
+   * then a cache keyed by it would serve one server's rows for the other. That
+   * is the same hazard `keys.ts` keys by company for, one level up.
+   */
+  instanceId: string | null;
   me: MeResponse | null;
   email: string | null;
   /** Shown on every sign-in screen so a bad QR cannot hide the host. */
@@ -179,10 +192,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [instanceId, instancesLoading]);
 
+  // Hand the session to supabase-js.
+  //
+  // The direct PostgREST reads — scrap reasons, a scanned tracked entity, an
+  // item by readable id — go through this client under RLS as the signed-in
+  // user. Without a session it is ANONYMOUS, and an anonymous read of an
+  // RLS-gated table returns zero rows rather than an error: the scrap sheet
+  // would show an empty reason list and a scanned label would read as "nothing
+  // matches". A silent empty result is the worst shape that failure could take,
+  // so this is the one place the handoff happens.
+  //
+  // It keys on `me` because `me` is the state that is set immediately after the
+  // tokens are, on every path that produces them (restore, code verify, MFA,
+  // password) — the tokens themselves are refs an effect cannot observe.
+  //
+  // Note that this client carries `autoRefreshToken`, so from here it maintains
+  // its OWN copy of the session. That is deliberate: the API client does not
+  // refresh (`refreshSession` returns null), so letting supabase-js keep its
+  // socket and reads alive is strictly better than both copies expiring.
+  useEffect(() => {
+    if (!me || !instanceId) return;
+    const access_token = accessToken.current;
+    const refresh_token = refreshToken.current;
+    if (!access_token || !refresh_token) return;
+
+    getSupabase(instanceId, me.instance)
+      .auth.setSession({ access_token, refresh_token })
+      .catch(() => {
+        // A rejected handoff leaves the client anonymous, which the reads that
+        // use it already treat as "nothing found". Nothing here can recover it,
+        // and throwing would take down a screen that is otherwise working.
+      });
+  }, [me, instanceId]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
       api,
+      instanceId,
       me,
       email,
       serverUrl,
@@ -269,7 +316,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       reloadMe: loadMe,
 
       async signOut() {
-        if (instanceId) await clearSession(instanceId);
+        if (instanceId) {
+          await clearSession(instanceId);
+          // `scope: "local"` on purpose: this clears the client's stored
+          // session without asking the server to revoke the token, which the
+          // app's own /api/v1 session lifecycle owns.
+          if (me) {
+            await getSupabase(instanceId, me.instance)
+              .auth.signOut({ scope: "local" })
+              .catch(() => {
+                // The app's own session is already cleared above, which is
+                // what gates every screen. A client that failed to forget its
+                // copy must not keep the operator signed in on screen.
+              });
+          }
+        }
         accessToken.current = null;
         refreshToken.current = null;
         operatorToken.current = null;

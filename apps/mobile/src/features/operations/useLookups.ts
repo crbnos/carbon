@@ -26,12 +26,14 @@ export type ScrapReason = { id: string; name: string };
 
 export function useScrapReasons(enabled: boolean) {
   const supabase = useSupabase();
-  const { companyId, me } = useAuth();
-  const instanceId = me?.instance.name ?? "unknown";
+  const { companyId, instanceId } = useAuth();
 
   return useQuery({
     enabled: enabled && Boolean(supabase && companyId),
-    queryKey: keys.scrapReasons({ instanceId, companyId: companyId ?? "" }),
+    queryKey: keys.scrapReasons({
+      instanceId: instanceId ?? "unknown",
+      companyId: companyId ?? ""
+    }),
     // Reasons are configuration, not shop-floor state: a five-minute cache
     // keeps reopening the sheet instant without going stale in a shift.
     staleTime: 5 * 60_000,
@@ -60,13 +62,12 @@ export type ReworkTarget = {
 };
 
 export function useReworkTargets(operationId: string, enabled: boolean) {
-  const { api, companyId, me } = useAuth();
-  const instanceId = me?.instance.name ?? "unknown";
+  const { api, companyId, instanceId } = useAuth();
 
   return useQuery({
     enabled: enabled && Boolean(companyId && operationId),
     queryKey: keys.reworkTargets(
-      { instanceId, companyId: companyId ?? "" },
+      { instanceId: instanceId ?? "unknown", companyId: companyId ?? "" },
       operationId
     ),
     queryFn: async () => {
