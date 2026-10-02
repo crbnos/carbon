@@ -35,88 +35,62 @@ export const recalculate = defineServerFn({
 
     logger.info({ type, id, companyId, userId });
 
-    const client = await ctx.supabase();
-
+    // Every read here goes over the direct connection: a PostgREST call costs
+    // roughly ten times a statement, and this runs on every job save.
     switch (type) {
       case "jobMakeMethodRequirements": {
         const jobMakeMethodId = id;
 
-        const [jobMakeMethod] = await Promise.all([
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("id", jobMakeMethodId)
-            .eq("companyId", companyId)
-            .maybeSingle()
-        ]);
+        const jobMakeMethod = await db
+          .selectFrom("jobMakeMethod")
+          .select(["id", "jobId", "parentMaterialId"])
+          .where("id", "=", jobMakeMethodId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
 
-        if (jobMakeMethod.error) {
-          throw new Error(
-            `Failed to get job makeMethod: ${jobMakeMethod.error.message}`
-          );
-        }
-        // Service-role client: a make method outside companyId is a 404.
-        if (!jobMakeMethod.data) {
+        // A make method outside companyId is a 404.
+        if (!jobMakeMethod) {
           throw new NotFoundError("Job make method not found");
         }
 
         let parentQuantity = 1;
-        if (jobMakeMethod.data.parentMaterialId) {
-          const jobMaterial = await client
-            .from("jobMaterial")
-            .select("*")
-            .eq("id", jobMakeMethod.data.parentMaterialId)
-            .single();
-          if (jobMaterial.data?.methodType !== "Make to Order") {
-            return { success: true };
-          }
+        if (jobMakeMethod.parentMaterialId) {
+          const jobMaterial = await db
+            .selectFrom("jobMaterial")
+            .select(["methodType", "estimatedQuantity", "quantity"])
+            .where("id", "=", jobMakeMethod.parentMaterialId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
 
-          if (jobMaterial.error) {
-            throw new Error(
-              `Failed to get job material: ${jobMaterial.error.message}`
-            );
-          }
-
-          if (!jobMaterial.data) {
-            throw new NotFoundError(
-              `Job material not found for id: ${jobMakeMethod.data.parentMaterialId}`
-            );
-          }
-
-          if (jobMaterial.data.methodType !== "Make to Order") {
+          if (jobMaterial?.methodType !== "Make to Order") {
             logger.info(
-              `Job material ${jobMakeMethod.data.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
+              `Job material ${jobMakeMethod.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
             );
             return { success: true };
           }
 
           parentQuantity =
-            jobMaterial.data.estimatedQuantity ?? jobMaterial.data.quantity;
+            jobMaterial.estimatedQuantity ?? jobMaterial.quantity;
         } else {
-          const job = await client
-            .from("job")
-            .select("*")
-            .eq("id", jobMakeMethod.data.jobId)
-            .single();
-          if (job.error) {
-            throw new Error(`Failed to get job: ${job.error.message}`);
+          const job = await db
+            .selectFrom("job")
+            .select(["quantity"])
+            .where("id", "=", jobMakeMethod.jobId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!job) {
+            throw new Error("Failed to get job");
           }
           // Use job.quantity as the root's target quantity (not productionQuantity)
           // The item's scrap percentage will be applied within updateJobQuantities
-          parentQuantity = job.data.quantity ?? 1;
+          parentQuantity = job.quantity ?? 1;
         }
 
         const jobMethodTrees = await getJobMethodTree(
-          client,
-          jobMakeMethod.data.id,
-          jobMakeMethod.data.parentMaterialId
+          db,
+          jobMakeMethod.id,
+          jobMakeMethod.parentMaterialId
         );
-
-        if (jobMethodTrees.error) {
-          throw new Error(
-            `Failed to get method tree: ${jobMethodTrees.error.message}`
-          );
-        }
 
         const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
         if (!jobMethodTree) {
@@ -131,40 +105,34 @@ export const recalculate = defineServerFn({
       }
       case "jobRequirements": {
         const jobId = id;
-        const [job, jobMakeMethod] = await Promise.all([
-          client
-            .from("job")
-            .select("*")
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-            .maybeSingle(),
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("jobId", jobId)
-            .eq("companyId", companyId)
-            .is("parentMaterialId", null)
-            .single()
+        const [job, jobMakeMethods] = await Promise.all([
+          db
+            .selectFrom("job")
+            .select(["quantity"])
+            .where("id", "=", jobId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+          db
+            .selectFrom("jobMakeMethod")
+            .select(["id"])
+            .where("jobId", "=", jobId)
+            .where("companyId", "=", companyId)
+            .where("parentMaterialId", "is", null)
+            .execute()
         ]);
 
-        // Service-role client: a job outside companyId is a 404.
-        if (!job.data) throw new NotFoundError("Job not found");
+        // A job outside companyId is a 404.
+        if (!job) throw new NotFoundError("Job not found");
 
-        if (jobMakeMethod.error) {
+        // Exactly one root make method, as `.single()` required before.
+        const jobMakeMethod = jobMakeMethods[0];
+        if (!jobMakeMethod || jobMakeMethods.length > 1) {
           throw new Error(
-            `Failed to get job make method: ${jobMakeMethod.error.message}`
+            `Failed to get job make method: found ${jobMakeMethods.length}`
           );
         }
 
-        const [jobMethodTrees] = await Promise.all([
-          getJobMethodTree(client, jobMakeMethod.data.id)
-        ]);
-
-        if (jobMethodTrees.error) {
-          throw new Error(
-            `Failed to get method tree: ${jobMethodTrees.error.message}`
-          );
-        }
+        const jobMethodTrees = await getJobMethodTree(db, jobMakeMethod.id);
 
         const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
         if (!jobMethodTree) {
@@ -174,11 +142,7 @@ export const recalculate = defineServerFn({
         await db.transaction().execute(async (trx) => {
           // Use job.quantity as the root's target quantity (not productionQuantity)
           // The item's scrap percentage will be applied within updateJobQuantities
-          await updateJobQuantities(
-            trx,
-            jobMethodTree,
-            job.data?.quantity ?? 1
-          );
+          await updateJobQuantities(trx, jobMethodTree, job.quantity ?? 1);
         });
 
         break;

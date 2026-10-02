@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { round } from "./precision.ts";
 import type { Database } from "./types.ts";
+import { type AnyPostgresClient, isKysely } from "./utils.ts";
 
 export type JobMethod = NonNullable<
   Awaited<ReturnType<typeof getJobMethodTreeArray>>["data"]
@@ -16,11 +18,26 @@ export type JobMethodTreeItem = {
   children: JobMethodTreeItem[];
 };
 
+/**
+ * A job's method tree. Given a Kysely handle it reads over the direct
+ * connection (and throws on failure, as Kysely does); given a Supabase client
+ * it goes through PostgREST and returns the error.
+ */
 export async function getJobMethodTree(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   methodId: string,
   parentMaterialId: string | null = null
 ) {
+  if (isKysely(client)) {
+    const { rows } = await sql<JobMethod>`
+      SELECT * FROM get_job_methods_by_method_id(${methodId})
+    `.execute(client);
+    return {
+      data: getJobMethodTreeArrayToTree(rows, parentMaterialId),
+      error: null
+    };
+  }
+
   const items = await getJobMethodTreeArray(client, methodId);
   if (items.error) return items;
 
