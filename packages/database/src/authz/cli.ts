@@ -94,7 +94,15 @@ async function main() {
           .map((t) => `  ${t}`)
           .join("\n")}`
       );
-      process.exit(1);
+      // Only `check` fails on this. `sync` reports it and carries on, because
+      // its caller is `crbn up`: a developer's local database accumulates
+      // tables from every branch they have ever checked out, and none of those
+      // have a rule on the branch they are on now. Failing there aborted the
+      // whole dev startup — AFTER the containers, the migrations and the type
+      // regen had all succeeded — over tables the message itself says were
+      // left alone. `check` is the gate that still catches a table shipped
+      // without a rule.
+      if (command === "check") process.exit(1);
     }
     // 3, not 1: CI tells "the database differs from the manifest" apart from a failure.
     if (
