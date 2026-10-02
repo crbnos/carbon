@@ -580,3 +580,109 @@ export const timecardScreen = z
   })
   .passthrough();
 export type TimecardScreen = z.infer<typeof timecardScreen>;
+
+// ---------------------------------------------------------------------------
+// Operation detail: materials, instructions, notes
+// ---------------------------------------------------------------------------
+
+/**
+ * One line of the operation's bill of material, from the
+ * `jobMaterialWithMakeMethodId` view the web reads.
+ *
+ * Nearly every column is nullable because it IS a view, not a table — the
+ * generated types say so, and a schema that demanded `itemReadableId` would
+ * reject a whole operation over one unnameable row.
+ */
+export const operationMaterial = z
+  .object({
+    id: z.string().nullable(),
+    itemId: z.string().nullable(),
+    itemReadableId: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    methodType: z.string().nullable().optional(),
+    /** What the job plans to consume, including its scrap allowance. */
+    estimatedQuantity: z.number().nullable().optional(),
+    quantityIssued: z.number().nullable().optional(),
+    quantityToIssue: z.number().nullable().optional(),
+    unitOfMeasureCode: z.string().nullable().optional(),
+    requiresSerialTracking: z.boolean().nullable().optional(),
+    requiresBatchTracking: z.boolean().nullable().optional(),
+    storageUnitName: z.string().nullable().optional(),
+    /** Set when a supersession swapped this line; the column holds the OTHER item. */
+    substitutedFromItemId: z.string().nullable().optional(),
+    substitutionFactor: z.number().nullable().optional(),
+    kit: z.boolean().nullable().optional()
+  })
+  .passthrough();
+export type OperationMaterial = z.infer<typeof operationMaterial>;
+
+export const procedureStepType = z.enum([
+  "Value",
+  "Measurement",
+  "Checkbox",
+  "Timestamp",
+  "Person",
+  "List",
+  "File",
+  "Task",
+  "Inspection"
+]);
+export type ProcedureStepType = z.infer<typeof procedureStepType>;
+
+/** What an operator has already recorded against a step, per unit. */
+export const operationStepRecord = z
+  .object({
+    id: z.string(),
+    jobOperationStepId: z.string(),
+    /** The unit-axis position. One record per unit per step. */
+    index: z.number(),
+    value: z.string().nullable().optional(),
+    numericValue: z.number().nullable().optional(),
+    booleanValue: z.boolean().nullable().optional(),
+    userValue: z.string().nullable().optional(),
+    createdBy: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional()
+  })
+  .passthrough();
+export type OperationStepRecord = z.infer<typeof operationStepRecord>;
+
+export const operationStep = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    /**
+     * Tiptap rich text, not a string. The app flattens it to plain text for
+     * display — there is no rich-text renderer in the native bundle, and a
+     * step whose instructions were silently blank would be worse than one
+     * shown without its formatting.
+     */
+    description: z.unknown().nullable().optional(),
+    type: procedureStepType,
+    sortOrder: z.number(),
+    required: z.boolean().nullable().optional(),
+    minValue: z.number().nullable().optional(),
+    maxValue: z.number().nullable().optional(),
+    listValues: z.array(z.string()).nullable().optional(),
+    unitOfMeasureCode: z.string().nullable().optional(),
+    jobOperationStepRecord: z.array(operationStepRecord).nullable().optional()
+  })
+  .passthrough();
+export type OperationStep = z.infer<typeof operationStep>;
+
+export const operationProcedure = z
+  .object({
+    attributes: z.array(operationStep),
+    parameters: z.array(z.unknown())
+  })
+  .passthrough();
+export type OperationProcedure = z.infer<typeof operationProcedure>;
+
+export const operationNote = z
+  .object({
+    id: z.string(),
+    note: z.string().nullable().optional(),
+    createdBy: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional()
+  })
+  .passthrough();
+export type OperationNote = z.infer<typeof operationNote>;
