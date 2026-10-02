@@ -78,7 +78,7 @@ RUN MARCH="${MARCH:-$( [ "$TARGETARCH" = arm64 ] && echo armv8.2-a || echo x86-6
     && cmake --build /draco/b --target install
 
 # ---- Rust builder ----
-FROM rust:1.90-bookworm AS build
+FROM rust:1.98-bookworm AS build
 # Eigen headers for the cxx shim; OpenBLAS/gfortran for the planner's BLAS.
 # FCL/ccd come from the static build above (no libfcl-dev/libccd-dev).
 RUN apt-get update && apt-get install -y --no-install-recommends \
