@@ -40,7 +40,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -495,9 +495,11 @@ function ShipmentLineItem({
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.readableIdWithRevision}
                 </span>
-                <span className="text-xs text-muted-foreground truncate block w-full">
-                  {item?.name}
-                </span>
+                {distinctItemText(item?.readableIdWithRevision, item?.name) && (
+                  <span className="text-xs text-muted-foreground truncate block w-full">
+                    {item?.name}
+                  </span>
+                )}
               </div>
               <div className="mt-2">
                 <Enumerable

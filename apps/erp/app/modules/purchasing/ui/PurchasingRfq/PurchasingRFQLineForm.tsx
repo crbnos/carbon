@@ -26,6 +26,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -43,6 +44,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items";
 import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
@@ -83,6 +85,7 @@ const PurchasingRFQLineForm = ({
   const isEditing = initialValues.id !== undefined;
 
   const [itemType, setItemType] = useState<ItemType>(initialValues.itemType);
+  const isService = itemType === "Service";
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
@@ -114,13 +117,19 @@ const PurchasingRFQLineForm = ({
       return;
     }
 
+    // A service is always bought and "stocked" in EA, 1:1.
+    const isServiceItem = item.data?.type === "Service";
     const newItemData = {
       ...itemData,
       itemId,
       itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
-      inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-      purchaseUom: item.data?.unitOfMeasureCode ?? "EA",
+      inventoryUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (item.data?.unitOfMeasureCode ?? "EA"),
+      purchaseUom: isServiceItem
+        ? EACH_UNIT_OF_MEASURE_CODE
+        : (item.data?.unitOfMeasureCode ?? "EA"),
       conversionFactor: 1
     };
 
@@ -166,7 +175,10 @@ const PurchasingRFQLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>{itemData?.description}</span>
+                        {distinctItemText(
+                          itemData?.itemReadableId || "RFQ Line",
+                          itemData?.description
+                        ) && <span>{itemData?.description}</span>}
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
                             {initialValues?.quantity?.join(", ")}
@@ -207,9 +219,22 @@ const PurchasingRFQLineForm = ({
                 <Hidden
                   name="inventoryUnitOfMeasureCode"
                   value={
-                    itemData?.inventoryUom || itemData?.purchaseUom || "EA"
+                    isService
+                      ? EACH_UNIT_OF_MEASURE_CODE
+                      : itemData?.inventoryUom || itemData?.purchaseUom || "EA"
                   }
                 />
+                {/* A service is always bought in EA, so no unit of measure
+                    or conversion factor is asked for. */}
+                {isService && (
+                  <>
+                    <Hidden
+                      name="purchaseUnitOfMeasureCode"
+                      value={EACH_UNIT_OF_MEASURE_CODE}
+                    />
+                    <Hidden name="conversionFactor" value={1} />
+                  </>
+                )}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                     <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
@@ -244,31 +269,35 @@ const PurchasingRFQLineForm = ({
                         value={itemData.description}
                         isReadOnly={!!itemData.itemId}
                       />
-                      <UnitOfMeasure
-                        name="purchaseUnitOfMeasureCode"
-                        label={t`Purchase Unit of Measure`}
-                        termId="item-purchasing-uom"
-                        value={itemData.purchaseUom}
-                        onChange={(newValue) =>
-                          setItemData((d) => ({
-                            ...d,
-                            purchaseUom: newValue?.value ?? "EA"
-                          }))
-                        }
-                      />
-                      <ConversionFactor
-                        name="conversionFactor"
-                        termId="conversion-factor"
-                        purchasingCode={itemData.purchaseUom}
-                        inventoryCode={itemData.inventoryUom}
-                        value={itemData.conversionFactor}
-                        onChange={(value) => {
-                          setItemData((d) => ({
-                            ...d,
-                            conversionFactor: value
-                          }));
-                        }}
-                      />
+                      {!isService && (
+                        <>
+                          <UnitOfMeasure
+                            name="purchaseUnitOfMeasureCode"
+                            label={t`Purchase Unit of Measure`}
+                            termId="item-purchasing-uom"
+                            value={itemData.purchaseUom}
+                            onChange={(newValue) =>
+                              setItemData((d) => ({
+                                ...d,
+                                purchaseUom: newValue?.value ?? "EA"
+                              }))
+                            }
+                          />
+                          <ConversionFactor
+                            name="conversionFactor"
+                            termId="conversion-factor"
+                            purchasingCode={itemData.purchaseUom}
+                            inventoryCode={itemData.inventoryUom}
+                            value={itemData.conversionFactor}
+                            onChange={(value) => {
+                              setItemData((d) => ({
+                                ...d,
+                                conversionFactor: value
+                              }));
+                            }}
+                          />
+                        </>
+                      )}
 
                       <CustomFormFields table="purchasingRfqLine" />
                     </div>

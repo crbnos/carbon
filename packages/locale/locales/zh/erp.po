@@ -6975,6 +6975,9 @@ msgstr "例如 Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
+msgid "Each is built in and can't be renamed or deleted"
+msgstr ""
+
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "每个工单保留自己的批次。车间无法更改这些。"
 
@@ -20883,9 +20886,6 @@ msgstr "使用...获取下一个原材料ID"
 
 msgid "Use ... to get the next part ID"
 msgstr "使用 ... 获取下一个零件 ID"
-
-msgid "Use ... to get the next service ID"
-msgstr "使用...获取下一个服务ID"
 
 msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"

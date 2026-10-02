@@ -41,6 +41,7 @@ import {
   type BatchRuleDimension,
   type BatchRules,
   type BatchType,
+  distinctItemText,
   formatDate,
   formatDurationMilliseconds,
   RoundingMode,
@@ -1875,9 +1876,14 @@ function CandidateTable({
               <span className="text-sm truncate">
                 {row.original.itemReadableId}
               </span>
-              <span className="text-xs text-muted-foreground truncate">
-                {row.original.itemDescription}
-              </span>
+              {distinctItemText(
+                row.original.itemReadableId,
+                row.original.itemDescription
+              ) && (
+                <span className="text-xs text-muted-foreground truncate">
+                  {row.original.itemDescription}
+                </span>
+              )}
             </VStack>
           </HStack>
         )

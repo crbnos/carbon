@@ -1548,6 +1548,14 @@ export function itemIdentity(ctx: ValidationCtx): void {
       itemIds.add(spec.readableId);
     }
   }
+  // A service is identified by its name (upsertService, the CSV import).
+  for (const spec of ctx.dataset.items.services) {
+    if (spec.readableId !== spec.name) {
+      ctx.fail(
+        `items.services "${spec.readableId}": a service's readableId must equal its name "${spec.name}"`
+      );
+    }
+  }
 }
 
 export function items(ctx: ValidationCtx): void {

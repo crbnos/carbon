@@ -39,7 +39,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -319,7 +319,9 @@ const QuoteBillOfProcess = ({
         .map((item) => ({
           id: item.id,
           label: item.name ?? item.readableIdWithRevision,
-          helper: item.name ? item.readableIdWithRevision : undefined
+          helper: item.name
+            ? distinctItemText(item.name, item.readableIdWithRevision)
+            : undefined
         })),
     [allItems, materialItemIds]
   );

@@ -18,7 +18,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
@@ -84,6 +84,7 @@ const LineItems = ({
             : line.invoiceLineType === "Fixed Asset"
               ? (line as any).assetReadableId || "Fixed Asset"
               : getItemReadableId(items, line.itemId);
+        const description = distinctItemText(itemReadableId, line.description);
         const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
         const customerSubtotal =
           (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -156,12 +157,14 @@ const LineItems = ({
                           </Link>
                         </Button>
                       </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={line.description}
-                      >
-                        {line.description}
-                      </TruncatedTooltipText>
+                      {description && (
+                        <TruncatedTooltipText
+                          className="text-muted-foreground text-sm truncate w-full"
+                          tooltip={description}
+                        >
+                          {description}
+                        </TruncatedTooltipText>
+                      )}
                     </VStack>
                     <VStack
                       spacing={2}

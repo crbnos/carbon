@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { distinctItemText } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import {
   DEFAULT_LINE_ITEMS_OPTIONS,
@@ -72,14 +73,17 @@ export function LineItemsBlock({
             <Text style={{ ...tw("text-gray-800"), ...overflow }}>
               {line.item?.readableIdWithRevision ?? ""}
             </Text>
-            {line.item?.name ? (
+            {distinctItemText(
+              line.item?.readableIdWithRevision ?? "",
+              line.item?.name
+            ) ? (
               <Text
                 style={{
                   ...tw("text-[9px] text-gray-600 mt-0.5"),
                   ...overflow
                 }}
               >
-                {line.item.name}
+                {line.item?.name}
               </Text>
             ) : null}
           </View>

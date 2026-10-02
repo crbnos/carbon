@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -133,9 +134,14 @@ const InventoryTable = memo(
               >
                 <VStack spacing={0}>
                   {row.original.readableIdWithRevision}
-                  <div className="w-full truncate text-muted-foreground text-xs">
-                    {row.original.name}
-                  </div>
+                  {distinctItemText(
+                    row.original.readableIdWithRevision,
+                    row.original.name
+                  ) && (
+                    <div className="w-full truncate text-muted-foreground text-xs">
+                      {row.original.name}
+                    </div>
+                  )}
                 </VStack>
               </Hyperlink>
             </HStack>

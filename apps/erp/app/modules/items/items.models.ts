@@ -960,14 +960,29 @@ export const revisionValidator = z
     { message: "Revision or copy from is required" }
   );
 
+export const SERVICE_NAME_MAX_LENGTH = 100;
+
+/**
+ * The built-in "Each" unit of measure. Every company has it and the database
+ * refuses to rename, deactivate or delete it; a service is always counted in it.
+ */
+export const EACH_UNIT_OF_MEASURE_CODE = "EA";
+
 export const serviceValidator = applyStorageAndShelfLifeRefines(
   itemValidator.merge(
     z.object({
-      id: z.string().min(1, { message: "Service ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      unitOfMeasureCode: z
+      // A service is identified by its name: it is the readable id, so
+      // neither an id nor a revision is asked for. `id` is only the key of the
+      // service to update.
+      id: zfd.text(z.string().max(255).optional()),
+      name: z
         .string()
-        .min(1, { message: "Unit of Measure is required" }),
+        .trim()
+        .min(1, { message: "Name is required" })
+        .max(SERVICE_NAME_MAX_LENGTH),
+      revision: zfd.text(z.string().optional()),
+      // Ignored: a service is always counted in Each (EA).
+      unitOfMeasureCode: zfd.text(z.string().optional()),
       replenishmentSystem: z.enum(serviceReplenishmentSystems, {
         error: "Replenishment system is required"
       }),

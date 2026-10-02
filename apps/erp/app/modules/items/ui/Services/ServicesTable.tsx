@@ -26,7 +26,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-
+import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -114,7 +114,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
     const defaultColumns: ColumnDef<ServiceListItem>[] = [
       {
         accessorKey: "id",
-        header: t`Service ID`,
+        header: t`Service`,
         cell: ({ row }) => (
           <HStack className="py-1 min-w-[200px] truncate">
             <ItemThumbnail
@@ -125,9 +125,14 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
             <Hyperlink to={path.to.serviceDetails(row.original.id!)}>
               <VStack spacing={0}>
                 {row.original.readableIdWithRevision}
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
+                {distinctItemText(
+                  row.original.readableIdWithRevision,
+                  row.original.name
+                ) && (
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                )}
               </VStack>
             </Hyperlink>
           </HStack>

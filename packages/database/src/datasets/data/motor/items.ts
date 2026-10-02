@@ -26,7 +26,7 @@ import { motorAssembly } from "./assembly.ts";
 //   MAG- / BRG- / ENC- / TRM-BLK / FAN- / SEAL- / FST- / NPL- = Buy Parts
 //   MAT- = Materials
 //   TL-  = Tools
-//   SVC- = Services
+//   Services are keyed by name, not a prefix
 //   CN-  = Consumables
 // ---------------------------------------------------------------------------
 
@@ -255,9 +255,11 @@ export const TOOLS: ItemSpec[] = [
 
 export const SERVICES: ItemSpec[] = [
   {
-    readableId: "SVC-DYNO-CERT",
-    name: "Dynamometer Certification (external)",
+    // A service's readableId is its name.
+    readableId: "Dynamometer Certification",
+    name: "Dynamometer Certification",
     type: "Service",
+    thumbnail: "SVC-DYNO-CERT",
     replenishment: "Buy",
     standardCost: 1450,
     leadTime: 21

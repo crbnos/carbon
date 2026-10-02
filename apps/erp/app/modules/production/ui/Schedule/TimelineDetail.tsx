@@ -4,6 +4,7 @@
 
 import { Button, cn, Heading, IconButton, Subheading } from "@carbon/react";
 import {
+  distinctItemText,
   formatDateTimeInZone,
   formatDurationMilliseconds,
   formatRelativeTime
@@ -391,7 +392,10 @@ export function TimelineDetail({
                 value={
                   <span className="flex flex-col items-end">
                     <span>{detail.itemReadableId}</span>
-                    {detail.itemName && (
+                    {distinctItemText(
+                      detail.itemReadableId,
+                      detail.itemName
+                    ) && (
                       <span className="text-xs font-normal text-muted-foreground">
                         {detail.itemName}
                       </span>

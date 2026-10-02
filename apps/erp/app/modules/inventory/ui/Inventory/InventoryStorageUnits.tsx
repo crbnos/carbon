@@ -257,9 +257,11 @@ const InventoryStorageUnits = ({
     const params = new URLSearchParams({
       itemId: pickMethod.itemId,
       trackedEntityId: item.trackedEntityId,
-      locationId,
-      storageUnitId: item.storageUnitId
+      locationId
     });
+    // A unit in no bin has a null storageUnitId; URLSearchParams would send it
+    // as the string "null", which then fails the itemLedger bin FK.
+    if (item.storageUnitId) params.set("storageUnitId", item.storageUnitId);
     return `${path.to.fixedAssetCapitalize}?${params}`;
   };
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { distinctItemText } from "@carbon/utils";
 
 export function getLineDescription(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
@@ -29,7 +30,8 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
-      return line?.description ?? "";
+      // A service's readable id is its name — don't print it twice.
+      return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }
 }
 

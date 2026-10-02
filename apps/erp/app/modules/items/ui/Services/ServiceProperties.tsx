@@ -35,7 +35,10 @@ import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { serviceReplenishmentSystems } from "../../items.models";
+import {
+  SERVICE_NAME_MAX_LENGTH,
+  serviceReplenishmentSystems
+} from "../../items.models";
 import type { ItemFile, MakeMethod, Service, SupplierPart } from "../../types";
 import { FileBadge, ItemDescription } from "../Item";
 
@@ -100,12 +103,11 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
   const onUpdate = useCallback(
     (
       field:
-        | "name"
+        | "serviceName"
         | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemPostingGroupId"
-        | "serviceId"
         | "active",
       value: string | null
     ) => {
@@ -230,30 +232,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         <VStack spacing={1} className="pt-2">
           <ValidatedForm
             defaultValues={{
-              serviceId:
-                routeData?.serviceSummary?.readableIdWithRevision ?? undefined
-            }}
-            validator={z.object({
-              serviceId: z.string()
-            })}
-            className="w-full -mt-2"
-          >
-            <span className="text-sm">
-              <InputControlled
-                label=""
-                name="serviceId"
-                inline
-                size="sm"
-                value={routeData?.serviceSummary?.readableId ?? ""}
-                onBlur={(e) => {
-                  onUpdate("serviceId", e.target.value ?? null);
-                }}
-                className="text-muted-foreground"
-              />
-            </span>
-          </ValidatedForm>
-          <ValidatedForm
-            defaultValues={{
               name: routeData?.serviceSummary?.name ?? undefined
             }}
             validator={z.object({
@@ -261,18 +239,20 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
             })}
             className="w-full -mt-2"
           >
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm">
               <InputControlled
                 label=""
                 name="name"
                 inline
                 size="sm"
-                characterLimit={40}
+                characterLimit={SERVICE_NAME_MAX_LENGTH}
                 value={routeData?.serviceSummary?.name ?? ""}
                 onBlur={(e) => {
-                  onUpdate("name", e.target.value ?? null);
+                  const name = e.target.value?.trim();
+                  if (name && name !== routeData?.serviceSummary?.name) {
+                    onUpdate("serviceName", name);
+                  }
                 }}
-                className="text-muted-foreground"
               />
             </span>
           </ValidatedForm>
@@ -387,17 +367,6 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
-
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Unit of Measure</Trans>
-        </h3>
-        {routeData?.serviceSummary?.unitOfMeasure && (
-          <Badge variant="secondary">
-            {routeData.serviceSummary.unitOfMeasure}
-          </Badge>
-        )}
-      </VStack>
 
       <ItemDescription
         value={routeData?.serviceSummary?.description ?? ""}

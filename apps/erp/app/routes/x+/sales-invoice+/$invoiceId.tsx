@@ -124,11 +124,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,
-    files: getOpportunityDocuments(
-      client,
-      companyId,
-      salesInvoice.data?.opportunityId!
-    ),
+    files: salesInvoice.data?.opportunityId
+      ? getOpportunityDocuments(
+          client,
+          companyId,
+          salesInvoice.data.opportunityId
+        )
+      : Promise.resolve([]),
     opportunity: opportunity?.data ?? null,
     customer: customer?.data ?? null,
     defaultCc,

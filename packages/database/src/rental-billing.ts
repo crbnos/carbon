@@ -249,6 +249,14 @@ async function draftAgreementInvoice(
     "salesInvoice",
     companyId
   );
+  // Every sales invoice has an opportunity, as createSalesInvoice makes one:
+  // its documents live under the opportunity's storage folder, and the
+  // invoice page reads it.
+  const opportunity = await trx
+    .insertInto("opportunity")
+    .values({ companyId, customerId: agreement.customerId })
+    .returning(["id"])
+    .executeTakeFirstOrThrow();
   const invoice = await trx
     .insertInto("salesInvoice")
     .values({
@@ -267,7 +275,7 @@ async function draftAgreementInvoice(
       totalDiscount: 0,
       totalTax,
       totalAmount: round(subtotal + totalTax),
-      opportunityId: null,
+      opportunityId: opportunity.id,
       companyId,
       createdBy: userId
     })

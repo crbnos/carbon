@@ -22,6 +22,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
@@ -235,12 +236,14 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <TruncatedTooltipText
-                    className="text-muted-foreground text-sm truncate"
-                    tooltip={line.description}
-                  >
-                    {line.description}
-                  </TruncatedTooltipText>
+                  {distinctItemText(line.itemReadableId, line.description) && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate"
+                      tooltip={line.description}
+                    >
+                      {line.description}
+                    </TruncatedTooltipText>
+                  )}
                 </div>
               </VStack>
             </HStack>

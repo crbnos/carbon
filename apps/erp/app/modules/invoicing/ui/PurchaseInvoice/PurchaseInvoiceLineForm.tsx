@@ -35,7 +35,11 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
+import {
+  distinctItemText,
+  getItemReadableId,
+  INPUT_FORMAT
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
@@ -56,6 +60,7 @@ import {
   UnitOfMeasure,
   useTaxPair
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -66,7 +71,10 @@ import {
 } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
-import { getSupplierPartPriceBreaks } from "~/modules/items";
+import {
+  EACH_UNIT_OF_MEASURE_CODE,
+  getSupplierPartPriceBreaks
+} from "~/modules/items";
 import {
   type ItemType,
   itemType,
@@ -90,7 +98,7 @@ const PurchaseInvoiceLineForm = ({
   type,
   onClose
 }: PurchaseInvoiceLineFormProps) => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
@@ -123,6 +131,11 @@ const PurchaseInvoiceLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type (above) is a real enum value — "Item" is not one — and follows the
+  // selected item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
+  const isService = lineType === "Service";
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -303,7 +316,11 @@ const PurchaseInvoiceLineForm = ({
   const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: ItemType | "Item") => {
-    if (t === lineType) return;
+    if (t === itemFilter) return;
+    setItemFilter(t);
+    // Widening to every type keeps the selected item; narrowing to another
+    // type clears it.
+    if (t === "Item" || t === lineType) return;
     setLineType(t as ItemType);
     setItemData({
       itemId: "",
@@ -382,22 +399,28 @@ const PurchaseInvoiceLineForm = ({
           exchangeRate
         );
 
+        // A service is always bought and "stocked" in EA, 1:1.
+        const isServiceItem = item.data?.type === "Service";
         setItemData({
           itemId: itemId,
           description: item.data?.name ?? "",
           quantity: initialQty,
           supplierUnitPrice: resolvedPrice,
           supplierShippingCost: 0,
-          purchaseUom:
-            supplierPart?.data?.supplierUnitOfMeasureCode ??
-            itemReplenishment?.purchasingUnitOfMeasureCode ??
-            item.data?.unitOfMeasureCode ??
-            "EA",
-          inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-          conversionFactor:
-            supplierPart?.data?.conversionFactor ??
-            itemReplenishment?.conversionFactor ??
-            1,
+          purchaseUom: isServiceItem
+            ? EACH_UNIT_OF_MEASURE_CODE
+            : (supplierPart?.data?.supplierUnitOfMeasureCode ??
+              itemReplenishment?.purchasingUnitOfMeasureCode ??
+              item.data?.unitOfMeasureCode ??
+              "EA"),
+          inventoryUom: isServiceItem
+            ? EACH_UNIT_OF_MEASURE_CODE
+            : (item.data?.unitOfMeasureCode ?? "EA"),
+          conversionFactor: isServiceItem
+            ? 1
+            : (supplierPart?.data?.conversionFactor ??
+              itemReplenishment?.conversionFactor ??
+              1),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
           taxPercent: 0,
@@ -437,6 +460,15 @@ const PurchaseInvoiceLineForm = ({
       storageUnitId: storageUnit?.data?.defaultStorageUnitId ?? ""
     }));
   };
+
+  const lineSubtitle = isFixedAsset
+    ? initialValues.assetName || indirectData.description
+    : isGLAccount
+      ? "G/L Account"
+      : distinctItemText(
+          getItemReadableId(items, itemData?.itemId),
+          itemData?.description
+        );
 
   return (
     <Tabs
@@ -494,14 +526,7 @@ const PurchaseInvoiceLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>
-                          {isFixedAsset
-                            ? initialValues.assetName ||
-                              indirectData.description
-                            : isGLAccount
-                              ? "G/L Account"
-                              : itemData?.description}
-                        </span>
+                        {lineSubtitle && <span>{lineSubtitle}</span>}
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
                             {initialValues?.quantity}
@@ -562,15 +587,30 @@ const PurchaseInvoiceLineForm = ({
                   )}
                   <Hidden
                     name="inventoryUnitOfMeasureCode"
-                    value={itemData?.inventoryUom}
+                    value={
+                      isService
+                        ? EACH_UNIT_OF_MEASURE_CODE
+                        : itemData?.inventoryUom
+                    }
                   />
+                  {/* A service is always bought in EA, so no unit of
+                      measure or conversion factor is asked for. */}
+                  {isService && (
+                    <>
+                      <Hidden
+                        name="purchaseUnitOfMeasureCode"
+                        value={EACH_UNIT_OF_MEASURE_CODE}
+                      />
+                      <Hidden name="conversionFactor" value={1} />
+                    </>
+                  )}
                   <VStack>
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
                         autoFocus={!isEditing}
                         name="itemId"
-                        label={lineType}
-                        type={lineType}
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
                         validItemTypes={[...itemType]}
                         locationId={locationId}
                         replenishmentSystem="Buy"
@@ -629,31 +669,35 @@ const PurchaseInvoiceLineForm = ({
                             }}
                           />
 
-                          <UnitOfMeasure
-                            name="purchaseUnitOfMeasureCode"
-                            label={t`Unit of Measure`}
-                            value={itemData.purchaseUom}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  purchaseUom: newValue?.value as string
-                                }));
-                              }
-                            }}
-                          />
-                          <ConversionFactor
-                            name="conversionFactor"
-                            purchasingCode={itemData.purchaseUom}
-                            inventoryCode={itemData.inventoryUom}
-                            value={itemData.conversionFactor}
-                            onChange={(value) => {
-                              setItemData((d) => ({
-                                ...d,
-                                conversionFactor: value
-                              }));
-                            }}
-                          />
+                          {!isService && (
+                            <>
+                              <UnitOfMeasure
+                                name="purchaseUnitOfMeasureCode"
+                                label={t`Unit of Measure`}
+                                value={itemData.purchaseUom}
+                                onChange={(newValue) => {
+                                  if (newValue) {
+                                    setItemData((d) => ({
+                                      ...d,
+                                      purchaseUom: newValue?.value as string
+                                    }));
+                                  }
+                                }}
+                              />
+                              <ConversionFactor
+                                name="conversionFactor"
+                                purchasingCode={itemData.purchaseUom}
+                                inventoryCode={itemData.inventoryUom}
+                                value={itemData.conversionFactor}
+                                onChange={(value) => {
+                                  setItemData((d) => ({
+                                    ...d,
+                                    conversionFactor: value
+                                  }));
+                                }}
+                              />
+                            </>
+                          )}
 
                           <NumberControlled
                             name="supplierUnitPrice"

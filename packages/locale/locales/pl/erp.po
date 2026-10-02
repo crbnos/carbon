@@ -6975,6 +6975,9 @@ msgstr "np. Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "W każdej komórce znajdują się przydzieleni pracownicy w stosunku do pracowników potrzebnych do pracy tego dnia."
 
+msgid "Each is built in and can't be renamed or deleted"
+msgstr ""
+
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "Każde zlecenie produkcyjne ma własną partię. Hala produkcyjna nie może tego zmienić."
 
@@ -20883,9 +20886,6 @@ msgstr "Użyj ... aby uzyskać następny identyfikator materiału"
 
 msgid "Use ... to get the next part ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator części"
-
-msgid "Use ... to get the next service ID"
-msgstr "Użyj ... aby uzyskać następny identyfikator usługi"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Użyj ... aby uzyskać następny identyfikator narzędzia"

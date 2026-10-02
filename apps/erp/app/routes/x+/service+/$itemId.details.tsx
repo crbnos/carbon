@@ -33,6 +33,7 @@ import {
 } from "~/modules/items/ui/Item";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { getTagsList } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -111,7 +112,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateService = await upsertService(client, {
+  const updateService = await upsertService(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,
     companyId,

@@ -59,32 +59,44 @@ export default function useAccountingSubmodules() {
         name: t`General Ledger`,
         routes: [
           {
+            name: t`Journal Entries`,
+            to: path.to.accountingJournals,
+            role: "employee",
+            icon: <LuBookOpen />,
+            table: "journal"
+          },
+          {
             name: t`Intercompany`,
             to: path.to.intercompany,
             role: "employee",
             icon: <LuArrowLeftRight />
-          },
-          {
-            name: t`Journal Entries`,
-            to: path.to.accountingJournals,
-            role: "employee",
-            icon: <LuBookOpen />
-          },
+          }
+        ]
+      },
+      {
+        name: t`Closing`,
+        routes: [
           {
             name: t`Accounting Periods`,
             to: path.to.accountingPeriods,
             role: "employee",
-            icon: <LuCalendarCheck />
+            icon: <LuCalendarCheck />,
+            table: "accountingPeriod"
           },
           {
             name: t`Revenue Recognition`,
             to: path.to.revenueRecognitionRuns,
             role: "employee",
             icon: <LuCalendarClock />
+          },
+          {
+            name: t`Depreciation`,
+            to: path.to.depreciationRuns,
+            role: "employee",
+            icon: <LuClock />
           }
         ]
       },
-
       {
         name: t`Fixed Assets`,
         routes: [
@@ -99,12 +111,6 @@ export default function useAccountingSubmodules() {
             to: path.to.fleet,
             role: "employee",
             icon: <LuTruck />
-          },
-          {
-            name: t`Depreciation`,
-            to: path.to.depreciationRuns,
-            role: "employee",
-            icon: <LuClock />
           }
         ]
       },

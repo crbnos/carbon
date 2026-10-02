@@ -19,7 +19,7 @@ import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { reactNodeToString, withDistinctHelpers } from "./utils/react";
 
 export type CreatableComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -54,7 +54,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     {
       size,
       value,
-      options,
+      options: optionsProp,
       selected,
       isClearable,
       isReadOnly: isReadOnlyProp,
@@ -72,6 +72,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     ref
   ) => {
     const { t } = useLingui();
+    // An item option's helper is its name, which for a service repeats the
+    // readable id in the label.
+    const options = useMemo(
+      () => withDistinctHelpers(optionsProp),
+      [optionsProp]
+    );
     // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
     // accepts it (extends button props), so honor it rather than swallow it.
     const isReadOnly = isReadOnlyProp || disabled;

@@ -37,6 +37,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo, useCallback, useEffect, useState } from "react";
@@ -384,7 +385,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                   <LuExternalLink />
                 </Link>
               </DrawerTitle>
-              <DrawerDescription>{selectedItem.name}</DrawerDescription>
+              {distinctItemText(
+                selectedItem.readableIdWithRevision,
+                selectedItem.name
+              ) && <DrawerDescription>{selectedItem.name}</DrawerDescription>}
               <div className="absolute top-4 right-12">
                 <TabsList>
                   <TabsTrigger value="ordering">

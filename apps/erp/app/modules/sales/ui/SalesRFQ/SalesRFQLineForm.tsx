@@ -42,6 +42,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked, salesRfqLineValidator } from "../../sales.models";
 import type { SalesRFQ, SalesRFQLine } from "../../types";
@@ -75,6 +76,8 @@ const SalesRFQLineForm = ({
 
   const isEditing = initialValues.id !== undefined;
 
+  const [items] = useItems();
+
   const [itemData, setItemData] = useState<{
     customerPartId: string;
     customerPartRevision: string;
@@ -90,6 +93,10 @@ const SalesRFQLineForm = ({
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "EA",
     modelUploadId: initialValues.modelUploadId ?? null
   });
+
+  // A service is always sold in "EA", so it has no unit of measure to pick
+  const isService =
+    items.find((i) => i.id === itemData.itemId)?.type === "Service";
 
   const onCustomerPartChange = async (customerPartId: string) => {
     if (!carbon || !routeData?.rfqSummary?.customerId) return;
@@ -144,7 +151,7 @@ const SalesRFQLineForm = ({
     const [item, customerPart] = await Promise.all([
       carbon
         .from("item")
-        .select("name, unitOfMeasureCode, modelUploadId")
+        .select("name, type, unitOfMeasureCode, modelUploadId")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -165,7 +172,10 @@ const SalesRFQLineForm = ({
       ...itemData,
       itemId,
       description: item.data?.name ?? "",
-      unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+      unitOfMeasureCode:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? "EA"),
       modelUploadId: item.data?.modelUploadId ?? null
     };
 
@@ -260,6 +270,7 @@ const SalesRFQLineForm = ({
                   name="modelUploadId"
                   value={itemData.modelUploadId ?? undefined}
                 />
+                {isService && <Hidden name="unitOfMeasureCode" value="EA" />}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                     <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
@@ -311,16 +322,18 @@ const SalesRFQLineForm = ({
                         value={itemData.description}
                         isReadOnly={!!itemData.itemId}
                       />
-                      <UnitOfMeasure
-                        name="unitOfMeasureCode"
-                        value={itemData.unitOfMeasureCode}
-                        onChange={(newValue) =>
-                          setItemData((d) => ({
-                            ...d,
-                            unitOfMeasureCode: newValue?.value ?? "EA"
-                          }))
-                        }
-                      />
+                      {!isService && (
+                        <UnitOfMeasure
+                          name="unitOfMeasureCode"
+                          value={itemData.unitOfMeasureCode}
+                          onChange={(newValue) =>
+                            setItemData((d) => ({
+                              ...d,
+                              unitOfMeasureCode: newValue?.value ?? "EA"
+                            }))
+                          }
+                        />
+                      )}
 
                       <CustomFormFields table="salesRfqLine" />
                     </div>

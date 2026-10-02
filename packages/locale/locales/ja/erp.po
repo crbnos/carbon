@@ -6975,6 +6975,9 @@ msgstr "例：Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
+msgid "Each is built in and can't be renamed or deleted"
+msgstr ""
+
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "各製造指図は独自のロットを保持します。製造現場は変更できません。"
 
@@ -20883,9 +20886,6 @@ msgstr "「...」を使用して次の材料IDを取得します"
 
 msgid "Use ... to get the next part ID"
 msgstr "「...」を使用して次のパートIDを取得します"
-
-msgid "Use ... to get the next service ID"
-msgstr "... を使用して次のサービス ID を取得"
 
 msgid "Use ... to get the next tool ID"
 msgstr "「...」を使用して次のツールIDを取得します"

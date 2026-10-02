@@ -22,6 +22,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
@@ -209,7 +210,10 @@ const SalesInvoicePostModal = ({
                           <Td>
                             <VStack spacing={0}>
                               <span>{line.itemReadableId}</span>
-                              {line.description && (
+                              {distinctItemText(
+                                line.itemReadableId,
+                                line.description
+                              ) && (
                                 <span className="text-xs text-muted-foreground">
                                   {line.description}
                                 </span>

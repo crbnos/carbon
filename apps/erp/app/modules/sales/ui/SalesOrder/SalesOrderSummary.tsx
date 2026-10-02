@@ -26,7 +26,11 @@ import {
   VStack
 } from "@carbon/react";
 import type { SalesOrderForProductionCheck } from "@carbon/utils";
-import { getSalesOrderJobStatus, hasLinesRequiringJobs } from "@carbon/utils";
+import {
+  distinctItemText,
+  getSalesOrderJobStatus,
+  hasLinesRequiringJobs
+} from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -377,6 +381,11 @@ function LineItems({
         if (!line.id) return null;
 
         const isMade = line.methodType === "Make to Order";
+        const title =
+          line.salesOrderLineType === "Fixed Asset"
+            ? (line as any).assetReadableId || "Fixed Asset"
+            : line.itemReadableId;
+        const description = distinctItemText(title, line.description);
 
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
           // @ts-expect-error TS2345 - TODO: fix type
@@ -418,11 +427,7 @@ function LineItems({
                   <div className="flex items-center justify-between w-full">
                     <VStack spacing={0} className="flex-1 min-w-0">
                       <HStack spacing={2} className="flex min-w-0 w-full">
-                        <Heading className="truncate">
-                          {line.salesOrderLineType === "Fixed Asset"
-                            ? (line as any).assetReadableId || "Fixed Asset"
-                            : line.itemReadableId}
-                        </Heading>
+                        <Heading className="truncate">{title}</Heading>
                         <Button
                           asChild
                           variant="link"
@@ -434,12 +439,14 @@ function LineItems({
                           </Link>
                         </Button>
                       </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={line.description}
-                      >
-                        {line.description}
-                      </TruncatedTooltipText>
+                      {description && (
+                        <TruncatedTooltipText
+                          className="text-muted-foreground text-sm truncate w-full"
+                          tooltip={description}
+                        >
+                          {description}
+                        </TruncatedTooltipText>
+                      )}
                     </VStack>
                     <VStack
                       spacing={2}

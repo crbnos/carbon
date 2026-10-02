@@ -28,7 +28,7 @@ import { roboticsAssembly } from "./assembly.ts";
 //   MOT- / GBX- / ENC- / SNS- / BRG- / FST- = Buy Parts
 //   MAT- = Materials
 //   TL-  = Tools
-//   SVC- = Services
+//   Services are keyed by name, not a prefix
 //   CN-  = Consumables
 // ---------------------------------------------------------------------------
 
@@ -251,9 +251,11 @@ export const TOOLS: ItemSpec[] = [
 
 export const SERVICES: ItemSpec[] = [
   {
-    readableId: "SVC-CAL",
-    name: "Robot Calibration & Certification (external)",
+    // A service's readableId is its name.
+    readableId: "Robot Calibration & Certification",
+    name: "Robot Calibration & Certification",
     type: "Service",
+    thumbnail: "SVC-CAL",
     replenishment: "Buy",
     standardCost: 1850,
     leadTime: 21

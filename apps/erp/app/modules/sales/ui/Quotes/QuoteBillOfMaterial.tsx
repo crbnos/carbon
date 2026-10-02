@@ -31,7 +31,11 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
+import {
+  distinctItemText,
+  getItemReadableId,
+  INPUT_FORMAT
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -158,7 +162,7 @@ function makeItem(
             </Link>
           )}
         </div>
-        {material?.description && (
+        {distinctItemText(itemReadableId, material?.description) && (
           <span className="text-xs text-muted-foreground">
             {material.description}{" "}
           </span>

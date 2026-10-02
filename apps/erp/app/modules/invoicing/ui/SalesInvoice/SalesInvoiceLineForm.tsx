@@ -35,6 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  distinctItemText,
   formatDate,
   getItemReadableId,
   INPUT_FORMAT,
@@ -72,6 +73,7 @@ import {
   TaxFields,
   useTaxPair
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -273,7 +275,7 @@ const SalesInvoiceItemLineForm = ({
   isSalesOrderLine = false,
   onClose
 }: SalesInvoiceLineFormProps) => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const permissions = usePermissions();
   const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
@@ -320,6 +322,10 @@ const SalesInvoiceItemLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
   // A service can run a single day, so its end may equal its start.
   const [serviceStartDate, setServiceStartDate] = useState(
     initialValues.serviceStartDate
@@ -448,7 +454,11 @@ const SalesInvoiceItemLineForm = ({
         : !permissions.can("create", "purchasing");
 
   const onTypeChange = (t: ItemType | "Item") => {
-    if (t === lineType) return;
+    if (t === itemFilter) return;
+    setItemFilter(t);
+    // Widening to every type keeps the selected item; narrowing to another
+    // type clears it.
+    if (t === "Item" || t === lineType) return;
     setLineType(t as ItemType);
     setItemData({
       itemId: "",
@@ -528,7 +538,11 @@ const SalesInvoiceItemLineForm = ({
             (itemCost?.unitCost ?? 0) /
             (routeData?.salesInvoice?.exchangeRate ?? 1),
           shippingCost: 0,
-          unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
+          // A service is always sold in "EA"
+          unitOfMeasureCode:
+            item.data?.type === "Service"
+              ? "EA"
+              : (item.data?.unitOfMeasureCode ?? "EA"),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
           taxAmount: 0,
           taxPercent: 0
@@ -635,11 +649,16 @@ const SalesInvoiceItemLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>
-                          {isFixedAsset
-                            ? initialValues.assetName || assetData.description
-                            : itemData?.description}
-                        </span>
+                        {isFixedAsset ? (
+                          <span>
+                            {initialValues.assetName || assetData.description}
+                          </span>
+                        ) : (
+                          distinctItemText(
+                            getItemReadableId(items, itemData?.itemId),
+                            itemData?.description
+                          ) && <span>{itemData?.description}</span>
+                        )}
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
@@ -699,7 +718,11 @@ const SalesInvoiceItemLineForm = ({
                   <Hidden name="description" value={itemData.description} />
                   <Hidden
                     name="unitOfMeasureCode"
-                    value={itemData?.unitOfMeasureCode}
+                    value={
+                      lineType === "Service"
+                        ? "EA"
+                        : itemData?.unitOfMeasureCode
+                    }
                   />
 
                   <VStack>
@@ -718,8 +741,8 @@ const SalesInvoiceItemLineForm = ({
                       <Item
                         autoFocus={!isEditing}
                         name="itemId"
-                        label={lineType}
-                        type={lineType}
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
                         validItemTypes={[...itemType]}
                         locationId={locationId}
                         // Required by a refine rather than the schema object,

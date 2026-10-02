@@ -6975,6 +6975,9 @@ msgstr "örneğin Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
+msgid "Each is built in and can't be renamed or deleted"
+msgstr ""
+
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "Her İş emri kendi Lotunu tutar. Atölye bunları değiştiremez."
 
@@ -20883,9 +20886,6 @@ msgstr "Bir sonraki malzeme kimliğini almak için ... kullanın"
 
 msgid "Use ... to get the next part ID"
 msgstr "Bir sonraki parça kimliğini almak için ..."
-
-msgid "Use ... to get the next service ID"
-msgstr "Sonraki hizmet kimliğini almak için ... kullan"
 
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."

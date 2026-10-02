@@ -6975,6 +6975,9 @@ msgstr "उदाहरण के लिए Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
+msgid "Each is built in and can't be renamed or deleted"
+msgstr ""
+
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "प्रत्येक जॉब अपना स्वयं का लॉट रखता है। शॉप फ्लोर इन्हें नहीं बदल सकता।"
 
@@ -20883,9 +20886,6 @@ msgstr "अगली सामग्री ID प्राप्त करने
 
 msgid "Use ... to get the next part ID"
 msgstr "अगला पार्ट आईडी प्राप्त करने के लिए ... का उपयोग करें"
-
-msgid "Use ... to get the next service ID"
-msgstr "अगली सेवा ID प्राप्त करने के लिए ... का उपयोग करें"
 
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"

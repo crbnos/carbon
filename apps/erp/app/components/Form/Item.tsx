@@ -633,8 +633,6 @@ const Item = ({
             triggerRef.current?.click();
           }}
           initialValues={{
-            id: "",
-            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Non-Inventory",

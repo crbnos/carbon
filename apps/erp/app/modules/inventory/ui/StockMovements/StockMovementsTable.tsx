@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, HStack, MenuIcon, MenuItem, VStack } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -83,7 +84,10 @@ const StockMovementsTable = memo(
               <Hyperlink to={getInventoryItemActivityPath(row.original)}>
                 <VStack spacing={0}>
                   <span>{row.original.itemReadableId}</span>
-                  {row.original.itemDescription && (
+                  {distinctItemText(
+                    row.original.itemReadableId,
+                    row.original.itemDescription
+                  ) && (
                     <span className="text-muted-foreground text-xs">
                       {row.original.itemDescription}
                     </span>

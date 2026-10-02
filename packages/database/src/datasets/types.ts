@@ -289,6 +289,11 @@ export type ItemSpec = {
   active?: boolean;
   revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
   material?: MaterialClassificationSpec;
+  /**
+   * The bundled thumbnail's file name (no `.svg`) when it is not the
+   * readableId — a service's readableId is its name, which is no file name.
+   */
+  thumbnail?: string;
 };
 
 export type MethodType =

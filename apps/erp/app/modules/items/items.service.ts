@@ -55,6 +55,7 @@ import {
   type configurationRuleValidator,
   type consumableValidator,
   type customerPartValidator,
+  EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
   ItemTrackingType,
   isAllowedChangeNoticeTransition,
@@ -6123,15 +6124,19 @@ export async function upsertMaterialSubstance(
 }
 
 /**
- * Creates a service (item row and service row) or updates one; on update `id`
- * is the item id (uuid) or the service's readable id and the write is a full
- * replace, so omitted optional fields are cleared.
+ * Creates a service (item row and service row) or updates one. A service is
+ * identified by its name: on create the readable id is `name`, and on update
+ * a changed name renames the readable id with it (a name another service uses
+ * is refused). On update `id` is the item id (uuid) or the
+ * service's readable id and the write is a full replace, so omitted optional
+ * fields are cleared.
  * @mcp upsert
  * @mcp key item id
  * @mcp key item readableId=id
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   service:
     | (z.infer<typeof serviceValidator> & {
         companyId: string;
@@ -6145,11 +6150,27 @@ export async function upsertService(
       })
 ) {
   if ("createdBy" in service) {
+    const readableId = service.name;
+    const existing = await client
+      .from("item")
+      .select("id")
+      .eq("readableId", readableId)
+      .eq("type", "Service")
+      .eq("companyId", service.companyId)
+      .limit(1);
+    if (existing.error) return existing;
+    if (existing.data.length > 0) {
+      return {
+        data: null,
+        error: ruleError(`A service named "${readableId}" already exists`)
+      };
+    }
+
     const itemInsert = await client
       .from("item")
       .insert({
-        readableId: service.id,
-        revision: service.revision ?? "0",
+        readableId,
+        revision: service.revision || "0",
         name: service.name,
         description: service.description,
         type: "Service",
@@ -6157,7 +6178,8 @@ export async function upsertService(
         defaultMethodType: service.defaultMethodType,
         // Services can never be shipped, received, or stocked
         itemTrackingType: "Non-Inventory",
-        unitOfMeasureCode: service.unitOfMeasureCode,
+        // A service is always counted in Each, whatever unit a caller sends.
+        unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
         active: true,
         companyId: service.companyId,
         createdBy: service.createdBy
@@ -6169,7 +6191,7 @@ export async function upsertService(
 
     const [serviceInsert, itemCostUpdate] = await Promise.all([
       client.from("service").upsert({
-        id: service.id,
+        id: readableId,
         // Legacy column, no longer surfaced in the UI; the migration adds a
         // DB-level default of "External". Passed explicitly until the committed
         // (cloud-sourced) types pick up that default and make it optional.
@@ -6195,11 +6217,15 @@ export async function upsertService(
     const newService = await client
       .from("services")
       .select("*")
-      .eq("readableId", service.id)
+      .eq("readableId", readableId)
       .eq("companyId", service.companyId)
       .single();
 
     return newService;
+  }
+
+  if (!service.id) {
+    return { data: null, error: ruleError("Service id is required") };
   }
 
   const updated = await updateTypedItem(client, {
@@ -6208,17 +6234,97 @@ export async function upsertService(
     updatedBy: service.updatedBy,
     type: "Service",
     item: {
-      name: service.name,
       description: service.description,
       replenishmentSystem: service.replenishmentSystem,
       defaultMethodType: service.defaultMethodType,
       itemTrackingType: "Non-Inventory",
-      unitOfMeasureCode: service.unitOfMeasureCode,
+      // A service is always counted in Each, whatever unit a caller sends.
+      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
       active: true
     },
     typed: { customFields: service.customFields }
   });
-  return updated;
+  if (updated.error) return updated;
+
+  // The name is the readable id, so it is written by the rename (after the
+  // update above, which resolves `id` against the current readable id).
+  const renamed = await updateServiceName(db, {
+    itemId: updated.data.id,
+    name: service.name,
+    companyId: service.companyId,
+    userId: service.updatedBy
+  });
+  if (renamed.error) return renamed;
+  return {
+    data: { id: updated.data.id, readableId: renamed.data.readableId },
+    error: null
+  };
+}
+
+/**
+ * Renames a service. A service is identified by its name, so every revision's
+ * readable id and the service row's id follow it; a name another service
+ * already uses is refused.
+ */
+export async function updateServiceName(
+  db: Kysely<KyselyDatabase>,
+  args: { itemId: string; name: string; companyId: string; userId: string }
+): Promise<
+  | { data: { readableId: string }; error: null }
+  | { data: null; error: { code: string; message: string } }
+> {
+  const name = args.name.trim();
+  if (!name) {
+    return { data: null, error: ruleError("Name is required") };
+  }
+
+  const updatedAt = datetime.timestamp();
+
+  return db.transaction().execute(async (trx) => {
+    const item = await trx
+      .selectFrom("item")
+      .select("readableId")
+      .where("id", "=", args.itemId)
+      .where("type", "=", "Service")
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!item) {
+      return { data: null, error: ruleError("Service not found") };
+    }
+
+    if (item.readableId !== name) {
+      const taken = await trx
+        .selectFrom("item")
+        .select("id")
+        .where("readableId", "=", name)
+        .where("type", "=", "Service")
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (taken) {
+        return {
+          data: null,
+          error: ruleError(`A service named "${name}" already exists`)
+        };
+      }
+
+      await trx
+        .updateTable("service")
+        .set({ id: name, updatedBy: args.userId, updatedAt })
+        .where("id", "=", item.readableId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("item")
+      .set({ readableId: name, name, updatedBy: args.userId, updatedAt })
+      .where("readableId", "=", item.readableId)
+      .where("type", "=", "Service")
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    return { data: { readableId: name }, error: null };
+  });
 }
 
 /** @mcp upsert */

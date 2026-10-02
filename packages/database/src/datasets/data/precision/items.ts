@@ -26,7 +26,7 @@ import { precisionAssembly } from "./assembly.ts";
 //   HW- / INS- / BRG- / BSH- / SEAL- / SPR- / PIN- / CYL- = Buy Parts
 //   MAT- = Materials
 //   TL-  = Tools
-//   SVC- = Services
+//   Services are keyed by name, not a prefix
 //   CN-  = Consumables
 // ---------------------------------------------------------------------------
 
@@ -252,9 +252,11 @@ export const TOOLS: ItemSpec[] = [
 
 export const SERVICES: ItemSpec[] = [
   {
-    readableId: "SVC-CMM-PROG",
-    name: "CMM Program Development (external)",
+    // A service's readableId is its name.
+    readableId: "CMM Program Development",
+    name: "CMM Program Development",
     type: "Service",
+    thumbnail: "SVC-CMM-PROG",
     replenishment: "Buy",
     standardCost: 1250,
     leadTime: 14
