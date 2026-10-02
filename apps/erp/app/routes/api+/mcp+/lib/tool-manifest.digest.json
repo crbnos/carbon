@@ -378,7 +378,7 @@
     {"name":"items_deleteMethodOperationTool","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"parts:delete","paginates":false},
     {"name":"items_deleteSupplierPart","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"parts:delete","paginates":false},
     {"name":"items_deleteUnitOfMeasure","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"parts:delete","paginates":false},
-    {"name":"items_diffMethod","classification":"READ","paramCount":1,"schema":"8e916e7918fd","response":"945cb97c37b8","injectAuth":"companyId","permission":"parts:view","paginates":false},
+    {"name":"items_diffMethod","classification":"READ","paramCount":1,"schema":"0fdf50a7c7ba","response":"fab3ac9dac53","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_duplicateMethodOperationStep","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create","paginates":false},
     {"name":"items_findChangeNoticesForItem","classification":"READ","paramCount":2,"schema":"10c8230a9f49","response":"e0196d4b0041","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_findOtherOpenChangeNoticesForItem","classification":"READ","paramCount":2,"schema":"8a1da983320d","response":"e0196d4b0041","injectAuth":"companyId","permission":"parts:view","paginates":false},

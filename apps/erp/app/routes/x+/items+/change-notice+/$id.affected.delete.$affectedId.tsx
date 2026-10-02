@@ -12,6 +12,7 @@ import {
   requireChangeNoticeChildRoute,
   requireEditableChangeNoticeRoute
 } from "~/modules/items/items.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -41,6 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const remove = await removeChangeNoticeAffectedItem(
     client,
+    getDatabaseClient(),
     affectedId,
     companyId
   );

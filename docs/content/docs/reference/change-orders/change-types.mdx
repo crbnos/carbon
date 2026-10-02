@@ -76,12 +76,17 @@ how the new part or revision is bought: **Supplier**, **Supplier ID** (the suppl
 Price**, **Unit of Measure**, **Minimum Order Quantity**, and **Conversion Factor**. Add, edit, and delete rows
 here the same way you would on a live part.
 
-<Callout type="warning" title="Set suppliers up before you release, or the released part can't be bought.">
-A draft item starts with **no** supplier parts — the source item's suppliers aren't copied onto the draft. If a
-purchased Revision, Replacement Part, or New Part releases with an empty grid, the new part is stocked but has
-no way to buy it, so a purchase order can't reference it. Fill the grid on the line first. The suppliers you add
-show up in the change notice's [changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release)
-as additions.
+A **Revision** draft starts with the source revision's supplier parts and their price breaks, along with its
+batch size, scrap percent, lead time, reordering policy, preferred supplier, and item group. It releases ready
+to plan and buy, so edit the grid only where the new revision differs. The change notice's
+[changes](/docs/reference/change-orders/lifecycle#review-the-changes-then-release) list only the suppliers you
+added, changed, or removed.
+
+<Callout type="warning" title="Set suppliers up on a Replacement Part or New Part before you release.">
+These two drafts start with **no** supplier parts. A Replacement Part does not inherit the source item's
+suppliers, and a New Part has no source to inherit from. If a purchased one releases with an empty grid, the
+new part is stocked but has no way to buy it, so a purchase order can't reference it. Fill the grid on the line
+first. The suppliers you add show up in the change notice's changes as additions.
 </Callout>
 
 ## Related
