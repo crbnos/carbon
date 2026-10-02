@@ -173,6 +173,25 @@ impl JobStore {
         }
     }
 
+    /// Whether Redis answers, for the health check. Bounded, so a connection
+    /// that hangs fails the check instead of hanging it.
+    pub async fn ping(&self) -> bool {
+        let mut c = self.conn.clone();
+        let ping = redis::cmd("PING");
+        let answer = ping.query_async::<()>(&mut c);
+        match tokio::time::timeout(Duration::from_secs(2), answer).await {
+            Ok(Ok(())) => true,
+            Ok(Err(e)) => {
+                eprintln!("assembler: redis ping failed: {e}");
+                false
+            }
+            Err(_) => {
+                eprintln!("assembler: redis ping timed out");
+                false
+            }
+        }
+    }
+
     // --- job status (pointer, not artifact bytes) --------------------------
 
     async fn read(&self, id: &str) -> Option<JobRecord> {
@@ -643,9 +662,24 @@ impl JobStore {
     }
 }
 
+/// The client's defaults suit nobody waiting on a job: no limit on a connect
+/// or a reply, and a reconnect backoff that goes from one second straight to a
+/// minute or two (its factor of 100 multiplies each delay). After a Redis
+/// restart that left every job read and write failing for about two minutes.
+/// Bounded waits, and retries that double from one second up to five.
+const REDIS_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+const REDIS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(15);
+const REDIS_RETRY_FACTOR: u64 = 2;
+const REDIS_RETRY_MAX_DELAY_MS: u64 = 5_000;
+
 async fn connect(url: &str) -> redis::RedisResult<redis::aio::ConnectionManager> {
     let client = redis::Client::open(url)?;
-    let mut conn = client.get_connection_manager().await?;
+    let config = redis::aio::ConnectionManagerConfig::new()
+        .set_connection_timeout(REDIS_CONNECT_TIMEOUT)
+        .set_response_timeout(REDIS_RESPONSE_TIMEOUT)
+        .set_factor(REDIS_RETRY_FACTOR)
+        .set_max_delay(REDIS_RETRY_MAX_DELAY_MS);
+    let mut conn = client.get_connection_manager_with_config(config).await?;
     redis::cmd("PING").query_async::<()>(&mut conn).await?;
     Ok(conn)
 }

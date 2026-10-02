@@ -198,8 +198,16 @@ async fn shutdown_signal() {
     });
 }
 
-async fn health() -> Json<Value> {
-    Json(json!({ "ok": true, "version": VERSION }))
+/// Healthy means it can do its job, and it cannot without Redis: every job's
+/// status lives there. A probe that fails here gets the instance replaced.
+async fn health(State(state): State<AppState>) -> (StatusCode, Json<Value>) {
+    if state.jobs.ping().await {
+        return (StatusCode::OK, Json(json!({ "ok": true, "version": VERSION })));
+    }
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({ "ok": false, "version": VERSION, "error": "redis unreachable" })),
+    )
 }
 
 async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {

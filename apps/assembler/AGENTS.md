@@ -114,6 +114,14 @@ and is the fallback when the callback is lost.
 or another Lambda invocation can answer a poll. It holds pointers, never artifact
 bytes — with one exception below.
 
+`GET /health` pings Redis (2 s limit) and answers 503 when it does not reply:
+without Redis no job can be recorded or polled, so the instance is not healthy
+and the container healthcheck / load balancer replaces it. The client
+(`connect` in `jobs.rs`) bounds every connect (5 s) and reply (15 s) and
+retries a lost connection with delays that double from 1 s to 5 s, so the
+service is healthy again within seconds of Redis returning. The crate's
+defaults wait forever and back off to a minute or two.
+
 **Outputs go from memory to storage.** The service has no storage credentials.
 When the submit carried a URL for every output, `finish()` PUTs them straight
 from `Bytes` and stores nothing. Otherwise (no URLs at submit, or that upload
