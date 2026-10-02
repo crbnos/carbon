@@ -530,6 +530,9 @@ msgstr "Choose a photo"
 msgid "Choose a reason"
 msgstr "Choose a reason"
 
+msgid "Choose one on the left to start working on it."
+msgstr "Choose one on the left to start working on it."
+
 msgid "Clear"
 msgstr "Clear"
 
@@ -1888,6 +1891,9 @@ msgstr "Pick all {0}"
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "Pick all {0} {unit}"
 msgstr "Pick all {0} {unit}"
+
+msgid "Pick an operation"
+msgstr "Pick an operation"
 
 msgid "Pick expired lot"
 msgstr "Pick expired lot"

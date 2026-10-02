@@ -10,9 +10,9 @@ import {
 } from "expo-camera";
 import { Camera, CameraOff } from "lucide-react-native";
 import { useCallback, useEffect, useRef } from "react";
-import { Linking, useColorScheme, View } from "react-native";
-import { themeColor } from "~/components/themeColors";
+import { Linking, View } from "react-native";
 import { Button, Card, ErrorNote, Muted, Skeleton } from "~/components/ui";
+import { useThemeColors } from "~/components/useThemeColor";
 
 /**
  * The camera as a barcode scanner.
@@ -52,7 +52,7 @@ export function CameraScanner({
   className?: string;
 }) {
   const { t } = useLingui();
-  const scheme = useColorScheme();
+  const colors = useThemeColors();
   const [permission, requestPermission] = useCameraPermissions();
 
   const cooling = useRef(false);
@@ -119,7 +119,7 @@ export function CameraScanner({
     return (
       <Card className="gap-3">
         <View className="flex-row items-center gap-3">
-          <Camera size={24} color={themeColor(scheme, "mutedForeground")} />
+          <Camera size={24} color={colors.mutedForeground} />
           <Muted className="flex-1">
             {t`Carbon MES needs the camera to read barcodes and QR codes.`}
           </Muted>
@@ -140,7 +140,7 @@ export function CameraScanner({
   if (!active) {
     return (
       <View className={`items-center justify-center gap-2 ${frame}`}>
-        <CameraOff size={28} color={themeColor(scheme, "mutedForeground")} />
+        <CameraOff size={28} color={colors.mutedForeground} />
         <Muted className="text-sm">
           <Trans>The camera is off</Trans>
         </Muted>

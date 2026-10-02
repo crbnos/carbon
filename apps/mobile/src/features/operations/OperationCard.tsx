@@ -20,10 +20,13 @@ import { Body, Card, Muted } from "~/components/ui";
 
 export function OperationCard({
   operation,
-  onPress
+  onPress,
+  selected = false
 }: {
   operation: OperationCardData;
   onPress: () => void;
+  /** Marked in the tablet's two-pane layout: the card IS the current screen. */
+  selected?: boolean;
 }) {
   const { t } = useLingui();
   const done = operation.quantityCompleted ?? 0;
@@ -33,11 +36,16 @@ export function OperationCard({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected }}
       accessibilityLabel={t`Open operation ${
         operation.itemReadableId ?? operation.jobReadableId ?? ""
       }`}
     >
-      <Card className="gap-3 active:opacity-80">
+      <Card
+        className={`gap-3 active:opacity-80 ${
+          selected ? "border-ring bg-accent" : ""
+        }`}
+      >
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             {operation.itemReadableId ? (

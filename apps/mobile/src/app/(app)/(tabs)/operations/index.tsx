@@ -15,15 +15,30 @@ import {
   Screen,
   Skeleton
 } from "~/components/ui";
+import { useLayout } from "~/components/useLayout";
 import { OperationCard } from "~/features/operations/OperationCard";
+import { OperationDetailView } from "~/features/operations/OperationDetailView";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
+/**
+ * The operations list.
+ *
+ * On a landscape tablet it is a two-pane layout: the list stays on the left and
+ * the selected operation fills the right, so an operator working through a
+ * queue never loses their place in it. A phone, or a tablet in portrait, pushes
+ * the operation as its own route instead — 834pt is not enough for both.
+ *
+ * Both render the SAME `OperationDetailView`, so the two layouts cannot drift
+ * on what Start does.
+ */
 export default function Operations() {
   const { t } = useLingui();
   const { me, locationId } = useAuth();
   const [workCenterIds, setWorkCenterIds] = useState<string[]>([]);
   const query = useOperationsQuery(workCenterIds);
+  const { isSplit } = useLayout();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // The floor moves while the operator is on another screen.
   useFocusEffect(
@@ -39,7 +54,7 @@ export default function Operations() {
     ? columns.find((c) => c.id === workCenterIds[0])?.title
     : null;
 
-  return (
+  const list = (
     <Screen className="gap-4 py-4">
       <View className="gap-1">
         <Heading>
@@ -114,13 +129,40 @@ export default function Operations() {
           renderItem={({ item }) => (
             <OperationCard
               operation={item}
-              onPress={() =>
-                router.push(`/(app)/(tabs)/operations/${item.id}` as never)
-              }
+              selected={isSplit && item.id === selectedId}
+              onPress={() => {
+                if (isSplit) {
+                  setSelectedId(item.id);
+                  return;
+                }
+                router.push(`/(app)/(tabs)/operations/${item.id}` as never);
+              }}
             />
           )}
         />
       )}
     </Screen>
+  );
+
+  if (!isSplit) return list;
+
+  return (
+    <View className="flex-1 flex-row bg-background">
+      {/* The list keeps a fixed width so the operation pane does not reflow
+          every time a card's description wraps. */}
+      <View className="w-[380px] border-r border-border">{list}</View>
+      <View className="flex-1">
+        {selectedId ? (
+          // Keyed by the id so switching operations remounts rather than
+          // leaking the previous one's timer state into the new screen.
+          <OperationDetailView key={selectedId} operationId={selectedId} />
+        ) : (
+          <EmptyState
+            title={t`Pick an operation`}
+            description={t`Choose one on the left to start working on it.`}
+          />
+        )}
+      </View>
+    </View>
   );
 }

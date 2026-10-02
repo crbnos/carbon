@@ -530,6 +530,9 @@ msgstr ""
 msgid "Choose a reason"
 msgstr ""
 
+msgid "Choose one on the left to start working on it."
+msgstr ""
+
 msgid "Clear"
 msgstr "クリア"
 
@@ -1887,6 +1890,9 @@ msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "Pick all {0} {unit}"
+msgstr ""
+
+msgid "Pick an operation"
 msgstr ""
 
 msgid "Pick expired lot"
