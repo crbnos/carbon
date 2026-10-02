@@ -148,7 +148,3 @@ backend = "postgres"
 [functions.embedding]
 enabled = true
 verify_jwt = true
-
-[functions.thumbnail]
-enabled = true
-verify_jwt = true

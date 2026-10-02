@@ -12,6 +12,7 @@ path = "src/main.rs"
 converter = { path = "../../crates/converter" }
 planner = { path = "../../crates/planner" }
 optimize = { path = "../../crates/optimize" }
+thumbnail = { path = "../../crates/thumbnail" }
 serde.workspace = true
 serde_json.workspace = true
 axum = "0.7"

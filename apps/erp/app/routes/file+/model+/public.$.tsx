@@ -32,9 +32,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw notFound("Invalid path");
   }
 
-  // Only the GLB the model viewer draws (`/file/model/$id`, rendered headless
-  // for thumbnails). Any other type here is a tenant-uploaded file served with
-  // no session — an SVG under models/ ran script on our origin.
+  // GLB only. Any other type here is a tenant-uploaded file served with no
+  // session — an SVG under models/ ran script on our origin.
   if (path.split(".").pop()?.toLowerCase() !== "glb") {
     logger.error("Refused a public model file type", { path });
     throw notFound("Invalid path");

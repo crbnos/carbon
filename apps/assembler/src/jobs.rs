@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-//! Async job store shared by every heavy action (convert / optimize / plan).
+//! Async job store shared by every action (convert / optimize / plan / compact / thumbnail).
 //! One lifecycle for all actions: create -> compute -> finalize (submit-time
 //! URLs) -> completion callback; GET /v1/jobs/{id}?wait= serves status and the
 //! late-mint fallback.
@@ -31,7 +31,7 @@ use tokio::sync::Notify;
 /// hold the completion POINTER (paths + counts) — never the artifact bytes.
 #[derive(Clone, Serialize, Deserialize)]
 struct JobRecord {
-    action: String, // convert | optimize | plan
+    action: String, // convert | optimize | plan | compact | thumbnail
     status: String, // pending | running | uploading | done | error | canceled
     #[serde(skip_serializing_if = "Option::is_none")]
     result: Option<Value>,

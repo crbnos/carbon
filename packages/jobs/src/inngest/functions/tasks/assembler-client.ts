@@ -235,7 +235,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan" | "compact";
+  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
@@ -404,7 +404,7 @@ type AssemblerLogger = {
 type AssemblerJobSpec = {
   /** Namespaces this job's Inngest step ids (a caller may run several). */
   idPrefix: string;
-  action: "convert" | "optimize" | "plan" | "compact";
+  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
   jobId: string;
   /** Build the request body (signs a fresh source URL) — run inside a step. */
   buildBody: () => Promise<unknown>;

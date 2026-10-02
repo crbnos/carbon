@@ -124,8 +124,8 @@ pnpm --filter @carbon/files typecheck
 ## Cross-References
 
 - `src/media/label-logo.ts` — consumer of the pipeline primitives (`decodeImage` /
-  `resizeImage` / `encodeImage`). The `thumbnail` edge function is self-contained and
-  calls `npm:@jsquash/*` directly.
+  `resizeImage` / `encodeImage`). Model thumbnails do not use it: the Rust
+  assembler renders them (`crates/thumbnail`).
 - `packages/dev/docker/docker-compose.dev.yml`,
   `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml` — imgproxy service
 - `apps/{erp,mes}/app/routes/file+/preview+/$bucket.$.tsx` — read-side serving

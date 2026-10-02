@@ -1,7 +1,9 @@
 # assembler — Agent Guide
 
-The geometry service: STEP → GLB + assembly graph (`/convert`) and collision-free
-disassembly motion planning (`/plan`), as a Rust **axum** HTTP service. It runs
+The geometry service: STEP → GLB + assembly graph (`/convert`), collision-free
+disassembly motion planning (`/plan`), the compact preview GLB (`/optimize`), raw
+compaction (`/compact`) and the PNG preview thumbnail (`/thumbnail`), as a Rust
+**axum** HTTP service. It runs
 over the C++ **FCL** (collision) and **OpenCASCADE** (CAD) libraries via `cxx`
 bridges. Ported from a former Python/FastAPI service; the byte-for-byte outputs
 (nodeIds, geometry hashes, collision truth) are preserved so previously stored
@@ -26,6 +28,10 @@ crates/
 │                # sheet/surface geometry beside the solids keeps the merged mesh (nothing vanishes).
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
+├── thumbnail/   # GLB → PNG preview, on the CPU: reads plain or EXT_meshopt_compression GLBs,
+│                # z-buffer rasteriser from the viewer's default isometric direction (Z up),
+│                # material base colours, transparent background, hand-written PNG encoder.
+│                # `cargo run --release -p thumbnail --example render -- in.glb out.png` to eyeball one.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
                  # stability.rs adds a support-polygon check (part CoM outside the hull of the
                  # contact points below it ⇒ `needsSupport`); pipeline2 `compute_waves` levels
@@ -145,6 +151,16 @@ and plan jobs, then force-exits after `ASSEMBLER_SHUTDOWN_GRACE_S`.
 
 - **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
   the `carbon-assembler` image, or deploys the container.
+
+## Thumbnails
+
+`POST /v1/thumbnail` `{ source: { url }, output: { path?, size? } }` renders the
+GLB at `source.url` to a square PNG (300 px unless `size` says otherwise) and
+late-mint uploads it as the `thumbnail` output. The caller is `@carbon/jobs`
+`tasks/model-thumbnail.ts`, which hands it the model's optimised GLB (else the
+lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
+page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex
+colours are ignored in favour of the material colour.
 
 ## meshopt / Draco compression
 

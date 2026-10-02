@@ -5,7 +5,7 @@
 //! Carbon assembler service (Rust) — the CAD heavy-lifting hub. Action-based RPC
 //! over HTTP/JSON, versioned under `/v1`, with one shared async job model:
 //!
-//!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact
+//!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact | /v1/thumbnail
 //!                                                → 202 { ok, job }   (create, async)
 //!                          ...?sync              → 200 { ok, job }   (run inline; Lambda)
 //!   GET  /v1/jobs/{id}?wait=N                     → 200 { ok, job }   (poll)
@@ -102,6 +102,7 @@ async fn serve() {
         .route("/v1/optimize", post(create_optimize))
         .route("/v1/plan", post(create_plan))
         .route("/v1/compact", post(create_compact))
+        .route("/v1/thumbnail", post(create_thumbnail))
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
         .route("/v1/cache/invalidate", post(cache_invalidate))
@@ -194,7 +195,7 @@ async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
         .collect();
     Ok(Json(json!({
         "version": VERSION,
-        "actions": ["convert", "optimize", "plan", "compact"],
+        "actions": ["convert", "optimize", "plan", "compact", "thumbnail"],
         "input_formats": input_formats,
         "codecs": ["meshopt", "draco", "none"],
         "limits": {
@@ -720,6 +721,54 @@ async fn create_compact(
         }
     }
     respond(&state, &headers, &job_id, "compact", sync).await
+}
+
+async fn create_thumbnail(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
+) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
+    require_auth(&headers)?;
+    let req = parse_body(body)?;
+
+    let source_url = req["source"]["url"]
+        .as_str()
+        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
+    config::validate_url(source_url)?;
+    let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
+
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "thumbnail", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "thumbnail", optional_meta(&req), submit_urls.clone(), callback_url.clone())
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "thumbnail", &req).await?;
+        }
+        None => {
+            let meta = optional_meta(&req);
+            state.jobs.set_pending(&job_id, "thumbnail", meta, submit_urls.clone(), callback_url.clone()).await;
+            eprintln!("[{job_id}] thumbnail queued");
+            actions::thumbnail::spawn(&state, &job_id, thumbnail_req(source_url, &req["output"]));
+        }
+    }
+    respond(&state, &headers, &job_id, "thumbnail", sync).await
+}
+
+/// `output: { path?, size? }` — shared by the HTTP body and the run-job spec.
+pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::ThumbnailReq {
+    actions::thumbnail::ThumbnailReq {
+        source_url: source_url.to_string(),
+        size: output["size"]
+            .as_u64()
+            .map_or(thumbnail::DEFAULT_SIZE, |s| s.min(u32::MAX as u64) as u32),
+        path: output["path"].as_str().map(str::to_string),
+    }
 }
 
 fn optional_meta(req: &Value) -> Option<Value> {

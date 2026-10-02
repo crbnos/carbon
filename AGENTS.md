@@ -85,7 +85,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
 | Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
-| Adding a Deno edge function (embedding, thumbnail only) | `.claude/rules/workflow-edge-function.md` |
+| Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
 | Adding event handlers | `.claude/rules/workflow-event-system.md` |
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |

@@ -6,19 +6,19 @@ paths: ["packages/database/supabase/functions/**"]
 
 How to add or extend a Carbon edge function. These are **Deno** functions in
 `packages/database/supabase/functions/<name>/index.ts`, called over HTTP via
-`client.functions.invoke("<name>", { body })`. Two remain:
+`client.functions.invoke("<name>", { body })`. One remains:
 
 | Function | Contract | Caller check | Called from |
 |---|---|---|---|
 | `embedding` | `{ text }` → `{ embedding }`; `{ texts }` (≤ 100) → `{ embeddings }` — gte-small (384 dims) via `Supabase.ai.Session` | `requireCaller`: the service role key, a `service_role`/`authenticated` JWT (signature verified with `JWT_SECRET` when set), or a `carbon-key` API key checked against `apiKey` + `check_api_key_rate_limit` | ERP `shared.service.ts` (search), `@carbon/jobs` `events/embedding.ts` (`embedRecords`) |
-| `thumbnail` | `{ url }` → 300×300 PNG (puppeteer screenshot, resized with `npm:@jsquash/*`) | `requireServiceRole` — it drives a browser to any URL it is handed | `@carbon/jobs` `tasks/model-thumbnail.ts` |
 
 Everything else is Node. Privileged, transactional writes shared by the apps, the
 API and jobs (posting, converting, issuing, CSV import) are **server functions** —
 see `packages/server-functions/AGENTS.md`. MRP and scheduling are
 `@carbon/planning`. Async/event-driven side effects go through the Inngest event
 system (`@carbon/jobs`, see `event-system.md`); Postgres sends its own Inngest
-events with `util.send_inngest_event` and never calls an edge function. Reach for a
+events with `util.send_inngest_event` and never calls an edge function. Model
+thumbnails are rendered by the Rust assembler (`crates/thumbnail`). Reach for a
 new edge function only when the work needs the edge runtime itself (e.g. its
 built-in model API).
 
@@ -56,7 +56,7 @@ deployed".
 `verify_jwt = true` only checks the JWT's signature, and the anon key published in
 the apps' HTML IS a valid JWT, so the gateway alone lets anyone in. Every function
 defines and calls its own `requireCaller` (signed-in users, API keys, servers) or
-`requireServiceRole` (servers only) — copy the one from `embedding` or `thumbnail`.
+`requireServiceRole` (servers only) — copy `requireCaller` from `embedding`.
 The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a function
 whose files call neither.
 
@@ -115,8 +115,8 @@ which live-mounts `packages/database/supabase/functions/` — no per-edit deploy
 Exercise a function through the app or job path that invokes it.
 
 CI (`.github/workflows/check.yml`, job `edge-functions`, Deno v2) runs
-`deno check --no-lock embedding/index.ts thumbnail/index.ts` from the functions
-directory. Add a new function's `index.ts` to that command.
+`deno check --no-lock */index.ts` from the functions directory, after a step that
+fails any import reaching outside a function's own directory.
 
 ## 7. Deploy
 
@@ -134,5 +134,4 @@ Self-hosted instances sync separately (`.github/workflows/functions.yml`). Mergi
 - [ ] Payload validated
 - [ ] `requireCaller` or `requireServiceRole` defined and called in the function
 - [ ] Any record id re-read under `companyId`
-- [ ] Added to the `deno check` command in `check.yml`
 - [ ] Called via `client.functions.invoke("<name>", { body })`

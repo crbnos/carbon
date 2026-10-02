@@ -76,6 +76,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
+ "thumbnail",
  "tikv-jemallocator",
  "tokio",
  "tokio-util",
@@ -2486,6 +2487,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "thumbnail"
+version = "0.1.0"
+dependencies = [
+ "crc32fast",
+ "flate2",
+ "meshopt",
+ "optimize",
+ "serde_json",
 ]
 
 [[package]]

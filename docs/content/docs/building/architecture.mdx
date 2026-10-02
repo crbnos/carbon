@@ -385,9 +385,9 @@ Keep function code thin and perform set-based work in Postgres. Use Inngest for 
 Rust service for compute-intensive CAD geometry. MRP [[11]](#g11) and production scheduling live in
 `@carbon/planning` and run in Node the same way.
 
-Two small edge functions [[4]](#g4), written for Deno [[2]](#g2), remain in
-`packages/database/supabase/functions/`: `embedding` and `thumbnail`. Each is
-self-contained, and they are called over HTTP with `client.functions.invoke("<name>", { body })`.
+One small edge function [[4]](#g4), written for Deno [[2]](#g2), remains in
+`packages/database/supabase/functions/`: `embedding`. It is self-contained and
+called over HTTP with `client.functions.invoke("embedding", { body })`.
 
 **RPCs** are a narrower fifth path: Postgres functions called with `client.rpc("name", args)`. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one example.
 
