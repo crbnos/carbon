@@ -4,6 +4,7 @@
 
 // @ts-nocheck
 import { getLogger } from "@carbon/logger";
+import { describeRequest } from "@carbon/logger/middleware.server";
 import {
   annotateRequestSpan,
   nameRequestSpan,
@@ -81,6 +82,7 @@ export async function createMcpServer<Ctx extends McpContext>(
       const call = operation ? `${tool} ${operation}` : tool;
       annotateRequestSpan(attributes);
       nameRequestSpan(`POST /api/mcp ${call}`);
+      describeRequest(call);
       return withSpan(`mcp ${call}`, attributes, () => handler(params, extra));
     });
 

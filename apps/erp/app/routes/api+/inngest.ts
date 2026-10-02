@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import { describeRequest } from "@carbon/logger/middleware.server";
 import {
   annotateRequestSpan,
   nameRequestSpan
@@ -61,6 +62,7 @@ export function action(args: ActionFunctionArgs) {
   // caller's: an id that is not ours stays out of the span name.
   if (functionId && functionIds.has(functionId)) {
     nameRequestSpan(`${args.request.method} /api/inngest ${functionId}`);
+    describeRequest(functionId);
   }
   return handler(args);
 }

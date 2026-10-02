@@ -72,6 +72,17 @@ export function getRequestContext<T>(context: RouterContext<T>): T | undefined {
   return storage.getStore()?.get(context);
 }
 
+export const requestDetailContext = createContext<string | null>(null);
+
+/**
+ * What a route that serves many things on one path ran for this request:
+ * the Inngest function behind `/api/inngest`, the tool behind `/api/mcp`.
+ * The access log prints it after the path. No-op outside a request.
+ */
+export function describeRequest(detail: string) {
+  storage.getStore()?.set(requestDetailContext, detail);
+}
+
 /** Backing store for `oncePerRequest`, kept in the router context itself. */
 const memoContext = createContext<Map<string, unknown> | null>(null);
 

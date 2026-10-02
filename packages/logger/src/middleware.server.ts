@@ -9,7 +9,7 @@ import {
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
-import { getRequestContext } from "./context.server";
+import { getRequestContext, requestDetailContext } from "./context.server";
 import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
 import { annotateRequestSpan } from "./tracing.server";
 
@@ -20,6 +20,7 @@ import { annotateRequestSpan } from "./tracing.server";
 // package's `exports` and repoint the four importers (both apps' root.tsx,
 // auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
 export {
+  describeRequest,
   getRequestContext,
   getRouterContext,
   oncePerRead,
@@ -168,14 +169,21 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
     // Rendered as a Morgan "dev"-style colored line in dev (see
     // http-formatter.ts) and as a structured JSONL record in prod. When a
     // request body was captured, it rides on the same record (`body`).
-    log.debug("{method} {pathname} → {status} in {responseTime}ms", {
-      method,
-      pathname,
-      search: redactSearch(search),
-      status: res.status,
-      responseTime: performance.now() - start,
-      ...(body === undefined ? {} : { body })
-    });
+    const detail = context.get(requestDetailContext);
+    log.debug(
+      detail
+        ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
+        : "{method} {pathname} → {status} in {responseTime}ms",
+      {
+        method,
+        pathname,
+        ...(detail ? { detail } : {}),
+        search: redactSearch(search),
+        status: res.status,
+        responseTime: performance.now() - start,
+        ...(body === undefined ? {} : { body })
+      }
+    );
     return res;
   });
 

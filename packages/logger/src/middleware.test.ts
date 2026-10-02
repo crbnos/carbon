@@ -8,8 +8,10 @@ import { createLogRecorder } from "@logtape/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getLogger } from "./logger";
 import {
+  describeRequest,
   getRequestId,
   REQUEST_ID_HEADER,
+  requestContextMiddleware,
   requestIdContext,
   requestIdMiddleware
 } from "./middleware.server";
@@ -228,5 +230,57 @@ describe("requestIdMiddleware body logging", () => {
       async () => new Response("ok")
     );
     expect(httpRecord()?.properties.search).toBe("");
+  });
+});
+
+describe("describeRequest", () => {
+  it("puts what a shared route served into the access log line", async () => {
+    const request = new Request(
+      "http://x/api/inngest?fnId=carbon-event-queue",
+      {
+        method: "POST"
+      }
+    );
+    const context = makeContext();
+    const args = { request, context } as never;
+
+    await requestContextMiddleware(
+      args,
+      async () =>
+        (await requestIdMiddleware(args, async () => {
+          describeRequest("carbon-event-queue");
+          return new Response("ok");
+        })) as Response
+    );
+
+    const access = recorder.records.find(
+      (record) => record.properties.pathname === "/api/inngest"
+    );
+    expect(access?.properties.detail).toBe("carbon-event-queue");
+    expect(access?.message.join("")).toContain(
+      "POST /api/inngest carbon-event-queue"
+    );
+  });
+
+  it("leaves the line alone for a request that says nothing", async () => {
+    const context = makeContext();
+    const args = {
+      request: new Request("http://x/dashboard"),
+      context
+    } as never;
+
+    await requestContextMiddleware(
+      args,
+      async () =>
+        (await requestIdMiddleware(
+          args,
+          async () => new Response("ok")
+        )) as Response
+    );
+
+    const access = recorder.records.find(
+      (record) => record.properties.pathname === "/dashboard"
+    );
+    expect(access?.properties).not.toHaveProperty("detail");
   });
 });
