@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -179,6 +180,7 @@ const ShipmentForm = ({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !permissions.can("delete", "inventory") ||
                     !permissions.is("employee")

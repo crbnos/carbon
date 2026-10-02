@@ -171,7 +171,7 @@ const IssueWorkflowForm = ({
             </p>
           </VStack>
         </HStack>
-        <Input name="name" label={t`Name`} />
+        <Input name="name" label={t`Name`} autoFocus={!isEditing} />
         <VStack spacing={2}>
           <label
             htmlFor="content"

@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   Heading,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   toast,
   useDisclosure,
   VStack
@@ -143,6 +144,7 @@ const WarehouseTransferForm = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     disabled={
                       isLocked ||
                       !permissions.can("delete", "inventory") ||
@@ -359,7 +361,11 @@ const WarehouseTransferForm = ({
                     table="warehouseTransfer"
                   />
                 )}
-                <Input name="reference" label={t`Reference`} />
+                <Input
+                  name="reference"
+                  label={t`Reference`}
+                  autoFocus={!isEditing}
+                />
                 <Location name="fromLocationId" label={t`From Location`} />
                 <Location name="toLocationId" label={t`To Location`} />
                 {isEditing && (

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+    },
+    "test": {
+      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+    },
+    "typecheck": {
+      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+    }
+  }
+}

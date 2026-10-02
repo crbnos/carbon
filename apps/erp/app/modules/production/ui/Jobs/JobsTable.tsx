@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -721,6 +722,7 @@ const JobsTable = memo((props: JobsTableProps) => {
     (row) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           onClick={() => {
             navigate(path.to.job(row.id!));
           }}
@@ -729,6 +731,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           Edit Job
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "production")}
           onClick={() => onDelete(row)}

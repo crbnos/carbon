@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -276,7 +277,12 @@ const GaugeForm = ({
                                                       />
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                      <DropdownMenuItem asChild>
+                                                      <DropdownMenuItem
+                                                        shortcut={
+                                                          MENU_ITEM_SHORTCUTS.view
+                                                        }
+                                                        asChild
+                                                      >
                                                         <Link
                                                           to={path.to.gaugeCalibrationRecord(
                                                             record.id!
@@ -375,7 +381,11 @@ function GaugeFormContent({
             table="gauge"
           />
         )}
-        <Input name="description" label={t`Description`} />
+        <Input
+          name="description"
+          label={t`Description`}
+          autoFocus={!isEditing}
+        />
         <Select
           name="gaugeTypeId"
           label={t`Gauge Type`}

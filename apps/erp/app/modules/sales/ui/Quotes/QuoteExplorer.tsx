@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Spinner,
   Tooltip,
@@ -541,7 +542,11 @@ function QuoteLineItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem asChild onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Link
                     to={getLinkToItemDetails(
                       line.itemType as MethodItemType,
@@ -664,6 +669,7 @@ function QuoteLineItem({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {

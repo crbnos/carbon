@@ -30,6 +30,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tabs,
   TabsContent,
@@ -579,6 +580,7 @@ function ProcedureStepItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(attribute);
@@ -588,6 +590,7 @@ function ProcedureStepItem({
                 Edit Step
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {
@@ -669,6 +672,7 @@ function ProcedureParameterItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(parameter);
@@ -678,6 +682,7 @@ function ProcedureParameterItem({
                 Edit Parameter
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {

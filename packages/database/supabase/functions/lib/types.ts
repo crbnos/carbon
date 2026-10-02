@@ -3634,6 +3634,7 @@ export type Database = {
           hiddenComponentNodeIds: string[]
           id: string
           instructionText: string | null
+          isSubAssembly: boolean
           listValues: string[] | null
           maxValue: number | null
           minValue: number | null
@@ -3650,6 +3651,7 @@ export type Database = {
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
+          usedInStepId: string | null
           warnings: Json | null
         }
         Insert: {
@@ -3668,6 +3670,7 @@ export type Database = {
           hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
+          isSubAssembly?: boolean
           listValues?: string[] | null
           maxValue?: number | null
           minValue?: number | null
@@ -3684,6 +3687,7 @@ export type Database = {
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          usedInStepId?: string | null
           warnings?: Json | null
         }
         Update: {
@@ -3702,6 +3706,7 @@ export type Database = {
           hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
+          isSubAssembly?: boolean
           listValues?: string[] | null
           maxValue?: number | null
           minValue?: number | null
@@ -3718,6 +3723,7 @@ export type Database = {
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          usedInStepId?: string | null
           warnings?: Json | null
         }
         Relationships: [
@@ -3853,6 +3859,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_usedInStepId_fkey"
+            columns: ["usedInStepId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructionStep"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -46712,6 +46725,7 @@ export type Database = {
           netExtendedPrice: number | null
           netUnitPrice: number | null
           priceSource: string
+          priceTrace: Json | null
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -46735,6 +46749,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -46758,6 +46773,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId?: string
           quoteLineId?: string

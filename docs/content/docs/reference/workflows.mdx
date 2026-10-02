@@ -92,7 +92,7 @@ Every step reads and writes with the owner's permissions, re-checked at each ste
 
 ## Runs and history
 
-Every firing is recorded as a <Term>workflow run</Term>: one row for the run and one per step, with the values in, the values out, and why it ended the way it did. Open **Automate → Runs** for the list: status, workflow, trigger, the record it started from, duration, owner, and a **Chain** cell reading **"Hop 2"** when the run was caused by another run. Rows update live while anything is queued or running.
+Every firing is recorded as a <Term>workflow run</Term>: one row for the run and one per step, with the values in, the values out, and why it ended the way it did. Open **Automate → Runs** for the list: status, workflow, trigger, the record it started from (shown by its name or number, and linked so you can open it), duration, owner, and a **Chain** cell reading **"Hop 2"** when the run was caused by another run. Rows update live while anything is queued or running.
 
 <Screenshot label="The Run Details drawer from Automate → Runs: outcome sentence, step list in workflow order with a skipped branch greyed out, and one step expanded showing Input and Output" caption="The outcome sentence is the fastest way to understand a run." />
 

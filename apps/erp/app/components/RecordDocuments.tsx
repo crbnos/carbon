@@ -18,6 +18,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -184,12 +185,18 @@ const RecordDocuments = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                           {isViewableInBrowser(file.name) && (
-                            <DropdownMenuItem onClick={() => view(file)}>
+                            <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.view}
+                              onClick={() => view(file)}
+                            >
                               <LuExternalLink className="mr-2" />
                               <Trans>View in new tab</Trans>
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => download(file)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
+                            onClick={() => download(file)}
+                          >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem

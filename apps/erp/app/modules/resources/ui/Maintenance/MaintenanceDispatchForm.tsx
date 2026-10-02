@@ -134,6 +134,7 @@ const MaintenanceDispatchForm = ({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  autoFocus={!isEditing}
                   initialValue={content}
                   onUpload={onUploadImage}
                   onChange={(value) => {

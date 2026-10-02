@@ -167,6 +167,9 @@ msgstr "Todos para retrabalho"
 msgid "All scrap"
 msgstr "Todo refugo"
 
+msgid "All steps"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "Alocar unidades com falha"
 
@@ -516,6 +519,9 @@ msgstr "Vencido hoje?"
 msgid "Duplicate batch number"
 msgstr "Número de lote duplicado"
 
+msgid "Duplicate or copy"
+msgstr ""
+
 msgid "Duplicate serial number"
 msgstr "Número de série duplicado"
 
@@ -711,6 +717,9 @@ msgstr "Imperial"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "em {0}"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "Em Andamento"
@@ -1138,6 +1147,11 @@ msgstr "Abrir um NCR para disposição MRB"
 msgid "Open Jobs"
 msgstr "Ordens de produção abertas"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "Operações"
 
@@ -1225,6 +1239,9 @@ msgstr "separação em lugar de {substitutedFrom}, o item da ordem de produção
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "separação em lugar de {substitutedFrom}, o item da ordem de produção, para {substitutedAssemblies} conjuntos"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "Desconectar"
@@ -1352,6 +1369,9 @@ msgstr "Remover Estoque"
 
 msgid "Remove part"
 msgstr "Remover peça"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
@@ -1640,6 +1660,21 @@ msgstr "Etapas ausentes"
 msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Enviar anonimamente"
 
@@ -1829,6 +1864,11 @@ msgstr "Usar uma conta diferente"
 msgid "Used automatically at completion"
 msgstr "Usado automaticamente na conclusão"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "Valor"
 
@@ -1837,6 +1877,9 @@ msgstr "Verificar"
 
 msgid "View maintenance dispatch"
 msgstr "Visualizar ordem de manutenção"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Enviamos um link mágico para você entrar na sua conta."

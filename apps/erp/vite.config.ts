@@ -73,6 +73,15 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
       command === "build" && process.env.ASSETS_URL
         ? process.env.ASSETS_URL.replace(/\/*$/, "/")
         : undefined,
+    /**
+     * The jSquash image codecs (paperless thumbnails, via
+     * `@carbon/files/media/node`) import their wasm as `?inline` data URIs, so
+     * the bytes ride in the server bundle instead of being resolved off disk at
+     * runtime — a bundled `require.resolve` is anchored in the output directory,
+     * where neither `@jsquash` nor the .wasm exists. Vite only honours `?inline`
+     * for a file it treats as an asset, and `.wasm` is not one by default.
+     */
+    assetsInclude: ["**/*.wasm"],
     build: {
       minify: true,
       rolldownOptions: {

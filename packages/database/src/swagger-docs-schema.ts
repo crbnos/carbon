@@ -53497,6 +53497,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53652,6 +53658,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53759,6 +53771,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -67504,6 +67522,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -67626,6 +67647,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -67700,6 +67724,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
           },
           {
             $ref: "#/parameters/body.quoteLinePrice"
@@ -132031,7 +132058,8 @@ export default {
         "createdBy",
         "createdAt",
         "status",
-        "hiddenComponentNodeIds"
+        "hiddenComponentNodeIds",
+        "isSubAssembly"
       ],
       properties: {
         id: {
@@ -132198,6 +132226,17 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        usedInStepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        isSubAssembly: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -138865,6 +138904,9 @@ export default {
         convertedShippingCost: {
           format: "numeric",
           type: "number"
+        },
+        priceTrace: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -180025,6 +180067,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.assemblyInstructionStep.usedInStepId": {
+      name: "usedInStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.isSubAssembly": {
+      name: "isSubAssembly",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.receiptLine": {
       name: "receiptLine",
       description: "receiptLine",
@@ -187475,6 +187529,12 @@ export default {
     },
     "rowFilter.quoteLinePrice.convertedShippingCost": {
       name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.priceTrace": {
+      name: "priceTrace",
       required: false,
       in: "query",
       type: "string"

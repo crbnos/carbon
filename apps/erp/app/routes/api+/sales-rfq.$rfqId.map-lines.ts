@@ -134,6 +134,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  // A line that could not be mapped is reported, not swallowed: the modal
+  // closes on `success`, so answering `true` here told the user every line was
+  // mapped when some were not.
+  let failed = 0;
+
   for (const map of mappings) {
     if (map.action === "ignore") continue;
 
@@ -181,35 +186,74 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
         if (!created.error && created.data?.id) {
           finalItemId = created.data.id;
+        } else {
+          failed++;
+          logger.error("Failed to create part for RFQ line", {
+            companyId,
+            rfqId,
+            lineId: map.lineId,
+            readableId: createName,
+            error: created.error
+          });
         }
       }
     }
 
     if (finalItemId) {
       // Update salesRfqLine
-      await client
+      const { error: lineError } = await client
         .from("salesRfqLine")
         .update({
           itemId: finalItemId,
           updatedBy: userId
         })
         .eq("id", map.lineId);
+      if (lineError) {
+        failed++;
+        logger.error("Failed to map RFQ line to item", {
+          companyId,
+          rfqId,
+          lineId: map.lineId,
+          itemId: finalItemId,
+          error: lineError
+        });
+        continue;
+      }
 
-      // Upsert customerPartToItem
+      // Upsert customerPartToItem. The table has no audit columns — a
+      // `createdBy` here made every upsert fail with PGRST204, and the
+      // unchecked result meant the mapping silently never persisted.
       if (customerId && map.customerPartId) {
-        await serviceRole.from("customerPartToItem").upsert(
-          {
-            customerId,
-            customerPartId: map.customerPartId,
-            itemId: finalItemId,
+        const { error: customerPartError } = await serviceRole
+          .from("customerPartToItem")
+          .upsert(
+            {
+              customerId,
+              customerPartId: map.customerPartId,
+              itemId: finalItemId,
+              companyId
+            },
+            { onConflict: "customerId,itemId" }
+          );
+        if (customerPartError) {
+          failed++;
+          logger.error("Failed to map customer part to item", {
             companyId,
-            createdBy: userId
-          },
-          { onConflict: "customerId, itemId" }
-        );
+            customerId,
+            itemId: finalItemId,
+            customerPartId: map.customerPartId,
+            error: customerPartError
+          });
+        }
       }
     }
   }
 
+  if (failed > 0) {
+    return {
+      success: false,
+      error: "Some lines could not be mapped. Review them and try again."
+    };
+  }
   return { success: true };
 }

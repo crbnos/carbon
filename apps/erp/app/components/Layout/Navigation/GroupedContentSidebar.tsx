@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Subheading,
   useDebounce,
   VStack
@@ -272,7 +273,11 @@ const ViewsReorderGroup = ({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem destructive onSelect={() => onDelete(view)}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
+                    destructive
+                    onSelect={() => onDelete(view)}
+                  >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete View</Trans>
                   </DropdownMenuItem>

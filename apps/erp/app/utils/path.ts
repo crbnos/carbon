@@ -380,8 +380,6 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/components/reassign`),
     assemblyInstructionStepHiddenComponents: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/hidden/${stepId}`),
-    assemblyInstructionStepJoin: (id: string, stepId: string) =>
-      generatePath(`${x}/assembly/${id}/steps/join/${stepId}`),
     assemblyInstructionStepMotion: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>
@@ -403,6 +401,14 @@ export const path = {
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
+    assemblySubAssembly: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}`),
+    assemblySubAssemblyDelete: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/delete`),
+    assemblySubAssemblyNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/new`),
+    assemblySubAssemblyUngroup: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/ungroup`),
     assemblySyncBop: (id: string) =>
       generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
@@ -1991,6 +1997,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteLineOrder: (quoteId: string) =>
       generatePath(`${x}/quote/${quoteId}/line-order`),
+    quoteLinePriceTrace: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/price-trace`),
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
     quoteLineUpdatePrecision: (quoteId: string, lineId: string) =>

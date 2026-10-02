@@ -17,6 +17,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuItem,
   PulsingDot,
   Tooltip,
@@ -560,7 +561,7 @@ const KanbansTable = memo(
         return (
           <>
             {canUpdate && (
-              <MenuItem asChild>
+              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={`${path.to.kanban(row.id!)}?${params}`}>
                   <LuPencil className="mr-2 size-4" />
                   <Trans>Edit</Trans>
@@ -580,7 +581,7 @@ const KanbansTable = memo(
                 )
                   return null;
                 return (
-                  <MenuItem asChild>
+                  <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link to={getLinkToItemDetails(itemType, row.itemId)}>
                       <MethodItemTypeIcon
                         type={itemType}
@@ -592,7 +593,11 @@ const KanbansTable = memo(
                 );
               })()}
             {canDelete && (
-              <MenuItem destructive asChild>
+              <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                asChild
+              >
                 <Link to={`${path.to.deleteKanban(row.id!)}?${params}`}>
                   <LuTrash className="mr-2 size-4" />
                   Delete

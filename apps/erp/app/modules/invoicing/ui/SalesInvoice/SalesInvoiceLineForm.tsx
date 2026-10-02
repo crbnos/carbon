@@ -536,6 +536,7 @@ const SalesInvoiceLineForm = ({
                     )}
                     <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                       <Item
+                        autoFocus={!isEditing}
                         name="itemId"
                         label={lineType}
                         type={lineType}

@@ -13,6 +13,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -89,6 +90,7 @@ const MaintenanceDispatchHeader = () => {
                   <Trans>Reopen</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
                     isLocked ||

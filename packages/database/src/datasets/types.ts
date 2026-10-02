@@ -382,7 +382,8 @@ export type PricingRuleSpec = {
   name: string;
   ruleType: "Discount" | "Markup";
   amountType: "Percentage" | "Fixed";
-  /** Percent (0–100] for Percentage; a per-unit amount for Fixed. */
+  /** Percent (0–100] for Percentage — tier 02 stores it as the fraction the
+   *  pricing engine expects; a per-unit amount for Fixed. */
   amount: number;
   customer?: string;
   customerType?: string;
@@ -408,11 +409,23 @@ export type ConfigurationRuleSpec = {
   code: string;
 };
 
+/** A surcharge one parameter adds to the configured item's price. `value` is
+ *  the list option, or "true" for a boolean; omitted, the amount is per unit
+ *  of a numeric parameter's value. */
+export type ConfigurationPriceSpec = {
+  key: string;
+  value?: string;
+  amount: number;
+};
+
 export type ConfigurationSpec = {
   item: string;
   group: string;
   parameters: ConfigurationParameterSpec[];
   rules: ConfigurationRuleSpec[];
+  /** Seeded as the item's Configuration pricing rule ("<item> Configuration"),
+   *  so quotes and orders of a configured line price the chosen options. */
+  prices?: ConfigurationPriceSpec[];
 };
 
 export type RuleOperator =
@@ -1197,7 +1210,33 @@ export type AssemblyStepSpec = {
   componentNodeIds: string[];
   materials?: { item: string; quantity: number }[];
   tools?: { item: string; quantity: number }[];
+  /** Needed when another step names this one in `parent` / `usedIn`. Unique per assembly. */
+  key?: string;
+  /** A sub-assembly header row: names no node ids, materials or tools. */
+  isSubAssembly?: boolean;
+  /** Key of the header this step is a member of. Members sit directly before their header. */
+  parent?: string;
+  /** Headers only: key of the later step that fits this finished sub-assembly. */
+  usedIn?: string;
+  /**
+   * Planner-baked insertion, what the app's order-preserving re-motion would
+   * write: planned per build (the main build and each sub-assembly on its own),
+   * moving the step's parts plus any finished sub-assembly it fits. Absent =
+   * motion "none" (the player fades the parts in).
+   */
+  motion?: AssemblyStepMotionSpec;
+  /** Planner's view direction for the step (the camera's `{ source: "plan" }` hint). */
+  view?: [number, number, number];
+  /** Parts the planner found blocking every insertion: the step fades in, no path is invented. */
+  blockedBy?: string[];
 };
+
+type Vec3Spec = [number, number, number];
+
+/** The `Motion` shapes the planner bakes (`@carbon/viewer` types.ts). */
+export type AssemblyStepMotionSpec =
+  | { type: "linear"; direction: Vec3Spec; distance: number }
+  | { type: "L"; segments: { direction: Vec3Spec; distance: number }[] };
 
 export type AssemblyComponentMappingSpec = {
   geometryHash: string;
@@ -1218,6 +1257,12 @@ export type AssemblySpec = {
   componentCount: number;
   /** 1-based BOP position of the item's "Assembly" operation. */
   operation: number;
+  /**
+   * `assemblyStructureFingerprint` of the steps the baked `motion` / `view` /
+   * `blockedBy` were planned for. The validator fails when the steps' parts or
+   * structure change after baking.
+   */
+  motionsBakedFor?: string;
   steps: AssemblyStepSpec[];
   componentMappings: AssemblyComponentMappingSpec[];
 };

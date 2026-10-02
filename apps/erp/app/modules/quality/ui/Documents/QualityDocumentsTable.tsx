@@ -9,6 +9,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -190,6 +191,7 @@ const QualityDocumentsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.qualityDocument(row.id!)}`);
@@ -199,6 +201,7 @@ const QualityDocumentsTable = memo(
               Edit Document
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {

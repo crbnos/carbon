@@ -6,8 +6,8 @@
 
 - **graph.json** (`AssemblyGraph`) — assembly tree written by the geometry service `/convert`; leaf nodes carry a stable `nodeId` (also baked into GLB node extras as `userData.nodeId`). All joins between steps, plans, and scene objects are by `nodeId`.
 - **plan.json** (`AssemblyPlan`) — per-component insertion `Motion`, sequence, subassembly `groups`, and body-level `contacts`, written by the geometry service `/plan`. `CURRENT_PLAN_VERSION` (currently `3`) — stored plans below it are STALE and must be treated as absent so the pipeline re-plans.
-- **Step** (`AssemblyStep`) — one build instruction: `componentNodeIds`, a `Motion`, optional `camera`, `fastener`, per-step `hiddenComponentNodeIds`, and `joinStepId`. Built from a plan by `buildAssemblyStepGroups`.
-- **Sub-assembly staging** (`staging.ts`) — a step with `joinStepId` (DB `parentStepId`) is built OFF TO THE SIDE: its parts sit at a computed staging spot (beside the model along +X or +Z — never above/below, Y is up — whichever is most side-on to the saved cameras of the steps involved, +X by default; one lane per group) until the later JOIN step, which glides the whole group in (`STAGING_GLIDE_SECONDS`, `buildStepClip`'s `glide`) and then plays its own insertion. The player's clip effect is the ONLY place that moves parked nodes (`parkNodes`), so park/unpark stay paired with the clip's save/restore. Picking and path editing always show parts seated. Invalid links (backwards, from the base step, nested chains, unknown ids) play as built in place.
+- **Step** (`AssemblyStep`) — one build instruction: `componentNodeIds`, a `Motion`, optional `camera`, `fastener`, per-step `hiddenComponentNodeIds`, and the sub-assembly fields `isSubAssembly` / `parentStepId` / `usedInStepId`. Built from a plan by `buildAssemblyStepGroups`.
+- **Sub-assemblies** (`subassembly.ts`) — a header step (`isSubAssembly`) groups the steps whose `parentStepId` points at it; those steps sit directly before it in play order and are BUILT ON THEIR OWN: while one is active the player isolates its sub-assembly's parts (focus-style, ancestors kept, not cleared by playback, framed on their own bounds). A header's `usedInStepId` names the later step that carries the finished unit in (glide from beside the build, `CARRY_IN_GLIDE_SECONDS` / `buildStepClip`'s `glide.nodeIds`, then the step's insertion); without one the header itself is where the unit joins the main build, and a USED header plays nothing (0-length segment, skipped by prev/next). No nesting — a step USES a finished sub-assembly instead, so chains of any length work. `arrivalIndexByNode(steps, world)` is THE answer to "when does this part appear in the build on screen" and drives visibility; `validateSubAssemblies` is THE structural rule the ERP service and editor share. `scopeStepIds` limits the timeline to an opened sub-assembly.
 - **Motion** — discriminated union `linear | L | helix | path | none`. Insertion motion; the player derives removal (reverse) and start poses. `flagged`/`blockedBy` steps use `none` and fade in (no collision-free path exists — a synthesized path would clip through geometry).
 - **Artifact tiers** — a model renders from best-available: LOD GLB → optimised GLB → lossless GLB → raw WASM (in-browser occt-import-js) fallback.
 
@@ -35,7 +35,7 @@
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/viewer test        # vitest — camera, fallback, graph, motion, plan, staging, visibility
+pnpm --filter @carbon/viewer test        # vitest — camera, fallback, graph, motion, plan, subassembly, visibility
 pnpm --filter @carbon/viewer typecheck   # tsgo --noEmit
 ```
 
@@ -50,7 +50,7 @@ pnpm --filter @carbon/viewer typecheck   # tsgo --noEmit
 | `./optimize-progress` | `OptimizeProgress` — optimise-status chip |
 | `./use-optimized-model` | `useOptimizedModel` — TanStack Query polling of the model optimise lifecycle (shared by ERP `CadModel` + MES model tab) |
 
-Key non-exported building blocks: `useAssembly` (loads meshopt GLB + graph.json, indexes nodes by nodeId), `motion.ts` (`buildStepClip`, `motionToKeyframes`, `naturalizeMotion`), `fallback.ts` (`synthesizeFallbackMotion` — AABB escape for legacy `none` motions), `staging.ts` (`buildStaging` / `parkedOffsetsAt` / `stagedGroupNodeIds` / `joinTargets` — sub-assemblies built aside; `joinTargets` is THE link rule the ERP service, the ERP select and playback share, and it and `stagedGroupNodeIds` are also on `./steps`), `camera.ts` (`fitFraming` — live frustum fit around the planner's baked view direction), `raw/` (WASM fallback tier: `loadRawModel` via occt-import-js).
+Key non-exported building blocks: `useAssembly` (loads meshopt GLB + graph.json, indexes nodes by nodeId), `motion.ts` (`buildStepClip`, `motionToKeyframes`, `naturalizeMotion`), `fallback.ts` (`synthesizeFallbackMotion` — AABB escape for legacy `none` motions), `subassembly.ts` (`buildSubAssemblyPlan` / `arrivalIndexByNode` / `validateSubAssemblies` / `usableSubAssemblies` / `displayOrder` — also on `./steps`), `camera.ts` (`fitFraming` — live frustum fit around the planner's baked view direction), `raw/` (WASM fallback tier: `loadRawModel` via occt-import-js).
 
 ## Cross-References
 

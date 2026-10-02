@@ -72,8 +72,43 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
      `applyRulesOnTop=false` skips discounts and markups but still applies the
      configuration prices (`applyPriceRules(..., { configurationOnly: true })`).
    - Final price clamped to ≥ 0.
-   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`)
-   into `priceTrace`. The winning rule's id lands on `quoteLine.pricingRuleId`.
+   Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`).
+   The trace is a **snapshot stored with the price** — pricing rules are edited
+   in place, so re-running today's rules cannot explain yesterday's price.
+   - `quoteLinePrice.priceTrace` (migration `20261001125824`), one per quantity
+     break. Written by every system-pricing path: the three
+     `build*PriceRows` builders, `recalculateQuoteLinePrices`, the grid's
+     Markup % (`recalculate-price` route, `priceTracesByQuantity`) and
+     per-category markup edits, and `repriceQuoteLineFromRules`. A typed price
+     (`priceSource = 'manual'`) writes `null`. `rewriteQuoteLinePrices` does
+     NOT carry an omitted trace over (it explains the unit price, which every
+     caller restates) — except the precision rebuild, which passes the stored
+     one. Kysely writes `JSON.stringify` it (a JS array would go out as a
+     Postgres array literal). `get-method` `quoteToQuote` copies it.
+     `withBasePriceSource` renames the Base Price step's source
+     (`QUOTE_BASE_PRICE_SOURCES`: "Cost + Markup", "Supplier Price"), since
+     `resolvePrice` names every base the item's sale price.
+   - `salesOrderLine.priceTrace`, posted by `SalesOrderLineForm` (typing a
+     price posts `"null"`), set by `createReplacementSalesOrder`, and copied
+     by `convert` from the converted break via `quoteToOrderPriceTrace`
+     (`functions/lib/price-trace.ts`), which appends the quote line discount so
+     the trace ends at the order line's net price.
+   - `quoteLine.priceTrace` is dead — one trace cannot describe several breaks.
+     Nothing fills it; `get-method` `quoteToQuote` copies it (always null).
+   `getQuoteLinePriceTraces` (`x+/quote+/$quoteId.$lineId.price-trace.tsx`
+   loader, `shouldRevalidate` false — it is expensive, so the grid loads it
+   only on modal open, after a reprice, and once on mount for a line with an
+   untraced system price) returns each break's stored `trace` plus a
+   `currentTrace`: today's
+   pipeline re-run from the base the row's builder starts from (cost-plus
+   rollup with the row's markups / configured sale price for Make to Order,
+   supplier break for Purchase to Order, item sale price for Pull from
+   Inventory); none for a `manual` row. It calls
+   `buildCostEffects(..., { refreshBuyCosts: false })` so the read never writes
+   `quoteMaterial.unitCost`. The route's action, `repriceQuoteLineFromRules`,
+   stores each `currentTrace` and its final price in one
+   `upsertQuoteLinePrices` transaction. It refuses a non-Draft quote itself
+   (`QuoteLockedError`) because it is also an MCP tool.
 
 `upsertQuoteLinePrices(db, companyId, quoteId, lineId, prices)` deletes and
 re-inserts rows **inside one Kysely transaction** (so a failed insert rolls the
@@ -117,7 +152,16 @@ it.
 - `pricingRuleValidator` in `sales.models.ts`; Percentage `amount` must be ≤ 1.
 - UI: `ui/Quotes/QuoteLinePricing.tsx` (per-quantity discount/markup editing) and
   the `ui/Pricing/` folder (`PricingRuleForm`, `PricingRulesTable`, `PriceOverrideForm`,
-  `PriceTracePopover`).
+  `PriceTraceModal`). `PriceTraceModal` (calculator icon → modal; sales order line,
+  price list) renders `PriceTraceTable`; the quote grid's Unit Price row shows a
+  calculator `IconButton` only when `hasPriceAdjustments` finds an override, rule or
+  configuration step in some break's stored trace (from the grid's own price
+  rows — no request) or fetched current trace, and opens
+  `QuoteLinePriceTraceModal`: one `PriceTraceTable` per quantity from the
+  stored trace (today's calculation for a row priced before traces were
+  recorded), a "repricing gives X" note when today's final price differs at the
+  line's precision (`repricedUnitPrice`, `sales.utils.ts`), and a **Reprice with current rules** button on a Draft
+  quote.
 - Every path that turns a cost rollup into a quote line price runs it through
   `resolvePrice` as `existingBasePrice` with the line's `configuration`: the server
   builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and
@@ -145,6 +189,7 @@ it.
   **wrong** — they were dropped in 2024. Markup now lives in `categoryMarkups` (rollup)
   and `pricingRule` (engine).
 - `quoteLinePrice` has **no `id`** — PK is `(quoteLineId, quantity)`.
-- Sales orders/invoices: `salesOrderLine` now carries `pricingRuleId` + `priceTrace`
-  (so rule provenance *does* propagate to orders), but invoice lines do not. Quote→order
+- Sales orders/invoices: `salesOrderLine` carries `pricingRuleId` + `priceTrace`
+  (the trace propagates from the quote through `convert`; nothing writes
+  `pricingRuleId`), but invoice lines do not. Quote→order
   conversion goes through the `convert` edge function (`convertQuoteToOrder`).

@@ -15,7 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -207,7 +208,7 @@ export function BatchItemCard({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.open} asChild>
                     <a href={path.to.external.mesBatch(item.batchId)}>
                       <DropdownMenuIcon icon={<LuPlay />} />
                       {t`Open in MES`}

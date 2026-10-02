@@ -19,6 +19,7 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure,
   VStack
@@ -217,6 +218,7 @@ const JournalEntryForm = ({
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
                           disabled={
                             !permissions.can("delete", "accounting") ||
                             !permissions.is("employee")

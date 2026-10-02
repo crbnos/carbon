@@ -205,6 +205,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                 />
               )}
               <Customer
+                autoFocus={!isEditing}
                 name="customerId"
                 label={t`Customer`}
                 onChange={onCustomerChange}

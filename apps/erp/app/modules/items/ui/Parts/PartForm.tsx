@@ -283,6 +283,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     onChange={onIdChange}
                     isDisabled={loading}
                     isUppercase={!allowLowercaseItemIds}
+                    autoFocus
                   />
                 )}
                 <Input

@@ -48,7 +48,7 @@ function toNav(nodes: TreeNode[]): DocsNavNode[] {
 // URLs (/docs/reference/<slug>) never move. Any reference page missing from this map is
 // appended ungrouped, so adding a new entity can never make it vanish from the nav.
 const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
-  { label: "Getting started", slugs: ["onboarding"] },
+  { label: "Getting started", slugs: ["onboarding", "keyboard-shortcuts"] },
   {
     label: "Sales",
     slugs: ["quotes", "pricing", "sales-orders", "rmas", "customer-portal"],
