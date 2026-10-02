@@ -8,7 +8,8 @@ import { path } from "./path";
 const log = getLogger("auth");
 
 export function getCurrentPath(request: Request) {
-  return new URL(request.url).pathname;
+  const url = new URL(request.url);
+  return `${url.pathname}${url.search}`;
 }
 
 export function makeRedirectToFromHere(request: Request) {
