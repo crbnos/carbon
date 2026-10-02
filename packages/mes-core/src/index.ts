@@ -4,3 +4,4 @@
 
 export * from "./contract";
 export * from "./locales";
+export * from "./models";

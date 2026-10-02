@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./contract": "./src/contract.ts",
-    "./locales": "./src/locales.ts"
+    "./locales": "./src/locales.ts",
+    "./models": "./src/models.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules",
