@@ -1339,7 +1339,10 @@ export async function updateAbility(
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client.from("ability").update(ability).eq("id", id);
+  return client
+    .from("ability")
+    .update({ recertifyEveryDays: ability.recertifyEveryDays })
+    .eq("id", id);
 }
 
 /**
@@ -1546,17 +1549,15 @@ export async function upsertFailureMode(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in failureMode) {
-    return client
-      .from("maintenanceFailureMode")
-      .insert([failureMode])
-      .select("id");
-  } else {
-    return client
-      .from("maintenanceFailureMode")
-      .update(sanitize(failureMode))
-      .eq("id", failureMode.id);
+  // maintenanceFailureMode has no customFields column.
+  const { customFields: _customFields, ...mode } = failureMode;
+  if ("createdBy" in mode) {
+    return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
+  return client
+    .from("maintenanceFailureMode")
+    .update(sanitize(mode))
+    .eq("id", mode.id);
 }
 
 /** @mcp upsert */

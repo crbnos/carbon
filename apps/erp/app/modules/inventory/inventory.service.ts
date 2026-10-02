@@ -2190,7 +2190,9 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  // batchProperty has no group column; the group is not stored.
+  const { batchPropertyGroupId: _group, ...order } = data;
+  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
 /** @mcp update */
@@ -2224,7 +2226,11 @@ export async function upsertBatchProperty(
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  const {
+    userId,
+    configurationParameterGroupId: _group,
+    ...data
+  } = batchProperty;
   if (batchProperty.id) {
     return client
       .from("batchProperty")
@@ -2259,22 +2265,18 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in kanban) {
-    return client
-      .from("kanban")
-      .insert({
-        ...kanban
-      })
-      .select("id")
-      .single();
+  // kanban has no customFields column.
+  const { customFields: _customFields, ...row } = kanban;
+  if ("createdBy" in row) {
+    return client.from("kanban").insert(row).select("id").single();
   }
   return client
     .from("kanban")
     .update({
-      ...sanitize(kanban),
+      ...sanitize(row),
       updatedAt: datetime.timestamp()
     })
-    .eq("id", kanban.id)
+    .eq("id", row.id)
     .select("id")
     .single();
 }

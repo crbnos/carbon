@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { async } from "@carbon/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const env = vi.hoisted(() => ({
@@ -276,6 +277,28 @@ describe("captureWorkEvent", () => {
       );
       expect(() => trackWorkEvent("job_released", released)).not.toThrow();
       await new Promise((resolve) => setImmediate(resolve));
+    });
+
+    // On a host that freezes the process after the response, the capture must
+    // be handed to the host to wait for.
+    it("is handed to the host's lifetime hook, and done when that settles", async () => {
+      const kept: Promise<unknown>[] = [];
+      async.onBackground((work) => kept.push(work));
+      let sent = false;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          sent = true;
+          return new Response("ok", { status: 200 });
+        })
+      );
+      trackWorkEvent("job_released", released);
+      expect(sent).toBe(false);
+      expect(kept).toHaveLength(1);
+      await kept[0];
+      expect(sent).toBe(true);
+      async.onBackground(undefined);
     });
   });
 });

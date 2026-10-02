@@ -9,7 +9,11 @@ import {
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
-import { getRequestContext } from "./context.server";
+import {
+  getRequestContext,
+  requestContextMiddleware,
+  requestDetailContext
+} from "./context.server";
 import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
 import { annotateRequestSpan } from "./tracing.server";
 
@@ -20,8 +24,11 @@ import { annotateRequestSpan } from "./tracing.server";
 // package's `exports` and repoint the four importers (both apps' root.tsx,
 // auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
 export {
+  currentRequest,
+  describeRequest,
   getRequestContext,
   getRouterContext,
+  isReadRequest,
   oncePerRead,
   oncePerRequest,
   requestContextMiddleware
@@ -161,24 +168,45 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
     const res = await next();
     annotateRequestSpan({
       "http.response.status_code": res.status,
-      "carbon.request_id": requestId
+      "carbon.request_id": requestId,
+      // The client left before the response was ready, so a read's queries
+      // were cancelled and its status says nothing about the server.
+      ...(request.signal.aborted && { "carbon.request.abandoned": true })
     });
     // Debug-level so it is visible in dev but filtered by the prod `info`
     // default — the pipeline is observable with zero migrated call sites.
     // Rendered as a Morgan "dev"-style colored line in dev (see
     // http-formatter.ts) and as a structured JSONL record in prod. When a
     // request body was captured, it rides on the same record (`body`).
-    log.debug("{method} {pathname} → {status} in {responseTime}ms", {
-      method,
-      pathname,
-      search: redactSearch(search),
-      status: res.status,
-      responseTime: performance.now() - start,
-      ...(body === undefined ? {} : { body })
-    });
+    const detail = context.get(requestDetailContext);
+    log.debug(
+      detail
+        ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
+        : "{method} {pathname} → {status} in {responseTime}ms",
+      {
+        method,
+        pathname,
+        ...(detail ? { detail } : {}),
+        search: redactSearch(search),
+        status: res.status,
+        responseTime: performance.now() - start,
+        ...(body === undefined ? {} : { body })
+      }
+    );
     return res;
   });
 
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
 };
+
+/**
+ * The request scope in one middleware: publishes the request context
+ * (`requestContextMiddleware`) and, inside it, assigns the request id and
+ * writes the access log (`requestIdMiddleware`). Register FIRST in an app's
+ * root `middleware`, so everything downstream runs inside both.
+ */
+export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
+  requestContextMiddleware(args, () =>
+    Promise.resolve(requestIdMiddleware(args, next) as Response)
+  );

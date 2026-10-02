@@ -51,3 +51,11 @@ export const get = <T extends Record<string, any>, K extends keyof T>(
   const value = obj[key];
   return value === undefined ? defaultValue : value;
 };
+
+/**
+ * Passes a value TypeScript cannot check to a typed parameter: a patch or
+ * filter whose column or table is only known at runtime. Never use it for a
+ * typed payload that carries keys the table lacks — strip those instead, or
+ * PostgREST rejects the write (PGRST204) and the compiler no longer warns.
+ */
+export const unchecked = (value: unknown) => value as never;

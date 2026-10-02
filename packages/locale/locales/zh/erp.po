@@ -2999,8 +2999,14 @@ msgstr "返回可追溯性"
 msgid "Backflush"
 msgstr "倒冲"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "备份失败"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "备份"
@@ -3788,6 +3794,9 @@ msgstr "检查点 ·"
 
 msgid "Checkpoints"
 msgstr "检查点"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "选择批号"
@@ -8133,6 +8142,9 @@ msgstr "上传 PDF 失败"
 msgid "Failed to upload thumbnail"
 msgstr "上传缩略图失败"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "故障"
 
@@ -11264,6 +11276,9 @@ msgstr "净收益"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "永不"
 
@@ -13640,6 +13655,9 @@ msgstr "首选供应商"
 
 msgid "Prefix"
 msgstr "前缀"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "预付款（默认）"
@@ -16070,6 +16088,9 @@ msgstr "搜索变量…"
 msgid "Search..."
 msgstr "搜索..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完成秒数"
 
@@ -16099,6 +16120,9 @@ msgstr "驱动客户定价和条款的细分市场"
 
 msgid "Select"
 msgstr "选择"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "选择经办人"
@@ -20052,6 +20076,9 @@ msgstr "上传 CSV"
 msgid "Upload failed. Please try again."
 msgstr "上传失败。请重试。"
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "已上传模型"
 
@@ -20068,6 +20095,18 @@ msgstr "正在上传 {0}"
 
 msgid "Uploading {fileName}"
 msgstr "正在上传 {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "上传中..."
@@ -21299,6 +21338,9 @@ msgstr "你已打卡{hoursElapsed}小时。你忘记收工了吗?"
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "即使您的登录被盗，您的账户也保持安全"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"

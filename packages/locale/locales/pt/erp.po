@@ -2999,8 +2999,14 @@ msgstr "Voltar para rastreabilidade"
 msgid "Backflush"
 msgstr "Baixa automática"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Backup falhou"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Backups"
@@ -3788,6 +3794,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Escolha um número de lote"
@@ -8133,6 +8142,9 @@ msgstr "Falha ao enviar arquivo PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Falha ao enviar arquivo de miniatura"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Falha"
 
@@ -11264,6 +11276,9 @@ msgstr "Receita líquida"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Nunca"
 
@@ -13640,6 +13655,9 @@ msgstr "Fornecedor preferencial"
 
 msgid "Prefix"
 msgstr "Prefixo"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Adiantamentos (padrão)"
@@ -16070,6 +16088,9 @@ msgstr "Pesquisar variáveis…"
 msgid "Search..."
 msgstr "Pesquisar..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Segundos para completar"
 
@@ -16099,6 +16120,9 @@ msgstr "Segmentos que determinam a precificação e os termos do cliente"
 
 msgid "Select"
 msgstr "Selecionar"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Selecione um designado"
@@ -20052,6 +20076,9 @@ msgstr "Enviar arquivo CSV"
 msgid "Upload failed. Please try again."
 msgstr "O envio do arquivo falhou. Por favor, tente novamente."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Modelo carregado"
 
@@ -20068,6 +20095,18 @@ msgstr "Enviando {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Carregando {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Enviando..."
@@ -21295,6 +21334,9 @@ msgstr "Você marcou entrada há {hoursElapsed} horas. Você esqueceu de apontar
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Sua conta permanece segura mesmo se seu login for roubado"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Seus livros e como o dinheiro flui."

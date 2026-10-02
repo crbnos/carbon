@@ -2999,8 +2999,14 @@ msgstr "Вернуться к прослеживаемости"
 msgid "Backflush"
 msgstr "Ретроградное списание"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Ошибка резервной копии"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Резервные копии"
@@ -3788,6 +3794,9 @@ msgstr "Контрольная точка ·"
 
 msgid "Checkpoints"
 msgstr "Контрольные точки"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Выберите номер партии"
@@ -8133,6 +8142,9 @@ msgstr "Ошибка загрузки PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Не удалось загрузить миниатюру"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Сбой"
 
@@ -11264,6 +11276,9 @@ msgstr "Чистый доход"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Никогда"
 
@@ -13640,6 +13655,9 @@ msgstr "Основной поставщик"
 
 msgid "Prefix"
 msgstr "Префикс"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Предоплаты"
@@ -16070,6 +16088,9 @@ msgstr "Поиск переменных…"
 msgid "Search..."
 msgstr "Поиск..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Секунды для завершения"
 
@@ -16099,6 +16120,9 @@ msgstr "Сегменты, которые определяют ценообраз
 
 msgid "Select"
 msgstr "Выбрать"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
@@ -20052,6 +20076,9 @@ msgstr "Загрузить CSV"
 msgid "Upload failed. Please try again."
 msgstr "Не удалось загрузить файл. Попробуйте ещё раз."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Модель загружена"
 
@@ -20068,6 +20095,18 @@ msgstr "Загрузка {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Загрузка {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Загрузка..."
@@ -21295,6 +21334,9 @@ msgstr "Вы в работе уже {hoursElapsed} часов. Вы забыли
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Ваша учетная запись остается в безопасности, даже если ваше имя входа украдено"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Ваши книги и движение денежных средств."

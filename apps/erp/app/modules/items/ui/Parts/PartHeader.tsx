@@ -64,7 +64,7 @@ const PartHeader = () => {
     } | null>;
   }>(path.to.part(itemId));
 
-  const supersession = useResolved(routeData?.supersession, null);
+  const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(
     supersession?.supersessionMode
   );

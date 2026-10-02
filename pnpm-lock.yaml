@@ -133,17 +133,17 @@ catalogs:
       specifier: 7.10.0
       version: 7.10.0
     '@supabase/functions-js':
-      specifier: 2.1.5
-      version: 2.1.5
+      specifier: 2.117.2
+      version: 2.117.2
     '@supabase/postgrest-js':
-      specifier: 2.80.0
-      version: 2.80.0
+      specifier: 2.117.2
+      version: 2.117.2
     '@supabase/storage-js':
-      specifier: 2.80.0
-      version: 2.80.0
+      specifier: 2.117.2
+      version: 2.117.2
     '@supabase/supabase-js':
-      specifier: 2.80.0
-      version: 2.80.0
+      specifier: 2.117.2
+      version: 2.117.2
     '@tailwindcss/typography':
       specifier: 0.5.19
       version: 0.5.19
@@ -541,10 +541,10 @@ importers:
         version: 7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(typescript@5.8.3)
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
@@ -806,16 +806,16 @@ importers:
         version: 13.3.0
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/postgrest-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2
       '@supabase/storage-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tanstack/react-query':
         specifier: 5.97.0
         version: 5.97.0(react@18.3.1)
@@ -1257,13 +1257,13 @@ importers:
         version: 13.3.0
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/storage-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
@@ -1501,10 +1501,10 @@ importers:
         version: 7.18.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(typescript@5.8.3)
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
@@ -1616,7 +1616,7 @@ importers:
     dependencies:
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       dotenv:
         specifier: 16.3.1
         version: 16.3.1
@@ -1653,10 +1653,10 @@ importers:
         version: 7.14.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(typescript@5.8.3)
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@vercel/react-router':
         specifier: 'catalog:'
         version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1732,10 +1732,10 @@ importers:
         version: 7.14.0(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(typescript@5.8.3)
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@vercel/react-router':
         specifier: 'catalog:'
         version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.0(patch_hash=10eab9c1af1b5cc376e67a81f64216bb5d6fcd8a94fc807eb46ecf1982b2cde4)(@react-router/serve@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.1.0)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.0.16(@types/node@26.1.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))(yaml@2.9.1))(@react-router/node@7.18.0(react-router@7.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1982,10 +1982,10 @@ importers:
         version: 13.3.0
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@vercel/analytics':
         specifier: 'catalog:'
         version: 1.6.1(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -2143,7 +2143,7 @@ importers:
         version: 2.2.3(@logtape/logtape@2.2.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
@@ -2183,7 +2183,7 @@ importers:
         version: link:../config
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -2452,7 +2452,7 @@ importers:
         version: 7.10.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       ai:
         specifier: 'catalog:'
         version: 7.0.116(zod@4.5.4)
@@ -2571,10 +2571,10 @@ importers:
         version: 1.5.0
       '@supabase/storage-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       libheif-js:
         specifier: 1.23.2
         version: 1.23.2
@@ -2789,10 +2789,10 @@ importers:
         version: 7.10.0
       '@supabase/functions-js':
         specifier: 'catalog:'
-        version: 2.1.5
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       ai:
         specifier: 'catalog:'
         version: 7.0.116(zod@4.5.4)
@@ -2941,7 +2941,7 @@ importers:
         version: 7.10.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       inngest:
         specifier: 3.54.0
         version: 3.54.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(hono@4.12.25)(next@15.5.21(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
@@ -3124,7 +3124,7 @@ importers:
         version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)(react@18.3.1)
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -3170,7 +3170,7 @@ importers:
         version: 3.12.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
@@ -3226,7 +3226,7 @@ importers:
         version: link:../database
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -3379,7 +3379,7 @@ importers:
         version: 4.2.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
@@ -3596,7 +3596,7 @@ importers:
         version: link:../utils
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       stripe:
         specifier: 22.4.0
         version: 22.4.0(@types/node@20.19.39)
@@ -3790,7 +3790,7 @@ importers:
         version: 3.12.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.80.0
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tiptap/react':
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9515,36 +9515,37 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@supabase/auth-js@2.80.0':
-    resolution: {integrity: sha512-q2LyCVJGN4p7d92cOI7scWOoNwxJhZuFRwiimSUGJGI5zX7ubf1WUPznwOmYEn8WVo3Io+MyMinA7era6j5KPw==}
-    engines: {node: '>=20.0.0'}
+  '@supabase/auth-js@2.117.2':
+    resolution: {integrity: sha512-Z3WnGwrphYZubrLbxp5Iv0tLA9A5GhvKzJ/ZXglxqwd2QEH2R4dXRltjVJ8sIn4xEW2BSFIGT0yALVJIgZeDYw==}
+    engines: {node: '>=22.0.0'}
 
-  '@supabase/functions-js@2.1.5':
-    resolution: {integrity: sha512-BNzC5XhCzzCaggJ8s53DP+WeHHGT/NfTsx2wUSSGKR2/ikLFQTBCDzMvGz/PxYMqRko/LwncQtKXGOYp1PkPaw==}
+  '@supabase/functions-js@2.117.2':
+    resolution: {integrity: sha512-6DT4ZIjmZxa9ANKaBIrjc86AyKrX8M376ynvNeOBBVad3eP7x3UHqWfDR2ynFkHGzCuOpr1A+kObmnahxuwuog==}
+    engines: {node: '>=22.0.0'}
 
-  '@supabase/functions-js@2.80.0':
-    resolution: {integrity: sha512-0S/k8LRtoblrbzy4ir9m4WuvU/XTkb1EwL/33/oJexCUHCXtsqaPJ3eKfr1GWtNqTa1zryv6sXs3Fpv7lKCsMQ==}
-    engines: {node: '>=20.0.0'}
+  '@supabase/phoenix@0.4.5':
+    resolution: {integrity: sha512-aAn9H9ovVyeApKy11OWOrrOGq8DV68yWeH4ud2lN9fzn4aO8Zb5GLL9m1pUg9nLqIcT+ZDfAcsZe0E/nqdv2lw==}
 
-  '@supabase/node-fetch@2.6.15':
-    resolution: {integrity: sha512-1ibVeYUacxWYi9i0cf5efil6adJ9WRyZBLivgjs+AUpewx1F3xPi7gLgaASI2SmIQxPoCEjAsLAzKPgMJVgOUQ==}
-    engines: {node: 4.x || >=6.0.0}
+  '@supabase/postgrest-js@2.117.2':
+    resolution: {integrity: sha512-V1Qhn+M8xzJqCasOxHZ2KG19Fj39PxU7weEAmOK65/KTsWCRXboB4hcQwFvxRvM7ZikeP9IZWNvQkfjvSxzYFw==}
+    engines: {node: '>=22.0.0'}
 
-  '@supabase/postgrest-js@2.80.0':
-    resolution: {integrity: sha512-yKzehXlRbDoXIQefdRQnvaI9BEogoWIp/7+y/m5enZDKW2IP9aAgq5tU72sThcwftDJvknnIpEHAABG3qviEng==}
-    engines: {node: '>=20.0.0'}
+  '@supabase/realtime-js@2.117.2':
+    resolution: {integrity: sha512-lYXSAIg3eAKA58riUED6Vb+TCzF8jtx18uOoiCaVJ7ZMre6FWBpwB1MPeW+B6vykJT/hPdiuqwcSB7ILMS21ew==}
+    engines: {node: '>=22.0.0'}
 
-  '@supabase/realtime-js@2.80.0':
-    resolution: {integrity: sha512-cXK6Gs4UDylN8oz40omi01QK0cSCBVj0efXC1WodpENTuDnrkUs28W8/eslEnAtlawaVtikC1Q92mpz9+o85Mg==}
-    engines: {node: '>=20.0.0'}
+  '@supabase/storage-js@2.117.2':
+    resolution: {integrity: sha512-8gAJoVaxZa/War2kFRfJMxGk4M190Q7lJ70BofwGlRxU/u9pIodd6XyTvmXkxOKXWuIYtkDaYPZrIAUt1T/7FQ==}
+    engines: {node: '>=22.0.0'}
 
-  '@supabase/storage-js@2.80.0':
-    resolution: {integrity: sha512-Iepod83h2WoMCaLC9pGb3QOT67Kn3RlUdbXpo3uvbDKfPU8EgytS4RVaPmDjhqDjj8AGaiz9mk/ppd2Q2WS+gw==}
-    engines: {node: '>=20.0.0'}
-
-  '@supabase/supabase-js@2.80.0':
-    resolution: {integrity: sha512-n8pkXQxuo5zCWXX5cbSNZj1vuWS8IVNGWTmP1m31Iq1k0e8lPZ07PF08TRV79HHq3mEPP/Ko//BQuflHvY2o8w==}
-    engines: {node: '>=20.0.0'}
+  '@supabase/supabase-js@2.117.2':
+    resolution: {integrity: sha512-eSG2VKnHR+Clp1PmidZ1/weJ8PJwoybjva3L2GgKqFG4YDS1Iqmc61psKGZP5xw6OMT2O7ZorPR42PY6q1BOXg==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      '@opentelemetry/api': '>=1.0.0'
+    peerDependenciesMeta:
+      '@opentelemetry/api':
+        optional: true
 
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
@@ -10367,9 +10368,6 @@ packages:
 
   '@types/pg@8.15.6':
     resolution: {integrity: sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ==}
-
-  '@types/phoenix@1.6.7':
-    resolution: {integrity: sha512-oN9ive//QSBkf19rfDv45M7eZPi0eEXylht2OLEXicu5b4KoQ1OzXIw+xDSGWxSxe1JmepRR/ZH283vsu518/Q==}
 
   '@types/prismjs@1.26.6':
     resolution: {integrity: sha512-vqlvI7qlMvcCBbVe0AKAb4f97//Hy0EBTaiW8AalRnG/xAN5zOiWWyrNqNXeq8+KAuvRewjCVY1+IPxk4RdNYw==}
@@ -12839,6 +12837,10 @@ packages:
 
   hyphen@1.14.1:
     resolution: {integrity: sha512-kvL8xYl5QMTh+LwohVN72ciOxC0OEV79IPdJSTwEXok9y9QHebXGdFgrED4sWfiax/ODx++CAMk3hMy4XPJPOw==}
+
+  iceberg-js@0.8.1:
+    resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
+    engines: {node: '>=20.0.0'}
 
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
@@ -23722,50 +23724,39 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@supabase/auth-js@2.80.0':
+  '@supabase/auth-js@2.117.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/functions-js@2.1.5':
-    dependencies:
-      '@supabase/node-fetch': 2.6.15
-
-  '@supabase/functions-js@2.80.0':
+  '@supabase/functions-js@2.117.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/node-fetch@2.6.15':
-    dependencies:
-      whatwg-url: 5.0.0
+  '@supabase/phoenix@0.4.5': {}
 
-  '@supabase/postgrest-js@2.80.0':
+  '@supabase/postgrest-js@2.117.2':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/realtime-js@2.80.0':
+  '@supabase/realtime-js@2.117.2':
     dependencies:
-      '@types/phoenix': 1.6.7
-      '@types/ws': 8.18.1
-      tslib: 2.8.1
-      ws: 8.21.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@supabase/storage-js@2.80.0':
-    dependencies:
+      '@supabase/phoenix': 0.4.5
       tslib: 2.8.1
 
-  '@supabase/supabase-js@2.80.0':
+  '@supabase/storage-js@2.117.2':
     dependencies:
-      '@supabase/auth-js': 2.80.0
-      '@supabase/functions-js': 2.80.0
-      '@supabase/postgrest-js': 2.80.0
-      '@supabase/realtime-js': 2.80.0
-      '@supabase/storage-js': 2.80.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+
+  '@supabase/supabase-js@2.117.2(@opentelemetry/api@1.9.0)':
+    dependencies:
+      '@supabase/auth-js': 2.117.2
+      '@supabase/functions-js': 2.117.2
+      '@supabase/postgrest-js': 2.117.2
+      '@supabase/realtime-js': 2.117.2
+      '@supabase/storage-js': 2.117.2
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.0
 
   '@swc/helpers@0.5.15':
     dependencies:
@@ -24614,8 +24605,6 @@ snapshots:
       '@types/node': 22.19.7
       pg-protocol: 1.13.0
       pg-types: 2.2.0
-
-  '@types/phoenix@1.6.7': {}
 
   '@types/prismjs@1.26.6': {}
 
@@ -27521,6 +27510,8 @@ snapshots:
   husky@8.0.3: {}
 
   hyphen@1.14.1: {}
+
+  iceberg-js@0.8.1: {}
 
   iconv-lite@0.4.24:
     dependencies:

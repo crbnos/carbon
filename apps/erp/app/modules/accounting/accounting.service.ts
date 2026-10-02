@@ -16,7 +16,8 @@ import {
   round,
   toDisplayCredit,
   toDisplayDebit,
-  toStoredAmount
+  toStoredAmount,
+  unchecked
 } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -6076,7 +6077,7 @@ export async function upsertFixedAssetClass(
   const { id, ...rest } = data;
   return client
     .from("fixedAssetClass")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();
@@ -6308,7 +6309,7 @@ export async function upsertFixedAsset(
   const { id, ...rest } = data;
   return client
     .from("fixedAsset")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();

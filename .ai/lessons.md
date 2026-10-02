@@ -988,7 +988,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** `space-x-*` / `space-y-*` are structural (`:not(:last-child)`) — never use them on a container whose children a component may add to at runtime; use `gap-*`, which only applies between elements that generate boxes and so ignores `display:none`. When a component renders extra DOM next to its main element (React Router prefetch links, portals, measurement nodes), isolate it in a `display: contents` wrapper so it can't perturb the caller's layout. To diagnose "impossible" width changes, diff every computed property between states and count child nodes — a node-count delta with no style delta means injected DOM, not CSS.
 
-**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `<Link prefetch>` placed directly inside a `space-*` container.
+**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `PrefetchLink` (`@carbon/react`, which injects the same tags on press) or `<Link prefetch>` placed directly inside a `space-*` container.
 
 ## A list-query benchmark that omits the ORDER BY measures a query the app never runs
 
@@ -2025,7 +2025,7 @@ full-screen ERP route.
 
 **Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry` and `isEdgeFunctionInvoke` were removed with the supabase-js 2.117 upgrade; `storageReadFetch` retries storage reads only and never touches `/functions/v1/`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 ## pdfjs rejects Node Buffer by constructor check
 
 **Context:** `@carbon/files/pdf` and the shared image pipeline feed bytes from `fs.readFile` / `storage.download().arrayBuffer()` into pdfjs (via unpdf) and jSquash codecs.
@@ -2124,7 +2124,7 @@ full-screen ERP route.
 
 **Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry` and `isEdgeFunctionInvoke` were removed with the supabase-js 2.117 upgrade; `storageReadFetch` retries storage reads only and never touches `/functions/v1/`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 
 ## A fetcher's redirect is dropped when anything revalidates during the action
 
@@ -2628,7 +2628,9 @@ failed but extra copies appeared", check all four before assuming a browser doub
 `isDisabled` bound to any-old-boolean is not a guard: name the submit state.
 
 **Applies to:** `packages/react/src/Button.tsx`, `packages/form/src/ValidatedForm.tsx`,
-`packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable`),
+`packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable` — both
+since removed: database reads now use supabase-js's own retry, which never replays a
+write, and only storage reads go through `storageReadFetch`),
 `packages/jobs/src/inngest/functions/notifications/send-{email,slack}.ts`, and any
 `<Button type="submit">` — enforced by `no-unguarded-submit` (`@carbon/checks`).
 
@@ -2738,6 +2740,30 @@ drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, 
 `search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
 helper.
 
+## A write that changes nothing still costs a queue message, an Inngest event and a function run
+
+**Context:** `/api/inngest` was the largest consumer on the ERP deployment (2026-10-01
+traces). The audit handler's log was mostly "Skipping: no meaningful diff for UPDATE on
+jobOperation".
+
+**Problem:** The scheduler's `persistChanges` issued one `UPDATE jobOperation` per operation on
+every regen, always setting `updatedAt`, and re-stamped `status = 'Ready'` on operations that
+were already Ready. `dispatch_event_batch()` queued every one of those updates, the drainer
+sent them to Inngest ten at a time, and the audit, search and embedding handlers then threw
+them away. Nothing was wrong in any single place; the waste was the sum.
+
+**Rule:** A bulk writer guards its UPDATE on the values it writes (`isDistinctFromAny` in
+`scheduling-engine.ts` compares in Postgres, so DATE and timestamptz are matched in their own
+type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
+UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
+SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
+migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
+if the filter is lost.
+
+**Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
+of a table with event subscriptions, and every migration that redefines
+`dispatch_event_batch()`.
+
 ## A cached generator's inputs are everything it executes, not everything it parses
 
 **Context:** The MCP manifest generator was made a cached Turborepo task with `inputs`
@@ -2787,3 +2813,79 @@ tag until proven otherwise.
 
 **Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
 
+
+## A cast that silences excess-property errors hides failed writes
+
+**Context:** supabase-js 2.117 types reject keys a table does not have (`RejectExcessProperties`). The upgrade wrapped ~75 failing write payloads in `unchecked()` (a cast to `never`) to get typecheck green.
+
+**Problem:** About 30 of those were typed payloads (a zod validator spread into an insert/update) carrying fields the table lacks: `item.shelfLifeCalculateFromBom`, `ability.name`, `quote.notes`, `salesOrder.promisedDate`, `batchProperty.batchPropertyGroupId`, and more. PostgREST rejects any unknown column with PGRST204, so every such write failed whenever the field was present, and `itemValidator`'s always-present checkbox made the BoM explorer's item edit (`api+/item.$type.ts` → `updateItem`) fail on every save. The cast had removed the only warning. The 2.80 types never rejected excess keys, so these were latent all along.
+
+**Rule:** Never cast a typed payload past the table's type. When the compiler names an extra key, destructure it out at the write, where every caller is covered, and say where the value actually lives. `unchecked()` is only for a column or table chosen at runtime (`{ [field]: value }`, `.from(table)`). To list every extra key at once rather than one per error, probe with `Exclude<keyof Payload, keyof Database["public"]["Tables"][T]["Update"]>`.
+
+**Applies to:** every `{module}.service.ts` write, MES `services/*.service.ts`, `packages/utils/src/object.ts` (`unchecked`).
+
+
+## A function redefined by forking its last migration picks up whatever that fork did
+
+**Context:** Database functions were changed by copying the newest definition into a new migration and editing it. `create_audit_log_table` was forked several times; one fork made its existing-table branch re-attach the append-only trigger and re-run `secure_audit_log_table` unconditionally, and `insert_audit_log_batch` calls it on every write.
+
+**Problem:** `CREATE TRIGGER` fires PostgREST's `pgrst_ddl_watch` event trigger, which reloads the schema cache. With one audit table and one search table per company that reload took 10-13 s in production, and every request with an embed waited for it: 480+ reloads a day, each one stalling joins for every company. No test or review could see it, because each fork looked like a small diff against a file nobody reads end to end. `dispatch_event_batch` lost its composite-key pairing the same way once.
+
+**Rule:** A function that changes more than once is authored as a single file, not as a chain of forks. The event system's functions live in `packages/database/src/event-system/functions/<name>.sql`; edit the file and run `pnpm --filter @carbon/database authz migration <name>`. A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes).
+
+**Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
+
+
+## Work a request does not await is frozen with the instance on Vercel
+
+**Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
+
+**Problem:** A Vercel function instance is frozen once its response is sent. The unawaited call stopped mid-flight and finished only when the next request woke the instance, so traces showed analytics calls of 10 s and more, and on an instance that was never reused the event was lost. `request.signal` does not help either: without `supportsCancellation` it never aborts on Vercel.
+
+**Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
+
+**Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.
+
+
+## React Router's instrumentation API can observe a request, not change it
+
+**Context:** The request-id, access-log and request-context middlewares looked like candidates to move into `instrumentations`, to shorten the middleware chain.
+
+**Problem:** In React Router 7.18 an instrumentation wrapper receives a read-only view: the request is `{ method, url, headers.get }` with no `signal` and no `clone()`, the context exposes only `get`, and the result carries only `statusCode` and `meta`. It cannot set a response header, open an AsyncLocalStorage scope around the handler, or read the body, which is everything those middlewares do.
+
+**Rule:** Instrumentation is for spans and measurements. Anything that sets a header, provides context to downstream code or reads the request stays a middleware; merge middlewares into one (`requestMiddleware`) instead of moving them. A middleware's own cost is recorded by `timedMiddleware` as `carbon.middleware.<name>.ms`, not by a span, because a middleware span contains everything it calls.
+
+**Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
+
+
+## A limiter must hand a freed slot to the next waiter, not decrement and let it race
+
+**Context:** `async.limit` first released a slot by decrementing the active count and waking the first queued call.
+
+**Problem:** The woken call resumes a microtask later. A call made in between saw a free slot, took it, and the woken call then incremented too: more than `concurrency` ran at once, and under steady load a queued call could be overtaken indefinitely.
+
+**Rule:** When a slot frees and a call is queued, pass the slot to it directly and leave the count unchanged; decrement only when the queue is empty. A queued call never increments. Test it by starting a new call in the same tick a running one finishes and asserting the queued one runs first.
+
+**Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
+
+
+## "Come back here" must carry the query string
+
+**Context:** Notification emails link to `/api/link?event=…&documentId=…&companyId=…`, and `requireAuthSession` sends a request away and back for a token refresh, login, MFA or idle unlock.
+
+**Problem:** `getCurrentPath` returned `pathname` only, so every one of those round trips came back to a bare `/api/link`, which has nothing to resolve and redirects to the home page. The link itself was correct, and it worked on a second click (the token was fresh by then), so it read as an email bug. The token-refresh branch hit anyone idle for longer than the refresh threshold, which is the normal state of someone arriving from an email.
+
+**Rule:** A "return to where you were" target is `pathname + search`, never `pathname`. When it is passed on inside another URL, encode it (`encodeURIComponent` / `URLSearchParams`), or its own `&` splits it. Test the round trip with a URL that has a query string. Drop React Router's `_routes` param from it, and only when present: middleware sees that param (loaders do not), a page URL that carries it limits which loaders later data requests run, and `searchParams.delete` re-encodes the whole query even when it removes nothing. Whatever sends the target on must be matched by something that reads it: three of the four callbacks ignored the `redirectTo` their login page sent.
+
+**Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
+
+
+## A `resolve.alias` stub reaches the server bundle too
+
+**Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
+
+**Problem:** A top-level `resolve.alias` applies to every Vite environment. On the server `unpdf/pdfjs` is the only PDF engine, so every deployed document extraction (purchase invoice, sales RFQ) failed with "Serverless PDF.js bundle could not be resolved". Dev and vitest passed: dev leaves `unpdf` external, so Node resolves the real module and the alias never applies.
+
+**Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.

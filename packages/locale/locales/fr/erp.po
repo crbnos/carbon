@@ -2999,8 +2999,14 @@ msgstr "Retour à la traçabilité"
 msgid "Backflush"
 msgstr "Post-consommation"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "La sauvegarde a échoué"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Sauvegardes"
@@ -3788,6 +3794,9 @@ msgstr "Point de contrôle ·"
 
 msgid "Checkpoints"
 msgstr "Points de contrôle"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Choisir un numéro de lot"
@@ -8133,6 +8142,9 @@ msgstr "Impossible de téléverser le PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Impossible de téléverser la miniature"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Échec"
 
@@ -11264,6 +11276,9 @@ msgstr "Produits nets"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Jamais"
 
@@ -13640,6 +13655,9 @@ msgstr "Fournisseur préféré"
 
 msgid "Prefix"
 msgstr "Préfixe"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Acomptes (par défaut)"
@@ -16070,6 +16088,9 @@ msgstr "Rechercher des variables…"
 msgid "Search..."
 msgstr "Rechercher..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Secondes pour compléter"
 
@@ -16099,6 +16120,9 @@ msgstr "Segments qui déterminent la tarification et les conditions client"
 
 msgid "Select"
 msgstr "Sélectionner"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Sélectionner un assigné"
@@ -20052,6 +20076,9 @@ msgstr "Téléverser un CSV"
 msgid "Upload failed. Please try again."
 msgstr "Le téléversement a échoué. Veuillez réessayer."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Modèle téléchargé"
 
@@ -20068,6 +20095,18 @@ msgstr "Téléchargement de {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Téléchargement de {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Téléchargement..."
@@ -21295,6 +21334,9 @@ msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de po
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Votre compte reste en sécurité même si votre identifiant est volé"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Vos livres et la circulation de l'argent."

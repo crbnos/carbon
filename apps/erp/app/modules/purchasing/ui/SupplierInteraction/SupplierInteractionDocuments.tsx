@@ -360,8 +360,13 @@ export default SupplierInteractionDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 export const usePendingItems = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;

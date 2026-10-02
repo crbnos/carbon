@@ -134,8 +134,16 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       }>
     >;
   }>(path.to.material(itemId));
-  const supersession = useResolved(routeDataFromRoute?.supersession, null);
-  const supersededBy = useResolved(routeDataFromRoute?.supersededBy, null);
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const locations = data?.locations ?? sharedMaterialsData?.locations ?? [];

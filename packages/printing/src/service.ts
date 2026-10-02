@@ -154,7 +154,7 @@ export async function updatePrintJobStatus(
   status: PrintJobStatus,
   opts?: { error?: string }
 ) {
-  const update: Record<string, unknown> = {
+  const update: Database["public"]["Tables"]["printJob"]["Update"] = {
     status,
     updatedAt: new Date().toISOString()
   };

@@ -2999,8 +2999,14 @@ msgstr "Powrót do identyfikowalności"
 msgid "Backflush"
 msgstr "Pobranie wsteczne"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Kopia bezpieczeństwa nie powiodła się"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Kopie zapasowe"
@@ -3788,6 +3794,9 @@ msgstr "Punkt kontrolny ·"
 
 msgid "Checkpoints"
 msgstr "Punkty kontrolne"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Wybierz numer partii"
@@ -8133,6 +8142,9 @@ msgstr "Nie udało się przesłać pliku PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Nie udało się przesłać miniatury."
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Niepowodzenie"
 
@@ -11264,6 +11276,9 @@ msgstr "Przychody netto"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Nigdy"
 
@@ -13640,6 +13655,9 @@ msgstr "Preferowany dostawca"
 
 msgid "Prefix"
 msgstr "Prefiks"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Zaliczki"
@@ -16070,6 +16088,9 @@ msgstr "Wyszukaj zmienne…"
 msgid "Search..."
 msgstr "Szukaj..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Sekund do ukończenia"
 
@@ -16099,6 +16120,9 @@ msgstr "Segmenty, które określają ceny i warunki dla klientów"
 
 msgid "Select"
 msgstr "Wybierz"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Wybierz osobę przypisaną"
@@ -20052,6 +20076,9 @@ msgstr "Prześlij plik CSV"
 msgid "Upload failed. Please try again."
 msgstr "Przesłanie pliku nie powiodło się. Spróbuj ponownie."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Model przesłany"
 
@@ -20068,6 +20095,18 @@ msgstr "Przesyłanie {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Przesylanie {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Przesyłanie..."
@@ -21295,6 +21334,9 @@ msgstr "Pracujesz już {hoursElapsed} godzin. Czy zapomniałeś o zakończeniu p
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Twoje konto pozostaje bezpieczne, nawet jeśli twoje logowanie zostanie skradzione"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Twoje księgi i przepływ pieniędzy."

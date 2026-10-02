@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   Subheading,
   useDebounce,
   VStack
@@ -26,24 +27,38 @@ import {
   LuGripVertical,
   LuTrash
 } from "react-icons/lu";
-import { Link, useSubmit } from "react-router";
+import { useSubmit } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { useOptimisticLocation } from "~/hooks";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
-import { CollapsibleSidebar } from "./CollapsibleSidebar";
+import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+
+type GroupedRoute = RouteGroup["routes"][number];
+
+const matchesRoute = (
+  route: GroupedRoute,
+  pathname: string,
+  exactMatch: boolean
+) =>
+  route.isActive
+    ? route.isActive(pathname)
+    : exactMatch
+      ? pathname === route.to
+      : pathname.includes(route.to);
 
 const GroupedContentSidebar = ({
   groups,
-  width = 240,
   exactMatch = false
 }: {
   groups: RouteGroup[];
-  width?: number;
   exactMatch?: boolean;
 }) => {
   const { t } = useLingui();
-  const location = useOptimisticLocation();
+  const location = useSidebarLocation((pathname) =>
+    groups.some((group) =>
+      group.routes.some((route) => matchesRoute(route, pathname, exactMatch))
+    )
+  );
   const submit = useSubmit();
 
   const [expandedViews, setExpandedViews] = useState<Record<string, boolean>>(
@@ -76,8 +91,8 @@ const GroupedContentSidebar = ({
   };
 
   return (
-    <CollapsibleSidebar width={width}>
-      <div className="overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8">
+    <>
+      <SidebarLinks>
         <VStack>
           {groups.map((group) => (
             <VStack
@@ -88,14 +103,13 @@ const GroupedContentSidebar = ({
                 {group.name}
               </Subheading>
               {group.routes.map((route) => {
-                const isActive = route.isActive
-                  ? route.isActive(location.pathname)
-                  : exactMatch
-                    ? location.pathname === route.to
-                    : location.pathname.includes(route.to) &&
-                      !`${location.pathname}${location.search}`.includes(
-                        "view="
-                      );
+                const isActive =
+                  matchesRoute(route, location.pathname, exactMatch) &&
+                  (Boolean(route.isActive) ||
+                    exactMatch ||
+                    !`${location.pathname}${location.search}`.includes(
+                      "view="
+                    ));
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];
@@ -109,7 +123,10 @@ const GroupedContentSidebar = ({
 
                 return (
                   <div className="w-full flex flex-col" key={route.name}>
-                    <div className="flex items-center gap-x-0.5 relative">
+                    <div
+                      className="flex items-center gap-x-0.5 relative"
+                      data-nav-item=""
+                    >
                       <Button
                         asChild
                         leftIcon={route.icon}
@@ -118,15 +135,14 @@ const GroupedContentSidebar = ({
                           "justify-start flex-grow truncate",
                           isActive
                             ? "shadow-none dark:shadow-button-base"
-                            : "hover:bg-active hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+                            : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
                         )}
                       >
-                        <Link
+                        <PrefetchLink
                           to={route.to + (route.q ? `?q=${route.q}` : "")}
-                          prefetch="intent"
                         >
                           {route.name}
-                        </Link>
+                        </PrefetchLink>
                       </Button>
                       {hasViews && (
                         <IconButton
@@ -163,7 +179,7 @@ const GroupedContentSidebar = ({
             </VStack>
           ))}
         </VStack>
-      </div>
+      </SidebarLinks>
       {selectedView && (
         <ConfirmDelete
           isOpen={!!selectedView}
@@ -176,7 +192,7 @@ const GroupedContentSidebar = ({
           }}
         />
       )}
-    </CollapsibleSidebar>
+    </>
   );
 };
 
@@ -187,7 +203,7 @@ const ViewsReorderGroup = ({
   onDelete
 }: {
   views: { id: string; name: string; to: string; sortOrder: number }[];
-  location: ReturnType<typeof useOptimisticLocation>;
+  location: ReturnType<typeof useSidebarLocation>;
   onReorder: (
     updates: { id: string; name: string; to: string; sortOrder: number }[]
   ) => void;
@@ -240,7 +256,10 @@ const ViewsReorderGroup = ({
 
         return (
           <Reorder.Item key={view.to} value={view} className="w-full">
-            <div className="group/view flex items-center relative">
+            <div
+              className="group/view flex items-center relative"
+              data-nav-item=""
+            >
               <Button
                 asChild
                 variant={isViewActive ? "active" : "ghost"}
@@ -248,12 +267,10 @@ const ViewsReorderGroup = ({
                   "justify-start text-sm pl-7 pr-7 truncate flex-grow !shadow-none",
                   isViewActive
                     ? "shadow-none border-active-foreground/30 dark:border-none dark:shadow-button-base"
-                    : "hover:bg-active hover:text-active-foreground"
+                    : "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
-                <Link to={view.to} prefetch="intent">
-                  {view.name}
-                </Link>
+                <PrefetchLink to={view.to}>{view.name}</PrefetchLink>
               </Button>
               <IconButton
                 aria-label={t`Drag handle`}

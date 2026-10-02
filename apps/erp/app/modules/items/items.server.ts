@@ -8,6 +8,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
 import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -15,8 +16,11 @@ import { data } from "react-router";
 import {
   activateMethodVersion,
   findChangeNoticesForItem,
+  getChangeNoticeTypesList,
   getItemSupersededBy,
   getItemSupersession,
+  getMakeMethodById,
+  getMakeMethods,
   upsertItemSupersession
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
@@ -31,6 +35,51 @@ import {
 } from "./items.models";
 
 const logger = getLogger("erp", "change-orders");
+
+// An item page's layout and its tab loaders run in ONE request and each read the
+// item's methods and change notices. These share that read across the loaders;
+// on a mutation they are plain calls, so a revalidation never sees stale rows.
+
+export const getMakeMethodsOnce = (
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) =>
+  oncePerRead(`makeMethods:${companyId}:${itemId}`, () =>
+    getMakeMethods(client, itemId, companyId)
+  );
+
+export const getMakeMethodByIdOnce = (
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) =>
+  oncePerRead(`makeMethod:${companyId}:${makeMethodId}`, () =>
+    getMakeMethodById(client, makeMethodId, companyId)
+  );
+
+export const findChangeNoticesForItemOnce = (
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+) =>
+  oncePerRead(`changeNotices:${args.companyId}:${args.itemId}`, () =>
+    findChangeNoticesForItem(client, args)
+  );
+
+export async function getItemChangeNoticeDataOnce(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [changeNotices, changeNoticeTypes] = await Promise.all([
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
+    getChangeNoticeTypesList(client, companyId)
+  ]);
+  return {
+    changeNotices: changeNotices.data,
+    changeNoticeTypes: changeNoticeTypes.data ?? []
+  };
+}
 
 // Release-lock helpers — gate BOM/BOP mutations on a released (Production)
 // revision. A Production revision is the controlled, released make method;

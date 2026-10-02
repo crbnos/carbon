@@ -86,7 +86,9 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
 - Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
-  `companyIntegration`, `employeePin`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `companyIntegration`, `employeePin`, `webhook`, `oauthClient`, `oauthCode`, `oauthToken`,
+  `ssoConnection`, `ssoDomain` — never travel; SSO rows carry values unique across all
+  companies (`providerId`, a verified `domain`), so a cross-company copy collided;
   `employeePin` holds console-PIN bcrypt hashes, a credential for a 4-digit PIN, and
   stays in place on restore alongside `employee` (`IN_PLACE_SKIPPED_TABLES`), which is
   never wiped, so its (employee, company) FK has nothing to orphan it from;
@@ -171,6 +173,19 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   IS carried; a column missing from this set survives a cross-company restore
   still pointing at the SOURCE company's prefix (which is what left restored
   assemblies unable to load their model).
+- FK-less id refs: `ID_REF_COLUMNS` (`src/backups/id-refs.ts`, per table) lists
+  TEXT/TEXT[] columns that hold a tenant row's id with no FK — generic refs like
+  `inspection.sourceDocumentId`/`sourceDocumentLineId` (receipt line OR job
+  operation), `itemLedger.documentId`, `...Ids` arrays. `buildRowTransforms` rewrites
+  them through the combined `idRewrite` map on a remap load (element-wise for arrays,
+  lookup-only so non-id values pass through; an FK column is never treated this way).
+  Unlisted, a cross-company restore keeps the SOURCE ids: the
+  `inspection_sourceDocumentLineId_key` unique index (cross-company, on
+  `("sourceDocument","sourceDocumentLineId")`) then collides with the source
+  company's live rows and rolls the restore back. A migration adding such a column
+  must list it (`workflow-database-migration.md` step 3c). The map is typed against the
+  generated row types (`satisfies`), so a renamed/dropped column fails typecheck.
+  Neither `db:check:backups` nor any other check detects an UNLISTED new column yet.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
   of `private/{companyId}/…` files into a backup's `assets/` folder) and
   `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +

@@ -10,10 +10,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
@@ -33,7 +30,7 @@ const SYSTEM_USER = "system";
 
 // Module-level Kysely pool — one connection is enough; we only use it for the
 // replaceInvoiceSettlements transaction path.
-const _pool = getPostgresConnectionPool(1);
+const _pool = getProcessPool();
 const _db = getPostgresClient<KyselyDatabase>(_pool, PostgresDriver);
 
 export type StripeConnectPaymentResult =

@@ -13,6 +13,7 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -142,9 +143,8 @@ function AffectedItemRow({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.changeNoticeAffectedItem(changeOrderId, item.id)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -221,7 +221,7 @@ function AffectedItemRow({
             </div>
           )}
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

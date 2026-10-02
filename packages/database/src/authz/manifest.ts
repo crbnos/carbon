@@ -425,13 +425,16 @@ export const manifest = {
   depreciationRunLine: company("accounting", { read: "accounting_view" }),
   dimension: group("accounting"),
   dimensionValue: group("accounting"),
+  // groups_for_user is wrapped in a SELECT so Postgres runs it once per query
+  // rather than once per row (it is VOLATILE), and it comes first so the
+  // API-key lookup only runs for rows outside the caller's groups.
   document: custom(
     "bespoke: readGroups/writeGroups arrays via groups_for_user, plus has_valid_api_key_for_company",
     (t) => `
-    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_delete'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
-    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_create'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
-    CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_view'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "readGroups") = true))));
-    CREATE POLICY "UPDATE" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_update'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
+    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_delete'::text) AS get_companies_with_employee_permission)::text[])) AND (("writeGroups" && ( SELECT groups_for_user((( SELECT auth.uid() AS uid))::text) AS groups_for_user)) OR has_valid_api_key_for_company("companyId"))));
+    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_create'::text) AS get_companies_with_employee_permission)::text[])) AND (("writeGroups" && ( SELECT groups_for_user((( SELECT auth.uid() AS uid))::text) AS groups_for_user)) OR has_valid_api_key_for_company("companyId"))));
+    CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_view'::text) AS get_companies_with_employee_permission)::text[])) AND (("readGroups" && ( SELECT groups_for_user((( SELECT auth.uid() AS uid))::text) AS groups_for_user)) OR has_valid_api_key_for_company("companyId"))));
+    CREATE POLICY "UPDATE" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_update'::text) AS get_companies_with_employee_permission)::text[])) AND (("writeGroups" && ( SELECT groups_for_user((( SELECT auth.uid() AS uid))::text) AS groups_for_user)) OR has_valid_api_key_for_company("companyId"))));
   `
   ),
   documentExtraction: policies({ all: inCompany("companyId", "employee") }),

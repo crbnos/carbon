@@ -96,10 +96,10 @@ catalog:
   '@shikijs/themes': 4.2.0
   '@shikijs/types': 4.2.0
   '@slack/web-api': 7.10.0
-  '@supabase/functions-js': 2.1.5
-  '@supabase/postgrest-js': 2.80.0
-  '@supabase/storage-js': 2.80.0
-  '@supabase/supabase-js': 2.80.0
+  '@supabase/functions-js': 2.117.2
+  '@supabase/postgrest-js': 2.117.2
+  '@supabase/storage-js': 2.117.2
+  '@supabase/supabase-js': 2.117.2
   '@tailwindcss/container-queries': 0.2.2
   '@tailwindcss/typography': 0.5.19
   '@tailwindcss/vite': 4.3.0

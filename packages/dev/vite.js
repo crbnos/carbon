@@ -32,3 +32,23 @@ export function applyDotenvToProcessEnv(mode, appDir) {
     }
   }
 }
+
+/**
+ * Resolve `specifier` to `file` in the browser build only. A top-level
+ * `resolve.alias` applies to every environment, so a stub meant to keep a
+ * chunk out of the client bundle also replaces the module on the server.
+ *
+ * @param {string} specifier
+ * @param {string} file
+ * @returns {import("vite").Plugin}
+ */
+export function clientOnlyAlias(specifier, file) {
+  return {
+    name: `carbon:client-only-alias:${specifier}`,
+    enforce: "pre",
+    applyToEnvironment: (environment) => environment.name === "client",
+    resolveId(source) {
+      if (source === specifier) return file;
+    },
+  };
+}

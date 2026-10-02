@@ -31,8 +31,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { z } from "zod";
+import { MethodItemTypeIcon } from "~/components";
 import {
   ArrayNumeric,
   ConversionFactor,
@@ -44,6 +45,8 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { itemType as itemTypes } from "~/modules/shared";
 import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
@@ -132,6 +135,8 @@ const PurchasingRFQLineForm = ({
   };
 
   const deleteDisclosure = useDisclosure();
+  const canDelete = !isLocked && permissions.can("update", "purchasing");
+  const canViewItem = !!itemData.itemId && itemTypes.includes(itemType);
 
   return (
     <>
@@ -179,30 +184,49 @@ const PurchasingRFQLineForm = ({
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
-                {isEditing &&
-                  !isLocked &&
-                  permissions.can("update", "purchasing") && (
-                    <CardAction className="pr-12">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            icon={<BsThreeDotsVertical />}
-                            aria-label={t`More`}
-                            variant="ghost"
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                {isEditing && (canDelete || canViewItem) && (
+                  <CardAction className="pr-12">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          icon={<BsThreeDotsVertical />}
+                          aria-label={t`More`}
+                          variant="ghost"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canDelete && (
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.delete}
+                            destructive
                             onClick={deleteDisclosure.onOpen}
                           >
                             <DropdownMenuIcon icon={<LuTrash />} />
                             <Trans>Delete Line</Trans>
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </CardAction>
-                  )}
+                        )}
+                        {canViewItem && (
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
+                            <Link
+                              to={getLinkToItemDetails(
+                                itemType,
+                                itemData.itemId
+                              )}
+                            >
+                              <DropdownMenuIcon
+                                icon={<MethodItemTypeIcon type={itemType} />}
+                              />
+                              <Trans>View Item Master</Trans>
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardAction>
+                )}
               </HStack>
               <ModalCardBody>
                 <Hidden name="id" />

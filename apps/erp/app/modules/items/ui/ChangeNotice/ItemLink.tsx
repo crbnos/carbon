@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn } from "@carbon/react";
+import { cn, PrefetchLink } from "@carbon/react";
 import type { ReactNode } from "react";
-import { Link } from "react-router";
 import { getItemDetailPath } from "~/utils/path";
 
 // Renders an item reference (id/name) as a link to the item's detail page.
@@ -24,12 +23,11 @@ export default function ItemLink({
   className?: string;
 }) {
   return (
-    <Link
+    <PrefetchLink
       to={getItemDetailPath(type, itemId)}
-      prefetch="intent"
       className={cn("hover:underline", className)}
     >
       {children}
-    </Link>
+    </PrefetchLink>
   );
 }

@@ -2999,8 +2999,14 @@ msgstr "トレーサビリティに戻る"
 msgid "Backflush"
 msgstr "バックフラッシュ"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "バックアップに失敗しました"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "バックアップ"
@@ -3788,6 +3794,9 @@ msgstr "チェックポイント ·"
 
 msgid "Checkpoints"
 msgstr "チェックポイント"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "バッチ番号を選択"
@@ -8133,6 +8142,9 @@ msgstr "PDFのアップロードに失敗しました"
 msgid "Failed to upload thumbnail"
 msgstr "サムネイルのアップロードに失敗しました"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "失敗"
 
@@ -11264,6 +11276,9 @@ msgstr "純収益"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "なし"
 
@@ -13640,6 +13655,9 @@ msgstr "優先仕入先"
 
 msgid "Prefix"
 msgstr "プレフィックス"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "前払金（デフォルト）"
@@ -16070,6 +16088,9 @@ msgstr "変数を検索…"
 msgid "Search..."
 msgstr "検索..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完了までの秒数"
 
@@ -16099,6 +16120,9 @@ msgstr "得意先の価格設定と条件を決定するセグメント"
 
 msgid "Select"
 msgstr "選択"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "担当者を選択"
@@ -20052,6 +20076,9 @@ msgstr "CSVをアップロード"
 msgid "Upload failed. Please try again."
 msgstr "アップロードに失敗しました。もう一度お試しください。"
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "モデルをアップロードしました"
 
@@ -20068,6 +20095,18 @@ msgstr "アップロード中 {0}"
 
 msgid "Uploading {fileName}"
 msgstr "アップロード中 {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "アップロード中..."
@@ -21295,6 +21334,9 @@ msgstr "{hoursElapsed}時間作業しています。作業終了を忘れまし�
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "ログインが盗まれてもアカウントは安全です"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"

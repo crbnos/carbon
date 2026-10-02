@@ -35,6 +35,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   toast,
   useDisclosure,
   VStack
@@ -257,9 +258,7 @@ const MakeMethodTools = ({
             </MenubarItem>
             {itemLink && (
               <MenubarItem leftIcon={<LuGitFork />} asChild>
-                <Link prefetch="intent" to={itemLink}>
-                  Item Master
-                </Link>
+                <PrefetchLink to={itemLink}>Item Master</PrefetchLink>
               </MenubarItem>
             )}
           </HStack>

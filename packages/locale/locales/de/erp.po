@@ -2999,8 +2999,14 @@ msgstr "Zurück zur Rückverfolgbarkeit"
 msgid "Backflush"
 msgstr "Retrograde Entnahme"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Sicherung fehlgeschlagen"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Sicherungen"
@@ -3788,6 +3794,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Kontrollpunkte"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Wählen Sie eine Chargennummer"
@@ -8133,6 +8142,9 @@ msgstr "Fehler beim Hochladen des PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Fehler beim Hochladen des Vorschaubildes"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Fehler"
 
@@ -11264,6 +11276,9 @@ msgstr "Nettoeinkommen"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Nie"
 
@@ -13640,6 +13655,9 @@ msgstr "Bevorzugter Lieferant"
 
 msgid "Prefix"
 msgstr "Präfix"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Anzahlungen"
@@ -16070,6 +16088,9 @@ msgstr "Variablen durchsuchen…"
 msgid "Search..."
 msgstr "Suchen..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Sekunden zum Abschluss"
 
@@ -16099,6 +16120,9 @@ msgstr "Segmente, die Kundenpreise und -bedingungen bestimmen"
 
 msgid "Select"
 msgstr "Auswählen"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Einen Bearbeiter auswählen"
@@ -20052,6 +20076,9 @@ msgstr "CSV hochladen"
 msgid "Upload failed. Please try again."
 msgstr "Hochladen fehlgeschlagen. Bitte versuchen Sie es erneut."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Modell hochgeladen"
 
@@ -20068,6 +20095,18 @@ msgstr "Wird hochgeladen {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Wird hochgeladen {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Wird hochgeladen..."
@@ -21295,6 +21334,9 @@ msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausste
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Ihr Konto bleibt sicher, auch wenn Ihr Anmeldedaten gestohlen werden"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "Ihre Bücher und wie Geld fließt."

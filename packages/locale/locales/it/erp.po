@@ -2999,8 +2999,14 @@ msgstr "Torna alla tracciabilità"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "Backup non riuscito"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "Backup"
@@ -3788,6 +3794,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoint"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "Scegli un numero di lotto"
@@ -8133,6 +8142,9 @@ msgstr "Caricamento PDF non riuscito"
 msgid "Failed to upload thumbnail"
 msgstr "Impossibile caricare la miniatura"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "Errore"
 
@@ -11264,6 +11276,9 @@ msgstr "Proventi netti"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "Mai"
 
@@ -13640,6 +13655,9 @@ msgstr "Fornitore preferenziale"
 
 msgid "Prefix"
 msgstr "Prefisso"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "Acconti"
@@ -16070,6 +16088,9 @@ msgstr "Cerca variabili…"
 msgid "Search..."
 msgstr "Cerca..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Secondi per completare"
 
@@ -16099,6 +16120,9 @@ msgstr "Segmenti che determinano i prezzi e le condizioni dei clienti"
 
 msgid "Select"
 msgstr "Seleziona"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
@@ -20052,6 +20076,9 @@ msgstr "Carica CSV"
 msgid "Upload failed. Please try again."
 msgstr "Caricamento non riuscito. Riprova."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "Modello caricato"
 
@@ -20068,6 +20095,18 @@ msgstr "Caricamento {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Caricamento in corso {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "Caricamento in corso..."
@@ -21295,6 +21334,9 @@ msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbrare fine?"
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Il tuo account rimane al sicuro anche se il tuo accesso viene rubato"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "I tuoi libri e come scorre il denaro."

@@ -105,7 +105,7 @@ export const getAuthFromAPIKey = async (
     userId: row.createdBy,
     apiKeyId: row.id,
     scopes: row.scopes ?? {},
-    rateLimit: row.rateLimit ?? 60,
+    rateLimit: row.rateLimit ?? 20,
     rateLimitWindow: row.rateLimitWindow ?? "1m",
   };
 };

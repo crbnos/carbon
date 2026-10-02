@@ -8,6 +8,7 @@ import { mapLinearStatusToCarbonStatus } from "@carbon/ee/linear";
 import {
   Badge,
   cn,
+  PrefetchLink,
   Status,
   Tooltip,
   TooltipContent,
@@ -74,7 +75,6 @@ import {
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
-import { Link } from "react-router";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
@@ -174,7 +174,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
   const style = getReplenishmentBadgeColor(type, mode);
   return (
-    <Link to={to} prefetch="intent" className="group flex items-center gap-1">
+    <PrefetchLink to={to} className="group flex items-center gap-1">
       <Badge style={style} className={className}>
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
@@ -182,7 +182,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
       <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 

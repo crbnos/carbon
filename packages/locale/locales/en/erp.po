@@ -2999,8 +2999,14 @@ msgstr "Back to traceability"
 msgid "Backflush"
 msgstr "Backflush"
 
+msgid "Backup"
+msgstr "Backup"
+
 msgid "Backup failed"
 msgstr "Backup failed"
+
+msgid "Backup uploaded"
+msgstr "Backup uploaded"
 
 msgid "Backups"
 msgstr "Backups"
@@ -3788,6 +3794,9 @@ msgstr "Checkpoint ·"
 
 msgid "Checkpoints"
 msgstr "Checkpoints"
+
+msgid "Choose a backup"
+msgstr "Choose a backup"
 
 msgid "Choose a batch number"
 msgstr "Choose a batch number"
@@ -8133,6 +8142,9 @@ msgstr "Failed to upload PDF"
 msgid "Failed to upload thumbnail"
 msgstr "Failed to upload thumbnail"
 
+msgid "Failed to upload: {reason}"
+msgstr "Failed to upload: {reason}"
+
 msgid "Failure"
 msgstr "Failure"
 
@@ -11264,6 +11276,9 @@ msgstr "Net Income"
 msgid "Net Unit Price"
 msgstr "Net Unit Price"
 
+msgid "Network error"
+msgstr "Network error"
+
 msgid "Never"
 msgstr "Never"
 
@@ -13640,6 +13655,9 @@ msgstr "Preferred Supplier"
 
 msgid "Prefix"
 msgstr "Prefix"
+
+msgid "Preparing the backup for restore…"
+msgstr "Preparing the backup for restore…"
 
 msgid "Prepayments"
 msgstr "Prepayments"
@@ -16070,6 +16088,9 @@ msgstr "Search variables…"
 msgid "Search..."
 msgstr "Search..."
 
+msgid "Search…"
+msgstr "Search…"
+
 msgid "Seconds to complete"
 msgstr "Seconds to complete"
 
@@ -16099,6 +16120,9 @@ msgstr "Segments that drive customer pricing and terms"
 
 msgid "Select"
 msgstr "Select"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr "Select a .carbon.tar.gz backup"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
@@ -20052,6 +20076,9 @@ msgstr "Upload CSV"
 msgid "Upload failed. Please try again."
 msgstr "Upload failed. Please try again."
 
+msgid "Upload new backup…"
+msgstr "Upload new backup…"
+
 msgid "Uploaded model"
 msgstr "Uploaded model"
 
@@ -20068,6 +20095,18 @@ msgstr "Uploading {0}"
 
 msgid "Uploading {fileName}"
 msgstr "Uploading {fileName}"
+
+msgid "Uploading backup"
+msgstr "Uploading backup"
+
+msgid "Uploading model"
+msgstr "Uploading model"
+
+msgid "Uploading the backup file"
+msgstr "Uploading the backup file"
+
+msgid "Uploading the CAD file"
+msgstr "Uploading the CAD file"
 
 msgid "Uploading..."
 msgstr "Uploading..."
@@ -21299,6 +21338,9 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Your account stays safe even if your login is stolen"
+
+msgid "Your backups"
+msgstr "Your backups"
 
 msgid "Your books and how money flows."
 msgstr "Your books and how money flows."

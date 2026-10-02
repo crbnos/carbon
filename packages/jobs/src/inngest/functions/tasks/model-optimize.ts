@@ -210,9 +210,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       // it via the late-mint URL, so the job never holds the bytes) to surface
       // the reduction against the untouched source `size`.
       const dir = `${companyId}/models/${modelUploadId}`;
-      const listed = await storage(client)
-        .company(companyId)
-        .list(dir, { search: "optimized.glb" });
+      const listed = await storage(client).company(companyId).list(dir);
       const optimized = listed.data?.find((o) => o.name === "optimized.glb");
       const optimizedSize = optimized?.metadata?.size ?? null;
 

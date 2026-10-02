@@ -36,7 +36,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       accountId: string;
     };
     beforeAll(async () => {
-      db = getJobDatabaseClient(2);
+      db = getJobDatabaseClient();
       ({ getCarbonServiceRole } = await import("@carbon/auth/client.server"));
       ({ syncRampBills } = await import("./ramp-sync-bill"));
       scope = (await db

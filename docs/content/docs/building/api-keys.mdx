@@ -39,7 +39,7 @@ API keys require no login or refresh flow. Carbon hashes each submitted key and 
 
 A key has only its stored `module_action` scopes, such as `sales_view` or `inventory_create`, and can access only its company. A key with no scopes can authenticate but cannot read or write data. Scope changes and deletion take effect immediately. On Carbon Cloud, API access requires the **Business** plan; Starter-plan requests return `403` regardless of scope. See [Licensing](/docs/platform/licensing).
 
-Each key allows **60 requests per minute**. Limits are independent per key and cannot be configured. A rejected request returns `429` with `Retry-After` and `X-RateLimit-*` headers. Retry after the specified interval.
+New keys allow **20 requests per minute**. Existing keys retain the rate limit shown in the **Rate Limit** column. All keys for a company share a separate limit of **60 requests per minute**. Neither limit is configurable. A rejected request returns `429` with `Retry-After` and `X-RateLimit-*` headers; retry after the specified interval.
 
 ## What the key unlocks
 
@@ -76,7 +76,7 @@ The call needs a `module_action` scope the key doesn't carry — checked per req
 On Carbon Cloud, API access is Business-tier: the key path blocks Starter-plan companies outright (`packages/auth/src/services/auth.server.ts:312-330`). Upgrade the plan; the key itself is fine. A 403 on a single operation is the scope problem above instead. Connectors (OAuth) hit the same plan gate through the identity they inherit.
 
 ### "Rate limit exceeded"
-Over the key's 60/minute window (`supabase.ts:304`). Platform-controlled, no field to raise it. Honor `Retry-After`; if the ceiling is genuinely too tight, batch reads (PostgREST `in.(...)` filters, embedded relations) or talk to us.
+Over the key's per-minute limit, or over the company's 60/minute total across its keys; `X-RateLimit-Limit` carries the limit that refused it (`supabase.ts:304`). Platform-controlled, no field to raise it. Honor `Retry-After`; if the ceiling is genuinely too tight, batch reads (PostgREST `in.(...)` filters, embedded relations) or talk to us.
 
 ### "API key has expired"
 `expiresAt` is in the past (`supabase.ts:293`). Expiry can't be extended on a used key — create a new one and swap it in.

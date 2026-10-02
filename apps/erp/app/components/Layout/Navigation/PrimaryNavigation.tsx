@@ -27,7 +27,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { memo, useMemo } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
-import { useMatches, useNavigate } from "react-router";
+import { useLocation, useMatches, useNavigate } from "react-router";
 import {
   useModules,
   useOptimisticLocation,
@@ -78,8 +78,8 @@ const PrimaryNavigation = () => {
   const { t, i18n } = useLingui();
   const { isMobile } = useSidebar();
   const permissions = usePermissions();
-  const location = useOptimisticLocation();
-  const currentModule = getModule(location.pathname);
+  const committedModule = getModule(useLocation().pathname);
+  const pendingModule = getModule(useOptimisticLocation().pathname);
   const links = useModules();
   const settingsModule = useSettingsModule();
   const matchedModules = useMatches().reduce((acc, match) => {
@@ -92,9 +92,21 @@ const PrimaryNavigation = () => {
     return acc;
   }, new Set<string>());
 
+  // While a navigation is pending the highlight moves to the destination at
+  // once, and off the module being left: `matchedModules` still describes the
+  // page on screen, so honouring both lit two modules for the length of the
+  // loader. A destination that is no module's own path (a detail page, whose
+  // module is only known from its route handle) keeps the current highlight.
+  const pendingIsModule =
+    pendingModule !== committedModule &&
+    (pendingModule === "get-started" ||
+      [...links, settingsModule].some(
+        (link) => link && getModule(link.to) === pendingModule
+      ));
+  const currentModule = pendingIsModule ? pendingModule : committedModule;
   const isModuleActive = (to: string) => {
     const m = getModule(to);
-    return currentModule === m || matchedModules.has(m);
+    return currentModule === m || (!pendingIsModule && matchedModules.has(m));
   };
 
   const editMode = useNavigationEditMode();
@@ -157,6 +169,7 @@ const PrimaryNavigation = () => {
           label={t`Customize`}
           onClick={editMode.enterEditMode}
           className={ACTION_HOVER}
+          data-hover-tone="accent"
         />
       )}
     </>
@@ -254,6 +267,7 @@ const NavigationSearchButton = () => {
         openSearchModal();
       }}
       className={ACTION_HOVER}
+      data-hover-tone="accent"
       trailing={
         <ShortcutKey
           shortcut={searchShortcut}

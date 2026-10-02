@@ -39,7 +39,7 @@ function createServiceRoleClient(url: string, serviceRole: string) {
   );
   const { createClient } = fromDatabase("@supabase/supabase-js");
   return createClient(url, serviceRole, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
@@ -47,7 +47,10 @@ const client = createServiceRoleClient(supabaseUrl, serviceRoleKey);
 
 type CompanySummary = { copied: number; skipped: number; failed: number };
 
-function isAlreadyExistsError(error: { message?: string; statusCode?: string | number }) {
+function isAlreadyExistsError(error: {
+  message?: string;
+  statusCode?: string | number;
+}) {
   const message = error.message ?? "";
   return (
     /already exists/i.test(message) ||
@@ -64,7 +67,8 @@ async function getCompanyIds(): Promise<string[]> {
       .select("id")
       .order("id")
       .range(offset, offset + LIST_PAGE_SIZE - 1);
-    if (error) throw new Error(`Failed to read company table: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to read company table: ${error.message}`);
     ids.push(...data.map((row: { id: string }) => row.id));
     if (data.length < LIST_PAGE_SIZE) break;
   }
@@ -73,7 +77,10 @@ async function getCompanyIds(): Promise<string[]> {
 
 // Recursively list every object key under `prefix` in `bucket`.
 // Storage list returns folders as entries with id === null; recurse into them.
-async function listObjectKeys(bucket: string, prefix: string): Promise<string[]> {
+async function listObjectKeys(
+  bucket: string,
+  prefix: string
+): Promise<string[]> {
   const keys: string[] = [];
   for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
     const { data, error } = await client.storage
@@ -94,22 +101,20 @@ async function listObjectKeys(bucket: string, prefix: string): Promise<string[]>
   return keys;
 }
 
-// Keys already present in the destination bucket, so a re-run skips them
-// without issuing a copy request per object. Purely an optimization: if the
-// listing fails (bucket missing on a dry run, transient error), return
-// nothing and let the per-object already-exists check catch the duplicates.
-async function listAlreadyMigratedKeys(companyId: string): Promise<string[]> {
-  try {
-    return await listObjectKeys(companyId, companyId);
-  } catch {
-    return [];
-  }
+// Look before creating: Postgres logs every rejected duplicate insert as an
+// error, so creating unconditionally logged one `buckets_pkey` error per
+// company on every run.
+async function bucketExists(companyId: string): Promise<boolean> {
+  const { error } = await client.storage.getBucket(companyId);
+  if (!error) return true;
+  if (String(error.statusCode) === "404") return false;
+  throw new Error(`Failed to read bucket ${companyId}: ${error.message}`);
 }
 
-async function ensureBucket(companyId: string) {
+async function createBucket(companyId: string) {
   const { error } = await client.storage.createBucket(companyId, {
     public: false,
-    fileSizeLimit: BUCKET_FILE_SIZE_LIMIT
+    fileSizeLimit: BUCKET_FILE_SIZE_LIMIT,
   });
   if (error && !isAlreadyExistsError(error)) {
     throw new Error(`Failed to create bucket ${companyId}: ${error.message}`);
@@ -119,12 +124,18 @@ async function ensureBucket(companyId: string) {
 async function migrateCompany(companyId: string): Promise<CompanySummary> {
   const summary: CompanySummary = { copied: 0, skipped: 0, failed: 0 };
 
-  if (!isDryRun) {
-    await ensureBucket(companyId);
+  const exists = await bucketExists(companyId);
+  if (!exists && !isDryRun) {
+    await createBucket(companyId);
   }
 
   const keys = await listObjectKeys(LEGACY_BUCKET, companyId);
-  const alreadyMigrated = new Set(await listAlreadyMigratedKeys(companyId));
+  // Keys already in the company bucket are skipped rather than copied again:
+  // a duplicate copy is another rejected insert, and another logged error.
+  // A bucket that did not exist yet has nothing in it to list.
+  const alreadyMigrated = new Set(
+    exists ? await listObjectKeys(companyId, companyId) : []
+  );
 
   for (const key of keys) {
     if (alreadyMigrated.has(key)) {
@@ -133,7 +144,9 @@ async function migrateCompany(companyId: string): Promise<CompanySummary> {
     }
 
     if (isDryRun) {
-      process.stdout.write(`  would copy ${LEGACY_BUCKET}/${key} -> ${companyId}/${key}\n`);
+      process.stdout.write(
+        `  would copy ${LEGACY_BUCKET}/${key} -> ${companyId}/${key}\n`
+      );
       summary.copied += 1;
       continue;
     }
@@ -148,7 +161,9 @@ async function migrateCompany(companyId: string): Promise<CompanySummary> {
       summary.skipped += 1;
     } else {
       summary.failed += 1;
-      process.stderr.write(`  FAILED ${companyId}: ${key} — ${error.message}\n`);
+      process.stderr.write(
+        `  FAILED ${companyId}: ${key} — ${error.message}\n`
+      );
     }
   }
 

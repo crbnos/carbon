@@ -103,7 +103,7 @@ const ChangeNoticeProperties = () => {
   const changeNotice = routeData?.changeNotice;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
-  const impactUsedIn = useResolved(routeData?.impactUsedIn, NO_IMPACT);
+  const impactUsedIn = useResolved(routeData?.impactUsedIn, NO_IMPACT, id);
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);

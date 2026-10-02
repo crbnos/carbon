@@ -849,11 +849,14 @@ export async function upsertPurchaseInvoice(
         customFields?: Json;
       })
 ) {
+  // Shipping cost belongs to purchaseInvoiceDelivery, not the invoice row.
   if ("id" in purchaseInvoice) {
+    const { supplierShippingCost: _shipping, ...invoiceUpdate } =
+      purchaseInvoice;
     return client
       .from("purchaseInvoice")
       .update({
-        ...sanitize(purchaseInvoice),
+        ...sanitize(invoiceUpdate),
         updatedAt: datetime.timestamp()
       })
       .eq("id", purchaseInvoice.id)
@@ -902,8 +905,11 @@ export async function upsertPurchaseInvoice(
   const locationId =
     purchaseInvoice.locationId ?? purchaser?.data?.locationId ?? null;
 
-  const { companyGroupId: _companyGroupId, ...purchaseInvoiceData } =
-    purchaseInvoice;
+  const {
+    companyGroupId: _companyGroupId,
+    supplierShippingCost: _shipping,
+    ...purchaseInvoiceData
+  } = purchaseInvoice;
 
   const invoice = await client
     .from("purchaseInvoice")
@@ -1233,10 +1239,11 @@ export async function upsertSalesInvoice(
       })
 ) {
   if ("id" in salesInvoice) {
+    const { supplierShippingCost: _shipping, ...invoiceUpdate } = salesInvoice;
     return client
       .from("salesInvoice")
       .update({
-        ...sanitize(salesInvoice),
+        ...sanitize(invoiceUpdate),
         updatedAt: datetime.timestamp()
       })
       .eq("id", salesInvoice.id)
@@ -1285,7 +1292,11 @@ export async function upsertSalesInvoice(
   const locationId =
     salesInvoice.locationId ?? salesPerson?.data?.locationId ?? null;
 
-  const { companyGroupId: _companyGroupId, ...salesInvoiceData } = salesInvoice;
+  const {
+    companyGroupId: _companyGroupId,
+    supplierShippingCost: _shipping,
+    ...salesInvoiceData
+  } = salesInvoice;
 
   const invoice = await client
     .from("salesInvoice")
@@ -1370,11 +1381,17 @@ export async function upsertSalesInvoiceLine(
         customFields?: Json;
       })
 ) {
-  if ("id" in salesInvoiceLine) {
+  // salesInvoiceLine has no purchase order columns.
+  const {
+    purchaseOrderId: _purchaseOrderId,
+    purchaseOrderLineId: _purchaseOrderLineId,
+    ...line
+  } = salesInvoiceLine;
+  if ("id" in line) {
     return client
       .from("salesInvoiceLine")
-      .update(sanitize(salesInvoiceLine))
-      .eq("id", salesInvoiceLine.id)
+      .update(sanitize(line))
+      .eq("id", line.id)
       .select("id")
       .single();
   }
@@ -1382,7 +1399,7 @@ export async function upsertSalesInvoiceLine(
   const existing = await client
     .from("salesInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", salesInvoiceLine.invoiceId);
+    .eq("invoiceId", line.invoiceId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1391,7 +1408,7 @@ export async function upsertSalesInvoiceLine(
 
   return client
     .from("salesInvoiceLine")
-    .insert([{ ...salesInvoiceLine, sortOrder: maxSortOrder + 1 }])
+    .insert([{ ...line, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }

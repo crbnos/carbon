@@ -12,38 +12,42 @@ function formatBytes(n: number): string {
   return `${n} B`;
 }
 
-export type ModelUploadProgressProps = {
+export type UploadProgressProps = {
   percent: number;
   uploaded: number;
   total: number;
+  label: string;
+  description: string;
   className?: string;
 };
 
 /**
- * Progress readout for a resumable model upload — the `BarProgress` visual
+ * Progress readout for a file upload (CAD models, backup archives) — the `BarProgress` visual
  * language shared with assembly-convert / backups. Chrome-less on purpose (no
  * card border/background) so it drops straight into whatever container is
  * uploading — the dashed dropzone, or an overlay on the 3D viewer.
  */
-export function ModelUploadProgress({
+export function UploadProgress({
   percent,
   uploaded,
   total,
+  label,
+  description,
   className
-}: ModelUploadProgressProps) {
+}: UploadProgressProps) {
   return (
     <div className={cn("flex w-full flex-col gap-2.5", className)}>
       <BarProgress
         progress={percent}
         max={100}
-        label="Uploading model"
+        label={label}
         value={`${Math.round(percent)}%`}
         activeClassName="bg-primary"
       />
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <LuLoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
         <span>
-          Uploading the CAD file ·{" "}
+          {description} ·{" "}
           <span className="tabular-nums">
             {formatBytes(uploaded)} / {formatBytes(total)}
           </span>

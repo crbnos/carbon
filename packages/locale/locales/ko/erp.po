@@ -2999,8 +2999,14 @@ msgstr "추적성으로 돌아가기"
 msgid "Backflush"
 msgstr "백플러시"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "백업 실패"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "백업"
@@ -3788,6 +3794,9 @@ msgstr "체크포인트 ·"
 
 msgid "Checkpoints"
 msgstr "체크포인트"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "배치 번호를 선택하세요"
@@ -8133,6 +8142,9 @@ msgstr "PDF를 업로드하지 못했습니다"
 msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "실패"
 
@@ -11264,6 +11276,9 @@ msgstr "순이익"
 msgid "Net Unit Price"
 msgstr ""
 
+msgid "Network error"
+msgstr ""
+
 msgid "Never"
 msgstr "안 함"
 
@@ -13640,6 +13655,9 @@ msgstr "우선 공급업체"
 
 msgid "Prefix"
 msgstr "접두사"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "선급금"
@@ -16070,6 +16088,9 @@ msgstr "변수 검색…"
 msgid "Search..."
 msgstr "검색..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "완료할 시간(초)"
 
@@ -16099,6 +16120,9 @@ msgstr "고객 가격 책정과 계약 조건을 좌우하는 구분 항목"
 
 msgid "Select"
 msgstr "선택"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "담당자 선택"
@@ -20052,6 +20076,9 @@ msgstr "CSV 업로드"
 msgid "Upload failed. Please try again."
 msgstr "업로드에 실패했습니다. 다시 시도해 주세요."
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "업로드된 모델"
 
@@ -20068,6 +20095,18 @@ msgstr "{0} 업로드 중"
 
 msgid "Uploading {fileName}"
 msgstr "{fileName} 업로드 중"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "업로드 중..."
@@ -21295,6 +21334,9 @@ msgstr "{hoursElapsed}시간 동안 작업이 진행 중입니다. 작업 종료
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "로그인이 도난당해도 계정은 안전하게 유지됩니다"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."

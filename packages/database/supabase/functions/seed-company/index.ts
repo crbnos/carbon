@@ -77,9 +77,8 @@ serve(async (req: Request) => {
     if (!company.data) throw new Error("Company not found");
 
     // Idempotency guard. The whole seed runs in a single transaction, so a
-    // committed run has inserted `userToCompany(userId, companyId)`. The
-    // service-role client retries on timeout / transient 5xx (fetchWithRetry),
-    // so a seed that committed but whose HTTP response was lost gets re-invoked
+    // committed run has inserted `userToCompany(userId, companyId)`. A seed
+    // that committed but whose HTTP response was lost can be invoked again
     // with the same payload — re-running would throw 23505 on the identity
     // inserts. If the link already exists, the prior run finished: no-op.
     const existingLink = await client

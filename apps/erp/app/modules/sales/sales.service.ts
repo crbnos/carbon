@@ -2185,15 +2185,18 @@ export async function insertSalesOrderLines(
     customFields?: Json;
   })[]
 ) {
-  const linesWithDefaults = salesOrderLines.map((line) => ({
-    ...line,
-    setupPrice: line.setupPrice ?? 0,
-    unitPrice: line.unitPrice ?? 0,
-    shippingCost: line.shippingCost ?? 0,
-    addOnCost: line.addOnCost ?? 0,
-    nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-    taxPercent: line.taxPercent ?? 0
-  }));
+  // salesOrderLine has no serviceId column.
+  const linesWithDefaults = salesOrderLines.map(
+    ({ serviceId: _serviceId, ...line }) => ({
+      ...line,
+      setupPrice: line.setupPrice ?? 0,
+      unitPrice: line.unitPrice ?? 0,
+      shippingCost: line.shippingCost ?? 0,
+      addOnCost: line.addOnCost ?? 0,
+      nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
+      taxPercent: line.taxPercent ?? 0
+    })
+  );
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
@@ -3260,9 +3263,16 @@ export async function updateCustomerContact(
       return customFieldUpdate;
     }
   }
+  // The contact id is the row key and the location is set on customerContact
+  // above; neither is a contact column.
+  const {
+    contactId: _contactId,
+    customerLocationId: _customerLocationId,
+    ...contact
+  } = customerContact.contact;
   return client
     .from("contact")
-    .update(sanitize(customerContact.contact))
+    .update(sanitize(contact))
     .eq("id", customerContact.contactId)
     .select("id")
     .single();
@@ -4114,7 +4124,13 @@ export async function upsertQuote(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
+    // quote has no name column, and stores notes as internalNotes/externalNotes.
+    const {
+      companyGroupId: _cgId,
+      name: _name,
+      notes: _notes,
+      ...quoteUpdateData
+    } = quote;
     return client
       .from("quote")
       .update({
@@ -6315,7 +6331,16 @@ export async function upsertSalesOrder(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
+    // Dates live on salesOrderShipment, the quote link on the opportunity, and
+    // notes as internalNotes/externalNotes; none is a salesOrder column.
+    const {
+      companyGroupId: _cgId,
+      notes: _notes,
+      requestedDate: _requestedDate,
+      promisedDate: _promisedDate,
+      quoteId: _quoteId,
+      ...salesOrderUpdateData
+    } = salesOrder;
     return client
       .from("salesOrder")
       .update(sanitize(salesOrderUpdateData))
@@ -6490,9 +6515,11 @@ export async function upsertSalesOrderLine(
       })
 ) {
   if ("id" in salesOrderLine) {
+    // salesOrderLine has no serviceId column.
+    const { serviceId: _serviceId, ...lineUpdate } = salesOrderLine;
     return client
       .from("salesOrderLine")
-      .update(sanitize(salesOrderLine))
+      .update(sanitize(lineUpdate))
       .eq("id", salesOrderLine.id)
       .select("id")
       .single();
@@ -6578,10 +6605,12 @@ export async function upsertSalesOrderPayment(
         customFields?: Json;
       })
 ) {
+  // The currency is the order's; salesOrderPayment has no currencyCode column.
   if ("id" in salesOrderPayment) {
+    const { currencyCode: _currencyCode, ...paymentUpdate } = salesOrderPayment;
     return client
       .from("salesOrderPayment")
-      .update(sanitize(salesOrderPayment))
+      .update(sanitize(paymentUpdate))
       .eq("id", salesOrderPayment.id)
       .select("id")
       .single();

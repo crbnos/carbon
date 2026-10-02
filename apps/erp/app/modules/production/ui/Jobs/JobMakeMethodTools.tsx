@@ -24,6 +24,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   Tabs,
   TabsContent,
   TabsList,
@@ -46,7 +47,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Link, useFetcher, useLocation, useParams } from "react-router";
+import { useFetcher, useLocation, useParams } from "react-router";
 import { PrintButton } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
@@ -357,9 +358,9 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 )}
                 {itemLink && (
                   <MenubarItem leftIcon={<LuGitFork />} asChild>
-                    <Link prefetch="intent" to={itemLink}>
+                    <PrefetchLink to={itemLink}>
                       <Trans>Item Master</Trans>
-                    </Link>
+                    </PrefetchLink>
                   </MenubarItem>
                 )}
                 {makeMethod &&
