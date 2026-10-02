@@ -41,6 +41,7 @@ import {
   useSetGauge
 } from "./commands";
 import { DispositionSheet } from "./DispositionSheet";
+import { DrawingPane } from "./DrawingPane";
 import { GaugeSheet } from "./GaugeSheet";
 import {
   acceptRemaining,
@@ -118,6 +119,11 @@ export function InspectionView({
   >({});
   const [savingCell, setSavingCell] = useState<string | null>(null);
   const [gaugeFeatureId, setGaugeFeatureId] = useState<string | null>(null);
+  /** Which characteristic the drawing is pointing at, in both directions. */
+  const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+  const scroller = useRef<ScrollView>(null);
+  /** featureId -> its card's y offset, so a balloon tap can scroll to it. */
+  const cardOffsets = useRef<Record<string, number>>({});
 
   const scanSheet = useRef<SheetHandle>(null);
   const gaugeSheet = useRef<SheetHandle>(null);
@@ -166,6 +172,9 @@ export function InspectionView({
     const open = openEntityIds(screen.trackedEntities, operationId);
     return {
       rows,
+      // A balloon's number IS its characteristic's label, so the drawing reads
+      // them off the rows rather than the wire carrying them twice.
+      labelByFeatureId: new Map(rows.map((row) => [row.featureId, row.label])),
       columns: Array.from({ length: total }, (_, index) => index),
       effective,
       counts,
@@ -384,14 +393,6 @@ export function InspectionView({
           {t`This lot was closed as ${lot.status}. Nothing here can be changed.`}
         </WarningNote>
       ) : null}
-
-      {lot.inspectionDocumentId ? (
-        <WarningNote>
-          {/* Said once, plainly: the balloons are the one thing this screen
-              cannot show, and an inspector needs to know before they start. */}
-          {t`The drawing for this lot opens in Carbon MES on the web.`}
-        </WarningNote>
-      ) : null}
     </View>
   );
 
@@ -409,30 +410,43 @@ export function InspectionView({
           const cell = cellFor(row.featureId);
           const stored = gaugeValueFor(row.featureId, row.gaugeId);
           return (
-            <CharacteristicCard
+            <View
               key={row.featureId}
-              row={row}
-              status={cell.status}
-              value={cell.value}
-              gaugeLabel={gaugeLabel(
-                screen.gauges.find((g) => g.id === stored)
-              )}
-              disabled={model.closed}
-              saving={savingCell === cellKey(column, row.featureId)}
-              recorded={model.counts.get(row.featureId)}
-              onCommitValue={(value) =>
-                saveMeasurement(row.featureId, { value })
-              }
-              onToggle={(passed) => saveMeasurement(row.featureId, { passed })}
-              onPickGauge={
-                row.gaugeTypeId
-                  ? () => {
-                      setGaugeFeatureId(row.featureId);
-                      gaugeSheet.current?.open();
-                    }
-                  : undefined
-              }
-            />
+              // Where this card sits, so a balloon tap can scroll to it. The
+              // y is relative to the scroll content, which is what
+              // `scrollTo` wants.
+              onLayout={(event) => {
+                cardOffsets.current[row.featureId] = event.nativeEvent.layout.y;
+              }}
+            >
+              <CharacteristicCard
+                row={row}
+                status={cell.status}
+                value={cell.value}
+                gaugeLabel={gaugeLabel(
+                  screen.gauges.find((g) => g.id === stored)
+                )}
+                disabled={model.closed}
+                saving={savingCell === cellKey(column, row.featureId)}
+                recorded={model.counts.get(row.featureId)}
+                active={activeFeatureId === row.featureId}
+                onActivate={() => setActiveFeatureId(row.featureId)}
+                onCommitValue={(value) =>
+                  saveMeasurement(row.featureId, { value })
+                }
+                onToggle={(passed) =>
+                  saveMeasurement(row.featureId, { passed })
+                }
+                onPickGauge={
+                  row.gaugeTypeId
+                    ? () => {
+                        setGaugeFeatureId(row.featureId);
+                        gaugeSheet.current?.open();
+                      }
+                    : undefined
+                }
+              />
+            </View>
           );
         })
       )}
@@ -446,6 +460,7 @@ export function InspectionView({
       <View className="flex-1">
         <Screen title={t`Inspection`} onBack={onBack}>
           <ScrollView
+            ref={scroller}
             className="flex-1"
             contentContainerClassName="grow"
             keyboardShouldPersistTaps="handled"
@@ -458,6 +473,27 @@ export function InspectionView({
             }
           >
             {header}
+
+            {screen.drawing && screen.drawing.balloons.length > 0 ? (
+              <View className="pb-4">
+                <DrawingPane
+                  inspectionId={inspectionId}
+                  balloons={screen.drawing.balloons}
+                  labelByFeatureId={model.labelByFeatureId}
+                  activeFeatureId={activeFeatureId}
+                  onBalloonPress={(featureId) => {
+                    setActiveFeatureId(featureId);
+                    const y = cardOffsets.current[featureId];
+                    // Only scroll to a card that has been laid out; the
+                    // highlight lands either way.
+                    if (y != null) {
+                      scroller.current?.scrollTo({ y, animated: true });
+                    }
+                  }}
+                />
+              </View>
+            ) : null}
+
             {!model.closed || screen.samples.length > 0 ? (
               <View className="-mx-4">
                 <UnitStrip

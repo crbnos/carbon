@@ -1008,6 +1008,9 @@ msgstr "ड्राइंग और विशेषताओं को पु�
 msgid "Dragging {0} cancelled."
 msgstr "\"{0}\" को ड्रैग करना रद्द किया गया।"
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "अंतिम तारीख"
 
@@ -1630,6 +1633,9 @@ msgstr "सबसे नया पहले"
 msgid "Next"
 msgstr "अगला"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "अगला चरण"
 
@@ -2025,6 +2031,10 @@ msgstr "समग्र परिणाम"
 msgid "Overdue PMs?"
 msgstr "अतिदेय PMs?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "पैरामीटर"
 
@@ -2158,6 +2168,9 @@ msgstr ""
 msgid "Pin Out"
 msgstr "पिन आउट"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr ""
@@ -2191,6 +2204,9 @@ msgstr "पिछला"
 
 msgid "Preventive"
 msgstr "निवारक"
+
+msgid "Previous page"
+msgstr ""
 
 msgid "Previous step"
 msgstr "पिछला चरण"
@@ -2697,6 +2713,10 @@ msgstr "कम"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "विवरण दिखाएं"
 
@@ -2710,6 +2730,9 @@ msgid "Sign in"
 msgstr ""
 
 msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
 msgstr ""
 
 msgid "Sign in to look up a scanned code."
@@ -2894,7 +2917,7 @@ msgstr ""
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
 msgstr ""
 
 msgid "The jobs and parts that make up this run."

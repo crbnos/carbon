@@ -1008,6 +1008,9 @@ msgstr "Faites glisser pour redimensionner le dessin et les caractéristiques"
 msgid "Dragging {0} cancelled."
 msgstr "Déplacement de {0} annulé."
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "Échéance"
 
@@ -1630,6 +1633,9 @@ msgstr "Plus récent d'abord"
 msgid "Next"
 msgstr "Suivant"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "Étape suivante"
 
@@ -2025,6 +2031,10 @@ msgstr "Résultat global"
 msgid "Overdue PMs?"
 msgstr "PM en retard ?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "Paramètres"
 
@@ -2158,6 +2168,9 @@ msgstr ""
 msgid "Pin Out"
 msgstr "Déconnecter"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr ""
@@ -2191,6 +2204,9 @@ msgstr "Précédent"
 
 msgid "Preventive"
 msgstr "Préventif"
+
+msgid "Previous page"
+msgstr ""
 
 msgid "Previous step"
 msgstr "Étape précédente"
@@ -2697,6 +2713,10 @@ msgstr "Manquant"
 msgid "Short pick {itemName}"
 msgstr "Prélèvement court {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "Afficher la description"
 
@@ -2710,6 +2730,9 @@ msgid "Sign in"
 msgstr ""
 
 msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
 msgstr ""
 
 msgid "Sign in to look up a scanned code."
@@ -2894,7 +2917,7 @@ msgstr ""
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantité produite pour cette opération est inférieure à la quantité requise de {targetQuantity}."
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
 msgstr ""
 
 msgid "The jobs and parts that make up this run."

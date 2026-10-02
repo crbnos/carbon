@@ -46,6 +46,8 @@ export function CharacteristicCard({
   disabled,
   saving,
   recorded,
+  active = false,
+  onActivate,
   onCommitValue,
   onToggle,
   onPickGauge
@@ -60,6 +62,10 @@ export function CharacteristicCard({
   saving: boolean;
   /** How many readings this characteristic has, against the n it needs. */
   recorded: { recorded: number; failed: number } | undefined;
+  /** This characteristic is the one the drawing's balloon is highlighting. */
+  active?: boolean;
+  /** Touching the card highlights its balloon — the link, read the other way. */
+  onActivate?: () => void;
   onCommitValue: (value: string) => void;
   onToggle: (passed: "true" | "false") => void;
   onPickGauge?: () => void;
@@ -84,9 +90,14 @@ export function CharacteristicCard({
     <View
       className={`gap-3 rounded-lg border bg-card p-4 ${
         (status && STATUS_RING[status]) || "border-border"
-      }`}
+      } ${active ? "border-[#f97316]" : ""}`}
     >
-      <View className="flex-row items-start justify-between gap-3">
+      <Pressable
+        onPress={onActivate}
+        accessibilityRole="button"
+        accessibilityLabel={t`Show ${row.label} on the drawing`}
+        className="flex-row items-start justify-between gap-3"
+      >
         <View className="min-w-0 flex-1">
           <Text
             className="text-base font-semibold text-foreground"
@@ -107,12 +118,13 @@ export function CharacteristicCard({
           ) : null}
         </View>
         {saving ? <ActivityIndicator /> : null}
-      </View>
+      </Pressable>
 
       {row.isNumeric ? (
         <TextInput
           value={draft}
           onChangeText={setDraft}
+          onFocus={onActivate}
           onBlur={commit}
           onSubmitEditing={commit}
           editable={!disabled}

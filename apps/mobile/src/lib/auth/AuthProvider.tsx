@@ -93,6 +93,17 @@ type AuthContextValue = {
   setTerminalToken: (token: string | null) => void;
   setOperatorToken: (token: string | null) => void;
   locale: MesLocale | null;
+  /**
+   * The current access token, read at call time.
+   *
+   * A GETTER rather than a value because the token lives in a ref and is
+   * rotated by `applySession`; exposing it as state would re-render every
+   * consumer on every refresh. The one caller is an authenticated IMAGE url —
+   * the inspection drawing, which `expo-image` fetches itself and so cannot go
+   * through `api.request`. Everything else must use `api`, which attaches this
+   * along with the company, location and operator headers.
+   */
+  getAccessToken: () => string | null;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -376,7 +387,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCompanyId(null);
         setLocationId(null);
         setState(instanceId ? "signed_out" : "no_instance");
-      }
+      },
+      // Not in the dependency list: it reads a ref, so its identity never has
+      // to change for it to return the current token.
+      getAccessToken: () => accessToken.current
     }),
     [
       state,

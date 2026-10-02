@@ -1008,6 +1008,9 @@ msgstr "Drag to resize drawing and characteristics"
 msgid "Dragging {0} cancelled."
 msgstr "Dragging {0} cancelled."
 
+msgid "Drawing"
+msgstr "Drawing"
+
 msgid "Due"
 msgstr "Due"
 
@@ -1630,6 +1633,9 @@ msgstr "Newest first"
 msgid "Next"
 msgstr "Next"
 
+msgid "Next page"
+msgstr "Next page"
+
 msgid "Next step"
 msgstr "Next step"
 
@@ -2025,6 +2031,10 @@ msgstr "Overall result"
 msgid "Overdue PMs?"
 msgstr "Overdue PMs?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr "Page {page} of {0}"
+
 msgid "Parameters"
 msgstr "Parameters"
 
@@ -2158,6 +2168,9 @@ msgstr "Pin out"
 msgid "Pin Out"
 msgstr "Pin Out"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr "Pinned in as {0}"
@@ -2191,6 +2204,9 @@ msgstr "Prev"
 
 msgid "Preventive"
 msgstr "Preventive"
+
+msgid "Previous page"
+msgstr "Previous page"
 
 msgid "Previous step"
 msgstr "Previous step"
@@ -2697,6 +2713,10 @@ msgstr "Short"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr "Show {0} on the drawing"
+
 msgid "Show description"
 msgstr "Show description"
 
@@ -2711,6 +2731,9 @@ msgstr "Sign in"
 
 msgid "Sign in again to attach a photo"
 msgstr "Sign in again to attach a photo"
+
+msgid "Sign in again to see the drawing."
+msgstr "Sign in again to see the drawing."
 
 msgid "Sign in to look up a scanned code."
 msgstr "Sign in to look up a scanned code."
@@ -2894,8 +2917,8 @@ msgstr "The camera is off"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
-msgstr "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
+msgstr "The drawing could not be loaded. Pull down to try again."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."

@@ -1008,6 +1008,9 @@ msgstr "Перетащите для изменения размера рисун
 msgid "Dragging {0} cancelled."
 msgstr "Перетаскивание {0} отменено."
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "Срок"
 
@@ -1630,6 +1633,9 @@ msgstr "Новые в первую очередь"
 msgid "Next"
 msgstr "Далее"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "Следующий шаг"
 
@@ -2025,6 +2031,10 @@ msgstr "Общий результат"
 msgid "Overdue PMs?"
 msgstr "Просроченное ПМ?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "Параметры"
 
@@ -2158,6 +2168,9 @@ msgstr ""
 msgid "Pin Out"
 msgstr "Выход по PIN"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr ""
@@ -2191,6 +2204,9 @@ msgstr "Назад"
 
 msgid "Preventive"
 msgstr "Предупреждающее"
+
+msgid "Previous page"
+msgstr ""
 
 msgid "Previous step"
 msgstr "Предыдущий шаг"
@@ -2697,6 +2713,10 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "Показать описание"
 
@@ -2710,6 +2730,9 @@ msgid "Sign in"
 msgstr ""
 
 msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
 msgstr ""
 
 msgid "Sign in to look up a scanned code."
@@ -2894,7 +2917,7 @@ msgstr ""
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
 msgstr ""
 
 msgid "The jobs and parts that make up this run."

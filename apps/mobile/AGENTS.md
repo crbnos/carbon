@@ -142,9 +142,20 @@ look like `apps/mes/app/components/Inspection/`:
   Columns are still addressed by INDEX, exactly as the web grid does it, because a
   non-serial lot pre-offers one spare column whose sample row does not exist until
   the first reading is written into it.
-- **There is no drawing.** `getInspectionDocumentWithBalloons` feeds `react-konva`
-  + `react-pdf`; the wire carries no `pdfUrl` and no balloon coordinates. The
-  screen says so once, at the top, when the lot has a document.
+- **The drawing is an IMAGE plus a native overlay.** `react-pdf` and
+  `react-konva` are DOM-only and every RN PDF renderer is a native module, so
+  `GET /inspections/:id/drawing?page=N` rasterises the page server-side
+  (`renderPdfPageAsPng`, `@carbon/files/pdf/node`) and `DrawingPane` draws the
+  balloons on top with `react-native-svg`. That works because balloon
+  coordinates are normalized 0–1, so the same numbers land correctly over a
+  page rendered at any scale — and the geometry comes from
+  `@carbon/utils/balloons`, which the web pane and the plan editor also use, so
+  all three put a balloon in the same place. `expo-image` fetches the page
+  itself and so cannot go through the API client; `useAuth().getAccessToken()`
+  exists for that one url and nothing else. The costs are real and accepted: no
+  text selection, and no vector zoom past the render scale (hence 3×). Pages
+  shown are the ones carrying balloons — the wire has no page count, because
+  that would cost a PDF download and parse on every screen load.
 - **`Partial` is not offered.** It needs every unit inspected AND, on a serial
   lot, each unit routed individually to scrap or rework — an allocation table,
   which is the thing this screen exists to avoid. `DispositionSheet` says where

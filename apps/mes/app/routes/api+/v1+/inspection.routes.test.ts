@@ -23,8 +23,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  *  - that a lot id from the URL is handed to a command that re-scopes it, and
  *    that a body naming a DIFFERENT lot is refused rather than applied to the
  *    one in the path.
- *  - that the drawing is absent from the screen payload — the whole reason the
- *    mobile read is a separate shape.
+ *  - that the screen payload carries the drawing's BALLOONS but never a PDF
+ *    or a url to one: a native client draws the overlay itself over a page
+ *    rasterised by `GET /inspections/:id/drawing`.
  *  - that every POST needs an `Idempotency-Key`, and that a failure after the
  *    one-shot disposition close is a 5xx, which the window replays rather than
  *    re-running.
@@ -33,6 +34,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   requireApiUser,
   getInspectionScreen,
+  getInspection,
+  getInspectionDrawingStoragePath,
+  renderPdfPageAsPng,
+  download,
   recordInspectionMeasurement,
   setInspectionGauge,
   recordInspectionSample,
@@ -48,6 +53,10 @@ const {
   recordInspectionSample: vi.fn(),
   dispositionInspectionLot: vi.fn(),
   completePassedInspectionUnits: vi.fn(),
+  getInspection: vi.fn(),
+  getInspectionDrawingStoragePath: vi.fn(),
+  renderPdfPageAsPng: vi.fn(),
+  download: vi.fn(),
   serviceRole: { tag: "service-role" },
   db: { tag: "kysely" }
 }));
@@ -107,6 +116,20 @@ vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => db
 }));
 vi.mock("~/services/screens.server", () => ({ getInspectionScreen }));
+vi.mock("~/services/quality.service", () => ({
+  getInspection,
+  getInspectionDrawingStoragePath
+}));
+vi.mock("@carbon/files/pdf/node", () => ({ renderPdfPageAsPng }));
+// `storage(client).company(id).download(key)` — the company bucket with its
+// legacy fallback, the same accessor `file+/preview+/$bucket.$.tsx` reads
+// through. Only `download` is reached here.
+vi.mock("@carbon/files", () => ({
+  storage: () => ({ company: () => ({ download }) }),
+  isUnsafeStoragePath: (path: string) =>
+    path.includes("..") || path.startsWith("/"),
+  isStorageNotFound: async () => false
+}));
 vi.mock("~/services/commands.inspection.server", () => ({
   recordInspectionMeasurement,
   setInspectionGauge,
@@ -121,6 +144,7 @@ const gaugeRoute = await import("./inspections.$id.gauge");
 const sampleRoute = await import("./inspections.$id.sample");
 const dispositionRoute = await import("./inspections.$id.disposition");
 const completePassedRoute = await import("./inspections.$id.complete-passed");
+const drawingRoute = await import("./inspections.$id.drawing");
 
 const OPERATOR = "user-operator";
 const TERMINAL = "user-terminal";
@@ -169,6 +193,22 @@ const SCREEN = {
     id: LOT,
     status: "In Progress",
     inspectionDocumentId: "idoc_1"
+  },
+  drawing: {
+    documentName: "DWG-1001",
+    balloons: [
+      {
+        id: "bal_1",
+        inspectionFeatureId: "f_1",
+        pageNumber: 1,
+        xCoordinate: 0.5,
+        yCoordinate: 0.25,
+        regionX: 0.4,
+        regionY: 0.4,
+        regionWidth: 0.1,
+        regionHeight: 0.05
+      }
+    ]
   },
   samples: [{ id: "isp_1", status: "Pending" }],
   features: [],
@@ -219,16 +259,22 @@ describe("GET /api/v1/operations/:id/inspection", () => {
     );
   });
 
-  it("ships no drawing — the pane cannot run on React Native", async () => {
+  it("ships the drawing's geometry but never the PDF", async () => {
     getInspectionScreen.mockResolvedValue({ ok: true, data: SCREEN });
 
     const payload = await (await run(screenRoute.loader, url(), PARAMS)).json();
 
-    // The lot still says a document EXISTS, which is how the app knows to
-    // render characteristic rows rather than the overall-result row...
-    expect(payload.inspection.inspectionDocumentId).toBe("idoc_1");
-    // ...but none of the drawing travels.
-    expect(payload).not.toHaveProperty("pdfUrl");
+    // The balloons travel, because a native client draws them itself from
+    // normalized coordinates over a server-rendered page image.
+    expect(payload.drawing.documentName).toBe("DWG-1001");
+    expect(payload.drawing.balloons).toHaveLength(1);
+    expect(payload.drawing.balloons[0].xCoordinate).toBe(0.5);
+
+    // The PDF does not, and no url to it either: `react-pdf` is DOM-only, so
+    // a native client has no engine to open one with. Pages come from
+    // `GET /inspections/:id/drawing?page=N` as PNGs instead.
+    expect(JSON.stringify(payload)).not.toContain("pdfUrl");
+    // Nothing at the top level either — the old shape put these there.
     expect(payload).not.toHaveProperty("balloons");
     expect(payload).not.toHaveProperty("documentName");
   });
@@ -778,5 +824,204 @@ describe("POST /api/v1/inspections/:id/complete-passed", () => {
 
     expect(response.status).toBe(400);
     expect(completePassedInspectionUnits).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/v1/inspections/:id/drawing", () => {
+  const PARAMS = { id: LOT };
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+  const url = (query = "") =>
+    new Request(`http://mes.test/api/v1/inspections/${LOT}/drawing${query}`);
+
+  /** A lot in the caller's company, with a drawing under its own prefix. */
+  const healthy = () => {
+    getInspection.mockResolvedValue({
+      data: { id: LOT, companyId: COMPANY, inspectionDocumentId: "idoc_1" },
+      error: null
+    });
+    getInspectionDrawingStoragePath.mockResolvedValue({
+      data: { id: "idoc_1", storagePath: `${COMPANY}/inspection/dwg.pdf` },
+      error: null
+    });
+    download.mockResolvedValue({
+      data: { arrayBuffer: async () => new ArrayBuffer(8) },
+      error: null
+    });
+    renderPdfPageAsPng.mockResolvedValue(PNG);
+  };
+
+  it("answers with a PNG, not JSON", async () => {
+    healthy();
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/png");
+    // Still an API response: `apiRoute` owes the version header even on a
+    // handler that built its own Response.
+    expect(response.headers.get("carbon-api")).toBe("1");
+    // One company's engineering drawing must never land in a shared cache.
+    expect(response.headers.get("Cache-Control")).toContain("private");
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
+  });
+
+  it("404s a lot belonging to another company", async () => {
+    healthy();
+    getInspection.mockResolvedValue({
+      data: { id: LOT, companyId: "comp-2", inspectionDocumentId: "idoc_1" },
+      error: null
+    });
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(404);
+    // The lot id comes from the URL, so this is the tenant boundary. Nothing
+    // may be read before it holds.
+    expect(getInspectionDrawingStoragePath).not.toHaveBeenCalled();
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("404s a lot whose company cannot be read at all", async () => {
+    healthy();
+    // A row with no companyId is not "allowed"; it is unverifiable.
+    getInspection.mockResolvedValue({
+      data: { id: LOT, inspectionDocumentId: "idoc_1" },
+      error: null
+    });
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(404);
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("refuses a storage path outside the caller's company", async () => {
+    healthy();
+    getInspectionDrawingStoragePath.mockResolvedValue({
+      // A loose `includes(companyId)` would serve this: it ends with the
+      // caller's company id but belongs to another tenant's prefix.
+      data: { id: "idoc_1", storagePath: `comp-2/inspection/${COMPANY}.pdf` },
+      error: null
+    });
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(404);
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("refuses a storage path that escapes its prefix", async () => {
+    healthy();
+    getInspectionDrawingStoragePath.mockResolvedValue({
+      data: {
+        id: "idoc_1",
+        storagePath: `${COMPANY}/../comp-2/inspection/dwg.pdf`
+      },
+      error: null
+    });
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(404);
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("reads the company bucket by the storage KEY, prefix stripped", async () => {
+    healthy();
+    getInspectionDrawingStoragePath.mockResolvedValue({
+      // Some rows store the web preview route's path rather than the key.
+      data: {
+        id: "idoc_1",
+        storagePath: `/file/preview/private/${COMPANY}/inspection/dwg.pdf`
+      },
+      error: null
+    });
+
+    await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(download).toHaveBeenCalledWith(`${COMPANY}/inspection/dwg.pdf`);
+  });
+
+  it("404s a lot with no drawing", async () => {
+    healthy();
+    getInspection.mockResolvedValue({
+      data: { id: LOT, companyId: COMPANY, inspectionDocumentId: null },
+      error: null
+    });
+
+    const response = await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(response.status).toBe(404);
+    const payload = await response.json();
+    expect(payload.error.message).toContain("no drawing");
+  });
+
+  it("404s a page past the end of the document", async () => {
+    healthy();
+    // The wire carries no page count, so asking past the end is how a client
+    // finds it — a 404, never a 500.
+    renderPdfPageAsPng.mockRejectedValue(new Error("Invalid page request"));
+
+    const response = await run(drawingRoute.loader, url("?page=99"), PARAMS);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("refuses a page that is not a page number", async () => {
+    healthy();
+
+    for (const query of ["?page=0", "?page=-1", "?page=1.5", "?page=abc"]) {
+      const response = await run(drawingRoute.loader, url(query), PARAMS);
+      expect(response.status).toBe(400);
+    }
+    expect(renderPdfPageAsPng).not.toHaveBeenCalled();
+  });
+
+  it("renders page 1 at scale 3 by default", async () => {
+    healthy();
+
+    await run(drawingRoute.loader, url(), PARAMS);
+
+    expect(renderPdfPageAsPng).toHaveBeenCalledWith(expect.anything(), 1, {
+      scale: 3
+    });
+  });
+
+  it("clamps the scale rather than refusing it", async () => {
+    healthy();
+
+    await run(drawingRoute.loader, url("?scale=50"), PARAMS);
+    // An unbounded scale is a way to make one request render a
+    // 40-megapixel canvas; asking for more detail than we will spend is not
+    // itself an error.
+    expect(renderPdfPageAsPng).toHaveBeenCalledWith(expect.anything(), 1, {
+      scale: 4
+    });
+
+    renderPdfPageAsPng.mockClear();
+    await run(drawingRoute.loader, url("?scale=0"), PARAMS);
+    expect(renderPdfPageAsPng).toHaveBeenCalledWith(expect.anything(), 1, {
+      scale: 3
+    });
+  });
+
+  it("passes a page through, and reads with the service role", async () => {
+    healthy();
+
+    await run(drawingRoute.loader, url("?page=2&scale=2"), PARAMS);
+
+    expect(getInspection).toHaveBeenCalledWith(serviceRole, LOT);
+    expect(renderPdfPageAsPng).toHaveBeenCalledWith(expect.anything(), 2, {
+      scale: 2
+    });
+  });
+
+  it("400s with no inspection id", async () => {
+    healthy();
+
+    const response = await run(drawingRoute.loader, url(), {});
+
+    expect(response.status).toBe(400);
+    expect(getInspection).not.toHaveBeenCalled();
   });
 });

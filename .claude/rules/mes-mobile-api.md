@@ -196,12 +196,27 @@ the UI buttons use and it adds a `note` on clock-out.
   keyed on the lot id that read returns. Like the web loader it is gated only
   on being an employee of the company; the five writes need `quality` update.
 
-  The screen deliberately ships **no drawing**: `getInspectionDocumentWithBalloons`
-  feeds a `react-konva` + `react-pdf` pane that cannot run on React Native, so
-  that read stays in `x+/inspection.$operationId.tsx` and the wire carries no
-  `pdfUrl`, document name or balloon coordinates. The app gets
-  `inspection.inspectionDocumentId`, which is all it needs to know whether the
-  grid shows characteristic rows or the single overall-result row.
+  The screen carries the drawing as `drawing` — the document's name and its
+  balloon geometry — but **never a PDF or a url to one**. `react-pdf` and
+  `react-konva` cannot run on React Native, so a sixth endpoint,
+  `GET /inspections/:id/drawing?page=N`, rasterises a page with
+  `renderPdfPageAsPng` (`@carbon/files/pdf/node`, which is why `@carbon/files`
+  declares `@napi-rs/canvas`) and answers with a PNG — the one endpoint here
+  whose body is not JSON, which `apiRoute` allows because a handler may return
+  its own `Response`. Balloon coordinates are normalized 0–1, so a client draws
+  the overlay correctly over a page rendered at any scale, and `scale` is
+  clamped server-side. The web route keeps its own
+  `getInspectionDocumentWithBalloons` read: it needs the `pdfUrl` the wire does
+  not carry.
+
+  That endpoint is the one place a record id from the URL reaches a storage
+  read, so it layers all three guards: the lot is re-read and its `companyId`
+  compared (written out longhand, because `getInspection` is typed `any` and
+  the compiler cannot check it), the document is read scoped by `companyId`,
+  and the stored path is then checked with `isUnsafeStoragePath` plus a
+  whole-segment company match — a loose `includes(companyId)` would serve
+  `<otherCo>/…/<thisCo>.pdf`. Each of the three is pinned by a test that was
+  verified to go red when the guard is removed.
 
   `POST /inspections/:id/disposition` is the one place the idempotency window's
   "a stored 5xx is replayed" rule is load-bearing rather than defensive: the

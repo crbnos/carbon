@@ -1008,6 +1008,9 @@ msgstr "드래그하여 도면 및 특성 크기 조정"
 msgid "Dragging {0} cancelled."
 msgstr "{0} 드래그 취소됨."
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "기한"
 
@@ -1630,6 +1633,9 @@ msgstr "최신순"
 msgid "Next"
 msgstr "다음"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "다음 단계"
 
@@ -2025,6 +2031,10 @@ msgstr "전체 결과"
 msgid "Overdue PMs?"
 msgstr "기한 초과된 PM이 있나요?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "파라미터"
 
@@ -2158,6 +2168,9 @@ msgstr ""
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr ""
@@ -2191,6 +2204,9 @@ msgstr "이전"
 
 msgid "Preventive"
 msgstr "예방"
+
+msgid "Previous page"
+msgstr ""
 
 msgid "Previous step"
 msgstr "이전 단계"
@@ -2697,6 +2713,10 @@ msgstr "짧게"
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "설명 표시"
 
@@ -2710,6 +2730,9 @@ msgid "Sign in"
 msgstr ""
 
 msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
 msgstr ""
 
 msgid "Sign in to look up a scanned code."
@@ -2894,7 +2917,7 @@ msgstr ""
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
 msgstr ""
 
 msgid "The jobs and parts that make up this run."

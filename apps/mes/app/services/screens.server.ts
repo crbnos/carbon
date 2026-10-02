@@ -68,6 +68,7 @@ import {
 } from "~/services/picking.service";
 import {
   getInspection,
+  getInspectionDrawing,
   getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
@@ -1175,11 +1176,15 @@ export type InspectionScreenArgs = {
  *    everything else is `redirect` (409). `message: ""` means the loader
  *    redirected with no flash, and `details: { view }` is the wrong-view guard,
  *    whose redirect the web route appends its own search string to.
- *  - The DRAWING is deliberately absent. `getInspectionDocumentWithBalloons`
- *    feeds a `react-konva` + `react-pdf` pane that cannot run on React Native,
- *    so the mobile app never renders it; the web loader keeps that read for
- *    itself rather than making every mobile response carry a PDF url and a
- *    balloon list nothing will draw.
+ *  - The DRAWING is carried as `drawing` — the document's name and its balloon
+ *    geometry — but never as a PDF or a url to one. `react-pdf` and
+ *    `react-konva` are DOM-only, so a native client has no engine to open a
+ *    PDF with and renders a page through `GET /inspections/:id/drawing?page=N`
+ *    instead, which rasterises it server-side. The balloon coordinates are
+ *    normalized 0–1, so the same numbers place the overlay over a page
+ *    rendered at any scale. The web route still does its own
+ *    `getInspectionDocumentWithBalloons` read: it needs the `pdfUrl` this
+ *    deliberately does not carry.
  */
 export async function getInspectionScreen(
   client: SupabaseClient<Database>,
@@ -1290,6 +1295,19 @@ export async function getInspectionScreen(
     await reconcileInspectionSamplingPlans(db, lot.data.id, companyId);
   }
 
+  // The drawing, as a client with no PDF engine can use it: the name and the
+  // balloons. Both come from the same read the web pane uses, so the two panes
+  // cannot disagree about where a balloon sits; only `pdfUrl` is dropped.
+  // Scoped by `companyId` as well as by id — the document id comes off the lot
+  // row, but a drawing is the one thing here that is shared across lots.
+  const drawing = inspection.inspectionDocumentId
+    ? await getInspectionDrawing(
+        client,
+        inspection.inspectionDocumentId,
+        companyId
+      )
+    : null;
+
   const [
     features,
     measurements,
@@ -1350,6 +1368,7 @@ export async function getInspectionScreen(
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
+    drawing,
     samples,
     features: features.data ?? [],
     measurements: measurements.data ?? [],

@@ -980,19 +980,71 @@ export type InspectionLot = z.infer<typeof inspectionLot>;
  * operation. Opening it is what CREATES the lot (lazy find-or-create), which
  * is why a read is addressed by the operation rather than by the lot.
  *
- * **The drawing is deliberately absent.** The web screen renders the assigned
- * PDF with its balloons over a `react-konva` canvas and `react-pdf`, neither of
- * which runs on React Native, so this wire carries no `pdfUrl`, no
- * `documentName` and no balloon coordinates. The app therefore cannot show the
- * drawing or the click-to-highlight link between a balloon and its
- * characteristic row; it renders the measurement grid, and
- * `inspectionDocumentId` is how it knows a drawing exists at all. A native
- * viewer is a later piece of work with its own wire fields — `/api/v1` is
- * additive-only, so adding them later breaks nothing.
+ * **The drawing comes as balloons plus a raster endpoint, never a PDF.** The
+ * web screen renders the assigned PDF through `react-pdf` with its balloons on
+ * a `react-konva` canvas; both are DOM-only. So `drawing` carries the balloon
+ * geometry and the document's name, and a client renders a page through
+ * `GET /inspections/:id/drawing?page=N`, which rasterises it server-side. The
+ * balloon coordinates are normalized, so the overlay lands correctly over a
+ * page rendered at any scale. `drawing` is null when the lot has no document,
+ * which is also when the grid collapses to its single overall-result row.
  */
+/**
+ * One balloon on the drawing: a numbered circle and the region it points at.
+ *
+ * Every coordinate is **normalized 0–1** against the rendered page, not points
+ * or pixels — `xCoordinate`/`yCoordinate` are the top-left corner of a box
+ * `BALLOON_W_NORM` × `BALLOON_H_NORM` (`@carbon/utils/balloons`) whose centre
+ * is the circle, and `region*` is the anchor rectangle the leader line reaches.
+ * Being normalized is what lets a client draw them over a page rendered at any
+ * scale, which is exactly how the native pane works.
+ *
+ * There is no `label` here: it is the characteristic's own label, and a client
+ * already has the features. Sending it twice is two things to disagree.
+ */
+export const inspectionBalloon = z
+  .object({
+    id: z.string(),
+    inspectionFeatureId: z.string(),
+    pageNumber: z.number(),
+    xCoordinate: z.number(),
+    yCoordinate: z.number(),
+    regionX: z.number(),
+    regionY: z.number(),
+    regionWidth: z.number(),
+    regionHeight: z.number()
+  })
+  .passthrough();
+export type InspectionBalloon = z.infer<typeof inspectionBalloon>;
+
+/**
+ * The lot's drawing, as a client without a PDF engine can use it.
+ *
+ * The PDF itself is NOT here and no URL to it is either. A client renders a
+ * page through `GET /inspections/:id/drawing?page=N`, which rasterises it
+ * server-side and answers with a PNG — `react-pdf` and `react-konva` are
+ * DOM-only, so the native app has no engine to open a PDF with.
+ *
+ * Deliberately no page count: it would cost a PDF download and parse on every
+ * screen load, and the pages that matter are the ones carrying balloons, which
+ * `balloons` already names. A client wanting to leaf through pages with no
+ * characteristics on them can ask for any page number; the endpoint 404s past
+ * the end.
+ */
+export const inspectionDrawing = z
+  .object({
+    /** The drawing number, or the file name — what the web titles it with. */
+    documentName: z.string(),
+    balloons: z.array(inspectionBalloon)
+  })
+  .passthrough();
+export type InspectionDrawing = z.infer<typeof inspectionDrawing>;
+
 export const inspectionScreen = z
   .object({
     inspection: inspectionLot,
+    /** Null when the lot has no inspection document assigned. */
+    drawing: inspectionDrawing.nullable(),
     /** Ascending (createdAt, id) — the grid's column order. */
     samples: z.array(inspectionSample),
     /** The lot's characteristics; empty means the overall-result grid. */

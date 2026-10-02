@@ -1008,6 +1008,9 @@ msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
 msgid "Dragging {0} cancelled."
 msgstr "Taşıma {0} iptal edildi."
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "Vade"
 
@@ -1630,6 +1633,9 @@ msgstr "En yeniden önce"
 msgid "Next"
 msgstr "Sonraki"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "Sonraki adım"
 
@@ -2025,6 +2031,10 @@ msgstr "Genel sonuç"
 msgid "Overdue PMs?"
 msgstr "Gecikmiş PM'ler?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "Parametreler"
 
@@ -2158,6 +2168,9 @@ msgstr ""
 msgid "Pin Out"
 msgstr "Çıkış Yap"
 
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
 #. placeholder {0}: selected.name
 msgid "Pinned in as {0}"
 msgstr ""
@@ -2191,6 +2204,9 @@ msgstr "Önceki"
 
 msgid "Preventive"
 msgstr "Önleyici"
+
+msgid "Previous page"
+msgstr ""
 
 msgid "Previous step"
 msgstr "Önceki adım"
@@ -2697,6 +2713,10 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
@@ -2710,6 +2730,9 @@ msgid "Sign in"
 msgstr ""
 
 msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
 msgstr ""
 
 msgid "Sign in to look up a scanned code."
@@ -2894,7 +2917,7 @@ msgstr ""
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
 
-msgid "The drawing for this lot opens in Carbon MES on the web."
+msgid "The drawing could not be loaded. Pull down to try again."
 msgstr ""
 
 msgid "The jobs and parts that make up this run."
