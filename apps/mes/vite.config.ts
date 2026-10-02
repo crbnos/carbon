@@ -59,6 +59,13 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       command === "build" && process.env.ASSETS_URL
         ? process.env.ASSETS_URL.replace(/\/*$/, "/")
         : undefined,
+    /**
+     * Label logos (`@carbon/documents/labels` → `@carbon/files/media/node`)
+     * import the jSquash wasm codecs as `?inline` data URIs. Vite only honours
+     * `?inline` for a file it treats as an asset, and `.wasm` is not one by
+     * default. Same setting as the ERP's.
+     */
+    assetsInclude: ["**/*.wasm"],
     build: {
       minify: true,
       rolldownOptions: {
