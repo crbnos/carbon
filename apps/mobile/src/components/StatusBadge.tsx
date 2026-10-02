@@ -9,14 +9,17 @@ import {
   statusColor
 } from "@carbon/utils/status-colors";
 import {
+  Ban,
   Circle,
   CircleCheck,
+  CircleDashed,
   CirclePlay,
   CircleX,
   Clock,
   type LucideIcon,
   Pause,
-  Play
+  Play,
+  TriangleAlert
 } from "lucide-react-native";
 import { Text, View } from "react-native";
 
@@ -52,19 +55,49 @@ const TEXT_CLASSES: Record<StatusColor, string> = {
   purple: "text-violet-600 dark:text-violet-400"
 };
 
-/** Matches `OperationStatusIcon`; anything unmapped falls back to a plain dot. */
+/**
+ * Status to icon. The operation statuses match `OperationStatusIcon`; the rest
+ * follow the same house reading — a dash for not started, a clock for waiting,
+ * a tick for finished, a cross for dead.
+ *
+ * Every status this app can render needs an entry, because the icon is not
+ * decoration: it is the second channel this component exists for, and a badge
+ * that falls back to colour-and-text alone is exactly the case a glare-lit
+ * tablet and a red-green-blind operator cannot read. Picking statuses were
+ * missing when the picking screens landed, so Partial and Short — the two a
+ * kitter most needs to tell apart — were colour-only.
+ */
 const STATUS_ICONS: Record<string, LucideIcon> = {
+  // job
+  Planned: CircleDashed,
+  "Due Today": Clock,
+  Closed: CircleCheck,
+  Overdue: TriangleAlert,
+  // jobOperation
   Todo: Circle,
-  Ready: CirclePlay,
   Waiting: Clock,
-  "In Progress": Play,
-  Paused: Pause,
   Done: CircleCheck,
   Canceled: CircleX,
-  Cancelled: CircleX,
-  Draft: Circle,
-  Complete: CircleCheck,
-  Completed: CircleCheck
+  // pickingList
+  Draft: CircleDashed,
+  Partial: TriangleAlert,
+  // pickingListLine
+  Pending: CircleDashed,
+  Picked: CircleCheck,
+  Short: TriangleAlert,
+  // trackedEntity
+  Available: CircleCheck,
+  Reserved: Clock,
+  "On Hold": Pause,
+  Rejected: Ban,
+  Consumed: CircleCheck,
+  Scrapped: Ban,
+  // shared across the maps above
+  Ready: CirclePlay,
+  "In Progress": Play,
+  Paused: Pause,
+  Completed: CircleCheck,
+  Cancelled: CircleX
 };
 
 export function StatusBadge({

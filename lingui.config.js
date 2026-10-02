@@ -31,13 +31,25 @@ export default defineConfig({
     },
     {
       path: "<rootDir>/packages/locale/locales/{locale}/mes",
+      // apps/mobile shares this catalog on purpose: the native app is Carbon
+      // MES, so a string already translated for web MES is already translated
+      // there, and the thirteen languages do not have to be bought twice.
+      // `src/i18n/generated` is excluded because it IS the compiled catalog —
+      // extracting from it would feed every message back in as a new source
+      // string.
       include: [
         "apps/mes/app",
+        "apps/mobile/src",
         "packages/react/src",
         "packages/form/src",
         "packages/printing/src/ui"
       ],
-      exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
+      exclude: [
+        "**/*.server.*",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "apps/mobile/src/i18n/generated/**"
+      ]
     }
   ]
 });
