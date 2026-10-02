@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -445,10 +446,14 @@ function BatchPropertyComponent({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   <Trans>Edit</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deletePropertyDisclosure.onOpen}
                 >

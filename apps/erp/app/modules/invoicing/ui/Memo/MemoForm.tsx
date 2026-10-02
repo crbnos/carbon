@@ -13,6 +13,7 @@ import {
   CardTitle,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -122,7 +123,11 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
               }
               menuItems={
                 status === "Draft" && canDelete ? (
-                  <DropdownMenuItem destructive onClick={deleteModal.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
+                    destructive
+                    onClick={deleteModal.onOpen}
+                  >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete</Trans>
                   </DropdownMenuItem>

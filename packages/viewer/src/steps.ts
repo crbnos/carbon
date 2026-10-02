@@ -13,16 +13,32 @@ import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION
 } from "./plan";
-import { joinTargets, stagedGroupNodeIds } from "./staging";
+import {
+  buildSubAssemblyPlan,
+  displayOrder,
+  isSubAssemblyHeader,
+  subAssemblyPartIds,
+  usableSubAssemblies,
+  validateSubAssemblies
+} from "./subassembly";
 
 export {
   assignStepPhases,
   buildAssemblyStepGroups,
+  buildSubAssemblyPlan,
   CURRENT_PLAN_VERSION,
+  displayOrder,
   indexAssemblyGraph,
-  joinTargets,
-  stagedGroupNodeIds
+  isSubAssemblyHeader,
+  subAssemblyPartIds,
+  usableSubAssemblies,
+  validateSubAssemblies
 };
 export type { AssemblyGraphIndex } from "./graph";
 export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";
+export type {
+  SubAssemblyInfo,
+  SubAssemblyViolation,
+  UnusableReason
+} from "./subassembly";
 export type { AssemblyGraph } from "./types";

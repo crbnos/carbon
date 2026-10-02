@@ -23,6 +23,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   Switch,
   usePickOrderOptions,
   VStack
@@ -175,7 +176,7 @@ const PickMethodForm = ({
                 <DropdownMenuContent align="end">
                   {shelfLifeHistoryTrigger}
                   {inventoryHistoryTrigger}
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.open} asChild>
                     <Link to={path.to.auditLog}>
                       <DropdownMenuIcon icon={<LuSettings />} />
                       <Trans>Open Audit Log</Trans>

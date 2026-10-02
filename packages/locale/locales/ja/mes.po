@@ -167,6 +167,9 @@ msgstr "全て手直し"
 msgid "All scrap"
 msgstr "すべてスクラップ"
 
+msgid "All steps"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "不合格ユニットを割り当てる"
 
@@ -516,6 +519,9 @@ msgstr "本日が納期か?"
 msgid "Duplicate batch number"
 msgstr "バッチ番号の複製"
 
+msgid "Duplicate or copy"
+msgstr ""
+
 msgid "Duplicate serial number"
 msgstr "シリアル番号の複製"
 
@@ -711,6 +717,9 @@ msgstr "インペリアル"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0}で"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "進行中"
@@ -1138,6 +1147,11 @@ msgstr "MRB処置のためにNCRを開く"
 msgid "Open Jobs"
 msgstr "オープンな製造指図"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "工程"
 
@@ -1225,6 +1239,9 @@ msgstr "{substitutedFrom}の代わりにピッキング、当ジョブ上の品�
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "{substitutedAssemblies}個のアセンブリ分、{substitutedFrom}の代わりにピッキング、当ジョブ上の品目"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "ピンアウト"
@@ -1352,6 +1369,9 @@ msgstr "在庫を除去"
 
 msgid "Remove part"
 msgstr "部品を除去"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "サブアセンブリを再オープンし、代替品を作成"
@@ -1640,6 +1660,21 @@ msgstr "ステップが未記録です"
 msgid "Storage Unit"
 msgstr "保管ユニット"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "匿名で提出"
 
@@ -1829,6 +1864,11 @@ msgstr "別のアカウントを使用"
 msgid "Used automatically at completion"
 msgstr "完了時に自動使用"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "値"
 
@@ -1837,6 +1877,9 @@ msgstr "確認"
 
 msgid "View maintenance dispatch"
 msgstr "保全指示を表示"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"

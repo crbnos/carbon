@@ -2,7 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -232,6 +238,9 @@ const JournalEntriesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
+              }
               disabled={!permissions.can("view", "accounting")}
               onClick={() => {
                 navigate(path.to.journalEntryDetails(row.id?.toString()!));
@@ -241,6 +250,7 @@ const JournalEntriesTable = memo(
               {isDraft ? t`Edit Journal Entry` : t`View Journal Entry`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!isDraft || !permissions.can("delete", "accounting")}
               destructive
               onClick={() => {

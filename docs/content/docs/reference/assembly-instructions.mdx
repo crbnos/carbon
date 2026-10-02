@@ -65,17 +65,32 @@ The **Playback** box sets how the step plays:
 <FieldTable>
   <Field name="Motion">"Automatic" uses the path the planner found. **"Edit Path"** shows the path as red waypoints in the 3D view: drag one to reshape it, double-click the path to add one, and press Delete to remove the selected one. "No clear path" means the planner found none; hover the header note to see which parts block it.</Field>
   <Field name="Camera">"Automatic" frames the step's parts on its own. **"Use Current View"** saves the angle you are looking from; **"Clear"** goes back to automatic.</Field>
-  <Field name="Build off to the side">Builds this step beside the model and carries the group in at a later step (below).</Field>
 </FieldTable>
 
-### Building a group off to the side
+## Sub-assemblies
 
-Some parts are put together on their own first and then fitted as one piece: a hub gets its bearing, circlip and brake disc on the bench before the whole hub goes onto the trailing arm. <Term id="assembly-step-build-aside">Build off to the side</Term> models that.
+Some parts are put together on their own first and then fitted as one piece: a hub gets its bearing, circlip and brake disc on the bench before the whole hub goes onto the trailing arm. A <Term id="assembly-sub-assembly">sub-assembly</Term> models that: a named group of steps that is built by itself and then joins the main build.
 
-On each step of the group, set **"Build off to the side"** to the step where the group goes in, such as **"Joins step 8"**. During playback those steps build the group next to the model, and at the join step the finished group glides across and fits into place. The join step lists the steps it brings in, and each built-aside step shows a small stacked-boxes icon in the step list.
+To start one, open a step's menu and choose **"Make Sub-Assembly"**; that step becomes its first step. Add more by dragging steps onto it, or with **"Move Into"** in a step's menu. **"Move Out of Sub-Assembly"** returns a step to the main list. The list numbers a sub-assembly's steps under it, such as 4.1 and 4.2 under sub-assembly 4.
+
+Double-click a sub-assembly (or choose **"Open Sub-Assembly"**) to work on it alone: the list and the 3D view show only its steps and parts, and **"Add Step"** adds to it. **"All steps"** goes back to the whole instruction.
+
+Selecting a sub-assembly shows its name, its steps, and **"Where it goes"**:
+
+<FieldTable>
+  <Field name="Used in">The later step that fits the finished sub-assembly. Leave it on **"Main build (after its last step)"** when no step uses it, and it joins the build right after its own steps.</Field>
+  <Field name="Instruction">Shown only when no step uses it: what the operator reads as the finished sub-assembly joins the main build.</Field>
+  <Field name="Camera">Shown only when no step uses it: the view for that moment, saved with **"Use Current View"**.</Field>
+</FieldTable>
+
+You can also set this from the other side: on a step, **"Use Sub-Assembly"** picks a finished sub-assembly to fit in that step. The step's row then shows **"Uses 4"**.
+
+During playback a sub-assembly's steps play in order on their own, and the finished unit glides in at the step that uses it. Pressing play with a sub-assembly selected builds it from its first step.
+
+**"Ungroup"** removes the sub-assembly and keeps its steps in the main list. **"Delete Sub-Assembly"** removes it together with its steps.
 
 <Callout type="note" title="One level only.">
-The first step is the base and is always built in place. A join step can't itself be built off to the side, and a step can only join a later step. If a reorder puts a step after its join step, the link is cleared and the step builds in place again. **"Regenerate Steps"** removes these settings too.
+A sub-assembly can't sit inside another one. To build one into another, use it in one of the other's steps. A sub-assembly can only be used in a step that comes after it, and never in one of its own steps.
 </Callout>
 
 ## Materials, tools, and slides
@@ -86,7 +101,7 @@ The **BOM** tab links the step to what it consumes: parts from the item's bill o
 
 An **Assembly** [operation](/docs/reference/jobs#operation-type) picks its instruction on the item's bill of process. A job copies the instruction's steps when it is created. To bring a later edit into an existing job, use **"Sync Assembly Steps"** on the job operation: steps that came from the instruction are updated or removed to match, and steps someone wrote by hand on the job are kept.
 
-On the shop floor the operation opens the [guided assembly view](/docs/reference/mes#the-guided-assembly-view), which plays the same steps, hidden parts, and groups built off to the side.
+On the shop floor the operation opens the [guided assembly view](/docs/reference/mes#the-guided-assembly-view), which plays the same steps, hidden parts, and sub-assemblies. A sub-assembly itself is not a step the operator records; its steps are. The instruction's steps come after any steps the operation already has.
 
 ## Related
 
@@ -102,8 +117,8 @@ On the shop floor the operation opens the [guided assembly view](/docs/reference
 - Routes: list `/x/production/assemblies`, editor `/x/assembly/:id`. Tables: `assemblyInstruction` (row per version, grouped by `rootInstructionId ?? id`), `assemblyInstructionStep`, `assemblyInstructionStepMaterial`, `assemblyInstructionStepSlide`, `assemblyInstructionStepTool`.
 - Editing is Draft-only in the UI (`isDisabled = status !== "Draft" || !can("update","production")`). "Make Active" shows on any non-Published version, Archived included.
 - Step status DB meaning: Todo = new manual step, Review = planner-generated, Done = author-validated. New steps default to Todo with `planConfidence` "manual".
-- Build off to the side is stored as `assemblyInstructionStep.parentStepId` (the join step). Rule shared by ERP and playback: `joinTargets` in `packages/viewer/src/staging.ts`. Staged groups park on +X or +Z (whichever is most side-on to the saved cameras), 0.25 × the assembly diagonal away, and glide in over 1.2 s.
+- Sub-assemblies: a header row has `assemblyInstructionStep.isSubAssembly`; its steps have `parentStepId` = the header and are stored directly before it in `sortOrder`; the header's `usedInStepId` is the step that fits it (NULL = joins the main build at the header). Rules shared by ERP, the server, and playback: `validateSubAssemblies` in `packages/viewer/src/subassembly.ts`. Header rows are never copied to job steps. The carried unit glides in over 1.2 s. The open sub-assembly is the `?subAssembly=` URL parameter.
 - Hidden parts: `assemblyInstructionStep.hiddenComponentNodeIds`; a DB trigger strips the step's own components on every write.
-- Flash strings: "Step not found"; "That step can't be the join step for this one"; "Failed to update hidden components"; "Failed to update step status"; "Failed to update assembly instruction step"; "Steps already exist — delete them before generating from the plan"; "Some steps are locked — cannot regenerate"; "The geometry service is unavailable — motion planning can't run right now."; "Motion planning is already running"; "This instruction has no processed model"; "The model must finish converting before planning"; "This job is locked — steps can't be synced to it"; "The selected item has no 3D model. Upload a STEP file on the item's Model tab first."; "Made assembly instruction active"; "Failed to make assembly instruction active".
+- Flash strings: "Step not found"; "Sub-assembly not found"; "This step is already a sub-assembly"; "This step is already in a sub-assembly"; "A sub-assembly can't be inside another sub-assembly"; "A sub-assembly's steps must come directly before it"; "A sub-assembly can only be used after it is built"; "A sub-assembly can't be used by one of its own steps"; "Only draft instructions can be edited"; "Failed to update hidden components"; "Failed to update step status"; "Failed to update assembly instruction step"; "Steps already exist — delete them before generating from the plan"; "Some steps are locked — cannot regenerate"; "The geometry service is unavailable — motion planning can't run right now."; "Motion planning is already running"; "This instruction has no processed model"; "The model must finish converting before planning"; "This job is locked — steps can't be synced to it"; "The selected item has no 3D model. Upload a STEP file on the item's Model tab first."; "Made assembly instruction active"; "Failed to make assembly instruction active".
 - Planner offline: "The geometry service is offline — motion planning is unavailable right now." Generate is disabled until it is back.
 </AgentContext>

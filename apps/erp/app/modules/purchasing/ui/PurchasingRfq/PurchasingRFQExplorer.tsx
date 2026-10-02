@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -305,6 +306,7 @@ function PurchasingRFQLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
                     isDisabled || !permissions.can("update", "purchasing")
@@ -320,6 +322,7 @@ function PurchasingRFQLineItem({
                 {line.itemId &&
                   itemType.includes(line.itemType as ItemType) && (
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.view}
                       asChild
                       onClick={(e) => e.stopPropagation()}
                     >

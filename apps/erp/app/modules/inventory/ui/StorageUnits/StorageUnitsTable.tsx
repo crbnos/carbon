@@ -8,6 +8,7 @@ import {
   Checkbox,
   Combobox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -536,6 +537,7 @@ const StorageUnitsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(`${path.to.storageUnit(row.id)}?${params.toString()}`);
@@ -557,6 +559,7 @@ const StorageUnitsTable = memo(
               <Trans>Add Child Storage Unit</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!permissions.can("delete", "inventory")}
               destructive
               onClick={() => {

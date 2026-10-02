@@ -6,7 +6,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -62,8 +63,11 @@ function DepartmentNodeComponent({
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => onEdit(department.id!)}>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
+              onClick={() => onEdit(department.id!)}
+            >
               <LuPencil className="mr-2 size-4" />
               Edit
             </DropdownMenuItem>
@@ -72,6 +76,7 @@ function DepartmentNodeComponent({
               Add department
             </DropdownMenuItem>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(department.id!)}
             >

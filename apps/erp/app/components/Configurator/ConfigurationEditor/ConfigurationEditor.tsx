@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalContent,
   ModalTitle,
@@ -343,6 +344,7 @@ export default function Configurator({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     disabled={!isActive}
                     onClick={deleteDialog.onOpen}

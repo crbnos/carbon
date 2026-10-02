@@ -15,6 +15,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -141,6 +142,7 @@ const QualityDocumentHeader = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   !permissions.can("delete", "quality") ||
                   !permissions.is("employee") ||

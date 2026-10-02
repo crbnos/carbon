@@ -7,6 +7,7 @@ import {
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -276,6 +277,7 @@ const EmployeesTable = memo(
         return (
           <DropdownMenuContent>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
@@ -369,6 +371,7 @@ const EmployeesTable = memo(
             {row.active === true ? (
               <>
                 <MenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   onClick={() =>
                     navigate(
                       `${path.to.employeeAccount(row.id!)}?${params.toString()}`

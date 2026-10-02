@@ -9,6 +9,7 @@ import {
   Badge,
   BarProgress,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   VStack
@@ -231,14 +232,14 @@ const TrainingAssignmentsTable = memo(
 
         return (
           <>
-            <MenuItem asChild>
+            <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
               <Link to={path.to.trainingAssignmentDetail(row.trainingId)}>
                 <MenuIcon icon={<LuEye />} />
                 <Trans>View Status</Trans>
               </Link>
             </MenuItem>
             {permissions.can("update", "resources") && (
-              <MenuItem asChild>
+              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={path.to.trainingAssignment(assignmentId)}>
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Assignment</Trans>

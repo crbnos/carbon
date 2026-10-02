@@ -12,9 +12,22 @@ export function isEditableTarget(
   target: EventTarget | Element | null
 ): boolean {
   if (!(target instanceof HTMLElement)) return false;
-  if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return true;
-  if (target.isContentEditable) return true;
+  if (isTextEntryTarget(target)) return true;
   return Boolean(
     target.closest(".ProseMirror, [cmdk-root], [role='listbox'], [role='menu']")
   );
+}
+
+/**
+ * The narrow half of `isEditableTarget`: only fields that take typed text
+ * (INPUT, TEXTAREA, SELECT, contenteditable). Use it where the surrounding
+ * listbox/menu is the thing handling keys — e.g. menu item shortcuts, which
+ * must still stand down for a NumberField rendered inside a menu.
+ */
+export function isTextEntryTarget(
+  target: EventTarget | Element | null
+): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return true;
+  return target.isContentEditable;
 }

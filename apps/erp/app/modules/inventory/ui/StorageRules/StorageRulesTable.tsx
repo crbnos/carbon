@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Json } from "@carbon/database";
-import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import type { TransactionSurface } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -129,6 +135,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
     (row: (typeof rows)[number]) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("update", "settings")}
           onClick={() => {
             navigate(`${path.to.storageRule(row.id)}?${params.toString()}`);
@@ -138,6 +145,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
           <Trans>Edit Rule</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "settings")}
           destructive
           onClick={() => {

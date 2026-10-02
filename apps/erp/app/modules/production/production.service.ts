@@ -14,6 +14,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  datetime,
   groupBy,
   nameSimilarity,
   scrapAllowance,
@@ -31,7 +32,7 @@ import {
   describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph,
-  joinTargets
+  validateSubAssemblies
 } from "@carbon/viewer";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -7083,6 +7084,9 @@ export async function copyAssemblyInstructionAsVersion(
         parentStepId: step.parentStepId
           ? (stepIdMap.get(step.parentStepId) ?? null)
           : null,
+        usedInStepId: step.usedInStepId
+          ? (stepIdMap.get(step.usedInStepId) ?? null)
+          : null,
         // Lineage across versions: a step copied from v1 roots at v1's step, and
         // a v3 copied from v2 still roots at v1 — the chain stays flat so
         // COALESCE("rootStepId", "id") identifies the group at any depth.
@@ -7505,25 +7509,52 @@ export async function invalidateAssemblyModelCache(
     .eq("id", modelUploadId);
 }
 
+type AssemblyStepFields = {
+  title?: string | null;
+  type?: Database["public"]["Enums"]["procedureStepType"];
+  description?: Json;
+  required?: boolean;
+  unitOfMeasureCode?: string | null;
+  minValue?: number | null;
+  maxValue?: number | null;
+  listValues?: string[] | null;
+  componentNodeIds?: string[];
+  motion?: z.infer<typeof motionSchema>;
+  camera?: z.infer<typeof cameraSchema> | null;
+  fastener?: z.infer<typeof fastenerSchema> | null;
+  durationSeconds?: number | null;
+};
+
+/** A new step's columns, shared by both insert paths. */
+function newAssemblyStepColumns(data: AssemblyStepFields) {
+  return {
+    title: data.title ?? null,
+    type: data.type ?? "Task",
+    description: data.description ?? {},
+    instructionText:
+      data.description !== undefined
+        ? tiptapToText(data.description as JSONContent) || null
+        : null,
+    required: data.required ?? false,
+    unitOfMeasureCode:
+      data.type === "Measurement" ? (data.unitOfMeasureCode ?? null) : null,
+    minValue: data.type === "Measurement" ? (data.minValue ?? null) : null,
+    maxValue: data.type === "Measurement" ? (data.maxValue ?? null) : null,
+    listValues: data.type === "List" ? (data.listValues ?? null) : null,
+    componentNodeIds: data.componentNodeIds ?? [],
+    motion: (data.motion ?? { type: "none" }) as Json,
+    camera: (data.camera ?? null) as Json | null,
+    fastener: (data.fastener ?? null) as Json | null,
+    durationSeconds: data.durationSeconds ?? null
+  };
+}
+
 /** @mcp upsert */
 export async function upsertAssemblyInstructionStep(
   client: SupabaseClient<Database>,
-  data: {
+  data: AssemblyStepFields & {
     id?: string;
     assemblyInstructionId: string;
-    title?: string | null;
-    type?: Database["public"]["Enums"]["procedureStepType"];
-    description?: Json;
-    required?: boolean;
-    unitOfMeasureCode?: string | null;
-    minValue?: number | null;
-    maxValue?: number | null;
-    listValues?: string[] | null;
-    componentNodeIds?: string[];
-    motion?: z.infer<typeof motionSchema>;
-    camera?: z.infer<typeof cameraSchema> | null;
-    fastener?: z.infer<typeof fastenerSchema> | null;
-    durationSeconds?: number | null;
     sortOrder?: number;
     companyId: string;
     createdBy: string;
@@ -7589,24 +7620,7 @@ export async function upsertAssemblyInstructionStep(
     .from("assemblyInstructionStep")
     .insert({
       assemblyInstructionId: data.assemblyInstructionId,
-      title: data.title ?? null,
-      type: data.type ?? "Task",
-      description: data.description ?? {},
-      instructionText:
-        data.description !== undefined
-          ? tiptapToText(data.description as JSONContent) || null
-          : null,
-      required: data.required ?? false,
-      unitOfMeasureCode:
-        data.type === "Measurement" ? (data.unitOfMeasureCode ?? null) : null,
-      minValue: data.type === "Measurement" ? (data.minValue ?? null) : null,
-      maxValue: data.type === "Measurement" ? (data.maxValue ?? null) : null,
-      listValues: data.type === "List" ? (data.listValues ?? null) : null,
-      componentNodeIds: data.componentNodeIds ?? [],
-      motion: (data.motion ?? { type: "none" }) as Json,
-      camera: (data.camera ?? null) as Json | null,
-      fastener: (data.fastener ?? null) as Json | null,
-      durationSeconds: data.durationSeconds ?? null,
+      ...newAssemblyStepColumns(data),
       sortOrder: data.sortOrder ?? (await getNextStepSortOrder(client, data)),
       companyId: data.companyId,
       createdBy: data.createdBy
@@ -7696,56 +7710,394 @@ export async function updateAssemblyStepHiddenComponents(
     .single();
 }
 
-// Sub-assembly staging: `parentStepId` = the later JOIN step this step is built
-// aside for (NULL = built in place). Which links are allowed is `joinTargets`,
-// the one rule the select and playback share.
-/** @mcp update */
-export async function updateAssemblyStepJoin(
-  client: SupabaseClient<Database>,
-  data: {
-    assemblyInstructionId: string;
-    stepId: string;
-    joinStepId: string | null;
+// Sub-assemblies: a header row (`isSubAssembly`) plus the steps whose
+// `parentStepId` is the header, stored directly before it (play order). A
+// header's `usedInStepId` is the later step that fits the finished unit.
+// Every structural write loads the instruction's steps, applies the change in
+// memory, checks `validateSubAssemblies` (the same rules the editor offers
+// actions by) and writes the new order in one transaction.
+
+type StepStructureRow = {
+  id: string;
+  sortOrder: number;
+  componentNodeIds: string[];
+  parentStepId: string | null;
+  usedInStepId: string | null;
+  isSubAssembly: boolean;
+};
+
+async function loadStepStructure(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  assemblyInstructionId: string
+): Promise<StepStructureRow[]> {
+  // Locking the instruction row serializes every structural write on it, so
+  // each one validates against the order the previous one committed.
+  const instruction = await db
+    .selectFrom("assemblyInstruction")
+    .select("status")
+    .where("id", "=", assemblyInstructionId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!instruction) throw new Error("Assembly instruction not found");
+  if (instruction.status !== "Draft") {
+    throw new Error("Only draft instructions can be edited");
+  }
+
+  return db
+    .selectFrom("assemblyInstructionStep")
+    .select([
+      "id",
+      "sortOrder",
+      "componentNodeIds",
+      "parentStepId",
+      "usedInStepId",
+      "isSubAssembly"
+    ])
+    .where("assemblyInstructionId", "=", assemblyInstructionId)
+    .where("companyId", "=", companyId)
+    .orderBy("sortOrder", "asc")
+    .execute();
+}
+
+function assertValidStepStructure(steps: StepStructureRow[]) {
+  const [violation] = validateSubAssemblies(steps);
+  if (violation) throw new Error(violation.message);
+}
+
+/**
+ * Write `next` (the instruction's steps in their new play order) as sortOrder
+ * 1..n plus each row's sub-assembly links. Only rows that changed are touched.
+ */
+async function saveStepStructure(
+  db: Kysely<KyselyDatabase>,
+  args: {
     companyId: string;
-    updatedBy: string;
+    userId: string;
+    assemblyInstructionId: string;
+    before: StepStructureRow[];
+    next: StepStructureRow[];
   }
 ) {
-  const steps = await client
-    .from("assemblyInstructionStep")
-    .select("id, parentStepId")
-    .eq("assemblyInstructionId", data.assemblyInstructionId)
-    .eq("companyId", data.companyId)
-    .order("sortOrder", { ascending: true });
-  if (steps.error) return { data: null, error: steps.error };
+  const beforeById = new Map(args.before.map((step) => [step.id, step]));
+  const changed = args.next
+    .map((step, index) => ({ ...step, sortOrder: index + 1 }))
+    .filter((step) => {
+      const was = beforeById.get(step.id);
+      return (
+        !was ||
+        was.sortOrder !== step.sortOrder ||
+        was.parentStepId !== step.parentStepId ||
+        was.usedInStepId !== step.usedInStepId
+      );
+    });
+  if (changed.length === 0) return;
 
-  const rows = steps.data.map((row) => ({
-    id: row.id,
-    joinStepId: row.parentStepId
-  }));
-  if (!rows.some((row) => row.id === data.stepId)) {
-    return { data: null, error: { message: "Step not found" } };
+  const values = sql.join(
+    changed.map(
+      (step) =>
+        sql`(${step.id}::text, ${step.sortOrder}::double precision, ${step.parentStepId}::text, ${step.usedInStepId}::text)`
+    )
+  );
+  const { rows } = await sql<{ id: string }>`
+    UPDATE "assemblyInstructionStep" AS t
+    SET "sortOrder" = v."sortOrder",
+        "parentStepId" = v."parentStepId",
+        "usedInStepId" = v."usedInStepId",
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${datetime.timestamp()}
+    FROM (VALUES ${values}) AS v("id", "sortOrder", "parentStepId", "usedInStepId")
+    WHERE t."id" = v."id"
+      AND t."companyId" = ${args.companyId}
+      AND t."assemblyInstructionId" = ${args.assemblyInstructionId}
+    RETURNING t."id"
+  `.execute(db);
+  if (rows.length !== changed.length) {
+    throw new Error("Some steps are not on this instruction");
   }
-  if (
-    data.joinStepId &&
-    !joinTargets(rows, data.stepId).targets.includes(data.joinStepId)
-  ) {
-    return {
-      data: null,
-      error: { message: "That step can't be the join step for this one" }
+}
+
+/**
+ * Wrap a top-level step into a new sub-assembly; the step becomes its first step.
+ * @mcp action
+ */
+export async function makeAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    stepId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, stepId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const step = before.find((s) => s.id === stepId);
+    if (!step) throw new Error("Step not found");
+    if (step.isSubAssembly) {
+      throw new Error("This step is already a sub-assembly");
+    }
+    if (step.parentStepId) {
+      throw new Error("This step is already in a sub-assembly");
+    }
+
+    const header = await trx
+      .insertInto("assemblyInstructionStep")
+      .values({
+        assemblyInstructionId,
+        companyId,
+        sortOrder: step.sortOrder,
+        isSubAssembly: true,
+        createdBy: userId
+      })
+      .returning(["id", "sortOrder"])
+      .executeTakeFirstOrThrow();
+
+    const headerRow: StepStructureRow = {
+      id: header.id,
+      sortOrder: header.sortOrder,
+      componentNodeIds: [],
+      parentStepId: null,
+      usedInStepId: null,
+      isSubAssembly: true
     };
-  }
+    const next = before.flatMap((s) =>
+      s.id === stepId ? [{ ...s, parentStepId: header.id }, headerRow] : [s]
+    );
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: [...before, headerRow],
+      next
+    });
+    return header.id;
+  });
+}
 
-  return client
-    .from("assemblyInstructionStep")
-    .update({
-      parentStepId: data.joinStepId,
-      updatedBy: data.updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", data.stepId)
-    .eq("companyId", data.companyId)
-    .select("id")
-    .single();
+/**
+ * Add a step at the end of the instruction, or at the end of the sub-assembly
+ * `parentStepId` names (directly before its header).
+ * @mcp create
+ */
+export async function insertAssemblyInstructionStep(
+  db: Kysely<KyselyDatabase>,
+  args: AssemblyStepFields & {
+    assemblyInstructionId: string;
+    parentStepId?: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, parentStepId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    if (
+      parentStepId &&
+      !before.find((s) => s.id === parentStepId)?.isSubAssembly
+    ) {
+      throw new Error("Sub-assembly not found");
+    }
+
+    const step = await trx
+      .insertInto("assemblyInstructionStep")
+      .values({
+        assemblyInstructionId,
+        companyId,
+        ...newAssemblyStepColumns(args),
+        sortOrder: before.length + 1,
+        parentStepId: parentStepId ?? null,
+        createdBy: userId
+      })
+      .returning(["id", "sortOrder", "componentNodeIds"])
+      .executeTakeFirstOrThrow();
+
+    const stepRow: StepStructureRow = {
+      ...step,
+      parentStepId: parentStepId ?? null,
+      usedInStepId: null,
+      isSubAssembly: false
+    };
+    const next = parentStepId
+      ? before.flatMap((s) => (s.id === parentStepId ? [stepRow, s] : [s]))
+      : [...before, stepRow];
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: [...before, stepRow],
+      next
+    });
+    return step.id;
+  });
+}
+
+/**
+ * Rename a sub-assembly and/or set the step that uses it (`null` = it joins the
+ * main build). `undefined` leaves a field unchanged.
+ * @mcp update
+ */
+export async function updateAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    title?: string;
+    usedInStepId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    if (args.usedInStepId !== undefined) {
+      assertValidStepStructure(
+        before.map((s) =>
+          s.id === headerId ? { ...s, usedInStepId: args.usedInStepId! } : s
+        )
+      );
+    }
+
+    await trx
+      .updateTable("assemblyInstructionStep")
+      .set({
+        ...(args.title !== undefined ? { title: args.title } : {}),
+        ...(args.usedInStepId !== undefined
+          ? { usedInStepId: args.usedInStepId }
+          : {}),
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", headerId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+  });
+}
+
+/**
+ * Remove the sub-assembly but keep its steps: they return to the top level in place.
+ * @mcp action destructive
+ */
+export async function ungroupAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    const next = before
+      .filter((s) => s.id !== headerId)
+      .map((s) =>
+        s.parentStepId === headerId ? { ...s, parentStepId: null } : s
+      );
+    assertValidStepStructure(next);
+
+    await trx
+      .deleteFrom("assemblyInstructionStep")
+      .where("id", "=", headerId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before,
+      next
+    });
+  });
+}
+
+/**
+ * Delete a sub-assembly together with its steps.
+ * @mcp delete
+ */
+export async function deleteAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    const removed = new Set(
+      before
+        .filter((s) => s.id === headerId || s.parentStepId === headerId)
+        .map((s) => s.id)
+    );
+    // Deleting a step that used another sub-assembly makes that one join the
+    // main build (FK ON DELETE SET NULL); mirror it before validating.
+    const next = before
+      .filter((s) => !removed.has(s.id))
+      .map((s) =>
+        s.usedInStepId && removed.has(s.usedInStepId)
+          ? { ...s, usedInStepId: null }
+          : s
+      );
+    assertValidStepStructure(next);
+
+    await trx
+      .deleteFrom("assemblyInstructionStep")
+      .where("id", "in", [...removed])
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: before.map((s) =>
+        s.usedInStepId && removed.has(s.usedInStepId)
+          ? { ...s, usedInStepId: null }
+          : s
+      ),
+      next
+    });
+  });
 }
 
 // Assign a set of component instances to a target step. `duplicate` unions them
@@ -7932,40 +8284,55 @@ export async function updateAssemblyInstructionStepStatus(
     .single();
 }
 
-/** @mcp update */
+/**
+ * Drag-sort of the step list: each step's new position and sub-assembly
+ * (`parentStepId`, `null` = top level; omitted = unchanged). The result must
+ * satisfy the sub-assembly rules or nothing is written.
+ * @mcp update
+ */
 export async function updateAssemblyInstructionStepOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   assemblyInstructionId: string,
-  updates: { id: string; sortOrder: number }[]
+  updates: { id: string; sortOrder: number; parentStepId?: string | null }[]
 ) {
-  return updateSortOrder(db, {
-    table: "assemblyInstructionStep",
-    column: "sortOrder",
-    companyId,
-    userId,
-    parent: { column: "assemblyInstructionId", id: assemblyInstructionId },
-    updates,
-    // A step built aside must still come before its join step; a reorder that
-    // breaks that turns it back into a built-in-place step.
-    afterUpdate: async (trx) => {
-      await trx
-        .updateTable("assemblyInstructionStep as s")
-        .set({ parentStepId: null })
-        .where("s.companyId", "=", companyId)
-        .where("s.assemblyInstructionId", "=", assemblyInstructionId)
-        .where("s.parentStepId", "is not", null)
-        .where(({ exists, selectFrom }) =>
-          exists(
-            selectFrom("assemblyInstructionStep as j")
-              .select("j.id")
-              .whereRef("j.id", "=", "s.parentStepId")
-              .whereRef("j.sortOrder", "<=", "s.sortOrder")
-          )
-        )
-        .execute();
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const updateById = new Map(updates.map((update) => [update.id, update]));
+    if (updateById.size !== updates.length) {
+      throw new Error("A step appears twice in the new order");
     }
+    if (updates.some((update) => !before.some((s) => s.id === update.id))) {
+      throw new Error("Some steps are not on this instruction");
+    }
+
+    const next = before
+      .map((step) => {
+        const update = updateById.get(step.id);
+        if (!update) return step;
+        return {
+          ...step,
+          sortOrder: update.sortOrder,
+          parentStepId:
+            update.parentStepId === undefined
+              ? step.parentStepId
+              : update.parentStepId
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before,
+      next
+    });
   });
 }
 
@@ -8963,9 +9330,13 @@ function assemblyStepName(title: string | null, index: number) {
  * inserts duplicates beside them.
  *
  * Deliberately conservative: an orphan is claimed only when it matches a source
- * step on BOTH sortOrder and name AND no already-marked step claims that source
+ * step on BOTH position and name AND no already-marked step claims that source
  * step. Genuinely hand-authored steps match no source step and are untouched;
  * ambiguous cases are left alone rather than guessed at.
+ *
+ * Position is where the sync wrote the step: after the operation's own steps
+ * (the unmarked steps that share no name with a source step), in source order.
+ * Steps synced before that numbering sit at the source step's own sortOrder.
  */
 export function planOrphanStepAdoption(
   sourceSteps: { id: string; title: string | null; sortOrder: number | null }[],
@@ -8975,14 +9346,25 @@ export function planOrphanStepAdoption(
   const adoption = new Map<string, string>();
   const takenOrphans = new Set<string>();
 
+  const sourceNames = new Set(
+    sourceSteps.map((source, index) => assemblyStepName(source.title, index))
+  );
+  const lastOwnSortOrder = Math.max(
+    0,
+    ...orphanSteps
+      .filter((orphan) => orphan.name === null || !sourceNames.has(orphan.name))
+      .map((orphan) => orphan.sortOrder ?? 0)
+  );
+
   sourceSteps.forEach((source, index) => {
     if (claimedSourceIds.has(source.id)) return;
     const sourceName = assemblyStepName(source.title, index);
     const match = orphanSteps.find(
       (orphan) =>
         !takenOrphans.has(orphan.id) &&
-        orphan.sortOrder === source.sortOrder &&
-        orphan.name === sourceName
+        orphan.name === sourceName &&
+        (orphan.sortOrder === lastOwnSortOrder + 1 + index ||
+          orphan.sortOrder === source.sortOrder)
     );
     if (match) {
       adoption.set(match.id, source.id);
@@ -9133,6 +9515,10 @@ export async function syncAssemblyInstructionToOperation(
       ])
       .where("assemblyInstructionId", "=", instruction.id)
       .where("companyId", "=", companyId)
+      // A sub-assembly (header) row is not a build action to record: it is
+      // never a job step, and a job step synced from a row that has since
+      // become a header is removed as stale below.
+      .where("isSubAssembly", "=", false)
       .orderBy("sortOrder", "asc")
       .execute();
     if (sourceSteps.length === 0) {
@@ -9275,6 +9661,17 @@ export async function syncAssemblyInstructionToOperation(
       existingSynced
     );
 
+    // The operation's own steps number from 1 as well: the instruction's
+    // steps follow them, or the two interleave.
+    const syncedIds = new Set(existingSynced.map((step) => step.id));
+    const firstSortOrder =
+      Math.max(
+        0,
+        ...existingSteps
+          .filter((step) => !syncedIds.has(step.id))
+          .map((step) => step.sortOrder ?? 0)
+      ) + 1;
+
     const now = new Date().toISOString();
     let created = 0;
     let updated = 0;
@@ -9303,7 +9700,7 @@ export async function syncAssemblyInstructionToOperation(
         maxValue: source.maxValue,
         listValues: source.listValues,
         fileTypes: source.fileTypes,
-        sortOrder: source.sortOrder ?? index + 1
+        sortOrder: firstSortOrder + index
       };
 
       const existingId = targetIdBySourceId.get(source.id);
@@ -9820,7 +10217,9 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     instructionText: step.instructionText,
     componentNodeIds: step.componentNodeIds ?? [],
     hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
-    joinStepId: step.parentStepId ?? null,
+    isSubAssembly: step.isSubAssembly,
+    parentStepId: step.parentStepId ?? null,
+    usedInStepId: step.usedInStepId ?? null,
     motion: motion.success ? motion.data : { type: "none" },
     camera: camera.success ? camera.data : null,
     fastener: fastener.success ? fastener.data : null,
