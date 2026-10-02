@@ -47,7 +47,7 @@ export function WorkTypeToggle({
   const locked = types.length <= 1;
 
   return (
-    <View className="flex-row gap-1 rounded-lg border border-border bg-background p-1">
+    <View className="w-full min-w-[220px] shrink flex-row gap-1 rounded-lg border border-border bg-background p-1">
       {types.map((type) => {
         const Icon = ICONS[type];
         const selected = type === value;

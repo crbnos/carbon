@@ -48,7 +48,11 @@ export function ActionDock({
 
   return (
     <View
-      className="flex-row items-center justify-around gap-3 border-t border-border bg-card px-4 pt-3"
+      // Wraps, and every child may shrink. The operation dock carries a
+      // work-type toggle, a 96pt hero button and two more controls; on a phone
+      // that is wider than the screen, and without wrapping the row simply
+      // bled off the right edge with the last control unreachable.
+      className="flex-row flex-wrap items-center justify-center gap-3 border-t border-border bg-card px-4 pt-3"
       style={{ paddingBottom: insets.bottom + 12 }}
     >
       {children}
