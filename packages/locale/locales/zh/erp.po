@@ -5234,6 +5234,9 @@ msgstr "创建工作中心"
 msgid "Created"
 msgstr "已创建"
 
+msgid "Created <0/> by <1/>"
+msgstr ""
+
 msgid "Created account"
 msgstr "已创建账户"
 
@@ -6710,6 +6713,9 @@ msgstr "文件:"
 
 msgid "Documents"
 msgstr "文档"
+
+msgid "Documents and activity"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "文档推送发票、账单和付款作为本地提供商文件；其凭证被记录为由该文件覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并过账一个Carbon总账凭证。关闭时将其记录为故意排除。"
@@ -9169,6 +9175,9 @@ msgid "Hide Again"
 msgstr "再次隐藏"
 
 msgid "Hide calculation"
+msgstr ""
+
+msgid "Hide documents and activity"
 msgstr ""
 
 msgid "Hide raw"
@@ -14104,6 +14113,12 @@ msgstr "邮政编码"
 msgid "Posted"
 msgstr "已过账"
 
+msgid "Posted <0/>"
+msgstr ""
+
+msgid "Posted <0/> by <1/>"
+msgstr ""
+
 msgid "Posted At"
 msgstr "过账时间"
 
@@ -17502,6 +17517,9 @@ msgid "Show Customer IDs"
 msgstr "显示客户ID"
 
 msgid "Show Details"
+msgstr ""
+
+msgid "Show documents and activity"
 msgstr ""
 
 msgid "Show Durations"

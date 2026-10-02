@@ -5234,6 +5234,9 @@ msgstr "İş Merkezi Oluştur"
 msgid "Created"
 msgstr "Oluşturulma"
 
+msgid "Created <0/> by <1/>"
+msgstr ""
+
 msgid "Created account"
 msgstr "Oluşturulan hesap"
 
@@ -6710,6 +6713,9 @@ msgstr "Belge:"
 
 msgid "Documents"
 msgstr "Belgeler"
+
+msgid "Documents and activity"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Belgeler, faturaları, fatura bedelleri ve ödemeleri yerel sağlayıcı belgeleri olarak gönderir; muhasebe fişleri belge tarafından kapsandığı olarak kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çeker, eşleşen faturayı kapatır ve bir Carbon Büyük defter muhasebe fişi muhasebeleştirir. Kapalı, bunları kasıtlı olarak dışarıda bırakılanlar olarak kaydeder."
@@ -9169,6 +9175,9 @@ msgid "Hide Again"
 msgstr "Tekrar Gizle"
 
 msgid "Hide calculation"
+msgstr ""
+
+msgid "Hide documents and activity"
 msgstr ""
 
 msgid "Hide raw"
@@ -14104,6 +14113,12 @@ msgstr "Posta Kodu"
 msgid "Posted"
 msgstr "Yayınlandı"
 
+msgid "Posted <0/>"
+msgstr ""
+
+msgid "Posted <0/> by <1/>"
+msgstr ""
+
 msgid "Posted At"
 msgstr "Gönderilen Tarih"
 
@@ -17502,6 +17517,9 @@ msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
 
 msgid "Show Details"
+msgstr ""
+
+msgid "Show documents and activity"
 msgstr ""
 
 msgid "Show Durations"

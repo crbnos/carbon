@@ -5234,6 +5234,9 @@ msgstr "वर्क सेंटर बनाएँ"
 msgid "Created"
 msgstr "बनाया गया"
 
+msgid "Created <0/> by <1/>"
+msgstr ""
+
 msgid "Created account"
 msgstr "खाता बनाया गया"
 
@@ -6710,6 +6713,9 @@ msgstr "दस्तावेज़:"
 
 msgid "Documents"
 msgstr "दस्तावेज़"
+
+msgid "Documents and activity"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को नेटिव प्रदाता दस्तावेज़ के रूप में पुश करता है; उनकी जर्नल दस्तावेज़ द्वारा कवर किए गए के रूप में रिकॉर्ड की जाती है। यह प्रदाता में रिकॉर्ड किए गए भुगतान को Carbon में वापस पुल करता है, मिलान किए गए चालान या बिल को बंद करता है और एक Carbon सामान्य खाता बही जर्नल की पोस्टिंग करता है। बंद होने पर यह उन्हें जानबूझकर बाहर रखे जाने के रूप में रिकॉर्ड करता है।"
@@ -9169,6 +9175,9 @@ msgid "Hide Again"
 msgstr "फिर से छिपाएँ"
 
 msgid "Hide calculation"
+msgstr ""
+
+msgid "Hide documents and activity"
 msgstr ""
 
 msgid "Hide raw"
@@ -14104,6 +14113,12 @@ msgstr "पिन कोड"
 msgid "Posted"
 msgstr "पोस्ट किया गया"
 
+msgid "Posted <0/>"
+msgstr ""
+
+msgid "Posted <0/> by <1/>"
+msgstr ""
+
 msgid "Posted At"
 msgstr "पोस्ट किया गया"
 
@@ -17502,6 +17517,9 @@ msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"
 
 msgid "Show Details"
+msgstr ""
+
+msgid "Show documents and activity"
 msgstr ""
 
 msgid "Show Durations"

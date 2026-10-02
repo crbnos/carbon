@@ -5234,6 +5234,9 @@ msgstr "작업장 생성"
 msgid "Created"
 msgstr "생성됨"
 
+msgid "Created <0/> by <1/>"
+msgstr ""
+
 msgid "Created account"
 msgstr "계정 생성됨"
 
@@ -6710,6 +6713,9 @@ msgstr "문서:"
 
 msgid "Documents"
 msgstr "문서"
+
+msgid "Documents and activity"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 제공자 문서로 푸시합니다. 해당 전표는 문서로 커버되는 것으로 기록됩니다. 또한 제공자에 기록된 지불을 Carbon으로 다시 가져와 일치하는 송장 또는 청구서를 닫고 Carbon 총계정원장 전표를 전기합니다. 끄기는 이를 의도적으로 제외된 것으로 기록합니다."
@@ -9169,6 +9175,9 @@ msgid "Hide Again"
 msgstr "다시 숨기기"
 
 msgid "Hide calculation"
+msgstr ""
+
+msgid "Hide documents and activity"
 msgstr ""
 
 msgid "Hide raw"
@@ -14104,6 +14113,12 @@ msgstr "우편번호"
 msgid "Posted"
 msgstr "전기됨"
 
+msgid "Posted <0/>"
+msgstr ""
+
+msgid "Posted <0/> by <1/>"
+msgstr ""
+
 msgid "Posted At"
 msgstr "전기 일시"
 
@@ -17502,6 +17517,9 @@ msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
 
 msgid "Show Details"
+msgstr ""
+
+msgid "Show documents and activity"
 msgstr ""
 
 msgid "Show Durations"

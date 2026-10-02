@@ -442,7 +442,12 @@ function ShipmentLineItem({
     (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
+    <div
+      className={cn(
+        "@container flex flex-col border-b p-6 gap-6 relative",
+        className
+      )}
+    >
       <div className="absolute top-3 right-6">
         {line.fulfillment?.type === "Job" ? (
           <div className="flex flex-col items-end gap-0">
@@ -481,9 +486,11 @@ function ShipmentLineItem({
           </DropdownMenu>
         )}
       </div>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4}>
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. */}
+      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:justify-between @3xl:items-center gap-4 w-full">
+        <HStack spacing={4} className="w-full @3xl:w-1/2 min-w-0 pr-10">
+          <HStack spacing={4} className="min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
@@ -512,7 +519,7 @@ function ShipmentLineItem({
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2">
+        <div className="flex flex-grow flex-wrap items-center justify-between gap-4 w-full @3xl:w-1/2 @3xl:pl-4">
           <HStack spacing={4}>
             <VStack spacing={1}>
               <div className="flex items-center justify-between gap-1 w-full">
@@ -916,7 +923,7 @@ function BatchForm({
           />
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2 w-full">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuGroup /> Batch Number
@@ -1229,7 +1236,7 @@ function SerialForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => {
           // Check if the serial number is valid and in the list
           const resolvedSerial = serialNumber.id

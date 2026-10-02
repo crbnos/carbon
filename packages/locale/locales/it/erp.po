@@ -5234,6 +5234,9 @@ msgstr "Crea Centro di Lavoro"
 msgid "Created"
 msgstr "Creato"
 
+msgid "Created <0/> by <1/>"
+msgstr ""
+
 msgid "Created account"
 msgstr "Account creato"
 
@@ -6710,6 +6713,9 @@ msgstr "Documento:"
 
 msgid "Documents"
 msgstr "Documenti"
+
+msgid "Documents and activity"
+msgstr ""
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "I Documenti spingono Fatture, Fatture di acquisto e Pagamenti come documenti nativi del provider; le relative Prime note sono registrate come coperte dal documento. Inoltre estraggono i Pagamenti registrati nel provider in Carbon, chiudendo la corrispondente Fattura o Fattura di acquisto e registrando una Prima nota di Contabilità generale di Carbon. Off li registra come deliberatamente esclusi."
@@ -9169,6 +9175,9 @@ msgid "Hide Again"
 msgstr "Nascondi di nuovo"
 
 msgid "Hide calculation"
+msgstr ""
+
+msgid "Hide documents and activity"
 msgstr ""
 
 msgid "Hide raw"
@@ -14104,6 +14113,12 @@ msgstr "Codice Postale"
 msgid "Posted"
 msgstr "Registrato"
 
+msgid "Posted <0/>"
+msgstr ""
+
+msgid "Posted <0/> by <1/>"
+msgstr ""
+
 msgid "Posted At"
 msgstr "Pubblicato il"
 
@@ -17502,6 +17517,9 @@ msgid "Show Customer IDs"
 msgstr "Mostra ID Cliente"
 
 msgid "Show Details"
+msgstr ""
+
+msgid "Show documents and activity"
 msgstr ""
 
 msgid "Show Durations"

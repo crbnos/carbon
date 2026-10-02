@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-export { ChangeRow, default as AuditLogDrawer } from "./AuditLogDrawer";
+export {
+  AuditLogFeed,
+  ChangeRow,
+  default as AuditLogDrawer
+} from "./AuditLogDrawer";
 export { useAuditLog } from "./useAuditLog";
 export { isEmptyDiffValue } from "./utils";
