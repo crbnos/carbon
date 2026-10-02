@@ -138,7 +138,7 @@
     {"name":"documents_createDocumentUploadUrl","classification":"WRITE","paramCount":3,"schema":"9034f525c97e","response":"4ad76afe0777","injectAuth":"companyId+createdBy+updatedBy","permission":"documents:create","paginates":false},
     {"name":"documents_deleteDocument","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"documents:delete","paginates":false},
     {"name":"documents_getDocument","classification":"READ","paramCount":1,"schema":"e7617eb689c8","response":"88539143f954","injectAuth":"companyId","permission":"documents:view","paginates":false},
-    {"name":"documents_getDocumentExtensions","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"b24f77557f86","injectAuth":"companyId","permission":"documents:view","paginates":false},
+    {"name":"documents_getDocumentExtensions","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"a07a74ca3dd1","injectAuth":"companyId","permission":"documents:view","paginates":false},
     {"name":"documents_getDocumentLabels","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"7e2eeb0066ab","injectAuth":"companyId","permission":"documents:view","paginates":false},
     {"name":"documents_getDocuments","classification":"READ","paramCount":6,"schema":"848cac7bea79","response":"806ff23e9acc","injectAuth":"companyId","permission":"documents:view","paginates":true},
     {"name":"documents_insertDocumentExtraction","classification":"WRITE","paramCount":4,"schema":"790f2b883984","response":"d181256b2684","injectAuth":"companyId+createdBy+updatedBy","permission":"documents:create","paginates":false},

@@ -105,8 +105,11 @@ export async function getDocuments(
 }
 
 /** @mcp read */
-export async function getDocumentExtensions(client: SupabaseClient<Database>) {
-  return client.from("documentExtensions").select("extension");
+export async function getDocumentExtensions(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_document_extensions", { company_id: companyId });
 }
 
 /** @mcp read */

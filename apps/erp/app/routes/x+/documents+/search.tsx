@@ -47,9 +47,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  // Only the file-type filter needs this, and it is a DISTINCT over every
-  // document the user can read, so it streams rather than holding the page.
-  const extensions = getDocumentExtensions(client).then(
+  // Only the file-type filter needs this, so it streams rather than holding
+  // the page.
+  const extensions = getDocumentExtensions(client, companyId).then(
     (result) => result.data?.map(({ extension }) => extension) ?? []
   );
 
