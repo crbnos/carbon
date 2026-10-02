@@ -120,7 +120,11 @@ const PurchaseOrderHeader = () => {
     supplier: { status: string | null } | null;
     resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
   }>(path.to.purchaseOrder(orderId));
-  const resolvedAttachments = useResolved(routeData?.resolvedAttachments, []);
+  const resolvedAttachments = useResolved(
+    routeData?.resolvedAttachments,
+    [],
+    orderId
+  );
 
   const [suppliers] = useSuppliers();
   const isSupplierApproved = useMemo(

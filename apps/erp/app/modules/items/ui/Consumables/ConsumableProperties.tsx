@@ -112,8 +112,16 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
       }>
     >;
   }>(path.to.consumable(itemId));
-  const supersession = useResolved(routeDataFromRoute?.supersession, null);
-  const supersededBy = useResolved(routeDataFromRoute?.supersededBy, null);
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const locations = data?.locations ?? sharedConsumablesData?.locations ?? [];
