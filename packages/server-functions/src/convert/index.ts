@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
-import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import { getNextSequence } from "@carbon/database/sequence";
@@ -446,18 +445,9 @@ export const convert = defineServerFn({
           company
         ] = await inOrder([
           () => single(db, "quote", { id, companyId }),
-          () =>
-            fetchAll<Database["public"]["Tables"]["quoteLine"]["Row"]>(() =>
-              client
-                .from("quoteLine")
-                .select("*")
-                .eq("quoteId", id)
-                .eq("companyId", companyId)
-            ),
-          () =>
-            fetchAll<Database["public"]["Tables"]["quoteLinePrice"]["Row"]>(
-              () => many(db, "quoteLinePrice", { quoteId: id, companyId })
-            ),
+          // Read in full: the direct connection has no row cap to page around.
+          () => many(db, "quoteLine", { quoteId: id, companyId }),
+          () => many(db, "quoteLinePrice", { quoteId: id, companyId }),
           () => single(db, "quotePayment", { id, companyId }),
           () => single(db, "quoteShipment", { id, companyId }),
           () => single(db, "company", { id: companyId })
