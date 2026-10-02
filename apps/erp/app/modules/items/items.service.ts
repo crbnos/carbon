@@ -738,10 +738,13 @@ export async function getItemDemand(
       .in("periodId", periods)
   ]);
 
+  // A failed read is reported, not folded into an empty series: an item with
+  // no demand yet has empty series too, and the two must not look alike.
   return {
     actuals: actuals.data ?? [],
     forecasts: forecasts.data ?? [],
-    projections: projections.data ?? []
+    projections: projections.data ?? [],
+    error: actuals.error ?? forecasts.error ?? projections.error ?? null
   };
 }
 
@@ -4024,9 +4027,22 @@ export async function updateItem(
     type: Database["public"]["Enums"]["itemType"];
   }
 ) {
+  // These are stored elsewhere (pickMethod, itemCost, itemShelfLife), not on
+  // the item row.
+  const {
+    defaultStorageUnitId: _defaultStorageUnitId,
+    postingGroupId: _postingGroupId,
+    unitCost: _unitCost,
+    shelfLifeMode: _shelfLifeMode,
+    shelfLifeDays: _shelfLifeDays,
+    shelfLifeTriggerProcessId: _shelfLifeTriggerProcessId,
+    shelfLifeTriggerTiming: _shelfLifeTriggerTiming,
+    shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
+    ...row
+  } = item;
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(sanitize(row))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
@@ -6815,15 +6831,17 @@ export async function upsertChangeNoticeType(
         customFields?: Json;
       }
 ) {
+  // changeOrderType has no customFields column.
   if ("createdBy" in changeNoticeType) {
-    return client
-      .from("changeOrderType")
-      .insert([changeNoticeType])
-      .select("id")
-      .single();
+    const { customFields: _customFields, ...type } = changeNoticeType;
+    return client.from("changeOrderType").insert([type]).select("id").single();
   }
   // companyId scopes the row, it is not part of the payload (it's in the PK).
-  const { companyId, ...update } = changeNoticeType;
+  const {
+    companyId,
+    customFields: _customFields,
+    ...update
+  } = changeNoticeType;
   return client
     .from("changeOrderType")
     .update(sanitize(update))

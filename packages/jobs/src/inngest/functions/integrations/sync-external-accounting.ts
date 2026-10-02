@@ -2,6 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  type AccountingEntityType,
+  AccountingSyncSchema,
+  createMappingService,
+  getAccountingIntegration,
+  getProviderIntegration,
+  type SyncOperationTrigger
+} from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
+import { groupBy } from "@carbon/utils";
 /**
  * Function to sync entities between accounting providers and Carbon.
  *
@@ -22,22 +33,7 @@
  * cooldown check that used to live here), then a drain step claims Pending
  * operations and runs the entity syncers.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  type AccountingEntityType,
-  AccountingSyncSchema,
-  createMappingService,
-  getAccountingIntegration,
-  getProviderIntegration,
-  type SyncOperationTrigger
-} from "@carbon/ee/accounting";
-import { getLogger } from "@carbon/logger";
-import { groupBy } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type DrainSummary,
@@ -77,10 +73,7 @@ export const syncExternalAccountingFunction = inngest.createFunction(
     // reuse the same event id (absorbed), later deliveries get fresh keys
     const enqueueScope = event.id ?? runId;
 
-    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
-    // singleton (see lib/postgres) — do NOT end it per invocation.
-    const pool = getPostgresConnectionPool(10);
-    const kysely = getPostgresClient(pool, PostgresDriver);
+    const kysely = getJobDatabaseClient();
 
     // Step 1: resolve each entity's effective direction and enqueue one
     // ledger operation per entity + direction

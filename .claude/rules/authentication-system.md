@@ -29,7 +29,7 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
   RLS resolves the company via the key.
 - `getUserScopedClient(userId)` — mints a short-lived (5m) HS256 JWT with
   `SUPABASE_JWT_SECRET` and returns a user-scoped client (RLS enforced).
-- All clients use `fetchWithRetry` (timeout + retry on 5xx/408/524).
+- All clients set `db: { timeout: 25_000 }` and rely on supabase-js's built-in read retries, plus `storageReadFetch` for storage reads (see `database-patterns.md`).
 
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 

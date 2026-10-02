@@ -16,7 +16,7 @@
 
 import type { Database, Json } from "@carbon/database";
 import type { ConditionAst, Severity, TargetType } from "@carbon/utils";
-import { datetime, sanitize } from "@carbon/utils";
+import { datetime, sanitize, unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import type { Feature } from "../plan";
@@ -283,6 +283,6 @@ export async function unassignStorageRule(
   return (client as SupabaseClient<Database>)
     .from(table)
     .delete()
-    .eq(idCol, args.targetId)
+    .eq(unchecked(idCol), args.targetId)
     .eq("ruleId", args.ruleId);
 }

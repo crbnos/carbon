@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260930133226",
+  "schemaVersion": "20261001195204",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-30T18:00:33.029Z",
+  "exportedAt": "2026-10-01T23:59:25.768Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2939,6 +2939,7 @@
         "type",
         "samplingSeverity",
         "samplingSampleSize",
+        "gaugeTypeId",
         "label",
         "createdAt",
         "samplingInspectionLevel",
@@ -4600,6 +4601,7 @@
       "rows": 0,
       "columns": [
         "discountPercent",
+        "priceTrace",
         "unitPrice",
         "quoteLineId",
         "quantity",
@@ -4806,6 +4808,7 @@
       "columns": [
         "createdAt",
         "companyId",
+        "gaugeId",
         "inspectionId",
         "rejectionNumber",
         "updatedBy",
@@ -4814,6 +4817,7 @@
         "codeLetter",
         "sampleSize",
         "inspectionFeatureId",
+        "gaugeRecordedAt",
         "acceptanceNumber",
         "updatedAt"
       ]

@@ -518,7 +518,10 @@ describe("diffMethod — attributes", () => {
 });
 
 describe("getItemDemand", () => {
-  function mockClient(rowsByTable: Record<string, unknown[]>) {
+  function mockClient(
+    rowsByTable: Record<string, unknown[]>,
+    errorsByTable: Record<string, unknown> = {}
+  ) {
     const reads: Array<{
       table: string;
       filters: Array<[string, string, unknown]>;
@@ -539,7 +542,11 @@ describe("getItemDemand", () => {
           },
           order: () => builder,
           then: (resolve: (v: unknown) => void) =>
-            resolve({ data: rowsByTable[table] ?? [], error: null })
+            resolve(
+              errorsByTable[table]
+                ? { data: null, error: errorsByTable[table] }
+                : { data: rowsByTable[table] ?? [], error: null }
+            )
         };
         return builder;
       }
@@ -598,7 +605,22 @@ describe("getItemDemand", () => {
     expect(demand).toEqual({
       actuals: [],
       forecasts: [],
-      projections: [projectionRow]
+      projections: [projectionRow],
+      error: null
     });
+  });
+
+  it("tells an item with no demand apart from a failed read", async () => {
+    const { getItemDemand } = await import("./items.service");
+
+    const empty = await getItemDemand(mockClient({}).client, args);
+    expect(empty.error).toBeNull();
+
+    const failure = { message: "permission denied for table demandForecast" };
+    const failed = await getItemDemand(
+      mockClient({}, { demandForecast: failure }).client,
+      args
+    );
+    expect(failed.error).toBe(failure);
   });
 });

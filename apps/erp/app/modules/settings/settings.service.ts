@@ -852,7 +852,8 @@ export async function insertSubsidiary(
     isEliminationEntity?: boolean;
   }
 ) {
-  const { id: _, ...data } = subsidiary;
+  // company has no createdBy column.
+  const { id: _, createdBy: _createdBy, ...data } = subsidiary;
   return client.from("company").insert(data).select("id").single();
 }
 

@@ -2,6 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  fetchRemoteJournalTotals,
+  getAccountingIntegration,
+  getJournalEntrySyncEntityId,
+  getProviderIntegration,
+  getSyncOperations,
+  ProviderID,
+  parseJournalEntrySyncEntityId,
+  RatelimitError,
+  type RemoteJournalTotals,
+  resolvePostingSyncSettings,
+  type SyncContext,
+  type SyncOperation,
+  toDebitSignedAmount,
+  toPostingDateString
+} from "@carbon/ee/accounting";
 /**
  * Weekly reconciliation cron (posting sync, v3 spec §5 / v4 Pillar E) —
  * presence drift detection plus the per-period × per-account tie-out.
@@ -42,28 +59,7 @@
  *     Rows upsert on the (companyId, integration, accountingPeriodId,
  *     accountId) cell via the service role — the table has no write RLS.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  fetchRemoteJournalTotals,
-  getAccountingIntegration,
-  getJournalEntrySyncEntityId,
-  getProviderIntegration,
-  getSyncOperations,
-  ProviderID,
-  parseJournalEntrySyncEntityId,
-  RatelimitError,
-  type RemoteJournalTotals,
-  resolvePostingSyncSettings,
-  type SyncContext,
-  type SyncOperation,
-  toDebitSignedAmount,
-  toPostingDateString
-} from "@carbon/ee/accounting";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type IsolatedStepOutcome,
@@ -1023,10 +1019,7 @@ export const accountingReconciliationFunction = inngest.createFunction(
         id: `reconcile-${target.companyId}-${target.providerId}`,
         target,
         fn: async () => {
-          // Process-lifetime cached pool shared with events/sync.ts and the
-          // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
+          const database = getJobDatabaseClient();
           return await reconcileCompany({
             companyId: target.companyId,
             providerId: target.providerId as ProviderID,

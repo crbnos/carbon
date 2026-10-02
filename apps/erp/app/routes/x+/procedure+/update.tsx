@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { unchecked } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
@@ -30,11 +31,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "processId":
       return await client
         .from("procedure")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
     case "tags":
       return await client

@@ -4,6 +4,12 @@
 
 // @ts-nocheck
 import { getLogger } from "@carbon/logger";
+import { describeRequest } from "@carbon/logger/middleware.server";
+import {
+  annotateRequestSpan,
+  nameRequestSpan,
+  withSpan
+} from "@carbon/logger/tracing.server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { requireEntitlement } from "../entitlements.server";
@@ -60,6 +66,25 @@ export async function createMcpServer<Ctx extends McpContext>(
       instructions: getServerInstructions(today, toolMetadata)
     }
   );
+
+  // One span per tool call. An operation name comes from the client, so it is
+  // put in the span name only when it is a real operation.
+  const registerTool = server.registerTool.bind(server);
+  server.registerTool = (tool, config, handler) =>
+    registerTool(tool, config, (params, extra) => {
+      const operation = operationsByName.has(params?.name)
+        ? params.name
+        : undefined;
+      const attributes = {
+        "carbon.mcp.tool": tool,
+        ...(operation ? { "carbon.operation": operation } : {})
+      };
+      const call = operation ? `${tool} ${operation}` : tool;
+      annotateRequestSpan(attributes);
+      nameRequestSpan(`POST /api/mcp ${call}`);
+      describeRequest(call);
+      return withSpan(`mcp ${call}`, attributes, () => handler(params, extra));
+    });
 
   // Register describe_tool to get schema information for any tool
   server.registerTool(

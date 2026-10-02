@@ -61,6 +61,7 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
@@ -118,8 +119,13 @@ const PurchaseOrderHeader = () => {
     canDelete: boolean;
     defaultCc: string[];
     supplier: { status: string | null } | null;
-    resolvedAttachments: ResolvedAttachmentItem[];
+    resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
   }>(path.to.purchaseOrder(orderId));
+  const resolvedAttachments = useResolved(
+    routeData?.resolvedAttachments,
+    [],
+    orderId
+  );
 
   const [suppliers] = useSuppliers();
   const isSupplierApproved = useMemo(
@@ -693,7 +699,7 @@ const PurchaseOrderHeader = () => {
           purchaseOrder={routeData?.purchaseOrder}
           onClose={finalizeDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}
-          resolvedAttachments={routeData?.resolvedAttachments ?? []}
+          resolvedAttachments={resolvedAttachments}
         />
       )}
       {deleteModal.isOpen && (

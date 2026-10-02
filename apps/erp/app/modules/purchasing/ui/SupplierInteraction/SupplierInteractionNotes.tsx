@@ -61,7 +61,7 @@ const SupplierInteractionNotes = ({
   const onUpdateExternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrder")
         .update({
           externalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),
@@ -76,7 +76,7 @@ const SupplierInteractionNotes = ({
   const onUpdateInternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrder")
         .update({
           internalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),

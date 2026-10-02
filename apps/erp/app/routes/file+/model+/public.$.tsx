@@ -44,8 +44,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // the companyId, which selects the per-company bucket (with legacy fallback).
   const companyId = path.split("/")[0];
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const { data: fileData, error } = await storage(client)
     .company(companyId)
     .download(path);

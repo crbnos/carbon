@@ -30,7 +30,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import type { DragHandleBindings } from "~/components/LineReorder";
 import {
   ReorderableLineList,
@@ -39,7 +39,9 @@ import {
   useLineOrderEditMode
 } from "~/components/LineReorder";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { ItemType, MethodItemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isRfqLocked } from "../../purchasing.models";
@@ -317,6 +319,30 @@ function PurchasingRFQLineItem({
                   <DropdownMenuIcon icon={<LuTrash />} />
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
+                {line.itemId &&
+                  itemType.includes(line.itemType as ItemType) && (
+                    <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.view}
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link
+                        to={getLinkToItemDetails(
+                          line.itemType as ItemType,
+                          line.itemId
+                        )}
+                      >
+                        <DropdownMenuIcon
+                          icon={
+                            <MethodItemTypeIcon
+                              type={line.itemType as ItemType}
+                            />
+                          }
+                        />
+                        <Trans>View Item Master</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

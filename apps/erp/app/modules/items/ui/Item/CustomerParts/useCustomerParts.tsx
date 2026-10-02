@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { unchecked } from "@carbon/utils";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
 import type { CustomerPart } from "../../../types";
@@ -19,9 +20,11 @@ export default function useCustomerParts() {
       if (!carbon) throw new Error("Carbon client not found");
       return await carbon
         .from("customerPartToItem")
-        .update({
-          [id]: value
-        })
+        .update(
+          unchecked({
+            [id]: value
+          })
+        )
         .eq("id", row.id);
     },
     [carbon]

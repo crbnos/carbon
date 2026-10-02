@@ -92,7 +92,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     prices,
     opportunity,
     methods,
-    opportunityDocuments,
     companySettings
   ] = await Promise.all([
     getCustomer(client, quote.data?.customerId ?? ""),
@@ -102,7 +101,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuoteLinePricesByQuoteId(client, quoteId),
     getOpportunity(client, quote.data?.opportunityId),
     getQuoteMethodTrees(client, quoteId),
-    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? ""),
     getCompanySettings(client, companyId)
   ]);
 
@@ -208,7 +206,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     lines: lines.data ?? [],
     methods: methodTrees,
-    files: opportunityDocuments,
+    files: getOpportunityDocuments(client, companyId, quote.data.opportunityId),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

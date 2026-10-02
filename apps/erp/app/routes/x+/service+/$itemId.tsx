@@ -38,14 +38,16 @@ import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ServiceSummary } from "~/modules/items";
 import {
   getItemFiles,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodTree,
   getPartUsedIn,
   getService,
   getSupplierParts
 } from "~/modules/items";
-import { streamItemSupersession } from "~/modules/items/items.server";
+import {
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
+  streamItemSupersession
+} from "~/modules/items/items.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
@@ -99,7 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
+  const methodTree = getMakeMethodsOnce(client, itemId, companyId).then(
     async (makeMethods) => {
       const makeMethod = requestedMethodId
         ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
@@ -109,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           makeMethods.data?.[0]);
       if (!makeMethod) return null;
 
-      const fullMethod = await getMakeMethodById(
+      const fullMethod = await getMakeMethodByIdOnce(
         client,
         makeMethod.id,
         companyId
@@ -134,7 +136,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree

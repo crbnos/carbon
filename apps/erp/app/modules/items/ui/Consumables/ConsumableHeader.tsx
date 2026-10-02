@@ -58,7 +58,7 @@ const ConsumableHeader = () => {
     } | null>;
   }>(path.to.consumable(itemId));
 
-  const supersession = useResolved(routeData?.supersession, null);
+  const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(
     supersession?.supersessionMode
   );

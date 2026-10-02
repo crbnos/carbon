@@ -18,7 +18,8 @@ import {
   groupBy,
   nameSimilarity,
   scrapAllowance,
-  tiptapToText
+  tiptapToText,
+  unchecked
 } from "@carbon/utils";
 import type {
   AssemblyGraph,
@@ -3534,7 +3535,6 @@ export async function insertJob(
     salesOrderLineId?: string;
     quoteId?: string;
     quoteLineId?: string;
-    parentJobId?: string;
     modelUploadId?: string;
     notes?: string;
     customFields?: Json;
@@ -3656,7 +3656,6 @@ export async function insertJob(
       salesOrderLineId: input.salesOrderLineId,
       quoteId: input.quoteId,
       quoteLineId: input.quoteLineId,
-      parentJobId: input.parentJobId,
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
@@ -3805,7 +3804,6 @@ export async function updateJob(
     salesOrderLineId?: string | null;
     quoteId?: string | null;
     quoteLineId?: string | null;
-    parentJobId?: string | null;
     modelUploadId?: string | null;
     notes?: string | null;
     customFields?: Json;
@@ -3839,12 +3837,14 @@ export async function updateJob(
 
   return client
     .from("job")
-    .update({
-      ...sanitize(updates),
-      ...(priority !== undefined && { priority }),
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        ...sanitize(updates),
+        ...(priority !== undefined && { priority }),
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .eq("id", id)
     .select("id")
     .single();
@@ -4940,17 +4940,15 @@ export async function upsertFailureMode(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in failureMode) {
-    return client
-      .from("maintenanceFailureMode")
-      .insert([failureMode])
-      .select("id");
-  } else {
-    return client
-      .from("maintenanceFailureMode")
-      .update(sanitize(failureMode))
-      .eq("id", failureMode.id);
+  // maintenanceFailureMode has no customFields column.
+  const { customFields: _customFields, ...mode } = failureMode;
+  if ("createdBy" in mode) {
+    return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
+  return client
+    .from("maintenanceFailureMode")
+    .update(sanitize(mode))
+    .eq("id", mode.id);
 }
 
 export async function upsertMaintenanceDispatch(
@@ -10376,7 +10374,7 @@ export async function completeOperation(
       sanitize({
         jobOperationId: args.operationId,
         quantity: args.quantity,
-        type: "Production",
+        type: "Production" as const,
         companyId,
         createdBy: userId
       })

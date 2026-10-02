@@ -375,7 +375,7 @@ export const companyExportFunction = inngest.createFunction(
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.

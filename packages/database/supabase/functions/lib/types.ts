@@ -83446,6 +83446,12 @@ export type Database = {
           trackedActivityId: string
         }[]
       }
+      get_document_extensions: {
+        Args: { company_id: string }
+        Returns: {
+          extension: string
+        }[]
+      }
       get_effective_work_center_id: {
         Args: { p_storage_unit_id: string }
         Returns: string

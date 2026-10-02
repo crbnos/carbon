@@ -57,7 +57,7 @@ async function danglingForeignKeys(
 
 describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
   it("deletes a company, posted journals included, leaving no dangling rows", async () => {
-    const db = getJobDatabaseClient(1);
+    const db = getJobDatabaseClient();
     const replica = await canSetReplicationRole(db);
     expect(replica).toBe(true);
     const catalog = await getCompanyTableCatalog(db);

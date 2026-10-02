@@ -83,8 +83,16 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
       }>
     >;
   }>(path.to.service(itemId));
-  const supersession = useResolved(routeDataFromRoute?.supersession, null);
-  const supersededBy = useResolved(routeDataFromRoute?.supersededBy, null);
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const supplierParts = routeData?.supplierParts ?? [];

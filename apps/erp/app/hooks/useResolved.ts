@@ -7,14 +7,17 @@ import { useEffect, useState } from "react";
 const settled = new WeakMap<Promise<unknown>, unknown>();
 
 // Unwraps a promise a loader streamed instead of awaiting, keeping the last
-// value while a revalidation's replacement is pending.
+// value while a revalidation's replacement is pending. Pass the record id as
+// `scope` when the component stays mounted across records: a new scope drops
+// the last value, so one record never shows another's.
 export function useResolved<T>(
   promise: Promise<T> | null | undefined,
-  fallback: T
+  fallback: T,
+  scope?: string
 ): T {
-  const [value, setValue] = useState<T>(() =>
-    promise && settled.has(promise) ? (settled.get(promise) as T) : fallback
-  );
+  const initial = () =>
+    promise && settled.has(promise) ? (settled.get(promise) as T) : fallback;
+  const [state, setState] = useState(() => ({ scope, value: initial() }));
 
   useEffect(() => {
     if (!promise) return;
@@ -22,14 +25,14 @@ export function useResolved<T>(
     promise.then(
       (resolved) => {
         settled.set(promise, resolved);
-        if (active) setValue(resolved);
+        if (active) setState({ scope, value: resolved });
       },
       () => undefined
     );
     return () => {
       active = false;
     };
-  }, [promise]);
+  }, [promise, scope]);
 
-  return value;
+  return state.scope === scope ? state.value : initial();
 }

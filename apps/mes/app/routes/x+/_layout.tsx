@@ -92,6 +92,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
     currentUrl.pathname.startsWith("/switch-company") ||

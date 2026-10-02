@@ -454,7 +454,7 @@ export default function LoginRoute() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/callback${
-          redirectTo ? `?redirectTo=${redirectTo}` : ""
+          redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""
         }`
       }
     });
@@ -470,7 +470,7 @@ export default function LoginRoute() {
       options: {
         scopes: "email",
         redirectTo: `${window.location.origin}/callback${
-          redirectTo ? `?redirectTo=${redirectTo}` : ""
+          redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""
         }`
       }
     });
@@ -522,7 +522,7 @@ export default function LoginRoute() {
       domain,
       options: {
         redirectTo: `${window.location.origin}/callback${
-          redirectTo ? `?redirectTo=${redirectTo}` : ""
+          redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""
         }`
       }
     });

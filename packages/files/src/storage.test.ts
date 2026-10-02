@@ -38,7 +38,7 @@ const makeClient = (buckets: Record<string, Record<string, unknown>>) => ({
         info: vi.fn(() => fail("not found")),
         download: vi.fn(() => fail("not found")),
         createSignedUrl: vi.fn(() => fail("not found")),
-        list: vi.fn(() => ok([])),
+        listV2: vi.fn(() => ok({ hasNext: false, folders: [], objects: [] })),
         remove: vi.fn(() => ok([])),
         ...buckets[bucket]
       }) as unknown as Bucket
@@ -360,51 +360,193 @@ describe("storage(client).company", () => {
   });
 
   describe("list", () => {
-    it("unions both buckets with the company bucket winning ties", async () => {
+    const file = (key: string, id: string) => ({
+      key,
+      name: `co1/docs/${key}`,
+      id,
+      metadata: { size: 1 }
+    });
+    // The paged endpoint's folder shape: no id, no metadata.
+    const folder = (key: string) => ({ key, name: `co1/docs/${key}/` });
+
+    it("returns the folder's entries by their own names, sorted", async () => {
+      const listV2 = vi.fn(() =>
+        ok({
+          hasNext: false,
+          folders: [folder("zeta"), folder("alpha")],
+          objects: [file("b.pdf", "2"), file("a.pdf", "1")]
+        })
+      );
+      const legacy = vi.fn(() =>
+        ok({ hasNext: false, folders: [], objects: [] })
+      );
       const client = makeClient({
-        co1: { list: vi.fn(() => ok([{ name: "a.pdf", id: "new" }])) },
-        [LEGACY_PRIVATE_BUCKET]: {
-          list: vi.fn(() =>
-            ok([
-              { name: "a.pdf", id: "old" },
-              { name: "b.pdf", id: "legacy-only" }
-            ])
-          )
-        }
+        co1: { listV2 },
+        [LEGACY_PRIVATE_BUCKET]: { listV2: legacy }
       });
+
       const { data, error } = await storage(client)
         .company("co1")
-        .list("co1/docs", { limit: 10 });
+        .list("co1/docs");
+
       expect(error).toBeNull();
-      expect(data?.map((f) => [f.name, f.id]).sort()).toEqual([
-        ["a.pdf", "new"],
-        ["b.pdf", "legacy-only"]
+      expect(data?.map((f) => [f.name, f.id])).toEqual([
+        ["a.pdf", "1"],
+        ["alpha", null],
+        ["b.pdf", "2"],
+        ["zeta", null]
       ]);
-      expect(client.storage.from("co1").list).toHaveBeenCalledWith("co1/docs", {
-        limit: 10
+      expect(data?.[0]?.metadata).toEqual({ size: 1 });
+      expect(data?.[1]).toEqual({
+        key: "alpha",
+        name: "alpha",
+        id: null,
+        updated_at: null,
+        created_at: null,
+        last_accessed_at: null,
+        metadata: null
       });
+    });
+
+    it("unions both buckets with the company bucket winning ties", async () => {
+      const own = vi.fn(() =>
+        ok({ hasNext: false, folders: [], objects: [file("b.pdf", "own")] })
+      );
+      const legacy = vi.fn(() =>
+        ok({
+          hasNext: false,
+          folders: [],
+          objects: [file("b.pdf", "legacy"), file("a.pdf", "legacy")]
+        })
+      );
+      const client = makeClient({
+        co1: { listV2: own },
+        [LEGACY_PRIVATE_BUCKET]: { listV2: legacy }
+      });
+
+      const { data } = await storage(client).company("co1").list("co1/docs");
+
+      expect(data?.map((f) => [f.name, f.id])).toEqual([
+        ["a.pdf", "legacy"],
+        ["b.pdf", "own"]
+      ]);
     });
 
     it("still returns the healthy bucket's rows when the other errors", async () => {
       const client = makeClient({
-        co1: { list: vi.fn(() => fail("bucket missing")) },
-        [LEGACY_PRIVATE_BUCKET]: { list: vi.fn(() => ok([{ name: "b.pdf" }])) }
+        co1: { listV2: vi.fn(() => fail("bucket not found")) },
+        [LEGACY_PRIVATE_BUCKET]: {
+          listV2: vi.fn(() =>
+            ok({ hasNext: false, folders: [], objects: [file("a.pdf", "1")] })
+          )
+        }
       });
+
       const { data, error } = await storage(client)
         .company("co1")
         .list("co1/docs");
+
       expect(error).toBeNull();
-      expect(data?.map((f) => f.name)).toEqual(["b.pdf"]);
+      expect(data?.map((f) => f.name)).toEqual(["a.pdf"]);
+    });
+
+    it("lists what is inside the folder, with or without a trailing slash", async () => {
+      for (const path of ["co1/docs", "co1/docs/"]) {
+        const listV2 = vi.fn(() =>
+          ok({ hasNext: false, folders: [], objects: [] })
+        );
+        await storage(makeClient({ co1: { listV2 } }))
+          .company("co1")
+          .list(path);
+        expect(listV2).toHaveBeenCalledWith({
+          prefix: "co1/docs/",
+          with_delimiter: true,
+          cursor: undefined
+        });
+      }
+    });
+
+    it("reads every page", async () => {
+      const pages = [
+        {
+          hasNext: true,
+          nextCursor: "c1",
+          folders: [],
+          objects: [file("a.pdf", "1")]
+        },
+        {
+          hasNext: true,
+          nextCursor: "c2",
+          folders: [],
+          objects: [file("b.pdf", "2")]
+        },
+        { hasNext: false, folders: [], objects: [file("c.pdf", "3")] }
+      ];
+      const listV2 = vi.fn((options: { cursor?: string }) =>
+        ok(pages[["c1", "c2"].indexOf(options.cursor ?? "") + 1])
+      );
+
+      const { data } = await storage(makeClient({ co1: { listV2 } }))
+        .company("co1")
+        .list("co1/docs");
+
+      expect(data?.map((f) => f.name)).toEqual(["a.pdf", "b.pdf", "c.pdf"]);
+    });
+
+    it.each([
+      ["repeats the cursor", "c1"],
+      ["gives no cursor", undefined]
+    ])("fails when a page promises more and %s", async (_, nextCursor) => {
+      const listV2 = vi.fn(() =>
+        ok({
+          hasNext: true,
+          nextCursor,
+          folders: [],
+          objects: [file("a.pdf", "1")]
+        })
+      );
+
+      const { data, error } = await storage(
+        makeClient({ co1: { listV2 }, private: { listV2 } })
+      )
+        .company("co1")
+        .list("co1/docs");
+
+      expect(data).toBeNull();
+      expect(error?.message).toContain("did not advance");
+      expect(listV2.mock.calls.length).toBeLessThanOrEqual(4);
+    });
+
+    it("drops a bucket whose later page fails instead of keeping part of it", async () => {
+      const listV2 = vi.fn((options: { cursor?: string }) =>
+        options.cursor
+          ? fail("storage down")
+          : ok({
+              hasNext: true,
+              nextCursor: "c1",
+              folders: [],
+              objects: [file("a.pdf", "1")]
+            })
+      );
+
+      const { data, error } = await storage(makeClient({ co1: { listV2 } }))
+        .company("co1")
+        .list("co1/docs");
+
+      expect(error).toBeNull();
+      expect(data).toEqual([]);
     });
 
     it("reports the company error when both buckets fail", async () => {
       const client = makeClient({
-        co1: { list: vi.fn(() => fail("company down")) },
-        [LEGACY_PRIVATE_BUCKET]: { list: vi.fn(() => fail("legacy down")) }
+        co1: { listV2: vi.fn(() => fail("company down")) },
+        [LEGACY_PRIVATE_BUCKET]: { listV2: vi.fn(() => fail("legacy down")) }
       });
+
       const { data, error } = await storage(client)
         .company("co1")
         .list("co1/docs");
+
       expect(data).toBeNull();
       expect(error?.message).toBe("company down");
     });
