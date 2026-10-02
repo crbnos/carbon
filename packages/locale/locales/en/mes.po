@@ -544,6 +544,9 @@ msgstr "Choose a reason"
 msgid "Clear"
 msgstr "Clear"
 
+msgid "Clear {count} filter(s)"
+msgstr "Clear {count} filter(s)"
+
 msgid "Clear Filters"
 msgstr "Clear Filters"
 
@@ -1100,8 +1103,14 @@ msgstr "Files related to the job and the opportunity line."
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter ({filterCount})"
+msgstr "Filter ({filterCount})"
+
 msgid "Filter by location"
 msgstr "Filter by location"
+
+msgid "Filter the board"
+msgstr "Filter the board"
 
 msgid "Finish"
 msgstr "Finish"
@@ -1549,6 +1558,9 @@ msgstr "No dispatches assigned to you"
 
 msgid "No files"
 msgstr "No files"
+
+msgid "No filters"
+msgstr "No filters"
 
 msgid "No gauges found."
 msgstr "No gauges found."
@@ -3044,6 +3056,9 @@ msgstr "Why was it scrapped?"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Work center"
+msgstr "Work center"
 
 msgid "Work Center"
 msgstr "Work Center"

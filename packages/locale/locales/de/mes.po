@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "Löschen"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "Filter zurücksetzen"
 
@@ -1100,8 +1103,14 @@ msgstr "Dateien bezogen auf den Fertigungsauftrag und die Verkaufschance-Positio
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "Nach Standort filtern"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "Fertig"
@@ -1549,6 +1558,9 @@ msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 
 msgid "No files"
 msgstr "Keine Dateien"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "Keine Prüfmittel gefunden."
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "Arbeitsplatz"

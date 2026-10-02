@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "Очистить"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
 
@@ -1100,8 +1103,14 @@ msgstr "Файлы, связанные с производственным за�
 msgid "Filter"
 msgstr "Фильтровать"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "Фильтровать по площадке"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "Завершить"
@@ -1549,6 +1558,9 @@ msgstr "Вам не назначены никакие заявки на техо
 
 msgid "No files"
 msgstr "Нет файлов"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "Средства измерения не найдены."
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "Незавершенное производство"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "Рабочий центр"

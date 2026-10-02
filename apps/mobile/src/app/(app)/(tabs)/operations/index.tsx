@@ -5,8 +5,8 @@
 import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
-import { Factory, X } from "lucide-react-native";
-import { useCallback, useMemo, useState } from "react";
+import { Factory, SlidersHorizontal, X } from "lucide-react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
+import type { SheetHandle } from "~/components/BottomSheet";
 import {
   EmptyState,
   ErrorNote,
@@ -26,6 +27,14 @@ import {
 } from "~/components/ui";
 import { useLayout } from "~/components/useLayout";
 import { useThemeColors } from "~/components/useThemeColor";
+import { BoardFilterSheet } from "~/features/operations/BoardFilterSheet";
+import {
+  activeFilterCount,
+  type BoardFilters,
+  EMPTY_FILTERS,
+  filterColumns,
+  filterOperations
+} from "~/features/operations/boardFilters";
 import { OperationCard } from "~/features/operations/OperationCard";
 import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
@@ -147,6 +156,8 @@ export default function Operations() {
   const colors = useThemeColors();
   // The manning-board station default, and the operator's way out of it.
   const [allWorkCenters, setAllWorkCenters] = useState(false);
+  const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
+  const filterSheet = useRef<SheetHandle>(null);
   const query = useOperationsQuery([], allWorkCenters);
 
   // The floor moves while the operator is on another screen.
@@ -158,8 +169,16 @@ export default function Operations() {
 
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
-  const columns = query.data?.columns ?? [];
-  const items = useMemo(() => query.data?.items ?? [], [query.data?.items]);
+  const allColumns = query.data?.columns ?? [];
+  const columns = useMemo(
+    () => filterColumns(allColumns, filters),
+    [allColumns, filters]
+  );
+  const items = useMemo(
+    () => filterOperations(query.data?.items ?? [], filters),
+    [query.data?.items, filters]
+  );
+  const filterCount = activeFilterCount(filters);
 
   const byColumn = useMemo(() => {
     const map = new Map<string, OperationCardData[]>();
@@ -194,26 +213,34 @@ export default function Operations() {
       */}
       <QueueSwitcher current="board" />
 
-      {/*
-        Web's "Your station: <name> ✕" chip. An operator with a manning-board
-        assignment opens on their own station, which is right — but without a
-        way out they see one column of a seven-column board and nothing says
-        why.
-      */}
-      {query.data?.peopleStation && !allWorkCenters ? (
+      <View className="flex-row items-center gap-2 px-4">
         <Pressable
-          onPress={() => setAllWorkCenters(true)}
+          onPress={() => filterSheet.current?.open()}
           accessibilityRole="button"
-          accessibilityLabel={t`Show every work center`}
-          className="mx-4 min-h-[44px] flex-row items-center gap-2 self-start rounded-lg border border-border bg-card px-3 active:opacity-70"
+          accessibilityLabel={t`Filter the board`}
+          className="min-h-[44px] flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 active:opacity-70"
         >
-          <Factory size={16} color={colors.mutedForeground} />
+          <SlidersHorizontal size={16} color={colors.mutedForeground} />
           <Text className="text-sm text-foreground">
-            {t`Your station: ${query.data.peopleStation.name}`}
+            {filterCount === 0 ? t`Filter` : t`Filter (${filterCount})`}
           </Text>
-          <X size={16} color={colors.mutedForeground} />
         </Pressable>
-      ) : null}
+
+        {query.data?.peopleStation && !allWorkCenters ? (
+          <Pressable
+            onPress={() => setAllWorkCenters(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t`Show every work center`}
+            className="min-h-[44px] flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 active:opacity-70"
+          >
+            <Factory size={16} color={colors.mutedForeground} />
+            <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
+              {t`Your station: ${query.data.peopleStation.name}`}
+            </Text>
+            <X size={16} color={colors.mutedForeground} />
+          </Pressable>
+        ) : null}
+      </View>
 
       {query.isError ? (
         <View className="px-4">
@@ -261,6 +288,13 @@ export default function Operations() {
           ))}
         </ScrollView>
       )}
+      <BoardFilterSheet
+        ref={filterSheet}
+        columns={allColumns}
+        availableTags={query.data?.availableTags ?? []}
+        filters={filters}
+        onChange={setFilters}
+      />
     </Screen>
   );
 }

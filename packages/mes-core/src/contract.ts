@@ -281,6 +281,8 @@ export const operationCard = z
     quantityScrapped: z.number().nullable().optional(),
     quantityReworked: z.number().nullable().optional(),
     columnId: z.string().nullable().optional(),
+    /** Free-text tags, which the board filters on exactly as web does. */
+    tags: z.array(z.string()).nullable().optional(),
     thumbnailPath: z.string().nullable().optional(),
     salesOrderReadableId: z.string().nullable().optional(),
     batchId: z.string().nullable().optional(),

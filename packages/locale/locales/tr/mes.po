@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "Temizle"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
 
@@ -1100,8 +1103,14 @@ msgstr "İş ve fırsat hattıyla ilgili dosyalar."
 msgid "Filter"
 msgstr "Filtrele"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "Konuma göre filtrele"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "Bitir"
@@ -1549,6 +1558,9 @@ msgstr "Size atanmış bakım emri yok"
 
 msgid "No files"
 msgstr "Dosya yok"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "Ölçüm aleti bulunamadı."
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "Yarı Mamul"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "İş Merkezi"

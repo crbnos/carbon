@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "クリア"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
 
@@ -1100,8 +1103,14 @@ msgstr "製造指図と商談明細に関連するファイル。"
 msgid "Filter"
 msgstr "絞り込み"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "拠点で絞り込み"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "完了"
@@ -1549,6 +1558,9 @@ msgstr "あなたに割り当てられた保全指示はありません。"
 
 msgid "No files"
 msgstr "ファイルなし"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "測定器が見つかりません。"
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "仕掛品"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "作業区"

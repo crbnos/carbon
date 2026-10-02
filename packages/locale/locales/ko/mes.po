@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "지우기"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "필터 지우기"
 
@@ -1100,8 +1103,14 @@ msgstr "작업 지시 및 영업 기회 라인과 관련된 파일입니다."
 msgid "Filter"
 msgstr "필터"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "위치별 필터"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "마감"
@@ -1549,6 +1558,9 @@ msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 
 msgid "No files"
 msgstr "파일 없음"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "계측기가 없습니다."
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "재공품"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "작업장"

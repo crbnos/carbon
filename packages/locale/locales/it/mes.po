@@ -544,6 +544,9 @@ msgstr ""
 msgid "Clear"
 msgstr "Cancella"
 
+msgid "Clear {count} filter(s)"
+msgstr ""
+
 msgid "Clear Filters"
 msgstr "Cancella Filtri"
 
@@ -1100,8 +1103,14 @@ msgstr "File relativi al lavoro e alla riga dell'opportunità."
 msgid "Filter"
 msgstr "Filtro"
 
+msgid "Filter ({filterCount})"
+msgstr ""
+
 msgid "Filter by location"
 msgstr "Filtra per ubicazione"
+
+msgid "Filter the board"
+msgstr ""
 
 msgid "Finish"
 msgstr "Termina"
@@ -1549,6 +1558,9 @@ msgstr "Nessun intervento di manutenzione assegnato"
 
 msgid "No files"
 msgstr "Nessun file"
+
+msgid "No filters"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "Nessuno strumento di misura trovato."
@@ -3044,6 +3056,9 @@ msgstr ""
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "Centro di Lavoro"
