@@ -57,6 +57,14 @@ const DEFAULT_MAX_RENDER_WEIGHT_BYTES: u64 = 419_430_400; // 400 MiB
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+// Read by jemalloc at startup. A background thread purges freed pages after a
+// second (and skips the lazy "muzzy" stage), so memory a finished job freed
+// goes back to the OS instead of sitting in the allocator until the next job.
+#[cfg(target_os = "linux")]
+#[allow(non_upper_case_globals)]
+#[export_name = "malloc_conf"]
+pub static malloc_conf: &[u8] = b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:0\0";
+
 #[derive(Clone)]
 pub struct AppState {
     pub admission: admission::Admission,
