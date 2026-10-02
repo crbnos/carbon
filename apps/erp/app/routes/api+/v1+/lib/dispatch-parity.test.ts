@@ -24,6 +24,8 @@ const spies = vi.hoisted(() => ({
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
+  updateJobOperationStatus: vi.fn(),
+  upsertPurchasingRFQSuppliers: vi.fn(),
   insertIssue: vi.fn(),
   getInspectionDocument: vi.fn(),
   insertPurchaseOrder: vi.fn(),
@@ -60,10 +62,12 @@ vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
+  updateJobOperationStatus: spies.updateJobOperationStatus,
   upsertJobMaterial: spies.upsertJobMaterial
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
-  insertPurchaseOrder: spies.insertPurchaseOrder
+  insertPurchaseOrder: spies.insertPurchaseOrder,
+  upsertPurchasingRFQSuppliers: spies.upsertPurchasingRFQSuppliers
 }));
 vi.mock("~/modules/quality/quality.service", () => ({
   insertIssue: spies.insertIssue,
@@ -168,6 +172,8 @@ const allSpies = [
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
+  spies.updateJobOperationStatus,
+  spies.upsertPurchasingRFQSuppliers,
   spies.insertIssue,
   spies.getInspectionDocument,
   spies.insertPurchaseOrder,
@@ -334,6 +340,35 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         "c1",
         { startDate: "2026-01-01", companyId: "c1" }
       ]
+    ]);
+  });
+
+  // A service that takes the acting user as its own positional argument. The
+  // generator sees the body write it to an audit column and records the slot
+  // (`contextParams`); before that the whole body was passed in its place and
+  // the write failed on the `updatedBy` foreign key.
+  it("a3. fills a positional updatedBy / createdBy from context, never from the body", async () => {
+    const status = await runDispatch(
+      "production_updateJobOperationStatus",
+      spies.updateJobOperationStatus,
+      { id: "op1", status: "Done", updatedBy: "forged" }
+    );
+    expect(status.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+
+    const omitted = await runDispatch(
+      "production_updateJobOperationStatus",
+      spies.updateJobOperationStatus,
+      { id: "op1", status: "Done" }
+    );
+    expect(omitted.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+
+    const suppliers = await runDispatch(
+      "purchasing_upsertPurchasingRFQSuppliers",
+      spies.upsertPurchasingRFQSuppliers,
+      { purchasingRfqId: "rfq1", supplierIds: ["s1"] }
+    );
+    expect(suppliers.calls).toEqual([
+      [spies.FAKE_CLIENT, "rfq1", ["s1"], "c1", "u1"]
     ]);
   });
 

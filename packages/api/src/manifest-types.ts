@@ -18,6 +18,14 @@ export type AuthField =
   | "updatedBy"
   | "userId";
 
+/** What the dispatcher fills a positional service parameter with. */
+export type ContextSource =
+  | "client"
+  | "db"
+  | "userId"
+  | "companyId"
+  | "companyGroupId";
+
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
@@ -38,6 +46,11 @@ export interface ManifestEntry {
   description: string;
   paramCount: number;
   serviceParams: string[];
+  /** The positional params the dispatcher fills from the authenticated context,
+   *  and with what. The generator decides this from the service's signature and
+   *  body; the dispatcher keeps no list of its own. A param absent here carries
+   *  the caller's payload. */
+  contextParams: Record<string, ContextSource>;
   injectAuth: AuthField[];
   permission: ToolPermission;
   /** Whether the service itself applies limit/offset (`setGenericQueryFilters`

@@ -35,6 +35,9 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** Positional params filled from a context value of a different name
+   *  (`updatedBy=userId`). Absent when every context param is its own source. */
+  context?: string;
   /** How create is told from update: the key fields, or `table(columns)` for
    *  each row the dispatcher looks up. Absent when the service does not branch. */
   upsert?: string;
@@ -102,6 +105,16 @@ function describeUpsert(upsert: NonNullable<ManifestEntry["upsert"]>): string {
     .join("|");
 }
 
+function describeContext(tool: ManifestEntry): string {
+  return tool.serviceParams
+    .filter((name) => {
+      const source = tool.contextParams[name];
+      return source !== undefined && source !== name;
+    })
+    .map((name) => `${name}=${tool.contextParams[name]}`)
+    .join(",");
+}
+
 export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
   return {
     totalTools: tools.length,
@@ -121,6 +134,7 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
         paginates: t.paginates,
+        ...(describeContext(t) ? { context: describeContext(t) } : {}),
         ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {})
       }))
   };

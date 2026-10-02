@@ -21,6 +21,7 @@ const baseTool: ManifestEntry = {
   description: "get customer",
   paramCount: 1,
   serviceParams: ["client", "id"],
+  contextParams: { client: "client" },
   injectAuth: ["companyId"],
   permission: { module: "sales", actions: ["view"] },
   paginates: true,

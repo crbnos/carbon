@@ -12,7 +12,7 @@
 // THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
 // callOperation reconstructs the { success:false, error } envelope.
 
-import type { AuthField, ManifestEntry } from "@carbon/api";
+import type { AuthField, ContextSource, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
@@ -195,15 +195,29 @@ export function extractOperation(args: Record<string, any> | undefined): {
 
 type UpsertRule = NonNullable<ManifestEntry["upsert"]>;
 
-/** Service params the dispatcher fills itself; the rest carry the payload. */
-const UPSERT_CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "userId",
-  "companyId",
-  "companyGroupId",
-  "eliminationClient"
-]);
+/**
+ * Whether the manifest says the dispatcher fills this positional param. The
+ * generator decides that from the service's signature and body
+ * (`contextParamsOf`), so no parameter name is recognised here.
+ */
+function isContextParam(meta: ManifestEntry, paramName: string): boolean {
+  return Object.hasOwn(meta.contextParams, paramName);
+}
+
+function contextValue(source: ContextSource, context: AuthedContext): unknown {
+  switch (source) {
+    case "client":
+      return context.client;
+    case "db":
+      return getDatabaseClient();
+    case "userId":
+      return context.userId;
+    case "companyId":
+      return context.companyId;
+    case "companyGroupId":
+      return context.companyGroupId;
+  }
+}
 
 /**
  * A field of the RECORD the call is about: at the top level of the body, or
@@ -298,17 +312,6 @@ function declaredScalarParam(
     : undefined;
 }
 
-/** Params the loop fills from context rather than from the request body. */
-const CONTEXT_PARAM_NAMES = new Set([
-  "client",
-  "db",
-  "userId",
-  "companyId",
-  "companyGroupId",
-  "eliminationClient",
-  "args"
-]);
-
 /**
  * Is `paramName` a key the caller genuinely addresses, or does it just happen to
  * collide with a field of the object this param expects? A service whose sole
@@ -331,7 +334,7 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   if (!properties || !(paramName in properties)) return true;
 
   const payloadParams = meta.serviceParams.filter(
-    (p) => !CONTEXT_PARAM_NAMES.has(p)
+    (p) => !isContextParam(meta, p) && p !== "args"
   );
   if (payloadParams.length !== 1 || payloadParams[0] !== paramName) return true;
 
@@ -396,7 +399,7 @@ export async function dispatchOperation(
       (await resolveUpsertOperation(
         meta.upsert,
         normalizedArgs,
-        meta.serviceParams.filter((name) => !UPSERT_CONTEXT_PARAMS.has(name)),
+        meta.serviceParams.filter((name) => !isContextParam(meta, name)),
         async (table, filter) => {
           // Scoped to the caller's company on top of RLS: a user-scoped client
           // can see every company the user belongs to.
@@ -418,20 +421,8 @@ export async function dispatchOperation(
 
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {
-    if (paramName === "client") {
-      functionArgs.push(context.client);
-    } else if (paramName === "db") {
-      functionArgs.push(getDatabaseClient());
-    } else if (paramName === "userId") {
-      functionArgs.push(context.userId);
-    } else if (paramName === "companyId") {
-      functionArgs.push(context.companyId);
-    } else if (paramName === "companyGroupId") {
-      functionArgs.push(context.companyGroupId);
-    } else if (paramName === "eliminationClient") {
-      // A second client for consolidation reads, defaulted by the service to its
-      // own `client`. Context, never caller-supplied.
-      functionArgs.push(context.client);
+    if (isContextParam(meta, paramName)) {
+      functionArgs.push(contextValue(meta.contextParams[paramName], context));
     } else if (paramName === "args") {
       // Two wire shapes, told apart by the operation's own schema: when it
       // declares an `args` object the body is `{ args: {...} }`, otherwise the

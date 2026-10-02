@@ -34,6 +34,7 @@ import {
   type ParameterDeclaration,
   Project,
   type SourceFile,
+  type Symbol as MorphSymbol,
   SymbolFlags,
   SyntaxKind
 } from "ts-morph";
@@ -464,6 +465,54 @@ export function dbWrites(fn: ServiceFunctionNode): DbWrite[] {
     if (root) writes.push({ kind: supabase, table: stringArgument(root) });
   }
   return writes;
+}
+
+/** Columns that record who wrote a row. */
+const AUDIT_COLUMNS = new Set(["createdBy", "updatedBy"]);
+
+function propertyKey(node: Node): string | undefined {
+  if (Node.isIdentifier(node)) return node.getText();
+  if (Node.isStringLiteral(node) || Node.isNoSubstitutionTemplateLiteral(node)) {
+    return node.getLiteralText();
+  }
+  return undefined;
+}
+
+/**
+ * The function's own parameters that it writes into an audit column: the value
+ * of a `createdBy` / `updatedBy` property, by shorthand (`{ updatedBy }`) or by
+ * name (`{ createdBy: actor }`). Whatever such a parameter is called, the row
+ * says it is who made the write, so the caller is never the one to supply it.
+ */
+export function auditParams(fn: ServiceFunctionNode): string[] {
+  const own = new Set<Node>(fn.getParameters());
+  const found = new Set<string>();
+
+  const record = (symbol: MorphSymbol | undefined) => {
+    const declaration = symbol?.getValueDeclaration();
+    if (
+      declaration &&
+      Node.isParameterDeclaration(declaration) &&
+      own.has(declaration)
+    ) {
+      found.add(declaration.getName());
+    }
+  };
+
+  for (const node of fn.getDescendants()) {
+    if (Node.isShorthandPropertyAssignment(node)) {
+      if (AUDIT_COLUMNS.has(node.getName())) record(node.getValueSymbol());
+    } else if (Node.isPropertyAssignment(node)) {
+      const key = propertyKey(node.getNameNode());
+      if (!key || !AUDIT_COLUMNS.has(key)) continue;
+      const value = unwrap(node.getInitializer());
+      if (value && Node.isIdentifier(value)) record(value.getSymbol());
+    }
+  }
+  return fn
+    .getParameters()
+    .map((p) => p.getName())
+    .filter((name) => found.has(name));
 }
 
 /**

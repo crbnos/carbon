@@ -24,6 +24,7 @@ import * as path from "path";
 import type {
   AuthField,
   Classification,
+  ContextSource,
   ManifestEntry,
   PermissionAction,
   ToolPermission,
@@ -43,6 +44,7 @@ import {
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
+  auditParams,
   branchesOnKeyPresence,
   buildServiceAst,
   dbWrites,
@@ -53,8 +55,10 @@ import {
   type ServiceFunction
 } from "./service-ast";
 import {
+  AUDIT_FIELDS,
   buildValidatorRegistry,
   CONTEXT_PARAMS,
+  POSITIONAL_CONTEXT,
   type ValidatorRegistry,
 } from "./validator-registry";
 
@@ -961,6 +965,39 @@ export function withoutAbsentAuditColumns(
   return fields.filter((f) => !dropped.includes(f));
 }
 
+/**
+ * The positional params the dispatcher fills from the authenticated context,
+ * and with what.
+ *
+ * `client`, `db`, `userId`, `companyId` and `companyGroupId` are the positional
+ * contract (`POSITIONAL_CONTEXT`). The acting user under any other name is read
+ * from the body: a param the function writes to `createdBy` / `updatedBy`
+ * (`auditParams`) is who made the write, so it is filled with the caller.
+ *
+ * A param NAMED for an audit column that the body is never seen writing to one
+ * fails generation. Published as an ordinary argument it would let a caller name
+ * the author; hidden without a slot, nobody would fill it.
+ */
+export function contextParamsOf(
+  fn: Pick<ServiceFunction, "node" | "params" | "toolName">
+): Record<string, ContextSource> {
+  const actors = new Set(auditParams(fn.node));
+  const named: Record<string, ContextSource> = POSITIONAL_CONTEXT;
+  const out: Record<string, ContextSource> = {};
+  for (const param of fn.params) {
+    if (param.name in named) {
+      out[param.name] = named[param.name];
+    } else if (actors.has(param.name)) {
+      out[param.name] = "userId";
+    } else if ((AUDIT_FIELDS as readonly string[]).includes(param.name)) {
+      throw new Error(
+        `${fn.toolName} takes a positional \`${param.name}\`, but its body is not seen writing it to a createdBy/updatedBy column, so it cannot be filled with the acting user. Name it \`userId\`, or write it to the audit column directly.`
+      );
+    }
+  }
+  return out;
+}
+
 export function withPayloadUserId(
   fields: AuthField[],
   func: Pick<ServiceFunction, "params">
@@ -1142,7 +1179,10 @@ function buildToolSchema(
   func: Pick<ServiceFunction, "params">,
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
-  const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
+  const context = ctx.contextParams;
+  const userParams = func.params.filter((p) =>
+    context ? !(p.name in context) : !CONTEXT_PARAMS.has(p.name)
+  );
   const resolveCtx: TypeResolveContext = { ...ctx };
 
   if (userParams.length === 0) {
@@ -1372,6 +1412,9 @@ export type ValidatorResolution = "native" | "unresolved";
 /** Per-module state threaded into `buildToolSchema`. */
 interface SchemaBuildContext {
   module?: string;
+  /** The positional params the dispatcher fills (`contextParamsOf`); they are
+   *  left out of the published schema. */
+  contextParams?: Record<string, ContextSource>;
   validators?: ValidatorRegistry;
   /** Module-local sources for bare type-alias resolution (see `resolveTypeAlias`). */
   aliasSources?: string[];
@@ -1496,12 +1539,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         DESCRIPTION_OVERRIDES[toolName] ||
         generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
+      const contextParams = contextParamsOf(func);
       const permission: ToolPermission = declaredPermission(func) ?? {
         module: mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod,
         actions: [...verb.actions]
       };
       const { schema, paramCount } = buildToolSchema(func, {
         module: mod,
+        contextParams,
         validators: opts.validators,
         aliasSources,
         onResolved: (validatorName, how) =>
@@ -1530,6 +1575,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         description,
         paramCount,
         serviceParams,
+        contextParams,
         injectAuth,
         permission,
         // Whether the service applies limit/offset itself. A list operation

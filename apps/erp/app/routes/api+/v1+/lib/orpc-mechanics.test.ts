@@ -28,6 +28,7 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     description: "demo ping",
     paramCount: 1,
     serviceParams: ["client", "args"],
+    contextParams: { client: "client" },
     injectAuth: [],
     permission: { module: null, actions: [] },
     paginates: false,

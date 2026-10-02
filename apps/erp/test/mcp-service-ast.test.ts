@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  auditParams,
   branchesOnKeyPresence,
   dbWrites,
   namedTables,
@@ -11,6 +12,7 @@ import {
   parseServiceSource
 } from "../../../scripts/lib/service-ast";
 import {
+  contextParamsOf,
   declarationOf,
   upsertRule,
   withoutAbsentAuditColumns
@@ -397,3 +399,80 @@ describe("audit fields the table does not have", () => {
   });
 });
 
+describe("positional params the dispatcher fills", () => {
+  const fns = parse(`
+    export async function updateStatus(
+      client: Client, id: string, status: string, updatedBy: string
+    ) {
+      return client.from("job").update({ status, updatedBy }).eq("id", id);
+    }
+    export async function approve(client: Client, id: string, approver: string) {
+      return client
+        .from("job")
+        .update({ status: "Approved", "updatedBy": approver as string })
+        .eq("id", id);
+    }
+    export async function addSuppliers(
+      client: Client, rfqId: string, supplierIds: string[],
+      companyId: string, createdBy: string
+    ) {
+      return client.from("rfqSupplier").insert(
+        supplierIds.map((supplierId) => ({ rfqId, supplierId, companyId, createdBy }))
+      );
+    }
+    export async function reorder(
+      db: Db, companyId: string, userId: string, updates: { id: string }[]
+    ) {
+      return db.updateTable("line").set({ updatedBy: userId }).execute();
+    }
+    export async function upsertRow(
+      client: Client, row: { id: string; updatedBy: string }
+    ) {
+      return client.from("job").update({ ...row }).eq("id", row.id);
+    }
+    export async function shadowed(client: Client, updatedBy: string) {
+      return [1].map((updatedBy) => ({ updatedBy }));
+    }
+    export async function viaRpc(client: Client, id: string, updatedBy: string) {
+      return client.rpc("touch", { p_id: id, p_user: updatedBy });
+    }
+  `);
+
+  it("reads the acting user off the audit column a param is written to", () => {
+    expect(auditParams(fns.updateStatus.node)).toEqual(["updatedBy"]);
+    expect(auditParams(fns.addSuppliers.node)).toEqual(["createdBy"]);
+    // Whatever the param is called, and through a cast and a quoted key.
+    expect(auditParams(fns.approve.node)).toEqual(["approver"]);
+    // A field of a payload object is not a positional param.
+    expect(auditParams(fns.upsertRow.node)).toEqual([]);
+  });
+
+  it("maps each filled param to its context value and leaves the payload out", () => {
+    expect(contextParamsOf(fns.updateStatus)).toEqual({
+      client: "client",
+      updatedBy: "userId"
+    });
+    expect(contextParamsOf(fns.approve)).toEqual({
+      client: "client",
+      approver: "userId"
+    });
+    expect(contextParamsOf(fns.addSuppliers)).toEqual({
+      client: "client",
+      companyId: "companyId",
+      createdBy: "userId"
+    });
+    expect(contextParamsOf(fns.reorder)).toEqual({
+      db: "db",
+      companyId: "companyId",
+      userId: "userId"
+    });
+    expect(contextParamsOf(fns.upsertRow)).toEqual({ client: "client" });
+  });
+
+  it("refuses a positional audit param it cannot see written to the column", () => {
+    // Passed on to something else: the body never names the column.
+    expect(() => contextParamsOf(fns.viaRpc)).toThrow(/positional `updatedBy`/);
+    // An inner binding of the same name is not the function's own parameter.
+    expect(() => contextParamsOf(fns.shadowed)).toThrow(/positional `updatedBy`/);
+  });
+});

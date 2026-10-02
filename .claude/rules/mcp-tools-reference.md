@@ -266,9 +266,15 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   unknown keys (no generated schema sets `additionalProperties: false`) and
   accepts a lone wrapper's contents sent flat, since the dispatcher does too.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
-  `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
-  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
-  service whose param is `db` is handed `getDatabaseClient()`; payload params are
+  `["client", "args"]`), `contextParams` and `injectAuth`. The dispatch builds
+  the positional arg array from them: a param listed in `contextParams` is filled
+  with the context value the manifest names (`client`, `db` →
+  `getDatabaseClient()`, `userId`, `companyId`, `companyGroupId`), and the
+  dispatcher recognises NO parameter name itself. It used to keep its own list,
+  which lacked `createdBy`/`updatedBy` while the generator hid them from the
+  schema, so `updateJobOperationStatus(client, id, status, updatedBy)` was handed
+  the caller's value or the whole body and failed `jobOperation_updatedBy_fkey`.
+  Pinned by `dispatch-parity.test.ts` a3. Payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
   `dispatch.server.ts`) — including `userId` when the payload itself declares one
   (the edge-function wrappers), which the manifest marks via `injectAuth` and the
@@ -350,8 +356,9 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   mapper must never attach `data.supabase` — `callOperation` keys its
   `Database error:` envelope off that field.
 - `eliminationClient` is a **context param**, filled from `context.client` (which
-  is what the service itself defaults it to). Left out of the generator's
-  `CONTEXT_PARAMS` it became a required field a caller cannot express — a
+  is what the service itself defaults it to): `POSITIONAL_CONTEXT` maps it to
+  `client`. Left out of the generator's list it became a required field a caller
+  cannot express — a
   Supabase client — so the two consolidated-balance ops failed every call.
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
@@ -405,7 +412,7 @@ functions that must import `*.server` modules — see the gotcha below — e.g.
 `production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
 exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
-`{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
+`{ name, module, classification, description, paramCount, serviceParams, contextParams, injectAuth, schema }`.
 
 - **How the service files are read** (`scripts/lib/service-ast.ts`): ONE ts-morph
   project, shared with the response-schema reflection. Which functions exist
@@ -481,6 +488,21 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
+- **contextParams** (`contextParamsOf`) says which positional params the
+  dispatcher fills and with what, and is the only place that is decided. Two
+  sources: the positional contract `POSITIONAL_CONTEXT`
+  (`scripts/lib/validator-registry.ts`: `client`, `eliminationClient`, `db`,
+  `userId`, `companyId`, `companyGroupId` — a plain `string` carries nothing more
+  for the compiler to read), and the body. `auditParams` (`service-ast.ts`) finds
+  every parameter the function writes as the value of a `createdBy` / `updatedBy`
+  property, by shorthand or by name, through the compiler's own symbol
+  resolution; such a param is the acting user whatever it is called, and maps to
+  `userId`. A positional param NAMED `createdBy`/`updatedBy` that the body is not
+  seen writing to the column fails generation — published it would let a caller
+  name the author, hidden without a slot nobody would fill it. Context params are
+  left out of the published schema. The digest shows a mapping only where the
+  source differs from the name (`"context":"updatedBy=userId"`). Pinned by
+  `apps/erp/test/mcp-service-ast.test.ts`.
 - **injectAuth** starts from the verb's audit fields (table above) plus
   `companyId`, then is checked against the schema (`withoutAbsentAuditColumns`):
   when the function names exactly ONE relation and that relation has no
