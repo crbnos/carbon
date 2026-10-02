@@ -132,6 +132,10 @@ msgstr "{0} of {1} lines"
 msgid "{0} of {1} will not be made"
 msgstr "{0} of {1} will not be made"
 
+#. placeholder {0}: operations.length
+msgid "{0} operation(s)"
+msgstr "{0} operation(s)"
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} queued"
@@ -456,6 +460,9 @@ msgstr "Between {0} and {1} {2}"
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
 
+msgid "Blocked for maintenance"
+msgstr "Blocked for maintenance"
+
 msgid "Blocking"
 msgstr "Blocking"
 
@@ -533,9 +540,6 @@ msgstr "Choose a photo"
 
 msgid "Choose a reason"
 msgstr "Choose a reason"
-
-msgid "Choose one on the left to start working on it."
-msgstr "Choose one on the left to start working on it."
 
 msgid "Clear"
 msgstr "Clear"
@@ -1579,12 +1583,6 @@ msgstr "No open jobs"
 msgid "No open units to allocate"
 msgstr "No open units to allocate"
 
-msgid "No operations at {locationName}"
-msgstr "No operations at {locationName}"
-
-msgid "No operations at {selectedName}"
-msgstr "No operations at {selectedName}"
-
 msgid "No operators"
 msgstr "No operators"
 
@@ -1624,6 +1622,9 @@ msgstr "No samples required."
 msgid "No scheduled time"
 msgstr "No scheduled time"
 
+msgid "No scheduled work"
+msgstr "No scheduled work"
+
 msgid "No serial numbers"
 msgstr "No serial numbers"
 
@@ -1657,6 +1658,9 @@ msgstr "No warehouse stock is on record for this item. You can still pick it —
 msgid "No Work Center"
 msgstr "No Work Center"
 
+msgid "No work centers"
+msgstr "No work centers"
+
 msgid "No work centers are blocked"
 msgstr "No work centers are blocked"
 
@@ -1687,6 +1691,9 @@ msgstr "Nothing left to send"
 #. placeholder {0}: scan.value
 msgid "Nothing matches {0}"
 msgstr "Nothing matches {0}"
+
+msgid "Nothing queued here."
+msgstr "Nothing queued here."
 
 msgid "Nothing running"
 msgstr "Nothing running"
@@ -1929,9 +1936,6 @@ msgstr "Pick all {0}"
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "Pick all {0} {unit}"
 msgstr "Pick all {0} {unit}"
-
-msgid "Pick an operation"
-msgstr "Pick an operation"
 
 msgid "Pick expired lot"
 msgstr "Pick expired lot"
@@ -3049,6 +3053,9 @@ msgstr "Work Center"
 msgid "Work Center Displays"
 msgstr "Work Center Displays"
 
+msgid "Work centers for {locationName} appear here once they exist."
+msgstr "Work centers for {locationName} appear here once they exist."
+
 msgid "Work email"
 msgstr "Work email"
 
@@ -3057,9 +3064,6 @@ msgstr "Work instructions"
 
 msgid "Work is now recorded against this device's account."
 msgstr "Work is now recorded against this device's account."
-
-msgid "Work shows up here as soon as it is scheduled."
-msgstr "Work shows up here as soon as it is scheduled."
 
 msgid "Working as"
 msgstr "Working as"

@@ -132,6 +132,10 @@ msgstr ""
 msgid "{0} of {1} will not be made"
 msgstr ""
 
+#. placeholder {0}: operations.length
+msgid "{0} operation(s)"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0}件がキュー待ちです"
@@ -456,6 +460,9 @@ msgstr "{0}から{1} {2}まで"
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
 
+msgid "Blocked for maintenance"
+msgstr ""
+
 msgid "Blocking"
 msgstr "ブロック中"
 
@@ -532,9 +539,6 @@ msgid "Choose a photo"
 msgstr ""
 
 msgid "Choose a reason"
-msgstr ""
-
-msgid "Choose one on the left to start working on it."
 msgstr ""
 
 msgid "Clear"
@@ -1579,12 +1583,6 @@ msgstr "オープンな製造指図はありません。"
 msgid "No open units to allocate"
 msgstr "割り当てるオープンユニットがありません"
 
-msgid "No operations at {locationName}"
-msgstr ""
-
-msgid "No operations at {selectedName}"
-msgstr ""
-
 msgid "No operators"
 msgstr "作業者がいません。"
 
@@ -1624,6 +1622,9 @@ msgstr "サンプルは必要ありません。"
 msgid "No scheduled time"
 msgstr "予定時間なし"
 
+msgid "No scheduled work"
+msgstr ""
+
 msgid "No serial numbers"
 msgstr "シリアル番号なし"
 
@@ -1657,6 +1658,9 @@ msgstr "このアイテムの倉庫在庫は記録されていません。それ
 msgid "No Work Center"
 msgstr "作業区未設定"
 
+msgid "No work centers"
+msgstr ""
+
 msgid "No work centers are blocked"
 msgstr "ブロックされた作業区はありません。"
 
@@ -1686,6 +1690,9 @@ msgstr ""
 
 #. placeholder {0}: scan.value
 msgid "Nothing matches {0}"
+msgstr ""
+
+msgid "Nothing queued here."
 msgstr ""
 
 msgid "Nothing running"
@@ -1928,9 +1935,6 @@ msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "Pick all {0} {unit}"
-msgstr ""
-
-msgid "Pick an operation"
 msgstr ""
 
 msgid "Pick expired lot"
@@ -3049,6 +3053,9 @@ msgstr "作業区"
 msgid "Work Center Displays"
 msgstr "作業区ディスプレイ"
 
+msgid "Work centers for {locationName} appear here once they exist."
+msgstr ""
+
 msgid "Work email"
 msgstr ""
 
@@ -3056,9 +3063,6 @@ msgid "Work instructions"
 msgstr "作業手順書"
 
 msgid "Work is now recorded against this device's account."
-msgstr ""
-
-msgid "Work shows up here as soon as it is scheduled."
 msgstr ""
 
 msgid "Working as"

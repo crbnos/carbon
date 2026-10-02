@@ -2,12 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl, View } from "react-native";
+import { useCallback, useMemo } from "react";
 import {
-  Body,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View
+} from "react-native";
+import {
   EmptyState,
   ErrorNote,
   Heading,
@@ -17,28 +24,123 @@ import {
 } from "~/components/ui";
 import { useLayout } from "~/components/useLayout";
 import { OperationCard } from "~/features/operations/OperationCard";
-import { OperationDetailView } from "~/features/operations/OperationDetailView";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
- * The operations list.
+ * The operations board — a column per work centre, as web MES's Schedule board
+ * is (`apps/mes/app/routes/x+/operations.tsx` + `components/Kanban`).
  *
- * On a landscape tablet it is a two-pane layout: the list stays on the left and
- * the selected operation fills the right, so an operator working through a
- * queue never loses their place in it. A phone, or a tablet in portrait, pushes
- * the operation as its own route instead — 834pt is not enough for both.
+ * Columns rather than a filtered flat list because that is the screen an
+ * operator already knows: the work centres ARE the filter, the queue under each
+ * is its own, and a blocked centre is visible without opening anything.
  *
- * Both render the SAME `OperationDetailView`, so the two layouts cannot drift
- * on what Start does.
+ * It scrolls horizontally. A phone shows one column with a peek of the next, a
+ * tablet shows two or three — the same board, as much of it as the glass
+ * allows.
  */
+
+/** Web's `PulsingDot`: green when the centre is running, muted when idle. */
+function ColumnDot({ active }: { active: boolean }) {
+  return (
+    <View
+      className={`mt-1.5 size-2.5 rounded-full ${
+        active ? "bg-emerald-500" : "bg-muted-foreground/40"
+      }`}
+    />
+  );
+}
+
+function Column({
+  title,
+  active,
+  isBlocked,
+  operations,
+  width,
+  refreshing,
+  onRefresh
+}: {
+  title: string;
+  active: boolean;
+  isBlocked: boolean;
+  operations: OperationCardData[];
+  width: number;
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <View className="h-full border-r border-border" style={{ width }}>
+      {/*
+        The column header, from `Kanban/components/ColumnCard.tsx`: the dot and
+        the title, with the count beneath. A blocked centre turns the whole
+        header destructive — the web does the same, because it is the one state
+        an operator must see before walking to the machine.
+      */}
+      <View
+        className={`flex-row items-start gap-2 border-b border-border px-4 py-3 ${
+          isBlocked ? "bg-destructive" : "bg-card"
+        }`}
+      >
+        {isBlocked ? null : <ColumnDot active={active} />}
+        <View className="flex-1">
+          <Text
+            className={`font-semibold ${
+              isBlocked ? "text-destructive-foreground" : "text-foreground"
+            }`}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          <Text
+            className={`text-xs ${
+              isBlocked
+                ? "text-destructive-foreground"
+                : "text-muted-foreground"
+            }`}
+          >
+            {isBlocked
+              ? t`Blocked for maintenance`
+              : operations.length === 0
+                ? t`No scheduled work`
+                : t`${operations.length} operation(s)`}
+          </Text>
+        </View>
+      </View>
+
+      <FlatList
+        data={operations}
+        keyExtractor={(item) => item.id}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        contentContainerClassName="p-3 pb-8"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <Muted className="px-1 py-6 text-center text-sm">
+            {t`Nothing queued here.`}
+          </Muted>
+        }
+        renderItem={({ item }) => (
+          <OperationCard
+            operation={item}
+            onPress={() =>
+              router.push(`/(app)/(tabs)/operations/${item.id}` as never)
+            }
+          />
+        )}
+      />
+    </View>
+  );
+}
+
 export default function Operations() {
   const { t } = useLingui();
   const { me, locationId } = useAuth();
-  const [workCenterIds, setWorkCenterIds] = useState<string[]>([]);
-  const query = useOperationsQuery(workCenterIds);
-  const { isSplit } = useLayout();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { isTablet } = useLayout();
+  const { width: screenWidth } = useWindowDimensions();
+  const query = useOperationsQuery();
 
   // The floor moves while the operator is on another screen.
   useFocusEffect(
@@ -50,119 +152,80 @@ export default function Operations() {
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
   const columns = query.data?.columns ?? [];
-  const selectedName = workCenterIds.length
-    ? columns.find((c) => c.id === workCenterIds[0])?.title
-    : null;
+  const items = useMemo(() => query.data?.items ?? [], [query.data?.items]);
 
-  const list = (
-    <Screen className="gap-4 py-4">
-      <View className="gap-1">
+  const byColumn = useMemo(() => {
+    const map = new Map<string, OperationCardData[]>();
+    for (const item of items) {
+      const key = item.columnId ?? "";
+      const list = map.get(key);
+      if (list) list.push(item);
+      else map.set(key, [item]);
+    }
+    return map;
+  }, [items]);
+
+  // A phone shows one column and a peek of the next, so it is obvious the
+  // board scrolls sideways; a tablet shows whole columns at a readable width.
+  const columnWidth = isTablet
+    ? 340
+    : Math.min(Math.round(screenWidth * 0.86), 380);
+
+  return (
+    <Screen className="gap-3 px-0 py-4">
+      <View className="gap-1 px-4">
         <Heading>
           <Trans>Operations</Trans>
         </Heading>
         <Muted className="text-sm">{locationName}</Muted>
       </View>
 
-      {columns.length > 1 ? (
-        <FlatList
-          horizontal
-          data={[{ id: "", title: t`All` }, ...columns]}
-          keyExtractor={(item) => item.id || "all"}
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2"
-          renderItem={({ item }) => {
-            const selected = item.id
-              ? workCenterIds.includes(item.id)
-              : workCenterIds.length === 0;
-            return (
-              <Pressable
-                onPress={() => setWorkCenterIds(item.id ? [item.id] : [])}
-                className={`min-h-[48px] justify-center rounded-full border px-4 ${
-                  selected ? "border-ring bg-accent" : "border-border bg-card"
-                }`}
-              >
-                <Body className="text-sm">{item.title}</Body>
-              </Pressable>
-            );
-          }}
-        />
-      ) : null}
-
       {query.isError ? (
-        <ErrorNote>
-          {query.error instanceof Error
-            ? query.error.message
-            : t`Could not load operations`}
-        </ErrorNote>
+        <View className="px-4">
+          <ErrorNote>
+            {query.error instanceof Error
+              ? query.error.message
+              : t`Could not load operations`}
+          </ErrorNote>
+        </View>
       ) : null}
 
       {query.isPending ? (
         // A skeleton, never an empty screen: an operator must be able to tell
         // "still loading" from "nothing to do".
-        <View className="gap-3">
+        <View className="gap-3 px-4">
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
           <Skeleton className="h-28" />
         </View>
+      ) : columns.length === 0 ? (
+        <EmptyState
+          title={t`No work centers`}
+          description={t`Work centers for ${locationName} appear here once they exist.`}
+        />
       ) : (
-        <FlatList
-          data={query.data?.items ?? []}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <View className="h-3" />}
-          contentContainerClassName="pb-6"
-          refreshControl={
-            <RefreshControl
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-1"
+          // Paging on a phone so a column lands square rather than half shown.
+          snapToInterval={isTablet ? undefined : columnWidth}
+          decelerationRate="fast"
+        >
+          {columns.map((column) => (
+            <Column
+              key={column.id}
+              title={column.title}
+              active={column.active ?? false}
+              isBlocked={column.isBlocked ?? false}
+              operations={byColumn.get(column.id) ?? []}
+              width={columnWidth}
               refreshing={query.isFetching}
               onRefresh={() => void query.refetch()}
             />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              title={
-                selectedName
-                  ? t`No operations at ${selectedName}`
-                  : t`No operations at ${locationName}`
-              }
-              description={t`Work shows up here as soon as it is scheduled.`}
-            />
-          }
-          renderItem={({ item }) => (
-            <OperationCard
-              operation={item}
-              selected={isSplit && item.id === selectedId}
-              onPress={() => {
-                if (isSplit) {
-                  setSelectedId(item.id);
-                  return;
-                }
-                router.push(`/(app)/(tabs)/operations/${item.id}` as never);
-              }}
-            />
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
     </Screen>
-  );
-
-  if (!isSplit) return list;
-
-  return (
-    <View className="flex-1 flex-row bg-background">
-      {/* The list keeps a fixed width so the operation pane does not reflow
-          every time a card's description wraps. */}
-      <View className="w-[380px] border-r border-border">{list}</View>
-      <View className="flex-1">
-        {selectedId ? (
-          // Keyed by the id so switching operations remounts rather than
-          // leaking the previous one's timer state into the new screen.
-          <OperationDetailView key={selectedId} operationId={selectedId} />
-        ) : (
-          <EmptyState
-            title={t`Pick an operation`}
-            description={t`Choose one on the left to start working on it.`}
-          />
-        )}
-      </View>
-    </View>
   );
 }

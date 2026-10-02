@@ -132,6 +132,10 @@ msgstr ""
 msgid "{0} of {1} will not be made"
 msgstr ""
 
+#. placeholder {0}: operations.length
+msgid "{0} operation(s)"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} в очереди"
@@ -456,6 +460,9 @@ msgstr "Между {0} и {1} {2}"
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
 
+msgid "Blocked for maintenance"
+msgstr ""
+
 msgid "Blocking"
 msgstr "Блокирующие"
 
@@ -532,9 +539,6 @@ msgid "Choose a photo"
 msgstr ""
 
 msgid "Choose a reason"
-msgstr ""
-
-msgid "Choose one on the left to start working on it."
 msgstr ""
 
 msgid "Clear"
@@ -1579,12 +1583,6 @@ msgstr "Нет открытых производственных заказов"
 msgid "No open units to allocate"
 msgstr "Нет открытых единиц для распределения"
 
-msgid "No operations at {locationName}"
-msgstr ""
-
-msgid "No operations at {selectedName}"
-msgstr ""
-
 msgid "No operators"
 msgstr "Нет операторов"
 
@@ -1624,6 +1622,9 @@ msgstr "Образцы не требуются."
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
 
+msgid "No scheduled work"
+msgstr ""
+
 msgid "No serial numbers"
 msgstr "Нет серийных номеров"
 
@@ -1657,6 +1658,9 @@ msgstr "На складе нет записей о наличии этого т�
 msgid "No Work Center"
 msgstr "Без рабочего центра"
 
+msgid "No work centers"
+msgstr ""
+
 msgid "No work centers are blocked"
 msgstr "Нет заблокированных рабочих центров"
 
@@ -1686,6 +1690,9 @@ msgstr ""
 
 #. placeholder {0}: scan.value
 msgid "Nothing matches {0}"
+msgstr ""
+
+msgid "Nothing queued here."
 msgstr ""
 
 msgid "Nothing running"
@@ -1928,9 +1935,6 @@ msgstr ""
 
 #. placeholder {0}: formatQuantity(toPick, locale)
 msgid "Pick all {0} {unit}"
-msgstr ""
-
-msgid "Pick an operation"
 msgstr ""
 
 msgid "Pick expired lot"
@@ -3049,6 +3053,9 @@ msgstr "Рабочий центр"
 msgid "Work Center Displays"
 msgstr "Дисплеи рабочего центра"
 
+msgid "Work centers for {locationName} appear here once they exist."
+msgstr ""
+
 msgid "Work email"
 msgstr ""
 
@@ -3056,9 +3063,6 @@ msgid "Work instructions"
 msgstr "Рабочие инструкции"
 
 msgid "Work is now recorded against this device's account."
-msgstr ""
-
-msgid "Work shows up here as soon as it is scheduled."
 msgstr ""
 
 msgid "Working as"
