@@ -65,8 +65,15 @@ impl Admission {
     /// Wait until `estimate_mb` (capped at the whole budget) is free. Waiters
     /// are served in order, so a large job is not starved by small ones.
     pub async fn acquire(&self, estimate_mb: u64) -> Grant {
+        let want = self.clamp(estimate_mb);
+        if self.semaphore.available_permits() < want as usize {
+            eprintln!(
+                "assembler: a job is waiting for {want} MB of the {} MB memory budget",
+                self.budget_mb
+            );
+        }
         let permit = Arc::clone(&self.semaphore)
-            .acquire_many_owned(self.clamp(estimate_mb))
+            .acquire_many_owned(want)
             .await
             .expect("admission semaphore is never closed");
         Grant {
