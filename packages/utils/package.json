@@ -4,7 +4,6 @@
     "@internationalized/date": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "@tiptap/react": "catalog:",
-    "better-all": "0.0.9",
     "cookie": "catalog:",
     "dompurify": "catalog:",
     "intl-parse-accept-language": "catalog:",

@@ -2,27 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { all, allSettled, flow } from "better-all";
-
-/** How many things `map` and `limit` run at once unless told otherwise. */
+/** How many things `map`, `all`, `allSettled` and `limit` run at once unless told otherwise. */
 export const DEFAULT_CONCURRENCY = 8;
-
-/** Return this from a `map` mapper to leave the element out of the result. */
-const skip: unique symbol = Symbol("async.skip");
 
 type MaybePromise<T> = T | Promise<T>;
 
-export type MapOptions = {
-  concurrency?: number;
-  /**
-   * `true` (default): reject with the first failure and start nothing after it.
-   * `false`: run every element, then reject with an `AggregateError` of all
-   * failures.
-   */
-  stopOnError?: boolean;
-  /** Rejects with the signal's reason and starts nothing after it aborts. */
-  signal?: AbortSignal;
-};
+export type ConcurrencyOptions = { concurrency?: number };
+
+type Tasks = readonly (() => unknown)[];
 
 function assertConcurrency(concurrency: number) {
   if (
@@ -33,97 +20,6 @@ function assertConcurrency(concurrency: number) {
       `Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\``
     );
   }
-}
-
-async function collect<T>(input: Iterable<T> | AsyncIterable<T>) {
-  const items: Awaited<T>[] = [];
-  for await (const item of input) items.push(item);
-  return items;
-}
-
-/** Rejects with the signal's reason when it aborts; never settles otherwise. */
-function abortion(signal: AbortSignal | undefined, cleanup: AbortSignal) {
-  return new Promise<never>((_, reject) => {
-    if (!signal) return;
-    if (signal.aborted) return reject(signal.reason);
-    signal.addEventListener("abort", () => reject(signal.reason), {
-      once: true,
-      signal: cleanup
-    });
-  });
-}
-
-/**
- * p-map: `mapper` over every element of an iterable or async iterable, at most
- * `concurrency` at a time, results in input order. Each of `concurrency`
- * workers pulls the next element when it is free, so the input is read
- * lazily, and an element may be a promise. The one difference from p-map is
- * the default `concurrency`: DEFAULT_CONCURRENCY, not Infinity.
- */
-async function map<T, R>(
-  input: Iterable<MaybePromise<T>> | AsyncIterable<MaybePromise<T>>,
-  mapper: (element: T, index: number) => MaybePromise<R | typeof skip>,
-  {
-    concurrency = DEFAULT_CONCURRENCY,
-    stopOnError = true,
-    signal
-  }: MapOptions = {}
-): Promise<Exclude<R, typeof skip>[]> {
-  assertConcurrency(concurrency);
-  signal?.throwIfAborted();
-
-  // With no limit everything starts at once, so an iterable is read to the
-  // end first: its length says how many workers to start.
-  const source =
-    concurrency === Number.POSITIVE_INFINITY && !Array.isArray(input)
-      ? await collect(input)
-      : input;
-  const workers = Array.isArray(source)
-    ? Math.min(concurrency, source.length)
-    : concurrency;
-  const iterator =
-    Symbol.asyncIterator in source
-      ? source[Symbol.asyncIterator]()
-      : source[Symbol.iterator]();
-  const results: (R | typeof skip)[] = [];
-  const errors: unknown[] = [];
-  let index = 0;
-  let stopped = false;
-
-  const worker = async () => {
-    while (!stopped && !signal?.aborted) {
-      const i = index++;
-      const item = await iterator.next();
-      if (item.done) return;
-      try {
-        results[i] = await mapper(await item.value, i);
-      } catch (error) {
-        if (stopOnError) {
-          stopped = true;
-          throw error;
-        }
-        errors.push(error);
-        results[i] = skip;
-      }
-    }
-  };
-
-  const done = new AbortController();
-  try {
-    await Promise.race([
-      Promise.all(Array.from({ length: workers }, worker)),
-      abortion(signal, done.signal)
-    ]);
-  } finally {
-    stopped = true;
-    done.abort();
-  }
-  if (errors.length > 0) {
-    throw new AggregateError(errors, "Some mappers failed");
-  }
-  return results.filter(
-    (value): value is Exclude<R, typeof skip> => value !== skip
-  );
 }
 
 /**
@@ -163,6 +59,55 @@ function limit(concurrency = DEFAULT_CONCURRENCY) {
   };
 }
 
+/**
+ * p-map: `Promise.all(items.map(mapper))`, at most `concurrency` at a time,
+ * results in input order. Rejects with the first failure and starts nothing
+ * after it.
+ */
+function map<T, R>(
+  items: Iterable<T>,
+  mapper: (item: T, index: number) => MaybePromise<R>,
+  { concurrency }: ConcurrencyOptions = {}
+): Promise<R[]> {
+  const run = limit(concurrency);
+  let failed = false;
+  return Promise.all(
+    Array.from(items, (item, index) =>
+      run(async () => {
+        // The result is already a rejection; nobody reads this value.
+        if (failed) return undefined as R;
+        try {
+          return await mapper(item, index);
+        } catch (error) {
+          failed = true;
+          throw error;
+        }
+      })
+    )
+  );
+}
+
+/**
+ * p-all: `Promise.all` over functions instead of promises, so at most
+ * `concurrency` run at a time. Results keep the tuple's types and order.
+ */
+function all<const T extends Tasks>(tasks: T, options?: ConcurrencyOptions) {
+  return map(tasks, (task) => task(), options) as Promise<{
+    -readonly [K in keyof T]: Awaited<ReturnType<T[K]>>;
+  }>;
+}
+
+/** p-settle: `Promise.allSettled` over functions, at most `concurrency` at a time. */
+function allSettled<const T extends Tasks>(
+  tasks: T,
+  { concurrency }: ConcurrencyOptions = {}
+) {
+  const run = limit(concurrency);
+  return Promise.allSettled(tasks.map((task) => run(task))) as Promise<{
+    -readonly [K in keyof T]: PromiseSettledResult<Awaited<ReturnType<T[K]>>>;
+  }>;
+}
+
 let extendLifetime: ((work: Promise<unknown>) => void) | undefined;
 
 /**
@@ -193,26 +138,24 @@ function onBackground(
 }
 
 /**
- * Promise helpers with the APIs of the libraries they follow: `map` and `skip`
- * are p-map's, `limit` is p-limit's, `all` / `allSettled` / `flow` are
- * better-all's. Database calls need no limit of their own: the Supabase client
- * a request gets from `requirePermissions` runs at most 8 calls at once.
+ * `Promise.all`, `Promise.allSettled` and `items.map` with a limit on how many
+ * run at once (8 unless told otherwise). Tasks are functions, since a promise
+ * is already running. Database calls inside a request need no limit of their
+ * own: the Supabase client from `requirePermissions` runs at most 8 at once.
  *
- *   const { order, lines } = await async.all({
- *     order: () => getOrder(client, id),
- *     async lines() { return getLines(client, (await this.$.order).id) }
- *   });
+ *   const [order, lines] = await async.all([
+ *     () => getOrder(client, id),
+ *     () => getLines(client, id)
+ *   ]);
  *   const rows = await async.map(ids, (id) => load(id), { concurrency: 4 });
- *   const found = await async.map(ids, async (id) => (await find(id)) ?? async.skip);
+ *   const results = await async.allSettled(ids.map((id) => () => sync(id)));
  *   async.background(() => track(event), (error) => logger.error("…", { error }));
  *   async.onBackground(waitUntil); // once at startup, on a host that freezes
  */
 export const async = {
   all,
   allSettled,
-  flow,
   map,
-  skip,
   limit,
   background,
   onBackground
