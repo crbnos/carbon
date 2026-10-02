@@ -2,11 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { expect } from "vitest";
-import {
-  connectLocalTestDatabase,
-  databaseTest
-} from "../local-database-test-fixture";
 import {
   deleteRows,
   insertRows,
@@ -15,7 +10,12 @@ import {
   selectRow,
   selectRows,
   updateRows
-} from "./rows";
+} from "@carbon/database/rows";
+import { expect } from "vitest";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../local-database-test-fixture";
 
 databaseTest(
   "selectRows returns rows the way PostgREST does, with embeds",

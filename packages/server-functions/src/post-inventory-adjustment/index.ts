@@ -5,6 +5,13 @@
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  inOrder,
+  many,
+  maybeSingle,
+  rpcRows,
+  single
+} from "@carbon/database/rows";
+import {
   buildBatchSplitRecords,
   datetime,
   isFullDraw,
@@ -21,7 +28,6 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
-import { inOrder, many, maybeSingle, rpcRows, single } from "../lib/rows";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost";
 
 // settleQuantity needs the lot's CURRENT status to know whether to preserve it

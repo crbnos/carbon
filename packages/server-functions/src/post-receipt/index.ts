@@ -9,6 +9,17 @@ import {
 } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  contains,
+  inOrder,
+  lt,
+  many,
+  maybeSingle,
+  neq,
+  single,
+  type Tables,
+  updateRows
+} from "@carbon/database/rows";
+import {
   resolveFeatureSamplingPlan,
   resolveSamplingPlan,
   type SamplingStandard
@@ -37,17 +48,6 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import {
-  contains,
-  inOrder,
-  lt,
-  many,
-  maybeSingle,
-  neq,
-  single,
-  type Tables,
-  updateRows
-} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-receipt");
 

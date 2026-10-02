@@ -7,7 +7,7 @@ import {
   type Database,
   isKysely
 } from "@carbon/database";
-import { single } from "./rows";
+import { single } from "@carbon/database/rows";
 
 /** The company's posting accounts. Pass `db` (or `trx`); a Supabase client still works. */
 export async function getDefaultPostingGroup(

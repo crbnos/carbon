@@ -18,6 +18,7 @@ import {
   type SharedTakes,
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
+import { contains, inOrder, many, single } from "@carbon/database/rows";
 import {
   getNextSequence,
   getNextSerialNumbers
@@ -62,7 +63,6 @@ import {
   createAdjustmentJournal,
   valueMovement
 } from "../lib/post-adjustment";
-import { contains, inOrder, many, single } from "../lib/rows";
 import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded

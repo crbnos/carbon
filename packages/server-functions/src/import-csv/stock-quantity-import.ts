@@ -27,6 +27,7 @@
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { many, single } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -47,7 +48,6 @@ import {
   createAdjustmentJournal,
   loadOpenCostLayers
 } from "../lib/post-adjustment";
-import { many, single } from "../lib/rows";
 import { chunked } from "./chunks";
 import {
   buildStockItemMap,

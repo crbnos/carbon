@@ -5,6 +5,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { round } from "./precision.ts";
+import {
+  deleteRows,
+  insertRows,
+  isNull,
+  many,
+  notIn,
+  single,
+  updateRows
+} from "./rows.ts";
 import type { Database } from "./types.ts";
 import { type AnyPostgresClient, isKysely } from "./utils.ts";
 
@@ -376,25 +385,42 @@ const costCategoryKeys: CostCategoryKey[] = [
 type CostEffects = Record<CostCategoryKey, ((qty: number) => number)[]>;
 
 async function getSupplierPriceBreaksForItems(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   itemIds: string[]
 ): Promise<SupplierPriceMap> {
   if (!itemIds.length) return {};
 
-  const supplierParts = await client
-    .from("supplierPart")
-    .select("id, itemId, unitPrice")
-    .in("itemId", itemIds);
+  const supplierParts = isKysely(client)
+    ? await many(
+        client,
+        "supplierPart",
+        { itemId: itemIds },
+        { columns: ["id", "itemId", "unitPrice"] }
+      )
+    : await client
+        .from("supplierPart")
+        .select("id, itemId, unitPrice")
+        .in("itemId", itemIds);
 
   if (!supplierParts.data?.length) return {};
 
   const supplierPartIds = supplierParts.data.map((sp) => sp.id);
 
-  const prices = await client
-    .from("supplierPartPrice")
-    .select("supplierPartId, quantity, unitPrice")
-    .in("supplierPartId", supplierPartIds)
-    .order("quantity", { ascending: true });
+  const prices = isKysely(client)
+    ? await many(
+        client,
+        "supplierPartPrice",
+        { supplierPartId: supplierPartIds },
+        {
+          columns: ["supplierPartId", "quantity", "unitPrice"],
+          orderBy: ["quantity"]
+        }
+      )
+    : await client
+        .from("supplierPartPrice")
+        .select("supplierPartId, quantity, unitPrice")
+        .in("supplierPartId", supplierPartIds)
+        .order("quantity", { ascending: true });
 
   const spToItem = new Map<string, string>();
   for (const sp of supplierParts.data) {
@@ -521,8 +547,13 @@ function normalizeTimeToHours(
   return { fixedHours, hoursPerUnit };
 }
 
+/**
+ * Recomputes a quote line's system prices. Given a Kysely handle it reads and
+ * writes over the direct connection; given a Supabase client, through
+ * PostgREST.
+ */
 export async function calculateQuoteLinePrices(
-  client: SupabaseClient<Database>,
+  client: AnyPostgresClient,
   quoteId: string,
   quoteLineId: string,
   companyId: string,
@@ -530,20 +561,49 @@ export async function calculateQuoteLinePrices(
 ) {
   // 1. Fetch data in parallel
   const [quoteLineResult, settingsResult, quoteResult, operationsResult] =
-    await Promise.all([
-      client
-        .from("quoteLine")
-        .select("quantity, methodType, unitPricePrecision")
-        .eq("id", quoteLineId)
-        .single(),
-      client
-        .from("companySettings")
-        .select("quoteLineCategoryMarkups")
-        .eq("id", companyId)
-        .single(),
-      client.from("quote").select("exchangeRate").eq("id", quoteId).single(),
-      client.from("quoteOperation").select("*").eq("quoteLineId", quoteLineId)
-    ]);
+    isKysely(client)
+      ? [
+          await single(
+            client,
+            "quoteLine",
+            { id: quoteLineId },
+            { columns: ["quantity", "methodType", "unitPricePrecision"] }
+          ),
+          await single(
+            client,
+            "companySettings",
+            { id: companyId },
+            { columns: ["quoteLineCategoryMarkups"] }
+          ),
+          await single(
+            client,
+            "quote",
+            { id: quoteId },
+            { columns: ["exchangeRate"] }
+          ),
+          await many(client, "quoteOperation", { quoteLineId })
+        ]
+      : await Promise.all([
+          client
+            .from("quoteLine")
+            .select("quantity, methodType, unitPricePrecision")
+            .eq("id", quoteLineId)
+            .single(),
+          client
+            .from("companySettings")
+            .select("quoteLineCategoryMarkups")
+            .eq("id", companyId)
+            .single(),
+          client
+            .from("quote")
+            .select("exchangeRate")
+            .eq("id", quoteId)
+            .single(),
+          client
+            .from("quoteOperation")
+            .select("*")
+            .eq("quoteLineId", quoteLineId)
+        ]);
 
   if (quoteLineResult.error) throw new Error("Failed to get quote line");
   if (settingsResult.error) throw new Error("Failed to get company settings");
@@ -574,11 +634,18 @@ export async function calculateQuoteLinePrices(
   // Rows whose price was stated by a person or an external system
   // (priceSource = 'manual') are never recomputed. Mirrors decideRecalcPricing
   // in sales.utils.ts.
-  const existingPricesResult = await client
-    .from("quoteLinePrice")
-    .select("quantity, priceSource")
-    .eq("quoteLineId", quoteLineId)
-    .eq("companyId", companyId);
+  const existingPricesResult = isKysely(client)
+    ? await many(
+        client,
+        "quoteLinePrice",
+        { quoteLineId, companyId },
+        { columns: ["quantity", "priceSource"] }
+      )
+    : await client
+        .from("quoteLinePrice")
+        .select("quantity, priceSource")
+        .eq("quoteLineId", quoteLineId)
+        .eq("companyId", companyId);
   // A failed read must abort: treating it as "no manual rows" would let the
   // delete/replace below wipe manually priced rows.
   if (existingPricesResult.error)
@@ -595,11 +662,18 @@ export async function calculateQuoteLinePrices(
 
   // 2. Fix Buy material costs with supplier price breaks; resolveBuyUnitCost
   //    leaves a typed cost alone.
-  const buyMaterials = await client
-    .from("quoteMaterial")
-    .select("id, itemId, unitCost, unitCostSource")
-    .eq("quoteLineId", quoteLineId)
-    .eq("methodType", "Purchase to Order");
+  const buyMaterials = isKysely(client)
+    ? await many(
+        client,
+        "quoteMaterial",
+        { quoteLineId, methodType: "Purchase to Order" },
+        { columns: ["id", "itemId", "unitCost", "unitCostSource"] }
+      )
+    : await client
+        .from("quoteMaterial")
+        .select("id, itemId, unitCost, unitCostSource")
+        .eq("quoteLineId", quoteLineId)
+        .eq("methodType", "Purchase to Order");
 
   const buyItemIds = [
     ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
@@ -610,20 +684,38 @@ export async function calculateQuoteLinePrices(
     if (mat.unitCostSource === "manual") continue;
     const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
-      await client
-        .from("quoteMaterial")
-        .update({ unitCost: price })
-        .eq("id", mat.id);
+      if (isKysely(client)) {
+        await updateRows(
+          client,
+          "quoteMaterial",
+          { unitCost: price },
+          {
+            id: mat.id
+          }
+        );
+      } else {
+        await client
+          .from("quoteMaterial")
+          .update({ unitCost: price })
+          .eq("id", mat.id);
+      }
     }
   }
 
   // 3. Build the quote method tree
-  const rootMethod = await client
-    .from("quoteMakeMethod")
-    .select("id")
-    .eq("quoteLineId", quoteLineId)
-    .is("parentMaterialId", null)
-    .single();
+  const rootMethod = isKysely(client)
+    ? await single(
+        client,
+        "quoteMakeMethod",
+        { quoteLineId, parentMaterialId: isNull },
+        { columns: ["id"] }
+      )
+    : await client
+        .from("quoteMakeMethod")
+        .select("id")
+        .eq("quoteLineId", quoteLineId)
+        .is("parentMaterialId", null)
+        .single();
 
   if (rootMethod.error) throw new Error("Failed to get root make method");
 
@@ -902,6 +994,20 @@ export async function calculateQuoteLinePrices(
   // 7. Replace system-priced rows; manual rows for current quantities are
   // preserved untouched. Manual rows for removed quantity breaks are deleted
   // along with the system rows.
+  if (isKysely(client)) {
+    await deleteRows(client, "quoteLinePrice", {
+      quoteLineId,
+      companyId,
+      ...(manualQuantities.size > 0
+        ? { quantity: notIn([...manualQuantities]) }
+        : {})
+    });
+    if (priceRows.length > 0) {
+      await insertRows(client, "quoteLinePrice", priceRows);
+    }
+    return;
+  }
+
   let deleteQuery = client
     .from("quoteLinePrice")
     .delete()

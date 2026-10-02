@@ -25,6 +25,14 @@ import {
 } from "@carbon/database/methods";
 import { effectiveReplenishment } from "@carbon/database/mrp-engine";
 import {
+  isNull,
+  many,
+  maybeSingle,
+  selectRow,
+  selectRows,
+  single
+} from "@carbon/database/rows";
+import {
   getNextRevisionSequence,
   getNextSequence
 } from "@carbon/database/sequence";
@@ -49,14 +57,6 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import {
-  isNull,
-  many,
-  maybeSingle,
-  selectRow,
-  selectRows,
-  single
-} from "../lib/rows";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
@@ -3336,7 +3336,7 @@ export const getMethod = defineServerFn({
           });
 
         await calculateQuoteLinePrices(
-          await ctx.supabase(),
+          db,
           quoteId,
           quoteLineId,
           companyId,
@@ -7180,7 +7180,7 @@ export const getMethod = defineServerFn({
         });
 
         await calculateQuoteLinePrices(
-          await ctx.supabase(),
+          db,
           targetQuoteId,
           targetQuoteLineId,
           companyId,

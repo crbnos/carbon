@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { type RawBuilder, sql } from "kysely";
+import type { Kysely, KyselyDatabase } from "./client.ts";
+import type { Database } from "./types.ts";
 
 type Relations = Database["public"]["Tables"] & Database["public"]["Views"];
 type RelationName = keyof Relations & string;
@@ -18,7 +18,7 @@ export const isNull = Symbol("IS NULL");
 
 /** A comparison other than equality: PostgREST's `.neq`, `.lt`, `.contains`, … */
 type Comparison = {
-  readonly op: "<>" | "<" | "<=" | ">" | ">=" | "@>" | "IS NOT NULL";
+  readonly op: "<>" | "<" | "<=" | ">" | ">=" | "@>" | "IS NOT NULL" | "NOT IN";
   readonly value?: unknown;
 };
 export const neq = (value: unknown): Comparison => ({ op: "<>", value });
@@ -28,6 +28,11 @@ export const gt = (value: unknown): Comparison => ({ op: ">", value });
 export const gte = (value: unknown): Comparison => ({ op: ">=", value });
 /** `.contains(column, value)` on a jsonb column: the form its GIN index serves. */
 export const contains = (value: unknown): Comparison => ({ op: "@>", value });
+/** `.not(column, "in", values)`: a null column matches neither way. */
+export const notIn = (values: readonly unknown[]): Comparison => ({
+  op: "NOT IN",
+  value: values
+});
 /** `.not(column, "is", null)`. */
 export const notNull: Comparison = { op: "IS NOT NULL" };
 
@@ -172,6 +177,7 @@ function conditionsFor(alias: string, where: Record<string, unknown>) {
     if (Array.isArray(value)) return sql`${ref} = ANY(${value})`;
     if (isComparison(value)) {
       if (value.op === "IS NOT NULL") return sql`${ref} IS NOT NULL`;
+      if (value.op === "NOT IN") return sql`NOT (${ref} = ANY(${value.value}))`;
       if (value.op === "@>") {
         return sql`${ref} @> ${JSON.stringify(value.value)}::jsonb`;
       }

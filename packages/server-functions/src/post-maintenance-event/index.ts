@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { single } from "@carbon/database/rows";
 import { credit, datetime, debit, indexBy } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -10,7 +11,6 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import { single } from "../lib/rows";
 import {
   diffLaborGroups,
   type LaborDimension,

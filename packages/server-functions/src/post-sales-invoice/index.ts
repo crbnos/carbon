@@ -7,6 +7,14 @@ import {
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
+import {
+  inOrder,
+  many,
+  maybeSingle,
+  single,
+  type Tables,
+  updateRows
+} from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -35,14 +43,6 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import {
-  inOrder,
-  many,
-  maybeSingle,
-  single,
-  type Tables,
-  updateRows
-} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-sales-invoice");
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCompanyTimeZone, journalReference } from "@carbon/database";
+import { inOrder, single } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { credit, datetime, debit, round } from "@carbon/utils";
 import { nanoid } from "nanoid";
@@ -10,7 +11,6 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
-import { inOrder, single } from "../lib/rows";
 
 export const closeJobInput = z.object({
   jobId: z.string()

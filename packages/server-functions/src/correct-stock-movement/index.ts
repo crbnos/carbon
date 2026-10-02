@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  inOrder,
+  many,
+  maybeSingle,
+  rpcRows,
+  single
+} from "@carbon/database/rows";
 import { equals, round, statusAfterQuantityChange } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -9,7 +16,6 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { getAccountingPeriodForDate } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
-import { inOrder, many, maybeSingle, rpcRows, single } from "../lib/rows";
 
 // Corrects a posted stock movement by inserting ONE opposite (delta) movement
 // linked to the original via itemLedger.correctionOfItemLedgerId. The caller

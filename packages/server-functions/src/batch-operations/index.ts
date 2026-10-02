@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { many, neq, updateRows } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   assertAllOperationsClaimed,
@@ -26,7 +27,6 @@ import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { issue } from "../issue";
-import { many, neq, updateRows } from "../lib/rows";
 import { postProductionEvent } from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";
 

@@ -9,6 +9,18 @@ import {
   journalReference
 } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  contains,
+  deleteRows,
+  inOrder,
+  insertRows,
+  many,
+  maybeSingle,
+  neq,
+  single,
+  type Tables,
+  updateRows
+} from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -33,18 +45,6 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
-import {
-  contains,
-  deleteRows,
-  inOrder,
-  insertRows,
-  many,
-  maybeSingle,
-  neq,
-  single,
-  type Tables,
-  updateRows
-} from "../lib/rows";
 
 const logger = getLogger("server-functions", "post-shipment");
 

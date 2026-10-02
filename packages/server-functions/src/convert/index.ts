@@ -5,6 +5,15 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { toJson } from "@carbon/database/json";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import {
+  inOrder,
+  insertRows,
+  many,
+  maybeSingle,
+  rpcValue,
+  single,
+  type Tables
+} from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -18,15 +27,6 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { getMethod } from "../get-method";
-import {
-  inOrder,
-  insertRows,
-  many,
-  maybeSingle,
-  rpcValue,
-  single,
-  type Tables
-} from "../lib/rows";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");

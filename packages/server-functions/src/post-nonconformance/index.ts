@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
+import { inOrder, many, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -15,7 +16,6 @@ import {
   createAdjustmentJournal
 } from "../lib/post-adjustment";
 import type { AdjustmentItemCost } from "../lib/post-adjustment-cost";
-import { inOrder, many, single } from "../lib/rows";
 
 // The GL/cost posting path for inspection-reject and NCR-disposition inventory
 // write-offs. The caller (inspection reject route / closeIssue) owns the

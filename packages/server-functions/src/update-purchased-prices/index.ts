@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
+import { gte, inOrder, many, maybeSingle } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -10,7 +11,6 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { gte, inOrder, many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "update-purchased-prices");
 

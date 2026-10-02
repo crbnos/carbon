@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Database, getCompanyTimeZone } from "@carbon/database";
+import { many, notNull, single } from "@carbon/database/rows";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -13,7 +14,6 @@ import {
   bookAdjustment,
   createAdjustmentJournal
 } from "../lib/post-adjustment";
-import { many, notNull, single } from "../lib/rows";
 import { resolveCountedEntity } from "./count-guards";
 import { planInventoryCountPost } from "./plan-post";
 

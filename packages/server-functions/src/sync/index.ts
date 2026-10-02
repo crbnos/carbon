@@ -3,13 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { insertRows, many, maybeSingle } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { datetime, getReadableIdWithRevision } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { insertRows, many, maybeSingle } from "../lib/rows";
 
 const logger = getLogger("server-functions", "sync");
 

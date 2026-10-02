@@ -60,7 +60,7 @@ resets after a failed build, so one bad start does not poison later calls.
   never a caller's RLS client. Prefer `ctx.db`: in production a PostgREST call takes
   about 52 ms at the median and a direct statement 4.5 ms, so a function that reads
   through the Supabase client pays for every lookup ten times over.
-- MUST use `src/lib/rows.ts` for a read whose rows are copied or compared as PostgREST
+- MUST use `@carbon/database/rows` for a read whose rows are copied or compared as PostgREST
   would return them: `selectRows` / `selectRow`, or `single` / `maybeSingle` / `many`
   for code written against `{ data, error }`. They go through `to_jsonb`, so timestamps
   stay strings at full precision (a Kysely row hands back a `Date` cut to the

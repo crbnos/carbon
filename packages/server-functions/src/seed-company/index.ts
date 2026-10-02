@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { single, updateRows } from "@carbon/database/rows";
 import {
   accountDefaults,
   accounts,
@@ -32,7 +33,6 @@ import type { Insertable, Kysely } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { single, updateRows } from "../lib/rows";
 import { resolveShippingDefault } from "./shipping-default";
 
 const logger = getLogger("server-functions", "seed-company");
