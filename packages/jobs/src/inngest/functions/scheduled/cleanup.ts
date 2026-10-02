@@ -3,12 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  LEGACY_PRIVATE_BUCKET,
-  storage,
-  TEMP_STAGING_BUCKET
-} from "@carbon/files";
+import { LEGACY_PRIVATE_BUCKET, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
+import { filterEmpty } from "@carbon/utils";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -39,6 +36,25 @@ async function listStorageObjects(where: ReturnType<typeof sql>) {
   } catch (error) {
     return { data: [], error };
   }
+}
+
+/**
+ * The staged names that also exist in their company's bucket or the legacy
+ * shared one. One query: probing each name over HTTP was two requests per
+ * object, every night, for objects that are referenced and never pruned.
+ */
+async function findDurableCopies(names: string[]) {
+  const buckets = [
+    LEGACY_PRIVATE_BUCKET,
+    ...new Set(filterEmpty(names.map((name) => name.split("/")[0])))
+  ];
+  const { rows } = await sql<{ name: string }>`
+    SELECT DISTINCT name FROM storage.objects
+    WHERE bucket_id = ANY(${buckets}::text[])
+      AND name = ANY(${names}::text[])
+      AND bucket_id IN (${LEGACY_PRIVATE_BUCKET}, split_part(name, '/', 1))
+  `.execute(getJobDatabaseClient());
+  return new Set(rows.map((row) => row.name));
 }
 
 type NotifyEvent = {
@@ -396,28 +412,16 @@ export const cleanupFunction = inngest.createFunction(
       // holding a temp-staging source pointer). Once the durable copy exists,
       // the staged one is redundant regardless of size or references: every
       // reader probes/falls back to `private`.
-      const relocated = new Set<string>();
-      const CHUNK = 20;
       // A durable copy may live in the company's own bucket (current pipeline)
-      // or the legacy shared `private` bucket (pre-migration relocations);
-      // `info` probes both. Object keys start with the companyId segment, and
-      // a key without one can't have a durable copy anywhere.
-      const probeDurableCopy = async (name: string) => {
-        const companyId = name.split("/")[0];
-        if (!companyId) return null;
-        const found = await storage(serviceRole)
-          .company(companyId)
-          .info(name)
-          .then((r) => !r.error)
-          .catch(() => false);
-        return found ? name : null;
-      };
-      for (let i = 0; i < staleNames.length; i += CHUNK) {
-        const chunk = staleNames.slice(i, i + CHUNK);
-        const probes = await Promise.all(chunk.map(probeDurableCopy));
-        for (const name of probes) {
-          if (name) relocated.add(name);
-        }
+      // or the legacy shared `private` bucket (pre-migration relocations).
+      // Object keys start with the companyId segment, and a key without one
+      // can't have a durable copy anywhere.
+      let relocated: Set<string>;
+      try {
+        relocated = await findDurableCopies(staleNames);
+      } catch (error) {
+        logger.error("Error finding durable copies of staged raws", { error });
+        return;
       }
 
       // Rule 2 — ORPHANED: no modelUpload points at it via EITHER column
