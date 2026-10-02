@@ -9,6 +9,7 @@ Shared UI component library — primitives, layout, data display, and overlays b
 - **Components live flat in `src/`** (e.g. `src/Button.tsx`), not under a `components/` subdirectory. Follow this convention for new components.
 - **Concentric border radius**: outer radius = inner radius + padding. Card shell is `rounded-lg`; don't re-add borders/radius on CardContent.
 - **Popover inside Drawer/Dialog**: `stopPropagation` on `onWheel`/`onTouchMove` of `PopoverContent` to prevent scroll-lock from swallowing events.
+- **Drawer closing animation**: the panel slides out only when the `Drawer` stays mounted and its `open` prop goes false. `{item && <Drawer open />}` removes it in the same render, so nothing animates — keep the record while it closes (`useDrawerItem` in the ERP, `~/hooks`). The positioning div in `DrawerPortal` runs a no-op exit animation matched to the panel's closing duration; Radix unmounts the portal as soon as that div stops animating, so change the two durations together.
 
 ## Ask First
 

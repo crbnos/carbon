@@ -58,7 +58,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, useUser } from "~/hooks";
+import { useDrawerItem, usePermissions, useUser } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import {
@@ -417,8 +417,14 @@ const ProductionPlanningTable = ({
     [setFenceDate]
   );
 
-  const [selectedItem, setSelectedItem] =
-    useState<ProductionPlanningItem | null>(null);
+  // The drawer stays mounted, on the last selected part, while it slides out.
+  const {
+    item: selectedItem,
+    isOpen: isDrawerOpen,
+    key: drawerKey,
+    open: openDrawer,
+    close: closeDrawer
+  } = useDrawerItem<ProductionPlanningItem>();
 
   const setOrders = useCallback(
     (item: ProductionPlanningItem, orders: ProductionOrder[]) => {
@@ -549,7 +555,7 @@ const ProductionPlanningTable = ({
               // The row itself toggles its expanded actions on click; this
               // opens the drawer instead, so the click must not reach it.
               event.stopPropagation();
-              setSelectedItem(row.original);
+              openDrawer(row.original);
             }}
           >
             <ItemThumbnail
@@ -828,7 +834,7 @@ const ProductionPlanningTable = ({
                 isDisabled={isDisabled || isBlocked}
                 onClick={(event) => {
                   event.stopPropagation();
-                  setSelectedItem(row.original);
+                  openDrawer(row.original);
                 }}
               >
                 {isBlocked ? (
@@ -945,7 +951,7 @@ const ProductionPlanningTable = ({
             assignee: user.id
           })
         }
-        onOrder={() => setSelectedItem(row)}
+        onOrder={() => openDrawer(row)}
       />
     ),
     [
@@ -953,7 +959,8 @@ const ProductionPlanningTable = ({
       user.id,
       canUpdateActions,
       isActionsBusy,
-      submitActions
+      submitActions,
+      openDrawer
     ]
   );
 
@@ -1022,6 +1029,7 @@ const ProductionPlanningTable = ({
 
       {selectedItem && (
         <ProductionPlanningOrderDrawer
+          key={drawerKey}
           locationId={locationId}
           row={selectedItem}
           orders={
@@ -1037,8 +1045,8 @@ const ProductionPlanningTable = ({
           actionHandlers={actionHandlers}
           setOrders={setOrders}
           periods={periods}
-          isOpen={!!selectedItem}
-          onClose={() => setSelectedItem(null)}
+          isOpen={isDrawerOpen}
+          onClose={closeDrawer}
         />
       )}
     </Loading>

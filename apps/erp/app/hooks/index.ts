@@ -23,6 +23,7 @@ import {
 } from "./useCurrencies";
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
 import { useDateFormatter } from "./useDateFormatter";
+import { useDrawerItem } from "./useDrawerItem";
 import { useFileUpload } from "./useFileUpload";
 import { useFlags } from "./useFlags";
 import { useGooglePlaces } from "./useGooglePlaces";
@@ -59,6 +60,7 @@ export {
   useCompanyToday,
   useCurrencyFormatter,
   useDateFormatter,
+  useDrawerItem,
   useFlags,
   useGooglePlaces,
   useIdle,

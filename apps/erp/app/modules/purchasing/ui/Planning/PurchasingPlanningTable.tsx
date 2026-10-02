@@ -63,7 +63,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, useUser } from "~/hooks";
+import { useDrawerItem, usePermissions, useUser } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
@@ -465,8 +465,15 @@ const PlanningTable = memo(
       [setFenceDate]
     );
 
-    const [selectedItem, setSelectedItem] =
-      useState<PurchasingPlanningItem | null>(null);
+    // The drawer stays mounted, on the last selected part, while it slides out.
+    const {
+      item: selectedItem,
+      setItem: setSelectedItem,
+      isOpen: isDrawerOpen,
+      key: drawerKey,
+      open: openDrawer,
+      close: closeDrawer
+    } = useDrawerItem<PurchasingPlanningItem>();
 
     const setOrders = useCallback(
       (item: PurchasingPlanningItem, orders: PlannedOrder[]) => {
@@ -607,7 +614,7 @@ const PlanningTable = memo(
                 // The row itself toggles its expanded actions on click; this
                 // opens the drawer instead, so the click must not reach it.
                 event.stopPropagation();
-                setSelectedItem(row.original);
+                openDrawer(row.original);
               }}
             >
               <ItemThumbnail
@@ -929,7 +936,7 @@ const PlanningTable = memo(
                   isDisabled={isDisabled || isBlocked}
                   onClick={(event) => {
                     event.stopPropagation();
-                    setSelectedItem(row.original);
+                    openDrawer(row.original);
                   }}
                 >
                   {isBlocked ? (
@@ -1046,7 +1053,7 @@ const PlanningTable = memo(
               assignee: user.id
             })
           }
-          onOrder={() => setSelectedItem(row)}
+          onOrder={() => openDrawer(row)}
         />
       ),
       [
@@ -1054,7 +1061,8 @@ const PlanningTable = memo(
         user.id,
         canUpdateActions,
         isActionsBusy,
-        submitActions
+        submitActions,
+        openDrawer
       ]
     );
 
@@ -1124,6 +1132,7 @@ const PlanningTable = memo(
 
         {selectedItem && (
           <PurchasingPlanningOrderDrawer
+            key={drawerKey}
             locationId={locationId}
             selectedItem={selectedItem}
             setSelectedItem={setSelectedItem}
@@ -1141,8 +1150,8 @@ const PlanningTable = memo(
             actionHandlers={actionHandlers}
             setOrders={setOrders}
             periods={periods}
-            isOpen={!!selectedItem}
-            onClose={() => setSelectedItem(null)}
+            isOpen={isDrawerOpen}
+            onClose={closeDrawer}
             onSupplierChange={(itemId, supplierId) => {
               setSuppliersMap((prev) => ({
                 ...prev,

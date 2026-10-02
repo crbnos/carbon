@@ -24,17 +24,26 @@ const DrawerTrigger = DialogPrimitive.Trigger;
 
 const DrawerCloseButton = DialogPrimitive.Close;
 
-const portalVariants = cva("fixed inset-0 z-50 flex p-3", {
-  variants: {
-    position: {
-      top: "items-start",
-      bottom: "items-end",
-      left: "justify-start",
-      right: "justify-end"
-    }
-  },
-  defaultVariants: { position: "right" }
-});
+// Radix keeps a closing dialog mounted only while the element it wraps is
+// animating, and what the portal wraps is this positioning div, not the panel.
+// So the div runs a no-op exit animation for as long as its panel is closing
+// (`animate-out` with no modifiers animates to the element's own state);
+// without it the portal removes the panel before it can slide out. The
+// duration must match the panel's closing duration below.
+const portalVariants = cva(
+  "fixed inset-0 z-50 flex p-3 [&:has(>[role=dialog][data-state=closed])]:animate-out [&:has(>[role=dialog][data-state=closed])]:duration-200",
+  {
+    variants: {
+      position: {
+        top: "items-start",
+        bottom: "items-end",
+        left: "justify-start",
+        right: "justify-end"
+      }
+    },
+    defaultVariants: { position: "right" }
+  }
+);
 
 interface DrawerPortalProps
   extends DialogPrimitive.DialogPortalProps,
@@ -81,10 +90,12 @@ const sheetVariants = cva(
   {
     variants: {
       position: {
-        top: "animate-in slide-in-from-top w-full duration-300",
-        bottom: "animate-in slide-in-from-bottom w-full duration-300",
-        left: "animate-in slide-in-from-left h-full duration-300",
-        right: "animate-in slide-in-from-right h-full duration-300"
+        top: "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top w-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
+        bottom:
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom w-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
+        left: "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left h-full data-[state=open]:duration-300 data-[state=closed]:duration-200",
+        right:
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right h-full data-[state=open]:duration-300 data-[state=closed]:duration-200"
       },
       size: {
         content: "",
