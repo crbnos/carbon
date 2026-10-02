@@ -11,8 +11,28 @@ import {
   noAuthzDdlInMigrations
 } from "./no-authz-ddl-in-migrations";
 
-const check = noAuthzDdlInMigrations(["get_companies_with_employee_role"]);
+const check = noAuthzDdlInMigrations([
+  {
+    schema: "public",
+    name: "get_companies_with_employee_role",
+    file: "packages/database/src/authz/helpers/get_companies_with_employee_role.sql",
+    since: "20260927000000"
+  },
+  {
+    schema: "public",
+    name: "dispatch_event_batch",
+    file: "packages/database/src/event-system/functions/dispatch_event_batch.sql",
+    since: "20261002114954"
+  },
+  {
+    schema: "util",
+    name: "wake_event_queue",
+    file: "packages/database/src/event-system/functions/util.wake_event_queue.sql",
+    since: "20261002114954"
+  }
+]);
 const NEW = "20260928120000_widget.sql";
+const AFTER_EVENT_TAKEOVER = "20261003120000_widget.sql";
 
 describe("noAuthzDdlInMigrations", () => {
   it("flags CREATE POLICY and ALTER POLICY in a new migration", () => {
@@ -43,6 +63,34 @@ CREATE POLICY "x" ON "storage"."objects" FOR INSERT WITH CHECK (true);`;
 ALTER FUNCTION "public"."get_companies_with_employee_role"() VOLATILE;
 DROP FUNCTION IF EXISTS get_companies_with_employee_role();`;
     expect(check.scan(NEW, sql)).toHaveLength(3);
+  });
+
+  it("flags an event-system function, in public or util, after its takeover", () => {
+    const sql = `CREATE OR REPLACE FUNCTION public.dispatch_event_batch() RETURNS trigger AS $$ $$;
+CREATE OR REPLACE FUNCTION util.wake_event_queue() RETURNS void AS $$ $$;`;
+    const found = check.scan(AFTER_EVENT_TAKEOVER, sql);
+    expect(found.map((v) => v.line)).toEqual([1, 2]);
+    expect(found[1]?.message).toContain("util.wake_event_queue.sql");
+  });
+
+  it("leaves event-system migrations from before the takeover as history", () => {
+    const sql =
+      "CREATE OR REPLACE FUNCTION public.dispatch_event_batch() RETURNS trigger AS $$ $$;";
+    expect(
+      check.scan(
+        "20261001195204_event-dispatch-skip-unchanged-updates.sql",
+        sql
+      )
+    ).toEqual([]);
+  });
+
+  it("tells a managed function from its namesake in another schema", () => {
+    expect(
+      check.scan(
+        AFTER_EVENT_TAKEOVER,
+        "CREATE OR REPLACE FUNCTION public.wake_event_queue() RETURNS void AS $$ $$;"
+      )
+    ).toEqual([]);
   });
 
   it("allows any other function", () => {

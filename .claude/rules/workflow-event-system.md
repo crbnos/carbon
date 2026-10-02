@@ -25,7 +25,8 @@ the procedure, not a re-description — it does not repeat that detail.
 | Served `functions` array | `packages/jobs/src/inngest/index.ts` |
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
-| `attach_event_trigger`, handler-type CHECK | `packages/database/supabase/migrations/` |
+| `attach_event_trigger`, `dispatch_event_batch` and the other event-system functions | `packages/database/src/event-system/functions/<name>.sql` (edit the file, then `authz migration`; see `authz-manifest.md`) |
+| Handler-type CHECK, per-table `attach_event_trigger(...)` calls | `packages/database/supabase/migrations/` |
 
 ## Use cases → handler type
 

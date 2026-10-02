@@ -7,7 +7,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
 - Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
-- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` (plus `nanoid` and `@supabase/supabase-js` for the typed `supabase.ts` wrappers) are allowed runtime deps.
+- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). The `async` module is the one exception to "no side effects": it schedules work the caller hands it and holds the host's lifetime hook. Only `@internationalized/date`, `zod` and `lodash.template` (plus `nanoid` and `@supabase/supabase-js` for the typed `supabase.ts` wrappers) are allowed runtime deps.
 
 ## Ask First
 
@@ -18,7 +18,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Never
 
 - Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate edge-shared utilities:** `precision.ts`, `accounting-currency.ts`, `accounting-posting.ts`, `payment-funding.ts`, `sales-posting-amounts.ts`, `batch-time-split.ts`, and `batch-compatibility.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes `precision.ts`). Those implementations live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. They are client-safe source imports, not imports of the server/database package, and not something to "fix" (same pattern as `packages/database/src/sampling.ts`). Keep their dependency graphs pure.
-- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers). File/image handling lives in `@carbon/files`, not here.
+- Add async/IO operations — utilities should be synchronous pure functions (the exceptions are the `supabase.ts` helpers, which are typed wrappers, and the `async` module, which runs the caller's own async work and does no IO itself). File/image handling lives in `@carbon/files`, not here.
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
 ## Validation Commands
@@ -38,6 +38,7 @@ pnpm --filter @carbon/utils typecheck
 | `payment-funding` | Shared effective-settlement, invoice/funding balance reducers and exact document-principal allocation; callers own tenant/status/reservation queries |
 | `sales-posting-amounts` | Pure sales component normalization and posting calculations |
 | `arrays` | Array manipulation, grouping, deduplication |
+| `async` | The `async` object: `Promise.all`, `Promise.allSettled` and `items.map` with a limit on how many run at once (`DEFAULT_CONCURRENCY`, 8, unless `{ concurrency }` says otherwise). `map(items, mapper)` follows p-map, `all(tasks)` and `allSettled(tasks)` take FUNCTIONS (a promise is already running) and keep the tuple's types, `limit(n)` follows p-limit. After a failure `map` / `all` start nothing further. Database calls inside a request need no limit of their own — the client `requirePermissions` returns has at most 8 in flight. `background(task, onError)` is fire-and-forget with a required error handler. `onBackground(hook)` registers what keeps the process alive for that work — both apps register Vercel's `waitUntil` in `entry.server.tsx` — so use `background` (never a bare unawaited promise) for anything a request leaves running |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |

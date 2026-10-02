@@ -25,7 +25,7 @@ Server-only Inngest jobs for event draining, integrations, notifications, workfl
 - Never use the async event system for data-integrity or real-time guarantees; use database constraints/interceptors.
 - Never write handler tables directly; database triggers route changes through `dispatch_event_batch()` and PGMQ.
 - Never give workflow actions a service-role/untagged business client; it bypasses the owner's permissions and workflow loop guards.
-- Never close the shared pool from a job function.
+- Never close the shared pool from a job function. A Node process has one pool (`getProcessPool()`, 16 connections) shared with the app's requests; `getJobDatabaseClient()` takes no size.
 
 ## Validation Commands
 

@@ -2,6 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  createMappingService,
+  ensureProviderSubscriptions,
+  getAccountingIntegration,
+  getProviderIntegration,
+  PAYMENT_PUSH_PROVIDERS,
+  ProviderID,
+  resolvePostingSyncSettings,
+  type SyncContext
+} from "@carbon/ee/accounting";
+import { trigger } from "@carbon/lib/trigger";
+import { NotificationEvent } from "@carbon/notifications";
+import { today } from "@internationalized/date";
 /**
  * Outbound accounting reconciliation sweep — the correctness guarantee
  * behind OUTBOUND push sync (v4 Pillar B, transport unified under the v5
@@ -21,25 +35,7 @@
  * The window is deliberately short (SWEEP_LOOKBACK_DAYS) — history beyond
  * it is the explicit backfill's job, never a silent mass-push.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  createMappingService,
-  ensureProviderSubscriptions,
-  getAccountingIntegration,
-  getProviderIntegration,
-  PAYMENT_PUSH_PROVIDERS,
-  ProviderID,
-  resolvePostingSyncSettings,
-  type SyncContext
-} from "@carbon/ee/accounting";
-import { trigger } from "@carbon/lib/trigger";
-import { NotificationEvent } from "@carbon/notifications";
-import { today } from "@internationalized/date";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type IsolatedStepOutcome,
@@ -702,10 +698,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
         id: `outbound-sweep-${target.providerId}-${target.companyId}`,
         target,
         fn: async () => {
-          // Process-lifetime cached pool shared with events/sync.ts and the
-          // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
+          const database = getJobDatabaseClient();
           return await sweepCompanyProvider({
             companyId: target.companyId,
             providerId: target.providerId,

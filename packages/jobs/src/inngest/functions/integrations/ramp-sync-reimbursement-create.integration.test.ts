@@ -31,7 +31,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
     const remoteIds: string[] = [];
 
     beforeAll(async () => {
-      db = getJobDatabaseClient(2);
+      db = getJobDatabaseClient();
       const row = await db
         .selectFrom("company")
         .innerJoin("employee", "employee.companyId", "company.id")

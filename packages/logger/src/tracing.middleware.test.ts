@@ -19,37 +19,54 @@ provider.register();
 
 beforeEach(() => exporter.reset());
 
-it("names each middleware span after its function", async () => {
-  const { namedMiddleware, routerInstrumentation } = await import(
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+it("records each middleware's own time on the request span, not what runs after it", async () => {
+  const { routerInstrumentation, timedMiddleware } = await import(
     "./tracing.server"
   );
 
-  type Handler = () => Promise<{ error?: Error }>;
-  let wrap: (call: Handler, info: never) => Promise<void> = async () =>
+  type Handle = () => Promise<{ error?: Error }>;
+  let request: (handle: Handle, info: never) => Promise<void> = async () =>
     undefined;
-  routerInstrumentation(provider.getTracer("test")).route?.({
-    id: "root",
-    instrument: (handlers: { middleware?: typeof wrap }) => {
-      if (handlers.middleware) wrap = handlers.middleware;
+  routerInstrumentation(provider.getTracer("test")).handler?.({
+    instrument: (handlers: { request?: typeof request }) => {
+      if (handlers.request) request = handlers.request;
     }
   } as never);
 
-  const requestIdMiddleware = async () => undefined;
-  const flashMiddleware = async () => undefined;
-  for (const run of namedMiddleware([requestIdMiddleware, flashMiddleware])) {
-    await wrap(
-      async () => {
-        await run();
-        return {};
-      },
-      { request: { method: "GET" }, pattern: "x" } as never
-    );
-  }
+  const [slow, quick] = timedMiddleware<Response>({
+    // 30 ms of its own before the rest of the request, which takes 60 ms.
+    slow: async (_args, next) => {
+      await sleep(30);
+      return next();
+    },
+    quick: (_args, next) => next()
+  });
 
-  expect(exporter.getFinishedSpans().map((span) => span.name)).toEqual([
-    "middleware requestIdMiddleware",
-    "middleware flashMiddleware"
-  ]);
+  await request(
+    async () => {
+      await slow?.({} as never, () =>
+        Promise.resolve(
+          quick?.({} as never, async () => {
+            await sleep(60);
+            return new Response();
+          }) as Response
+        )
+      );
+      return {};
+    },
+    { request: { method: "GET", url: "http://erp.test/x" } } as never
+  );
+
+  const spans = exporter.getFinishedSpans();
+  expect(spans.map((span) => span.name)).toEqual(["GET"]);
+  const attributes = spans[0]?.attributes ?? {};
+  const slowMs = attributes["carbon.middleware.slow.ms"] as number;
+  const quickMs = attributes["carbon.middleware.quick.ms"] as number;
+  expect(slowMs).toBeGreaterThanOrEqual(25);
+  expect(slowMs).toBeLessThan(55);
+  expect(quickMs).toBeLessThan(10);
 });
 
 it("wraps a call in a span and marks it failed when the call throws", async () => {

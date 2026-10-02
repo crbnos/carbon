@@ -103,14 +103,24 @@ async function isHoliday(
  *
  * Idempotent: a run whose `nextDueAt` is already in the future creates nothing
  * and re-writes the same value.
+ *
+ * `notificationGroup` is the company's `maintenanceDispatchNotificationGroup`
+ * (Settings → Resources), the same group a dispatch created in the MES notifies.
  */
 export async function generateDispatchesForSchedule(args: {
   serviceRole: ReturnType<typeof getCarbonServiceRole>;
   schedule: MaintenanceSchedule;
   companyId: string;
   currentDateTime: ReturnType<typeof now>;
+  notificationGroup: string[];
 }): Promise<number> {
-  const { serviceRole, schedule, companyId, currentDateTime } = args;
+  const {
+    serviceRole,
+    schedule,
+    companyId,
+    currentDateTime,
+    notificationGroup
+  } = args;
   const timeZone = currentDateTime.timeZone;
 
   let dispatchesCreated = 0;
@@ -312,30 +322,24 @@ export async function generateDispatchesForSchedule(args: {
       date: targetDateString
     });
 
-    // Get employees assigned to this work center to notify them
-    const { data: workCenterEmployees } = await (serviceRole as any)
-      .from("workCenterEmployee")
-      .select("userId")
-      .eq("workCenterId", schedule.workCenterId);
-
-    if (workCenterEmployees && workCenterEmployees.length > 0) {
-      const userIds = workCenterEmployees.map((e: any) => e.userId as string);
-      await inngest.send({
-        name: "carbon/notify",
-        data: {
-          event: NotificationEvent.MaintenanceDispatchCreated,
-          companyId,
-          documentId: newDispatch.id,
-          recipient: {
-            type: "users" as const,
-            userIds
+    if (notificationGroup.length > 0) {
+      try {
+        await inngest.send({
+          name: "carbon/notify",
+          data: {
+            event: NotificationEvent.MaintenanceDispatchCreated,
+            companyId,
+            documentId: newDispatch.id,
+            recipient: { type: "group" as const, groupIds: notificationGroup }
           }
-        }
-      });
-      log.info("Notified work center employees about dispatch", {
-        count: userIds.length,
-        dispatchId: sequenceData
-      });
+        });
+      } catch (error) {
+        log.error("Failed to notify about maintenance dispatch", {
+          scheduleId: schedule.id,
+          dispatchId: sequenceData,
+          error
+        });
+      }
     }
 
     // Calculate next due date based on frequency
@@ -392,7 +396,9 @@ export const dispatchFunction = inngest.createFunction(
         // Generate for every company; the schedule query below is the real
         // gate (only active schedules that are due within the advance window).
         const { data: companiesWithSettings, error: settingsError } =
-          await serviceRole.from("companySettings").select("id");
+          await serviceRole
+            .from("companySettings")
+            .select("id, maintenanceDispatchNotificationGroup");
 
         if (settingsError) {
           logger.error("Failed to fetch company settings", {
@@ -439,7 +445,9 @@ export const dispatchFunction = inngest.createFunction(
                 serviceRole,
                 schedule: schedule as MaintenanceSchedule,
                 companyId: settings.id,
-                currentDateTime
+                currentDateTime,
+                notificationGroup:
+                  settings.maintenanceDispatchNotificationGroup ?? []
               });
             } catch (err) {
               logger.error("Error processing schedule", {
@@ -507,11 +515,24 @@ export const generateMaintenanceForScheduleFunction = inngest.createFunction(
         return { dispatchesCreated: 0 };
       }
 
+      const { data: settings, error: settingsError } = await serviceRole
+        .from("companySettings")
+        .select("maintenanceDispatchNotificationGroup")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (settingsError) {
+        logger.error("Failed to load maintenance notification group", {
+          companyId,
+          error: settingsError
+        });
+      }
+
       const dispatchesCreated = await generateDispatchesForSchedule({
         serviceRole,
         schedule: schedule as MaintenanceSchedule,
         companyId,
-        currentDateTime
+        currentDateTime,
+        notificationGroup: settings?.maintenanceDispatchNotificationGroup ?? []
       });
 
       logger.info("Generated dispatches for schedule on demand", {

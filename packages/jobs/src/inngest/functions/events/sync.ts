@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { EventSchema } from "@carbon/database/event";
+import { ProviderID, SpendProviderID } from "@carbon/ee/accounting";
+import { groupBy } from "@carbon/utils";
+import { z } from "zod";
 /**
  * SYNC event handler — v5 reconciler shape
  * (.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D3).
@@ -23,16 +28,7 @@
  * DELETEs remain logged-and-skipped (DELETE sync is unimplemented; a
  * deleted row also reconciles to nothing by construction).
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import { EventSchema } from "@carbon/database/event";
-import { ProviderID, SpendProviderID } from "@carbon/ee/accounting";
-import { groupBy } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
-import { z } from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type DrainSummary,
@@ -99,12 +95,9 @@ export const syncFunction = inngest.createFunction(
       return `${companyId}:${provider}`;
     });
 
-    const pool = getPostgresConnectionPool(10);
-    const kysely = getPostgresClient(pool, PostgresDriver);
+    const kysely = getJobDatabaseClient();
     const client = getCarbonServiceRole();
 
-    // NOTE: the pool from getPostgresConnectionPool is a process-lifetime
-    // singleton (see lib/postgres) — do NOT end it per invocation.
     for (const [key, records] of Object.entries(byCompanyProvider)) {
       const [companyId, provider] = key.split(":");
 

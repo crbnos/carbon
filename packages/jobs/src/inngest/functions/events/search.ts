@@ -28,6 +28,8 @@ const SearchPayloadSchema = z.object({
 
 export type SearchPayload = z.infer<typeof SearchPayloadSchema>;
 
+const UNDEFINED_TABLE = "42P01";
+
 export const searchFunction = inngest.createFunction(
   {
     id: "event-handler-search",
@@ -127,6 +129,22 @@ export const searchFunction = inngest.createFunction(
               `.execute(pg);
             }
           } catch (error) {
+            // Deleting a company drops its search table while its events may
+            // still be queued. A missing table on a live company is a real
+            // failure and still throws.
+            if (
+              (error as { code?: string }).code === UNDEFINED_TABLE &&
+              !(await pg
+                .selectFrom("company")
+                .select("id")
+                .where("id", "=", companyId)
+                .executeTakeFirst())
+            ) {
+              logger.warn("Skipped search index events of a deleted company", {
+                companyId
+              });
+              return { updated: 0, deleted: 0, skipped: records.length };
+            }
             logger.error("Failed to write search index", { companyId, error });
             throw error;
           }

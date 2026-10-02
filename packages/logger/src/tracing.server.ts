@@ -34,7 +34,7 @@ import {
   ATTR_URL_PATH,
   ATTR_URL_QUERY
 } from "@opentelemetry/semantic-conventions";
-import type { ServerInstrumentation } from "react-router";
+import type { MiddlewareFunction, ServerInstrumentation } from "react-router";
 import { REDACTED, redactSearch } from "./redaction";
 
 const REQUEST_SPAN = createContextKey("carbon.request-span");
@@ -161,22 +161,35 @@ export function fetchSpanName(method: string, origin: string, path: string) {
 }
 
 /**
- * React Router reports a middleware by its route alone, so four root
- * middleware are four spans named `middleware root`. Wrapping the list names
- * each span after its function.
+ * The middleware in the order given, each one's OWN time recorded on the
+ * request span as `carbon.middleware.<key>.ms`: its total minus the time spent
+ * in what it calls next. A span per middleware cannot say that — it contains
+ * everything after it, so it reads as slow whenever a loader is. Named by key,
+ * not by the function's `name`, which the production build minifies.
  */
-export function namedMiddleware<
-  Middleware extends (...args: never[]) => unknown
->(middleware: Middleware[]): Middleware[] {
-  if (!enabled) return middleware;
-  return middleware.map(
-    (run) =>
-      ((...args) => {
-        if (run.name)
-          trace.getActiveSpan()?.updateName(`middleware ${run.name}`);
-        return run(...args);
-      }) as Middleware
-  );
+export function timedMiddleware<Result>(
+  middleware: Record<string, MiddlewareFunction<Result>>
+): MiddlewareFunction<Result>[] {
+  const entries = Object.entries(middleware);
+  if (!enabled) return entries.map(([, run]) => run);
+  return entries.map(([name, run]) => async (args, next) => {
+    const start = performance.now();
+    let downstream = 0;
+    try {
+      return await run(args, async () => {
+        const called = performance.now();
+        try {
+          return await next();
+        } finally {
+          downstream += performance.now() - called;
+        }
+      });
+    } finally {
+      annotateRequestSpan({
+        [`carbon.middleware.${name}.ms`]: performance.now() - start - downstream
+      });
+    }
+  });
 }
 
 // Inngest's event API takes the event key as a path segment (`POST /e/<key>`),
@@ -222,6 +235,50 @@ export function querySpanName(sql: string) {
     sql.trimStart().split(/\s+/, 1)[0]?.toUpperCase() || "QUERY";
   const table = sql.match(/\b(?:from|into|update)\s+(?:"\w+"\.)?"(\w+)"/i)?.[1];
   return table ? `${operation} ${table}` : operation;
+}
+
+/** The parts of a node-postgres `Pool` that tell whether `connect()` will wait. */
+type ObservablePool = {
+  connect: (...args: never[]) => unknown;
+  idleCount: number;
+  totalCount: number;
+  waitingCount: number;
+  options: { max?: number };
+};
+
+const TRACED_POOL = Symbol.for("carbon.tracing.pool");
+
+/**
+ * Query spans time only the query, so a request waiting for a free connection
+ * looked like a slow request with fast queries. When `connect()` cannot hand
+ * out an idle connection this records the wait as a span: `db pool wait` when
+ * the pool is full and the caller queues, `db connect` when it has to open a
+ * new connection. Taking an idle connection records nothing. Idempotent.
+ */
+export function traceConnectionWaits<P extends ObservablePool>(pool: P): P {
+  if (!enabled || TRACED_POOL in pool) return pool;
+  const connect = pool.connect.bind(pool) as (...args: unknown[]) => unknown;
+  Object.assign(pool, {
+    [TRACED_POOL]: true,
+    // The callback form is pg's own `pool.query`; only the promise form is
+    // awaited by a caller.
+    connect: (...args: unknown[]) => {
+      // Idle connections go to callers already queued first.
+      if (args.length > 0 || pool.idleCount > pool.waitingCount) {
+        return connect(...args);
+      }
+      const full = pool.totalCount >= (pool.options.max ?? 10);
+      return withSpan(
+        full ? "db pool wait" : "db connect",
+        {
+          "db.client.connection.pool.size": pool.totalCount,
+          "db.client.connection.pool.waiting": pool.waitingCount
+        },
+        () => connect() as Promise<unknown>
+      );
+    }
+  });
+  return pool;
 }
 
 /** Kysely `log` hook. Kysely reports a query after it ran, so the span is back-dated. */
@@ -281,6 +338,16 @@ function end(span: Span, error: Error | undefined) {
     span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
   }
   span.end();
+}
+
+/**
+ * Starts a span and returns what ends it, for a wait that someone else's call
+ * finishes. Does nothing when tracing is off.
+ */
+export function startSpan(name: string, attributes: Attributes): () => void {
+  if (!enabled) return () => undefined;
+  const span = trace.getTracer("carbon").startSpan(name, { attributes });
+  return () => span.end();
 }
 
 /** Runs `run` in a child span of whatever is active; a plain call when tracing is off. */
@@ -352,7 +419,6 @@ export function routerInstrumentation(
         };
 
       instrument({
-        middleware: traced("middleware"),
         loader: traced("loader"),
         action: traced("action")
       });

@@ -11,7 +11,7 @@ import { enableAuditLog } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
@@ -21,9 +21,22 @@ import {
   seedCompany
 } from "~/modules/settings";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "settings", "company");
+
+// The form lives in the topbar and only posts here. A tab left open across a
+// deployment cannot submit it: React Router reloads the document at this URL
+// instead, which without a loader is a 400. Send that reload back to the page
+// it came from.
+export function loader({ request }: LoaderFunctionArgs) {
+  const referrer = requestReferrer(request);
+  throw redirect(
+    referrer && !referrer.startsWith(path.to.newCompany)
+      ? referrer
+      : path.to.authenticatedRoot
+  );
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   try {

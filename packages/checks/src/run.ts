@@ -14,7 +14,11 @@ import type {
 } from "./check";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 import { moduleShape } from "./conformance/module-shape";
-import { noAuthzDdlInMigrations } from "./conformance/no-authz-ddl-in-migrations";
+import {
+  MANAGED_FUNCTION_SETS,
+  type ManagedFunction,
+  noAuthzDdlInMigrations
+} from "./conformance/no-authz-ddl-in-migrations";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
@@ -109,11 +113,21 @@ export function scanModules(
   return out;
 }
 
-/** The managed RLS helpers: one packages/database/src/authz/helpers/<name>.sql each. */
-export function loadAuthzHelperNames(root: string): string[] {
-  return readdirSync(join(root, "packages/database/src/authz/helpers"))
-    .filter((file) => file.endsWith(".sql"))
-    .map((file) => file.replace(/\.sql$/, ""));
+/** The managed functions: one `<name>.sql` (or `<schema>.<name>.sql`) file each. */
+export function loadManagedFunctions(root: string): ManagedFunction[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir, since }) =>
+    readdirSync(join(root, dir))
+      .filter((file) => file.endsWith(".sql"))
+      .map((file) => {
+        const [first = "", second] = file.replace(/\.sql$/, "").split(".");
+        return {
+          schema: second ? first : "public",
+          name: second ?? first,
+          file: `${dir}/${file}`,
+          since
+        };
+      })
+  );
 }
 
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
@@ -121,7 +135,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
-      noAuthzDdlInMigrations(loadAuthzHelperNames(root))
+      noAuthzDdlInMigrations(loadManagedFunctions(root))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),

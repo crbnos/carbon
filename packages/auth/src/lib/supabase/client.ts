@@ -26,17 +26,21 @@ const STORAGE_BACKOFF_MS = [500, 1000];
 // response headers and two retries on a 5xx or a dropped connection. The body
 // itself is not timed, so a large download is never cut off. Uploads, deletes
 // and everything outside storage pass straight through.
-const isStorageRead = (url: string, method: string) =>
+export const isStorageRead = (url: string, method: string) =>
   url.includes("/storage/v1/") &&
   (method === "GET" ||
     method === "HEAD" ||
     (method === "POST" && url.includes("/storage/v1/object/list")));
 
-export const storageReadFetch: typeof fetch = async (input, init) => {
-  const url = input instanceof Request ? input.url : String(input);
-  const method = (
+export const urlAndMethod = (input: RequestInfo | URL, init?: RequestInit) => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: (
     init?.method ?? (input instanceof Request ? input.method : "GET")
-  ).toUpperCase();
+  ).toUpperCase()
+});
+
+export const storageReadFetch: typeof fetch = async (input, init) => {
+  const { url, method } = urlAndMethod(input, init);
   if (!isStorageRead(url, method)) return fetch(input, init);
 
   for (let attempt = 0; ; attempt++) {
@@ -61,9 +65,11 @@ export const storageReadFetch: typeof fetch = async (input, init) => {
   }
 };
 
+/** `fetch` replaces `storageReadFetch` — on the server, `requestFetch()`. */
 export const getCarbonClient = (
   supabaseKey: string,
-  accessToken?: string
+  accessToken?: string,
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
   // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
   // not sent as the bearer on Edge Function calls, and those functions tell a
@@ -79,7 +85,7 @@ export const getCarbonClient = (
         autoRefreshToken: false,
         persistSession: false
       },
-      global: { headers, fetch: storageReadFetch }
+      global: { headers, fetch }
     }
   );
 
@@ -87,12 +93,13 @@ export const getCarbonClient = (
 };
 
 export const getCarbonAPIKeyClient = (
-  apiKey: string
+  apiKey: string,
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
   const client = createClient(SUPABASE_INTERNAL_URL!, SUPABASE_ANON_KEY!, {
     db,
     global: {
-      fetch: storageReadFetch,
+      fetch,
       headers: {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         "carbon-key": apiKey

@@ -9,17 +9,30 @@ import { parse } from "libpg-query";
 import type { Client } from "pg";
 
 /**
- * The RLS and auth helper functions. `helpers/<name>.sql` is the only place each is
- * defined; migrations must not create or redefine them. Sync applies a file only when the
- * function it produces differs from the live one.
+ * The managed functions: the RLS and auth helpers (`helpers/<name>.sql`) and the event
+ * system's functions (`../event-system/functions/<name>.sql`). Each file is the only place
+ * its function is defined; migrations must not create or redefine one. Sync applies a file
+ * only when the function it produces differs from the live one.
+ *
+ * A file is named for its function. One outside `public` carries its schema:
+ * `util.wake_event_queue.sql`.
  */
 
-export const HELPERS_DIR = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "helpers"
-);
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+export const HELPERS_DIR = path.join(HERE, "helpers");
+export const EVENT_SYSTEM_DIR = path.join(HERE, "../event-system/functions");
+export const HELPER_DIRS = [HELPERS_DIR, EVENT_SYSTEM_DIR];
 
-export type Helper = { name: string; sql: string };
+/** `schema` defaults to `public`. */
+export type Helper = { name: string; sql: string; schema?: string };
+
+export const helperSchema = (helper: Helper) => helper.schema ?? "public";
+
+/** How a helper is named everywhere it is reported: `name`, or `schema.name` outside public. */
+export const helperKey = (helper: Helper) =>
+  helperSchema(helper) === "public"
+    ? helper.name
+    : `${helperSchema(helper)}.${helper.name}`;
 
 /**
  * Helpers that were managed here and have been dropped from the database (by a later
@@ -39,10 +52,12 @@ export const RETIRED_HELPERS: Readonly<Record<string, string>> = {
 type Ast = any;
 
 /**
- * A helper file must be exactly one `CREATE OR REPLACE FUNCTION public.<name>(…)` — so a
+ * A helper file must be exactly one `CREATE OR REPLACE FUNCTION <schema>.<name>(…)` — so a
  * file can never smuggle in a second statement, or define a function it is not named for.
  */
-export async function validateHelper({ name, sql }: Helper): Promise<void> {
+export async function validateHelper(helper: Helper): Promise<void> {
+  const { sql } = helper;
+  const expected = `${helperSchema(helper)}.${helper.name}`;
   const tree: Ast = await parse(sql);
   const statements = tree.stmts ?? [];
   const fn = statements[0]?.stmt?.CreateFunctionStmt;
@@ -52,33 +67,44 @@ export async function validateHelper({ name, sql }: Helper): Promise<void> {
     !fn ||
     !fn.replace ||
     fn.is_procedure ||
-    qualified.join(".") !== `public.${name}`
+    qualified.join(".") !== expected
   ) {
     throw new Error(
-      `helpers/${name}.sql must be exactly one CREATE OR REPLACE FUNCTION public.${name}(…)`
+      `${helperKey(helper)}.sql must be exactly one CREATE OR REPLACE FUNCTION ${expected}(…)`
     );
   }
 }
 
-export async function loadHelpers(dir = HELPERS_DIR): Promise<Helper[]> {
-  const helpers = readdirSync(dir)
-    .filter((file) => file.endsWith(".sql"))
-    .sort()
-    .map((file) => ({
-      name: file.replace(/\.sql$/, ""),
-      sql: readFileSync(path.join(dir, file), "utf8")
-    }));
+/** `name.sql` is public.name; `schema.name.sql` is schema.name. */
+const parseFileName = (file: string) => {
+  const [first = "", second] = file.replace(/\.sql$/, "").split(".");
+  return second ? { schema: first, name: second } : { name: first };
+};
+
+export async function loadHelpers(
+  dirs: string | string[] = HELPER_DIRS
+): Promise<Helper[]> {
+  const helpers = [dirs].flat().flatMap((dir) =>
+    readdirSync(dir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .map((file) => ({
+        ...parseFileName(file),
+        sql: readFileSync(path.join(dir, file), "utf8")
+      }))
+  );
   for (const helper of helpers) await validateHelper(helper);
   return helpers;
 }
 
-const definitions = async (db: Client, name: string) =>
+const definitions = async (db: Client, helper: Helper) =>
   (
     await db.query<{ def: string }>(
       `SELECT pg_get_functiondef(p.oid) AS def FROM pg_proc p
-        WHERE p.pronamespace = 'public'::regnamespace AND p.proname = $1
+         JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = $1 AND p.proname = $2
         ORDER BY p.oid`,
-      [name]
+      [helperSchema(helper), helper.name]
     )
   ).rows.map((r) => r.def);
 
@@ -94,20 +120,21 @@ export async function syncHelpers(
   { dryRun }: { dryRun: boolean }
 ): Promise<string[]> {
   const changed: string[] = [];
-  for (const { name, sql } of helpers) {
-    const before = await definitions(db, name);
+  for (const helper of helpers) {
+    const name = helperKey(helper);
+    const before = await definitions(db, helper);
     if (before.length > 1) {
       throw new Error(
         `helper ${name} has ${before.length} overloads; expected one`
       );
     }
     await db.query("SAVEPOINT authz_helper");
-    await db.query(sql);
-    const after = await definitions(db, name);
+    await db.query(helper.sql);
+    const after = await definitions(db, helper);
     if (after.length !== 1) {
       await db.query("ROLLBACK TO SAVEPOINT authz_helper");
       throw new Error(
-        `helpers/${name}.sql changes the signature of ${name}; that needs a migration`
+        `${name}.sql changes the signature of ${name}; that needs a migration`
       );
     }
     const differs = after[0] !== before[0];

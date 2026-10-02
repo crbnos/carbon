@@ -85,7 +85,7 @@ export const rampSyncFunction = inngest.createFunction(
       .eq("companyId", companyId)
       .maybeSingle();
 
-    const jobDb = getJobDatabaseClient(5);
+    const jobDb = getJobDatabaseClient();
     const ctx: RampSyncContext = {
       client,
       db: jobDb,

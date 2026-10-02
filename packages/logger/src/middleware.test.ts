@@ -11,9 +11,9 @@ import {
   describeRequest,
   getRequestId,
   REQUEST_ID_HEADER,
-  requestContextMiddleware,
   requestIdContext,
-  requestIdMiddleware
+  requestIdMiddleware,
+  requestMiddleware
 } from "./middleware.server";
 
 const recorder = createLogRecorder();
@@ -244,14 +244,10 @@ describe("describeRequest", () => {
     const context = makeContext();
     const args = { request, context } as never;
 
-    await requestContextMiddleware(
-      args,
-      async () =>
-        (await requestIdMiddleware(args, async () => {
-          describeRequest("carbon-event-queue");
-          return new Response("ok");
-        })) as Response
-    );
+    await requestMiddleware(args, async () => {
+      describeRequest("carbon-event-queue");
+      return new Response("ok");
+    });
 
     const access = recorder.records.find(
       (record) => record.properties.pathname === "/api/inngest"
@@ -269,14 +265,14 @@ describe("describeRequest", () => {
       context
     } as never;
 
-    await requestContextMiddleware(
-      args,
-      async () =>
-        (await requestIdMiddleware(
-          args,
-          async () => new Response("ok")
-        )) as Response
-    );
+    // One middleware: the id is readable with no context in hand, and echoed.
+    let ambientId: string | null = null;
+    const response = (await requestMiddleware(args, async () => {
+      ambientId = getRequestId();
+      return new Response("ok");
+    })) as Response;
+    expect(ambientId).not.toBeNull();
+    expect(response.headers.get(REQUEST_ID_HEADER)).toBe(ambientId);
 
     const access = recorder.records.find(
       (record) => record.properties.pathname === "/dashboard"

@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { runMountPublish } from "@carbon/ee/mount.server";
+import { getLogger } from "@carbon/logger";
+import z from "zod";
 /**
  * Mount publish sweep — the "Push customers / suppliers / parts" actions on
  * the Mount integration's detail page.
@@ -20,15 +24,7 @@
  * this same function, iterating every active Mount integration; nothing here
  * assumes a human started it.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import { runMountPublish } from "@carbon/ee/mount.server";
-import { getLogger } from "@carbon/logger";
-import { PostgresDriver } from "kysely";
-import z from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "mount-publish");
@@ -61,7 +57,7 @@ export const mountPublishFunction = inngest.createFunction(
     const result = await step.run("publish", async () =>
       runMountPublish({
         serviceRole: getCarbonServiceRole(),
-        db: getPostgresClient(getPostgresConnectionPool(5), PostgresDriver),
+        db: getJobDatabaseClient(),
         companyId,
         entityTypes
       })
