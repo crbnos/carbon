@@ -243,3 +243,118 @@ export const pinInBody = z.object({
   pin: z.string().regex(/^\d{4,8}$/, { message: "Enter your 4-8 digit PIN" })
 });
 export type PinInBody = z.infer<typeof pinInBody>;
+
+// ---------------------------------------------------------------------------
+// Inspection execution
+// ---------------------------------------------------------------------------
+
+export const inspectionSampleStatus = ["Pending", "Passed", "Failed"] as const;
+export type InspectionSampleStatus = (typeof inspectionSampleStatus)[number];
+
+export const inspectionDecision = ["Accept", "Reject", "Partial"] as const;
+export type InspectionDecision = (typeof inspectionDecision)[number];
+
+/**
+ * Every inspection write names its lot in the body as well as in the path, the
+ * way the picking line bodies do: the route refuses a body that names a
+ * different lot rather than quietly applying the write to the one in the URL.
+ */
+const lotRef = { inspectionId: z.string().min(1) };
+
+/**
+ * One cell of the features x samples grid.
+ *
+ * `value` stays a STRING, as it is on the web. The engine valuates it against
+ * the feature's nominal and tolerances and stores it in a NUMERIC column; a
+ * reading carries up to 5 decimals (the quantity kind in
+ * `.claude/rules/numeric-precision.md`) and is never rounded on the way in, so
+ * sending the operator's digits verbatim is what keeps "0.0625" from becoming
+ * a float the server rounded for them. An empty string clears the reading.
+ */
+export const inspectionMeasurementBody = z.object({
+  ...lotRef,
+  /** Absent = create an anonymous sample (non-serial grid columns). */
+  sampleId: z.string().optional(),
+  inspectionFeatureId: z.string().min(1),
+  value: z.string().optional(),
+  /** Attribute (non-numeric) features toggle pass/fail instead of a value. */
+  passed: z.enum(["true", "false"]).optional(),
+  notes: z.string().optional()
+});
+export type InspectionMeasurementBody = z.infer<
+  typeof inspectionMeasurementBody
+>;
+
+/** Which gauge measured one feature of this lot; empty clears the record. */
+export const inspectionGaugeBody = z.object({
+  ...lotRef,
+  inspectionFeatureId: z.string().min(1),
+  gaugeId: z.string().optional()
+});
+export type InspectionGaugeBody = z.infer<typeof inspectionGaugeBody>;
+
+/**
+ * A verdict for one unit. `Pending` registers a sample without one — the
+ * identify-only scan a serial lot makes before any feature is measured.
+ */
+export const inspectionSampleBody = z.object({
+  ...lotRef,
+  /** Update an existing anonymous column in place (the overall-result row). */
+  sampleId: z.string().optional(),
+  /** Serial parts scan a discrete tracked entity; other parts carry none. */
+  trackedEntityId: z.string().optional(),
+  status: z.enum(inspectionSampleStatus),
+  notes: z.string().optional()
+});
+export type InspectionSampleBody = z.infer<typeof inspectionSampleBody>;
+
+/** The production events a posting is clocked against. */
+const inspectionEventIds = {
+  setupProductionEventId: z.string().optional(),
+  laborProductionEventId: z.string().optional(),
+  machineProductionEventId: z.string().optional()
+};
+
+/**
+ * Closing the lot. The decision carries its physical outcome, so the
+ * allocation travels with it.
+ *
+ * The web sends the serial allocation as two JSON-encoded strings inside
+ * FormData; JSON needs no such encoding, so these are real arrays. The
+ * quantities are plain numbers for the same reason `zfd.numeric` exists on the
+ * web. Either way the server recomputes every bucket from the database and
+ * clamps to the operation's remaining quantity — these fields are operator
+ * intent, never trusted arithmetic.
+ */
+export const inspectionDispositionBody = z.object({
+  ...lotRef,
+  decision: z.enum(inspectionDecision),
+  /** The job operation the lot must belong to. */
+  operationId: z.string().min(1),
+  /** Serial allocation: the tracked entities picked per outcome. */
+  scrapEntityIds: z.array(z.string().min(1)).optional(),
+  reworkEntityIds: z.array(z.string().min(1)).optional(),
+  /** Non-serial allocation: quantities out of the failed / open remainder. */
+  scrapQuantity: z.number().min(0).optional(),
+  reworkQuantity: z.number().min(0).optional(),
+  scrapReasonId: z.string().optional(),
+  targetOperationId: z.string().optional(),
+  reworkReason: z.string().optional(),
+  /** Optional documentation — never required for scrap or rework. */
+  createNcr: z.boolean().optional(),
+  nonConformanceTypeId: z.string().optional(),
+  ...inspectionEventIds
+});
+export type InspectionDispositionBody = z.infer<
+  typeof inspectionDispositionBody
+>;
+
+/** Progressive completion of passed units while the lot stays open. */
+export const inspectionCompletePassedBody = z.object({
+  ...lotRef,
+  operationId: z.string().min(1),
+  ...inspectionEventIds
+});
+export type InspectionCompletePassedBody = z.infer<
+  typeof inspectionCompletePassedBody
+>;

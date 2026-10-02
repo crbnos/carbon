@@ -5,15 +5,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { upsertInspectionSample } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { recordInspectionSample } from "~/services/commands.inspection.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionSampleValidator } from "~/services/models";
-
-const logger = getLogger("mes", "inspection-lot-sample");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,50 +37,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const db = getDatabaseClient();
+  const result = await recordInspectionSample(
+    getDatabaseClient(),
+    { companyId, userId },
+    { ...validation.data, inspectionId: id }
+  );
 
-  // The sample write runs as the superuser and links the tracked entity, so
-  // the entity must belong to this company.
-  const { trackedEntityId } = validation.data;
-  if (trackedEntityId) {
-    const entity = await db
-      .selectFrom("trackedEntity")
-      .select("id")
-      .where("id", "=", trackedEntityId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!entity) {
-      logger.warn("Tracked entity not found for company", {
-        companyId,
-        inspectionId: id,
-        trackedEntityId
-      });
-      return data(
-        { error: { message: "Tracked entity not found" } },
-        await flash(request, error(null, "Tracked entity not found"))
-      );
-    }
-  }
-
-  const result = await upsertInspectionSample(db, {
-    ...validation.data,
-    companyId,
-    inspectedBy: userId
-  });
-
-  if (result.error) {
+  if (!result.ok) {
+    const { failure } = result;
     return data(
-      { error: result.error },
-      await flash(request, error(result.error, "Failed to save sample"))
+      { error: failure.details ?? { message: failure.message } },
+      await flash(
+        request,
+        failure.fields?.trackedEntityId
+          ? error(null, failure.message)
+          : error(failure.details ?? null, "Failed to save sample")
+      )
     );
   }
 
   if (quiet) {
-    return data({ success: true, sampleId: result.data.id });
+    return data({ success: true, sampleId: result.data.sampleId });
   }
 
   return data(
-    { success: true, sampleId: result.data.id },
+    { success: true, sampleId: result.data.sampleId },
     await flash(request, success("Sample recorded"))
   );
 }

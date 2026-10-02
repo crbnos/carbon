@@ -5,10 +5,10 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { recordInspectionGauge } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { setInspectionGauge } from "~/services/commands.inspection.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionGaugeValidator } from "~/services/models";
 
@@ -33,21 +33,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await recordInspectionGauge(getDatabaseClient(), {
-    inspectionId: id,
-    inspectionFeatureId: validation.data.inspectionFeatureId,
-    gaugeId: validation.data.gaugeId || null,
-    companyId,
-    userId
-  });
+  const result = await setInspectionGauge(
+    getDatabaseClient(),
+    { companyId, userId },
+    {
+      inspectionId: id,
+      inspectionFeatureId: validation.data.inspectionFeatureId,
+      gaugeId: validation.data.gaugeId
+    }
+  );
 
-  if (result.error) {
+  if (!result.ok) {
     return data(
-      { error: result.error },
-      await flash(request, error(result.error, "Failed to record gauge"))
+      { error: result.failure.details ?? { message: result.failure.message } },
+      await flash(
+        request,
+        error(result.failure.details ?? null, "Failed to record gauge")
+      )
     );
   }
 
   // Quiet like the per-cell measurement saves — the matrix updates itself.
-  return data(result);
+  return data({ data: result.data, error: null });
 }

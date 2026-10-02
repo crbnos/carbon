@@ -69,11 +69,15 @@ pnpm exec turbo run typecheck --filter=@carbon/mes-core
 | `pickingListDetail`, `pickingListLine` | `./contract` | One picking list with its lines and recommended lots |
 | `pickingTrackedOptions`, `expiredEntityPolicy` | `./contract` | The lots available for one picking line |
 | `timecardScreen`, `timeCardEntry` | `./contract` | One week of the operator's time card |
+| `inspectionScreen`, `inspectionLot`, `inspectionSample`, `inspectionFeaturePlan`, `inspectionMeasurement`, `inspectionGauge` | `./contract` | One job operation's inspection — **no drawing**, see the schema's note |
+| `inspectionMeasurementResult`, `inspectionSampleResult`, `inspectionGaugeResult`, `inspectionDispositionResult`, `inspectionCompletePassedResult` | `./contract` | What each inspection write returns |
 | `startEventBody`, `endEventBody`, `completeFromScanBody` | `./models` | Time events |
 | `quantityBody`, `scrapBody`, `reworkBody`, `finishBody` | `./models` | Quantities |
 | `issueMaterialBody`, `issueTrackedBody`, `unconsumeBody` | `./models` | Materials |
 | `stepRecordBody`, `noteBody`, `qualityIssueBody`, `printBody` | `./models` | Steps, notes, quality, print |
 | `pickQuantityBody`, `pickTrackedBody`, `pickingListStatusBody`, `isPickingListLocked` | `./models` | Picking |
+| `inspectionMeasurementBody`, `inspectionGaugeBody`, `inspectionSampleBody`, `inspectionDispositionBody`, `inspectionCompletePassedBody` | `./models` | Inspection execution |
+| `inspectionSampleStatus`, `inspectionDecision` | `./models` | The sample-verdict and disposition enums |
 | `clockOutBody`, `pinInBody` | `./models` | Time card and shared terminal |
 | `consoleTerminalResponse`, `consolePinInResponse`, `consolePinOutResponse`, `consoleOperator` | `./contract` | The shared-tablet token responses (`HEADERS.terminal` / `HEADERS.operator`) |
 | `MES_LOCALES`, `resolveMesLocale` | `./locales` | The 13 shipped locales |

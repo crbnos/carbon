@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
-import { pickingListStatus } from "./models";
+import {
+  inspectionDecision,
+  inspectionSampleStatus,
+  pickingListStatus
+} from "./models";
 
 /**
  * The wire contract between the Carbon MES mobile app and the MES API
@@ -817,3 +821,301 @@ export type ConsolePinInResponse = z.infer<typeof consolePinInResponse>;
  */
 export const consolePinOutResponse = z.object({ ok: z.literal(true) });
 export type ConsolePinOutResponse = z.infer<typeof consolePinOutResponse>;
+
+// ---------------------------------------------------------------------------
+// Inspection execution
+// ---------------------------------------------------------------------------
+
+/**
+ * One characteristic of the lot's plan: the resolved per-feature sampling row
+ * with its live `inspectionFeature` embedded.
+ *
+ * The NOMINAL and TOLERANCE fields are strings because the COLUMNS are: a
+ * characteristic may be specified as "0.250", "1/4" or "FLAT", and
+ * `valuateMeasurement` parses them itself, valuating anything unparseable as
+ * an attribute. Never coerce them to numbers on the way through.
+ */
+export const inspectionFeaturePlan = z
+  .object({
+    id: z.string(),
+    inspectionFeatureId: z.string(),
+    /** The required minimum number of readings for this characteristic. */
+    sampleSize: z.number(),
+    acceptanceNumber: z.number(),
+    rejectionNumber: z.number(),
+    codeLetter: z.string().nullable().optional(),
+    /** The gauge recorded for this characteristic on this lot, if any. */
+    gaugeId: z.string().nullable().optional(),
+    gaugeRecordedAt: z.string().nullable().optional(),
+    inspectionFeature: z
+      .object({
+        id: z.string(),
+        label: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        pageNumber: z.number().nullable().optional(),
+        type: z.string().nullable().optional(),
+        nominalValue: z.string().nullable().optional(),
+        tolerancePlus: z.string().nullable().optional(),
+        toleranceMinus: z.string().nullable().optional(),
+        unit: z.string().nullable().optional(),
+        /** The gauge TYPE this characteristic must be measured with. */
+        gaugeTypeId: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+  })
+  .passthrough();
+export type InspectionFeaturePlan = z.infer<typeof inspectionFeaturePlan>;
+
+/** One recorded reading. `value` is NULL for an attribute characteristic. */
+export const inspectionMeasurement = z
+  .object({
+    id: z.string(),
+    inspectionSampleId: z.string(),
+    inspectionFeatureId: z.string(),
+    /**
+     * The stored reading. A `NUMERIC` column, carried as a JSON number and
+     * never rounded for display on the way out — the quantity kind in
+     * `.claude/rules/numeric-precision.md` keeps up to 5 decimals, and the app
+     * formats it, the server does not. NULL for an attribute characteristic.
+     */
+    value: z.number().nullable().optional(),
+    /** The valuation AT ENTRY; a later tolerance edit never rewrites it. */
+    status: z.enum(inspectionSampleStatus),
+    notes: z.string().nullable().optional(),
+    inspectedBy: z.string().nullable().optional(),
+    inspectedAt: z.string().nullable().optional()
+  })
+  .passthrough();
+export type InspectionMeasurement = z.infer<typeof inspectionMeasurement>;
+
+/** One column of the grid: a unit with a verdict, or a scan awaiting one. */
+export const inspectionSample = z
+  .object({
+    id: z.string(),
+    /** Null on an anonymous (batch / inventory) column. */
+    trackedEntityId: z.string().nullable().optional(),
+    status: z.enum(inspectionSampleStatus),
+    inspectedBy: z.string().nullable().optional(),
+    inspectedAt: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+    trackedEntity: z
+      .object({
+        id: z.string(),
+        readableId: z.string().nullable().optional(),
+        status: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+  })
+  .passthrough();
+export type InspectionSample = z.infer<typeof inspectionSample>;
+
+/** A gauge the operator may pick for a characteristic of this lot. */
+export const inspectionGauge = z
+  .object({
+    id: z.string(),
+    gaugeId: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    gaugeTypeId: z.string().nullable().optional(),
+    gaugeStatus: z.string().nullable().optional(),
+    /** Out-of-calibration is SHOWN, never blocking. */
+    gaugeCalibrationStatusWithDueDate: z.string().nullable().optional()
+  })
+  .passthrough();
+export type InspectionGauge = z.infer<typeof inspectionGauge>;
+
+/**
+ * The lot itself, with its resolved sampling-plan snapshot.
+ *
+ * `inspectionDocumentId` tells the app which grid to render: with a document
+ * the rows are characteristics, without one the grid collapses to a single
+ * synthetic pass/fail "Overall result" row whose cells write the sample's
+ * status directly. The DRAWING that document carries is NOT on this wire —
+ * see `inspectionScreen`.
+ */
+export const inspectionLot = z
+  .object({
+    id: z.string(),
+    inspectionId: z.string().nullable().optional(),
+    status: z.enum(["Pending", "In Progress", "Passed", "Failed", "Partial"]),
+    itemId: z.string(),
+    itemReadableId: z.string().nullable().optional(),
+    inspectionDocumentId: z.string().nullable().optional(),
+    /** The resolved plan snapshot — what the lot was judged against. */
+    lotSize: z.number(),
+    sampleSize: z.number(),
+    acceptanceNumber: z.number(),
+    rejectionNumber: z.number(),
+    samplingPlanType: z.string(),
+    samplingStandard: z.string(),
+    inspectionLevel: z.string().nullable().optional(),
+    severity: z.string().nullable().optional(),
+    codeLetter: z.string().nullable().optional(),
+    aql: z.number().nullable().optional(),
+    sourceDocument: z.string(),
+    sourceDocumentId: z.string(),
+    sourceDocumentLineId: z.string().nullable().optional(),
+    sourceDocumentReadableId: z.string().nullable().optional(),
+    dispositionedBy: z.string().nullable().optional(),
+    dispositionedAt: z.string().nullable().optional(),
+    item: z
+      .object({
+        readableId: z.string().nullable().optional(),
+        name: z.string().nullable().optional(),
+        type: z.string().nullable().optional(),
+        itemTrackingType: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+  })
+  .passthrough();
+export type InspectionLot = z.infer<typeof inspectionLot>;
+
+/**
+ * `GET /operations/:id/inspection` — the whole inspection screen for one job
+ * operation. Opening it is what CREATES the lot (lazy find-or-create), which
+ * is why a read is addressed by the operation rather than by the lot.
+ *
+ * **The drawing is deliberately absent.** The web screen renders the assigned
+ * PDF with its balloons over a `react-konva` canvas and `react-pdf`, neither of
+ * which runs on React Native, so this wire carries no `pdfUrl`, no
+ * `documentName` and no balloon coordinates. The app therefore cannot show the
+ * drawing or the click-to-highlight link between a balloon and its
+ * characteristic row; it renders the measurement grid, and
+ * `inspectionDocumentId` is how it knows a drawing exists at all. A native
+ * viewer is a later piece of work with its own wire fields — `/api/v1` is
+ * additive-only, so adding them later breaks nothing.
+ */
+export const inspectionScreen = z
+  .object({
+    inspection: inspectionLot,
+    /** Ascending (createdAt, id) — the grid's column order. */
+    samples: z.array(inspectionSample),
+    /** The lot's characteristics; empty means the overall-result grid. */
+    features: z.array(inspectionFeaturePlan),
+    measurements: z.array(inspectionMeasurement),
+    gauges: z.array(inspectionGauge),
+    /** Gauge ids most recently used at this lot's station, in order. */
+    recentGaugeIds: z.array(z.string()),
+    issueTypes: z.array(
+      z.object({ id: z.string(), name: z.string() }).passthrough()
+    ),
+    /** The make method's WIP units, for the serial scan picker. */
+    trackedEntities: z.array(
+      z
+        .object({
+          id: z.string(),
+          readableId: z.string().nullable().optional(),
+          status: z.string().nullable().optional()
+        })
+        .passthrough()
+    ),
+    requiresSerialTracking: z.boolean(),
+    requiresBatchTracking: z.boolean(),
+    operation: z
+      .object({
+        id: z.string(),
+        description: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        operationType: z.string().nullable().optional(),
+        operationQuantity: z.number().nullable().optional(),
+        targetQuantity: z.number().nullable().optional(),
+        quantityComplete: z.number().nullable().optional(),
+        quantityScrapped: z.number().nullable().optional(),
+        quantityReworked: z.number().nullable().optional(),
+        workCenterId: z.string().nullable().optional(),
+        jobMakeMethodId: z.string().nullable().optional(),
+        itemReadableId: z.string().nullable().optional(),
+        itemDescription: z.string().nullable().optional(),
+        thumbnailPath: z.string().nullable().optional(),
+        // `makeDurations` has already summed these, in milliseconds.
+        setupDuration: z.number().nullable().optional(),
+        laborDuration: z.number().nullable().optional(),
+        machineDuration: z.number().nullable().optional()
+      })
+      .passthrough(),
+    job: z
+      .object({
+        id: z.string().nullable().optional(),
+        jobId: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        itemId: z.string().nullable().optional(),
+        customerId: z.string().nullable().optional(),
+        dueDate: z.string().nullable().optional()
+      })
+      .passthrough(),
+    jobId: z.string().nullable(),
+    events: z.array(productionEvent),
+    /** Named as the shared screen read names it, not as the card reads it. */
+    productionQuantities: z.object({
+      scrap: z.number(),
+      production: z.number(),
+      rework: z.number()
+    }),
+    /** Samples whose verdict already produced a Production posting. */
+    linkedSampleIds: z.array(z.string()),
+    linkedProductionQuantity: z.number()
+  })
+  .passthrough();
+export type InspectionScreen = z.infer<typeof inspectionScreen>;
+
+/**
+ * What a measurement write returns. The app mirrors these two statuses locally
+ * rather than refetching the screen — a per-cell save must not cost a reload.
+ */
+export const inspectionMeasurementResult = z.object({
+  sampleId: z.string(),
+  measurementId: z.string(),
+  measurementStatus: z.string(),
+  sampleStatus: z.string()
+});
+export type InspectionMeasurementResult = z.infer<
+  typeof inspectionMeasurementResult
+>;
+
+export const inspectionGaugeResult = z.object({
+  inspectionFeatureId: z.string(),
+  gaugeId: z.string().nullable()
+});
+export type InspectionGaugeResult = z.infer<typeof inspectionGaugeResult>;
+
+/** The id of the sample that was created or updated in place. */
+export const inspectionSampleResult = z.object({
+  sampleId: z.string()
+});
+export type InspectionSampleResult = z.infer<typeof inspectionSampleResult>;
+
+/**
+ * What a disposition posted.
+ *
+ * `warnings` is the one field an app must not treat as failure: the lot IS
+ * closed and the units ARE posted, and each string names a follow-up that did
+ * not land (the materials backflush, the job recalculation, the optional NCR).
+ * The web shows them in the same sentence as the outcome, and so should the
+ * app — retrying the disposition would be refused, because it is one-shot.
+ */
+export const inspectionDispositionResult = z.object({
+  decision: z.enum(inspectionDecision),
+  completed: z.number(),
+  scrapped: z.number(),
+  reworked: z.number(),
+  /** The operation reached its target and was finished. */
+  finished: z.boolean(),
+  warnings: z.array(z.string()),
+  /** The sentence the operator reads, identical to the web's flash. */
+  message: z.string()
+});
+export type InspectionDispositionResult = z.infer<
+  typeof inspectionDispositionResult
+>;
+
+export const inspectionCompletePassedResult = z.object({
+  completed: z.number()
+});
+export type InspectionCompletePassedResult = z.infer<
+  typeof inspectionCompletePassedResult
+>;

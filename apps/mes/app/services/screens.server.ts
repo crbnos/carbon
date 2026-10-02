@@ -8,6 +8,12 @@ import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  getOrCreateJobOperationInspection,
+  getRecentInspectionGauges,
+  reconcileInspectionSamplingPlans
+} from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type {
@@ -60,7 +66,14 @@ import {
   getAssignedPickingLists,
   getPickingListForExecution
 } from "~/services/picking.service";
-import type { OperationWithDetails } from "~/services/types";
+import {
+  getInspection,
+  getInspectionGauges,
+  getInspectionMeasurements,
+  getInspectionSamplingPlans,
+  getIssueTypesList
+} from "~/services/quality.service";
+import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
@@ -84,6 +97,9 @@ import { failed, ok } from "./api-result.server";
  */
 
 const log = getLogger("mes");
+// Scope kept as it was in `x+/inspection.$operationId.tsx` so existing log
+// queries for its one warn keep matching.
+const inspectionLog = getLogger("mes", "inspection");
 
 type BatchTotals = {
   size: number;
@@ -1121,4 +1137,242 @@ export async function getTimecardScreen(
 
 export type TimecardScreen = Awaited<
   ReturnType<typeof getTimecardScreen>
+>["data"];
+
+// ---------------------------------------------------------------------------
+// Inspection
+// ---------------------------------------------------------------------------
+
+export type InspectionScreenArgs = {
+  companyId: string;
+  /** Whose open timers the events read returns. */
+  userId: string;
+  /** The JOB OPERATION in the URL — the lot is found or created from it. */
+  operationId: string;
+};
+
+/**
+ * `x+/inspection.$operationId.tsx`'s loader, moved.
+ *
+ * Four things about it:
+ *
+ *  - It takes BOTH clients the loader used: the service-role supabase client
+ *    for the reads (RLS on `productionEvent` needs `production_view`, which an
+ *    operator does not have — a direct read would show them less than the web
+ *    does) and the Kysely pool for the three engine calls (the lot
+ *    find-or-create, the plan reconcile, the gauge history). The caller passes
+ *    `getDatabaseClient()`, exactly as the loader did.
+ *  - It WRITES, despite being a read: `getOrCreateJobOperationInspection` is a
+ *    lazy find-or-create (idempotent per `(sourceDocument,
+ *    sourceDocumentLineId)`, settled by the partial unique index) and
+ *    `reconcileInspectionSamplingPlans` resolves plan rows for features added
+ *    to the live document after the lot existed. Opening the screen is what
+ *    creates the lot on both clients; that is the flow, not a side effect to
+ *    factor out.
+ *  - Every `throw redirect(..., flash(...))` the loader had is a failure
+ *    carrying the SAME message and target, so the web route throws exactly
+ *    what it throws today. A company-scope miss is `not_found` (the API's 404);
+ *    everything else is `redirect` (409). `message: ""` means the loader
+ *    redirected with no flash, and `details: { view }` is the wrong-view guard,
+ *    whose redirect the web route appends its own search string to.
+ *  - The DRAWING is deliberately absent. `getInspectionDocumentWithBalloons`
+ *    feeds a `react-konva` + `react-pdf` pane that cannot run on React Native,
+ *    so the mobile app never renders it; the web loader keeps that read for
+ *    itself rather than making every mobile response carry a PDF url and a
+ *    balloon list nothing will draw.
+ */
+export async function getInspectionScreen(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: InspectionScreenArgs
+) {
+  const { companyId, userId, operationId } = args;
+
+  // Every read below uses the service role, so prove the operation belongs to
+  // this company before any of them runs.
+  const scopedOperation = await client
+    .from("jobOperation")
+    .select("id")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (scopedOperation.error || !scopedOperation.data) {
+    inspectionLog.warn("Job operation not found for company", {
+      companyId,
+      operationId,
+      error: scopedOperation.error
+    });
+    return failed({
+      kind: "not_found",
+      message: "Failed to fetch operation",
+      redirectTo: path.to.operations,
+      details: scopedOperation.error
+    });
+  }
+
+  const [job, operation] = await Promise.all([
+    getJobByOperationId(client, operationId),
+    getJobOperationById(client, operationId)
+  ]);
+
+  if (job.error) {
+    return failed({
+      kind: "redirect",
+      message: "Failed to fetch job",
+      redirectTo: path.to.operations,
+      details: job.error
+    });
+  }
+  if (operation.error) {
+    return failed({
+      kind: "redirect",
+      message: "Failed to fetch operation",
+      redirectTo: path.to.operations,
+      details: operation.error
+    });
+  }
+
+  const op = operation.data?.[0];
+  if (!op) {
+    return failed({
+      kind: "redirect",
+      message: "",
+      redirectTo: path.to.operations
+    });
+  }
+
+  // Redirect guard (ADR-0005): only Inspection operations render here.
+  // Guards only redirect kinds they don't serve, so no loop. The caller
+  // appends its own search string — the web carries the selected unit across
+  // the hop.
+  const view = resolveOperationView(op.operationType);
+  if (view !== "inspection") {
+    return failed({
+      kind: "redirect",
+      message: "",
+      redirectTo: path.to.operation(operationId),
+      details: { view }
+    });
+  }
+
+  // Lazy find-or-create of the inspection lot for this operation — mirrors
+  // post-receipt lot creation (plan snapshot + per-feature plans from the
+  // operation's inspectionDocumentId FK). Idempotent per (sourceDocument,
+  // sourceDocumentLineId).
+  const lot = await getOrCreateJobOperationInspection(db, {
+    jobOperationId: operationId,
+    companyId,
+    userId
+  });
+  if (lot.error || !lot.data) {
+    return failed({
+      kind: "redirect",
+      message: "Failed to create inspection",
+      redirectTo: path.to.operations,
+      details: lot.error
+    });
+  }
+
+  const inspectionResult = await getInspection(client, lot.data.id);
+  if (inspectionResult.error || !inspectionResult.data) {
+    return failed({
+      kind: "redirect",
+      message: "Failed to fetch inspection",
+      redirectTo: path.to.operations,
+      details: inspectionResult.error
+    });
+  }
+  const inspection = inspectionResult.data as any;
+
+  // The lot references its document live: features added to the document
+  // after lot creation get their per-lot plan rows resolved lazily.
+  if (inspection.inspectionDocumentId) {
+    await reconcileInspectionSamplingPlans(db, lot.data.id, companyId);
+  }
+
+  const [
+    features,
+    measurements,
+    issueTypes,
+    trackedEntities,
+    jobMakeMethod,
+    events,
+    quantities,
+    linkedQuantities,
+    gauges,
+    recentGauges
+  ] = await Promise.all([
+    getInspectionSamplingPlans(client, lot.data.id, companyId),
+    getInspectionMeasurements(client, lot.data.id, companyId),
+    getIssueTypesList(client, companyId),
+    getTrackedEntitiesByMakeMethodId(client, op.jobMakeMethodId, companyId),
+    getJobMakeMethod(client, op.jobMakeMethodId),
+    getProductionEventsForJobOperation(client, { operationId, userId }),
+    getProductionQuantitiesForJobOperation(client, operationId),
+    // Verdict-driven postings link back to their sample — the UI derives
+    // "Complete passed (n)" from what is passed but not yet posted.
+    client
+      .from("productionQuantity")
+      .select("id, type, quantity, inspectionSampleId")
+      .eq("inspectionId", lot.data.id),
+    getInspectionGauges(client, companyId, lot.data.id),
+    getRecentInspectionGauges(db, {
+      inspectionId: lot.data.id,
+      companyId
+    })
+  ]);
+
+  const linkedProductionRows = (linkedQuantities.data ?? []).filter(
+    (row) => row.type === "Production"
+  );
+
+  const productionQuantities = (quantities.data ?? []).reduce(
+    (acc, curr) => {
+      if (curr.type === "Scrap") acc.scrap += curr.quantity;
+      else if (curr.type === "Production") acc.production += curr.quantity;
+      else if (curr.type === "Rework") acc.rework += curr.quantity;
+      return acc;
+    },
+    { scrap: 0, production: 0, rework: 0 }
+  );
+
+  // Sample column order must match the engine's required-feature derivation
+  // (createdAt asc, id asc).
+  const samples = (
+    [...(inspection.inspectionSample ?? [])] as InspectionSample[]
+  ).sort(
+    (a, b) =>
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
+      a.id.localeCompare(b.id)
+  );
+
+  return ok({
+    job: job.data,
+    operation: makeDurations(op) as OperationWithDetails,
+    inspection,
+    samples,
+    features: features.data ?? [],
+    measurements: measurements.data ?? [],
+    gauges: gauges.data ?? [],
+    recentGaugeIds: recentGauges.data ?? [],
+    issueTypes: issueTypes.data ?? [],
+    trackedEntities: trackedEntities.data ?? [],
+    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
+    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
+    events: events.data ?? [],
+    productionQuantities,
+    linkedSampleIds: linkedProductionRows
+      .map((row) => row.inspectionSampleId)
+      .filter((sampleId): sampleId is string => Boolean(sampleId)),
+    linkedProductionQuantity: linkedProductionRows.reduce(
+      (sum, row) => sum + (row.quantity ?? 0),
+      0
+    ),
+    jobId: job.data.id ?? null
+  });
+}
+
+export type InspectionScreen = Extract<
+  Awaited<ReturnType<typeof getInspectionScreen>>,
+  { ok: true }
 >["data"];

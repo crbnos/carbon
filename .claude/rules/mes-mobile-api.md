@@ -184,6 +184,33 @@ have read on the web.
 Clock in/out likewise has two web entry points: `api+/timecard.ts` is the one
 the UI buttons use and it adds a `note` on clock-out.
 
+- **`GET /operations/:id/inspection` WRITES.** It is addressed by the operation
+  rather than by the lot because opening the screen is what CREATES the lot:
+  `getOrCreateJobOperationInspection` is a lazy find-or-create (idempotent per
+  `(sourceDocument, sourceDocumentLineId)`, settled by the partial unique
+  index), and `reconcileInspectionSamplingPlans` resolves plan rows for
+  features added to the live document afterwards. That is the web flow
+  unchanged, so it stays a `loader` — but it is why the inspection endpoints
+  split: ONE read keyed on the operation, FIVE writes
+  (`POST /inspections/:id/{measurement,gauge,sample,disposition,complete-passed}`)
+  keyed on the lot id that read returns. Like the web loader it is gated only
+  on being an employee of the company; the five writes need `quality` update.
+
+  The screen deliberately ships **no drawing**: `getInspectionDocumentWithBalloons`
+  feeds a `react-konva` + `react-pdf` pane that cannot run on React Native, so
+  that read stays in `x+/inspection.$operationId.tsx` and the wire carries no
+  `pdfUrl`, document name or balloon coordinates. The app gets
+  `inspection.inspectionDocumentId`, which is all it needs to know whether the
+  grid shows characteristic rows or the single overall-result row.
+
+  `POST /inspections/:id/disposition` is the one place the idempotency window's
+  "a stored 5xx is replayed" rule is load-bearing rather than defensive: the
+  disposition closes the lot FIRST (one-shot `requireOpen`) and then posts, so a
+  failure afterwards is a 500 the window replays — an automatic retry can
+  neither re-run a half-applied disposition nor clone the rework branch twice.
+  `warnings` in a 200 body is NOT a failure; the lot is closed and the units are
+  posted, and each string names a follow-up that did not land.
+
 ## Versioning
 
 `/api/v1` is **additive-only** (`BACKWARD_COMPATIBILITY.md`). The two most

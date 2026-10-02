@@ -33,6 +33,7 @@
  *   - scrap stays ONE `issue` `jobOperationScrap` invoke;
  *   - the picking-list policies stay server-side.
  */
+export * from "./commands.inspection.server";
 export * from "./commands.materials.server";
 export * from "./commands.picking.server";
 export * from "./commands.quantities.server";
