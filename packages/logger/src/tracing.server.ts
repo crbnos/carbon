@@ -180,14 +180,24 @@ export function namedMiddleware<
 }
 
 // Inngest's event API takes the event key as a path segment (`POST /e/<key>`),
-// so the path is a secret there and must not reach the trace backend.
-const INNGEST_EVENT_PATH = /^\/e\/[^/]+/;
+// so the path is a secret there and must not reach the trace backend. A
+// configured base URL may carry a path prefix (`/prefix/e/<key>`).
+const INNGEST_EVENT_PATH = /\/e\/[^/]+/;
+
+function originOf(url: string | undefined) {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
 
 function isInngestEventApi(origin: string) {
   const configured = [
     process.env.INNGEST_EVENT_API_BASE_URL,
     process.env.INNGEST_BASE_URL
-  ].map((url) => url?.replace(/\/+$/, ""));
+  ].map(originOf);
   return origin === "https://inn.gs" || configured.includes(origin);
 }
 

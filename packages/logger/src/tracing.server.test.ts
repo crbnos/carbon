@@ -2,14 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchSpanName, redactedUrl } from "./tracing.server";
 
 describe("redactedUrl", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("removes the Inngest event key from the path", () => {
     expect(redactedUrl("https://inn.gs", "/e/secret-event-key")).toEqual({
       "url.full": "https://inn.gs/e/[REDACTED]",
       "url.path": "/e/[REDACTED]",
+      "url.query": ""
+    });
+  });
+
+  it("removes the key behind a configured base URL with a path prefix", () => {
+    vi.stubEnv("INNGEST_EVENT_API_BASE_URL", "https://events.example.com/x/");
+    expect(
+      redactedUrl("https://events.example.com", "/x/e/secret-event-key")
+    ).toEqual({
+      "url.full": "https://events.example.com/x/e/[REDACTED]",
+      "url.path": "/x/e/[REDACTED]",
       "url.query": ""
     });
   });
