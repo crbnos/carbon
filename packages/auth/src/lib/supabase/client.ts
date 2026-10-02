@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { async } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import type { MutableRefObject } from "react";
@@ -65,37 +66,48 @@ export const storageReadFetch: typeof fetch = async (input, init) => {
   }
 };
 
+// How many calls a client serving one request has in flight at once — the
+// request's share of PostgREST's connections, like an HTTP agent's maxSockets.
+const REQUEST_CONCURRENCY = 8;
+
+const READ_METHODS = new Set(["GET", "HEAD"]);
+
 // A select, an RPC, or a storage read. A write to a table is not: some GET
 // routes write (an OAuth callback saving its tokens), and that must finish.
 const isRead = (url: string, method: string) =>
   isStorageRead(url, method) ||
   (url.includes("/rest/v1/") &&
-    (method === "GET" || method === "HEAD" || url.includes("/rest/v1/rpc/")));
+    (READ_METHODS.has(method) || url.includes("/rest/v1/rpc/")));
 
 /**
- * Database reads and storage reads stop when `signal` aborts. Table writes,
- * auth and edge function calls are left alone: a saved row, a token refresh or
- * an invoked function must not be cut off half way.
+ * The fetch of a client that serves one request. Every call waits for one of
+ * REQUEST_CONCURRENCY slots, so `Promise.all` over a page's queries cannot take
+ * every connection. On a read request (GET/HEAD) its reads also stop when
+ * `request.signal` aborts — the browser has gone — while table writes, auth and
+ * edge function calls run to the end.
  */
-export const abortableFetch =
-  (signal: AbortSignal): typeof fetch =>
-  (input, init) => {
-    const { url, method } = urlAndMethod(input, init);
-    if (!isRead(url, method)) return storageReadFetch(input, init);
-    return storageReadFetch(input, {
-      ...init,
-      signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal
+export function requestFetch(request: Request): typeof fetch {
+  const limit = async.limit(REQUEST_CONCURRENCY);
+  const signal = READ_METHODS.has(request.method) ? request.signal : undefined;
+  return (input, init) =>
+    limit(() => {
+      const { url, method } = urlAndMethod(input, init);
+      if (!signal || !isRead(url, method)) return storageReadFetch(input, init);
+      return storageReadFetch(input, {
+        ...init,
+        signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal
+      });
     });
-  };
+}
 
 /**
- * `signal` is the request's, for a client that lives for one read request
- * (`readRequestSignal()`): its calls are cancelled once the client has gone.
+ * `request` is given for a client that lives for one request: see
+ * `requestFetch`. Clients for jobs and scripts have neither limit nor signal.
  */
 export const getCarbonClient = (
   supabaseKey: string,
   accessToken?: string,
-  signal?: AbortSignal
+  request?: Request
 ): SupabaseClient<Database, "public"> => {
   // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
   // not sent as the bearer on Edge Function calls, and those functions tell a
@@ -113,7 +125,7 @@ export const getCarbonClient = (
       },
       global: {
         headers,
-        fetch: signal ? abortableFetch(signal) : storageReadFetch
+        fetch: request ? requestFetch(request) : storageReadFetch
       }
     }
   );
@@ -158,9 +170,9 @@ export const createCarbonWithAuthGetter = (
 
 export const getCarbon = (
   accessToken?: string,
-  signal?: AbortSignal
+  request?: Request
 ): SupabaseClient<Database, "public"> => {
-  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken, signal);
+  return getCarbonClient(SUPABASE_ANON_KEY!, accessToken, request);
 };
 
 export const carbonClient = getCarbon();

@@ -17,7 +17,9 @@ const { getCarbonAPIKeyClient, getCarbonClient, storageReadFetch } =
 
 // A loader's client carries its request's signal: once the browser has gone,
 // what the loader still wants from the database is not worth fetching.
-describe("a client tied to a request's signal", () => {
+// A client serving one request is bound to it: a share of PostgREST's
+// connections, and on a read, the request's abort signal.
+describe("a client bound to a request", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   // Resolves only when its signal aborts, as a slow query would.
@@ -34,14 +36,36 @@ describe("a client tied to a request's signal", () => {
         })
     );
 
-  it("stops a query in flight, does not retry it, and fails later ones at once", async () => {
+  const pageLoad = (controller: AbortController, method = "GET") =>
+    new Request("http://erp.test/x/part/1", {
+      method,
+      signal: controller.signal
+    });
+
+  it("has at most 8 calls in flight", async () => {
     const fetchMock = hangingFetch();
     vi.stubGlobal("fetch", fetchMock);
-    const request = new AbortController();
-    const client = getCarbonClient("anon", "user-jwt", request.signal);
+    const controller = new AbortController();
+    const client = getCarbonClient("anon", "user-jwt", pageLoad(controller));
+
+    const calls = Array.from({ length: 12 }, () =>
+      client.from("item").select("id")
+    ).map((query) => query.then((result) => result));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(fetchMock).toHaveBeenCalledTimes(8);
+
+    controller.abort();
+    await Promise.all(calls);
+  });
+
+  it("stops a read in flight when the browser leaves, without retrying, and fails later ones at once", async () => {
+    const fetchMock = hangingFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+    const client = getCarbonClient("anon", "user-jwt", pageLoad(controller));
 
     const pending = client.from("item").select("id");
-    setTimeout(() => request.abort(), 5);
+    setTimeout(() => controller.abort(), 5);
     const first = await pending;
     expect(first.error?.message).toContain("AbortError");
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -50,27 +74,33 @@ describe("a client tied to a request's signal", () => {
     expect(second.error?.message).toContain("AbortError");
   });
 
-  it("leaves table writes, auth and edge function calls alone", async () => {
+  it("leaves table writes, auth and edge function calls alone, and every call of an action", async () => {
     const fetchMock = vi.fn(
       async (_input: RequestInfo | URL, _init?: RequestInit) =>
         new Response("{}", { status: 200 })
     );
     vi.stubGlobal("fetch", fetchMock);
-    const request = new AbortController();
-    request.abort();
-    const client = getCarbonClient("anon", "user-jwt", request.signal);
+    const controller = new AbortController();
+    controller.abort();
 
-    const invoked = await client.functions.invoke("create", { body: {} });
+    const read = getCarbonClient("anon", "user-jwt", pageLoad(controller));
+    const invoked = await read.functions.invoke("create", { body: {} });
     expect(invoked.error).toBeNull();
-    const written = await client
-      .from("item")
-      .update({ name: "x" })
-      .eq("id", "1");
+    const written = await read.from("item").update({ name: "x" }).eq("id", "1");
     expect(written.error).toBeNull();
+
+    const action = getCarbonClient(
+      "anon",
+      "user-jwt",
+      pageLoad(controller, "POST")
+    );
+    const selected = await action.from("item").select("id");
+    expect(selected.error).toBeNull();
+
     for (const [, init] of fetchMock.mock.calls) {
       expect(init?.signal?.aborted ?? false).toBe(false);
     }
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
 

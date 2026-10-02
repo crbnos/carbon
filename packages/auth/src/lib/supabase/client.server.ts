@@ -12,9 +12,9 @@ import {
 import { getCarbon, getCarbonClient } from "./client";
 
 export const getCarbonServiceRole = (
-  signal?: AbortSignal
+  request?: Request
 ): SupabaseClient<Database> => {
-  return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!, undefined, signal);
+  return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!, undefined, request);
 };
 
 export async function getUserScopedClient(

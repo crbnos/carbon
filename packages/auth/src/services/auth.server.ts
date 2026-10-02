@@ -9,10 +9,7 @@ import {
 } from "@carbon/database/ratelimit";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import {
-  oncePerRequest,
-  readRequestSignal
-} from "@carbon/logger/middleware.server";
+import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { Edition, getClientIp, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
@@ -50,18 +47,16 @@ const log = getLogger("auth");
 export { logAuthEvent } from "./auth-events.server";
 
 // Each matched loader used to build its own Supabase client for identical
-// credentials; `createClient` is not free and they are interchangeable.
-// On a read request the client carries the request's abort signal, so a
-// loader's queries stop once the browser has navigated away.
-const carbonForRequest = (accessToken: string) =>
+// credentials; `createClient` is not free and they are interchangeable. The
+// client is bound to the request (`requestFetch`): a limit on calls in flight,
+// and on a read, the request's abort signal.
+const carbonForRequest = (accessToken: string, request: Request) =>
   oncePerRequest(`carbon:${accessToken}`, () =>
-    getCarbon(accessToken, readRequestSignal())
+    getCarbon(accessToken, request)
   );
 
-const serviceRoleForRequest = () =>
-  oncePerRequest("carbon:service-role", () =>
-    getCarbonServiceRole(readRequestSignal())
-  );
+const serviceRoleForRequest = (request: Request) =>
+  oncePerRequest("carbon:service-role", () => getCarbonServiceRole(request));
 
 export async function createEmailAuthAccount(
   email: string,
@@ -385,8 +380,8 @@ export async function requirePermissions(
     return {
       client:
         requiredPermissions.bypassRls && myClaims.role === "employee"
-          ? serviceRoleForRequest()
-          : carbonForRequest(accessToken),
+          ? serviceRoleForRequest(request)
+          : carbonForRequest(accessToken, request),
       companyId,
       companyGroupId,
       email,
@@ -447,8 +442,8 @@ export async function requirePermissions(
   return {
     client:
       !!requiredPermissions.bypassRls && myClaims.role === "employee"
-        ? serviceRoleForRequest()
-        : carbonForRequest(accessToken),
+        ? serviceRoleForRequest(request)
+        : carbonForRequest(accessToken, request),
     companyId,
     companyGroupId,
     email,

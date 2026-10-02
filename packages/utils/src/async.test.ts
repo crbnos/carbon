@@ -153,109 +153,49 @@ describe("async.map", () => {
   });
 });
 
-describe("async.all", () => {
-  it("runs at most the limit at once", async () => {
+describe("async.limit", () => {
+  it("runs at most the limit at once, in call order", async () => {
     const g = gauge();
-    const result = await async.all(
-      {
-        a: () => g.run("a"),
-        b: () => g.run("b"),
-        c: () => g.run("c"),
-        d: () => g.run("d"),
-        e: () => g.run("e")
-      },
-      { concurrency: 2 }
-    );
-    expect(result).toEqual({ a: "a", b: "b", c: "c", d: "d", e: "e" });
-    expect(g.peak()).toBe(2);
-  });
-
-  it("does not deadlock on dependencies with a limit of one", async () => {
-    const result = await async.all(
-      {
-        async total() {
-          const [a, b] = await Promise.all([this.$.a, this.$.b]);
-          return a + b;
-        },
-        async doubled() {
-          return (await this.$.total) * 2;
-        },
-        async a() {
-          await tick();
-          return 1;
-        },
-        async b() {
-          await tick();
-          return 2;
-        }
-      },
-      { concurrency: 1 }
-    );
-    expect(result).toEqual({ total: 3, doubled: 6, a: 1, b: 2 });
-  });
-
-  it("keeps the limit while tasks wait on each other", async () => {
-    const g = gauge();
-    await async.all(
-      {
-        a: () => g.run(1),
-        b: () => g.run(2),
-        async c() {
-          return g.run((await this.$.a) + 1);
-        },
-        async d() {
-          return g.run((await this.$.b) + 1);
-        }
-      },
-      { concurrency: 2 }
-    );
-    expect(g.peak()).toBe(2);
-  });
-
-  it("never frees a slot twice when a task asks for another one late", async () => {
-    const g = gauge();
-    const result = await async.all(
-      {
-        async sum() {
-          const a = this.$.a;
-          // `a` settles during this, and the slot is not back yet when
-          // `b` is asked for.
-          await tick(15);
-          const b = this.$.b;
-          return (await a) + (await b);
-        },
-        a: () => g.run(1, 5),
-        b: () => g.run(2, 30),
-        c: () => g.run(3, 5)
-      },
-      { concurrency: 1 }
-    );
-    expect(result.sum).toBe(3);
-    expect(g.peak()).toBe(1);
-  });
-
-  it("starts nothing queued after a failure", async () => {
-    const started: string[] = [];
-    const task =
-      (name: string, fails = false) =>
-      async () => {
-        started.push(name);
-        await tick();
-        if (fails) throw new Error(`${name} failed`);
-        return name;
-      };
-    await expect(
-      async.all(
-        { a: task("a", true), b: task("b"), c: task("c") },
-        { concurrency: 1 }
+    const limit = async.limit(2);
+    const order: number[] = [];
+    const results = await Promise.all(
+      [1, 2, 3, 4, 5].map((n) =>
+        limit(async () => {
+          order.push(n);
+          return g.run(n);
+        })
       )
-    ).rejects.toThrow("a failed");
-    await tick(20);
-    expect(started).toEqual(["a"]);
+    );
+    expect(results).toEqual([1, 2, 3, 4, 5]);
+    expect(order).toEqual([1, 2, 3, 4, 5]);
+    expect(g.peak()).toBe(2);
+  });
+
+  it("frees the slot when a call fails", async () => {
+    const limit = async.limit(1);
+    await expect(
+      limit(async () => {
+        throw new Error("failed");
+      })
+    ).rejects.toThrow("failed");
+    expect(await limit(() => "next")).toBe("next");
   });
 });
 
-describe("async.all signals", () => {
+describe("async.all", () => {
+  it("resolves named tasks, each able to await another", async () => {
+    const result = await async.all({
+      async a() {
+        await tick();
+        return 1;
+      },
+      async b() {
+        return (await this.$.a) + 1;
+      }
+    });
+    expect(result).toEqual({ a: 1, b: 2 });
+  });
+
   it("aborts this.$signal in running tasks when a sibling fails", async () => {
     let aborted: unknown;
     await expect(
@@ -274,61 +214,55 @@ describe("async.all signals", () => {
     expect((aborted as Error).message).toBe("broken");
   });
 
-  it("does not start queued tasks once the caller's signal aborts", async () => {
+  it("passes the caller's signal on as this.$signal", async () => {
     const controller = new AbortController();
-    const started: string[] = [];
     const result = async.all(
       {
         async a() {
-          started.push("a");
           await tick(10);
           return this.$signal.aborted;
-        },
-        async b() {
-          started.push("b");
         }
       },
-      { concurrency: 1, signal: controller.signal }
+      { signal: controller.signal }
     );
-    await tick(2);
-    controller.abort(new Error("cancelled"));
-    await expect(result).rejects.toThrow("cancelled");
-    expect(started).toEqual(["a"]);
+    controller.abort();
+    expect(await result).toEqual({ a: true });
   });
 });
 
 describe("async.allSettled", () => {
-  it("leaves this.$signal alone when a task fails", async () => {
+  it("reports each outcome, fails a dependant, and leaves this.$signal alone", async () => {
     const result = await async.allSettled({
+      async ok() {
+        await tick();
+        return this.$signal.aborted;
+      },
       async broken(): Promise<number> {
         throw new Error("broken");
       },
-      async after() {
-        await tick();
-        return this.$signal.aborted;
+      async needsBroken() {
+        return (await this.$.broken) + 1;
       }
     });
-    expect(result.after).toEqual({ status: "fulfilled", value: false });
-  });
-
-  it("reports each outcome and fails a task whose dependency failed", async () => {
-    const result = await async.allSettled(
-      {
-        async ok() {
-          return 1;
-        },
-        async broken(): Promise<number> {
-          throw new Error("broken");
-        },
-        async needsBroken() {
-          return (await this.$.broken) + 1;
-        }
-      },
-      { concurrency: 1 }
-    );
-    expect(result.ok).toEqual({ status: "fulfilled", value: 1 });
+    expect(result.ok).toEqual({ status: "fulfilled", value: false });
     expect(result.broken.status).toBe("rejected");
     expect(result.needsBroken.status).toBe("rejected");
+  });
+});
+
+describe("async.flow", () => {
+  it("returns the value of the first task to end it", async () => {
+    const result = await async.flow<string>({
+      async fast() {
+        await tick(5);
+        this.$end("fast");
+      },
+      async slow() {
+        await tick(30);
+        this.$end("slow");
+      }
+    });
+    expect(result).toBe("fast");
   });
 });
 

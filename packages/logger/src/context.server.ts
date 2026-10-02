@@ -64,15 +64,11 @@ const isReadRequestContext = createContext<boolean>(false);
 const readSignalContext = createContext<AbortSignal | null>(null);
 
 /**
- * The current request's abort signal, when the request only reads.
- *
- * The server aborts it when the client goes away before the response is done
- * (a navigation that supersedes this one, a closed tab). Reads made for a
- * response nobody will receive can stop; `requirePermissions` ties the Supabase
- * client it hands out to this.
- *
- * Undefined on a mutating request — an action's writes must run to the end
- * whether or not the client waits — and outside a request.
+ * The current request's abort signal, when the request only reads; undefined
+ * on a mutating request and outside a request. The server aborts it when the
+ * client goes away before the response is done, and the Supabase client
+ * `requirePermissions` hands out cancels its reads then (from `request.signal`
+ * directly). Here it is for code that has no request: the log filter.
  */
 export function readRequestSignal(): AbortSignal | undefined {
   return storage.getStore()?.get(readSignalContext) ?? undefined;
