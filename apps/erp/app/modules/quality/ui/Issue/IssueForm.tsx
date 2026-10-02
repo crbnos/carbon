@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -134,7 +133,7 @@ const IssueForm = ({
 
           <VStack spacing={4}>
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
-              <Input name="name" label={t`Name`} />
+              <Input name="name" label={t`Name`} autoFocus={!isEditing} />
               <Select
                 name="nonConformanceTypeId"
                 label={t`Issue Type`}

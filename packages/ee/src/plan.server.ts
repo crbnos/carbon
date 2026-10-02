@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -8,8 +7,15 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { Edition, normalizePlanId, Plan } from "@carbon/utils";
+import { oncePerRead } from "@carbon/logger/middleware.server";
+import {
+  companyPlanCacheKey,
+  Edition,
+  normalizePlanId,
+  Plan
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
 import {
@@ -42,7 +48,22 @@ function isBypassCompany(companyId: string): boolean {
 // rules) off — fail-open. Callers are UI gates and evaluators that should not 500
 // on a transient blip, so log rather than throw; the signal is what was missing
 // when this silently disabled rules.
-async function readCompanyPlan(companyId: string): Promise<string | null> {
+//
+// Cached in Redis and cleared by the Stripe sync; the TTL covers writes that
+// don't clear it. A missing row is never cached.
+const PLAN_CACHE_TTL_SECONDS = 60;
+
+function readCompanyPlan(companyId: string): Promise<string | null> {
+  return oncePerRead(`companyPlan:${companyId}`, () =>
+    loadCompanyPlan(companyId)
+  );
+}
+
+async function loadCompanyPlan(companyId: string): Promise<string | null> {
+  const cacheKey = companyPlanCacheKey(companyId);
+  const cached = await redis.get(cacheKey);
+  if (cached) return cached;
+
   const { data, error: planError } = await getCarbonServiceRole()
     .from("companyPlan")
     .select("planId")
@@ -51,6 +72,10 @@ async function readCompanyPlan(companyId: string): Promise<string | null> {
 
   if (planError) {
     logger.error("getCompanyPlan failed", { companyId, error: planError });
+  }
+
+  if (data?.planId) {
+    await redis.set(cacheKey, data.planId, "EX", PLAN_CACHE_TTL_SECONDS);
   }
 
   return data?.planId ?? null;

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -26,13 +25,11 @@ export type LicenseKind = "agpl" | "commercial";
 export const LICENSE_HEADERS: Record<LicenseKind, readonly string[]> = {
   agpl: [
     "// SPDX-License-Identifier: AGPL-3.0-only",
-    "// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.",
     "// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,",
     "// including ports, remain AGPLv3; serving them over a network requires releasing their source."
   ],
   commercial: [
     "// SPDX-License-Identifier: LicenseRef-Carbon-Commercial",
-    "// Copyright (C) Carbon Manufacturing Systems Corporation.",
     "// Carbon Enterprise file, licensed only under the Carbon Commercial License",
     // packages/ee/LICENSE §1 permits viewing, and copying/sharing only in source
     // form as part of Carbon's source; §2 makes every other use — "including
@@ -255,7 +252,10 @@ const OUR_SPDX_LINES = new Map<string, LicenseKind>([
  * or in LICENSE_HEADERS are ever stripped: a file's own comments are never
  * guessed to be part of a header.
  */
-export const RETIRED_HEADER_LINES: readonly string[] = [];
+export const RETIRED_HEADER_LINES: readonly string[] = [
+  "// Copyright (C) Carbon Manufacturing Systems Corporation.",
+  "// Copyright (C) Carbon Manufacturing Systems Corporation and contributors."
+];
 
 const KNOWN_HEADER_LINES = new Set<string>([
   ...LICENSE_HEADERS.agpl,

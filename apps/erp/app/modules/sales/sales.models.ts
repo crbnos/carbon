@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -360,6 +359,16 @@ const parseJsonField = (value: unknown) => {
   }
 };
 
+// One step of how a price was resolved — the shape of PriceTraceStep (types.ts).
+export const priceTraceStepValidator = z.object({
+  step: z.string(),
+  source: z.string(),
+  amount: z.number(),
+  adjustment: z.number().optional(),
+  ruleId: z.string().optional(),
+  label: z.string().optional()
+});
+
 // A Configuration rule prices one configurable item's parameter values
 // (`configurationPrices`) and has no discount or markup of its own.
 export const pricingRuleTypes = [
@@ -492,9 +501,13 @@ export const quoteLineValidator = z.object({
   unitOfMeasureCode: zfd.text(
     z.string().min(1, { message: "Unit of measure is required" })
   ),
-  quantity: z.array(
-    zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
-  ),
+  quantity: z
+    .array(
+      zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
+    )
+    .refine((quantities) => new Set(quantities).size === quantities.length, {
+      message: "Each quantity must be different"
+    }),
   modelUploadId: zfd.text(z.string().optional()),
   noQuoteReason: zfd.text(z.string().optional()),
   taxPercent: zfd.numeric(
@@ -990,6 +1003,12 @@ export const salesOrderLineValidator = z
     configuration: z.preprocess(
       parseJsonField,
       z.record(z.string(), z.any()).nullable().optional()
+    ),
+    // How unitPrice was resolved, posted as JSON; "null" clears it when the
+    // price was typed rather than resolved.
+    priceTrace: z.preprocess(
+      parseJsonField,
+      z.array(priceTraceStepValidator).nullable().optional()
     )
   })
   .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {

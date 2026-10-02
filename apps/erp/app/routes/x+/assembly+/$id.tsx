@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import {
   useInterval,
   useMode
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyPlayerHandle,
@@ -28,7 +28,11 @@ import {
 } from "@carbon/viewer";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   data,
   redirect,
@@ -72,6 +76,11 @@ export const handle: Handle = {
   ),
   module: "production"
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["id"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -623,7 +632,7 @@ export default function AssemblyInstructionRoute() {
                 />
               }
               content={
-                <div className="relative bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full">
+                <div className="relative bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full">
                   {glbPath && graphPath && isPlanning && (
                     <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
                       <Spinner className="h-3.5 w-3.5" />

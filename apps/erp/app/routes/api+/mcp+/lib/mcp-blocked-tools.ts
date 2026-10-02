@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -50,7 +49,10 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesOrderFavorite",
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
-  "resources_insertTrainingCompletion"
+  "resources_insertTrainingCompletion",
+  // Variadic (`...items`): the dispatcher fills one positional argument per
+  // parameter from a JSON object and has no slot for a rest tail.
+  "production_getPartDocuments"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

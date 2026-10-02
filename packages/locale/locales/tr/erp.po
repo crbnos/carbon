@@ -4556,6 +4556,9 @@ msgstr "sarf malzemesi"
 msgid "Consumable"
 msgstr "Sarf malzemesi"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Sarf malzemesi Ayrıntıları"
 
@@ -4684,6 +4687,9 @@ msgstr "MRP önerilerini satın alma siparişlerine ve iş emirlerine dönüşt�
 
 msgid "Convert to Quote"
 msgstr "Teklife Dönüştür"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "Dönüştürülüyor…"
@@ -8722,7 +8728,7 @@ msgid "From"
 msgstr "Başlangıç"
 
 #. placeholder {0}: formatDate(startDate)
-#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+#. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "{0} tarihinden itibaren"
 
@@ -9159,6 +9165,9 @@ msgstr "Hesap numarasını gizle"
 msgid "Hide Again"
 msgstr "Tekrar Gizle"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Ham verileri gizle"
 
@@ -9332,6 +9341,9 @@ msgstr "Çözülen fiyatın nasıl hesaplandığı."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele, İlk N'yi İncele, Lot'un Yüzdesi veya AQL (Z1.4 / ISO 2859-1). Her mod aşağıda kendi parametre alanlarını ortaya koymaktadır."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu ölçüm aletinin nasıl kullanıldığı — Normal (düzenli kontroller) veya Mastar (diğer ölçüm aletlerini kalibre eder)."
@@ -9591,6 +9603,9 @@ msgstr "Pasifleri Dahil Et"
 
 msgid "Included"
 msgstr "Dahil"
+
+msgid "Includes bought and picked parts"
+msgstr ""
 
 msgid "Includes tax and shipping costs"
 msgstr "Vergi ve nakliye bedelini içerir"
@@ -10330,6 +10345,12 @@ msgstr "İşçilik ve Makine Sapması"
 msgid "Labor & Machine Variance (default)"
 msgstr "İşçilik ve Makine Sapması (varsayılan)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "İşçilik oranı"
 
@@ -10816,6 +10837,12 @@ msgstr "Küçük harf Ürün Kimlikleri izin verilir"
 msgid "Machine"
 msgstr "Makine"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Makine oranı"
 
@@ -11066,6 +11093,12 @@ msgstr "Piyasa kuru geçmişi (USD başına)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenmazlar."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Mastar ölçüm aleti"
 
@@ -11110,6 +11143,9 @@ msgstr "Malzeme"
 
 msgid "Material"
 msgstr "Malzeme"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Malzeme Boyutu"
@@ -11634,6 +11670,9 @@ msgstr "Net Kiralama Yatırımı"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Net Kiralama Yatırımı (varsayılan)"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Asla"
@@ -12431,6 +12470,9 @@ msgstr "Seçilen miktar için fiyatlandırma yok"
 
 msgid "No pricing options found"
 msgstr "Fiyatlandırma seçeneği bulunamadı"
+
+msgid "No pricing rules apply to this quantity."
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
@@ -13544,6 +13586,9 @@ msgstr "Parça"
 msgid "Part Being Replaced"
 msgstr "Yerine Geçilen Parça"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "Parça Detayları"
 
@@ -14189,6 +14234,9 @@ msgstr "Fiyat Listeleri"
 msgid "Price override"
 msgstr "Fiyat geçersiz kılma"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "Fiyatlar"
 
@@ -14349,6 +14397,9 @@ msgstr "Üretim: atölye uygulaması ve planlama"
 
 msgid "Profile"
 msgstr "Profil"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "İlerleme"
@@ -14730,6 +14781,10 @@ msgstr "Miktarlar"
 
 msgid "Quantity"
 msgstr "Miktar"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Gelecek miktar — açık satın alma siparişlerinde ve üretim (üretme) siparişlerinde."
@@ -15433,6 +15488,9 @@ msgstr "Sıralamayı kaldır"
 msgid "Remove station"
 msgstr "İstasyonu kaldır"
 
+msgid "Remove this item"
+msgstr ""
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldırır ve siler. Bu geri alınamaz."
 
@@ -15586,6 +15644,13 @@ msgstr "Raporlama boyutu"
 
 msgid "Reports"
 msgstr "Raporlar"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
@@ -16791,6 +16856,9 @@ msgstr "Bir işlem seçin…"
 msgid "Select an option"
 msgstr "Bir seçenek seçin"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Dönüştürmek için en az bir satır seçin"
 
@@ -17424,8 +17492,14 @@ msgstr "Kullanılabilir parti numaralarını göster"
 msgid "Show available tracking numbers"
 msgstr "Kullanılabilir izleme numaralarını göster"
 
+msgid "Show calculation"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Süreleri Göster"
@@ -19733,6 +19807,9 @@ msgstr "Bu PIN bir daha gösterilmeyecek. Kaybolduysa, operatörler listesinden 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
+
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"
 
@@ -20040,9 +20117,6 @@ msgstr "Seviye değiştir"
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"
 
-msgid "Toggle the sidebar"
-msgstr "Kenar çubuğunu aç/kapat"
-
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 
@@ -20069,6 +20143,9 @@ msgstr "Alet Detayları"
 
 msgid "Tool ID"
 msgstr "Alet Kimliği"
+
+msgid "Tooling Cost"
+msgstr ""
 
 msgid "tools"
 msgstr "Araçlar"
@@ -20101,11 +20178,17 @@ msgstr "Varlığın toplam kapitalize edilen maliyeti (satın alma fiyatı artı
 msgid "Total Construction Cost:"
 msgstr "Toplam İnşaat Maliyeti:"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Toplam iskonto"
 
 msgid "Total Due"
 msgstr "Toplam Borç"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
@@ -20113,11 +20196,23 @@ msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; 
 msgid "Total Hours"
 msgstr "Toplam Saat"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Toplam Dakika"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Toplam Fiyat"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Toplam Miktar"

@@ -4556,6 +4556,9 @@ msgstr "Verbrauchsmaterial"
 msgid "Consumable"
 msgstr "Verbrauchsmaterial"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Verbrauchsmaterial-Details"
 
@@ -4684,6 +4687,9 @@ msgstr "Wandeln Sie MRP-Vorschläge in Bestellungen und Fertigungsaufträge um."
 
 msgid "Convert to Quote"
 msgstr "In Angebot umwandeln"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "Wird konvertiert …"
@@ -8722,7 +8728,7 @@ msgid "From"
 msgstr "Von"
 
 #. placeholder {0}: formatDate(startDate)
-#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+#. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "Von {0}"
 
@@ -9159,6 +9165,9 @@ msgstr "Kontonummer verbergen"
 msgid "Hide Again"
 msgstr "Erneut ausblenden"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Roh ausblenden"
 
@@ -9332,6 +9341,9 @@ msgstr "Wie der aufgelöste Preis berechnet wurde."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Wie die Stichprobengröße entschieden wird — Alle inspizieren, Erste N inspizieren, Prozentsatz des Loses oder AQL (Z1.4 / ISO 2859-1). Jeder Modus zeigt seine eigenen Parameterfelder unten."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Wie dieses Prüfmittel verwendet wird — Normal (regelmäßige Überprüfungen) oder Referenz (kalibriert andere Prüfmittel)."
@@ -9591,6 +9603,9 @@ msgstr "Inaktive einschließen"
 
 msgid "Included"
 msgstr "Enthalten"
+
+msgid "Includes bought and picked parts"
+msgstr ""
 
 msgid "Includes tax and shipping costs"
 msgstr "Enthält Steuern und Versandkosten"
@@ -10330,6 +10345,12 @@ msgstr "Personal- & Maschinenabweichung"
 msgid "Labor & Machine Variance (default)"
 msgstr "Personal- & Maschinenabweichung (Standard)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "Personalsatz"
 
@@ -10816,6 +10837,12 @@ msgstr "Kleingeschriebene Artikel-IDs sind erlaubt"
 msgid "Machine"
 msgstr "Maschine"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Maschinensatz"
 
@@ -11066,6 +11093,12 @@ msgstr "Marktkursverlauf (pro USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Markiert die Person für jeden Tag im Bereich als frei. Sie werden nicht eingeplant, während sie weg sind."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Normalprüfmittel"
 
@@ -11110,6 +11143,9 @@ msgstr "Material"
 
 msgid "Material"
 msgstr "Material"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Materialdimension"
@@ -11634,6 +11670,9 @@ msgstr "Nettoinvestitionen in Leasingverhältnisse"
 
 msgid "Net Investment in Leases (default)"
 msgstr "Nettoinvestitionen in Leasingverhältnisse (Standard)"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Nie"
@@ -12431,6 +12470,9 @@ msgstr "Keine Preisfindung für die ausgewählte Menge"
 
 msgid "No pricing options found"
 msgstr "Keine Preisfindungsoptionen gefunden"
+
+msgid "No pricing rules apply to this quantity."
+msgstr ""
 
 msgid "No printer configured"
 msgstr "Kein Drucker konfiguriert"
@@ -13544,6 +13586,9 @@ msgstr "Teil"
 msgid "Part Being Replaced"
 msgstr "Zu ersetzender Teil"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "Teildetails"
 
@@ -14189,6 +14234,9 @@ msgstr "Preislisten"
 msgid "Price override"
 msgstr "Preisübersteuerung"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "Preise"
 
@@ -14349,6 +14397,9 @@ msgstr "Produktion: Shop-Floor-App und Planung"
 
 msgid "Profile"
 msgstr "Profil"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "Fortschritt"
@@ -14730,6 +14781,10 @@ msgstr "Mengen"
 
 msgid "Quantity"
 msgstr "Menge"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Eintreffende Menge – aus offenen Bestellungen plus aus Produktionsaufträgen (Herstellen)."
@@ -15433,6 +15488,9 @@ msgstr "Sortierung nach Spalte entfernen"
 msgid "Remove station"
 msgstr "Station entfernen"
 
+msgid "Remove this item"
+msgstr ""
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Entfernen Sie diesen Speichertyp aus allen referenzierenden Lagereinheiten und löschen Sie ihn. Dies kann nicht rückgängig gemacht werden."
 
@@ -15586,6 +15644,13 @@ msgstr "Berichtsdimension"
 
 msgid "Reports"
 msgstr "Berichte"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "Erneut drucken"
@@ -16791,6 +16856,9 @@ msgstr "Vorgang auswählen…"
 msgid "Select an option"
 msgstr "Wählen Sie eine Option"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Wählen Sie mindestens eine Position zum Umwandeln aus"
 
@@ -17424,8 +17492,14 @@ msgstr "Verfügbare Losnummern anzeigen"
 msgid "Show available tracking numbers"
 msgstr "Verfügbare Verfolgungsnummern anzeigen"
 
+msgid "Show calculation"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "Kundenkennung anzeigen"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Dauern anzeigen"
@@ -19733,6 +19807,9 @@ msgstr "Diese PIN wird nicht mehr angezeigt. Wenn Sie sie vergessen haben, setze
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Diese PIN wird nicht mehr angezeigt. Sie benötigen sie, um den Konsolenmodus auf MES-Terminals zu beenden."
 
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
+
 msgid "this purchase order"
 msgstr "diese Bestellung"
 
@@ -20040,9 +20117,6 @@ msgstr "Ebene umschalten"
 msgid "Toggle Properties"
 msgstr "Eigenschaften umschalten"
 
-msgid "Toggle the sidebar"
-msgstr "Seitenleiste umschalten"
-
 msgid "Toggle views"
 msgstr "Ansichten umschalten"
 
@@ -20069,6 +20143,9 @@ msgstr "Werkzeugdetails"
 
 msgid "Tool ID"
 msgstr "Werkzeug-ID"
+
+msgid "Tooling Cost"
+msgstr ""
 
 msgid "tools"
 msgstr "Werkzeuge"
@@ -20101,11 +20178,17 @@ msgstr "Gesamtkapitalisierten Kosten des Vermögenswerts (Kaufpreis plus Fracht,
 msgid "Total Construction Cost:"
 msgstr "Gesamtbaukosten:"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Gesamtrabatt"
 
 msgid "Total Due"
 msgstr "Fälliger Gesamtbetrag"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreibung; Kosten werden pro hergestellter Einheit verteilt."
@@ -20113,11 +20196,23 @@ msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreib
 msgid "Total Hours"
 msgstr "Gesamtstunden"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Gesamtminuten"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Gesamtpreis"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Gesamtmenge"

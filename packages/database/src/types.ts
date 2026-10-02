@@ -47968,6 +47968,7 @@ export type Database = {
           netExtendedPrice: number | null
           netUnitPrice: number | null
           priceSource: string
+          priceTrace: Json | null
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -47991,6 +47992,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -48014,6 +48016,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId?: string
           quoteLineId?: string

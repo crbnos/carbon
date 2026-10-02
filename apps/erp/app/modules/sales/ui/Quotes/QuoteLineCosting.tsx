@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -10,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   HStack,
   Switch,
   Table,
@@ -33,6 +33,7 @@ import { MethodItemTypeIcon, TimeTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks";
 import type { Costs } from "../../types";
+import { CostRowLabel, costRowLabelCellClass } from "./CostRowLabel";
 
 const QuoteLineCosting = ({
   quantities,
@@ -77,28 +78,33 @@ const QuoteLineCosting = ({
               id="cost-details"
             />
             <label className="text-sm" htmlFor="cost-details">
-              Show Details
+              <Trans>Show Details</Trans>
             </label>
           </div>
         </CardAction>
       </HStack>
       <CardContent>
-        <Table>
+        <Table className="[&_td]:whitespace-nowrap [&_td]:tabular-nums">
           <Thead>
             <Tr>
-              <Th className="w-[300px]" />
+              <Th className={costRowLabelCellClass} />
               {quantities.map((quantity) => (
-                <Th key={quantity.toString()}>{quantity}</Th>
+                <Th
+                  key={quantity.toString()}
+                  className="min-w-[140px] tabular-nums"
+                >
+                  {quantity}
+                </Th>
               ))}
             </Tr>
           </Thead>
           <Tbody>
             <Tr>
-              <Td className="border-r border-border ">
-                <HStack className="w-full justify-between ">
-                  <span>Total Material Cost</span>
-                  <Enumerable value="Material" />
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel
+                  badge={<Enumerable value="Material" />}
+                  label={<Trans>Total Material Cost</Trans>}
+                />
               </Td>
               {quantityCosts.map(({ quantity, costs }, index) => {
                 const totalMaterialCost =
@@ -131,23 +137,25 @@ const QuoteLineCosting = ({
             {detailsDisclosure.isOpen && (
               <>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Part Cost{" "}
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <MethodItemTypeIcon type="Part" />
+                        </Badge>
+                      }
+                      label={<Trans>Part Cost</Trans>}
+                      info={
                         <Tooltip>
                           <TooltipTrigger>
                             <LuInfo className="w-4 h-4" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            Includes bought and picked parts
+                            <Trans>Includes bought and picked parts</Trans>
                           </TooltipContent>
                         </Tooltip>
-                      </span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Part" />
-                      </Badge>
-                    </HStack>
+                      }
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -171,13 +179,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap">Material Cost</span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Material" />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <MethodItemTypeIcon type="Material" />
+                        </Badge>
+                      }
+                      label={<Trans>Material Cost</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -201,13 +211,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap">Tooling Cost</span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Tool" />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <MethodItemTypeIcon type="Tool" />
+                        </Badge>
+                      }
+                      label={<Trans>Tooling Cost</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -231,13 +243,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap">Consumable Cost</span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Consumable" />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <MethodItemTypeIcon type="Consumable" />
+                        </Badge>
+                      }
+                      label={<Trans>Consumable Cost</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -261,14 +275,9 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 {/* <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap">Service Cost</span>
-                      <Badge variant="secondary">
-                        <MethodItemTypeIcon type="Service" />
-                      </Badge>
-                    </HStack>
-                  </Td>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+<CostRowLabel badge={<Badge variant="secondary"><MethodItemTypeIcon type="Service" /></Badge>} label={<Trans>Service Cost</Trans>} />
+</Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
                       <Td key={quantity.toString()}>
@@ -293,11 +302,11 @@ const QuoteLineCosting = ({
               </>
             )}
             <Tr>
-              <Td className="border-r border-border ">
-                <HStack className="w-full justify-between ">
-                  <span>Total Direct Cost</span>
-                  <Enumerable value="Direct" />
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel
+                  badge={<Enumerable value="Direct" />}
+                  label={<Trans>Total Direct Cost</Trans>}
+                />
               </Td>
               {quantityCosts.map(({ quantity, costs }, index) => {
                 const totalDirectCost =
@@ -320,15 +329,15 @@ const QuoteLineCosting = ({
             {detailsDisclosure.isOpen && (
               <>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Labor Costs
-                      </span>
-                      <Badge variant="secondary">
-                        <TimeTypeIcon type="Labor" />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <TimeTypeIcon type="Labor" />
+                        </Badge>
+                      }
+                      label={<Trans>Labor Costs</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -352,15 +361,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-14 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Labor Hours
-                      </span>
-                      <Badge variant="secondary">
-                        <LuClock />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-14")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <LuClock />
+                        </Badge>
+                      }
+                      label={<Trans>Labor Hours</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     const laborHours =
@@ -380,15 +389,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-10 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Machine Costs
-                      </span>
-                      <Badge variant="secondary">
-                        <TimeTypeIcon type="Machine" />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-10")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <TimeTypeIcon type="Machine" />
+                        </Badge>
+                      }
+                      label={<Trans>Machine Costs</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     return (
@@ -412,15 +421,15 @@ const QuoteLineCosting = ({
                   })}
                 </Tr>
                 <Tr>
-                  <Td className="border-r border-border pl-14 ">
-                    <HStack className="w-full justify-between ">
-                      <span className="whitespace-nowrap flex items-center justify-start gap-2">
-                        Machine Hours
-                      </span>
-                      <Badge variant="secondary">
-                        <LuClock />
-                      </Badge>
-                    </HStack>
+                  <Td className={cn(costRowLabelCellClass, "pl-14")}>
+                    <CostRowLabel
+                      badge={
+                        <Badge variant="secondary">
+                          <LuClock />
+                        </Badge>
+                      }
+                      label={<Trans>Machine Hours</Trans>}
+                    />
                   </Td>
                   {quantityCosts.map(({ quantity, costs }) => {
                     const machineHours = costs.machineHours ?? 0;
@@ -441,11 +450,11 @@ const QuoteLineCosting = ({
               </>
             )}
             <Tr>
-              <Td className="border-r border-border ">
-                <HStack className="w-full justify-between ">
-                  <span>Total Indirect Cost</span>
-                  <Enumerable value="Indirect" />
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel
+                  badge={<Enumerable value="Indirect" />}
+                  label={<Trans>Total Indirect Cost</Trans>}
+                />
               </Td>
               {quantityCosts.map(({ quantity, costs }, index) => {
                 return (
@@ -469,11 +478,11 @@ const QuoteLineCosting = ({
               })}
             </Tr>
             <Tr>
-              <Td className="border-r border-border ">
-                <HStack className="w-full justify-between ">
-                  <span>Total Outside Cost</span>
-                  <Enumerable value="Outside" />
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel
+                  badge={<Enumerable value="Outside" />}
+                  label={<Trans>Total Outside Cost</Trans>}
+                />
               </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 return (
@@ -498,7 +507,9 @@ const QuoteLineCosting = ({
             </Tr>
 
             <Tr className="font-bold ">
-              <Td className="border-r border-border ">Total Estimated Cost</Td>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Total Estimated Cost</Trans>} />
+              </Td>
               {quantityCosts.map(({ quantity, costs }) => {
                 const totalCost =
                   costs.consumableCost +
@@ -531,7 +542,7 @@ const QuoteLineCosting = ({
           </Tbody>
           <Tfoot>
             {/* <Tr className="font-bold">
-              <Td className="border-r border-border" />
+              <Td className={costRowLabelCellClass} />
               {quantityCosts.map(({ quantity }) => (
                 <Td key={quantity} >
                   <Button variant="secondary">Add</Button>

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -62,11 +61,6 @@ const ShortcutHelp = () => {
       {
         shortcut: SHORTCUTS.confirm,
         description: t`Confirm a dialog`,
-        group: general
-      },
-      {
-        shortcut: SHORTCUTS.sidebarToggle,
-        description: t`Toggle the sidebar`,
         group: general
       },
       {

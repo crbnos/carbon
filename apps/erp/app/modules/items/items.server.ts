@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -16,6 +15,8 @@ import { data } from "react-router";
 import {
   activateMethodVersion,
   findChangeNoticesForItem,
+  getItemSupersededBy,
+  getItemSupersession,
   upsertItemSupersession
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
@@ -860,4 +861,37 @@ export function unreleasedChangeOrderItemsMessage(
         `${item.itemName} was created by change order ${item.changeOrderReadableId}, which has not been released yet.`
     )
     .join(" ");
+}
+
+// Not awaited by the item layouts: only the header badge and the properties
+// sidebar read these, so they stream instead of holding the page.
+export function streamItemSupersession(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return {
+    supersession: getItemSupersession(client, itemId, companyId).then(
+      (result) => result.data,
+      (error) => {
+        logger.error("Failed to load item supersession", {
+          companyId,
+          itemId,
+          error
+        });
+        return null;
+      }
+    ),
+    supersededBy: getItemSupersededBy(client, itemId, companyId).then(
+      (result) => result.data ?? [],
+      (error) => {
+        logger.error("Failed to load item predecessors", {
+          companyId,
+          itemId,
+          error
+        });
+        return [];
+      }
+    )
+  };
 }

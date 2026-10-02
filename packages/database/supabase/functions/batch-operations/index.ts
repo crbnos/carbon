@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -148,7 +147,10 @@ async function loadMemberOutputs(
     .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
     .where("companyId", "=", companyId)
     .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+    // Deterministic among tied `createdAt` (bulk-minted serials).
     .orderBy("createdAt", "asc")
+    .orderBy("readableId", "asc")
+    .orderBy("id", "asc")
     .execute();
   const entityByMakeMethod = new Map<string, string>();
   for (const e of entities) {

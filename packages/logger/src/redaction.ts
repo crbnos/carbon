@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -39,4 +38,21 @@ export function isSensitiveKey(key: string): boolean {
       ? key.toLowerCase().includes(pattern.toLowerCase())
       : pattern.test(key)
   );
+}
+
+/**
+ * Mask sensitive query-param values (`?code=…`, `?token=…`, …) while keeping the
+ * rest of the query string readable. Returns "" for a bodyless query.
+ */
+export function redactSearch(search: string): string {
+  if (!search || search === "?") return "";
+  const params = new URLSearchParams(search);
+  let changed = false;
+  for (const key of params.keys()) {
+    if (isSensitiveKey(key)) {
+      params.set(key, REDACTED);
+      changed = true;
+    }
+  }
+  return changed ? `?${params.toString()}` : search;
 }

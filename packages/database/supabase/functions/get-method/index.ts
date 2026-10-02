@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -7200,8 +7199,10 @@ serve(async (req: Request) => {
                       l.exchangeRate ?? sourceQuote.data?.exchangeRate ?? 1,
                     categoryMarkups: JSON.stringify(l.categoryMarkups ?? {}),
                     // Copied prices keep their provenance so a manual price
-                    // stays protected on the new quote/revision.
+                    // stays protected on the new quote/revision, and the
+                    // trace that explains it.
                     priceSource: l.priceSource ?? "system",
+                    priceTrace: toJson(l.priceTrace),
                     createdBy: userId,
                   }))
                 )
