@@ -70,9 +70,12 @@ function map<T, R>(
   { concurrency }: ConcurrencyOptions = {}
 ): Promise<R[]> {
   const run = limit(concurrency);
+  // Read the input to the end before anything starts: if iterating it throws,
+  // no mapper is left running with nobody watching its result.
+  const list = Array.from(items);
   let failed = false;
   return Promise.all(
-    Array.from(items, (item, index) =>
+    list.map((item, index) =>
       run(async () => {
         // The result is already a rejection; nobody reads this value.
         if (failed) return undefined as R;

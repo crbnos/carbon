@@ -52,6 +52,22 @@ describe("async.map", () => {
     expect(started).toEqual([1, 2]);
   });
 
+  it("starts nothing when reading the input throws", () => {
+    const started: number[] = [];
+    function* broken() {
+      yield 1;
+      yield 2;
+      throw new Error("input failed");
+    }
+    expect(() =>
+      async.map(broken(), (n) => {
+        started.push(n);
+        return n;
+      })
+    ).toThrow("input failed");
+    expect(started).toEqual([]);
+  });
+
   it("rejects a limit that is not a positive integer or Infinity", () => {
     expect(() => async.map([1], (n) => n, { concurrency: 0 })).toThrow(
       TypeError
