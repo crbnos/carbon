@@ -89,7 +89,49 @@ pub struct JobStore {
     park_dir: Option<PathBuf>,
     /// Per-job in-process wakeups so a same-replica long-poll returns the instant
     /// the worker finishes (cross-replica completion caught by the Redis re-check).
-    notifiers: Arc<DashMap<String, Arc<Notify>>>,
+    notifiers: Notifiers,
+}
+
+/// One wakeup per job a long-poll is waiting on. An entry lives only while a
+/// poll holds a [`Watch`] on it, so the map does not grow with every job the
+/// process has ever been asked about.
+#[derive(Clone, Default)]
+struct Notifiers(Arc<DashMap<String, Arc<Notify>>>);
+
+struct Watch {
+    notifiers: Notifiers,
+    id: String,
+    notify: Arc<Notify>,
+}
+
+impl Notifiers {
+    fn watch(&self, id: &str) -> Watch {
+        let notify = self
+            .0
+            .entry(id.to_string())
+            .or_insert_with(|| Arc::new(Notify::new()))
+            .clone();
+        Watch {
+            notifiers: self.clone(),
+            id: id.to_string(),
+            notify,
+        }
+    }
+
+    fn wake(&self, id: &str) {
+        if let Some(n) = self.0.get(id) {
+            n.notify_waiters();
+        }
+    }
+}
+
+impl Drop for Watch {
+    fn drop(&mut self) {
+        // The map's handle and this one: no other poll is waiting on the job.
+        self.notifiers
+            .0
+            .remove_if(&self.id, |_, notify| Arc::strong_count(notify) <= 2);
+    }
 }
 
 /// Outcome of a finalize attempt during a long-poll.
@@ -121,7 +163,7 @@ impl JobStore {
                     conn,
                     park_dir: (dispatch::from_env() == dispatch::Dispatch::Local)
                         .then(config::pending_dir),
-                    notifiers: Arc::new(DashMap::new()),
+                    notifiers: Notifiers::default(),
                 }
             }
             Err(e) => {
@@ -134,13 +176,19 @@ impl JobStore {
     // --- job status (pointer, not artifact bytes) --------------------------
 
     async fn read(&self, id: &str) -> Option<JobRecord> {
+        self.try_read(id).await.ok().flatten()
+    }
+
+    /// `Err` when Redis could not be asked, as opposed to `Ok(None)` for a job
+    /// it does not have.
+    async fn try_read(&self, id: &str) -> Result<Option<JobRecord>, ()> {
         let mut c = self.conn.clone();
         match c.get::<_, Option<String>>(job_key(id)).await {
-            Ok(Some(s)) => serde_json::from_str(&s).ok(),
-            Ok(None) => None,
+            Ok(Some(s)) => Ok(serde_json::from_str(&s).ok()),
+            Ok(None) => Ok(None),
             Err(e) => {
                 eprintln!("assembler: redis job read failed: {e}");
-                None
+                Err(())
             }
         }
     }
@@ -263,13 +311,16 @@ impl JobStore {
         Some(Self::render(id, &rec))
     }
 
-    /// True once the job left the active set (terminal or canceled) — the compute
-    /// task polls this to abandon a canceled run.
+    /// True when the job was canceled or its record is gone — the compute task
+    /// asks this to abandon a run nobody waits for. A Redis that could not be
+    /// asked is not a cancel: dropping a finished compute over one failed read
+    /// would leave the job `running` until its TTL.
     pub async fn is_canceled(&self, id: &str) -> bool {
-        self.read(id)
-            .await
-            .map(|r| r.status == "canceled")
-            .unwrap_or(true)
+        match self.try_read(id).await {
+            Ok(Some(rec)) => rec.status == "canceled",
+            Ok(None) => true,
+            Err(()) => false,
+        }
     }
 
     /// The uniform poll envelope: `{ ok, job: { id, action, status, result?,
@@ -306,6 +357,7 @@ impl JobStore {
         max: Option<Duration>,
     ) -> Option<Value> {
         let deadline = max.map(|m| Instant::now() + m);
+        let mut watch = None;
         loop {
             let rec = self.read(id).await?;
             match rec.status.as_str() {
@@ -325,26 +377,17 @@ impl JobStore {
             if now >= dl {
                 return Some(Self::render(id, &rec));
             }
-            let notify = self.notifier(id);
+            let watch = watch.get_or_insert_with(|| self.notifiers.watch(id));
             let tick = (dl - now).min(Duration::from_millis(500));
             tokio::select! {
-                _ = notify.notified() => {}
+                _ = watch.notify.notified() => {}
                 _ = tokio::time::sleep(tick) => {}
             }
         }
     }
 
-    fn notifier(&self, id: &str) -> Arc<Notify> {
-        self.notifiers
-            .entry(id.to_string())
-            .or_insert_with(|| Arc::new(Notify::new()))
-            .clone()
-    }
-
     pub fn wake(&self, id: &str) {
-        if let Some(n) = self.notifiers.get(id) {
-            n.notify_waiters();
-        }
+        self.notifiers.wake(id);
     }
 
     /// Complete a computed job. When the submit handed over an upload URL for
@@ -748,6 +791,19 @@ mod tests {
             content_type: "application/octet-stream".into(),
             bytes: Bytes::from_static(bytes),
         }
+    }
+
+    #[test]
+    fn a_wakeup_lives_only_while_a_poll_waits_on_it() {
+        let notifiers = Notifiers::default();
+        let first = notifiers.watch("job");
+        let second = notifiers.watch("job");
+        assert!(Arc::ptr_eq(&first.notify, &second.notify));
+
+        drop(first);
+        assert_eq!(notifiers.0.len(), 1, "the second poll still waits");
+        drop(second);
+        assert!(notifiers.0.is_empty());
     }
 
     #[tokio::test]

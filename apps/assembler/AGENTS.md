@@ -169,8 +169,10 @@ Built to sit as a small always-on pod beside other workloads.
   on one face is meshed with that pass off for planes only: 840 MB, and faster.
   The vertices are the same, so graph.json, nodeIds and geometry hashes do not
   change; the triangle wiring in the GLB can (co-circular ties on a regular hole
-  pattern), which is why parts under the threshold keep the default path and
-  stay byte-identical. `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
+  pattern), and with it the contact-derived details of a plan for parts that
+  touch such a face (one `needsSupport` flag flipped on a test assembly; the
+  sequence, motions and contact graph did not). That is why parts under the
+  threshold keep the default path and stay byte-identical. `ASSEMBLER_LEAN_PLANES=0` turns it off. OCCT's other
   mesher (Delabella) is not an answer: lean on memory, but minutes on the same
   plates.
 - **The allocator** on Linux is jemalloc for the whole process (unprefixed, so
@@ -181,7 +183,9 @@ Built to sit as a small always-on pod beside other workloads.
   on Lambda), memory-mapped when a hit is served and cleared at startup.
 - **`<tmp>` must be real disk** with room for the cache, parked outputs and
   downloaded sources. A memory-backed `emptyDir` would charge all of it to the
-  pod's memory limit.
+  pod's memory limit. The server clears downloaded sources (`geometry-*`) left
+  by an earlier process when it starts: a killed container skips its own
+  cleanup and the volume outlives the restart.
 
 ## Not yet done
 

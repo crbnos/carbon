@@ -103,6 +103,7 @@ pub async fn build_state() -> AppState {
 }
 
 async fn serve() {
+    http::clear_stale_sources();
     let state = build_state().await;
     let admission = state.admission.clone();
     // Parked outputs nobody drained (see `jobs.rs`): the disk half of the

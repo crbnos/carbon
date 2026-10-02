@@ -20,6 +20,25 @@ pub fn temp_path(ext: &str) -> PathBuf {
     std::env::temp_dir().join(format!("geometry-{}-{n}-{nanos}.{ext}", std::process::id()))
 }
 
+/// Delete the sources an earlier process left behind. A killed process (an OOM
+/// kill above all) skips its actions' own cleanup, and a pod's temp volume
+/// outlives the container restart, so they would pile up. Only for the standing
+/// server at startup, before it has a job of its own.
+pub fn clear_stale_sources() {
+    clear_sources_in(&std::env::temp_dir());
+}
+
+fn clear_sources_in(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        if entry.file_name().to_string_lossy().starts_with("geometry-") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
 /// One shared client for the process: reuses connections (keep-alive/h2)
 /// instead of paying a fresh pool + TLS handshake per download/upload.
 fn client() -> &'static reqwest::Client {
@@ -229,4 +248,23 @@ pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiErr
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stale_sources_are_cleared_and_nothing_else() {
+        let dir = tempfile::tempdir().unwrap();
+        let stale = dir.path().join("geometry-1-0-123.step");
+        let other = dir.path().join("asm-cache");
+        std::fs::write(&stale, b"x").unwrap();
+        std::fs::create_dir(&other).unwrap();
+
+        clear_sources_in(dir.path());
+
+        assert!(!stale.exists());
+        assert!(other.exists());
+    }
 }
