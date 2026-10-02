@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
 import { loadEnv } from "../datasets/cli";
-import { loadHelpers } from "./helpers";
+import { helperKey, loadHelpers } from "./helpers";
 import { renderMigration, unshipped } from "./migration";
 import { syncAuthz } from "./sync";
 
@@ -39,7 +39,7 @@ async function main() {
     }
     const sql = await renderMigration(
       manifest,
-      helpers.filter((h) => todo.helpers.includes(h.name)),
+      helpers.filter((h) => todo.helpers.includes(helperKey(h))),
       todo.tables
     );
     const root = path.resolve(
