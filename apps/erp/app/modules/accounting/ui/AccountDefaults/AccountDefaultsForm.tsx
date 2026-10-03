@@ -636,7 +636,7 @@ const AccountDefaultsForm = ({
                 {group.fields.map((field) => (
                   <div
                     key={field.name}
-                    className="group rounded-lg border border-border p-4 transition-all hover:border-muted-foreground/30"
+                    className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
