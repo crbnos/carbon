@@ -31,7 +31,9 @@ does not exist. It is not part of `pnpm test`.
    `read-tools.inputs.ts`; a required argument still unanswered leaves the tool
    not called.
 3. Calls the tool and records one of: `ok`, `failed`, `not-found` (it ran and
-   no row matched what it was given), `not-called` (with the reason).
+   no row matched what it was given), `not-called` (with the reason). A tool
+   that was not called fails the sweep: it was not checked. Give its argument a
+   value in `read-tools.inputs.ts`.
 4. Writes `.report/read-tools.json` and compares the failures with
    `read-tools.baseline.json`.
 

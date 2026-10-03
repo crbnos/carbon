@@ -12,8 +12,8 @@
  * in TypeScript or through a SQL function, so the sweep cannot change data.
  *
  * Run it with `pnpm sweep:tools` (see `test/sweep/README.md`). It writes a
- * report and fails when a tool that passed before now errors, or when a tool
- * the baseline lists as failing now passes — the baseline only ever shrinks.
+ * report and fails when a tool errors that the baseline does not list, when a
+ * tool it lists now passes, or when a tool could not be called at all.
  */
 
 import {
@@ -193,6 +193,8 @@ async function resolve(
   let sets = 1;
   const unmatched: string[] = [];
   const sampled = new Map<Planned, unknown[]>();
+  // Lists with nothing to sample and no single value to stand in: sent empty.
+  const empty = new Set<Planned>();
   const collect = async (name: string, planned: Planned): Promise<void> => {
     if (planned.kind === "object") {
       for (const [field, inner] of Object.entries(planned.fields)) {
@@ -223,6 +225,11 @@ async function resolve(
         return;
       }
     }
+    if (planned.many) {
+      empty.add(planned);
+      unmatched.push(name);
+      return;
+    }
     const tried = planned.from.map((from) => `${from.table}.${from.column}`);
     throw new NoValue(`no rows to take ${name} from (${tried.join(", ")})`);
   };
@@ -240,6 +247,7 @@ async function resolve(
         ])
       );
     }
+    if (empty.has(planned)) return [];
     const values = sampled.get(planned) as unknown[];
     const value = values[Math.min(index, values.length - 1)];
     return planned.many ? [value] : value;
@@ -473,6 +481,17 @@ describe("every read tool, against real data", () => {
         .filter((entry) => entry.outcome.status !== "not-called")
         .map((entry) => entry.tool)
     );
+    // A tool that was not called was not checked, and would pass by being
+    // skipped: an argument that stops being plannable must not go unnoticed.
+    expect(
+      entries
+        .filter((entry) => entry.outcome.status === "not-called")
+        .map(
+          (entry) =>
+            `${entry.tool}: ${(entry.outcome as { reason: string }).reason}`
+        ),
+      "read tools that were not called — give the argument a value in read-tools.inputs.ts"
+    ).toEqual([]);
     // New: failing now, not known to. Fixed: known to fail, called, and passing.
     expect(
       Object.keys(failures).filter((tool) => !(tool in known)),
