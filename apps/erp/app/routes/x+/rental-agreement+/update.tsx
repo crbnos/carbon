@@ -9,8 +9,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import {
   getRentalAgreement,
+  rentalAgreementInvoiceAutomationValidator,
   rentalAgreementValidator,
-  updateRentalAgreement
+  updateRentalAgreement,
+  updateRentalAgreementInvoiceAutomation
 } from "~/modules/sales";
 
 const logger = getLogger("erp", "rental-agreement-update");
@@ -67,6 +69,43 @@ export async function action({ request }: ActionFunctionArgs) {
   const id = formData.get("id");
   const field = formData.get("field");
   const value = formData.get("value");
+
+  // Invoicing is not a term: it stays editable while Active, so it skips the
+  // Draft-only terms path below.
+  if (formData.get("intent") === "invoiceAutomation") {
+    if (
+      typeof id !== "string" ||
+      (typeof value !== "string" && value !== null)
+    ) {
+      return { error: { message: "Invalid form data" }, data: null };
+    }
+    const parsed = rentalAgreementInvoiceAutomationValidator.safeParse({
+      invoiceAutomation: value === "" || value === null ? null : value
+    });
+    if (!parsed.success) {
+      return { error: { message: "Invalid invoicing setting" }, data: null };
+    }
+    const update = await updateRentalAgreementInvoiceAutomation(client, {
+      id,
+      companyId,
+      invoiceAutomation: parsed.data.invoiceAutomation,
+      updatedBy: userId
+    });
+    if (update.error) {
+      logger.error("rental agreement invoicing update failed", {
+        companyId,
+        id,
+        error: update.error
+      });
+      return {
+        error: {
+          message: update.error.message || "Failed to update invoicing"
+        },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
+  }
 
   if (
     typeof id !== "string" ||

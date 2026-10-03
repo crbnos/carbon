@@ -36,7 +36,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 11: `RecurringInvoicing` notification event
 - [ ] Task 12: Manual post route — shared PDF, storage path fix, sent stamps
 - [x] Task 13: Settings models/services + Settings → Invoicing page (moving two cards)
-- [ ] Task 14: Agreement override — model, service, update route, properties field
+- [x] Task 14: Agreement override — model, service, update route, properties field
 - [ ] Task 14b: Agreement shows invoicing is automatic; button becomes "Invoice Now"
 - [ ] Task 15: Generate Invoices / Sell to Customer fire automation
 - [ ] Task 16: Agreement cards show held invoices

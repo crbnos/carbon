@@ -38,10 +38,19 @@ import {
   PaymentTerm
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
-import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useSettings
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { rentalBillingCycles, rentalBillingTimings } from "../../sales.models";
+import {
+  invoiceAutomations,
+  rentalBillingCycles,
+  rentalBillingTimings
+} from "../../sales.models";
 import type { RentalAgreement, RentalAgreementRouteData } from "./types";
 
 type Term =
@@ -72,7 +81,7 @@ const PropertyForm = ({
   value,
   children
 }: {
-  name: Term;
+  name: Term | "invoiceAutomation";
   value: unknown;
   children: ReactNode;
 }) => (
@@ -84,6 +93,9 @@ const PropertyForm = ({
     {children}
   </ValidatedForm>
 );
+
+/** The Select's value for "no override": Radix refuses an empty item value. */
+const COMPANY_DEFAULT = "default";
 
 /** The agreement's terms, in the properties panel every document with an
  *  explorer has. Editable while Draft; after activation they are fixed (the
@@ -98,7 +110,9 @@ const RentalAgreementProperties = () => {
     path.to.rentalAgreement(id)
   );
   const agreement = routeData?.rentalAgreement;
+  const contactEmail = routeData?.contactEmail ?? null;
   const permissions = usePermissions();
+  const companySettings = useSettings();
   const currencyCode = agreement?.currencyCode ?? "";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
@@ -143,7 +157,48 @@ const RentalAgreementProperties = () => {
     [id]
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
+  const onUpdateInvoiceAutomation = useCallback(
+    (value: string | null) => {
+      const next = !value || value === COMPANY_DEFAULT ? null : value;
+      if ((agreement?.invoiceAutomation ?? null) === next) return;
+      const formData = new FormData();
+      formData.append("id", id);
+      formData.append("intent", "invoiceAutomation");
+      formData.append("value", next ?? "");
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.rentalAgreementUpdate
+      });
+    },
+    [id, agreement]
+  );
+
   if (!agreement) return null;
+
+  const invoiceAutomationLabels: Record<
+    (typeof invoiceAutomations)[number],
+    string
+  > = {
+    "Draft Only": t`Draft only`,
+    Post: t`Post`,
+    "Post and Email": t`Post and email`
+  };
+  const companyLabel =
+    invoiceAutomationLabels[companySettings.invoiceAutomation];
+  const invoiceAutomationOptions = [
+    {
+      value: COMPANY_DEFAULT,
+      label: t`Company default (${companyLabel})`
+    },
+    ...invoiceAutomations
+      // Sending needs an email to send to.
+      .filter((mode) => mode !== "Post and Email" || !!contactEmail)
+      .map((mode) => ({ value: mode, label: invoiceAutomationLabels[mode] }))
+  ];
+  const isInvoicingReadOnly =
+    !["Draft", "Active"].includes(agreement.status ?? "") ||
+    !permissions.can("update", "sales");
 
   const isDisabled =
     agreement.status !== "Draft" || !permissions.can("update", "sales");
@@ -328,6 +383,42 @@ const RentalAgreementProperties = () => {
           }}
         />
       </PropertyForm>
+      <PropertyForm
+        name="invoiceAutomation"
+        value={agreement.invoiceAutomation ?? COMPANY_DEFAULT}
+      >
+        <Select
+          name="invoiceAutomation"
+          label={t`Invoicing`}
+          inline={(value) => (
+            <span>
+              {value === COMPANY_DEFAULT
+                ? t`Company default (${companyLabel})`
+                : (invoiceAutomationLabels[
+                    value as (typeof invoiceAutomations)[number]
+                  ] ?? value)}
+            </span>
+          )}
+          isReadOnly={isInvoicingReadOnly}
+          helperText={
+            !contactEmail && !isInvoicingReadOnly
+              ? t`Add a contact with an email to send invoices`
+              : undefined
+          }
+          options={invoiceAutomationOptions}
+          onChange={(option) => {
+            onUpdateInvoiceAutomation(option?.value ?? null);
+          }}
+        />
+      </PropertyForm>
+      {agreement.effectiveInvoiceAutomation === "Post and Email" &&
+        !contactEmail && (
+          <p className="text-xs text-muted-foreground">
+            <Trans>
+              Invoices will be posted but not emailed — the contact has no email
+            </Trans>
+          </p>
+        )}
       <PropertyForm name="paymentTermId" value={agreement.paymentTermId}>
         <PaymentTerm
           name="paymentTermId"

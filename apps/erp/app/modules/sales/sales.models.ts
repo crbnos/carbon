@@ -1377,6 +1377,14 @@ export const rentalBillingCycles = ["Calendar Month", "28 Days"] as const;
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 
+/** What happens to an invoice the daily run creates — the DB enum
+ *  `invoiceAutomation`. An agreement's null falls back to the company's. */
+export const invoiceAutomations = [
+  "Draft Only",
+  "Post",
+  "Post and Email"
+] as const;
+
 /** A rental unit's rate frequency: what one unit of its `rate` buys. */
 export const rentalRateUnits = ["Day", "Week", "Month"] as const;
 
@@ -1457,6 +1465,10 @@ export const rentalAgreementValidator = z
       path: ["endDate"]
     }
   );
+
+export const rentalAgreementInvoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations).nullable()
+});
 
 export const rentalAgreementLineValidator = z.object({
   id: zfd.text(z.string().optional()),

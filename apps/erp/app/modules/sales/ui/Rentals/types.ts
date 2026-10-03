@@ -43,10 +43,16 @@ export type RentableFleetAsset = NonNullable<
   Awaited<ReturnType<typeof getRentableFleetAssets>>["data"]
 >[number];
 
-/** A billed period's or charge's invoice, keyed by `salesInvoiceLineId`. */
+/** A billed period's or charge's invoice, keyed by `salesInvoiceLineId`.
+ *  `automationHoldReason` is set when the daily run left it as a draft. */
 export type RentalInvoiceLinks = Record<
   string,
-  { id: string; invoiceId: string | null }
+  {
+    id: string;
+    invoiceId: string | null;
+    status: string | null;
+    automationHoldReason: string | null;
+  }
 >;
 
 /** What a Draft line is derecognized at, for the Activate preview: the
@@ -67,6 +73,8 @@ export type RentalAgreementRouteData = {
   deposits: RentalAgreementDeposit[];
   rentableAssets: RentableFleetAsset[];
   invoiceLinks: RentalInvoiceLinks;
+  /** The customer contact's email; null when there is none to send to. */
+  contactEmail: string | null;
   leasePolicy: LeasePolicy;
   /** Keyed by line id; Draft agreements only. */
   leaseInputs: Record<string, RentalLeaseLineInputs>;

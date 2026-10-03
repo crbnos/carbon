@@ -60,17 +60,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.rentalAgreements);
   }
 
-  const [lines, charges, periods, deposits, rentableAssets] = await Promise.all(
-    [
+  const customerContactId = rentalAgreement.data.customerContactId;
+  const [lines, charges, periods, deposits, rentableAssets, contact] =
+    await Promise.all([
       getRentalAgreementLines(client, id),
       getRentalAgreementCharges(client, id),
       getRentalBillingPeriods(client, id),
       getRentalAgreementDeposits(client, id),
       rentalAgreement.data.status === "Draft"
         ? getRentableFleetAssets(client, companyId)
-        : Promise.resolve({ data: [], error: null })
-    ]
-  );
+        : Promise.resolve({ data: [], error: null }),
+      // Whether invoices can be emailed: the contact's email.
+      customerContactId
+        ? client
+            .from("customerContact")
+            .select("contact(email)")
+            .eq("id", customerContactId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null })
+    ]);
 
   // `salesInvoiceLineId` on periods and charges has no foreign key, so the
   // invoice behind each billed row is read in one batch rather than embedded.
@@ -85,7 +94,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     invoiceLineIds.length > 0
       ? await client
           .from("salesInvoiceLine")
-          .select("id, salesInvoice(id, invoiceId)")
+          .select(
+            "id, salesInvoice(id, invoiceId, status, automationHoldReason)"
+          )
           .eq("companyId", companyId)
           .in("id", invoiceLineIds)
       : null;
@@ -140,7 +151,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (line.salesInvoice?.id) {
       invoiceLinks[line.id] = {
         id: line.salesInvoice.id,
-        invoiceId: line.salesInvoice.invoiceId
+        invoiceId: line.salesInvoice.invoiceId,
+        status: line.salesInvoice.status,
+        automationHoldReason: line.salesInvoice.automationHoldReason
       };
     }
   }
@@ -153,6 +166,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     deposits: deposits.data ?? [],
     rentableAssets: rentableAssets.data ?? [],
     invoiceLinks,
+    contactEmail: contact.data?.contact?.email || null,
     leasePolicy: {
       majorPartPercent: settings.data?.leaseMajorPartThresholdPercent ?? 75,
       substantiallyAllPercent:

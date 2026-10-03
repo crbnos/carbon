@@ -73,6 +73,7 @@ import type {
   quoteStatusType,
   quoteValidator,
   rentalAgreementChargeValidator,
+  rentalAgreementInvoiceAutomationValidator,
   rentalAgreementLineValidator,
   rentalAgreementValidator,
   returnReasonValidator,
@@ -8759,6 +8760,70 @@ export async function updateRentalAgreement(
     )
     .eq("id", rentalAgreement.id)
     .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+/** How the daily run's invoices are handled for one agreement — an
+ *  operational preference, not a term, so it stays editable while Active.
+ *  Null falls back to the company's setting. Sending needs an email to send
+ *  to, so `Post and Email` is refused when the contact has none.
+ *  @mcp update
+ */
+export async function updateRentalAgreementInvoiceAutomation(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    invoiceAutomation: z.infer<
+      typeof rentalAgreementInvoiceAutomationValidator
+    >["invoiceAutomation"];
+    updatedBy: string;
+  }
+) {
+  const current = await client
+    .from("rentalAgreement")
+    .select("status, customerContactId")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .single();
+  if (current.error) return current;
+  if (current.data.status !== "Draft" && current.data.status !== "Active") {
+    return rentalRefusal(
+      "RENTAL_AGREEMENT_CLOSED",
+      "Invoicing can only be changed on a Draft or Active agreement"
+    );
+  }
+
+  if (args.invoiceAutomation === "Post and Email") {
+    const contact = current.data.customerContactId
+      ? await client
+          .from("customerContact")
+          .select("contact(email)")
+          .eq("id", current.data.customerContactId)
+          .eq("companyId", args.companyId)
+          .maybeSingle()
+      : null;
+    if (contact?.error) return contact;
+    if (!contact?.data?.contact?.email) {
+      return rentalRefusal(
+        "RENTAL_INVOICE_EMAIL_NO_CONTACT",
+        "Add a contact with an email to send invoices"
+      );
+    }
+  }
+
+  return client
+    .from("rentalAgreement")
+    .update(
+      sanitize({
+        invoiceAutomation: args.invoiceAutomation,
+        updatedBy: args.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+    )
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
