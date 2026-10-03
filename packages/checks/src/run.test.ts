@@ -20,11 +20,12 @@ describe("scanAll", () => {
 });
 
 describe("conformance gate (real migrations vs baseline)", () => {
-  // Whole-repo filesystem scan (migrations + both apps' route trees) — a cold
-  // CI runner takes several seconds, so the 5s vitest default is too tight.
+  // Whole-repo filesystem scan (migrations + both apps' route trees): ~3s alone,
+  // but 20-38s inside CI's `pnpm test`, where it shares the runner's CPU with
+  // every other package's suite.
   it(
     "introduces no NEW deprecated patterns beyond the committed baseline",
-    { timeout: 30_000 },
+    { timeout: 120_000 },
     () => {
       const fresh = newViolations();
       const detail = fresh
