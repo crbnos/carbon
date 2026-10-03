@@ -563,6 +563,15 @@ export type Events = {
     data: Record<string, never>;
   };
 
+  // Sent by hand from the Inngest dashboard: delete inactive companies now,
+  // with no warning. A dry run unless `dryRun` is false.
+  "carbon/purge-inactive-companies": {
+    data: {
+      dryRun?: boolean;
+      limit?: number;
+    };
+  };
+
   // Dispatch
   "carbon/dispatch": {
     data: {
