@@ -45,6 +45,7 @@ import {
   saveStationFilter
 } from "~/features/operations/stationFilter";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
+import { WorkCenterStrip } from "~/features/operations/WorkCenterStrip";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
@@ -78,7 +79,9 @@ function Column({
   operations,
   width,
   refreshing,
-  onRefresh
+  onRefresh,
+  showHeader,
+  customerNames
 }: {
   title: string;
   active: boolean;
@@ -87,47 +90,65 @@ function Column({
   width: number;
   refreshing: boolean;
   onRefresh: () => void;
+  /** False on a phone, where the strip above the board names the column. */
+  showHeader: boolean;
+  customerNames: Map<string, string>;
 }) {
   const { t } = useLingui();
 
   return (
-    <View className="h-full border-r border-border" style={{ width }}>
+    <View
+      className={`h-full ${showHeader ? "border-r border-border" : ""}`}
+      style={{ width }}
+    >
       {/*
         The column header, from `Kanban/components/ColumnCard.tsx`: the dot and
         the title, with the count beneath. A blocked centre turns the whole
         header destructive — the web does the same, because it is the one state
         an operator must see before walking to the machine.
+
+        A phone shows one column at a time and names it in the strip above the
+        board, so the header would say the same thing twice there; the blocked
+        state is carried by the strip's chip and by the note below instead.
       */}
-      <View
-        className={`flex-row items-start gap-2 border-b border-border px-4 py-3 ${
-          isBlocked ? "bg-destructive" : "bg-card"
-        }`}
-      >
-        {isBlocked ? null : <ColumnDot active={active} />}
-        <View className="flex-1">
-          <Text
-            className={`font-semibold ${
-              isBlocked ? "text-destructive-foreground" : "text-foreground"
-            }`}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
-          <Text
-            className={`text-xs ${
-              isBlocked
-                ? "text-destructive-foreground"
-                : "text-muted-foreground"
-            }`}
-          >
-            {isBlocked
-              ? t`Blocked for maintenance`
-              : operations.length === 0
-                ? t`No scheduled work`
-                : t`${operations.length} operation(s)`}
+      {showHeader ? (
+        <View
+          className={`flex-row items-start gap-2 border-b border-border px-4 py-3 ${
+            isBlocked ? "bg-destructive" : "bg-card"
+          }`}
+        >
+          {isBlocked ? null : <ColumnDot active={active} />}
+          <View className="flex-1">
+            <Text
+              className={`font-semibold ${
+                isBlocked ? "text-destructive-foreground" : "text-foreground"
+              }`}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+            <Text
+              className={`text-xs ${
+                isBlocked
+                  ? "text-destructive-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {isBlocked
+                ? t`Blocked for maintenance`
+                : operations.length === 0
+                  ? t`No scheduled work`
+                  : t`${operations.length} operation(s)`}
+            </Text>
+          </View>
+        </View>
+      ) : isBlocked ? (
+        <View className="mx-3 mt-3 rounded-lg border border-destructive bg-destructive/10 p-3">
+          <Text className="text-sm text-destructive">
+            {t`${title} is blocked for maintenance`}
           </Text>
         </View>
-      </View>
+      ) : null}
 
       <FlatList
         data={operations}
@@ -142,14 +163,22 @@ function Column({
             {t`Nothing queued here.`}
           </Muted>
         }
-        renderItem={({ item }) => (
-          <OperationCard
-            operation={item}
-            onPress={() =>
-              router.push(`/(app)/(tabs)/operations/${item.id}` as never)
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          const customerId = (item as { customerId?: unknown }).customerId;
+          return (
+            <OperationCard
+              operation={item}
+              customerName={
+                typeof customerId === "string"
+                  ? customerNames.get(customerId)
+                  : null
+              }
+              onPress={() =>
+                router.push(`/(app)/(tabs)/operations/${item.id}` as never)
+              }
+            />
+          );
+        }}
       />
     </View>
   );
@@ -239,14 +268,38 @@ export default function Operations() {
     return map;
   }, [items]);
 
-  // A phone shows one column and a peek of the next, so it is obvious the
-  // board scrolls sideways; a tablet shows whole columns at a readable width.
-  const columnWidth = isTablet
-    ? 340
-    : Math.min(Math.round(screenWidth * 0.86), 380);
+  // A phone shows ONE whole column, a page wide; the strip above the board is
+  // what says there are more and where they are. (It used to show 86% of a
+  // column with a sliver of the next as the only hint that the board scrolled
+  // — which nobody read as "there are six more work centres".) A tablet shows
+  // whole columns at a readable width, as many as fit.
+  const columnWidth = isTablet ? 340 : screenWidth;
+  const board = useRef<ScrollView>(null);
+  const [currentColumn, setCurrentColumn] = useState(0);
+  // The columns can change under the index: a filter, a refetch, another
+  // location. Never point past the end of what is there.
+  const shownColumn = Math.min(currentColumn, Math.max(0, columns.length - 1));
+
+  // Customers arrive once for the whole board, not per card.
+  const customerNames = useMemo(() => {
+    const names = new Map<string, string>();
+    const customers = (query.data as { customers?: unknown } | undefined)
+      ?.customers;
+    if (Array.isArray(customers)) {
+      for (const customer of customers as { id?: unknown; name?: unknown }[]) {
+        if (
+          typeof customer?.id === "string" &&
+          typeof customer.name === "string"
+        ) {
+          names.set(customer.id, customer.name);
+        }
+      }
+    }
+    return names;
+  }, [query.data]);
 
   return (
-    <Screen className="gap-3 px-0 py-4">
+    <Screen className="gap-2 px-0 pb-0 pt-2">
       <View className="px-4">
         <Heading>
           <Trans>Schedule</Trans>
@@ -261,26 +314,64 @@ export default function Operations() {
       */}
       <QueueSwitcher current="board" />
 
-      <View className="flex-row items-center gap-2 px-4">
+      <View className="flex-row items-center gap-2 pl-4">
         <Pressable
           onPress={() => filterSheet.current?.open()}
           accessibilityRole="button"
-          accessibilityLabel={t`Filter the board`}
-          className="min-h-[44px] flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 active:opacity-70"
+          accessibilityLabel={
+            filterCount === 0
+              ? t`Filter the board`
+              : t`Filter the board, ${filterCount} active`
+          }
+          className={`min-h-[44px] flex-row items-center gap-2 rounded-full border px-3 active:opacity-70 ${
+            filterCount > 0
+              ? "border-primary bg-primary/10"
+              : "border-border bg-card"
+          }`}
         >
           <SlidersHorizontal size={16} color={colors.mutedForeground} />
-          <Text className="text-sm text-foreground">
-            {filterCount === 0 ? t`Filter` : t`Filter (${filterCount})`}
-          </Text>
+          {/* The word only where there is room for it: on a phone this row is
+              shared with every work centre on the floor. */}
+          {isTablet || filterCount > 0 ? (
+            <Text className="text-sm text-foreground">
+              {filterCount === 0 ? t`Filter` : String(filterCount)}
+            </Text>
+          ) : null}
         </Pressable>
 
-        {/* A TOGGLE, not a dismissal: off is the whole floor and on is just
-            this operator's station. It reads as a filter chip because that is
-            what it is — the previous version looked like a notice with a
-            close button, so an operator had no reason to think tapping it
-            would bring six work centres back. Only shown when the operator
-            actually has a station today. */}
-        {stationName ? (
+        {/* The work centres themselves, on a phone: the board shows one at a
+            time, and this row is what says there are more. */}
+        {!isTablet && columns.length > 0 ? (
+          <View className="min-w-0 flex-1">
+            <WorkCenterStrip
+              columns={columns.map((column) => ({
+                id: column.id,
+                title: column.title,
+                count: (byColumn.get(column.id) ?? []).length,
+                active: column.active ?? false,
+                isBlocked: column.isBlocked ?? false
+              }))}
+              current={shownColumn}
+              onSelect={(index) => {
+                setCurrentColumn(index);
+                board.current?.scrollTo({
+                  x: index * columnWidth,
+                  animated: true
+                });
+              }}
+            />
+          </View>
+        ) : null}
+      </View>
+
+      {/* A TOGGLE, not a dismissal: off is the whole floor and on is just
+          this operator's station. It reads as a filter chip because that is
+          what it is — the previous version looked like a notice with a close
+          button, so an operator had no reason to think tapping it would bring
+          six work centres back. Only shown when the operator actually has a
+          station today. */}
+      {stationName ? (
+        <View className="px-4">
           <Pressable
             onPress={() => {
               const next = !onlyMyStation;
@@ -294,7 +385,7 @@ export default function Operations() {
                 ? t`Showing only ${stationName}. Show every work center`
                 : t`Show only my station, ${stationName}`
             }
-            className={`min-h-[44px] flex-1 flex-row items-center gap-2 rounded-lg border px-3 active:opacity-70 ${
+            className={`min-h-[44px] flex-row items-center gap-2 rounded-lg border px-3 active:opacity-70 ${
               onlyMyStation
                 ? "border-primary bg-primary/10"
                 : "border-border bg-card"
@@ -311,8 +402,8 @@ export default function Operations() {
               <X size={16} color={colors.mutedForeground} />
             ) : null}
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       {query.isError ? (
         <View className="px-4">
@@ -372,12 +463,23 @@ export default function Operations() {
         )
       ) : (
         <ScrollView
+          ref={board}
           horizontal
           showsHorizontalScrollIndicator={false}
           className="flex-1"
-          // Paging on a phone so a column lands square rather than half shown.
-          snapToInterval={isTablet ? undefined : columnWidth}
+          // One work centre per page on a phone, so a swipe moves exactly one
+          // and a column never lands half shown.
+          pagingEnabled={!isTablet}
           decelerationRate="fast"
+          onMomentumScrollEnd={(event) => {
+            if (isTablet) return;
+            const x = event.nativeEvent.contentOffset.x;
+            // Nearest page, by integer arithmetic on the offset.
+            const index =
+              (x + columnWidth / 2 - ((x + columnWidth / 2) % columnWidth)) /
+              columnWidth;
+            setCurrentColumn(index);
+          }}
         >
           {columns.map((column) => (
             <Column
@@ -389,6 +491,8 @@ export default function Operations() {
               width={columnWidth}
               refreshing={refreshing}
               onRefresh={onRefresh}
+              showHeader={isTablet}
+              customerNames={customerNames}
             />
           ))}
         </ScrollView>

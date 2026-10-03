@@ -193,6 +193,15 @@ msgstr ""
 msgid "{0} Still unpicked: {1}"
 msgstr ""
 
+#. placeholder {0}: column.title
+#. placeholder {1}: column.count
+msgid "{0}, {1} operations"
+msgstr ""
+
+#. placeholder {0}: column.title
+msgid "{0}, blocked for maintenance"
+msgstr ""
+
 #. placeholder {0}: gaugeLabel(gauge) ?? ""
 msgid "{0}, out of calibration"
 msgstr ""
@@ -247,6 +256,12 @@ msgid "{resolved} of {0} lines"
 msgstr ""
 
 msgid "{resolved} of {lines} lines"
+msgstr ""
+
+msgid "{scrapped} scrapped"
+msgstr ""
+
+msgid "{title} is blocked for maintenance"
 msgstr ""
 
 msgid "{waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
@@ -1036,9 +1051,9 @@ msgstr ""
 msgid "Due"
 msgstr "应交期"
 
+#. placeholder {0}: formatDate(due, undefined, locale)
 #. placeholder {0}: formatDate(due.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -1231,13 +1246,13 @@ msgstr "与工单和商机行相关的文件。"
 msgid "Filter"
 msgstr "筛选"
 
-msgid "Filter ({filterCount})"
-msgstr ""
-
 msgid "Filter by location"
 msgstr "按位置筛选"
 
 msgid "Filter the board"
+msgstr ""
+
+msgid "Filter the board, {filterCount} active"
 msgstr ""
 
 msgid "Finish"

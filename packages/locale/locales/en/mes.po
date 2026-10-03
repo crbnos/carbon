@@ -193,6 +193,15 @@ msgstr "{0} still to pick"
 msgid "{0} Still unpicked: {1}"
 msgstr "{0} Still unpicked: {1}"
 
+#. placeholder {0}: column.title
+#. placeholder {1}: column.count
+msgid "{0}, {1} operations"
+msgstr "{0}, {1} operations"
+
+#. placeholder {0}: column.title
+msgid "{0}, blocked for maintenance"
+msgstr "{0}, blocked for maintenance"
+
 #. placeholder {0}: gaugeLabel(gauge) ?? ""
 msgid "{0}, out of calibration"
 msgstr "{0}, out of calibration"
@@ -248,6 +257,12 @@ msgstr "{resolved} of {0} lines"
 
 msgid "{resolved} of {lines} lines"
 msgstr "{resolved} of {lines} lines"
+
+msgid "{scrapped} scrapped"
+msgstr "{scrapped} scrapped"
+
+msgid "{title} is blocked for maintenance"
+msgstr "{title} is blocked for maintenance"
 
 msgid "{waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
 msgstr "{waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
@@ -1036,9 +1051,9 @@ msgstr "Drawing"
 msgid "Due"
 msgstr "Due"
 
+#. placeholder {0}: formatDate(due, undefined, locale)
 #. placeholder {0}: formatDate(due.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
 
@@ -1231,14 +1246,14 @@ msgstr "Files related to the job and the opportunity line."
 msgid "Filter"
 msgstr "Filter"
 
-msgid "Filter ({filterCount})"
-msgstr "Filter ({filterCount})"
-
 msgid "Filter by location"
 msgstr "Filter by location"
 
 msgid "Filter the board"
 msgstr "Filter the board"
+
+msgid "Filter the board, {filterCount} active"
+msgstr "Filter the board, {filterCount} active"
 
 msgid "Finish"
 msgstr "Finish"
