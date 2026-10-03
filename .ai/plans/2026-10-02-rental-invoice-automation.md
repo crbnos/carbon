@@ -28,7 +28,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 4: Pure invoice planner + tests
 - [x] Task 5: Generator drafts rent and charges invoices per the planner
 - [x] Task 5b: VOID stamps the voided invoice on released periods and charges
-- [ ] Task 6: Move the party-contact check to `@carbon/lib`
+- [x] Task 6: Move the party-contact check to `@carbon/lib`
 - [x] Task 7: Shared sales-invoice document loader in `@carbon/lib`; PDF route uses it
 - [ ] Task 8: Event type + trigger map entry
 - [ ] Task 9: `automateSalesInvoice` + tests

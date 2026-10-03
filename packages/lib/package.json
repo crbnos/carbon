@@ -37,6 +37,8 @@
     "./email.server": "./src/email.server.ts",
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",
+    "./party-contact": "./src/party-contact.ts",
+    "./party-contact.server": "./src/party-contact.server.ts",
     "./resend.server": "./src/resend.server.ts",
     "./sales-invoice-document.server": "./src/sales-invoice-document.server.tsx",
     "./shims": "./src/shims.ts",
