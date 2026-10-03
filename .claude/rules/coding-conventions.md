@@ -110,11 +110,12 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   re-runs every matched loader on every navigation otherwise. Use
   `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`, naming the
   route params the loader reads and either the search params it reads or `search: "all"`
-  for a list loader. Shell data that does not gate rendering is returned as a promise.
-  Render it through `Await` when it is visible on first paint, so it streams in the
-  server HTML (`ImplementationData` in `~/hooks/useImplementationNavItem` is the
-  pattern); read it with `useResolved` (`~/hooks/useResolved`) when a late value is
-  harmless. `useResolved` keeps the last value while a revalidation is pending, so a
+  for a list loader. Shell data that does not gate rendering is returned as a promise
+  and read with `useResolved` (`~/hooks/useResolved`) when a late value is harmless.
+  Data that adds or removes something on first paint (a nav item, a card) is awaited
+  instead: streamed in, it arrives after the page is drawn and pushes it around — the
+  Implementation Hub's nav item and home card did exactly that.
+  `useResolved` keeps the last value while a revalidation is pending, so a
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.

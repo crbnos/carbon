@@ -45,6 +45,7 @@ import {
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useSettings, useUser } from "~/hooks";
 import {
+  isCustomerPreview,
   setCustomerPreview,
   useCustomerPreview
 } from "~/hooks/useCustomerPreview";
@@ -166,6 +167,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     hub: hub.data,
+    previewAsCustomer: isCustomerPreview(request.headers.get("cookie")),
     checkStates: checkStates.data ?? [],
     fieldValues: fieldValues.data ?? [],
     rows: rows.data ?? [],
@@ -282,8 +284,8 @@ export default function GetStartedLayout() {
   );
 }
 
-// Internal-only bar: enter or exit the customer preview. State lives in
-// sessionStorage (useCustomerPreview), so toggling is a button, not navigation —
+// Internal-only bar: enter or exit the customer preview. State lives in a
+// session cookie (useCustomerPreview), so toggling is a button, not navigation —
 // it persists across pages + reloads without a URL param.
 function PreviewBar({ previewing }: { previewing: boolean }) {
   if (previewing) {

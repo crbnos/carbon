@@ -166,8 +166,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
-  // Streamed, not awaited. Each catches: the loader can exit early with
-  // nothing awaiting them.
+  // Awaited at the return below, not streamed: the hub puts an item in the
+  // primary nav and a card at the top of the home page, so streaming it in
+  // after first paint made both jump. It still overlaps the fan-out below. It
+  // catches: the loader can exit early with nothing awaiting it.
   const implementation = Promise.all([
     implementationHubPromise,
     getImplementationCheckStates(client, companyId),
@@ -189,6 +191,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
     () => false
   );
+  // Streamed, not awaited; each catches for the same early-exit reason.
   // Whether this user dismissed it is a user flag, read client-side.
   const changelog = getCachedChangelogPanelEntry().catch(() => null);
 
@@ -342,7 +345,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementation,
+    implementation: await implementation,
     changelog,
     itarCertification: {
       ...itarCertification,
