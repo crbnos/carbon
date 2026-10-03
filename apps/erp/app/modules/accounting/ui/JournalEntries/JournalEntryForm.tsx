@@ -16,7 +16,10 @@ import {
   journalEntrySourceTypes,
   journalEntryValidator
 } from "../../accounting.models";
-import JournalLineRow, { journalLineGridClassName } from "./JournalLineRow";
+import JournalLineRow, {
+  journalLineCell,
+  journalLineGridClassName
+} from "./JournalLineRow";
 import type {
   ClientJournalLine,
   DimensionWithValues,
@@ -202,16 +205,18 @@ const JournalEntryForm = ({
       </div>
 
       {/* Journal Lines + Totals */}
-      <div className="rounded-lg border border-border overflow-hidden w-full">
+      <div className="@container rounded-lg border border-border overflow-hidden w-full">
         {/* Column Headers */}
         <div
           className={`${journalLineGridClassName} items-center px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border`}
         >
-          <div className="w-6" />
-          <div className="pl-3 truncate">
+          <div className={`${journalLineCell.number} w-6`} />
+          <div className={`${journalLineCell.details} pl-3 truncate`}>
             <Trans>Account & Details</Trans>
           </div>
-          <div className="text-right pr-3">
+          <div
+            className={`${journalLineCell.debit} ${journalLineCell.wideOnly} text-right pr-3`}
+          >
             <LabelWithHelp
               variant="inline"
               termId="journal-line-debit"
@@ -220,7 +225,9 @@ const JournalEntryForm = ({
               <Trans>Debit</Trans>
             </LabelWithHelp>
           </div>
-          <div className="text-right pr-3">
+          <div
+            className={`${journalLineCell.credit} ${journalLineCell.wideOnly} text-right pr-3`}
+          >
             <LabelWithHelp
               variant="inline"
               termId="journal-line-credit"
@@ -229,7 +236,6 @@ const JournalEntryForm = ({
               <Trans>Credit</Trans>
             </LabelWithHelp>
           </div>
-          <div />
         </div>
 
         {/* Lines */}
@@ -266,8 +272,10 @@ const JournalEntryForm = ({
         <div
           className={`${journalLineGridClassName} items-center px-4 py-3 bg-muted/50 border-t border-border`}
         >
-          <div className="w-6" />
-          <div className="flex flex-wrap items-center gap-2 min-w-0 text-sm font-medium">
+          <div className={`${journalLineCell.number} w-6`} />
+          <div
+            className={`${journalLineCell.details} flex flex-wrap items-center gap-2 text-sm font-medium`}
+          >
             <Trans>Totals</Trans>
             {isBalanced && totalDebits > 0 ? (
               <Status color="green">
@@ -289,13 +297,22 @@ const JournalEntryForm = ({
               </Status>
             )}
           </div>
-          <div className="text-right font-mono text-sm tabular-nums truncate">
+          <div
+            className={`${journalLineCell.debit} text-right font-mono text-sm tabular-nums truncate`}
+          >
+            <div className={journalLineCell.narrowLabel}>
+              <Trans>Debit</Trans>
+            </div>
             {currencyFormatter.format(totalDebits)}
           </div>
-          <div className="text-right font-mono text-sm tabular-nums truncate">
+          <div
+            className={`${journalLineCell.credit} text-right font-mono text-sm tabular-nums truncate`}
+          >
+            <div className={journalLineCell.narrowLabel}>
+              <Trans>Credit</Trans>
+            </div>
             {currencyFormatter.format(totalCredits)}
           </div>
-          <div />
         </div>
       </div>
     </ValidatedForm>
