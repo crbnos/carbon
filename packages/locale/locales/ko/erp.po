@@ -15748,6 +15748,9 @@ msgstr "매출 송장"
 msgid "Sales Invoice"
 msgstr "매출 송장"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "매출 송장 라인"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "매출"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"

@@ -15748,6 +15748,9 @@ msgstr "Sales invoice"
 msgid "Sales Invoice"
 msgstr "Sales Invoice"
 
+msgid "Sales invoice line"
+msgstr "Sales invoice line"
+
 msgid "Sales Invoice Line"
 msgstr "Sales Invoice Line"
 
@@ -15801,6 +15804,10 @@ msgstr "Sales Revenue"
 
 msgid "Sales Rule"
 msgstr "Sales Rule"
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr "Sales rule \"{0}\""
 
 msgid "Sales Rule Violations"
 msgstr "Sales Rule Violations"

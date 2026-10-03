@@ -15748,6 +15748,9 @@ msgstr "Fatura de vendas"
 msgid "Sales Invoice"
 msgstr "Fatura de Venda"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Linha de Fatura de Vendas"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "Receita de Vendas"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"

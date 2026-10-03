@@ -64,20 +64,21 @@ type SalesRuleListItem = {
 };
 
 // Sales rules reach items through type/group filters; empty = all items.
-function ruleReach(rule: SalesRuleListItem): {
+function ruleReach(
+  rule: SalesRuleListItem,
+  t: ReturnType<typeof useLingui>["t"]
+): {
   broadcastLabel: string | null;
   showAssignments: boolean;
 } {
-  const types = rule.filteredItemTypes ?? [];
-  const groups = rule.filteredItemGroupIds ?? [];
-  if (types.length === 0 && groups.length === 0) {
-    return { broadcastLabel: "All items", showAssignments: false };
+  const types = rule.filteredItemTypes?.length ?? 0;
+  const groups = rule.filteredItemGroupIds?.length ?? 0;
+  if (types === 0 && groups === 0) {
+    return { broadcastLabel: t`All items`, showAssignments: false };
   }
   const parts: string[] = [];
-  if (types.length)
-    parts.push(`${types.length} type${types.length > 1 ? "s" : ""}`);
-  if (groups.length)
-    parts.push(`${groups.length} group${groups.length > 1 ? "s" : ""}`);
+  if (types) parts.push(types === 1 ? t`1 type` : t`${types} types`);
+  if (groups) parts.push(groups === 1 ? t`1 group` : t`${groups} groups`);
   return { broadcastLabel: parts.join(" · "), showAssignments: true };
 }
 
@@ -162,7 +163,7 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
 
   const canEdit = permissions.can("update", "sales");
   const canDelete = permissions.can("delete", "sales");
-  const { broadcastLabel, showAssignments } = ruleReach(rule);
+  const { broadcastLabel, showAssignments } = ruleReach(rule, t);
   const surfaces =
     rule.surfaces && rule.surfaces.length > 0
       ? rule.surfaces
@@ -267,7 +268,7 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
                     <div className="flex items-center gap-1">
                       {surfaces.map((s) => (
                         <Badge key={s} variant="secondary">
-                          {SALES_RULE_SURFACE_LABELS[s]}
+                          {t(SALES_RULE_SURFACE_LABELS[s])}
                         </Badge>
                       ))}
                     </div>
@@ -291,7 +292,7 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
       <ConfirmDelete
         action={path.to.deleteSalesRule(rule.id)}
         isOpen={deleteDisclosure.isOpen}
-        name={`Sales rule "${rule.name}"`}
+        name={t`Sales rule "${rule.name}"`}
         text={t`Are you sure you want to delete this sales rule? Assignments will also be removed.`}
         onCancel={deleteDisclosure.onClose}
         onSubmit={deleteDisclosure.onClose}

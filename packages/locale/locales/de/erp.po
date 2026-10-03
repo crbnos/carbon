@@ -15748,6 +15748,9 @@ msgstr "Ausgangsrechnung"
 msgid "Sales Invoice"
 msgstr "Ausgangsrechnung"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Ausgangsrechnungsposition"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "Umsatzerlöse"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"

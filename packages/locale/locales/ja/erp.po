@@ -15748,6 +15748,9 @@ msgstr "売上請求書"
 msgid "Sales Invoice"
 msgstr "売上請求書"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "売上請求書行"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "販売売上高"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"

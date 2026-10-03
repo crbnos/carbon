@@ -15748,6 +15748,9 @@ msgstr "Satış faturası"
 msgid "Sales Invoice"
 msgstr "Satış Faturası"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Satış Faturası Kalemi"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "Satış Hasılat"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"

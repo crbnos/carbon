@@ -15748,6 +15748,9 @@ msgstr "счет-фактура выданный"
 msgid "Sales Invoice"
 msgstr "Счет-фактура выданный"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Строка счета-фактуры выданного"
 
@@ -15800,6 +15803,10 @@ msgid "Sales Revenue"
 msgstr "Выручка от продаж"
 
 msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
 msgstr ""
 
 msgid "Sales Rule Violations"
