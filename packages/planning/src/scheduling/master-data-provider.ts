@@ -375,7 +375,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
             ORDER BY r.id, t.ordinality
           `.execute(this.db),
       itemIds.length === 0
-        ? []
+        ? ([] as { itemId: string; leadTime: number }[])
         : this.db
             .selectFrom("itemReplenishment")
             .select(["itemId", "leadTime"])
