@@ -32,6 +32,14 @@ export const modulesType = [
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 
+// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
+// invoice (rental agreements today) when the daily job creates it.
+export const invoiceAutomations = [
+  "Draft Only",
+  "Post",
+  "Post and Email"
+] as const;
+
 export const purchasePriceUpdateTimingTypes = [
   "Purchase Invoice Post",
   "Purchase Order Finalize"
@@ -240,6 +248,10 @@ export const jobCompletedValidator = z.object({
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
 });
 
+export const invoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations)
+});
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });
@@ -342,6 +354,12 @@ export const productLabelSizeValidator = z.object({
       message: "Product label size is required"
     }
   )
+});
+
+export const invoiceNotificationValidator = z.object({
+  invoiceNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
 });
 
 export const rfqReadyValidator = z.object({

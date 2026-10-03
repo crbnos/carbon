@@ -32,6 +32,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   accountsPayableBillingAddressValidator,
   accountsReceivableBillingAddressValidator,
+  invoiceAutomations,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
@@ -1390,6 +1391,30 @@ export async function updateQuoteLineCategoryMarkups(
   return client
     .from("companySettings")
     .update(sanitize({ quoteLineCategoryMarkups }))
+    .eq("id", companyId);
+}
+
+/** @mcp update */
+export async function updateInvoiceAutomationSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceAutomation: (typeof invoiceAutomations)[number]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ invoiceAutomation }))
+    .eq("id", companyId);
+}
+
+/** @mcp update */
+export async function updateInvoiceNotificationSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceNotificationGroup: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ invoiceNotificationGroup }))
     .eq("id", companyId);
 }
 

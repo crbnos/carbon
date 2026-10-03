@@ -113,6 +113,12 @@ export default function useSettingsSubmodules() {
             icon: <LuBox />
           },
           {
+            name: t`Invoicing`,
+            to: path.to.invoicingSettings,
+            role: "employee",
+            icon: <LuFileText />
+          },
+          {
             name: t`Items`,
             to: path.to.itemsSettings,
             role: "employee",

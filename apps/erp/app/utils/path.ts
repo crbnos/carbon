@@ -1354,6 +1354,7 @@ export const path = {
     invoicing: `${x}/invoicing`,
     invoicingPurchasing: `${x}/invoicing/purchasing`,
     invoicingSales: `${x}/invoicing/sales`,
+    invoicingSettings: `${x}/settings/invoicing`,
     issue: (id: string) => generatePath(`${x}/issue/${id}`),
     issueActionDueDate: (id: string) =>
       generatePath(`${x}/issue/action/${id}/due-date`),
