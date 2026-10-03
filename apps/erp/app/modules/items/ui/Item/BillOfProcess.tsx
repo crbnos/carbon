@@ -1836,7 +1836,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">

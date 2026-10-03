@@ -23,7 +23,7 @@ export const buttonVariants = cva(
     // Transition: background/colors use 'ease' (150ms), transform uses 'ease-out' for responsive press feel
     "transform-gpu transition-[background-color,color,transform,box-shadow] duration-150 ease",
     // Active state: subtle scale down for tactile press feedback
-    "active:scale-[0.96] active:duration-75 active:ease-out",
+    "active:scale-[0.98] active:duration-75 active:ease-out",
     // Accessibility: respect reduced motion preferences
     "motion-reduce:transform-none motion-reduce:transition-[background-color,color,box-shadow] corner-squircle"
   ],

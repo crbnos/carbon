@@ -880,9 +880,8 @@ const JobBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <OperationForm
@@ -1041,9 +1040,8 @@ const JobBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <InfiniteScroll
@@ -3738,7 +3736,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
