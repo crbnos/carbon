@@ -67,13 +67,19 @@ const JournalEntryHeader = () => {
           isDraft ? null : journalEntry.postedBy ? (
             <Trans key="posted">
               Posted{" "}
-              <DateTime value={journalEntry.postingDate} variant="date" /> by{" "}
-              <EmployeeAvatar employeeId={journalEntry.postedBy} />
+              <DateTime
+                value={journalEntry.postedAt ?? journalEntry.postingDate}
+                variant="date"
+              />{" "}
+              by <EmployeeAvatar employeeId={journalEntry.postedBy} />
             </Trans>
           ) : (
             <Trans key="posted">
               Posted{" "}
-              <DateTime value={journalEntry.postingDate} variant="date" />
+              <DateTime
+                value={journalEntry.postedAt ?? journalEntry.postingDate}
+                variant="date"
+              />
             </Trans>
           )
         ]}

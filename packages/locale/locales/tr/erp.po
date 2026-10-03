@@ -2397,9 +2397,6 @@ msgstr "Bu tedarikçi iadesini iptal etmek istediğinizden emin misiniz? Bu, yet
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Bu {propertyName} özelliğini değiştirmek istediğinizden emin misiniz? Üretilen malzeme kimlikleri kullandığınız için bu, parçanın ve tüm ilgili revizyonların parça kimliğini değiştirecektir."
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "Bu stok transferini tamamlamak istediğinizden emin misiniz?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Bu RMA'yı onaylamak istediğinizden emin misiniz? Onaylamak, müşteriye satırlardaki malları iade etme yetkisi verir."
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "Ekler"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "Denemeler"
@@ -4325,9 +4325,6 @@ msgstr "İşi Tamamla"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Bu iş emrini tamamlamadan önce MES'te seri numaralarını/partileri tamamlayın veya otomatik olarak tamamlanması için her operasyonu Bitti olarak işaretleyin."
 
-msgid "Complete Stock Transfer"
-msgstr "Stok Transferini Tamamla"
-
 msgid "Complete To"
 msgstr "Tamamla"
 
@@ -5482,6 +5479,9 @@ msgstr "Alacak dektontları ve tedarikçi kredileri, faturalar ve senetlerden ay
 
 msgid "Credit representation"
 msgstr "Alacak dekontlarının gösterimi"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "Alacak toplamı"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "Filo Birimi"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
@@ -9811,8 +9814,7 @@ msgstr "Aldığınız bir ürünü denetleme uyarı gösterir."
 msgid "Inspection"
 msgstr "Muayene"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "Faturalandı Durumları"
 
 msgid "Invoices"
 msgstr "Faturalar"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Bu muhasebe belgesinin uygulandığı faturalar. Belgeyi açmak için bir satıra tıklayın."
@@ -13564,6 +13569,9 @@ msgstr "Ürün asla hammaddelerinden daha uzun sürmez. Hiçbir girdinin son kul
 
 msgid "Outside operation"
 msgstr "Genel Gider Sapması"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Fazla uygulandı"
@@ -17549,6 +17557,9 @@ msgstr "Bu müşteriye gönderilen ve iade edilecek miktar kalan satırlar"
 msgid "Shipped Qty"
 msgstr "Sevk Edilen Miktar"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "Nakliye"
 
@@ -18565,6 +18576,9 @@ msgstr "Yüzey işlemi — örn. anodize vs toz boya"
 
 msgid "Surfaces"
 msgstr "Yüzeyler"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Şüpheli Arıza Modu"
@@ -19766,6 +19780,12 @@ msgstr "Ardından ayarlandı"
 
 msgid "Then by"
 msgstr "Sonra"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Bu RFQ için karşılaştırılacak aktif tedarikçi teklifi bulunmamaktadır."
@@ -22232,6 +22252,9 @@ msgstr "Bu Malzeme listesini Düzenlemek için İzniniz yok."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Bu Operasyon listesini Düzenlemek için İzniniz yok."
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Siz yönetirsiniz; biz sağlayalım ki her şey düzgün yapılsın. Sistem ayarları, veriler ve canlı geçişte uzman göz."

@@ -52,7 +52,8 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   `{Shipment,Receipt}Documents` — the customer/supplier, the source document, invoices
   (shipment: `getShipmentRelatedItems`; receipt: `getReceiptRelatedItems`, which also resolves a
   sales return's customer), receipt inspections and line attachments, the shipment's packing slip
-  (only with a source document) — and whose Activity tab is the audit log.
+  (only for the sources its PDF route renders: Sales Order, Sales Invoice, Purchase Order,
+  Outbound Transfer — `PACKING_SLIP_SOURCES`) — and whose Activity tab is the audit log.
 - **Form** (`ShipmentForm.tsx`, `ReceiptForm/ReceiptForm.tsx`): flat `ValidatedForm` (no Card),
   source-document `Select` + dependent `Combobox` (ID), `Location`, custom fields. The
   `use{Shipment,Receipt}Form` hook fetches

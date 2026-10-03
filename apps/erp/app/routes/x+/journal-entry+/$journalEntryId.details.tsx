@@ -158,7 +158,9 @@ export default function JournalEntryDetailsRoute() {
 
   return (
     <JournalEntryForm
-      key={routeData.journalEntry.id}
+      // Re-mount after every save (the save bumps updatedAt): lines added in
+      // the form carry client ids until the loader returns their stored ones.
+      key={`${routeData.journalEntry.id}:${routeData.journalEntry.updatedAt ?? ""}`}
       journalEntryId={journalEntryId}
       status={routeData.journalEntry.status}
       sourceType={routeData.journalEntry.sourceType ?? "Manual"}

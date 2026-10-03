@@ -84,10 +84,10 @@ const ShipmentHeader = () => {
         ]}
         menuItems={
           <>
-            {(isPosted || isVoided) && (
+            {isPosted && (
               <>
                 <DropdownMenuItem
-                  disabled={isVoided || !permissions.is("employee")}
+                  disabled={!permissions.is("employee")}
                   destructive
                   onClick={voidModal.onOpen}
                 >
@@ -188,11 +188,23 @@ function InvoiceButton({
     );
 
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <Button variant="secondary" isDisabled leftIcon={<LuCreditCard />}>
+          <Trans>Invoice</Trans>
+        </Button>
+      }
+    >
       <Await resolve={relatedItems}>
         {(resolved) => {
           const invoices = resolved?.invoices ?? [];
-          if (invoices.some((invoice) => invoice.shipmentId === shipment.id)) {
+          if (
+            invoices.some(
+              (invoice) =>
+                invoice.shipmentId === shipment.id &&
+                invoice.status !== "Voided"
+            )
+          ) {
             return null;
           }
           return (

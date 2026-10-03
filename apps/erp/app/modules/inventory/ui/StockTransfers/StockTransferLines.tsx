@@ -152,13 +152,19 @@ function StockTransferLineComponent({
         <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0">
           <HStack spacing={4} className="text-left items-center min-w-0">
             {"fromStorageUnitId" in line && (
-              <span className="text-base font-medium truncate">
+              <span
+                className="text-base font-medium truncate"
+                title={line.fromStorageUnitName ?? undefined}
+              >
                 {line.fromStorageUnitName ?? ""}
               </span>
             )}
             <LuArrowRight className="size-4 shrink-0" />
             {"toStorageUnitId" in line && (
-              <span className="text-base font-medium truncate">
+              <span
+                className="text-base font-medium truncate"
+                title={line.toStorageUnitName ?? undefined}
+              >
                 {line.toStorageUnitName ?? ""}
               </span>
             )}
@@ -184,7 +190,7 @@ function StockTransferLineComponent({
                 leftIcon={<LuUndo2 />}
                 onClick={() => onUnpick(line)}
               >
-                Unpick
+                <Trans>Unpick</Trans>
               </Button>
             ) : (
               <Button
@@ -197,7 +203,7 @@ function StockTransferLineComponent({
                     : () => onPick(line)
                 }
               >
-                Pick
+                <Trans>Pick</Trans>
               </Button>
             )}
             <DropdownMenu>

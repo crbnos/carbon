@@ -66,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId);
+  const memo = await getMemo(client, memoId, companyId);
   if (memo.error || !memo.data) {
     throw redirect(
       path.to.invoicing,
@@ -97,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
   const { memoId } = params;
@@ -110,7 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Only Draft memos are editable; Posted/Voided are immutable.
-  const existing = await getMemo(client, memoId);
+  const existing = await getMemo(client, memoId, companyId);
   if (existing.error || !existing.data) {
     throw redirect(
       path.to.invoicing,

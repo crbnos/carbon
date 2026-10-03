@@ -118,6 +118,53 @@ Template copiers. Xero: weekly or monthly × n, Save as Draft / Approve / Approv
 ### Stripe Billing / Chargebee / Maxio
 Stripe: anniversary `billing_cycle_anchor`, calendar via anchor config, proration to the second, `proration_behavior`, draft invoice ~1 hour then finalize, `collection_method` charge automatically vs send invoice (hosted invoice + payment link), `cancel_at_period_end`, subscription schedules for future price phases, one invoice per subscription. Chargebee: statuses future / in_trial / active / non_renewing / paused / cancelled, calendar billing with immediate or delayed alignment, consolidated invoicing, contract terms (renew / evergreen / cancel / renew_once), grandfathered prices, cancel credit options none / prorate / full. Maxio: snap-day calendar billing, first period prorated / immediate / delayed, subscription groups for consolidation, delayed product changes.
 
+### Rillet (API v4 data model)
+SaaS-specialist accounting platform; contract model read from its OpenAPI (help center is private).
+- **Contract** (`status`: `ACTIVE`, `IN_EFFECT`, `CANCELLED`, `ENDED`, `AMENDED`; `start_date`,
+  optional `end_date` = open-ended, `close_date` = booking date, `total_value`,
+  `purchase_order_number` "copied onto every invoice the contract generates") → **ContractItem**
+  (`product_id`, `price`, `quantity`, `discount`, `tax_rate`, `revenue_pattern`, item-level
+  `start_date`/`end_date` defaulting to the contract's, `status` `ACTIVE`/`AMENDED`, `amending`
+  → the item it replaces).
+- **Price** is `FIXED_RECURRING` (`amount`, `interval_months` 1–12) | `ONE_TIME` | `USAGE`
+  (`billing_scheme` per-unit or tiered graduated/metered). **Invoicing** cadence is separate and
+  on the contract: `MONTHLY` (`day` 1–31) | `QUARTERLY` / `SEMI_ANNUAL` / `YEARLY` (`month_day`),
+  each with `payment_terms` days.
+- **Revenue pattern** per product/item: `DAILY` (equal per day) | `EVEN_PERIOD` (equal per
+  calendar month); an invoice line's `revenue.period` is the service window recognition uses.
+- **Amendments, not edits**: `POST /contracts/{id}/amendments` with `amendment_date`, reason, and
+  items that either amend an existing item (`amending`, old one becomes `AMENDED`) or add one;
+  each carries `effective_from` `AS_OF_AMENDMENT_DATE` | `END_OF_CURRENT_BILLING_CYCLE`. A
+  preview endpoint dry-runs an amendment; `PUT /contracts/{id}/end` ends an open-ended contract.
+- **Invoice schedule preview** (`POST /contracts/preview-invoice-schedule`): every future invoice
+  with lines carrying `contract_item_id` and `billing_period {start, end}`; an edited schedule can
+  be passed on create only as a redistribution (per-item totals conserved).
+- **Scope** discriminator `FULL` | `REVENUE_RECOGNITION_ONLY` (invoices issued elsewhere,
+  supplied with their numbers) — one model serves native billing and imported billing.
+- Gaps: no auto-renewal (a renewal is a new contract), no advance/arrears flag for fixed items,
+  no documented fixed-item proration, and persisted invoice lines carry no contract-item link
+  (only `contract_id` + `product_id`).
+- Idempotency-Key header (24 h); draft contracts dedupe on an external reference.
+
+### Stripe (API data model, basil / clover versions)
+- The 2025-03-31 release moved `current_period_start/end` from the Subscription onto each
+  **SubscriptionItem** — the period belongs to the line. An invoice line carries
+  `period {start, end}` (inclusive, feeds revenue recognition) and a typed `parent` pointer
+  (`subscription_item_details {subscription_item, proration, proration_details.credited_items}`)
+  instead of flat fields.
+- Price `recurring.interval` `day`/`week`/`month`/`year` × `interval_count` (max 3 years);
+  `usage_type` `licensed`/`metered`.
+- Proration is a per-change request parameter, not stored state: `create_prorations` (pending
+  lines on the next invoice), `always_invoice`, `none`. In flexible billing mode (default from
+  2025-09-30) a credit is based on the **amount originally debited**, not the current price.
+- Future changes are **subscription schedule phases** (contiguous, past phases immutable,
+  `end_behavior` `release`/`cancel`).
+- Cancel: immediate (optional prorate / invoice now), `cancel_at_period_end` (reversible),
+  `cancel_at` (truncates the period, prorated final period); credits go to the customer credit
+  balance; credit notes adjust finalized invoices.
+- `pause_collection` keeps generating invoices without changing status; invoice metadata is
+  snapshotted at finalization.
+
 ## Recommended Approach for Carbon
 
 1. **A `subscription` header + `subscriptionLine` lines in the sales module** (NetSuite / BC / Stripe vocabulary), each line a Service item with its own quantity, rate frequency and rate — reusing the rental line's `rateUnit` + `rate` shape just landed for rentals.
@@ -128,7 +175,43 @@ Stripe: anniversary `billing_cycle_anchor`, calendar via anchor config, proratio
 6. **Invoice lines are Service lines carrying service dates**, so the existing Service-line deferral + revenue recognition run recognizes them ratably (all ERPs separate billing from recognition) — no new posting code.
 7. **Changes and termination as dated events** (NetSuite change orders): v1 = end date / cancel at period end and price or quantity changes from a date forward (never rewriting a billed period); prorated mid-period changes, renewal uplift and usage billing are later layers (every competitor ships them, none is needed to replace Xero/QBO repeating invoices).
 
+8. **From Rillet / Stripe APIs**: line-level start/end dates (staggered and co-termed lines);
+   changes as **amendment lines** that point at the line they replace (Rillet `amending`),
+   never edits to a billed line; each amendment chooses effective **as of its date (prorated)**
+   or **from the next billing cycle** (Rillet `effective_from`, Stripe `proration_behavior`);
+   adjustment credits computed from the amount **actually billed** (Stripe flexible mode); an
+   invoice line points at its subscription line and period and flags adjustments (Stripe
+   `parent`, which Rillet lacks); a pre-activation **invoice schedule preview** (Rillet);
+   a customer PO reference copied onto every invoice (Rillet `purchase_order_number` →
+   Carbon `salesInvoice.customerReference`); and a way to start a contract that was billed in
+   another system up to a date (Rillet `REVENUE_RECOGNITION_ONLY`, F&O "stubbing").
+
 ## Sources
+
+- https://docs.api.rillet.com/llms.txt
+- https://docs.api.rillet.com/reference/create-a-contract-1.md
+- https://docs.api.rillet.com/reference/retrieve-a-contract-1.md
+- https://docs.api.rillet.com/reference/amend-a-contract-1.md
+- https://docs.api.rillet.com/reference/preview-contract-amendment.md
+- https://docs.api.rillet.com/reference/end-an-open-ended-contract-1.md
+- https://docs.api.rillet.com/reference/preview-invoice-schedule.md
+- https://docs.api.rillet.com/reference/create-a-product-1.md
+- https://docs.api.rillet.com/reference/create-an-invoice-1.md
+- https://docs.api.rillet.com/reference/retrieve-an-invoice-1.md
+- https://docs.api.rillet.com/reference/create-a-credit-memo.md
+- https://docs.api.rillet.com/reference/upsert-a-usage-record.md
+- https://docs.api.rillet.com/reference/retrieve-waterfall-report.md
+- https://docs.api.rillet.com/docs/getting-started.md
+- https://docs.stripe.com/api/subscriptions/object
+- https://docs.stripe.com/api/subscription_items/object
+- https://docs.stripe.com/api/prices/object
+- https://docs.stripe.com/api/subscription_schedules/object
+- https://docs.stripe.com/api/invoices/object
+- https://docs.stripe.com/api/invoice-line-item/object
+- https://docs.stripe.com/api/credit_notes/object
+- https://docs.stripe.com/changelog/basil/2025-03-31/deprecate-subscription-current-period-start-and-end
+- https://docs.stripe.com/changelog/basil/2025-03-31/adds-new-parent-field-to-invoicing-objects
+- https://docs.stripe.com/billing/subscriptions/billing-mode
 
 - https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_161460541562.html
 - https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/subsect_1520456234.html

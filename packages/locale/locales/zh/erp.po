@@ -2397,9 +2397,6 @@ msgstr "确实要取消此供应商退货吗？这将把授权数量释放回源
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "您确定要更改{propertyName}属性吗？由于您使用自动生成的物料ID，这将更改该零件的零件ID及其所有相关的修订版。"
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "你确定要完成此库存转移吗？"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "确实要确认此 RMA 吗？确认授权客户退回这些行上的商品。"
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "附件"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "尝试次数"
@@ -4325,9 +4325,6 @@ msgstr "完成工作"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "请先在MES中完成序列号/批次再完成此工单，或将每道工序标记为完成以自动完成该工单。"
 
-msgid "Complete Stock Transfer"
-msgstr "完成库存转移"
-
 msgid "Complete To"
 msgstr "完成至"
 
@@ -5482,6 +5479,9 @@ msgstr "贷项凭证和供应商贷项凭证单独控制，与发票和账单分
 
 msgid "Credit representation"
 msgstr "信用备忘录的表示"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "贷项总额"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "租赁单位"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
@@ -9811,8 +9814,7 @@ msgstr "检查您收到的物料会显示警告。"
 msgid "Inspection"
 msgstr "检验"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "已开票状态"
 
 msgid "Invoices"
 msgstr "发票"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "此备忘录已应用的发票。点击一行打开文件。"
@@ -13564,6 +13569,9 @@ msgstr "产出的有效期永远不会超过其原材料的有效期。当没有
 
 msgid "Outside operation"
 msgstr "间接费用差异"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "超额应用"
@@ -17549,6 +17557,9 @@ msgstr "该客户已发货行项中剩余待退货的数量"
 msgid "Shipped Qty"
 msgstr "已发货数量"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "运输"
 
@@ -18565,6 +18576,9 @@ msgstr "表面处理 — 例如 阳极氧化 vs 粉末涂料"
 
 msgid "Surfaces"
 msgstr "表面"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "疑似故障模式"
@@ -19766,6 +19780,12 @@ msgstr "然后调整为"
 
 msgid "Then by"
 msgstr "然后按"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "此询价单没有可比较的启用供应商报价。"
@@ -22236,6 +22256,9 @@ msgstr "您没有权限编辑此物料清单。"
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "你没有权限编辑此工序清单。"
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "您来驾驶；我们确保做得正确。专家的目光关注您的设置、数据和上线。"

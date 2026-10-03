@@ -67,6 +67,7 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `getAvailableTrackedEntities` — calls `get_available_tracked_entities` RPC
 - `getReceipts` / `getReceiptLines` / `reconcileReceiptSerialEntities` — receipt management
 - `getShipments` / `getShipmentLines` / `getShipmentRelatedItems` — shipment management
+- `getReceiptRelatedItems` / `getWarehouseTransferRelatedItems` / `getPickingListRelatedItems` — the `DocumentPage` Documents panels (receipt invoices + a sales return's customer; a transfer's shipments and receipts; a picking list's jobs). Query errors are logged and degrade to empty lists
 - `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry

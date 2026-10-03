@@ -26,7 +26,7 @@
 | Bulk | `withSelectableRows` + `renderActions` (ERP tables only) | `apps/erp/app/modules/items/ui/Parts/PartsTable.tsx` |
 | Barcode scanning | `useKeyboardWedge` buffers scans; a scanned Carbon URL navigates there; MES avoids bare-letter shortcuts | `packages/react/src/hooks/useKeyboardWedge.ts` |
 | Copy identity | `Copy` next to IDs; "Copy link to X" / "Copy X number" icon buttons in Properties | `packages/react/src/Copy.tsx` |
-| Audit | "audit log" item in the header ⋯ menu opens `AuditLogDrawer` (`useAuditLog`) | `apps/erp/app/components/AuditLog/` |
+| Audit | "audit log" item in the header ⋯ menu opens `AuditLogDrawer` (`useAuditLog`); posting documents show it inline as the side panel's Activity tab (`AuditLogFeed`) | `apps/erp/app/components/AuditLog/` |
 | Whole-row hit targets | a checkbox/choice row is a full-row `<label>` (`px-4 py-3 rounded-lg border hover:bg-accent`) | (`6e99e39b48`) |
 
 No undo system exists — confirm destructive actions instead. No global "edit mode" for a record.

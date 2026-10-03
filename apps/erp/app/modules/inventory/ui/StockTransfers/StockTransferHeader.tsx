@@ -30,7 +30,6 @@ import {
   type StockTransferLine
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
-import StockTransferCompleteModal from "./StockTransferCompleteModal";
 import StockTransferStatus from "./StockTransferStatus";
 
 const StockTransferHeader = () => {
@@ -44,7 +43,6 @@ const StockTransferHeader = () => {
   }>(path.to.stockTransfer(id));
 
   const permissions = usePermissions();
-  const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
   // Storage rules fire on Release + Complete (the "go" transitions). Each gets
@@ -217,9 +215,6 @@ const StockTransferHeader = () => {
 
       <releaseRules.ViolationModal />
       <completeRules.ViolationModal />
-      {postModal.isOpen && (
-        <StockTransferCompleteModal onClose={postModal.onClose} />
-      )}
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.deleteStockTransfer(id)}

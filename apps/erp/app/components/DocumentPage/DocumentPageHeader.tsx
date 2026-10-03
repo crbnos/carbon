@@ -70,7 +70,11 @@ export function DocumentPageHeader({
         <div className="flex flex-col gap-1 w-full max-w-5xl mx-auto px-4 md:px-8 pt-5 pb-4">
           <div className="flex items-center justify-between gap-x-4 gap-y-2 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
-              <Heading as="h1" size="h2" className="whitespace-nowrap truncate">
+              <Heading
+                as="h1"
+                size="h2"
+                className="min-w-0 whitespace-nowrap truncate"
+              >
                 {title}
               </Heading>
               <Copy text={title} />
@@ -104,6 +108,7 @@ export function DocumentPageHeader({
                   }
                   icon={<LuPanelRight />}
                   variant="ghost"
+                  aria-expanded={isSidebarOpen}
                   onClick={toggleSidebar}
                 />
               )}

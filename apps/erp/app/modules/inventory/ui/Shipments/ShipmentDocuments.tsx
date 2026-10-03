@@ -29,6 +29,14 @@ import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoice
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
+/** The sources `file+/shipment+/$id[.]pdf.tsx` renders a packing slip for. */
+const PACKING_SLIP_SOURCES = new Set<string>([
+  "Sales Order",
+  "Sales Invoice",
+  "Purchase Order",
+  "Outbound Transfer"
+]);
+
 type SourceDocument = {
   to: string;
   icon: ReactNode;
@@ -173,17 +181,20 @@ const ShipmentDocuments = () => {
     />
   ) : null;
 
-  // A packing slip lists the source document's lines; with no source there
-  // is nothing to print.
-  const packingSlipRow = shipment.sourceDocumentId ? (
-    <RelatedDocument
-      to={path.to.file.shipment(shipmentId)}
-      external
-      icon={<LuBarcode />}
-      title={t`Packing Slip`}
-      description={t`PDF`}
-    />
-  ) : null;
+  // A packing slip lists the source document's lines; only the sources the
+  // packing-slip route renders have one to print.
+  const packingSlipRow =
+    shipment.sourceDocumentId &&
+    shipment.sourceDocument &&
+    PACKING_SLIP_SOURCES.has(shipment.sourceDocument) ? (
+      <RelatedDocument
+        to={path.to.file.shipment(shipmentId)}
+        external
+        icon={<LuBarcode />}
+        title={t`Packing Slip`}
+        description={t`PDF`}
+      />
+    ) : null;
 
   const hasRows = Boolean(partyRow || sourceRow || packingSlipRow);
 

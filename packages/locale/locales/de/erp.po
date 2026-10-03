@@ -2397,9 +2397,6 @@ msgstr "Möchten Sie diese Lieferantenrückgabe wirklich abbrechen? Dies gibt di
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Sind Sie sicher, dass Sie die Eigenschaft {propertyName} ändern möchten? Da Sie generierte Material-IDs verwenden, wird dies die Teile-ID dieses Teils und aller zugehörigen Revisionen ändern."
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "Sind Sie sicher, dass Sie diese Bestandsübertragung abschließen möchten?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Sind Sie sicher, dass Sie diese RMA bestätigen möchten? Die Bestätigung autorisiert den Kunden, die Waren in den Zeilen zurückzugeben."
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "Anhänge"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "Versuche"
@@ -4325,9 +4325,6 @@ msgstr "Auftrag abschließen"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Schließen Sie Seriennummern/Chargen in MES ab, bevor Sie diesen Fertigungsauftrag abschließen, oder markieren Sie jeden Arbeitsgang als Erledigt, um ihn automatisch abzuschließen."
 
-msgid "Complete Stock Transfer"
-msgstr "Lagerbestandsübertragung abschließen"
-
 msgid "Complete To"
 msgstr "Wird zu"
 
@@ -5482,6 +5479,9 @@ msgstr "Gutschriften und Lieferantengutschriften werden separat von Rechnungen v
 
 msgid "Credit representation"
 msgstr "Gutschriftendarstellung"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "Gutschriftsumme"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "Flotteneinheit"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "für alles. Sie werden die richtige Person hinzuziehen."
 
@@ -9811,8 +9814,7 @@ msgstr "Das Überprüfen eines Artikels, den Sie erhalten haben, zeigt eine Warn
 msgid "Inspection"
 msgstr "Prüfung"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "Fakturierte Status"
 
 msgid "Invoices"
 msgstr "Rechnungen"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Rechnungen, auf die dieses Memo angewendet wurde. Klicken Sie auf eine Zeile, um das Dokument zu öffnen."
@@ -13564,6 +13569,9 @@ msgstr "Die Ausgabe überlebt ihre Rohstoffe nie. Fällt auf die feste Dauer zur
 
 msgid "Outside operation"
 msgstr "Gemeinkostenabweichung"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Überangewendet um"
@@ -17549,6 +17557,9 @@ msgstr "Versandte Zeilen für diesen Kunden mit zu returnierenden Restmengen"
 msgid "Shipped Qty"
 msgstr "Versendete Menge"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "Versand"
 
@@ -18565,6 +18576,9 @@ msgstr "Oberflächenfinish — z.B. eloxiert vs. Pulverbeschichtung"
 
 msgid "Surfaces"
 msgstr "Oberflächen"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Vermuteter Fehlermodus"
@@ -19766,6 +19780,12 @@ msgstr "Dann angepasst für"
 
 msgid "Then by"
 msgstr "Dann nach"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Es gibt keine aktiven Lieferantenofferten zum Vergleichen für diese Anfrage."
@@ -22232,6 +22252,9 @@ msgstr "Sie haben keine Berechtigung, diese Stückliste zu bearbeiten."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Sie haben nicht die Berechtigung, diese Arbeitsgangliste zu bearbeiten."
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Sie treiben es voran; wir stellen sicher, dass es richtig gemacht wird. Fachleute überwachen Ihre Einrichtung, Daten und Go-Live."

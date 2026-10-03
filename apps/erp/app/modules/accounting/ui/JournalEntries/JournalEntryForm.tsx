@@ -10,7 +10,7 @@ import { atom } from "nanostores";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuPlus } from "react-icons/lu";
 import { DatePicker, Hidden, Input, Select } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import {
   journalEntrySourceTypes,
@@ -86,7 +86,6 @@ const JournalEntryForm = ({
   isDisabled = false
 }: JournalEntryFormProps) => {
   const { t } = useLingui();
-  const _permissions = usePermissions();
   const { company } = useUser();
   const currencyFormatter = useCurrencyFormatter({
     currency: company.baseCurrencyCode
@@ -101,7 +100,6 @@ const JournalEntryForm = ({
       dimensions: lineDimensions[line.id] ?? line.dimensions ?? []
     }));
   });
-  const _isDraft = status === "Draft";
   const isPosted = status === "Posted";
   const isReversed = status === "Reversed";
 

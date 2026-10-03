@@ -20,12 +20,10 @@ import {
 import {
   getOpenReimbursementsForEmployee,
   getReimbursement,
-  getReimbursementRelatedItems
-} from "~/modules/invoicing";
-import {
+  getReimbursementRelatedItems,
   ReimbursementDocuments,
   ReimbursementHeader
-} from "~/modules/invoicing/ui/Reimbursement";
+} from "~/modules/invoicing";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -41,11 +39,11 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
     : args.defaultShouldRevalidate;
 
 /**
- * Loads the document for the whole page — the header, the Documents panel and
- * read mode (`$reimbursementId._index.tsx`) all read it through
- * `useRouteData(path.to.reimbursement(id))`. Edit mode
- * (`$reimbursementId.edit.tsx`) keeps its own loader, which also enforces the
- * Draft-only lock for a direct URL.
+ * Loads the document for the whole page — the header, the Documents panel,
+ * read mode (`$reimbursementId._index.tsx`) and edit mode
+ * (`$reimbursementId.edit.tsx`) all read it through
+ * `useRouteData(path.to.reimbursement(id))`. Edit mode keeps its own loader
+ * only for the update permission and the Draft-only lock on a direct URL.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -176,10 +174,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-/**
- * Reimbursements are not audit-logged (not in `auditConfig.entities`), so the
- * side panel shows Documents alone — no Activity tab that could never fill.
- */
 export default function ReimbursementRoute() {
   const { reimbursement } = useLoaderData<typeof loader>();
   return (

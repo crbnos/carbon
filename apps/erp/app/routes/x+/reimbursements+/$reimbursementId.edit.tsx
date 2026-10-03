@@ -7,9 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, redirect, useParams } from "react-router";
 import type { ClientDocumentLine } from "~/components/DocumentLineEditor";
-import { getActiveDimensionsWithValues } from "~/modules/accounting";
+import { useRouteData } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
 import {
   getReimbursement,
@@ -25,26 +25,32 @@ import {
   postReimbursement,
   REIMBURSEMENT_UNBALANCED_MESSAGE
 } from "~/modules/invoicing/reimbursement.server";
+import type { loader as reimbursementLoader } from "~/routes/x+/reimbursements+/$reimbursementId";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
+/**
+ * The document and its dimensions come from the page loader
+ * (`$reimbursementId.tsx`), which runs on /edit too. This loader exists for the
+ * two server-side gates: the update permission and the Draft-only lock, so it
+ * reads nothing but the status.
+ */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "invoicing"
-    }
-  );
+  const { client, companyId } = await requirePermissions(request, {
+    update: "invoicing"
+  });
 
   const { reimbursementId } = params;
   if (!reimbursementId) throw new Error("Could not find reimbursementId");
 
-  const [reimbursement, dimensions] = await Promise.all([
-    getReimbursement(client, companyId, reimbursementId),
-    getActiveDimensionsWithValues(client, companyGroupId, companyId)
-  ]);
+  const reimbursement = await client
+    .from("reimbursement")
+    .select("status")
+    .eq("id", reimbursementId)
+    .eq("companyId", companyId)
+    .single();
 
   if (reimbursement.error || !reimbursement.data) {
     throw redirect(
@@ -66,10 +72,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     message: "A posted reimbursement cannot be edited"
   });
 
-  return {
-    reimbursement: reimbursement.data,
-    dimensions: dimensions.data ?? []
-  };
+  return null;
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -264,7 +267,16 @@ function toClientLines(
 }
 
 export default function ReimbursementEditRoute() {
-  const { reimbursement, dimensions } = useLoaderData<typeof loader>();
+  const { reimbursementId } = useParams();
+  if (!reimbursementId) throw new Error("Could not find reimbursementId");
+
+  const routeData = useRouteData<
+    Awaited<ReturnType<typeof reimbursementLoader>>
+  >(path.to.reimbursement(reimbursementId));
+  if (!routeData?.reimbursement) {
+    throw new Error("Could not find reimbursement in routeData");
+  }
+  const { reimbursement, dimensions } = routeData;
 
   const initialLines = toClientLines(
     reimbursement.reimbursementLine ?? [],

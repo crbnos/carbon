@@ -2397,9 +2397,6 @@ msgstr "この仕入先返品をキャンセルしてよろしいですか？こ
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "本当に{propertyName}プロパティを変更してもよろしいですか？生成された材料IDを使用しているため、このパーツのパーツIDと関連するすべてのリビジョンが変更されます。"
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "このストック転送を完了してもよろしいですか？"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "この RMA を確定してもよろしいですか？確定すると、得意先は明細の商品を返品することが認可されます。"
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "添付ファイル"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "試行"
@@ -4325,9 +4325,6 @@ msgstr "ジョブを完了"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "この製造指図を完了する前にMESでシリアル/バッチを完了するか、すべての工程を完了にして自動的に完了させてください。"
 
-msgid "Complete Stock Transfer"
-msgstr "在庫移動を完了"
-
 msgid "Complete To"
 msgstr "完了先"
 
@@ -5482,6 +5479,9 @@ msgstr "クレジットメモと仕入先クレジットの同期は請求書の
 
 msgid "Credit representation"
 msgstr "クレジット・メモの表示"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "クレジット合計"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "フリートユニット"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
@@ -9811,8 +9814,7 @@ msgstr "受け取った品目の検査時に警告が表示されます。"
 msgid "Inspection"
 msgstr "検査"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "請求済みステータス"
 
 msgid "Invoices"
 msgstr "請求書"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "このメモが適用された請求書。行をクリックして文書を開きます。"
@@ -13564,6 +13569,9 @@ msgstr "製品は原材料より長く保持されることはありません。
 
 msgid "Outside operation"
 msgstr "間接費差異"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "超過適用額"
@@ -17549,6 +17557,9 @@ msgstr "この得意先の出荷済明細のうち、返品待ち数量がある
 msgid "Shipped Qty"
 msgstr "出荷数量"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "配送"
 
@@ -18565,6 +18576,9 @@ msgstr "表面仕上げ — 例：アルマイト vs パウダーコート"
 
 msgid "Surfaces"
 msgstr "サーフェス"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "疑わしい故障モード"
@@ -19766,6 +19780,12 @@ msgstr "その後、以下のために調整されます"
 
 msgid "Then by"
 msgstr "次に"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "このRFQに対して比較する有効な仕入先見積がありません。"
@@ -22232,6 +22252,9 @@ msgstr "この部品表を編集する権限がありません。"
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "この工程表を編集する権限がありません。"
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "あなたが主導し、私たちはそれが正しく完了することを確認します。あなたの環境設定、データ、およびゴーライブに関する専門家の目。"

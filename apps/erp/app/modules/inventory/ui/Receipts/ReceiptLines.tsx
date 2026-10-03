@@ -505,7 +505,10 @@ function ReceiptLineItem({
               type={(item?.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <span className="text-sm font-medium truncate block w-full">
+              <span
+                className="text-sm font-medium truncate block w-full"
+                title={item?.name}
+              >
                 {item?.name}
               </span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -525,7 +528,9 @@ function ReceiptLineItem({
         <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
           <HStack spacing={4}>
             <VStack spacing={1}>
-              <label className="text-xs text-muted-foreground">Received</label>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Received</Trans>
+              </label>
 
               <NumberField
                 value={line.receivedQuantity ?? 0}
@@ -563,13 +568,19 @@ function ReceiptLineItem({
               </NumberField>
             </VStack>
             <VStack spacing={1} className="text-center items-center">
-              <label className="text-xs text-muted-foreground">Ordered</label>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Ordered</Trans>
+              </label>
               <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">
-                {isSurplus ? "Surplus" : "Outstanding"}
+                {isSurplus ? (
+                  <Trans>Surplus</Trans>
+                ) : (
+                  <Trans>Outstanding</Trans>
+                )}
               </label>
               <HStack className="justify-center">
                 <span
@@ -584,7 +595,7 @@ function ReceiptLineItem({
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      There are more received than ordered
+                      <Trans>There are more received than ordered</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -594,7 +605,7 @@ function ReceiptLineItem({
 
           <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
             <label className="text-xs text-muted-foreground">
-              Storage Unit
+              <Trans>Storage Unit</Trans>
             </label>
             <StorageUnit
               locationId={line.locationId}

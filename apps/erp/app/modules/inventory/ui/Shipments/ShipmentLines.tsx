@@ -437,8 +437,9 @@ function ShipmentLineItem({
   const deleteDisclosure = useDisclosure();
 
   // Check if shipped quantity exceeds job quantity for job fulfillments
+  const isJobFulfillment = line.fulfillment?.type === "Job";
   const isJobOverShipped =
-    line.fulfillment?.type === "Job" &&
+    isJobFulfillment &&
     (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
 
   return (
@@ -448,15 +449,8 @@ function ShipmentLineItem({
         className
       )}
     >
-      <div className="absolute top-3 right-6">
-        {line.fulfillment?.type === "Job" ? (
-          <div className="flex flex-col items-end gap-0">
-            <span>Job</span>
-            <span className="text-xs text-muted-foreground">
-              {line.fulfillment?.job?.jobId}
-            </span>
-          </div>
-        ) : (
+      {!isJobFulfillment && (
+        <div className="absolute top-3 right-6">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -484,13 +478,18 @@ function ShipmentLineItem({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-      </div>
+        </div>
+      )}
       {/* Sized by the line's own width, not the viewport: the content pane
           it sits in is resizable. The item takes what the quantities leave,
           and they stay on one line once the row is wide enough. pr-10 clears
-          the line menu. */}
-      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full pr-10">
+          the line menu; a Job line has no menu, its job sits in the row. */}
+      <div
+        className={cn(
+          "flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full",
+          !isJobFulfillment && "pr-10"
+        )}
+      >
         <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
           <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
@@ -525,14 +524,16 @@ function ShipmentLineItem({
           <HStack spacing={4}>
             <VStack spacing={1}>
               <div className="flex items-center justify-between gap-1 w-full">
-                <label className="text-xs text-muted-foreground">Shipped</label>
+                <label className="text-xs text-muted-foreground">
+                  <Trans>Shipped</Trans>
+                </label>
                 {isJobOverShipped && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      Shipped quantity exceeds job quantity
+                      <Trans>Shipped quantity exceeds job quantity</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -571,8 +572,7 @@ function ShipmentLineItem({
                   )}
                   isDisabled={
                     isReadOnly ||
-                    (line.fulfillment?.type === "Job" &&
-                      (line.requiresSerialTracking ?? false))
+                    (isJobFulfillment && (line.requiresSerialTracking ?? false))
                   }
                   size="sm"
                   min={0}
@@ -580,13 +580,15 @@ function ShipmentLineItem({
               </NumberField>
             </VStack>
             <VStack spacing={1} className="text-center items-center">
-              <label className="text-xs text-muted-foreground">Ordered</label>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Ordered</Trans>
+              </label>
               <span className="text-sm py-1.5">{line.orderQuantity || 0}</span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">
-                Outstanding
+                <Trans>Outstanding</Trans>
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
@@ -601,14 +603,24 @@ function ShipmentLineItem({
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      There are more shipped than ordered
+                      <Trans>There are more shipped than ordered</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
               </HStack>
             </VStack>
           </HStack>
-          {line.fulfillment?.type !== "Job" &&
+          {isJobFulfillment && (
+            <VStack spacing={1} className="items-end">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Job</Trans>
+              </label>
+              <span className="text-sm py-1.5">
+                {line.fulfillment?.job?.jobId}
+              </span>
+            </VStack>
+          )}
+          {!isJobFulfillment &&
             shipment?.sourceDocument !== "Purchase Order" && (
               <StorageUnit
                 locationId={line.locationId}

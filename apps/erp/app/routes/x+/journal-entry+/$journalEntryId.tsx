@@ -93,7 +93,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-// Journal entries are not audit-logged, so the panel shows Documents alone.
 export default function JournalEntryRoute() {
   const { journalEntry } = useLoaderData<typeof loader>();
   return (

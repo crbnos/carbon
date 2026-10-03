@@ -7,14 +7,13 @@ import {
   DrawerContent,
   DrawerTitle,
   ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
   useIsMobile
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
+import { Panel, PanelGroup } from "react-resizable-panels";
 
 type DocumentPageContextType = {
   hasSidebar: boolean;
@@ -87,18 +86,54 @@ export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
     </div>
   );
 
-  if (!hasSidebar) {
-    return (
-      <DocumentPageContext.Provider value={context}>
-        {content}
-      </DocumentPageContext.Provider>
-    );
-  }
+  const showPanel = hasSidebar && !isMobile;
 
-  if (isMobile) {
-    return (
-      <DocumentPageContext.Provider value={context}>
-        {content}
+  // One tree for every case, the content panel always in the same place, so
+  // crossing the mobile breakpoint never remounts the form underneath (and
+  // its unsaved state). The group is `react-resizable-panels` itself rather
+  // than the `@carbon/react` wrapper: the wrapper renders nothing on the
+  // server, and the page's content has to be in the server HTML.
+  return (
+    <DocumentPageContext.Provider value={context}>
+      <PanelGroup
+        direction="horizontal"
+        autoSaveId={showPanel ? "document-page" : undefined}
+        className="flex h-full w-full"
+      >
+        <Panel
+          id="document-page-content"
+          order={1}
+          defaultSize={showPanel ? 70 : 100}
+          minSize={40}
+        >
+          {content}
+        </Panel>
+        {showPanel && (
+          <>
+            <ResizableHandle withHandle />
+            <Panel
+              ref={sidebarRef}
+              id={SIDEBAR_PANEL_ID}
+              order={2}
+              defaultSize={30}
+              minSize={20}
+              maxSize={50}
+              collapsible
+              collapsedSize={0}
+              onCollapse={() => setIsSidebarOpen(false)}
+              onExpand={() => setIsSidebarOpen(true)}
+              className="bg-background/30"
+            >
+              {isSidebarOpen && (
+                <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] flex-col overflow-hidden">
+                  {sidebar}
+                </div>
+              )}
+            </Panel>
+          </>
+        )}
+      </PanelGroup>
+      {hasSidebar && isMobile && (
         <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
           <DrawerContent
             position="right"
@@ -113,37 +148,7 @@ export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
             </div>
           </DrawerContent>
         </Drawer>
-      </DocumentPageContext.Provider>
-    );
-  }
-
-  return (
-    <DocumentPageContext.Provider value={context}>
-      <ResizablePanelGroup direction="horizontal" autoSaveId="document-page">
-        <ResizablePanel id="document-page-content" order={1} minSize={40}>
-          {content}
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel
-          ref={sidebarRef}
-          id={SIDEBAR_PANEL_ID}
-          order={2}
-          defaultSize={30}
-          minSize={20}
-          maxSize={50}
-          collapsible
-          collapsedSize={0}
-          onCollapse={() => setIsSidebarOpen(false)}
-          onExpand={() => setIsSidebarOpen(true)}
-          className="bg-background/30"
-        >
-          {isSidebarOpen && (
-            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] flex-col overflow-hidden">
-              {sidebar}
-            </div>
-          )}
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      )}
     </DocumentPageContext.Provider>
   );
 }

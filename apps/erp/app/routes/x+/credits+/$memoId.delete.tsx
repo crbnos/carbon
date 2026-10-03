@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 // non-draft delete fails at the database; the UI also hides the action.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Read the memo before deleting so we can return to its party's list —
   // supplier memos → Supplier Credits (AP), customer memos → Credit Memos (AR).
-  const existing = await getMemo(client, memoId);
+  const existing = await getMemo(client, memoId, companyId);
   const listPath = existing.data?.supplierId
     ? path.to.supplierCredits
     : path.to.creditMemos;

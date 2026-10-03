@@ -7,7 +7,7 @@ import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { AuditLogFeed } from "~/components/AuditLog";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 
 type DocumentSidebarProps = {
@@ -34,8 +34,10 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
   const { company } = useUser();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
   const [tab, setTab] = useState<"documents" | "activity">("documents");
+  // The audit log is a settings-level read; without it there is no tab.
+  const canViewActivity = usePermissions().can("view", "settings");
 
-  if (!activity) {
+  if (!activity || !canViewActivity) {
     return (
       <div className="flex flex-col h-full min-h-0">
         <h2 className="shrink-0 px-4 pt-5 pb-3 text-sm font-medium">

@@ -54,7 +54,7 @@ UI calling the old actions is how Carbon evolves a page without forking its doma
 | 12 | Attachments | Documents card: dropzone + table (download, delete), deferred load | `OpportunityDocuments.tsx:65-197` |
 | 13 | See totals | Summary card computed from the loader's lines | `SalesOrderSummary.tsx:108-303` |
 | 14 | Preview / export / email | PDF preview, CSV export of lines, email option in the confirm modal | `SalesOrderHeader.tsx:319-407`, `$orderId.confirm.tsx:145-190` |
-| 15 | See history | `useAuditLog` item in ⋯ + drawer | `SalesOrderHeader.tsx:237-242` |
+| 15 | See history | `useAuditLog` item in ⋯ + drawer; on a posting document (`DocumentPage`) the side panel's Activity tab instead | `SalesOrderHeader.tsx:237-242`, `components/DocumentPage/DocumentSidebar.tsx` |
 | 16 | Delete the document | ⋯ last item, destructive, `ConfirmDelete`, disabled when locked | `SalesOrderHeader.tsx:348-359` |
 | 17 | Get rule feedback | `useRuleViolations` wraps the line form fetcher | `SalesOrderLineForm.tsx:113-120` |
 

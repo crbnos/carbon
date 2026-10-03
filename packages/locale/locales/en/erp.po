@@ -2397,9 +2397,6 @@ msgstr "Are you sure you want to cancel this supplier return? This releases the 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "Are you sure you want to complete this stock transfer?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 
@@ -3014,6 +3011,9 @@ msgstr "Attachment · {itemReadableId}"
 
 msgid "Attachments"
 msgstr "Attachments"
+
+msgid "Attachments could not be loaded"
+msgstr "Attachments could not be loaded"
 
 msgid "Attempts"
 msgstr "Attempts"
@@ -4325,9 +4325,6 @@ msgstr "Complete Job"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 
-msgid "Complete Stock Transfer"
-msgstr "Complete Stock Transfer"
-
 msgid "Complete To"
 msgstr "Complete To"
 
@@ -5482,6 +5479,9 @@ msgstr "Credit memos and supplier credits are gated separately from invoices and
 
 msgid "Credit representation"
 msgstr "Credit representation"
+
+msgid "Credit staged"
+msgstr "Credit staged"
 
 msgid "Credit total"
 msgstr "Credit total"
@@ -8771,6 +8771,9 @@ msgstr "Fleet unit"
 msgid "Fleet Unit"
 msgstr "Fleet Unit"
 
+msgid "For <0/>"
+msgstr "For <0/>"
+
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
 
@@ -9811,9 +9814,8 @@ msgstr "Inspecting an item you received shows a warning."
 msgid "Inspection"
 msgstr "Inspection"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
-msgstr "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
+msgstr "Inspection · {itemReadableId}"
 
 msgid "Inspection document"
 msgstr "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "Invoiced Statuses"
 
 msgid "Invoices"
 msgstr "Invoices"
+
+msgid "Invoices could not be loaded"
+msgstr "Invoices could not be loaded"
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Invoices this memo has been applied to. Click a row to open the document."
@@ -13564,6 +13569,9 @@ msgstr "Output never outlasts its raw materials. Falls back to the fixed duratio
 
 msgid "Outside operation"
 msgstr "Outside operation"
+
+msgid "Outstanding"
+msgstr "Outstanding"
 
 msgid "Over-applied by"
 msgstr "Over-applied by"
@@ -17549,6 +17557,9 @@ msgstr "Shipped lines for this customer with quantity remaining to return"
 msgid "Shipped Qty"
 msgstr "Shipped Qty"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr "Shipped quantity exceeds job quantity"
+
 msgid "Shipping"
 msgstr "Shipping"
 
@@ -18565,6 +18576,9 @@ msgstr "Surface finish — e.g. anodized vs powder-coat"
 
 msgid "Surfaces"
 msgstr "Surfaces"
+
+msgid "Surplus"
+msgstr "Surplus"
 
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
@@ -19766,6 +19780,12 @@ msgstr "Then adjusted for"
 
 msgid "Then by"
 msgstr "Then by"
+
+msgid "There are more received than ordered"
+msgstr "There are more received than ordered"
+
+msgid "There are more shipped than ordered"
+msgstr "There are more shipped than ordered"
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "There are no active supplier quotes to compare for this RFQ."
@@ -22236,6 +22256,9 @@ msgstr "You don't have permission to edit this bill of material."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "You don't have permission to edit this bill of process."
+
+msgid "You don't have permission to view history."
+msgstr "You don't have permission to view history."
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."

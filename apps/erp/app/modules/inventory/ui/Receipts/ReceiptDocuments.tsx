@@ -138,9 +138,11 @@ function useParty(
 /**
  * The documents around a receipt: who it comes from, what it receives, the
  * inspections posting raised, what billed it, and the files attached to its
- * lines.
+ * lines. The rows the receipt itself names render at once; invoices, a
+ * return's customer and attachments stream in.
  */
 const ReceiptDocuments = () => {
+  const { t } = useLingui();
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
@@ -153,122 +155,223 @@ const ReceiptDocuments = () => {
   }>(path.to.receipt(receiptId));
 
   const receipt = routeData?.receipt;
+  const permissions = usePermissions();
+  // A sales return's customer lives on the return, so it streams in with the
+  // related items; every other receipt's party is its supplier.
+  const supplierParty = useParty(receipt, null);
+  const source = useSourceDocument(receipt);
   if (!receipt) return null;
 
-  return (
-    <Suspense
-      fallback={
-        <RelatedDocumentGroup>
-          <RelatedDocumentSkeleton />
-          <RelatedDocumentSkeleton />
-        </RelatedDocumentGroup>
-      }
-    >
-      <Await resolve={routeData?.relatedItems}>
-        {(resolved) => (
-          <Await resolve={routeData?.receiptFiles}>
-            {(files) => (
-              <ReceiptDocumentList
-                receipt={receipt}
-                receiptLines={routeData?.receiptLines ?? []}
-                inspections={routeData?.receiptInspections ?? []}
-                relatedItems={resolved ?? { invoices: [], customerId: null }}
-                files={files?.data ?? []}
-              />
-            )}
-          </Await>
-        )}
-      </Await>
-    </Suspense>
+  const isSalesReturn = receipt.sourceDocument === "Sales Return Order";
+  const inspections = permissions.can("view", "quality")
+    ? (routeData?.receiptInspections ?? [])
+    : [];
+  const receiptLines = routeData?.receiptLines ?? [];
+  const relatedItems = routeData?.relatedItems;
+  const receiptFiles = routeData?.receiptFiles;
+
+  const supplierRow =
+    !isSalesReturn && supplierParty ? (
+      <RelatedDocument
+        to={supplierParty.to}
+        icon={supplierParty.icon}
+        title={supplierParty.name}
+        description={supplierParty.label}
+      />
+    ) : null;
+
+  const sourceRow = source ? (
+    <RelatedDocument
+      to={source.to}
+      icon={source.icon}
+      title={receipt.sourceDocumentReadableId!}
+      description={source.label}
+    />
+  ) : null;
+
+  const inspectionRows = inspections.map((inspection) => {
+    const itemReadableId = inspection.itemReadableId;
+    return (
+      <RelatedDocument
+        key={inspection.id}
+        to={path.to.inspection(inspection.id)}
+        icon={<LuClipboardCheck />}
+        title={inspection.inspectionId}
+        description={
+          itemReadableId ? t`Inspection · ${itemReadableId}` : t`Inspection`
+        }
+        status={<InspectionStatus status={inspection.status} />}
+      />
+    );
+  });
+
+  const hasImmediateRows = Boolean(
+    supplierRow || sourceRow || inspectionRows.length > 0
   );
-};
 
-function ReceiptDocumentList({
-  receipt,
-  receiptLines,
-  inspections,
-  relatedItems,
-  files
-}: {
-  receipt: Receipt;
-  receiptLines: ReceiptLine[];
-  inspections: ReceiptInspection[];
-  relatedItems: RelatedItems;
-  /** Line attachments; `bucket` holds the receipt line id. */
-  files: StorageItem[];
-}) {
-  const { t } = useLingui();
-  const { company } = useUser();
-  const permissions = usePermissions();
-  const party = useParty(receipt, relatedItems.customerId);
-  const source = useSourceDocument(receipt);
-
-  const visibleInspections = permissions.can("view", "quality")
-    ? inspections
-    : [];
-  // A receipt raised from an invoice already lists it as its source.
-  const invoices = permissions.can("view", "invoicing")
-    ? relatedItems.invoices.filter(
-        (invoice) =>
-          !(
-            receipt.sourceDocument === "Purchase Invoice" &&
-            invoice.id === receipt.sourceDocumentId
-          )
-      )
-    : [];
-
-  if (
-    !party &&
-    !source &&
-    visibleInspections.length === 0 &&
-    invoices.length === 0 &&
-    files.length === 0
-  ) {
-    return <Empty className="py-12" />;
+  // With nothing to show up front, wait for the streamed rows before
+  // deciding whether the list is empty.
+  if (!hasImmediateRows) {
+    return (
+      <Suspense
+        fallback={
+          <RelatedDocumentGroup>
+            <RelatedDocumentSkeleton />
+          </RelatedDocumentGroup>
+        }
+      >
+        <Await
+          resolve={relatedItems}
+          errorElement={<Empty className="py-12" />}
+        >
+          {(resolved) => (
+            <Await
+              resolve={receiptFiles}
+              errorElement={<Empty className="py-12" />}
+            >
+              {(files) => (
+                <StreamedReceiptDocuments
+                  receipt={receipt}
+                  receiptLines={receiptLines}
+                  relatedItems={resolved ?? EMPTY_RELATED_ITEMS}
+                  files={files?.data ?? []}
+                />
+              )}
+            </Await>
+          )}
+        </Await>
+      </Suspense>
+    );
   }
 
   return (
     <RelatedDocumentGroup>
-      {party && (
-        <RelatedDocument
-          to={party.to}
-          icon={party.icon}
-          title={party.name}
-          description={party.label}
-        />
+      {isSalesReturn ? (
+        <Suspense fallback={null}>
+          <Await resolve={relatedItems} errorElement={null}>
+            {(resolved) => (
+              <ReturnCustomerRow
+                receipt={receipt}
+                customerId={resolved?.customerId ?? null}
+              />
+            )}
+          </Await>
+        </Suspense>
+      ) : (
+        supplierRow
       )}
-      {source && (
-        <RelatedDocument
-          to={source.to}
-          icon={source.icon}
-          title={receipt.sourceDocumentReadableId!}
-          description={source.label}
-        />
-      )}
-      {visibleInspections.map((inspection) => (
-        <RelatedDocument
-          key={inspection.id}
-          to={path.to.inspection(inspection.id)}
-          icon={<LuClipboardCheck />}
-          title={inspection.inspectionId}
-          description={
-            inspection.itemReadableId
-              ? t`Inspection · ${inspection.itemReadableId}`
-              : t`Inspection`
+      {sourceRow}
+      {inspectionRows}
+      <Suspense fallback={<RelatedDocumentSkeleton />}>
+        <Await
+          resolve={relatedItems}
+          errorElement={
+            <li className="px-3 py-2.5 text-xs text-muted-foreground">
+              {t`Invoices could not be loaded`}
+            </li>
           }
-          status={<InspectionStatus status={inspection.status} />}
-        />
-      ))}
-      {invoices.map((invoice) => (
-        <RelatedDocument
-          key={invoice.id}
-          to={path.to.purchaseInvoice(invoice.id)}
-          icon={<LuCreditCard />}
-          title={invoice.invoiceId}
-          description={t`Purchase Invoice`}
-          status={<PurchaseInvoicingStatus status={invoice.status} />}
-        />
-      ))}
+        >
+          {(resolved) => (
+            <InvoiceRows
+              receipt={receipt}
+              invoices={(resolved ?? EMPTY_RELATED_ITEMS).invoices}
+            />
+          )}
+        </Await>
+      </Suspense>
+      <Suspense fallback={null}>
+        <Await
+          resolve={receiptFiles}
+          errorElement={
+            <li className="px-3 py-2.5 text-xs text-muted-foreground">
+              {t`Attachments could not be loaded`}
+            </li>
+          }
+        >
+          {(files) => (
+            <AttachmentRows
+              receiptLines={receiptLines}
+              files={files?.data ?? []}
+            />
+          )}
+        </Await>
+      </Suspense>
+    </RelatedDocumentGroup>
+  );
+};
+
+const EMPTY_RELATED_ITEMS: RelatedItems = { invoices: [], customerId: null };
+
+/** The customer a sales return came back from. */
+function ReturnCustomerRow({
+  receipt,
+  customerId
+}: {
+  receipt: Receipt;
+  customerId: string | null;
+}) {
+  const party = useParty(receipt, customerId);
+  if (!party) return null;
+  return (
+    <RelatedDocument
+      to={party.to}
+      icon={party.icon}
+      title={party.name}
+      description={party.label}
+    />
+  );
+}
+
+/** The purchase invoices that billed the receipt. */
+function InvoiceRows({
+  receipt,
+  invoices
+}: {
+  receipt: Receipt;
+  invoices: RelatedItems["invoices"];
+}) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  if (!permissions.can("view", "invoicing")) return null;
+
+  // A receipt raised from an invoice already lists it as its source.
+  return (
+    <>
+      {invoices
+        .filter(
+          (invoice) =>
+            !(
+              receipt.sourceDocument === "Purchase Invoice" &&
+              invoice.id === receipt.sourceDocumentId
+            )
+        )
+        .map((invoice) => (
+          <RelatedDocument
+            key={invoice.id}
+            to={path.to.purchaseInvoice(invoice.id)}
+            icon={<LuCreditCard />}
+            title={invoice.invoiceId}
+            description={t`Purchase Invoice`}
+            status={<PurchaseInvoicingStatus status={invoice.status} />}
+          />
+        ))}
+    </>
+  );
+}
+
+/** Files attached to the receipt's lines; `bucket` holds the line id. */
+function AttachmentRows({
+  receiptLines,
+  files
+}: {
+  receiptLines: ReceiptLine[];
+  files: StorageItem[];
+}) {
+  const { t } = useLingui();
+  const { company } = useUser();
+
+  return (
+    <>
       {files.map((file) => {
         const itemReadableId = receiptLines.find(
           (line) => line.id === file.bucket
@@ -288,6 +391,53 @@ function ReceiptDocumentList({
           />
         );
       })}
+    </>
+  );
+}
+
+/**
+ * The receipt's documents when it names none itself: only what streamed in,
+ * or the empty state.
+ */
+function StreamedReceiptDocuments({
+  receipt,
+  receiptLines,
+  relatedItems,
+  files
+}: {
+  receipt: Receipt;
+  receiptLines: ReceiptLine[];
+  relatedItems: RelatedItems;
+  files: StorageItem[];
+}) {
+  const permissions = usePermissions();
+  // Only a sales return can reach here with a party: a supplier would have
+  // rendered up front.
+  const customer = useParty(receipt, relatedItems.customerId);
+  const hasInvoices =
+    permissions.can("view", "invoicing") &&
+    relatedItems.invoices.some(
+      (invoice) =>
+        !(
+          receipt.sourceDocument === "Purchase Invoice" &&
+          invoice.id === receipt.sourceDocumentId
+        )
+    );
+
+  if (!customer && !hasInvoices && files.length === 0) {
+    return <Empty className="py-12" />;
+  }
+
+  return (
+    <RelatedDocumentGroup>
+      {receipt.sourceDocument === "Sales Return Order" && (
+        <ReturnCustomerRow
+          receipt={receipt}
+          customerId={relatedItems.customerId}
+        />
+      )}
+      <InvoiceRows receipt={receipt} invoices={relatedItems.invoices} />
+      <AttachmentRows receiptLines={receiptLines} files={files} />
     </RelatedDocumentGroup>
   );
 }

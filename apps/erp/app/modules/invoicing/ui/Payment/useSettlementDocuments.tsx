@@ -90,10 +90,12 @@ export function useCounterparty(party?: {
 
 /**
  * The documents a payment or memo settles, the credits a payment draws, and
- * the journal entry its posting wrote — one row each, with its status.
+ * the journal entry its posting wrote — one row each, with its status. While
+ * a payment is Draft its credits are only staged, not applied.
  */
 export function useSettlementRows(
-  related?: SettlementRelatedItems
+  related?: SettlementRelatedItems,
+  creditsStaged = false
 ): ReactElement[] {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -166,7 +168,7 @@ export function useSettlementRows(
         to={path.to.memo(credit.id)}
         icon={<LuCreditCard />}
         title={credit.memoId}
-        description={t`Credit applied`}
+        description={creditsStaged ? t`Credit staged` : t`Credit applied`}
         status={<MemoStatus status={credit.status} />}
       />
     );

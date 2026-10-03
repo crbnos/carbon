@@ -21,7 +21,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import {
   LuFilePen,
   LuFilePlus,
@@ -60,6 +60,9 @@ type AuditLogDrawerProps = {
   /** When true, shows an upgrade prompt instead of fetching audit data */
   planRestricted?: boolean;
 };
+
+/** How long after a change its audit rows typically take to be written. */
+const AUDIT_SETTLE_MS = 4000;
 
 type AuditLogFetcherData = {
   entries: AuditLogEntry[];
@@ -121,48 +124,63 @@ export function AuditLogFeed({
   refreshKey
 }: AuditLogFeedProps) {
   const fetcher = useFetcher<AuditLogFetcherData>();
+  // Held in a ref so a re-render (a new fetcher object) never re-runs the
+  // load effect and cancels its delayed second look.
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
+
+  const entityKey = `${entityType}:${entityId}:${companyId}:${recordId ?? ""}`;
+  const loadKey = `${entityKey}:${refreshKey ?? ""}`;
   const lastLoadedRef = useRef<string | null>(null);
-  const loadKey = `${entityType}:${entityId}:${companyId}:${recordId ?? ""}:${
-    refreshKey ?? ""
-  }`;
+  const requestedEntityRef = useRef<string | null>(null);
+  // The entity the fetched entries belong to, so another record's history is
+  // never shown while this one's loads.
+  const [dataEntity, setDataEntity] = useState<string | null>(null);
 
   const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
     path.to.authenticatedRoot
   );
   const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
   const { can } = usePermissions();
+  // /api/audit-log requires settings view and answers anyone else with a
+  // redirect, which a fetcher follows — off the page the user is on.
+  const canViewHistory = can("view", "settings");
 
-  // Load audit log data when the feed becomes active or the entity changes
   useEffect(() => {
     if (
       planRestricted ||
       !auditLogEnabled ||
+      !canViewHistory ||
       !isActive ||
       !entityType ||
       !entityId ||
-      fetcher.state !== "idle" ||
       lastLoadedRef.current === loadKey
     ) {
       return;
     }
     lastLoadedRef.current = loadKey;
-    const params = new URLSearchParams({
-      entityType,
-      entityId,
-      companyId
-    });
+    const params = new URLSearchParams({ entityType, entityId, companyId });
     if (recordId) params.set("recordId", recordId);
-    fetcher.load(`/api/audit-log?${params.toString()}`);
+    const load = () => {
+      requestedEntityRef.current = entityKey;
+      fetcherRef.current.load(`/api/audit-log?${params.toString()}`);
+    };
+    load();
+    // Audit rows are written by the event queue a few seconds after the
+    // change itself, so look again once a save's entries have landed.
+    const settle = setTimeout(load, AUDIT_SETTLE_MS);
+    return () => clearTimeout(settle);
   }, [
+    planRestricted,
+    auditLogEnabled,
+    canViewHistory,
     isActive,
     entityType,
     entityId,
     companyId,
     recordId,
-    loadKey,
-    fetcher,
-    planRestricted,
-    auditLogEnabled
+    entityKey,
+    loadKey
   ]);
 
   // Reset tracking when the feed goes inactive so it re-fetches next time
@@ -172,8 +190,23 @@ export function AuditLogFeed({
     }
   }, [isActive]);
 
-  const entries = fetcher.data?.entries ?? [];
-  const isLoading = fetcher.state === "loading" && !fetcher.data;
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      setDataEntity(requestedEntityRef.current);
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const hasCurrentData = Boolean(fetcher.data) && dataEntity === entityKey;
+  const entries = hasCurrentData ? (fetcher.data?.entries ?? []) : [];
+  const isLoading = !hasCurrentData;
+
+  if (!canViewHistory) {
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        <Trans>You don't have permission to view history.</Trans>
+      </p>
+    );
+  }
 
   if (planRestricted) {
     return (

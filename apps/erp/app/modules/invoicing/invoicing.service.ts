@@ -5,6 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 import {
   allocatePaymentFunding,
   applyRate,
@@ -65,6 +66,8 @@ import type {
   salesInvoiceStatusType,
   salesInvoiceValidator
 } from "./invoicing.models";
+
+const logger = getLogger("erp", "invoicing");
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
   "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
@@ -1633,6 +1636,13 @@ export async function getReimbursementRelatedItems(
         .order("appliedDate")
         .order("id")
   );
+  if (settlements.error) {
+    logger.error("Failed to get reimbursement settlements", {
+      companyId,
+      reimbursementId,
+      error: settlements.error
+    });
+  }
 
   const payments = new Map<string, Payment>();
   for (const settlement of settlements.data ?? []) {
@@ -2120,6 +2130,9 @@ export async function getSettlementRelatedItems(
       targetReimbursementId: string | null;
     }[];
     appliedViaPaymentId?: string;
+    // The payment is still Draft: credits applied through it are only staged,
+    // so what they target is not settled yet (as in getMemoApplications).
+    appliedViaPaymentStaged?: boolean;
     salesReturnOrderId?: string | null;
     purchaseReturnOrderId?: string | null;
   }
@@ -2133,8 +2146,17 @@ export async function getSettlementRelatedItems(
         .eq("companyId", companyId)
         .eq("appliedViaPaymentId", args.appliedViaPaymentId)
     : null;
+  if (viaPayment?.error) {
+    logger.error("Failed to get credits applied via payment", {
+      companyId,
+      paymentId: args.appliedViaPaymentId,
+      error: viaPayment.error
+    });
+  }
   const viaRows = viaPayment?.data ?? [];
-  const targets = [...args.targets, ...viaRows];
+  const targets = args.appliedViaPaymentStaged
+    ? args.targets
+    : [...args.targets, ...viaRows];
 
   const unique = (ids: (string | null | undefined)[]) => [
     ...new Set(ids.filter((id): id is string => Boolean(id)))
@@ -2170,6 +2192,7 @@ export async function getSettlementRelatedItems(
           .select("id, invoiceId, status")
           .in("id", salesInvoiceIds)
           .eq("companyId", companyId)
+          .order("invoiceId")
       : null,
     purchaseInvoiceIds.length > 0
       ? client
@@ -2177,6 +2200,7 @@ export async function getSettlementRelatedItems(
           .select("id, invoiceId, status")
           .in("id", purchaseInvoiceIds)
           .eq("companyId", companyId)
+          .order("invoiceId")
       : null,
     memoIds.length > 0
       ? client
@@ -2184,6 +2208,7 @@ export async function getSettlementRelatedItems(
           .select("id, memoId, status")
           .in("id", memoIds)
           .eq("companyId", companyId)
+          .order("memoId")
       : null,
     reimbursementIds.length > 0
       ? client
@@ -2191,6 +2216,7 @@ export async function getSettlementRelatedItems(
           .select("id, reimbursementId, status")
           .in("id", reimbursementIds)
           .eq("companyId", companyId)
+          .order("reimbursementId")
       : null,
     args.salesReturnOrderId
       ? client
@@ -2209,6 +2235,24 @@ export async function getSettlementRelatedItems(
           .maybeSingle()
       : null
   ]);
+
+  const failures = {
+    journal,
+    salesInvoices,
+    purchaseInvoices,
+    memos,
+    reimbursements,
+    salesReturnOrder,
+    purchaseReturnOrder
+  };
+  for (const [read, result] of Object.entries(failures)) {
+    if (result?.error) {
+      logger.error(`Failed to get settlement related ${read}`, {
+        companyId,
+        error: result.error
+      });
+    }
+  }
 
   const credits = new Set(creditIds);
   const allMemos = memos?.data ?? [];
@@ -3825,8 +3869,14 @@ export async function replaceInvoiceSettlements(
 // function; the apply table is editable only while the memo is Draft.
 
 /** @mcp read */
-export async function getMemo(client: SupabaseClient<Database>, id: string) {
-  return client.from("memo").select("*").eq("id", id).single();
+export async function getMemo(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId?: string
+) {
+  let query = client.from("memo").select("*").eq("id", id);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 /** @mcp read */

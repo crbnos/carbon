@@ -34,6 +34,7 @@ import { useEffect, useRef } from "react";
 import { LuArrowRight, LuCirclePlus, LuEllipsisVertical } from "react-icons/lu";
 import { Link, Outlet, useFetcher, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Empty, ItemThumbnail } from "~/components";
+import { useQuantityFormatter } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { WarehouseTransfer, WarehouseTransferLine } from "../../types";
@@ -129,6 +130,7 @@ function WarehouseTransferLineListItem({
   className?: string;
 }) {
   const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
   const deleteModalDisclosure = useDisclosure();
 
   const [items] = useItems();
@@ -155,17 +157,23 @@ function WarehouseTransferLineListItem({
               type={(item.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <span className="text-sm font-medium truncate block w-full">
+              <span
+                className="text-sm font-medium truncate block w-full"
+                title={item.name}
+              >
                 {item.name}
               </span>
-              <span className="text-xs text-muted-foreground truncate block w-full">
+              <span
+                className="text-xs text-muted-foreground truncate block w-full"
+                title={item.readableIdWithRevision}
+              >
                 {item.readableIdWithRevision}
               </span>
             </VStack>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Badge variant="secondary">
-              {Number(line.quantity).toLocaleString()}
+              {formatQuantity(Number(line.quantity))}
             </Badge>
             {line.fromStorageUnit && (
               <Badge variant="outline">{line.fromStorageUnit.name}</Badge>

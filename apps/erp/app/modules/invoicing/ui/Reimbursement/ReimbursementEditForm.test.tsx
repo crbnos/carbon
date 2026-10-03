@@ -89,7 +89,6 @@ vi.mock("~/components/DocumentLineEditor", () => ({
   DocumentLineEditor: ({ currencyCode }: { currencyCode: string }) =>
     createElement("div", { "data-lines-currency": currencyCode })
 }));
-vi.mock("~/components", () => ({ EmployeeAvatar: () => null }));
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
   useLingui: () => ({

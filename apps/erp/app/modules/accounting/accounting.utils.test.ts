@@ -13,6 +13,7 @@ import {
   calculateTaxDepreciation,
   computeDisposalGainLoss,
   depreciationRunLineDisplay,
+  diffJournalLines,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
@@ -851,5 +852,168 @@ describe("buildDepreciationLines", () => {
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+  });
+});
+
+describe("diffJournalLines", () => {
+  const stored = [
+    {
+      id: "jl_a",
+      accountId: "acct_cash",
+      description: "Rent",
+      amount: 1000,
+      dimensions: [{ dimensionId: "dim_loc", valueId: "loc_hq" }]
+    },
+    {
+      id: "jl_b",
+      accountId: "acct_rent",
+      description: null,
+      amount: -1000,
+      dimensions: []
+    }
+  ];
+
+  it("keeps lines nothing changed on, and deletes nothing", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: [{ dimensionId: "dim_loc", valueId: "loc_hq" }]
+      },
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        description: "",
+        amount: -1000,
+        dimensions: []
+      }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["keep", "keep"]);
+    expect(changes.every((c) => !c.dimensionsChanged)).toBe(true);
+    expect(deleteIds).toEqual([]);
+  });
+
+  it("updates a line in place when its account, description or amount changes", () => {
+    const { changes } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Office rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      {
+        id: "jl_b",
+        accountId: "acct_other",
+        description: null as unknown as string,
+        amount: -1000,
+        dimensions: []
+      }
+    ]);
+    expect(changes.map((c) => [c.op, c.id])).toEqual([
+      ["update", "jl_a"],
+      ["update", "jl_b"]
+    ]);
+  });
+
+  it("ignores float noise in amounts", () => {
+    const { changes } = diffJournalLines(stored.slice(0, 1), [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000.0000000001,
+        dimensions: stored[0].dimensions
+      }
+    ]);
+    expect(changes[0].op).toBe("keep");
+  });
+
+  it("inserts a line with no id or an unknown id, and deletes stored lines not submitted", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      { accountId: "acct_fee", amount: 5, dimensions: [] },
+      {
+        id: "client-xyz",
+        accountId: "acct_fee",
+        amount: -5,
+        dimensions: [{ dimensionId: "d", valueId: "v" }]
+      }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["keep", "insert", "insert"]);
+    expect(changes[1].dimensionsChanged).toBe(false);
+    expect(changes[2].dimensionsChanged).toBe(true);
+    expect(deleteIds).toEqual(["jl_b"]);
+  });
+
+  it("matches a stored id once — a repeat is inserted, never a second update of the same row", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      },
+      {
+        id: "jl_a",
+        accountId: "acct_cash",
+        description: "Rent",
+        amount: 1000,
+        dimensions: stored[0].dimensions
+      }
+    ]);
+    expect(changes.map((c) => [c.op, c.id])).toEqual([
+      ["keep", "jl_a"],
+      ["insert", undefined]
+    ]);
+    expect(deleteIds).toEqual(["jl_b"]);
+  });
+
+  it("flags a dimension change regardless of order, and only a real change", () => {
+    const twoDims = [
+      { dimensionId: "d1", valueId: "v1" },
+      { dimensionId: "d2", valueId: "v2" }
+    ];
+    const withDims = [{ ...stored[1], dimensions: twoDims }];
+    const reordered = diffJournalLines(withDims, [
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        amount: -1000,
+        dimensions: [...twoDims].reverse()
+      }
+    ]);
+    expect(reordered.changes[0].dimensionsChanged).toBe(false);
+
+    const changed = diffJournalLines(withDims, [
+      {
+        id: "jl_b",
+        accountId: "acct_rent",
+        amount: -1000,
+        dimensions: [twoDims[0]]
+      }
+    ]);
+    expect(changed.changes[0]).toMatchObject({
+      op: "keep",
+      dimensionsChanged: true
+    });
+  });
+
+  it("replaces every line for a caller that sends no ids", () => {
+    const { changes, deleteIds } = diffJournalLines(stored, [
+      { accountId: "acct_cash", amount: 1000, dimensions: [] },
+      { accountId: "acct_rent", amount: -1000, dimensions: [] }
+    ]);
+    expect(changes.map((c) => c.op)).toEqual(["insert", "insert"]);
+    expect(deleteIds).toEqual(["jl_a", "jl_b"]);
   });
 });

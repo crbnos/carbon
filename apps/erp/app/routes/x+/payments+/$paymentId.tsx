@@ -216,7 +216,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       relatedItems: getSettlementRelatedItems(client, companyId, {
         journalId: payment.data.journalId,
         targets: applications.data ?? [],
-        appliedViaPaymentId: payment.data.id
+        appliedViaPaymentId: payment.data.id,
+        appliedViaPaymentStaged: payment.data.status === "Draft"
       })
     };
   } catch (e) {

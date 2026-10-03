@@ -57,7 +57,6 @@ const ReimbursementHeader = () => {
   const canUpdate = permissions.can("update", "invoicing");
   const isDraft = status === "Draft";
   const isPosted = status === "Posted";
-  const isVoided = status === "Voided";
   const canPost = isDraft && canUpdate;
   const canVoid = isPosted && canUpdate;
   // Posted and still owed. `balanceDue` comes from the settlement rows, so a
@@ -73,6 +72,9 @@ const ReimbursementHeader = () => {
         title={reimbursement.reimbursementId}
         status={<ReimbursementStatus status={status} />}
         meta={[
+          <Trans key="employee">
+            For <EmployeeAvatar employeeId={reimbursement.employeeId} />
+          </Trans>,
           <Trans key="created">
             Created{" "}
             <DateTime value={reimbursement.createdAt} variant="relative" /> by{" "}
@@ -108,7 +110,7 @@ const ReimbursementHeader = () => {
           ) : null
         ]}
         menuItems={
-          isPosted || isVoided ? (
+          isPosted ? (
             <DropdownMenuItem
               disabled={!canVoid}
               destructive

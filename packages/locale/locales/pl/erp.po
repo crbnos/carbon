@@ -2397,9 +2397,6 @@ msgstr "Czy na pewno chcesz anulować ten zwrot do dostawcy? Spowoduje to zwolni
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Czy chcesz zmienić właściwość {propertyName}? Ponieważ używasz generowanych numerów artykułów, spowoduje to zmianę numeru artykułu tej części oraz wszystkich powiązanych rewizji."
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "Czy na pewno chcesz ukończyć ten transfer zapasów?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Czy na pewno chcesz potwierdzić tę RMA? Potwierdzenie autoryzuje klienta do zwrotu towarów w wierszach."
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "Załączniki"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "Próby"
@@ -4325,9 +4325,6 @@ msgstr "Ukończ zadanie"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Zakończ produkcję sztuk z numerami seryjnymi/partii w MES przed zakończeniem tego zlecenia produkcyjnego lub oznacz każdą operację jako zakończoną, aby zakończyć je automatycznie."
 
-msgid "Complete Stock Transfer"
-msgstr "Ukończ Transfer Zapasów"
-
 msgid "Complete To"
 msgstr "Przypisz do"
 
@@ -5482,6 +5479,9 @@ msgstr "Faktury korygujące i kredyty dostawcy są chronione osobno od faktur i 
 
 msgid "Credit representation"
 msgstr "Reprezentacja faktur korygujących"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "Razem kredyt"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "Sztuka floty"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "w sprawie czegokolwiek. Zaangażują odpowiednią osobę."
 
@@ -9811,8 +9814,7 @@ msgstr "Inspekcja artykułu, który otrzymałeś, pokazuje ostrzeżenie."
 msgid "Inspection"
 msgstr "Kontrola"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "Statusy Zafakturowane"
 
 msgid "Invoices"
 msgstr "Faktury"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Faktury, do których zastosowano tę notatkę. Kliknij wiersz, aby otworzyć dokument."
@@ -13564,6 +13569,9 @@ msgstr "Produkcja nigdy nie przetrwa dłużej niż jej surowce. Przyjmuje stały
 
 msgid "Outside operation"
 msgstr "Odchylenie Kosztów Pośrednich"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Przekroczone o"
@@ -17549,6 +17557,9 @@ msgstr "Wysłane linie dla tego klienta z pozostałą ilością do zwrotu"
 msgid "Shipped Qty"
 msgstr "Wysłana Ilość"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "Wysyłka"
 
@@ -18565,6 +18576,9 @@ msgstr "Obróbka powierzchni — np. anodowana vs. lakierowana proszkowo"
 
 msgid "Surfaces"
 msgstr "Powierzchnie"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Podejrzewany tryb awarii"
@@ -19766,6 +19780,12 @@ msgstr "Następnie dostosowane do"
 
 msgid "Then by"
 msgstr "Następnie wg"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Brak aktywnych ofert dostawców do porównania dla tego zapytania ofertowego."
@@ -22232,6 +22252,9 @@ msgstr "Nie masz uprawnień do edytowania tej listy materiałów."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Nie masz uprawnień do edytowania tej listy operacji."
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Prowadzisz ty; my zapewniamy jakość. Eksperci czuwają nad Twoją konfiguracją, danymi i wdrażaniem."

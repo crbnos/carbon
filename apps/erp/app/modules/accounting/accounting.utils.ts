@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { credit, debit, round, toStoredAmount } from "@carbon/utils";
+import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import { endOfMonth, parseDate, today } from "@internationalized/date";
 
 /**
@@ -682,4 +682,99 @@ export function buildDepreciationLines(
   }
 
   return lines;
+}
+
+type JournalLineDimension = { dimensionId: string; valueId: string };
+
+/** A journal line as stored. */
+export type StoredJournalLine = {
+  id: string;
+  accountId: string | null;
+  description: string | null;
+  amount: number;
+  dimensions: JournalLineDimension[];
+};
+
+/** A journal line as submitted, its amount already class-signed. */
+export type SubmittedJournalLine = {
+  /** The stored line it edits; absent (or unmatched) for a new line. */
+  id?: string;
+  accountId: string;
+  description?: string;
+  amount: number;
+  dimensions: JournalLineDimension[];
+};
+
+export type JournalLineChange = {
+  op: "keep" | "update" | "insert";
+  /** Set for `keep` and `update`. */
+  id?: string;
+  accountId: string;
+  description: string | null;
+  amount: number;
+  dimensions: JournalLineDimension[];
+  /** Whether the line's dimension set must be rewritten. */
+  dimensionsChanged: boolean;
+};
+
+const dimensionKey = (dimensions: JournalLineDimension[]) =>
+  dimensions
+    .map((d) => `${d.dimensionId}:${d.valueId}`)
+    .sort()
+    .join("|");
+
+/**
+ * Turns a submitted set of journal lines into the changes against the stored
+ * ones, in submitted order: a line whose id matches a stored line is kept or
+ * updated in place (updated only when its account, description or amount
+ * changed), anything else is inserted, and stored lines no longer submitted
+ * are deleted. A stored id is matched once — a repeat is inserted as a new
+ * line rather than updating the same row twice — so the audit log records
+ * what was actually edited instead of a delete and re-insert of every line.
+ */
+export function diffJournalLines(
+  stored: StoredJournalLine[],
+  submitted: SubmittedJournalLine[]
+): { changes: JournalLineChange[]; deleteIds: string[] } {
+  const storedById = new Map(stored.map((line) => [line.id, line]));
+  const claimed = new Set<string>();
+
+  const changes = submitted.map((line): JournalLineChange => {
+    const description = line.description ?? null;
+    const match =
+      line.id && !claimed.has(line.id) ? storedById.get(line.id) : undefined;
+
+    if (!match) {
+      return {
+        op: "insert",
+        accountId: line.accountId,
+        description,
+        amount: line.amount,
+        dimensions: line.dimensions,
+        dimensionsChanged: line.dimensions.length > 0
+      };
+    }
+
+    claimed.add(match.id);
+    const changed =
+      match.accountId !== line.accountId ||
+      (match.description ?? "") !== (description ?? "") ||
+      !equals(Number(match.amount), line.amount);
+
+    return {
+      op: changed ? "update" : "keep",
+      id: match.id,
+      accountId: line.accountId,
+      description,
+      amount: line.amount,
+      dimensions: line.dimensions,
+      dimensionsChanged:
+        dimensionKey(match.dimensions) !== dimensionKey(line.dimensions)
+    };
+  });
+
+  return {
+    changes,
+    deleteIds: stored.map((l) => l.id).filter((id) => !claimed.has(id))
+  };
 }

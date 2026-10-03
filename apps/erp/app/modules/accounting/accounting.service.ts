@@ -12,7 +12,6 @@ import {
   datetime,
   daysBetweenInclusive,
   earnsInterest,
-  equals,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   isBalanced,
@@ -56,6 +55,7 @@ import type {
   projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
+import { diffJournalLines } from "./accounting.utils";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -5535,11 +5535,17 @@ export async function getJournalEntry(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client
-    .from("journal")
-    .select("*, journalLine(*, account!journalLine_accountId_fkey(class))")
-    .eq("id", id)
-    .single();
+  return (
+    client
+      .from("journal")
+      .select("*, journalLine(*, account!journalLine_accountId_fkey(class))")
+      .eq("id", id)
+      // Lines read back in the order they were created: edits update in place,
+      // so heap order would move an edited line to the end.
+      .order("createdAt", { referencedTable: "journalLine" })
+      .order("id", { referencedTable: "journalLine" })
+      .single()
+  );
 }
 
 /** A document a journal entry was posted from or is referenced by. */
@@ -5716,7 +5722,12 @@ export async function getJournalEntryRelatedItems(
       ? client
           .from("fixedAssetTransfer")
           .select("fixedAsset(id, fixedAssetId)")
-          .in("id", idsOf("Asset Transfer"))
+          // An "attach job" transfer's line holds the job's id instead.
+          .or(
+            `id.in.(${idsOf("Asset Transfer").join(",")}),jobId.in.(${idsOf(
+              "Asset Transfer"
+            ).join(",")})`
+          )
           .eq("companyId", companyId)
           .then(({ data }) =>
             (data ?? []).flatMap((r) =>
@@ -5846,83 +5857,91 @@ export async function getJournalEntryRelatedItems(
       : none,
     // Rows that store this journal's id: the lines of these journals carry
     // no document of their own.
-    client
-      .from("fixedAssetDisposal")
-      .select("fixedAsset(id, fixedAssetId)")
-      .eq("journalId", journal.id)
-      .eq("companyId", companyId)
-      .then(({ data }) =>
-        (data ?? []).flatMap((r) =>
-          r.fixedAsset
-            ? [
-                {
-                  kind: "fixedAsset" as const,
-                  id: r.fixedAsset.id,
-                  readableId: r.fixedAsset.fixedAssetId
-                }
-              ]
-            : []
-        )
-      ),
-    client
-      .from("fixedAssetCipCost")
-      .select("fixedAsset(id, fixedAssetId)")
-      .eq("journalId", journal.id)
-      .eq("companyId", companyId)
-      .then(({ data }) =>
-        (data ?? []).flatMap((r) =>
-          r.fixedAsset
-            ? [
-                {
-                  kind: "fixedAsset" as const,
-                  id: r.fixedAsset.id,
-                  readableId: r.fixedAsset.fixedAssetId
-                }
-              ]
-            : []
-        )
-      ),
-    client
-      .from("depreciationRunLine")
-      .select(
-        "depreciationRun(id, depreciationRunId), fixedAsset(id, fixedAssetId)"
-      )
-      .eq("journalId", journal.id)
-      .eq("companyId", companyId)
-      .then(({ data }) =>
-        (data ?? []).flatMap((r) => [
-          ...(r.depreciationRun
-            ? [
-                {
-                  kind: "depreciationRun" as const,
-                  id: r.depreciationRun.id,
-                  readableId: r.depreciationRun.depreciationRunId
-                }
-              ]
-            : []),
-          ...(r.fixedAsset
-            ? [
-                {
-                  kind: "fixedAsset" as const,
-                  id: r.fixedAsset.id,
-                  readableId: r.fixedAsset.fixedAssetId
-                }
-              ]
-            : [])
-        ])
-      ),
-    client
-      .from("revenueRecognitionRun")
-      .select("id, runId")
-      .eq("journalId", journal.id)
-      .eq("companyId", companyId)
-      .then(({ data }) =>
-        (data ?? []).map((r) => ({
-          kind: "revenueRecognitionRun" as const,
-          id: r.id,
-          readableId: r.runId
-        }))
-      )
+    journal.sourceType === "Asset Disposal"
+      ? client
+          .from("fixedAssetDisposal")
+          .select("fixedAsset(id, fixedAssetId)")
+          .eq("journalId", journal.id)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.fixedAsset
+                ? [
+                    {
+                      kind: "fixedAsset" as const,
+                      id: r.fixedAsset.id,
+                      readableId: r.fixedAsset.fixedAssetId
+                    }
+                  ]
+                : []
+            )
+          )
+      : none,
+    journal.sourceType === "Asset Transfer" || journal.sourceType === "Manual"
+      ? client
+          .from("fixedAssetCipCost")
+          .select("fixedAsset(id, fixedAssetId)")
+          .eq("journalId", journal.id)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.fixedAsset
+                ? [
+                    {
+                      kind: "fixedAsset" as const,
+                      id: r.fixedAsset.id,
+                      readableId: r.fixedAsset.fixedAssetId
+                    }
+                  ]
+                : []
+            )
+          )
+      : none,
+    journal.sourceType === "Asset Depreciation"
+      ? client
+          .from("depreciationRunLine")
+          .select(
+            "depreciationRun(id, depreciationRunId), fixedAsset(id, fixedAssetId)"
+          )
+          .eq("journalId", journal.id)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) => [
+              ...(r.depreciationRun
+                ? [
+                    {
+                      kind: "depreciationRun" as const,
+                      id: r.depreciationRun.id,
+                      readableId: r.depreciationRun.depreciationRunId
+                    }
+                  ]
+                : []),
+              ...(r.fixedAsset
+                ? [
+                    {
+                      kind: "fixedAsset" as const,
+                      id: r.fixedAsset.id,
+                      readableId: r.fixedAsset.fixedAssetId
+                    }
+                  ]
+                : [])
+            ])
+          )
+      : none,
+    journal.sourceType === "Revenue Recognition"
+      ? client
+          .from("revenueRecognitionRun")
+          .select("id, runId")
+          .eq("journalId", journal.id)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "revenueRecognitionRun" as const,
+              id: r.id,
+              readableId: r.runId
+            }))
+          )
+      : none
   ];
 
   const [documentGroups, journals, accountingPeriod] = await Promise.all([
@@ -6104,163 +6123,88 @@ export async function saveJournalEntryWithLines(
     companyGroupId: string;
   }
 ) {
-  // 1. Update journal header
-  const headerUpdate = await client
-    .from("journal")
-    .update(
-      sanitize({
-        postingDate: data.postingDate,
-        description: data.description,
-        updatedBy: data.updatedBy
-      })
-    )
-    .eq("id", data.journalEntryId)
-    .eq("companyId", data.companyId)
-    .eq("status", "Draft");
-
-  if (headerUpdate.error) return headerUpdate;
-
-  // 2. Look up the stored lines and the account classes the new amounts need
+  // Reads first: the account classes that sign each amount (scoped to the
+  // company group — an id from the payload must not reach another group's
+  // chart), and the stored lines with their dimensions to diff against.
   const accountIds = [...new Set(data.lines.map((l) => l.accountId))];
-  const [existing, accounts] = await Promise.all([
+  const [accounts, storedLines] = await Promise.all([
+    accountIds.length > 0
+      ? client
+          .from("account")
+          .select("id, class")
+          .in("id", accountIds)
+          .eq("companyGroupId", data.companyGroupId)
+      : null,
     client
       .from("journalLine")
-      .select("*")
+      .select("id, accountId, description, amount")
       .eq("journalId", data.journalEntryId)
-      .eq("companyId", data.companyId),
-    accountIds.length > 0
-      ? client.from("account").select("id, class").in("id", accountIds)
-      : null
+      .eq("companyId", data.companyId)
   ]);
 
-  if (existing.error) return existing;
-  if (accounts?.error) return accounts;
+  if (accounts?.error) return { data: null, error: accounts.error };
+  if (storedLines.error) return { data: null, error: storedLines.error };
 
-  const accountMap = new Map(
+  const accountClass = new Map(
     (accounts?.data ?? []).map((a) => [a.id, a.class])
   );
-  const existingById = new Map((existing.data ?? []).map((l) => [l.id, l]));
-
-  const amountOf = (line: (typeof data.lines)[number]) => {
-    const accountClass = accountMap.get(line.accountId);
-    if (!accountClass) {
-      throw new Error(`Account not found: ${line.accountId}`);
-    }
-    return toStoredAmount(line.debit, line.credit, accountClass);
-  };
-
-  // 3. Sort the submitted lines into kept, changed and new
-  const kept: { id: string; line: (typeof data.lines)[number] }[] = [];
-  const updates: Database["public"]["Tables"]["journalLine"]["Insert"][] = [];
-  const inserts: Database["public"]["Tables"]["journalLine"]["Insert"][] = [];
-  const insertedLines: (typeof data.lines)[number][] = [];
-
-  for (const line of data.lines) {
-    const stored = line.id ? existingById.get(line.id) : undefined;
-    const amount = amountOf(line);
-    if (stored) {
-      kept.push({ id: stored.id, line });
-      const changed =
-        stored.accountId !== line.accountId ||
-        (stored.description ?? "") !== (line.description ?? "") ||
-        !equals(Number(stored.amount), amount);
-      if (changed) {
-        updates.push({
-          ...stored,
-          accountId: line.accountId,
-          description: line.description,
-          amount,
-          updatedBy: data.updatedBy,
-          updatedAt: datetime.timestamp()
-        });
-      }
-    } else {
-      insertedLines.push(line);
-      inserts.push({
-        journalId: data.journalEntryId,
-        accountId: line.accountId,
-        description: line.description,
-        amount,
-        journalLineReference: crypto.randomUUID(),
-        companyId: data.companyId,
-        createdBy: data.updatedBy
-      });
-    }
+  const missing = accountIds.find((id) => !accountClass.has(id));
+  if (missing) {
+    return { data: null, error: { message: `Account not found: ${missing}` } };
   }
 
-  const keptIds = new Set(kept.map((k) => k.id));
-  const removedIds = (existing.data ?? [])
-    .map((l) => l.id)
-    .filter((id) => !keptIds.has(id));
-
-  // 4. Delete removed lines (cascades journalLineDimension via FK)
-  if (removedIds.length > 0) {
-    const deleteResult = await client
-      .from("journalLine")
-      .delete()
-      .in("id", removedIds)
-      .eq("companyId", data.companyId);
-    if (deleteResult.error) return deleteResult;
+  const storedIds = storedLines.data.map((l) => l.id);
+  const storedDimensions =
+    storedIds.length > 0
+      ? await client
+          .from("journalLineDimension")
+          .select("journalLineId, dimensionId, valueId")
+          .in("journalLineId", storedIds)
+      : null;
+  if (storedDimensions?.error) {
+    return { data: null, error: storedDimensions.error };
   }
 
-  // 5. Update changed lines in one statement; unchanged lines are untouched
-  if (updates.length > 0) {
-    const updateResult = await client
-      .from("journalLine")
-      .upsert(updates, { onConflict: "id" });
-    if (updateResult.error) return updateResult;
+  const dimensionsByLine = new Map<
+    string,
+    { dimensionId: string; valueId: string }[]
+  >();
+  for (const d of storedDimensions?.data ?? []) {
+    const list = dimensionsByLine.get(d.journalLineId) ?? [];
+    list.push({ dimensionId: d.dimensionId, valueId: d.valueId });
+    dimensionsByLine.set(d.journalLineId, list);
   }
 
-  // 6. Insert new lines
-  let insertedIds: string[] = [];
-  if (inserts.length > 0) {
-    const insertResult = await client
-      .from("journalLine")
-      .insert(inserts)
-      .select("id");
-    if (insertResult.error) return insertResult;
-    insertedIds = (insertResult.data ?? []).map((l) => l.id);
-  }
-
-  // 7. Replace the dimensions of every kept line (not audited), then add the
-  //    new lines' dimensions
-  if (kept.length > 0) {
-    const dimDelete = await client
-      .from("journalLineDimension")
-      .delete()
-      .in(
-        "journalLineId",
-        kept.map((k) => k.id)
-      );
-    if (dimDelete.error) return dimDelete;
-  }
-
-  const dimensionInserts = [
-    ...kept.map((k) => ({ lineId: k.id, line: k.line })),
-    ...insertedIds.map((lineId, i) => ({ lineId, line: insertedLines[i] }))
-  ].flatMap(({ lineId, line }) =>
-    (line?.dimensions ?? []).map((d) => ({
-      journalLineId: lineId,
-      dimensionId: d.dimensionId,
-      valueId: d.valueId,
-      companyId: data.companyId
+  const { changes, deleteIds } = diffJournalLines(
+    storedLines.data.map((l) => ({
+      id: l.id,
+      accountId: l.accountId,
+      description: l.description,
+      amount: Number(l.amount),
+      dimensions: dimensionsByLine.get(l.id) ?? []
+    })),
+    data.lines.map((l) => ({
+      id: l.id,
+      accountId: l.accountId,
+      description: l.description,
+      amount: toStoredAmount(l.debit, l.credit, accountClass.get(l.accountId)!),
+      dimensions: l.dimensions ?? []
     }))
   );
 
-  if (dimensionInserts.length > 0) {
-    const dimInsertResult = await client
-      .from("journalLineDimension")
-      .insert(dimensionInserts);
-    if (dimInsertResult.error) return dimInsertResult;
-  }
+  // One transaction: refuses anything but a Draft journal of this company.
+  const saved = await client.rpc("save_journal_entry_lines", {
+    p_journal_id: data.journalEntryId,
+    p_company_id: data.companyId,
+    p_user_id: data.updatedBy,
+    p_posting_date: data.postingDate,
+    p_description: data.description,
+    p_lines: changes as unknown as Json,
+    p_delete_ids: deleteIds
+  });
 
-  return {
-    data: [
-      ...kept.map((k) => ({ id: k.id })),
-      ...insertedIds.map((id) => ({ id }))
-    ],
-    error: null
-  };
+  if (saved.error) return { data: null, error: saved.error };
+  return { data: (saved.data ?? []).map((id) => ({ id })), error: null };
 }
 
 /** @mcp action */

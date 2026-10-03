@@ -11,6 +11,7 @@ import {
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -57,6 +58,8 @@ import {
   resolvePickTarget,
   splitConsumeFirstPick
 } from "./supersession-pick";
+
+const logger = getLogger("erp", "inventory");
 
 /** @mcp delete */
 export async function deleteBatchProperty(
@@ -736,6 +739,21 @@ export async function getReceiptRelatedItems(
       : null
   ]);
 
+  if (invoices?.error) {
+    logger.error("Failed to get receipt purchase invoices", {
+      companyId,
+      supplierInteractionId,
+      error: invoices.error
+    });
+  }
+  if (salesReturnOrder?.error) {
+    logger.error("Failed to get receipt sales return order", {
+      companyId,
+      salesReturnOrderId,
+      error: salesReturnOrder.error
+    });
+  }
+
   return {
     invoices: invoices?.data ?? [],
     customerId: salesReturnOrder?.data?.customerId ?? null
@@ -1346,7 +1364,15 @@ export async function getShipmentRelatedItems(
     .from("salesOrder")
     .select("*")
     .eq("id", sourceDocumentId)
-    .single();
+    .maybeSingle();
+
+  if (salesOrder.error) {
+    logger.error("Failed to get shipment sales order", {
+      shipmentId,
+      sourceDocumentId,
+      error: salesOrder.error
+    });
+  }
 
   const invoices = await client
     .from("salesInvoice")
@@ -1356,6 +1382,13 @@ export async function getShipmentRelatedItems(
         salesOrder.data?.opportunityId ?? ""
       }`
     );
+
+  if (invoices.error) {
+    logger.error("Failed to get shipment sales invoices", {
+      shipmentId,
+      error: invoices.error
+    });
+  }
 
   return {
     invoices: invoices.data ?? []
@@ -1711,6 +1744,21 @@ export async function getWarehouseTransferRelatedItems(
       .eq("companyId", companyId)
       .order("createdAt")
   ]);
+
+  if (shipments.error) {
+    logger.error("Failed to get warehouse transfer shipments", {
+      companyId,
+      transferId,
+      error: shipments.error
+    });
+  }
+  if (receipts.error) {
+    logger.error("Failed to get warehouse transfer receipts", {
+      companyId,
+      transferId,
+      error: receipts.error
+    });
+  }
 
   return {
     shipments: shipments.data ?? [],
@@ -3039,6 +3087,14 @@ export async function getPickingListRelatedItems(
     .eq("pickingListLine.pickingListId", pickingListId)
     .eq("companyId", companyId)
     .order("jobId");
+
+  if (jobs.error) {
+    logger.error("Failed to get picking list jobs", {
+      companyId,
+      pickingListId,
+      error: jobs.error
+    });
+  }
 
   return {
     jobs: (jobs.data ?? []).map(({ id, jobId, status, itemId }) => ({

@@ -79,7 +79,7 @@ function PaymentDocumentList({
   const { t } = useLingui();
   const permissions = usePermissions();
   const party = useCounterparty(payment);
-  const settlementRows = useSettlementRows(related);
+  const settlementRows = useSettlementRows(related, payment.status === "Draft");
 
   // The order or rental agreement this payment is a deposit for.
   const depositId = payment.rentalAgreementId ?? payment.salesOrderId;

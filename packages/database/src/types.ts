@@ -88623,6 +88623,18 @@ export type Database = {
         }
         Returns: Json
       }
+      save_journal_entry_lines: {
+        Args: {
+          p_company_id: string
+          p_delete_ids: string[]
+          p_description?: string
+          p_journal_id: string
+          p_lines: Json
+          p_posting_date: string
+          p_user_id: string
+        }
+        Returns: string[]
+      }
       search_company_index: {
         Args: {
           p_company_id: string

@@ -99387,6 +99387,75 @@ export default {
         tags: ["(rpc) sync_purchase_invoice_line_price_change"]
       }
     },
+    "/rpc/save_journal_entry_lines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_delete_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_description: {
+                  format: "text",
+                  type: "string"
+                },
+                p_journal_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_lines: {
+                  format: "jsonb"
+                },
+                p_posting_date: {
+                  format: "date",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_journal_id",
+                "p_company_id",
+                "p_user_id",
+                "p_posting_date",
+                "p_description",
+                "p_lines",
+                "p_delete_ids"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) save_journal_entry_lines"]
+      }
+    },
     "/rpc/sync_create_nc_external_link": {
       post: {
         parameters: [

@@ -15,6 +15,8 @@ These refine the spec where the code facts gathered for this plan disagreed with
 5. **"Send" on a posted invoice with `sendError` is a new action route `x+/sales-invoice+/$invoiceId.send.tsx`.** It fires `carbon/rental-invoice.automate` with `mode: "Post and Email"`. `automateRentalInvoice` skips posting an already-Submitted invoice, then emails it. There is no send-only path in `SalesInvoicePostModal` to reuse.
 6. **The event carries an optional `mode`.** When absent, the function resolves the effective mode from the invoice's agreement (`salesInvoiceLine.rentalAgreementId` → `rentalAgreement.invoiceAutomation ?? companySettings.rentalInvoiceAutomation`).
 7. **The split and hold decision is a pure function in its own file**, `packages/database/src/rental-invoice-plan.ts`, tested with vitest. The existing `shared/rental-billing.test.ts` runs under Deno only.
+8. **Re-billing after a VOID is always held (user, 2026-10-02).** VOID returns a rental invoice's periods and charges to Pending (`post-sales-invoice/index.ts:1704-1715`). With automation on, the next morning's run would redraft and re-post — and email — the same amounts, since an Active agreement's rates are locked. VOID now stamps `voidedSalesInvoiceId` on each released row. The planner holds any rent invoice containing such a row with "Re-billing INV-…, which was voided"; charges are held anyway. The stamp is sticky: deleting the held draft (`releaseRentalInvoiceStamps`) leaves it, so the next draft is held again. A later VOID overwrites it. `Draft Only` agreements get no hold, since nothing is automated.
+9. **Notifications reach an internal person with no setup (user, 2026-10-02: "a good default should be automatic invoices with notifications to the internal person").** The spec's D16 sent nothing when `rentalInvoiceNotificationGroup` was empty, so out of the box nobody heard about anything. Now every cron run sends each agreement's internal owner — `rentalAgreement.salesPersonId ?? createdBy` — one digest covering their agreements' invoices: posted, emailed, held, unsent. The settings group becomes **Also notify**: those people get the company-wide digest on top. An owner listed directly in the group (by user id) gets only the company digest, never both. The default mode stays `Post and Email`.
 
 ## Progress
 
@@ -23,6 +25,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [ ] Task 3: Apply migration, regenerate types, run DB gates
 - [ ] Task 4: Pure invoice planner + tests
 - [ ] Task 5: Generator drafts rent and charges invoices per the planner
+- [ ] Task 5b: VOID stamps the voided invoice on released periods and charges
 - [ ] Task 6: Move the party-contact check to `@carbon/lib`
 - [ ] Task 7: Shared sales-invoice document loader in `@carbon/lib`; PDF route uses it
 - [ ] Task 8: Event type + trigger map entry
@@ -43,7 +46,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 ## Dependencies
 
 - Task 1 → Task 2 → Task 3. Every later task needs Task 3's types.
-- Task 4 → Task 5.
+- Task 4 → Task 5. Task 5b needs only Task 3 (parallel-safe with 4–5).
 - Tasks 6, 7 and 8 are independent of each other and of Tasks 4–5 (parallel-safe after Task 3).
 - Task 9 needs Tasks 5, 6, 7 and 8. Task 10 needs Tasks 9 and 11. Task 11 is independent after Task 3.
 - Task 12 needs Task 7.
@@ -97,6 +100,13 @@ ALTER TABLE "companySettings"
 ALTER TABLE "rentalAgreement"
   ADD COLUMN IF NOT EXISTS "invoiceAutomation" "rentalInvoiceAutomation";
 
+-- The last invoice this row was billed on that was VOIDED. Set by post-sales-invoice's
+-- void step; the rental invoice planner holds a re-bill. No FK, like salesInvoiceLineId.
+ALTER TABLE "rentalBillingPeriod"
+  ADD COLUMN IF NOT EXISTS "voidedSalesInvoiceId" TEXT;
+ALTER TABLE "rentalAgreementCharge"
+  ADD COLUMN IF NOT EXISTS "voidedSalesInvoiceId" TEXT;
+
 ALTER TABLE "salesInvoice"
   ADD COLUMN IF NOT EXISTS "automationHoldReason" TEXT,
   ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP WITH TIME ZONE,
@@ -146,6 +156,8 @@ grep -c "rentalInvoiceAutomation" packages/database/src/types.ts
 # Expected: >= 3 (enum + companySettings + rentalAgreement)
 grep -n "needsReview\|effectiveInvoiceAutomation" packages/database/src/types.ts | head
 # Expected: both names present
+grep -c "voidedSalesInvoiceId" packages/database/src/types.ts
+# Expected: >= 6 (Row/Insert/Update × 2 tables)
 pnpm db:check:datasets
 # Expected: all four datasets OK
 pnpm db:check:backups
@@ -176,14 +188,22 @@ export type RentalInvoiceAutomation = Database["public"]["Enums"]["rentalInvoice
 export const RENTAL_HOLD_CHARGES = "Charges are reviewed before posting";
 export const RENTAL_HOLD_EARLY_RETURN = "Includes an early-return credit";
 export const RENTAL_SEND_NO_EMAIL = "The invoice contact has no email";
+/** readableIds: distinct readable ids of the voided invoices, in first-seen order. */
+export const rentalHoldRebill = (readableIds: string[]) =>
+  `Re-billing ${readableIds.join(", ")}, which ${readableIds.length === 1 ? "was" : "were"} voided`;
 
-export type PlannableLine<T> = { item: T; kind: "Rent" | "Charge" | "Purchase Option"; isAdjustment: boolean };
+export type PlannableLine<T> = {
+  item: T; kind: "Rent" | "Charge" | "Purchase Option"; isAdjustment: boolean;
+  /** Readable id of a voided invoice this row was previously billed on, else null. */
+  voidedInvoiceReadableId: string | null;
+};
 export type PlannedInvoice<T> = { lines: T[]; holdReason: string | null; role: "combined" | "rent" | "charges" };
 
 /** Splits one agreement's due lines into the invoices to draft.
  *  Draft Only → one combined invoice, no hold (today's behaviour).
- *  Otherwise → a rent invoice (held when it carries an early-return adjustment)
- *  and a charges invoice (Charge + Purchase Option, always held). Empty invoices are omitted. */
+ *  Otherwise → a rent invoice and a charges invoice (Charge + Purchase Option, always held).
+ *  Rent hold precedence: re-bill of a voided invoice (rentalHoldRebill) > early-return adjustment.
+ *  Empty invoices are omitted. */
 export function planRentalInvoices<T>(mode: RentalInvoiceAutomation, lines: PlannableLine<T>[]): PlannedInvoice<T>[]
 
 /** The mode in force for an agreement. */
@@ -198,13 +218,16 @@ export function effectiveRentalInvoiceAutomation(
    - Post with rent + Charge + Purchase Option → rent (no hold) + charges (`RENTAL_HOLD_CHARGES`, 2 lines).
    - Post and Email with a rent row + an `isAdjustment` rent row → 1 rent invoice with `RENTAL_HOLD_EARLY_RETURN`.
    - Post with charges only → 1 charges invoice, held.
+   - Post and Email with two rent rows carrying `voidedInvoiceReadableId` "INV-7" and one with null → rent invoice held with `rentalHoldRebill(["INV-7"])` ("Re-billing INV-7, which was voided").
+   - Post with a re-billed rent row AND an adjustment row → the re-bill message wins.
+   - Draft Only with a re-billed row → 1 combined invoice, holdReason null.
    - Empty input → `[]` in every mode.
    - `effectiveRentalInvoiceAutomation(null, "Post")` is `"Post"`; `("Draft Only", "Post and Email")` is `"Draft Only"`.
 
 **Verify:**
 ```bash
 pnpm --filter @carbon/database test -- rental-invoice-plan
-# Expected: 7 passed (or more), 0 failed
+# Expected: 10 passed (or more), 0 failed
 ```
 
 **Out of scope:** any DB access in this file.
@@ -230,7 +253,7 @@ export type DraftedRentalInvoice = {
 Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }>  // invoiceIds = invoices.map(i => i.invoiceId), kept for callers
 ```
 2. In `draftAgreementInvoice` (114-340): read the company mode once per agreement inside the transaction, with `selectFrom("companySettings").select("rentalInvoiceAutomation").where("id","=",args.companyId).executeTakeFirstOrThrow()` right after the agreement `forUpdate` read (121-128). Compute `mode = effectiveRentalInvoiceAutomation(agreement.invoiceAutomation, company.rentalInvoiceAutomation)`.
-3. Build the `lines` array exactly as today (214-240), carrying each line's `kind` and the period's `isAdjustment` (selected at 142-175). Call `planRentalInvoices(mode, lines.map(l => ({ item: l, kind: l.kind, isAdjustment: l.isAdjustment ?? false })))`.
+3. Add `voidedSalesInvoiceId` to the period select (142-175) and the charge select (177-198). Read the readable ids in ONE query (`selectFrom("salesInvoice").select(["id","invoiceId"]).where("companyId","=",…).where("id","in",distinctIds)`, skipped when there are none; no per-row query). Build the `lines` array exactly as today (214-240), carrying each line's `kind`, the period's `isAdjustment` and `voidedInvoiceReadableId` (the readable id, else the raw id if the invoice row is gone). Call `planRentalInvoices(mode, lines.map(l => ({ item: l, kind: l.kind, isAdjustment: l.isAdjustment ?? false, voidedInvoiceReadableId: l.voidedInvoiceReadableId })))`.
 4. Extract the existing per-invoice block (subtotal/tax 242-245, `getNextSequence` 247, invoice insert 252-275, shipment insert 277-286, line insert 288-307, period stamp 310-323, charge stamp 325-337) into `insertRentalInvoice(trx, args, agreement, lines, holdReason)`, returning the invoice id. Insert `automationHoldReason: holdReason` on the `salesInvoice` row. Call it once per planned invoice. The function now returns `DraftedRentalInvoice[]` (empty when nothing is due). The stamping is already scoped by `sil.invoiceId`, so it stays correct per invoice.
 5. Update the three callers to the new shape (`invoiceIds` still exists, so `$id.invoice.tsx`'s counts keep working; the cron logs `invoices.length`).
 6. If the extracted block reads any variable that differs between the two invoices beyond lines/holdReason (e.g. a header-level total computed before the split), STOP and report. Do not improvise header semantics.
@@ -244,6 +267,33 @@ pnpm --filter @carbon/database test
 ```
 
 **Out of scope:** posting, emailing, events (Task 9/10); `rollBillingPeriodsForward`; the idempotency query at 52-102.
+
+---
+
+## Task 5b: VOID stamps the voided invoice on released periods and charges
+
+**Depends on:** 3
+**Files:**
+- Modify: `packages/database/supabase/functions/post-sales-invoice/index.ts:1704-1715` (the void step's `rentalBillingPeriod` and `rentalAgreementCharge` updates)
+
+**Steps:**
+1. In both `.set({...})` calls of the void step, add `voidedSalesInvoiceId: invoiceId` (the `salesInvoice.id` already in scope in the void branch; it is the same `invoiceId` used at :1560). Change nothing else in the void step.
+2. Update the comment above (`// Undo what posting a Rental line consumed…`) with one line: "…and remember the voided invoice, so the automated re-bill is held for review (spec 2026-10-02-rental-invoice-automation)."
+3. If `invoiceId` is not in scope at :1704, or holds the readable id rather than `salesInvoice.id`, STOP and report.
+4. The posting function has pre-existing `deno check` errors (see the revenue-recognition plan's execution notes). The gate is "no NEW errors": run the check at HEAD (`git stash`-free: copy the file to `/tmp` first) and after, then diff the normalized error lists.
+
+**Verify:**
+```bash
+grep -c "voidedSalesInvoiceId: invoiceId" packages/database/supabase/functions/post-sales-invoice/index.ts
+# Expected: 2
+cd packages/database/supabase/functions && deno check post-sales-invoice/index.ts 2>&1 | grep -E "^(error|TS)" | sed -E 's/:[0-9]+:[0-9]+//' | sort > /tmp/after.txt; wc -l < /tmp/after.txt
+# Expected: the same count (and identical content) as the HEAD run recorded in step 4
+cd packages/database/supabase/functions && deno task test post-sales-invoice/rental-posting.test.ts
+# Expected: all pass (unchanged)
+```
+Behaviour is proven end to end in Task 21 step 8.
+
+**Out of scope:** any other change to the void step; clearing the stamp anywhere.
 
 ---
 
@@ -426,6 +476,7 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs
 - Modify: `packages/jobs/src/inngest/functions/tasks/index.ts` — export it
 - Modify: `packages/jobs/src/inngest/index.ts` — import (~81-103) and add to the `// Tasks` section of the `functions` array (~130-151)
 - Modify: `packages/jobs/src/inngest/functions/scheduled/rental-billing.ts`
+- Create: `packages/jobs/src/rentals/digest.ts` + `digest.test.ts`
 - Copy from (precedent): `functions/tasks/post-transaction.ts:8-11` (event function), `company-import.ts:50` (concurrency), `scheduled/schedule-inputs-changed.ts:374-384` (digest `step.sendEvent`)
 
 **Steps:**
@@ -439,7 +490,13 @@ export const rentalInvoiceAutomateFunction = inngest.createFunction(
 ```
    Body: `mode = event.data.mode ?? (await step.run("resolve-mode", () => resolveInvoiceAutomation(...)))`. Null or `Draft Only` → return. `step.run("post", () => postRentalInvoice(...))`. If posted and `mode === "Post and Email"`: `step.run("email", () => emailPostedInvoice(...))`. `companyGroupId` is read from `company.companyGroupId` inside the email step.
 2. The cron (`scheduled/rental-billing.ts`): per company, keep the draft step (it now returns `invoices`). Then, for each invoice with `mode !== "Draft Only"` and `holdReason === null`, run `step.run(\`post-${invoiceId}\`)` and, when posted and `Post and Email`, `step.run(\`email-${invoiceId}\`)`, calling the same two functions. Collect `{ posted, emailed, held: invoiceIds[], unsent: invoiceIds[] }`. Pre-held invoices (from the planner) count as held. Replace the comment at :56 with: "Drafts, then posts and emails per the agreement's invoice automation (spec 2026-10-02-rental-invoice-automation)."
-3. Digest: after a company's invoices, if `posted + emailed + held.length + unsent.length > 0`, read `companySettings.rentalInvoiceNotificationGroup`. If non-empty: `step.sendEvent(\`notify-rental-invoicing-${companyId}\`, { name: "carbon/notify", data: { event: NotificationEvent.RentalInvoicing, companyId, documentIds: [...held, ...unsent], recipient: { type: "group", groupIds }, body: summaryText } })`, with `summaryText = \`${posted} posted, ${emailed} emailed, ${held.length + unsent.length} need review\``. If `documentIds` is empty, pass the posted invoice ids instead, so `notify` has documents (notify throws NonRetriable when an event has neither content nor documentIds).
+3. Digests (plan-level decision 9). Track every result per invoice as `{ invoiceId, rentalAgreementId, outcome }`, the planner's pre-held invoices included. After a company's invoices, if anything was posted, emailed or held:
+   1. Read owners in ONE query: `selectFrom("rentalAgreement").select(["id","salesPersonId","createdBy"]).where("companyId","=",companyId).where("id","in",agreementIds)`. Owner = `salesPersonId ?? createdBy`. Skip `"system"` and any id with no `userToCompany` row for the company (one `.in()` read).
+   2. Read `companySettings.rentalInvoiceNotificationGroup` (`groupIds`).
+   3. For each owner NOT present in `groupIds`: `step.sendEvent(\`notify-rental-invoicing-${companyId}-${ownerId}\`, { name: "carbon/notify", data: { event: NotificationEvent.RentalInvoicing, companyId, documentIds, recipient: { type: "user", userId: ownerId }, body } })`. `body` and `documentIds` are computed over that owner's invoices only.
+   4. If `groupIds` is non-empty: one company-wide event with `recipient: { type: "group", groupIds }` over all invoices.
+   5. `body = \`${posted} posted, ${emailed} emailed, ${needReview} need review\``. `documentIds` = held + unsent ids; when that's empty, use the posted ids (`notify` throws NonRetriable when an event has neither content nor documentIds).
+   6. Put the grouping in a pure helper `buildRentalInvoicingDigests(results, owners, groupIds)` in `packages/jobs/src/rentals/digest.ts`, with a vitest file covering: two owners get separate digests over their own invoices; an owner listed in `groupIds` gets no owner digest; an empty group sends only owner digests; nothing to report → no digests.
 
 **Verify:**
 ```bash
@@ -447,6 +504,8 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs --filter=erp
 # Expected: no new errors
 grep -n "rentalInvoiceAutomateFunction" packages/jobs/src/inngest/index.ts
 # Expected: one import + one array entry
+pnpm --filter @carbon/jobs test -- digest
+# Expected: 4 passed, 0 failed
 ```
 
 **Out of scope:** changing the cron schedule or retries of `rental-billing`.
@@ -525,7 +584,7 @@ grep -n "opportunity/\${salesInvoice.data.opportunityId}" "apps/erp/app/routes/x
 3. JSX, in order:
    - "Rental Invoices" card (enum Select; labels `Draft only` / `Post` / `Post and email`; description from spec UI Changes)
    - "Receivables Email" card (`Input name="accountsReceivableEmail"`)
-   - "Notifications" card (`Users name="rentalInvoiceNotificationGroup" type="employee"`, label "Who gets the daily rental invoicing summary")
+   - "Notifications" card: description "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices." plus `Users name="rentalInvoiceNotificationGroup" type="employee"` labelled "Also notify", with helper text "Gets the summary for every agreement"
    - then the moved Emails card (sales.tsx:390-431, fixing its spinner check to `intent === "emails"`)
    - the Centralized Billing Address card plus nested form (:480-580) with its state/handlers (:299-374).
 4. Delete those three intents, the two cards, their state, the AR-address loader read and now-unused imports from `sales.tsx`. The "Require a Customer Contact and Location" card (:432-479) STAYS in sales.tsx.
@@ -672,7 +731,7 @@ pnpm exec turbo run typecheck --filter=erp
 
 ## Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
 
-**Depends on:** 4–18
+**Depends on:** 4–18 (including 5b)
 **Files:** generated MCP metadata, `.po` catalogs
 
 **Steps:**
@@ -702,7 +761,7 @@ pnpm --filter @carbon/checks lint
 
 **Depends on:** 19
 **Files:**
-- Modify: `apps/erp/app/modules/sales/AGENTS.md` — Rentals "Invoice generation" bullet (:140): drafts AND automates (mode, split, holds, the automate event, the Send route); remove "Only drafts — posting stays human."
+- Modify: `apps/erp/app/modules/sales/AGENTS.md` — Rentals "Invoice generation" bullet (:140): drafts AND automates (mode, split, holds, the automate event, the Send route); remove "Only drafts — posting stays human." Add to the `rentalBillingPeriod` / `rentalAgreementCharge` table rows: `voidedSalesInvoiceId`, set by VOID, makes the re-bill a held draft, sticky across a deleted draft.
 - Modify: `apps/erp/app/modules/settings/AGENTS.md` — the Invoicing settings page and its cards
 - Modify: `apps/erp/app/modules/invoicing/AGENTS.md` — `automationHoldReason`/`sentAt`/`sentTo`/`sendError`, `needsReview`, the send route, the storage path for invoices without an opportunity
 - Modify: `.ai/specs/2026-10-02-rental-invoice-automation.md` — fold in this plan's "Plan-level decisions"; Changelog line; status `in-progress`
@@ -730,7 +789,8 @@ Use `/test` (needs `crbn up`; ask the user before starting it). Then:
 4. Clear the contact's email. The "Post and email" option is disabled and the note shows when the company default is Post and email. Generate: the invoice is Submitted with "Not sent". Click Send after restoring the email: it becomes "Emailed".
 5. Receivables → Needs Review lists the held and unsent invoices.
 6. Open a rental invoice PDF (`file/sales-invoice/<id>.pdf`) and a non-rental invoice PDF. Both render as before.
-7. Run the cron via the Inngest dev UI ("Invoke" `rental-billing`) with a notification group set. One "Rental invoicing" notification appears in the topbar.
+7. With NO notification group set, run the cron via the Inngest dev UI ("Invoke" `rental-billing`). The agreement's salesperson (or creator) gets one "Rental invoicing" notification, in the topbar and by email. Then add a different user to "Also notify" and re-run with a new due period: that user also gets one.
+8. Void the posted rent invoice from step 2 (⋯ → Void). The agreement's Billing Periods card shows the period Pending again. Click Invoice (Generate Invoices): the new rent invoice is Draft and "Held" with "Re-billing INV-…, which was voided", and nothing is posted or emailed. Delete that draft and generate again: still held.
 
 **Verify:** every step above passes; screenshots saved under `.context/`.
 

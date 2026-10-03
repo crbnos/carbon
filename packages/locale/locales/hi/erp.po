@@ -2397,9 +2397,6 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "क्या आप {propertyName} संपत्ति को बदलना चाहते हैं? चूंकि आप उत्पन्न सामग्री आईडी का उपयोग करते हैं, यह इस पार्ट की पार्ट आईडी और सभी संबंधित रिवीजन को बदल देगा।"
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "क्या आप सुनिश्चित हैं कि आप इस स्टॉक ट्रांसफर को पूरा करना चाहते हैं?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "क्या आप निश्चित हैं कि आप इस RMA की पुष्टि करना चाहते हैं? पुष्टि करने से ग्राहक को लाइनों पर सामान वापस करने का अधिकार मिलता है।"
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "अनुलग्नक"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "प्रयास"
@@ -4325,9 +4325,6 @@ msgstr "नौकरी पूरी करें"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "इस जॉब को पूर्ण करने से पहले MES में सीरियल नंबर/बैच पूर्ण करें, या इसे स्वचालित रूप से पूर्ण करने के लिए हर ऑपरेशन को हो गया के रूप में चिह्नित करें।"
 
-msgid "Complete Stock Transfer"
-msgstr "स्टॉक ट्रांसफर पूरा करें"
-
 msgid "Complete To"
 msgstr "को पूर्ण करें"
 
@@ -5482,6 +5479,9 @@ msgstr "क्रेडिट नोट और आपूर्तिकर्त
 
 msgid "Credit representation"
 msgstr "क्रेडिट मेमो का प्रतिनिधित्व"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "क्रेडिट कुल"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "बेड़े की इकाई"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
 
@@ -9811,8 +9814,7 @@ msgstr "आपके द्वारा प्राप्त आइटम क�
 msgid "Inspection"
 msgstr "निरीक्षण"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "चालान की गई स्थितियां"
 
 msgid "Invoices"
 msgstr "चालान"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "इस मेमो को लागू किए गए चालान। दस्तावेज़ खोलने के लिए एक पंक्ति पर क्लिक करें।"
@@ -13564,6 +13569,9 @@ msgstr "आउटपुट कभी भी इसके कच्चे मा�
 
 msgid "Outside operation"
 msgstr "ओवरहेड विचरण"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "अत्यधिक लागू किया गया"
@@ -17549,6 +17557,9 @@ msgstr "इस ग्राहक के लिए भेजी गई लाइ
 msgid "Shipped Qty"
 msgstr "भेजी गई मात्रा"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "शिपिंग"
 
@@ -18565,6 +18576,9 @@ msgstr "सतह फिनिश — उदा. एनोडाइज्ड ब
 
 msgid "Surfaces"
 msgstr "सतहें"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "संदिग्ध विफलता मोड"
@@ -19766,6 +19780,12 @@ msgstr "फिर इसके लिए समायोजित"
 
 msgid "Then by"
 msgstr "फिर द्वारा"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "इस RFQ के लिए तुलना करने के लिए कोई सक्रिय आपूर्तिकर्ता कोटेशन नहीं हैं।"
@@ -22236,6 +22256,9 @@ msgstr "आपके पास इस सामग्री विधि को 
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "आपके पास इस प्रक्रिया सूची को संपादित करने की अनुमति नहीं है।"
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "आप इसे चलाते हैं; हम सुनिश्चित करते हैं कि यह सही तरीके से किया जाता है। आपकी तैयारी, डेटा और गो-लाइव पर विशेषज्ञ की नजर।"

@@ -2397,9 +2397,6 @@ msgstr "Sei sicuro di voler annullare questo reso fornitore? Questo rilascia le 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Sei sicuro di voler cambiare la proprietà {propertyName}? Poiché utilizzi ID materiale generati, questo cambierà l'ID parte di questa parte e tutte le revisioni correlate."
 
-msgid "Are you sure you want to complete this stock transfer?"
-msgstr "Sei sicuro di voler completare questo trasferimento di magazzino?"
-
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Sei sicuro di voler confermare questo RMA? La conferma autorizza il cliente a restituire la merce sulle righe."
 
@@ -3014,6 +3011,9 @@ msgstr ""
 
 msgid "Attachments"
 msgstr "Allegati"
+
+msgid "Attachments could not be loaded"
+msgstr ""
 
 msgid "Attempts"
 msgstr "Tentativi"
@@ -4325,9 +4325,6 @@ msgstr "Completa Lavoro"
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
 msgstr "Completa i seriali/lotti in MES prima di completare questo ordine di produzione, oppure contrassegna ogni operazione come completata per completarlo automaticamente."
 
-msgid "Complete Stock Transfer"
-msgstr "Completa Trasferimento Magazzino"
-
 msgid "Complete To"
 msgstr "Completa per"
 
@@ -5482,6 +5479,9 @@ msgstr "Le note di credito e i crediti fornitori sono gestiti separatamente dall
 
 msgid "Credit representation"
 msgstr "Rappresentazione delle note di credito"
+
+msgid "Credit staged"
+msgstr ""
 
 msgid "Credit total"
 msgstr "Totale credito"
@@ -8771,6 +8771,9 @@ msgstr ""
 msgid "Fleet Unit"
 msgstr "Unità della flotta"
 
+msgid "For <0/>"
+msgstr ""
+
 msgid "for anything. They'll pull in the right person."
 msgstr "per qualsiasi cosa. Porteranno la persona giusta."
 
@@ -9811,8 +9814,7 @@ msgstr "L'ispezione di un articolo che hai ricevuto mostra un avviso."
 msgid "Inspection"
 msgstr "Controllo"
 
-#. placeholder {0}: inspection.itemReadableId
-msgid "Inspection · {0}"
+msgid "Inspection · {itemReadableId}"
 msgstr ""
 
 msgid "Inspection document"
@@ -10087,6 +10089,9 @@ msgstr "Stati Fatturati"
 
 msgid "Invoices"
 msgstr "Fatture"
+
+msgid "Invoices could not be loaded"
+msgstr ""
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Fatture a cui è stato applicato questo memo. Fare clic su una riga per aprire il documento."
@@ -13564,6 +13569,9 @@ msgstr "L'output non supera mai le sue materie prime. Ricade alla durata fissa q
 
 msgid "Outside operation"
 msgstr "Varianza Indiretta"
+
+msgid "Outstanding"
+msgstr ""
 
 msgid "Over-applied by"
 msgstr "Applicato in eccesso di"
@@ -17549,6 +17557,9 @@ msgstr "Righe spedite per questo cliente con quantità rimanente da restituire"
 msgid "Shipped Qty"
 msgstr "Qtà Spedita"
 
+msgid "Shipped quantity exceeds job quantity"
+msgstr ""
+
 msgid "Shipping"
 msgstr "Spedizione"
 
@@ -18565,6 +18576,9 @@ msgstr "Finitura della superficie — ad es. anodizzato vs verniciatura a polver
 
 msgid "Surfaces"
 msgstr "Superfici"
+
+msgid "Surplus"
+msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Modalità di guasto sospetta"
@@ -19766,6 +19780,12 @@ msgstr "Quindi adeguato per"
 
 msgid "Then by"
 msgstr "Quindi per"
+
+msgid "There are more received than ordered"
+msgstr ""
+
+msgid "There are more shipped than ordered"
+msgstr ""
 
 msgid "There are no active supplier quotes to compare for this RFQ."
 msgstr "Non ci sono offerte attive del fornitore da confrontare per questa RdO."
@@ -22232,6 +22252,9 @@ msgstr "Non hai l'autorizzazione per modificare questa distinta base."
 
 msgid "You don't have permission to edit this bill of process."
 msgstr "Non hai l'autorizzazione per modificare questa lista delle operazioni."
+
+msgid "You don't have permission to view history."
+msgstr ""
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "Tu lo guidi; noi ci assicuriamo che sia fatto bene. Occhi esperti sulla tua configurazione, dati e lancio."
