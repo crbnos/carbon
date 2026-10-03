@@ -11,6 +11,7 @@
  * here and the result is handed in as data.
  */
 
+import type { ContextSource } from "@carbon/api";
 import type { z } from "zod";
 import { createValidatorLoader, isZodSchema } from "./validator-loader";
 import {
@@ -24,21 +25,33 @@ import {
  * because forms submit them, but publishing them in the manifest would invite a
  * caller to set `companyId`.
  *
+ * `POSITIONAL_CONTEXT` is the positional contract: a service parameter with one
+ * of these names is that context value, and `service-metadata.ts` records it in
+ * the manifest for the dispatcher to follow.
+ *
  * Shared with `service-metadata.ts`, which strips the same set from a service's
  * own parameter list, so this is the single copy.
  *
  * `eliminationClient` is a second Supabase client for consolidation reads. Left out
  * of this set it becomes a required field no caller can express.
  */
-export const CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "companyId",
-  "userId",
-  "createdBy",
-  "updatedBy",
-  "companyGroupId",
-  "eliminationClient",
+export const POSITIONAL_CONTEXT = {
+  client: "client",
+  eliminationClient: "client",
+  db: "db",
+  companyId: "companyId",
+  userId: "userId",
+  companyGroupId: "companyGroupId",
+} as const satisfies Record<string, ContextSource>;
+
+/** The audit columns. As a payload FIELD either is stamped by the dispatcher;
+ *  as a positional PARAM it is the acting user only when the body is seen
+ *  writing it to that column (`contextParamsOf`). */
+export const AUDIT_FIELDS = ["createdBy", "updatedBy"] as const;
+
+export const CONTEXT_PARAMS = new Set<string>([
+  ...Object.keys(POSITIONAL_CONTEXT),
+  ...AUDIT_FIELDS,
 ]);
 
 /** A module whose validators are reused across modules when a local lookup misses. */

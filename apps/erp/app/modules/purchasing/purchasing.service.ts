@@ -1791,6 +1791,7 @@ export async function upsertPurchaseOrder(
       > & {
         id: string;
         purchaseOrderId: string;
+        companyGroupId?: string;
         updatedBy: string;
         customFields?: Json;
       }),
@@ -1798,9 +1799,11 @@ export async function upsertPurchaseOrder(
 ) {
   if ("id" in purchaseOrder) {
     // locationId belongs on the delivery record, as in the insert below, and
-    // notes are stored as internalNotes/externalNotes.
+    // notes are stored as internalNotes/externalNotes. companyGroupId is not a
+    // column of the order at all.
     const {
       locationId: _locationId,
+      companyGroupId: _companyGroupId,
       notes: _notes,
       ...orderUpdate
     } = purchaseOrder;
