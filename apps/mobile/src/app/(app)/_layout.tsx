@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, useSegments } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { Screen } from "~/components/ui";
 import { AnalyticsProvider } from "~/lib/analytics/AnalyticsProvider";
@@ -17,6 +17,7 @@ import { useIdleLock } from "~/lib/idle/useIdleLock";
  */
 export default function AppLayout() {
   const { state, companyId, locationId } = useAuth();
+  const segments = useSegments();
 
   if (state === "loading") {
     return (
@@ -30,7 +31,17 @@ export default function AppLayout() {
 
   if (state === "no_instance") return <Redirect href="/(setup)/connect" />;
   if (state !== "ready") return <Redirect href="/" />;
-  if (!companyId || !locationId) return <Redirect href="/(app)/context" />;
+  // The picker is a child of THIS layout, so the redirect must not fire while
+  // it is already the current screen: returning <Redirect> here means the
+  // Stack below never renders, and a redirect to a route this layout refuses
+  // to render is a loop — the picker never appears and the screen that
+  // navigated here sits under its spinner forever. That was invisible while
+  // every account was force-assigned its first company at sign-in; an account
+  // in several companies now arrives here with none.
+  const onPicker = segments[segments.length - 1] === "context";
+  if ((!companyId || !locationId) && !onPicker) {
+    return <Redirect href="/(app)/context" />;
+  }
 
   return (
     <AnalyticsProvider>
