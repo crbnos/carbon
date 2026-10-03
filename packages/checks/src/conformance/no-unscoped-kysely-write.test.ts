@@ -172,7 +172,6 @@ describe("noUnscopedKyselyWrite", () => {
         fn
       )
     ).toHaveLength(0);
-    // A companyId in the SET is not a filter.
     expect(
       scan('await updateRows(db, "item", { companyId }, { id });', fn)
     ).toHaveLength(1);

@@ -67,7 +67,6 @@ const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
 const ROWS_MESSAGE =
   "Kysely bypasses RLS: this updateRows/deleteRows filter has no companyId, so ids from the request can reach another tenant's rows. Add companyId to the filter (the last argument).";
 
-/** A call's top-level arguments, from just after its opening parenthesis. */
 function callArguments(text: string, from: number): string[] {
   const args: string[] = [];
   let depth = 0;
@@ -195,7 +194,6 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
     }
     for (const m of text.matchAll(ROWS_WRITE)) {
       const start = m.index ?? 0;
-      // (db, table, set, where) and (db, table, where): fewer is a declaration.
       const args = callArguments(text, start + m[0].length);
       if (args.length < 3) continue;
       const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");

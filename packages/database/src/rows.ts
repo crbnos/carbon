@@ -26,12 +26,8 @@ type Operator =
   | "IS NOT NULL"
   | "NOT IN";
 
-/**
- * A comparison other than equality: PostgREST's `.neq`, `.lt`, `.contains`, …
- * A class, not a shape: a filter VALUE can be any jsonb a caller passes
- * through, and an object that merely looked like `{ op, value }` must stay a
- * value, never become SQL.
- */
+/** A comparison other than equality. A class, so a jsonb VALUE shaped like
+ *  `{ op, value }` stays a value and never becomes SQL. */
 class Comparison {
   constructor(
     readonly op: Operator,
@@ -54,10 +50,6 @@ export const notIn = (values: readonly unknown[]) =>
 /** `.not(column, "is", null)`. */
 export const notNull = new Comparison("IS NOT NULL");
 
-/**
- * Filters, all ANDed: a value is `=`, an array is `= ANY`, {@link isNull} is
- * `IS NULL`, and {@link neq} and friends are the other comparisons.
- */
 type Where<T extends RelationName> = {
   [K in keyof RowOf<T> & string]?:
     | RowOf<T>[K]
@@ -67,23 +59,17 @@ type Where<T extends RelationName> = {
     | null;
 };
 
-/**
- * A related row nested under each row, as a PostgREST embed would be. `on`
- * names the RELATED table's column holding this row's `id` and yields an array
- * (one-to-many); `via` names THIS row's column holding the related row's `id`
- * and yields that row or null (many-to-one).
- */
+/** A PostgREST-style embed: `on` is the related table's column holding this
+ *  row's id (array), `via` is this row's column holding the related id (row). */
 export type Embed = {
   [property: string]: {
     table: RelationName;
-    /** Only these columns, as `select("a, b")` would return. Default: all. */
     columns?: readonly string[];
     embed?: Embed;
   } & ({ on: string; via?: never } | { via: string; on?: never });
 };
 
 type ReadOptions<T extends RelationName> = {
-  /** Only these columns, as `select("a, b")` would return. Default: all. */
   columns?: readonly (keyof RowOf<T> & string)[];
   embed?: Embed;
 };
@@ -96,16 +82,9 @@ type OrderBy<T extends RelationName> = {
 };
 
 /**
- * Rows of a table or view, read over the direct connection but shaped exactly
- * as PostgREST returns them: every row goes through `to_jsonb`, so timestamps
- * are strings at full precision and an embed is an array of such rows.
- *
- * It exists so a server function can stop paying for PostgREST (about 52 ms a
- * call in production against 4.5 ms for a statement) without the values it
- * copies into other rows changing shape — a Kysely row would hand back `Date`s
- * cut to the millisecond. There is no 1000-row cap to page around.
- *
- * Pass `trx` inside a transaction. Throws on failure, as Kysely does.
+ * Rows read over the direct connection, shaped as PostgREST returns them
+ * (`to_jsonb`: timestamps are full-precision strings, embeds are arrays), so
+ * values copied into other rows keep their shape. Throws on failure.
  */
 export function selectRows<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
@@ -142,7 +121,6 @@ export async function selectRows<T extends RelationName>(
   return rows.map((r) => r.row);
 }
 
-/** The first row, or undefined. For a lookup by key. */
 export async function selectRow<T extends RelationName, R = RowOf<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -222,10 +200,6 @@ function conditionsFor(alias: string, where: Record<string, unknown>) {
 
 type Functions = Database["public"]["Functions"];
 
-/**
- * A database function's rows, as `.rpc()` returns them for one that returns a
- * table. Arguments are passed by name.
- */
 export async function rpcRows<F extends keyof Functions & string>(
   db: Kysely<KyselyDatabase>,
   fn: F,
@@ -246,7 +220,6 @@ export async function rpcRows<F extends keyof Functions & string>(
   };
 }
 
-/** The same for a function that returns one value. */
 export async function rpcValue<F extends keyof Functions & string>(
   db: Kysely<KyselyDatabase>,
   fn: F,
@@ -269,13 +242,8 @@ function definedKeys(row: Record<string, unknown>): string[] {
   return Object.keys(row).filter((key) => row[key] !== undefined);
 }
 
-/**
- * `.insert()` over the direct connection. The rows go in as one JSON document
- * and Postgres casts them (`jsonb_populate_recordset`), which is what PostgREST
- * does: a jsonb array stays an array, and with several rows a key one of them
- * lacks is NULL for it. Pass `trx` to make the write part of a transaction —
- * a PostgREST write never is.
- */
+/** Rows go in as one JSON document cast by Postgres, as PostgREST does: a
+ *  jsonb array stays an array, and a key one row lacks is NULL for it. */
 export async function insertRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -301,7 +269,6 @@ export async function insertRows<T extends TableName>(
   return { data: result.rows.map((r) => r.row), error: null };
 }
 
-/** `.update(set)` with the filters of {@link selectRows}. */
 export async function updateRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -323,7 +290,6 @@ export async function updateRows<T extends TableName>(
   return { error: null };
 }
 
-/** `.delete()` with the filters of {@link selectRows}. */
 export async function deleteRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -342,10 +308,7 @@ export async function deleteRows<T extends TableName>(
 
 type Result<R> = { data: R; error: null } | { data: null; error: Error };
 
-/**
- * The same read with PostgREST's `.single()` contract, for code written
- * against `{ data, error }`: exactly one row, otherwise an error and no data.
- */
+/** PostgREST's `.single()`: exactly one row, otherwise an error and no data. */
 export function single<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -403,10 +366,7 @@ export async function maybeSingle<T extends RelationName>(
     : { data: rows[0] ?? null, error: null };
 }
 
-/**
- * A list read in the `{ data, error }` shape. A failure throws instead, so
- * `error` is always null; it is typed as PostgREST's so existing checks compile.
- */
+/** `error` is always null (a failure throws); typed so existing checks compile. */
 export function many<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -434,13 +394,8 @@ export async function many<T extends RelationName>(
 export type Tables = Database["public"]["Tables"];
 export type Views = Database["public"]["Views"];
 
-/**
- * `Promise.all` for reads, run one after another. A statement takes a few
- * milliseconds, so running a handful at once saves almost nothing, while each
- * one started at once takes its own connection from the process's pool of
- * sixteen — and opens one when the pool has none idle, which costs more than
- * the reads do.
- */
+/** `Promise.all` for reads, one after another: each concurrent read would
+ *  take its own connection from the pool and save almost nothing. */
 export async function inOrder<const T extends readonly (() => unknown)[]>(
   reads: T
 ): Promise<{ -readonly [K in keyof T]: Awaited<ReturnType<T[K]>> }> {

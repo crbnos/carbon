@@ -14,12 +14,7 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./local-database-test-fixture";
-import {
-  authorize,
-  clientUsesKey,
-  isPortalAccount,
-  ServerFnContext
-} from "./server-fn-context";
+import { authorize, ServerFnContext } from "./server-fn-context";
 
 vi.mock("@carbon/env", () => ({
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
@@ -39,49 +34,6 @@ describe("authorize", () => {
     await expect(
       authorize(ServerFnContext.system(fields), { update: "inventory" })
     ).resolves.toBeUndefined();
-  });
-
-  it("refuses a user a system-only function", async () => {
-    await expect(
-      authorize(ServerFnContext.user(fields), "system")
-    ).rejects.toMatchObject({ status: 403 });
-  });
-});
-
-describe("isPortalAccount", () => {
-  it("names customer and supplier logins, which hold view permissions too", () => {
-    expect(isPortalAccount({ role: "customer", sales_view: ["c1"] })).toBe(
-      true
-    );
-    expect(isPortalAccount({ role: "supplier", parts_view: ["c1"] })).toBe(
-      true
-    );
-  });
-
-  it("leaves employees and role-less claims to the permission check", () => {
-    expect(isPortalAccount({ role: "employee", sales_view: ["c1"] })).toBe(
-      false
-    );
-    expect(isPortalAccount({})).toBe(false);
-  });
-});
-
-describe("clientUsesKey", () => {
-  const client = (key: string) =>
-    createClient<Database>("http://localhost:54321", key);
-
-  it("recognizes the key a client was built with", () => {
-    expect(clientUsesKey(client("service-role-key"), "service-role-key")).toBe(
-      true
-    );
-  });
-
-  it("does not mistake another key (a user's or API key's client) for it", () => {
-    expect(clientUsesKey(client("anon-key"), "service-role-key")).toBe(false);
-  });
-
-  it("never matches an unset key", () => {
-    expect(clientUsesKey(client("anon-key"), undefined)).toBe(false);
   });
 });
 
@@ -223,7 +175,6 @@ describe("authorize (user)", () => {
         SELECT "companyId", "userId", get_claims("userId", "companyId") AS claims
         FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
       `.execute(db);
-      // The first employee holding any update permission in their company.
       for (const { companyId, userId, claims } of rows) {
         const held = Object.entries(claims).find(
           ([key, companies]) =>

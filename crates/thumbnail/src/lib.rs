@@ -40,9 +40,7 @@ const MAX_NODE_VISITS: usize = 1_000_000;
 const MAX_VIEW_BYTES: usize = 1 << 30;
 const MAX_VERTICES: usize = 8_000_000;
 const MAX_TRIANGLES: usize = 16_000_000;
-/// Pixels the rasteriser may test across all triangles: a few hundred full
-/// frames of overdraw. Large triangles stacked on each other cost a frame each,
-/// so the triangle ceiling alone leaves the render time unbounded.
+/// Bounds render time: stacked full-frame triangles cost a frame each.
 const MAX_PIXEL_TESTS: u64 = 1 << 32;
 
 #[derive(Debug)]
@@ -326,8 +324,7 @@ impl<'a> Doc<'a> {
             let Some(position) = index_of(&primitive["attributes"]["POSITION"]) else {
                 continue;
             };
-            // Checked on the declared counts, before anything is decoded: a
-            // view is only allocated once the primitive is known to fit.
+            // Checked on the declared counts, before any view is decoded.
             let declared = |accessor: usize| index_of(&self.root["accessors"][accessor]["count"]);
             let declared_vertices = declared(position).unwrap_or(0);
             let declared_indices = index_of(&primitive["indices"])
@@ -934,8 +931,6 @@ mod tests {
         let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = 1_000.into());
         assert!(message(&glb).contains("runs past its bufferView"));
 
-        // A primitive declaring more vertices than a render may hold is refused
-        // on the declaration, before its views are read.
         let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = u64::MAX.into());
         assert!(message(&glb).contains("too large to render"));
 

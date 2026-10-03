@@ -9,16 +9,13 @@ import { updateRows } from "@carbon/database/rows";
 type FixedAssetUpdate = Database["public"]["Tables"]["fixedAsset"]["Update"];
 type Write = (trx: Kysely<KyselyDatabase>) => Promise<unknown>;
 
-/**
- * Fixed-asset writes a posting function decides on while it builds its journal,
- * held back until the posting transaction so a failed post leaves the asset
- * register as it was.
- */
+/** Fixed-asset writes decided while the journal is built, applied inside the
+ *  posting transaction so a failed post leaves the asset register untouched. */
 export class FixedAssetWrites {
   private patches = new Map<string, FixedAssetUpdate>();
   private writes: Write[] = [];
 
-  /** Applies what earlier lines of this document staged onto a freshly read row. */
+  /** Later lines of one document see what earlier lines staged. */
   overlay<T extends object>(assetId: string, row: T): T {
     return Object.assign(row, this.patches.get(assetId));
   }

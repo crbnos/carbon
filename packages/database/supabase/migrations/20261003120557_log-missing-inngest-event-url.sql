@@ -1,8 +1,5 @@
--- util.send_inngest_event() returned silently when the Vault secret
--- inngest_event_url was missing, so a deployment that never set it lost every
--- database-raised event (job-completed notifications, the event-queue wake-up)
--- with nothing in the logs to say why. It still never raises; it now says so.
--- Body copied forward from 20261002170250_send-inngest-events-from-postgres.sql.
+-- Log when the Vault secret inngest_event_url is missing instead of returning
+-- silently. Body copied forward from 20261002170250.
 CREATE OR REPLACE FUNCTION util.send_inngest_event(p_name TEXT, p_data JSONB)
 RETURNS VOID
 LANGUAGE plpgsql

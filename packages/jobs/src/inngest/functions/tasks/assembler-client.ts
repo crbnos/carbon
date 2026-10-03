@@ -400,10 +400,7 @@ type StepTools = {
 
 type PollOutcome = Awaited<ReturnType<typeof pollAssemblerJobOnce>>;
 
-/**
- * Codes the assembler reports for a failure the same input will always
- * reproduce (the file itself cannot be processed), so a retry only repeats it.
- */
+/** Failures the same input always reproduces: a retry only repeats them. */
 const DETERMINISTIC_FAILURES = new Set(["invalid_input", "thumbnail_failed"]);
 
 function jobFailure(message: string, code: string | undefined): Error {

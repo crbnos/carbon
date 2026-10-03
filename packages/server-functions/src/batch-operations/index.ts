@@ -459,8 +459,6 @@ async function completeBatch(
       .executeTakeFirst();
     if (!batch) throw new NotFoundError(`Batch ${batchId} was not found`);
 
-    // A duplicate submit is told apart from a real refusal by the flag, so the
-    // caller never has to read the message.
     if (batch.status === "Completed") {
       throw new ServerFnError("This batch has already been completed", 409, {
         alreadyCompleted: true

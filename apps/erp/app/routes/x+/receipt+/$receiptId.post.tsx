@@ -177,11 +177,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     lines: lines ?? []
   });
 
-  // Make the transition to Pending atomic with the voided guard above: the
-  // early check and this update are separated by rule evaluation + reconcile,
-  // so a concurrent void or post could slip in between. Conditioning the write
-  // on the status still being postable (and detecting a zero-row match) closes
-  // that race — a voided or posted receipt won't be flipped back to Pending.
+  // Conditional on a postable status, so a concurrent void or post is not
+  // flipped back to Pending.
   const setPendingState = await client
     .from("receipt")
     .update({

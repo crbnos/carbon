@@ -159,12 +159,10 @@ type CreateResults = {
     purchaseOrderIdsBySupplierId: Record<string, string>;
   };
 };
-/** What a `type` returns: the two above, and the created row's id for the rest. */
 export type CreateResultFor<T extends CreateInput["type"]> =
   T extends keyof CreateResults ? CreateResults[T] : { id: string };
 export type CreateResult = CreateResultFor<CreateInput["type"]>;
 
-/** `create`, with the result narrowed by the input's `type`. */
 type Create = {
   <I extends CreateInput>(
     ctx: ServerFnContext,

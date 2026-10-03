@@ -118,9 +118,7 @@ export const modelThumbnailFunction = inngest.createFunction(
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();
-      // The assembler reports success once the render is done; the upload goes
-      // through a URL minted later. Repointing the model at an object that never
-      // landed would replace a working thumbnail with a broken one.
+      // The upload goes through a late-minted URL: confirm it landed before repointing.
       const uploaded = await storage(client)
         .company(companyId)
         .info(thumbnailPath);
