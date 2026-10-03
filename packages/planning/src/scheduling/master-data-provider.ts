@@ -2,15 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import {
+  type Database,
+  getLocationTimeZone as readLocationTimeZone
+} from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import {
   getJobMethodTree,
+  getJobMethodTreeArrayToTree,
+  type JobMethod,
   type JobMethodTreeItem
 } from "@carbon/database/methods";
+import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, type Selectable, sql } from "kysely";
 import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
 import {
   businessDayFromMs,
@@ -164,6 +170,12 @@ export interface MasterDataProvider {
   getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }>;
+  /** Manufacturing lead time (raw, in days) of the item each make method builds. */
+  getMakeMethodLeadTimes(
+    makeMethodIds: string[]
+  ): Promise<Map<string, unknown>>;
+  /** The location's timezone, falling back to the company's. */
+  getLocationTimeZone(locationId: string): Promise<string>;
   getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]>;
   getActiveWorkCenters(locationId: string): Promise<ActiveWorkCenter[]>;
   getCrossJobOperationsAtWorkCenters(
@@ -218,6 +230,42 @@ export interface MasterDataProvider {
   ): Promise<PeopleAbsenceRow[]>;
 }
 
+function toJob<
+  T extends {
+    dueDate: unknown;
+    timezone: string | null;
+    projectedCompletionAt: unknown;
+  }
+>(job: T) {
+  // pg returns DATE columns as JS Date objects; every consumer compares
+  // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
+  // comparisons — string > Date is always false)
+  return {
+    ...job,
+    dueDate: toIsoDate(job.dueDate),
+    timezone: job.timezone ?? "UTC",
+    projectedCompletionAt:
+      job.projectedCompletionAt == null
+        ? null
+        : toInstantIso(job.projectedCompletionAt as unknown as Date | string)
+  };
+}
+
+type Row<T extends keyof DB> = Selectable<DB[T]>;
+
+type JobPreload = {
+  jobIds: Set<string>;
+  jobs: Map<string, Job>;
+  operations: Record<string, Row<"jobOperation">[]>;
+  dependencies: Record<string, Row<"jobOperationDependency">[]>;
+  unlinked: Record<string, { id: string; jobMakeMethodId: string }[]>;
+  rootByJobId: Map<string, { id: string; itemId: string | null }>;
+  treeByRootId: Record<string, JobMethod[]>;
+  leadTimeByMakeMethodId: Map<string, unknown>;
+  operationIds: Set<string>;
+  operationsWithEvents: Set<string>;
+};
+
 /**
  * Live implementation backed by Kysely (and the Supabase client for the
  * job-method-tree RPC). Queries are moved verbatim from the engine,
@@ -232,12 +280,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    * Batch mode: when several jobs are scheduled in one invocation, the
    * company's STATIC master data (processes, work centers, qualifications,
    * shift windows, dispatch policies) is identical for every job — cache it
-   * on first read instead of re-querying per job. Job-scoped reads
-   * (operations, dependencies) and live reservations are NEVER cached:
-   * reservations must stay DB-fresh so each job in the batch sees the
-   * previous jobs' just-persisted placements.
+   * on first read instead of re-querying per job. Live reservations are
+   * NEVER cached: they must stay DB-fresh so each job in the batch sees the
+   * previous jobs' just-persisted placements. Job-scoped rows (operations,
+   * dependencies, method trees) are read once for the batch by `preloadJobs`.
    */
   private companyCache: Map<string, Promise<unknown>> | null = null;
+  private preload: JobPreload | null = null;
 
   constructor(
     db: Kysely<DB>,
@@ -263,8 +312,92 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return hit as Promise<T>;
   }
 
-  async getJob(jobId: string): Promise<Job | undefined> {
-    const job = await this.db
+  /**
+   * Read every job-scoped row the engine needs for these jobs in one query per
+   * table, so a location run does not repeat ~15 reads per job. Call it after
+   * anything that writes those rows for the batch (the batch pre-pass). Each
+   * job's rows are served to that job's own engine, which reads them before it
+   * writes any of them; reads that follow a write stay live.
+   */
+  async preloadJobs(jobIds: string[]): Promise<void> {
+    if (jobIds.length === 0) return;
+    const [jobs, operations, dependencies, makeMethods, unlinked] =
+      await Promise.all([
+        this.jobQuery().where("job.id", "in", jobIds).execute(),
+        this.db
+          .selectFrom("jobOperation")
+          .selectAll()
+          .where("jobId", "in", jobIds)
+          .orderBy("order")
+          .execute(),
+        this.db
+          .selectFrom("jobOperationDependency")
+          .selectAll()
+          .where("jobId", "in", jobIds)
+          .execute(),
+        this.db
+          .selectFrom("jobMakeMethod")
+          .select(["id", "itemId", "jobId", "parentMaterialId"])
+          .where("jobId", "in", jobIds)
+          .execute(),
+        this.db
+          .selectFrom("jobMaterial")
+          .select(["id", "jobMakeMethodId", "jobId"])
+          .where("jobId", "in", jobIds)
+          .where("jobOperationId", "is", null)
+          .execute()
+      ]);
+
+    const roots = makeMethods.filter((m) => m.parentMaterialId === null);
+    const rootIds = roots.map((m) => m.id);
+    const itemIds = [
+      ...new Set(
+        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
+      )
+    ];
+    const operationIds = operations.map((o) => o.id);
+
+    const [trees, replenishments, withEvents] = await Promise.all([
+      rootIds.length === 0
+        ? { rows: [] as (JobMethod & { rootMethodId: string })[] }
+        : sql<JobMethod & { rootMethodId: string }>`
+            SELECT r.id AS "rootMethodId", t.*
+            FROM unnest(${rootIds}::text[]) AS r(id),
+              LATERAL get_job_methods_by_method_id(r.id) WITH ORDINALITY AS t
+            ORDER BY r.id, t.ordinality
+          `.execute(this.db),
+      itemIds.length === 0
+        ? []
+        : this.db
+            .selectFrom("itemReplenishment")
+            .select(["itemId", "leadTime"])
+            .where("itemId", "in", itemIds)
+            .execute(),
+      this.readOperationsWithEvents(operationIds)
+    ]);
+
+    const leadTimeByItemId = new Map<string, unknown>(
+      replenishments.map((r) => [r.itemId, r.leadTime])
+    );
+    const preload: JobPreload = {
+      jobs: new Map(jobs.map((j) => [j.id as string, toJob(j)])),
+      operations: groupBy(operations, (o) => o.jobId as string),
+      dependencies: groupBy(dependencies, (d) => d.jobId),
+      unlinked: groupBy(unlinked, (m) => m.jobId),
+      rootByJobId: new Map(roots.map((m) => [m.jobId, m])),
+      treeByRootId: groupBy(trees.rows, (t) => t.rootMethodId),
+      leadTimeByMakeMethodId: new Map(
+        makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
+      ),
+      operationIds: new Set(operationIds),
+      operationsWithEvents: withEvents,
+      jobIds: new Set(jobIds)
+    };
+    this.preload = preload;
+  }
+
+  private jobQuery() {
+    return this.db
       .selectFrom("job")
       .leftJoin("location", "location.id", "job.locationId")
       .select([
@@ -279,28 +412,29 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "job.projectedCompletionAt",
         "location.timezone"
       ])
+      .where("job.companyId", "=", this.companyId);
+  }
+
+  async getJob(jobId: string): Promise<Job | undefined> {
+    if (this.preload?.jobIds.has(jobId)) return this.preload.jobs.get(jobId);
+    const job = await this.jobQuery()
       .where("job.id", "=", jobId)
-      .where("job.companyId", "=", this.companyId)
       .executeTakeFirst();
-    if (!job) return undefined;
-    // pg returns DATE columns as JS Date objects; every consumer compares
-    // dueDate lexicographically as "YYYY-MM-DD" (a Date silently fails those
-    // comparisons — string > Date is always false)
-    return {
-      ...job,
-      dueDate: toIsoDate(job.dueDate),
-      timezone: job.timezone ?? "UTC",
-      projectedCompletionAt:
-        job.projectedCompletionAt == null
-          ? null
-          : toInstantIso(job.projectedCompletionAt as unknown as Date | string)
-    };
+    return job && toJob(job);
   }
 
   async getOperations(
     jobId: string,
     opts?: { includeDone?: boolean }
   ): Promise<BaseOperation[]> {
+    if (this.preload?.jobIds.has(jobId)) {
+      const all = this.preload.operations[jobId] ?? [];
+      return (
+        opts?.includeDone
+          ? all
+          : all.filter((o) => o.status !== "Done" && o.status !== "Canceled")
+      ).map((o) => ({ ...o })) as BaseOperation[];
+    }
     let query = this.db
       .selectFrom("jobOperation")
       .selectAll()
@@ -314,11 +448,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getDependencies(jobId: string): Promise<JobOperationDependency[]> {
-    const deps = await this.db
-      .selectFrom("jobOperationDependency")
-      .selectAll()
-      .where("jobId", "=", jobId)
-      .execute();
+    const deps = this.preload?.jobIds.has(jobId)
+      ? (this.preload.dependencies[jobId] ?? [])
+      : await this.db
+          .selectFrom("jobOperationDependency")
+          .selectAll()
+          .where("jobId", "=", jobId)
+          .execute();
 
     return deps.map((d) => ({
       operationId: d.operationId,
@@ -385,6 +521,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getUnlinkedMaterials(jobId: string): Promise<UnlinkedMaterial[]> {
+    if (this.preload?.jobIds.has(jobId)) {
+      return (this.preload.unlinked[jobId] ?? []).map((m) => ({
+        id: m.id,
+        jobMakeMethodId: m.jobMakeMethodId
+      }));
+    }
     return await this.db
       .selectFrom("jobMaterial")
       .select(["id", "jobMakeMethodId"])
@@ -394,6 +536,10 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getRootMakeMethod(jobId: string): Promise<RootMakeMethod | undefined> {
+    if (this.preload?.jobIds.has(jobId)) {
+      const root = this.preload.rootByJobId.get(jobId);
+      return root && { id: root.id, itemId: root.itemId };
+    }
     return await this.db
       .selectFrom("jobMakeMethod")
       .select(["id", "itemId"])
@@ -405,7 +551,47 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }> {
+    const rows = this.preload?.treeByRootId[methodId];
+    if (rows) return { data: getJobMethodTreeArrayToTree(rows), error: null };
     return await getJobMethodTree(this.db, methodId);
+  }
+
+  async getMakeMethodLeadTimes(
+    makeMethodIds: string[]
+  ): Promise<Map<string, unknown>> {
+    const preloaded = this.preload?.leadTimeByMakeMethodId;
+    if (preloaded && makeMethodIds.every((id) => preloaded.has(id))) {
+      return preloaded;
+    }
+    if (makeMethodIds.length === 0) return new Map();
+    const makeMethods = await this.db
+      .selectFrom("jobMakeMethod")
+      .select(["id", "itemId"])
+      .where("id", "in", makeMethodIds)
+      .execute();
+    const itemIds = [
+      ...new Set(
+        makeMethods.map((m) => m.itemId).filter((id): id is string => !!id)
+      )
+    ];
+    if (itemIds.length === 0) return new Map();
+    const replenishments = await this.db
+      .selectFrom("itemReplenishment")
+      .select(["itemId", "leadTime"])
+      .where("itemId", "in", itemIds)
+      .execute();
+    const leadTimeByItemId = new Map<string, unknown>(
+      replenishments.map((r) => [r.itemId, r.leadTime])
+    );
+    return new Map(
+      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "")])
+    );
+  }
+
+  getLocationTimeZone(locationId: string): Promise<string> {
+    return this.cached(`locationTimeZone:${locationId}`, () =>
+      readLocationTimeZone(this.db, locationId, this.companyId)
+    );
   }
 
   async getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {
@@ -539,6 +725,18 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getOperationsWithEvents(operationIds: string[]): Promise<Set<string>> {
+    const preload = this.preload;
+    if (preload && operationIds.every((id) => preload.operationIds.has(id))) {
+      return new Set(
+        operationIds.filter((id) => preload.operationsWithEvents.has(id))
+      );
+    }
+    return this.readOperationsWithEvents(operationIds);
+  }
+
+  private async readOperationsWithEvents(
+    operationIds: string[]
+  ): Promise<Set<string>> {
     const result = new Set<string>();
     if (operationIds.length === 0) {
       return result;

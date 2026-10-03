@@ -2,11 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type Database,
-  getCompanyTimeZone,
-  getLocationTimeZone
-} from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -215,7 +211,7 @@ export class SchedulingEngine {
     // "Today" (conflict detection, fallback anchor) follows the job site's
     // wall clock — scheduling is operational, not ledger-scoped.
     this.timezone = job.locationId
-      ? await getLocationTimeZone(this.db, job.locationId, this.companyId)
+      ? await this.provider.getLocationTimeZone(job.locationId)
       : await getCompanyTimeZone(this.db, this.companyId);
 
     // Initialize work center selector with location
@@ -301,43 +297,17 @@ export class SchedulingEngine {
     ];
     if (makeMethodIds.length === 0) return;
 
-    const makeMethods = await this.db
-      .selectFrom("jobMakeMethod")
-      .select(["id", "itemId"])
-      .where("id", "in", makeMethodIds)
-      .execute();
-
-    const itemIds = [
-      ...new Set(
-        makeMethods
-          .map((m) => m.itemId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (itemIds.length === 0) return;
-
-    const replenishments = await this.db
-      .selectFrom("itemReplenishment")
-      .select(["itemId", "leadTime"])
-      .where("itemId", "in", itemIds)
-      .execute();
+    const leadTimes = await this.provider.getMakeMethodLeadTimes(makeMethodIds);
 
     // NUMERIC columns can come back from pg as strings — coerce to a number.
     const toLeadTimeDays = (value: unknown): number => {
       const n = Number(value ?? 0);
       return Number.isFinite(n) && n > 0 ? n : 0;
     };
-    const leadTimeByItemId = new Map(
-      replenishments.map((r) => [r.itemId, toLeadTimeDays(r.leadTime)])
-    );
-    const leadTimeByMakeMethodId = new Map(
-      makeMethods.map((m) => [m.id, leadTimeByItemId.get(m.itemId ?? "") ?? 0])
-    );
 
     for (const op of this.operations) {
       if (op.jobMakeMethodId) {
-        op.assemblyLeadTime =
-          leadTimeByMakeMethodId.get(op.jobMakeMethodId) ?? 0;
+        op.assemblyLeadTime = toLeadTimeDays(leadTimes.get(op.jobMakeMethodId));
       }
     }
   }
