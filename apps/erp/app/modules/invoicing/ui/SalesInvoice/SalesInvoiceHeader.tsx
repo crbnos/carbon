@@ -20,7 +20,7 @@ import {
   Status,
   useDisclosure
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -35,6 +35,7 @@ import {
   LuFile,
   LuPanelLeft,
   LuPanelRight,
+  LuSend,
   LuTicketX,
   LuTrash,
   LuTruck
@@ -125,6 +126,18 @@ const SalesInvoiceHeader = () => {
     !accountingEnabled && isPosted && permissions.can("update", "invoicing");
   const canMarkPaid = canToggleManualPaid && baseStatus === "Submitted";
   const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
+
+  // Invoice automation outcome: a held draft waits for review; a posted
+  // invoice was either emailed or failed to send (and can be re-sent).
+  const sendFetcher = useFetcher<{}>();
+  const isPostedNotVoided = isPosted && !isVoided;
+  const holdReason =
+    salesInvoice.status === "Draft" ? salesInvoice.automationHoldReason : null;
+  const sentTo = salesInvoice.sentTo ?? "";
+  const sentDate = formatDate(salesInvoice.sentAt);
+  const showEmailed = isPostedNotVoided && !!salesInvoice.sentAt;
+  const showNotSent =
+    isPostedNotVoided && !!salesInvoice.sendError && !salesInvoice.sentAt;
 
   const [relatedDocs, setRelatedDocs] = useState<{
     salesOrders: { id: string; readableId: string }[];
@@ -320,6 +333,43 @@ const SalesInvoiceHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             <SalesInvoiceStatus status={salesInvoice.status} />
+            {holdReason && (
+              <Status color="orange" tooltip={holdReason}>
+                <Trans>Held</Trans>
+              </Status>
+            )}
+            {showEmailed && (
+              <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
+                <Trans>Emailed</Trans>
+              </Status>
+            )}
+            {showNotSent && (
+              <>
+                <Status color="red" tooltip={salesInvoice.sendError}>
+                  <Trans>Not sent</Trans>
+                </Status>
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuSend />}
+                  isLoading={sendFetcher.state !== "idle"}
+                  isDisabled={
+                    sendFetcher.state !== "idle" ||
+                    !permissions.can("update", "invoicing")
+                  }
+                  onClick={() =>
+                    sendFetcher.submit(
+                      {},
+                      {
+                        method: "post",
+                        action: path.to.salesInvoiceSend(invoiceId)
+                      }
+                    )
+                  }
+                >
+                  <Trans>Send</Trans>
+                </Button>
+              </>
+            )}
             {routeData?.stripeInvoiceUrl && isPosted && (
               <a
                 href={routeData.stripeInvoiceUrl}
