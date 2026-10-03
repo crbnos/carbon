@@ -249,7 +249,7 @@ async function draftAgreementInvoice(
     "salesInvoice",
     companyId
   );
-  // Every sales invoice has an opportunity, as createSalesInvoice makes one:
+  // Every sales invoice has an opportunity, as insertSalesInvoice makes one:
   // its documents live under the opportunity's storage folder, and the
   // invoice page reads it.
   const opportunity = await trx
