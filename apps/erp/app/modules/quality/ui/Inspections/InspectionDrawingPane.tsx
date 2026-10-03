@@ -12,9 +12,14 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { Circle, Group, Layer, Line, Stage, Text } from "react-konva";
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
+
+// Registered here, not in the client entry: this module is lazy, so the PDF
+// engine stays out of every page that shows no PDF.
+registerReactPdfWorker(pdfjs);
 
 export type DrawingBalloon = {
   id: string;

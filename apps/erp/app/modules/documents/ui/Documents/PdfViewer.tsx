@@ -2,9 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { Skeleton } from "@carbon/react";
 import { useState } from "react";
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
+
+// Registered here, not in the client entry: this module is lazy, so the PDF
+// engine stays out of every page that shows no PDF.
+registerReactPdfWorker(pdfjs);
 
 function SkeletonDocument() {
   return (
