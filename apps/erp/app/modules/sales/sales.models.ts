@@ -1109,7 +1109,7 @@ export const salesRfqLineValidator = z.object({
   modelUploadId: zfd.text(z.string().optional())
 });
 
-// The `convert` edge function derives every financial field (net unit price,
+// The `convert` server function derives every financial field (net unit price,
 // shipping, add-ons) from the canonical quoteLinePrice rows server-side. These
 // money fields are UI/display only and are NOT trusted as an input to quote
 // conversion — only `quantity` (the selected quantity break) is authoritative.

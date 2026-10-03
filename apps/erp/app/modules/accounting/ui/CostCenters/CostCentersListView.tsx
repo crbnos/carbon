@@ -7,7 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -84,8 +85,11 @@ function CostCentersRow({
                 icon={<LuEllipsisVertical />}
               />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => onEdit(costCenter.id!)}>
+            <DropdownMenuContent align="end" className="min-w-44">
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
+                onClick={() => onEdit(costCenter.id!)}
+              >
                 <LuPencil className="mr-2 size-4" />
                 <Trans>Edit</Trans>
               </DropdownMenuItem>
@@ -94,6 +98,7 @@ function CostCentersRow({
                 <Trans>Add cost center</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete(costCenter.id!)}
               >

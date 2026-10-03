@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { round } from "../../../supabase/functions/shared/precision.ts";
+import { round } from "../../precision.ts";
 import {
   CLOSED_PERIOD_MONTHS_BACK,
   LOCKED_PERIOD_MONTHS_BACK,

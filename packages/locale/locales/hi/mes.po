@@ -167,6 +167,9 @@ msgstr "सभी पुनः कार्य"
 msgid "All scrap"
 msgstr "सभी स्क्रैप"
 
+msgid "All steps"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "विफल इकाइयों को आवंटित करें"
 
@@ -516,6 +519,9 @@ msgstr "आज देय?"
 msgid "Duplicate batch number"
 msgstr "डुप्लिकेट बैच संख्या"
 
+msgid "Duplicate or copy"
+msgstr ""
+
 msgid "Duplicate serial number"
 msgstr "डुप्लिकेट सीरियल नंबर"
 
@@ -711,6 +717,9 @@ msgstr "इंपीरियल"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0} में"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "प्रगति में"
@@ -1138,6 +1147,11 @@ msgstr "MRB निपटान के लिए एक NCR खोलें"
 msgid "Open Jobs"
 msgstr "खुली जॉब्स"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "ऑपरेशन"
 
@@ -1225,6 +1239,9 @@ msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर 
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम, {substitutedAssemblies} असेंबलीज के लिए"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "पिन आउट"
@@ -1352,6 +1369,9 @@ msgstr "इन्वेंटरी निकालें"
 
 msgid "Remove part"
 msgstr "पार्ट निकालें"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "सब-असेंबली को फिर से खोलें और एक रिप्लेसमेंट इकाई बनाएँ"
@@ -1640,6 +1660,21 @@ msgstr "चरण गायब हैं"
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
 
@@ -1829,6 +1864,11 @@ msgstr "एक अलग खाता उपयोग करें"
 msgid "Used automatically at completion"
 msgstr "पूर्णता पर स्वचालित रूप से उपयोग किया जाता है"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "मान"
 
@@ -1837,6 +1877,9 @@ msgstr "सत्यापित करें"
 
 msgid "View maintenance dispatch"
 msgstr "रखरखाव कार्य देखें"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"

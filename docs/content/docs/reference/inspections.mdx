@@ -3,9 +3,9 @@ title: Inspections and sampling
 description: How Carbon inspects received goods against AQL sampling plans, and how inspection templates and ballooned FAI drawings define what gets checked.
 ---
 
-A drum of 5,000 fasteners lands on the dock. You don't measure every one. You pull a sample, check it against a plan, and let the numbers decide whether the whole lot passes. That is what Carbon's <Term id="inbound-inspection">inbound inspection</Term> does: when a receipt is posted for an item flagged to [require inspection](/docs/reference/quality), Carbon holds the received units, computes a sample size from an AQL standard, and waits for an inspector to record pass/fail before the stock becomes available.
+Carbon's <Term id="inbound-inspection">inbound inspection</Term> evaluates received goods against a sampling plan. When a receipt posts for an item that [requires inspection](/docs/reference/quality), Carbon holds the received units, calculates the sample size, and requires inspection results before releasing stock.
 
-This page is the deep dive. The [quality overview](/docs/reference/quality) has the short version; here you get the lifecycle, the sampling math, the step types that build an inspection template, and the ballooned-drawing FAI system.
+This page describes the inspection lifecycle, sampling calculations, template step types, and ballooned-drawing FAI workflow. See [quality](/docs/reference/quality) for the module overview.
 
 ## The inbound inspection lifecycle
 
@@ -19,7 +19,7 @@ Inspection is **lot-based**: one inspection per received line (the `receiptLineI
   <Status name="Partial" terminal>Some units cleared and the rest stay On Hold. A middle disposition for when part of the lot is good and part isn't.</Status>
 </StatusFlow>
 
-The status enum is exactly `Pending`, `In Progress`, `Passed`, `Failed`, `Partial` (`quality.models.ts:698`, matching the `inboundInspectionStatus` type in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed / Failed / Partial are disposition outcomes**, not something an inspector reaches by finishing samples — the inspector records results, then presses **Accept Lot**, **Reject Lot**, or **Partial** to close the lot.
+The status enum is `Pending`, `In Progress`, `Passed`, `Failed`, or `Partial` (`quality.models.ts:698`, matching `inboundInspectionStatus` in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**.
 
 <Callout type="warn" title="Inspection-required stock is not on-hand until dispositioned">
 When a receipt posts for a `requiresInspection` item, its tracked entities are set to **On Hold**, not Available. They're received but you can't sell or consume them yet. Only Accept (or the per-sample passes) releases them.
@@ -27,7 +27,7 @@ When a receipt posts for a `requiresInspection` item, its tracked entities are s
 
 ### What triggers a lot
 
-The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` edge function reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
+The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` server function reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
 
 ### Recording samples
 
@@ -54,16 +54,16 @@ Every lot needs a sample size and an accept/reject rule. That comes from the ite
   <Field name="AQL" type="AQL">Statistical acceptance sampling per ANSI/ASQ Z1.4 or ISO 2859-1 — the sample size and accept/reject numbers come from the standard's tables.</Field>
 </FieldTable>
 
-The first three are simple counts with a zero-defect rule. **AQL** is the interesting one.
+The first three plans use a zero-defect rule. **AQL** uses standard acceptance tables.
 
 ### How an AQL plan resolves
 
-<Term id="sampling-plan-aql">AQL</Term> — Acceptable Quality Limit — is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan` in `samplingStandards.ts`, mirrored for the edge function in `sampling-engine.ts`) takes the plan, the lot size, and the company's standard, then walks the standard's tables in two steps:
+<Term id="sampling-plan-aql">AQL</Term> — Acceptable Quality Limit — is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan` in `samplingStandards.ts`, mirrored for `post-receipt` in `sampling-engine.ts`) takes the plan, the lot size, and the company's standard, then walks the standard's tables in two steps:
 
 1. **Lot size → code letter.** A single lot-size-range table maps the lot to a code letter (A–R) for the chosen **inspection level**. Level II is the general default; I and III trade sample size for confidence, and S1–S4 are special small-sample levels (`inspectionLevels`, `samplingStandards.ts:20`).
 2. **Code letter + AQL + severity → sample plan.** The code letter and AQL pick a cell giving the sample size `n`, the **acceptance number** (`Ac`, max defects to still accept), and the **rejection number** (`Re`). Severity switches which table is used: **Normal**, **Tightened** (stricter — used when a supplier's quality slips), or **Reduced** (`inspectionSeverities`, `samplingStandards.ts:31`).
 
-The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`, `samplingStandards.ts:34`). The whole Z1.4 / ISO 2859-1 constant tables live in `samplingStandards.ts` (and the Deno copy at `sampling-engine.ts`) — ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
+The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`, `samplingStandards.ts:34`). The whole Z1.4 / ISO 2859-1 constant tables live in `samplingStandards.ts` (and the posting copy at `sampling-engine.ts`) — ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
 
 <Callout type="note" title="The plan is snapshotted, not referenced">
 When the receipt posts, the resolved numbers are copied onto the `inboundInspection` row (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`). Editing the item's sampling plan afterward changes future lots, never the lot already on the dock. If no plan is configured, `post-receipt` defaults to `Inspect All`, level II, Normal.

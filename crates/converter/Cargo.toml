@@ -15,3 +15,6 @@ serde.workspace = true
 serde_json.workspace = true
 sha1.workspace = true
 regex = "1"
+
+[dev-dependencies]
+libc = "0.2"

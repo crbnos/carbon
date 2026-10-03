@@ -22,7 +22,7 @@
  * Inngest retry that re-runs an enqueue or drain step cannot duplicate work.
  *
  * Posting sync (journalEntry) rides the same machinery with two twists:
- * journal events enqueue on an INSERT born Posted (the post-* edge functions
+ * journal events enqueue on an INSERT born Posted (the post-* server functions
  * insert journals already Posted; reversal inserts skip via reversalOfId) or
  * on a status TRANSITION to Posted/Reversed (getJournalPostingDecision) with
  * trigger "posting", and companies whose posting-sync settings resolve to
@@ -44,6 +44,7 @@ import {
   getJournalEntrySyncEntityId,
   getJournalPostingPolicyDecision,
   insertTerminalSyncOperation,
+  isAccountingSyncEnabled,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
   type PostingSyncSettings,
@@ -152,7 +153,7 @@ export type JournalPostingDecision =
  * operation. Two paths enqueue (spec Phase B §2, amended 2026-07-09):
  *
  * - INSERT born `status='Posted'` with no `reversalOfId` — Carbon's `post-*`
- *   edge functions insert journals already Posted (they are never UPDATEd
+ *   server functions insert journals already Posted (they are never UPDATEd
  *   from Draft), so INSERT is the posting event on the main path. Reversal
  *   inserts (`reversalOfId` set, see `reverseJournalEntry`) skip: they are
  *   represented by the original journal's Reversed transition below.
@@ -949,6 +950,15 @@ export async function drainSyncOperations(args: {
    * silently push daily-consolidation journal operations individually.
    */
   integrationMetadata: unknown;
+  /**
+   * Claim only these operations. A master-data import passes its own entity
+   * type and the pull direction, so it drains what it enqueued and nothing
+   * else that is waiting.
+   */
+  only?: {
+    entityTypes: AccountingEntityType[];
+    direction: SyncOperationDirection;
+  };
 }): Promise<DrainSummary> {
   const summary: DrainSummary = {
     claimed: 0,
@@ -957,6 +967,19 @@ export async function drainSyncOperations(args: {
     skipped: 0,
     groups: []
   };
+
+  // Sync is turned off (an accounting integration still being set up): leave
+  // every row Pending. The entry points already skip enqueueing; this is the
+  // backstop for a Retry clicked in Sync Activity, which the first drain after
+  // sync is turned on then picks up. The one exception is a scoped PULL — a
+  // customer/vendor import only writes into Carbon, and the links it creates
+  // are what stop the first push after sync is on from duplicating records.
+  if (
+    !isAccountingSyncEnabled(args.integrationMetadata) &&
+    args.only?.direction !== "pull-from-accounting"
+  ) {
+    return summary;
+  }
 
   const postingSyncSettings = resolvePostingSyncSettings(
     args.integrationMetadata
@@ -975,9 +998,14 @@ export async function drainSyncOperations(args: {
     const claimed = await claimPendingOperations(args.client, {
       companyId: args.companyId,
       integration: args.integration,
-      ...(excludeEntityTypes
-        ? { excludeEntityTypes }
-        : { holdDailySummaryJournalEntries: true })
+      ...(args.only
+        ? {
+            entityTypes: args.only.entityTypes,
+            direction: args.only.direction
+          }
+        : excludeEntityTypes
+          ? { excludeEntityTypes }
+          : { holdDailySummaryJournalEntries: true })
     });
 
     if (claimed.error) {
@@ -1620,7 +1648,7 @@ export const MAX_REDRIVE_ATTEMPTS = 5;
 /**
  * Document statuses the outbound sweep treats as posted — the
  * per-provider SYNCABLE_STATUSES minus the transient "Pending"
- * (mid-posting: the post route flips Draft → Pending BEFORE the edge
+ * (mid-posting: the post route flips Draft → Pending BEFORE the server
  * function writes the posting journal, so diffing Pending would race the
  * same way the event path does; the document re-enters the diff as soon
  * as posting lands a terminal status).

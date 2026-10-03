@@ -9,8 +9,8 @@ import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import invariant from "tiny-invariant";
@@ -70,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Post the inventory write-off (itemLedger + cost relief + GL) for a
-  // non-tracked Inventory lot through the post-nonconformance edge function.
+  // non-tracked Inventory lot through the post-nonconformance operation.
   // Idempotent per (documentType, documentId), so retrying the reject after a
   // failure here re-posts safely (the lot stays Rejected). A failed write-off
   // MUST abort before NCR creation: the NCR's disposition (closeIssue) restores
@@ -78,10 +78,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // it, so proceeding would leave the received quantity double-counted on hand.
   const writeOff = dispositionResult.data?.writeOff;
   if (writeOff) {
-    const post = await client.functions.invoke("post-nonconformance", {
-      body: {
-        companyId,
-        userId,
+    const post = await serverFns
+      .as({ client, db: getDatabaseClient(), companyId, userId })
+      .invoke("post-nonconformance", {
         documentType: "Inbound Inspection",
         documentId: id,
         description: "Inbound inspection lot rejected",
@@ -93,9 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             quantity: writeOff.quantity
           }
         ]
-      },
-      region: FunctionRegion.UsEast1
-    });
+      });
     if (post.error) {
       logger.error("Failed to post inspection reject write-off", {
         error: post.error,
@@ -390,15 +387,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
-  });
+      id: ncrId
+    });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);
     throw redirect(

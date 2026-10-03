@@ -25,7 +25,7 @@ describe.skipIf(!runDatabaseTests)(
     };
 
     beforeAll(async () => {
-      db = getJobDatabaseClient(2);
+      db = getJobDatabaseClient();
       const row = await db
         .selectFrom("company")
         .innerJoin(

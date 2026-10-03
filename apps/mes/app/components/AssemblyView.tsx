@@ -55,11 +55,14 @@ import type {
   Fastener,
   Motion
 } from "@carbon/viewer";
-import { AssemblyPlayer } from "@carbon/viewer";
+import { AssemblyPlayer, buildSubAssemblyPlan } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuArrowLeft,
   LuBox,
+  LuBoxes,
   LuCheck,
   LuChevronLeft,
   LuChevronRight,
@@ -200,8 +203,11 @@ type AssemblyPlayback = {
     instructionText: string | null;
     componentNodeIds: string[] | null;
     hiddenComponentNodeIds: string[] | null;
-    /** The join step this step is built aside for (sub-assembly staging) */
+    /** The sub-assembly (header step) this step belongs to */
     parentStepId: string | null;
+    /** On a header: the step that fits the finished sub-assembly */
+    usedInStepId: string | null;
+    isSubAssembly: boolean;
     motion: Json;
     camera: Json | null;
     fastener: Json | null;
@@ -211,6 +217,9 @@ type AssemblyPlayback = {
 };
 
 const playerMotionTypes = ["linear", "L", "helix", "path", "none"];
+
+/** Opens a sub-assembly: the step bar and the player show only its steps. */
+const SUB_ASSEMBLY_PARAM = "subAssembly";
 
 // DB row → @carbon/viewer AssemblyStep.
 function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
@@ -222,7 +231,9 @@ function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
     instructionText: step.instructionText,
     componentNodeIds: step.componentNodeIds ?? [],
     hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
-    joinStepId: step.parentStepId ?? null,
+    parentStepId: step.parentStepId ?? null,
+    usedInStepId: step.usedInStepId ?? null,
+    isSubAssembly: step.isSubAssembly,
     motion:
       motion &&
       typeof motion === "object" &&
@@ -530,6 +541,7 @@ export function AssemblyView({
   const navigate = useNavigate();
   const revalidate = useRealtimeRevalidator();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLingui();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
   const [tab, setTab] = useState<"details" | "model" | "chat">("details");
 
@@ -1094,6 +1106,88 @@ export function AssemblyView({
     return index >= 0 ? index : null;
   }, [assemblyPlayback, step]);
   const playbackAvailable = playbackIndex !== null && viewerSteps.length > 0;
+
+  // Sub-assemblies come from the instruction: a job step belongs to one when
+  // its instruction step (the provenance marker) does. The bar shows each
+  // sub-assembly as one entry; ?subAssembly= opens it, so the bar and the
+  // player show only its steps. Hand-authored job steps stay top level.
+  const subPlan = useMemo(
+    () => buildSubAssemblyPlan(viewerSteps),
+    [viewerSteps]
+  );
+  const headerOfJobStep = (jobStep: Step | undefined) => {
+    const marker = jobStep?.assemblyInstructionStepId;
+    const info = marker ? subPlan.get(marker) : undefined;
+    return info && !info.isHeader ? info.headerId : null;
+  };
+  const subAssemblyTitle = (headerId: string) =>
+    viewerSteps.find((viewerStep) => viewerStep.id === headerId)?.title ||
+    t`Sub-Assembly`;
+  const subAssemblyNumber = (headerId: string) =>
+    subPlan.get(headerId)?.number ?? "";
+  const requestedSubAssembly = searchParams.get(SUB_ASSEMBLY_PARAM);
+  const openSubAssemblyId =
+    requestedSubAssembly && subPlan.get(requestedSubAssembly)?.isHeader
+      ? requestedSubAssembly
+      : null;
+  const scopeStepIds = useMemo(
+    () =>
+      openSubAssemblyId
+        ? viewerSteps
+            .filter(
+              (viewerStep) => viewerStep.parentStepId === openSubAssemblyId
+            )
+            .map((viewerStep) => viewerStep.id)
+        : null,
+    [openSubAssemblyId, viewerSteps]
+  );
+  const playbackInfo =
+    playbackIndex !== null
+      ? subPlan.get(viewerSteps[playbackIndex]?.id ?? "")
+      : undefined;
+  const isolationLabel =
+    playbackInfo && !playbackInfo.isHeader && playbackInfo.headerId
+      ? t`Sub-Assembly ${subAssemblyNumber(playbackInfo.headerId)} · ${subAssemblyTitle(
+          playbackInfo.headerId
+        )} — shown on its own`
+      : null;
+  const carriedIn = playbackInfo?.carriesIn ?? [];
+  const carryInLabel =
+    carriedIn.length > 0
+      ? carriedIn
+          .map(
+            (headerId) =>
+              t`Uses ${subAssemblyNumber(headerId)} · ${subAssemblyTitle(headerId)}`
+          )
+          .join(", ")
+      : null;
+
+  // The bar's entries: a job step, or a sub-assembly holding its job steps.
+  type BarItem =
+    | { kind: "step"; index: number }
+    | { kind: "subAssembly"; headerId: string; indices: number[] };
+  const barItems: BarItem[] = [];
+  const subAssemblyItems = new Map<
+    string,
+    Extract<BarItem, { kind: "subAssembly" }>
+  >();
+  steps.forEach((jobStep, index) => {
+    const headerId = headerOfJobStep(jobStep);
+    if (!headerId) {
+      barItems.push({ kind: "step", index });
+      return;
+    }
+    let item = subAssemblyItems.get(headerId);
+    if (!item) {
+      item = { kind: "subAssembly", headerId, indices: [] };
+      subAssemblyItems.set(headerId, item);
+      barItems.push(item);
+    }
+    item.indices.push(index);
+  });
+  const openIndices = openSubAssemblyId
+    ? (subAssemblyItems.get(openSubAssemblyId)?.indices ?? [])
+    : [];
   const selectedCaption =
     typeof selected === "number"
       ? (stepSlides[selected]?.caption ?? null)
@@ -1134,6 +1228,64 @@ export function AssemblyView({
       (prev) => {
         const next = new URLSearchParams(prev);
         next.set("step", String(n));
+        // Leaving an opened sub-assembly's steps closes it.
+        const open = next.get(SUB_ASSEMBLY_PARAM);
+        if (open && headerOfJobStep(steps[n]) !== open) {
+          next.delete(SUB_ASSEMBLY_PARAM);
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true }
+    );
+  }
+
+  function openSubAssembly(headerId: string, indices: number[]) {
+    const target =
+      indices.find((index) => !isStepDone(steps[index])) ?? indices[0] ?? 0;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(SUB_ASSEMBLY_PARAM, headerId);
+        next.set("step", String(target));
+        return next;
+      },
+      { replace: true, preventScrollReset: true }
+    );
+  }
+
+  const stepMatchesFilter = (s: Step) =>
+    stepFilter === "all"
+      ? true
+      : stepFilter === "completed"
+        ? isStepDone(s)
+        : !isStepDone(s);
+  const stepSegmentTone = (s: Step, i: number) =>
+    isStepDone(s)
+      ? isStepBadResult(s)
+        ? "bg-red-500"
+        : "bg-emerald-500"
+      : i === currentStep
+        ? "bg-foreground"
+        : "bg-border";
+  const renderStepSegment = (s: Step, i: number) => (
+    <button
+      key={s.id}
+      type="button"
+      aria-label={`Go to step ${i + 1}`}
+      onClick={() => goToStep(i)}
+      className={cn(
+        "h-3 flex-1 rounded-[2px] transition-colors",
+        stepSegmentTone(s, i),
+        !isStepDone(s) && i !== currentStep && "hover:bg-muted-foreground/40"
+      )}
+    />
+  );
+
+  function closeSubAssembly() {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete(SUB_ASSEMBLY_PARAM);
         return next;
       },
       { replace: true, preventScrollReset: true }
@@ -1587,7 +1739,7 @@ export function AssemblyView({
 
       {/* ── STEPS BAR (segmented, click to jump; green = done) ── */}
       {steps.length > 0 && (
-        <div className="flex h-9 shrink-0 items-center gap-3 bg-card border-b border-border px-5">
+        <div className="flex min-h-9 shrink-0 items-center gap-3 bg-card border-b border-border px-5 py-1">
           {/* Label reflects the active filter so a filtered bar (e.g. only the completed,
               all-green steps) is never mistaken for "everything done". */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -1597,34 +1749,64 @@ export function AssemblyView({
                 ? `${steps.length - doneCount} incomplete`
                 : `${doneCount} / ${steps.length} done`}
           </span>
-          <div className="flex flex-1 items-center gap-1">
-            {steps
-              .map((s, i) => [s, i] as const)
-              .filter(([s]) =>
-                stepFilter === "all"
-                  ? true
-                  : stepFilter === "completed"
-                    ? isStepDone(s)
-                    : !isStepDone(s)
-              )
-              .map(([s, i]) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  aria-label={`Go to step ${i + 1}`}
-                  onClick={() => goToStep(i)}
-                  className={cn(
-                    "h-3 flex-1 rounded-[2px] transition-colors",
-                    isStepDone(s)
-                      ? isStepBadResult(s)
-                        ? "bg-red-500"
-                        : "bg-emerald-500"
-                      : i === currentStep
-                        ? "bg-foreground"
-                        : "bg-border hover:bg-muted-foreground/40"
-                  )}
-                />
-              ))}
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            {openSubAssemblyId ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  leftIcon={<LuArrowLeft />}
+                  onClick={closeSubAssembly}
+                >
+                  {t`All steps`}
+                </Button>
+                <span className="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">
+                  {t`Sub-Assembly ${subAssemblyNumber(openSubAssemblyId)} · ${subAssemblyTitle(openSubAssemblyId)}`}
+                </span>
+                {openIndices
+                  .filter((i) => stepMatchesFilter(steps[i]))
+                  .map((i) => renderStepSegment(steps[i], i))}
+              </>
+            ) : (
+              barItems.map((item) => {
+                if (item.kind === "step") {
+                  const s = steps[item.index];
+                  return stepMatchesFilter(s)
+                    ? renderStepSegment(s, item.index)
+                    : null;
+                }
+                const members = item.indices.map((i) => steps[i]);
+                const allDone = members.every(isStepDone);
+                if (stepFilter === "completed" && !allDone) return null;
+                if (stepFilter === "incomplete" && allDone) return null;
+                const isCurrent = item.indices.includes(currentStep);
+                return (
+                  <button
+                    key={item.headerId}
+                    type="button"
+                    aria-label={t`Open sub-assembly ${subAssemblyNumber(item.headerId)}: ${subAssemblyTitle(item.headerId)}`}
+                    title={t`Sub-Assembly ${subAssemblyNumber(item.headerId)} · ${subAssemblyTitle(item.headerId)}`}
+                    onClick={() => openSubAssembly(item.headerId, item.indices)}
+                    style={{ flexGrow: item.indices.length }}
+                    className={cn(
+                      "flex h-6 flex-1 basis-0 items-center gap-0.5 rounded-[3px] border px-1 transition-colors hover:bg-muted",
+                      isCurrent ? "border-foreground" : "border-border"
+                    )}
+                  >
+                    <LuBoxes className="size-3.5 shrink-0 text-muted-foreground" />
+                    {item.indices.map((i) => (
+                      <span
+                        key={steps[i].id}
+                        className={cn(
+                          "h-2 flex-1 rounded-[1px]",
+                          stepSegmentTone(steps[i], i)
+                        )}
+                      />
+                    ))}
+                  </button>
+                );
+              })
+            )}
             {stepFilter === "incomplete" && doneCount === steps.length && (
               <span className="text-xs text-emerald-500">All steps done</span>
             )}
@@ -1983,6 +2165,9 @@ export function AssemblyView({
                           glbUrl={getPrivateUrl(assemblyPlayback.glbPath)}
                           graphUrl={getPrivateUrl(assemblyPlayback.graphPath)}
                           steps={viewerSteps}
+                          scopeStepIds={scopeStepIds}
+                          isolationLabel={isolationLabel}
+                          carryInLabel={carryInLabel}
                           activeStepIndex={playbackIndex ?? 0}
                           playStepNonce={currentStep}
                           autoPlay

@@ -1,240 +1,137 @@
+---
 paths: ["packages/database/supabase/functions/**"]
+---
 
 # Workflow: Authoring a Supabase Edge Function
 
 How to add or extend a Carbon edge function. These are **Deno** functions in
-`packages/database/supabase/functions/<name>/index.ts`. They run privileged work
-that doesn't belong in a request handler (creating documents, posting ledger
-entries, MRP, CSV import, scheduling) and are called from app code via
-`client.functions.invoke("<name>", { body })`.
+`packages/database/supabase/functions/<name>/index.ts`, called over HTTP via
+`client.functions.invoke("<name>", { body })`. One remains:
 
-Grounded against the real functions (`create`, `post-receipt`, `post-shipment`,
-`import-csv`, `mrp`, `schedule`) and the shared `lib/**`. Not Trigger.dev and not
-Inngest: edge functions are a distinct mechanism. Async/event-driven side effects
-go through the Inngest event system (`@carbon/jobs`, see `event-system.md`), NOT
-here. Reach for an edge function when the app needs a synchronous privileged
-call-and-wait (it gets `{ data, error }` back from `invoke`).
+| Function | Contract | Caller check | Called from |
+|---|---|---|---|
+| `embedding` | `{ text }` → `{ embedding }`; `{ texts }` (≤ 100) → `{ embeddings }` — gte-small (384 dims) via `Supabase.ai.Session` | `requireCaller`: the service role key, a `service_role`/`authenticated` JWT (signature verified with `JWT_SECRET` when set), or a `carbon-key` API key checked against `apiKey` + `check_api_key_rate_limit` | ERP `shared.service.ts` (search), `@carbon/jobs` `events/embedding.ts` (`embedRecords`) |
 
-## 1. Scaffold
+Everything else is Node. Privileged, transactional writes shared by the apps, the
+API and jobs (posting, converting, issuing, CSV import) are **server functions** —
+see `packages/server-functions/AGENTS.md`. MRP and scheduling are
+`@carbon/planning`. Async/event-driven side effects go through the Inngest event
+system (`@carbon/jobs`, see `event-system.md`); Postgres sends its own Inngest
+events with `util.send_inngest_event` and never calls an edge function. Model
+thumbnails are rendered by the Rust assembler (`crates/thumbnail`). Reach for a
+new edge function only when the work needs the edge runtime itself (e.g. its
+built-in model API).
+
+## 1. Self-contained, always
+
+A function imports nothing outside its own directory. There is no `functions/lib/`
+or `functions/shared/`, and `functions/deno.json` is just `{ "lock": false }` — no
+import map. Use inline `npm:` / `jsr:` / `node:` specifiers with pinned versions,
+and copy the few lines of helper (CORS headers, JSON response, caller check) into
+the function rather than sharing them. Workspace packages (`@carbon/*`) cannot be
+imported; logic that needs them belongs in Node.
+
+## 2. Scaffold and register
 
 ```bash
 pnpm db:function:new <name>     # → supabase functions new (root script)
 ```
 
-Creates `packages/database/supabase/functions/<name>/index.ts`.
-
-## 2. Register in config.toml (settings, NOT a deploy gate)
-
-Add an entry to `packages/database/supabase/config.toml`.
-
-**A missing entry does not stop the function from deploying.** `ci/src/migrations.ts`
-runs `supabase functions deploy` with **no function name**, and that deploys every
-directory under `supabase/functions/` regardless of `config.toml`. The entry only
-overrides per-function settings, `verify_jwt` above all.
-<!-- UNVERIFIED: verify_jwt default for an UNREGISTERED function (docs say true; not confirmed on a deployed Carbon fn) -->
-
-`schedule` and `trigger-rework` are both live today with no `config.toml` entry.
-That is the trap: an unregistered function looks unshipped in this file while being
-reachable in production, so its in-function authorization is the only gate it has —
-`trigger-rework` had none until
-`.ai/specs/2026-08-25-backup-durability.md` Part 3. Register the function anyway
-(it is where a future reader looks), but never treat absence as "not deployed".
+Add an entry to `packages/database/supabase/config.toml`:
 
 ```toml
 [functions.<name>]
 enabled = true
-verify_jwt = true                              # JWT required (the common case)
-# entrypoint = "./functions/<name>/index.ts"   # optional; only if not default index.ts
+verify_jwt = true
 ```
 
-- `verify_jwt = true` — the gateway checks the JWT's signature, nothing more. The anon key
-  published in the apps' HTML IS a valid JWT, so this alone lets anyone in. The function must
-  still authorize in-function: `requirePermissions` when it acts on a company's data, or
-  `requireCaller` (`lib/supabase.ts` — service role, signed-in user, or valid API key) when it
-  touches none, or `requireServiceRole` when only servers call it (`thumbnail`). `embedding`,
-  `post-picking`, `post-stock-transfer`, `reschedule` and `thumbnail` all served the anon key
-  until they got one. The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
-  function that calls none of them. `embed`, `event-wake` and `trigger` are still open —
-  Postgres calls them with the anon key from the `config` table (`util.invoke_edge_function`,
-  `util.wake_event_queue`, `finish_job_operation`), so they cannot tell it from an anonymous
-  caller until Postgres sends a server credential.
-- `verify_jwt = false` — only for genuinely public endpoints (`logo-resizer`).
-  Image processing for API/server callers is `process-image` (`verify_jwt = true`,
-  in-function `requirePermissions`); it runs the shared pipeline in
-  `shared/image-pipeline.ts` — see `packages/files/AGENTS.md`.
+**A missing entry does not stop the function from deploying.** `ci/src/migrations.ts`
+runs `supabase functions deploy` with no function name, which deploys every
+directory under `supabase/functions/`. The entry only overrides per-function
+settings, `verify_jwt` above all. Register it anyway; never treat absence as "not
+deployed".
 
-## 3. Function skeleton
+## 3. Authorize in-function
 
-Real imports (note: `serve` from deno.land std, **default** `z` import, lib paths
-relative to the function dir; the AGPL license header comes first — the fixer
-`pnpm --filter @carbon/checks license-headers` writes it):
+`verify_jwt = true` only checks the JWT's signature, and the anon key published in
+the apps' HTML IS a valid JWT, so the gateway alone lets anyone in. Every function
+defines and calls its own `requireCaller` (signed-in users, API keys, servers) or
+`requireServiceRole` (servers only) — copy `requireCaller` from `embedding`.
+The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a function
+whose files call neither.
+
+A function that takes a record id must re-read that record under `companyId` itself
+and 404 on a miss — the caller's credentials prove nothing about the ids in the body.
+
+## 4. Skeleton
 
 ```typescript
 // SPDX-License-Identifier: AGPL-3.0-only
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import z from "npm:zod@^4.5.4";
-import { corsHeaders } from "../lib/headers.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
 
-const payloadValidator = z.object({
-  companyId: z.string(),
-  userId: z.string(),
-  // ...your fields. Use z.discriminatedUnion("type", [...]) for multi-op fns (see `create`).
-});
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-serve(async (req: Request) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
   try {
-    const payload = await req.json();
-    const { companyId, userId, ...data } = payloadValidator.parse(payload);
-
-    // Auth + privileged client. Throws on missing/insufficient permission.
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory", // <module>_<action> the caller must hold; create/view/delete also valid
-    });
-
-    // ...work using `client` (service-role supabase, RLS bypassed)...
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    await requireServiceRole(req); // or requireCaller — defined in this file
+    const body = await req.json();
+    // ...validate body, do the work...
+    return json({ success: true });
   } catch (err) {
-    console.error(`Error in <name>:`, err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("<name> failed", err);
+    return json({ message: (err as Error).message }, 500);
   }
 });
 ```
 
-### Auth: `requirePermissions` (NOT ad-hoc client construction)
-
-`requirePermissions(req, companyId, userId, permissions)` from `../lib/supabase.ts`
-is the gate. It handles **both** auth paths — `Authorization: Bearer <jwt>` and the
-`carbon-key` API-key header (with rate-limit + scope checks) — verifies the
-`<module>_<action>` permission via `get_claims`, and returns a **service-role**
-`SupabaseClient<Database>` (RLS bypassed). It **throws** on denial; let the throw
-hit the `catch`. `companyId`/`userId` come from the validated payload, not headers.
-(Lower-level helpers `getSupabase` / `getSupabaseServiceRole` / `getAuthFromAPIKey`
-exist in the same file but `requirePermissions` is the standard entry point.)
-
-## 4. Database-heavy work — Kysely transactions
-
-For multi-row / multi-table writes, init the pool **once at module scope** and use
-a Kysely transaction (the `post-*` and `create` functions do this):
-
-```typescript
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-
-const pool = getConnectionPool(1);            // module scope, not per-request
-const db = getDatabaseClient<DB>(pool);
-
-await db.transaction().execute(async (trx) => {
-  await trx.insertInto("tableName").values({
-    id: nanoid(),
-    companyId,
-    createdBy: userId,
-    createdAt: new Date().toISOString(),
-    ...data,
-  }).execute();
-});
-```
-
-- `getConnectionPool` / `getDatabaseClient` / `DB` come from `../lib/database.ts`
-  (it re-exports `getPostgresConnectionPool` / `getPostgresClient` from
-  `lib/postgres/index.ts`; `DB` = `KyselyDatabase`).
-- Kysely **bypasses RLS and throws on rollback** — authorize first with
-  `requirePermissions`, wrap in `try/catch`.
-- Multi-tenancy: always include `companyId`; always set audit fields
-  (`createdBy`/`createdAt`, `updatedBy`/`updatedAt`).
-
-### Shared helpers (real paths)
-
-- Sequence numbers: `import { getNextSequence } from "../shared/get-next-sequence.ts";`
-- Other shared business logic lives in `../shared/` (`calculate-cogs.ts`,
-  `get-accounting-period.ts`, `sampling-engine.ts`, …). Generic DB/auth helpers
-  live in `../lib/`.
-
 ## 5. Invoke from app code
 
-App services call functions through the supabase client — do **not** hit a raw
-HTTP port. `body` is the JSON payload your validator expects; you get back
-`{ data, error }`.
-
 ```typescript
-// e.g. apps/erp/app/modules/.../*.service.ts (client is from requirePermissions)
-const { data, error } = await client.functions.invoke("post-receipt", {
-  body: { type: "post", receiptId, companyId, userId },
+const { data, error } = await client.functions.invoke("embedding", {
+  body: { text },
 });
 ```
 
-Real call sites: `serviceRole.functions.invoke("create", { body: {...} })`,
-`...invoke("mrp", { body: { ...params } })`, `...invoke("schedule", { body })`,
-`...invoke("import-csv", { body })`.
-
-The route's `requirePermissions` is **not** sufficient on its own, and believing it
-was is what produced the cross-tenant write in
-`.ai/specs/2026-08-25-backup-durability.md` Part 3. It proves the CALLER may act in
-`companyId`; it proves nothing about the RECORD IDS in the body, which usually come
-straight from the URL. When the invocation is service-role, RLS is not there to
-catch the mismatch either. So a function that takes a record id must re-read that
-record under `companyId` itself and 404 on a miss.
-
-The pattern is `functions/lib/company-records.ts`:
-
-- **Ids the function only writes as references** (a ledger's `locationId`, an
-  activity's `trackedEntityId`, a caller-chosen `purchaseOrderId`) — call
-  `assertCompanyRecords(db, table, ids, companyId, label)` once per table, right
-  after `requirePermissions`. It ignores null/undefined/duplicate ids (optional
-  fields stay optional), runs one query, and throws `RecordNotFoundError`. A table
-  must be on its `CompanyScopedTable` allow-list; add it there.
-- **The document the function acts on** (the receipt being posted, the invoice being
-  voided) — scope the EXISTING header read with `.eq("companyId", companyId)` and
-  `.maybeSingle()`, and 404 on a miss. Do not add a second pre-check query.
-- **Any other "X not found" miss** — throw `RecordNotFoundError`, not `Error`.
-
-`RecordNotFoundError` carries `status = 404`, and `errorResponse` (`lib/response.ts`)
-uses a numeric 4xx/5xx `err.status` over the status the catch block passes, so a
-catch block needs no `instanceof RecordNotFoundError` mapping.
-
-## 6. Local dev
+## 6. Local dev and CI
 
 Functions are served by the Docker `edge-runtime` container (`pnpm dev` / `crbn up`),
 which live-mounts `packages/database/supabase/functions/` — no per-edit deploy step.
-Locally `VERIFY_JWT` is `false`. Exercise the function by triggering the app path
-that calls `client.functions.invoke("<name>", ...)`.
-<!-- UNVERIFIED: invoking a local function directly via curl to the edge-runtime/Kong port — not a documented Carbon path; prefer driving it through the app's invoke() call site. -->
+Exercise a function through the app or job path that invokes it.
+
+CI (`.github/workflows/check.yml`, job `edge-functions`, Deno v2) runs
+`deno check --no-lock */index.ts` from the functions directory, after a step that
+fails any import reaching outside a function's own directory.
 
 ## 7. Deploy
 
-Deployment is **all-at-once**, not per-function. On push to `main` touching
-`packages/database/supabase/**`, CI runs `supabase functions deploy`
-(`ci/src/migrations.ts`), which deploys every `[functions.*]` with `enabled = true`
-(`supabase functions deploy`, no arguments → every directory under
-`supabase/functions/`, `config.toml` entry or not). There is **no
-`npm run db:deploy` / `db:deploy` script** — that was stale. Self-hosted instances
-sync separately via a server-side script (`.github/workflows/functions.yml`). You
-don't run a deploy manually; merging to `main` is what ships it.
+Deployment is all-at-once. On push to `main` touching `packages/database/supabase/**`,
+CI runs `supabase functions deploy` (`ci/src/migrations.ts`) with no arguments.
+Self-hosted instances sync separately (`.github/workflows/functions.yml`). Merging to
+`main` is what ships it.
 
 ## Checklist
 
-- [ ] `pnpm db:function:new <name>` (file at `functions/<name>/index.ts`)
+- [ ] `pnpm db:function:new <name>`; nothing imported from outside `functions/<name>/`
 - [ ] AGPL SPDX license header at the top of every new file (`pnpm --filter @carbon/checks license-headers`)
-- [ ] `[functions.<name>]` added to `config.toml` (`enabled`, `verify_jwt`) — for
-      the settings and for discoverability, NOT because it gates the deploy
-- [ ] CORS `OPTIONS` short-circuit returning `corsHeaders`
-- [ ] zod `payloadValidator` (`companyId` + `userId` always; discriminated union for multi-op)
-- [ ] Auth via `requirePermissions(req, companyId, userId, { <action>: "<module>" })`
-- [ ] Kysely transaction for multi-row writes; pool created at module scope
-- [ ] `companyId` + audit fields on every write
-- [ ] `try/catch` returning `{ error }` with `corsHeaders` + status 500
-- [ ] Called from app code via `client.functions.invoke("<name>", { body })`
+- [ ] `[functions.<name>]` in `config.toml` (`enabled`, `verify_jwt = true`)
+- [ ] CORS `OPTIONS` short-circuit
+- [ ] Payload validated
+- [ ] `requireCaller` or `requireServiceRole` defined and called in the function
+- [ ] Any record id re-read under `companyId`
+- [ ] Called via `client.functions.invoke("<name>", { body })`

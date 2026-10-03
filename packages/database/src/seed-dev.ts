@@ -28,7 +28,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { getPostgresConnectionPool } from "./client.ts";
+import { getProcessPool } from "./client.ts";
 import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
 import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
 import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
@@ -49,7 +49,7 @@ async function main() {
     `\nSeeding development environment for: ${email} (${datasetKey})\n`
   );
 
-  const pool = getPostgresConnectionPool(1);
+  const pool = getProcessPool();
   const client = await pool.connect();
   let seeded: { companyId: string; userId: string } | null = null;
 

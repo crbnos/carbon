@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { getFunctionLogger } from "@carbon/database/logging";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import type { BatchPlacement } from "./batch-scheduler.ts";
@@ -18,17 +18,10 @@ import {
 } from "./scheduling-engine.ts";
 
 /**
- * Whole-location forecast-first finite scheduling, extracted from the `schedule`
- * edge function's request handler so it can run in BOTH runtimes:
+ * Whole-location forecast-first finite scheduling, run in-process in Node: the
+ * ERP app and `@carbon/jobs` call this directly via `@carbon/planning`.
  *
- * - The Deno edge function (`schedule/index.ts`) — a thin wrapper that keeps
- *   auth/CORS and delegates here.
- * - In-process in Node — the ERP app and `@carbon/jobs` call this directly via
- *   `@carbon/database/scheduling`, eliminating the edge cold-start + HTTP hop
- *   that made a regen take >2s on trivial data.
- *
- * Same engine, same deterministic ordering, same outputs. The caller supplies a
- * Kysely `db` (Node pool or Deno pool) and a service-role `client`.
+ * The caller supplies a Kysely `db` and a service-role `client`.
  */
 
 export type NewlyLateJob = {
@@ -60,7 +53,7 @@ type BaseParams = {
   userId: string;
 };
 
-const log = getFunctionLogger("schedule");
+const log = getLogger("planning", "schedule");
 
 const deadlineRank = (deadlineType: string | null | undefined): number =>
   DEADLINE_PRIORITY[deadlineType ?? "No Deadline"] ?? 3;

@@ -808,7 +808,7 @@ export function BatchBuilder({
         fd.set("lotNumbers", JSON.stringify(lots.lotNumbers));
       }
       // Create & Release: the create validator's zfd.checkbox reads "on" and
-      // the edge fn inserts the batch already Active (on the floor).
+      // the server fn inserts the batch already Active (on the floor).
       if (opts?.release) fd.set("release", "on");
       if (opts?.purchaseOrdersBySupplierId) {
         fd.set(
@@ -876,9 +876,9 @@ export function BatchBuilder({
   );
 
   // Release needs a work center the batch can run at: the explicit pick, or —
-  // mirroring the edge fn's adoption rule — the single distinct work center
+  // mirroring the server fn's adoption rule — the single distinct work center
   // the selected members already sit on (members without one don't block
-  // adoption). Otherwise the edge fn refuses Create & Release.
+  // adoption). Otherwise the server fn refuses Create & Release.
   const memberWorkCenterIds = useMemo(() => {
     const ids = new Set<string>();
     for (const c of selected) {

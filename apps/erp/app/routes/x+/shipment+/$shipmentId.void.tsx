@@ -4,10 +4,11 @@
 
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,8 +20,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!shipmentId) throw new Error("shipmentId not found");
 
   try {
-    const serviceRole = getCarbonServiceRole();
-
     // Verify shipment is posted before allowing void
     const { data: shipment } = await client
       .from("shipment")
@@ -52,14 +51,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
-        type: "void",
-        shipmentId: shipmentId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
+    const voidShipment = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-shipment", { type: "void", shipmentId: shipmentId });
 
     if (voidShipment.error) {
       throw redirect(

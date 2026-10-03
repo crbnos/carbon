@@ -37,6 +37,7 @@ import {
 // sat unsaved until Order was pressed, and was dropped by Close.
 
 const SAVED = {
+  success: true,
   data: null,
   error: null,
   count: null,

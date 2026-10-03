@@ -12,10 +12,13 @@
 // THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
 // callOperation reconstructs the { success:false, error } envelope.
 
-import type { AuthField, ManifestEntry } from "@carbon/api";
+import type { AuthField, ContextSource, ManifestEntry } from "@carbon/api";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import { scopedToCompany } from "./company-scope.server";
+import { COMPANY_TABLES } from "./operations.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
@@ -195,15 +198,29 @@ export function extractOperation(args: Record<string, any> | undefined): {
 
 type UpsertRule = NonNullable<ManifestEntry["upsert"]>;
 
-/** Service params the dispatcher fills itself; the rest carry the payload. */
-const UPSERT_CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "userId",
-  "companyId",
-  "companyGroupId",
-  "eliminationClient"
-]);
+/**
+ * Whether the manifest says the dispatcher fills this positional param. The
+ * generator decides that from the service's signature and body
+ * (`contextParamsOf`), so no parameter name is recognised here.
+ */
+function isContextParam(meta: ManifestEntry, paramName: string): boolean {
+  return Object.hasOwn(meta.contextParams, paramName);
+}
+
+function contextValue(source: ContextSource, context: AuthedContext): unknown {
+  switch (source) {
+    case "client":
+      return scopedToCompany(context.client, context.companyId, COMPANY_TABLES);
+    case "db":
+      return getDatabaseClient();
+    case "userId":
+      return context.userId;
+    case "companyId":
+      return context.companyId;
+    case "companyGroupId":
+      return context.companyGroupId;
+  }
+}
 
 /**
  * A field of the RECORD the call is about: at the top level of the body, or
@@ -298,17 +315,6 @@ function declaredScalarParam(
     : undefined;
 }
 
-/** Params the loop fills from context rather than from the request body. */
-const CONTEXT_PARAM_NAMES = new Set([
-  "client",
-  "db",
-  "userId",
-  "companyId",
-  "companyGroupId",
-  "eliminationClient",
-  "args"
-]);
-
 /**
  * Is `paramName` a key the caller genuinely addresses, or does it just happen to
  * collide with a field of the object this param expects? A service whose sole
@@ -331,7 +337,7 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   if (!properties || !(paramName in properties)) return true;
 
   const payloadParams = meta.serviceParams.filter(
-    (p) => !CONTEXT_PARAM_NAMES.has(p)
+    (p) => !isContextParam(meta, p) && p !== "args"
   );
   if (payloadParams.length !== 1 || payloadParams[0] !== paramName) return true;
 
@@ -339,6 +345,81 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
     (k) => !(k !== paramName && meta.serviceParams.includes(k))
   );
   return own.length === 1 && own[0] === paramName;
+}
+
+function operationErrorCode(status: number) {
+  switch (status) {
+    case 400:
+      return "BAD_REQUEST";
+    case 403:
+      return "FORBIDDEN";
+    case 404:
+      return "NOT_FOUND";
+    case 409:
+      return "CONFLICT";
+    default:
+      return "INTERNAL_SERVER_ERROR";
+  }
+}
+
+/**
+ * Whether the schema declares `paramName` as an argument of its own that a
+ * caller may leave out — as opposed to the one payload param the body IS. A
+ * scalar is always its own argument. An object or a list is too when the
+ * service takes more than one payload param; when it is the only one, a caller
+ * may send its contents flat and the whole body is that param.
+ */
+function omittedNamedParam(meta: ManifestEntry, paramName: string): boolean {
+  if (declaredScalarParam(meta, paramName)) return true;
+  const properties = (meta.schema as { properties?: Record<string, unknown> })
+    ?.properties;
+  if (!properties || !(paramName in properties)) return false;
+  const payloadParams = meta.serviceParams.filter(
+    (p) => !isContextParam(meta, p) && p !== "args"
+  );
+  return payloadParams.length > 1;
+}
+
+/**
+ * The value with every default its schema publishes filled in, wherever the
+ * object holding the field was sent: through `properties`, each element of a
+ * list, and a union with exactly one alternative of the value's kind (a
+ * nullable object; `string | { limit, offset }`). A default is a promise to
+ * the caller, and a service typed from a validator's OUTPUT requires the
+ * field: a pivot sent `state: {}` crashed reading `state.columnAxis.type`. The
+ * generator publishes a default only where this walk reaches it
+ * (`publishDefaults`).
+ */
+export function withSchemaDefaults(schema: unknown, value: unknown): unknown {
+  if (!isRecord(schema)) return value;
+  const alternatives = schema.anyOf ?? schema.oneOf;
+  if (Array.isArray(alternatives)) {
+    const kind = Array.isArray(value)
+      ? "array"
+      : isRecord(value)
+        ? "object"
+        : "";
+    const fitting = alternatives.filter(
+      (alternative) => isRecord(alternative) && alternative.type === kind
+    );
+    return fitting.length === 1 ? withSchemaDefaults(fitting[0], value) : value;
+  }
+  if (Array.isArray(value)) {
+    return isRecord(schema.items)
+      ? value.map((element) => withSchemaDefaults(schema.items, element))
+      : value;
+  }
+  if (!isRecord(schema.properties) || !isRecord(value)) return value;
+  const filled: Record<string, unknown> = { ...value };
+  for (const [name, property] of Object.entries(schema.properties)) {
+    if (!isRecord(property)) continue;
+    if (filled[name] !== undefined) {
+      filled[name] = withSchemaDefaults(property, filled[name]);
+    } else if ("default" in property) {
+      filled[name] = structuredClone(property.default);
+    }
+  }
+  return filled;
 }
 
 function supabaseErrorMessage(error: unknown): string {
@@ -396,7 +477,7 @@ export async function dispatchOperation(
       (await resolveUpsertOperation(
         meta.upsert,
         normalizedArgs,
-        meta.serviceParams.filter((name) => !UPSERT_CONTEXT_PARAMS.has(name)),
+        meta.serviceParams.filter((name) => !isContextParam(meta, name)),
         async (table, filter) => {
           // Scoped to the caller's company on top of RLS: a user-scoped client
           // can see every company the user belongs to.
@@ -416,22 +497,23 @@ export async function dispatchOperation(
         }
       )));
 
+  // Published defaults are filled where the call supplies a whole value, and
+  // never on an update: there a field left out keeps what is stored. Each
+  // argument is filled against ITS schema once the body's shape is known —
+  // filling the raw body first would add keys beside a wrapper and change
+  // which shape it is read as.
+  const fills =
+    meta.defaults === "always" ||
+    (meta.defaults === "create" && operation === "create");
+  const filled = (schema: unknown, value: unknown) =>
+    fills ? withSchemaDefaults(schema, value) : value;
+  const declared = (meta.schema as { properties?: Record<string, unknown> })
+    ?.properties;
+
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {
-    if (paramName === "client") {
-      functionArgs.push(context.client);
-    } else if (paramName === "db") {
-      functionArgs.push(getDatabaseClient());
-    } else if (paramName === "userId") {
-      functionArgs.push(context.userId);
-    } else if (paramName === "companyId") {
-      functionArgs.push(context.companyId);
-    } else if (paramName === "companyGroupId") {
-      functionArgs.push(context.companyGroupId);
-    } else if (paramName === "eliminationClient") {
-      // A second client for consolidation reads, defaulted by the service to its
-      // own `client`. Context, never caller-supplied.
-      functionArgs.push(context.client);
+    if (isContextParam(meta, paramName)) {
+      functionArgs.push(contextValue(meta.contextParams[paramName], context));
     } else if (paramName === "args") {
       // Two wire shapes, told apart by the operation's own schema: when it
       // declares an `args` object the body is `{ args: {...} }`, otherwise the
@@ -440,41 +522,59 @@ export async function dispatchOperation(
       // inert, since setGenericQueryFilters reads only filters/sorts/offset/limit.
       const wrapped = normalizedArgs?.args;
       const value =
-        (meta.schema as { properties?: Record<string, unknown> })?.properties
-          ?.args &&
+        declared?.args &&
         wrapped &&
         typeof wrapped === "object" &&
         !Array.isArray(wrapped)
           ? wrapped
           : normalizedArgs || {};
       functionArgs.push(
-        enrichWithAuthContext(value, context, meta.injectAuth, operation)
-      );
-    } else if (
-      normalizedArgs &&
-      paramName in normalizedArgs &&
-      addressesWholeParam(meta, paramName)
-    ) {
-      functionArgs.push(
         enrichWithAuthContext(
-          normalizedArgs[paramName],
+          filled(declared?.args ?? meta.schema, value),
           context,
           meta.injectAuth,
           operation
         )
       );
     } else if (
-      declaredScalarParam(meta, paramName) &&
+      normalizedArgs &&
+      paramName in normalizedArgs &&
       addressesWholeParam(meta, paramName)
     ) {
-      // A scalar param with no matching key. The object fallbacks below would
-      // hand the service the whole payload as an id (`.eq("id", { apiKeyId })`
-      // matches nothing and reports success); `undefined` keeps the positional
-      // arity intact. A missing REQUIRED scalar is rejected earlier by input
-      // validation, so only optional ones legitimately reach here. The
+      // The param's own schema when it is published as an argument; the whole
+      // schema when the caller wrapped a flat payload in the param's name.
+      functionArgs.push(
+        enrichWithAuthContext(
+          filled(
+            declared?.[paramName] ?? meta.schema,
+            normalizedArgs[paramName]
+          ),
+          context,
+          meta.injectAuth,
+          operation
+        )
+      );
+    } else if (
+      omittedNamedParam(meta, paramName) &&
+      addressesWholeParam(meta, paramName)
+    ) {
+      // A param the caller addresses by name, with no matching key: it was
+      // left out. The object fallbacks below would hand the service the whole
+      // payload in its place — as an id (`.eq("id", { apiKeyId })` matches
+      // nothing and reports success), or as a list
+      // (`getActiveJobOperationsByLocation({ locationId })` sent the body as
+      // `workCenterIds` and Postgres answered "expected JSON array").
+      // `undefined` keeps the positional arity intact and lets the service's
+      // own default apply. A missing REQUIRED param is rejected earlier by
+      // input validation, so only optional ones legitimately reach here. The
       // addressesWholeParam guard keeps a collision op — whose same-named schema
       // entry describes a FIELD, so it looks scalar — falling through instead.
-      functionArgs.push(undefined);
+      const own = declared?.[paramName];
+      functionArgs.push(
+        fills && isRecord(own) && "default" in own
+          ? structuredClone(own.default)
+          : undefined
+      );
     } else if (
       normalizedArgs &&
       Object.keys(normalizedArgs).length === 1 &&
@@ -486,7 +586,7 @@ export async function dispatchOperation(
       // positionally (the documented `{ args: {...} }` wrapper, or a guessed key).
       functionArgs.push(
         enrichWithAuthContext(
-          Object.values(normalizedArgs)[0],
+          filled(meta.schema, Object.values(normalizedArgs)[0]),
           context,
           meta.injectAuth,
           operation
@@ -497,7 +597,7 @@ export async function dispatchOperation(
       // like upsertPart(client, part)).
       functionArgs.push(
         enrichWithAuthContext(
-          { ...normalizedArgs },
+          filled(meta.schema, { ...normalizedArgs }),
           context,
           meta.injectAuth,
           operation
@@ -530,16 +630,76 @@ export async function dispatchOperation(
     result = await result;
   }
 
-  // Supabase response shape { data, error, count } — unwrap, or throw on error.
-  if (result && typeof result === "object" && "data" in result) {
-    const r = result as { data: unknown; error?: unknown; count?: number };
-    if (r.error) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: supabaseErrorMessage(r.error),
-        data: { supabase: r.error }
-      });
-    }
-    return { data: r.data, count: r.count ?? undefined };
+  return readServiceResult(meta, result);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function serviceFailure(error: unknown): ORPCError<"BAD_REQUEST", unknown> {
+  return new ORPCError("BAD_REQUEST", {
+    message: supabaseErrorMessage(error),
+    data: { supabase: error }
+  });
+}
+
+/**
+ * Turn what the service returned into the operation's result, or throw when the
+ * service said it failed. A service does not throw, and where it puts the
+ * failure is read off its return type by the generator (`resultShape`).
+ *
+ * Only `{ data, error }` used to be read, and only when `data` was present, so
+ * a bare `{ error }`, a failed write inside a `Promise.all`, and `{ ok: false }`
+ * all went back to the caller as a success.
+ */
+function readServiceResult(
+  meta: ManifestEntry,
+  result: unknown
+): DispatchResult {
+  if (meta.resultShape === "envelopes" && Array.isArray(result)) {
+    const failed = result.find((item) => isRecord(item) && item.error);
+    if (failed) throw serviceFailure((failed as { error: unknown }).error);
+    return { data: result };
+  }
+
+  if (!isRecord(result)) return { data: result };
+
+  // An operation's error is already sanitized (empty when it came from the
+  // data layer) and carries its own status.
+  if (result.error instanceof ServerFnError) {
+    // A function whose thrown refusals default to 500 still reports its own
+    // message; that is the caller's to fix (as the edge path reported it),
+    // so only a data-layer failure — empty message — stays a server error.
+    const code =
+      result.error.status >= 500 && result.error.message
+        ? "BAD_REQUEST"
+        : operationErrorCode(result.error.status);
+    throw new ORPCError(code, {
+      message: result.error.message || "The operation could not be completed."
+    });
+  }
+
+  // Read whatever the manifest says: a truthy `error` on the result object is a
+  // failure under every shape, including a return type the checker saw as `any`.
+  if (result.error) throw serviceFailure(result.error);
+
+  if (
+    meta.resultShape === "flag" &&
+    (result.ok === false || result.success === false)
+  ) {
+    const reason = result.reason ?? result.message;
+    throw new ORPCError("BAD_REQUEST", {
+      message:
+        typeof reason === "string" ? reason : "The operation did not succeed."
+    });
+  }
+
+  if ("data" in result) {
+    return {
+      data: result.data,
+      count: (result.count as number | null | undefined) ?? undefined
+    };
   }
   return { data: result };
 }

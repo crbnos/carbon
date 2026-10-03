@@ -7,9 +7,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchase-invoice.post");
 
@@ -66,7 +68,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     return {
@@ -75,22 +80,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  if (!setPendingState.data?.length) {
+    return {
+      success: false,
+      message: "This purchase invoice has already been posted"
+    };
+  }
+
   let receiptIds: string[] | undefined;
 
   try {
     const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await serviceRole.functions.invoke<{
-      receiptIds?: string[];
-    }>("post-purchase-invoice", {
-      body: {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-purchase-invoice", {
         invoiceId: invoiceId,
-        userId: userId,
-        companyId: companyId,
         skipReceiptPost: skipReceiptPost
-      }
-    });
+      });
 
-    if (postPurchaseInvoice.error) {
+    if (posted.error) {
       await client
         .from("purchaseInvoice")
         .update({
@@ -104,7 +112,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
-    receiptIds = postPurchaseInvoice.data?.receiptIds;
+    receiptIds = posted.data?.receiptIds;
 
     // Check if we should update prices on invoice post
     const companySettings = await getCompanySettings(serviceRole, companyId);
@@ -112,19 +120,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       !companySettings.data?.purchasePriceUpdateTiming ||
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
     ) {
-      const priceUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
-        {
-          body: {
-            invoiceId: invoiceId,
-            companyId: companyId,
-            userId: userId,
-            source: "purchaseInvoice",
-            updatePrices: true,
-            updateLeadTimes: false
-          }
-        }
-      );
+      const priceUpdate = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("update-purchased-prices", {
+          invoiceId,
+          source: "purchaseInvoice",
+          updatePrices: true,
+          updateLeadTimes: false
+        });
 
       if (priceUpdate.error) {
         await client

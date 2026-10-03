@@ -55,6 +55,8 @@ export type Workspace = {
   database_password: string | null;
   jwt_key: string | null;
   service_role_key: string | null;
+  inngest_base_url: string | null;
+  inngest_event_key: string | null;
 };
 
 /**
@@ -217,6 +219,40 @@ async function migrate(): Promise<void> {
         await $$`supabase db push --include-all`;
         console.log(`✅ 🐣 Starting deployments for ${workspace.id}`);
         await $$`supabase functions deploy`;
+      }
+
+      // Postgres posts its Inngest events (util.send_inngest_event) to a URL in
+      // its Vault. This sets the event key in it, and the address only when
+      // none is stored yet: a changed `inngest_base_url` here needs
+      // set_inngest_event_url run by hand. The app does the same on boot from
+      // its own INNGEST_EVENT_KEY, so a workspace with no key here is wired by
+      // its first instance instead.
+      if (!workspace.inngest_event_key || !service_role_key) {
+        console.log(
+          `⏭️  📨 ${workspace.id} has no Inngest event key here: the app sets the database's event URL on boot`
+        );
+      } else {
+        // PostgREST reloads its schema a few seconds after a migration, so the
+        // function this run just created is not callable at once.
+        const eventUrlClient = createClient(database_url, service_role_key);
+        let eventUrlError: { message: string } | null = null;
+        for (let attempt = 1; attempt <= 6; attempt++) {
+          ({ error: eventUrlError } = await eventUrlClient.rpc(
+            "set_inngest_event_config",
+            {
+              p_key: workspace.inngest_event_key,
+              p_base_url: workspace.inngest_base_url ?? "https://inn.gs/",
+            }
+          ));
+          if (!eventUrlError) break;
+          await new Promise((resolve) => setTimeout(resolve, 5_000));
+        }
+        if (eventUrlError) {
+          console.error(
+            `🔴 📨 Failed to set the Inngest event URL for ${workspace.id}: ${eventUrlError.message}`
+          );
+          hasErrors = true;
+        }
       }
 
       if (!workspace.seeded) {

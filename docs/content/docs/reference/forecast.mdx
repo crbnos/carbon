@@ -3,7 +3,7 @@ title: Demand projections
 description: Enter expected future demand for a make part, week by week, so planning orders ahead of the sales orders that haven't landed yet.
 ---
 
-A <Term id="demand-projection">demand projection</Term> is your best guess at how much of a part you'll need in a given week, entered before any sales order exists to prove it. Planning treats that guess as demand: it nets it against what you already have coming, explodes the part's method to pull in its components, and suggests the jobs and purchase orders you'd need to be ready. Projections are how you tell Carbon "we expect to sell 40 of these in March" so the long-lead parts are ordered in time.
+A <Term id="demand-projection">demand projection</Term> is expected weekly demand for a part before sales orders exist. Planning nets projections against scheduled supply, explodes the part's method into component demand, and suggests required jobs and purchase orders.
 
 You enter projections under **Production → Demand Forecasts**, one part at a time, as a 52-week grid. Each cell is the quantity you expect to consume that week. Save it, and the next <Term>MRP</Term> run reads it.
 
@@ -51,7 +51,7 @@ The run turns projected demand into *suggested* jobs and purchase orders. Nothin
   <Field name="Week 1 … Week 52">Expected quantity consumed in each weekly bucket, starting from the current week. A blank or zero cell stores nothing.</Field>
 </FieldTable>
 
-Projections are a deliberately simple, manual input: there's no statistical or ML forecasting engine behind them, no seasonality model, no auto-generation from history. The schema reserves `forecastMethod` and `confidence` columns, but the Projections form writes neither — every projection is a hand-entered number. What makes them useful is the netting and BOM explosion on the planning side, not the forecasting itself.
+Projections are manual inputs. Carbon does not calculate them from history, seasonality, or a statistical model. Although the schema reserves `forecastMethod` and `confidence`, the Projections form does not write them. MRP provides the netting and BOM explosion.
 
 <AgentContext>
 ## Troubleshooting

@@ -3,9 +3,9 @@ title: Supplier quotes
 description: "A supplier's priced response to your RFQ, one per supplier, ready to convert into a purchase order."
 ---
 
-A **supplier quote** is a vendor's priced answer to a <Term id="rfq">purchasing RFQ</Term>: for the items you asked about, at the quantities you named, here's my price, my lead time, and my shipping. It's the buy side of a quote, and it is not a <Term id="quote">sales quote</Term>. A sales quote is what *you* send a customer; a supplier quote is what a *supplier* sends *you*.
+A **supplier quote** is a supplier's priced response to a <Term id="rfq">purchasing RFQ</Term>. It records price, lead time, and shipping for each requested item and quantity. It is distinct from a <Term id="quote">sales quote</Term>, which your company sends to a customer.
 
-You keep one quote per supplier per exchange, and once you've compared them you convert the winner into a <Term id="purchase-order">purchase order</Term>. Converting also writes the supplier's prices back onto the item's supplier part, so the next order already knows what this vendor charges.
+Each RFQ exchange stores one quote per supplier. You can compare the responses and convert the selected quote into a <Term id="purchase-order">purchase order</Term>. Conversion also updates the item's supplier-part price for later orders.
 
 ## Where a quote comes from
 
@@ -47,7 +47,7 @@ A quote is editable only while it's a **"Draft"**. Finalizing moves it to **"Act
 </StatusFlow>
 
 <Callout type="warning" title="Locked once it leaves Draft">
-Any status other than Draft locks the quote. If a supplier revises their pricing after you've finalized, you record the new numbers on a fresh quote rather than editing the old one, which keeps the paper trail intact for the comparison.
+Any status other than Draft locks the quote. Record post-finalization price revisions on a new quote to preserve the comparison history.
 </Callout>
 
 ## The supplier's link
@@ -60,7 +60,7 @@ Both flows are open only while the quote is a **"Draft"**; once submitted or dec
 
 When you've picked a winning quote, **"Convert to Order"** turns it into a purchase order. You choose which lines and which quantity tier to buy, and Carbon raises a purchase order for that supplier with the item lines, the supplier's contact and location, and the exchange rate all carried across from the quote. If the quote came from an RFQ, the new order is linked back to that RFQ.
 
-Converting does one more thing that matters: it updates the item's **supplier part**. For each converted line Carbon writes the quantity-break prices onto that supplier's `supplierPart` for the item (source: `Purchase Order`), and sets the supplier part's headline unit price to the best tier. So the quote doesn't just produce one order, it teaches Carbon what this vendor charges for the part going forward.
+Conversion also updates the item's **supplier part**. For each converted line, Carbon writes quantity-break prices to the supplier's `supplierPart` record (source: `Purchase Order`) and sets its primary unit price to the best tier. Later orders can reuse these prices.
 
 <Callout type="note" title="Converting updates item costs">
 The quantity-break prices land on the supplier part in *inventory* units: the supplier's per-purchase-unit price is divided by both the exchange rate and the conversion factor before it's stored. That's why a quote in another currency, in the supplier's pack size, still shows a sensible per-stock-unit cost afterward.
@@ -83,7 +83,7 @@ Finalizing with the notification method set to `Email` but no supplier contact s
 Your company requires supplier approval, and this supplier's status isn't `Active`. Approve the supplier (set them to Active) before converting the quote, or the Convert to Order action stays blocked.
 
 ### "Failed to convert quote to order"
-The convert edge function returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
+The convert server function returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
 
 ### Why is the quote read-only / why can't I edit lines?
 A supplier quote is editable only while its status is `Draft`. Any other status (`Active`, `Expired`, `Declined`, `Cancelled`) locks it. Record revised pricing on a fresh quote rather than editing a finalized one.

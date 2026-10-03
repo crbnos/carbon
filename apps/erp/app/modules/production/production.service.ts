@@ -13,12 +13,17 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
+  async,
   chunkArray,
+  datetime,
+  getErrorMessage,
   groupBy,
   nameSimilarity,
   scrapAllowance,
-  tiptapToText
+  tiptapToText,
+  unchecked
 } from "@carbon/utils";
 import type {
   AssemblyGraph,
@@ -32,7 +37,7 @@ import {
   describeStep,
   groupComponentNodeIds,
   indexAssemblyGraph,
-  joinTargets
+  validateSubAssemblies
 } from "@carbon/viewer";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -42,7 +47,6 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -119,6 +123,7 @@ const logger = getLogger("erp", "production");
 /** @mcp update */
 export async function convertSalesOrderLinesToJobs(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     orderId,
     companyId,
@@ -346,52 +351,46 @@ export async function convertSalesOrderLinesToJobs(
         });
 
         if (quoteId && !reconfigured) {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
               type: "quoteLineToJob",
               sourceId: `${quoteId}:${line.id}`,
-              targetId: createJob.data.id,
-              companyId,
-              userId
-            }
-          });
+              targetId: createJob.data.id
+            });
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }
         } else {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
               type: "itemToJob",
               sourceId: data.itemId,
               targetId: createJob.data.id,
-              companyId,
-              userId,
               ...(configuration ? { configuration } : {})
-            }
-          });
+            });
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }
         }
 
-        await client.functions.invoke("recalculate", {
-          body: {
+        await serverFns
+          .as({ client, db, companyId, userId })
+          .invoke("recalculate", {
             type: "jobRequirements",
-            id: createJob.data.id,
-            companyId,
-            userId
-          }
-        });
+            id: createJob.data.id
+          });
 
-        await assignJobSerialNumbers(client, {
+        await assignJobSerialNumbers(client, db, {
           jobId: createJob.data.id,
           itemId: data.itemId,
           companyId,
@@ -621,6 +620,7 @@ export async function deleteProcedureParameter(
 /** @mcp delete */
 export async function deleteProductionEvent(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   productionEventId: string,
   companyId: string,
   userId: string
@@ -636,17 +636,19 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const reversal = await client.functions.invoke<{
-      success: boolean;
-      reason?: string;
-    }>("post-production-event", {
-      body: { productionEventId, companyId, userId, reverse: true }
-    });
+    const reversal = await serverFns
+      .as({ client, db, companyId, userId })
+      .invoke("post-production-event", {
+        productionEventId,
+        reverse: true
+      });
     if (reversal.error) {
       return {
         data: null,
         error: {
-          message: `Failed to reverse the event's journal entry: ${reversal.error.message}`
+          message: `Failed to reverse the event's journal entry: ${
+            reversal.error.message || "unknown error"
+          }`
         }
       };
     }
@@ -959,7 +961,7 @@ export const getPartDocuments = async (
 export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: Job,
+  job: Pick<Job, "id" | "salesOrderLineId" | "quoteLineId">,
   itemId: string
 ): Promise<StorageItem[]> {
   const itemFiles = await getPartDocuments(client, companyId, { itemId });
@@ -2810,8 +2812,7 @@ export async function recalculateJobOperationDependencies(
   if (error || !job?.locationId) {
     return { data: null, error: error ?? new Error("Job has no location") };
   }
-  // Regenerate the whole location IN-PROCESS (Node) instead of round-tripping to
-  // the `schedule` edge function — no cold start, no HTTP hop. The caller's
+  // Regenerate the whole location IN-PROCESS (Node). The caller's
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
@@ -2834,35 +2835,37 @@ export async function recalculateJobOperationDependencies(
 /** @mcp update */
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
       type: "jobRequirements",
       ...params
-    }
-  });
+    });
 }
 
 /** @mcp update */
 export async function recalculateJobMakeMethodRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job make method id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
       type: "jobMakeMethodRequirements",
       ...params
-    }
-  });
+    });
 }
 
 /** @mcp update */
@@ -2882,8 +2885,7 @@ export async function runMRP(
     userId: string;
   }
 ) {
-  // Run MRP IN-PROCESS (Node) instead of round-tripping to the `mrp` edge
-  // function — no cold start, no HTTP hop. The caller's service-role client does
+  // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
@@ -3316,69 +3318,39 @@ export async function updateJobOperationStatus(
 }
 
 /**
- * Flush un-consumed picked material staged at lineside back to the warehouse
- * after an operation went 'Done'. If the operation was the last one, the SQL
- * interceptor has already completed the job — sweep the whole job (both
- * returnPickedMaterialTiming policies); otherwise sweep this operation's lines
- * (the post-picking edge function no-ops unless the policy is 'operation').
- * Pass a service-role client so the picking lines are readable regardless of
- * the caller's inventory permissions. Idempotent.
+ * Returns picked-but-unconsumed material an operation left at lineside once it
+ * is Done; when that completed the job, the whole job's remainder. Pass a
+ * service-role client so the picking lines are readable regardless of the
+ * caller's inventory permissions. Idempotent.
  */
 export async function returnPickedRemaindersForOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { data: null, error: op.error };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { data: null, error: job.error };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  return client.functions.invoke("post-picking", { body });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
 }
 
 /**
  * Job-scope sweep after an explicit job completion (the ERP Complete button).
- * The edge function guards on job.status = 'Completed' and is idempotent.
+ * post-picking guards on job.status = 'Completed' and is idempotent.
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; userId: string; companyId: string }
 ) {
-  return client.functions.invoke("post-picking", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
       type: "returnJobRemainders",
-      jobId: args.jobId,
-      userId: args.userId,
-      companyId: args.companyId
-    }
-  });
+      jobId: args.jobId
+    });
 }
 
 /** @mcp update */
@@ -3532,6 +3504,7 @@ export async function upsertProductionQuantity(
  */
 export async function insertJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     itemId: string;
     quantity: number;
@@ -3551,7 +3524,6 @@ export async function insertJob(
     salesOrderLineId?: string;
     quoteId?: string;
     quoteLineId?: string;
-    parentJobId?: string;
     modelUploadId?: string;
     notes?: string;
     customFields?: Json;
@@ -3673,7 +3645,6 @@ export async function insertJob(
       salesOrderLineId: input.salesOrderLineId,
       quoteId: input.quoteId,
       quoteLineId: input.quoteLineId,
-      parentJobId: input.parentJobId,
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
@@ -3712,28 +3683,26 @@ export async function insertJob(
       (input.quoteId && input.quoteLineId ? "quoteLine" : "item");
 
     if (methodSource === "quoteLine" && input.quoteId && input.quoteLineId) {
-      const body: Record<string, unknown> = {
-        type: "quoteLineToJob",
-        sourceId: `${input.quoteId}:${input.quoteLineId}`,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "quoteLineToJob",
+          sourceId: `${input.quoteId}:${input.quoteLineId}`,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from quote line", { error });
       }
     } else {
-      const body: Record<string, unknown> = {
-        type: "itemToJob",
-        sourceId: input.itemId,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "itemToJob",
+          sourceId: input.itemId,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from item", { error });
       }
@@ -3741,7 +3710,7 @@ export async function insertJob(
   }
 
   // Assign configured serial numbers to the job's tracked entities (best-effort).
-  await assignJobSerialNumbers(client, {
+  await assignJobSerialNumbers(client, db, {
     jobId: createdJobId,
     itemId: input.itemId,
     companyId: input.companyId,
@@ -3749,14 +3718,12 @@ export async function insertJob(
   });
 
   if (!options?.skipRecalculate) {
-    await client.functions.invoke("recalculate", {
-      body: {
+    await serverFns
+      .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+      .invoke("recalculate", {
         type: "jobRequirements",
-        id: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      }
-    });
+        id: createdJobId
+      });
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
@@ -3764,12 +3731,13 @@ export async function insertJob(
 
 /**
  * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the edge function entirely unless the item has
+ * Best-effort and cheap: it skips the operation entirely unless the item has
  * an `itemSerialSequence` configured. Shared by every job-creation path so serial
  * numbering is applied consistently (insertJob, sales-order conversion, ...).
  */
 async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; itemId: string; companyId: string; userId: string }
 ) {
   const serialSequence = await client
@@ -3789,14 +3757,11 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
-
-  const { error } = await client.functions.invoke("assign-serial-numbers", {
-    body: {
-      jobId: args.jobId,
-      companyId: args.companyId,
-      userId: args.userId
-    }
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("assign-serial-numbers", {
+      jobId: args.jobId
+    });
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
   }
@@ -3822,7 +3787,6 @@ export async function updateJob(
     salesOrderLineId?: string | null;
     quoteId?: string | null;
     quoteLineId?: string | null;
-    parentJobId?: string | null;
     modelUploadId?: string | null;
     notes?: string | null;
     customFields?: Json;
@@ -3856,12 +3820,14 @@ export async function updateJob(
 
   return client
     .from("job")
-    .update({
-      ...sanitize(updates),
-      ...(priority !== undefined && { priority }),
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        ...sanitize(updates),
+        ...(priority !== undefined && { priority }),
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .eq("id", id)
     .select("id")
     .single();
@@ -3964,6 +3930,7 @@ export async function upsertJobMaterial(
  */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobOperation:
     | (z.infer<typeof jobOperationValidator> & {
         jobId: string;
@@ -4010,15 +3977,18 @@ export async function upsertJobOperation(
   if (!operationId) return operationInsert;
 
   if (normalized.procedureId && "createdBy" in normalized) {
-    const { error } = await client.functions.invoke("get-method", {
-      body: {
-        type: "procedureToOperation",
-        sourceId: normalized.procedureId,
-        targetId: operationId,
+    const { error } = await serverFns
+      .as({
+        client,
+        db,
         companyId: normalized.companyId,
         userId: normalized.createdBy
-      }
-    });
+      })
+      .invoke("get-method", {
+        type: "procedureToOperation",
+        sourceId: normalized.procedureId,
+        targetId: operationId
+      });
     if (error) {
       return {
         data: null,
@@ -4498,6 +4468,7 @@ export async function setJobOperationToolStepLink(
 /** @mcp upsert */
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
@@ -4555,21 +4526,21 @@ export async function upsertJobMethod(
     body.parts = jobMethod.parts;
   }
 
-  const getMethodResult = await client.functions.invoke("get-method", {
-    body
-  });
+  const getMethodResult = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
   if (getMethodResult.error) {
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
+        message: getErrorMessage(
           getMethodResult.error,
           "Failed to get job method"
         )
       } as PostgrestError
     };
   }
-  return recalculateJobRequirements(client, {
+  return recalculateJobRequirements(client, db, {
     id: jobMethod.targetId,
     companyId: jobMethod.companyId,
     userId: jobMethod.userId
@@ -4579,6 +4550,7 @@ export async function upsertJobMethod(
 /** @mcp upsert */
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMaterial: {
     sourceId: string;
     targetId: string;
@@ -4635,18 +4607,15 @@ export async function upsertJobMaterialMakeMethod(
     body.parts = jobMaterial.parts;
   }
 
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 
   if (error) {
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
-          error,
-          "Failed to pull method"
-        )
+        message: getErrorMessage(error, "Failed to pull method")
       } as PostgrestError
     };
   }
@@ -4663,6 +4632,7 @@ export async function upsertJobMaterialMakeMethod(
  */
 export async function pullJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobMaterialId: string;
     itemId: string;
@@ -4689,7 +4659,7 @@ export async function pullJobMaterialMakeMethod(
     };
   }
 
-  return upsertJobMaterialMakeMethod(client, {
+  return upsertJobMaterialMakeMethod(client, db, {
     sourceId: args.itemId,
     targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
     companyId: args.companyId,
@@ -4700,6 +4670,7 @@ export async function pullJobMaterialMakeMethod(
 /** @mcp upsert */
 export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4715,21 +4686,25 @@ export async function upsertMakeMethodFromJob(
     };
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
       type: "jobToItem",
       sourceId: jobMethod.sourceId,
       targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
       parts: jobMethod.parts
-    }
-  });
+    });
 }
 
 /** @mcp upsert */
 export async function upsertMakeMethodFromJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4745,16 +4720,19 @@ export async function upsertMakeMethodFromJobMethod(
     };
   }
 ) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
+  const { error } = await serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
       type: "jobMakeMethodToItem",
       sourceId: jobMethod.sourceId,
       targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
       parts: jobMethod.parts
-    }
-  });
+    });
 
   if (error) {
     return {
@@ -4957,17 +4935,15 @@ export async function upsertFailureMode(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in failureMode) {
-    return client
-      .from("maintenanceFailureMode")
-      .insert([failureMode])
-      .select("id");
-  } else {
-    return client
-      .from("maintenanceFailureMode")
-      .update(sanitize(failureMode))
-      .eq("id", failureMode.id);
+  // maintenanceFailureMode has no customFields column.
+  const { customFields: _customFields, ...mode } = failureMode;
+  if ("createdBy" in mode) {
+    return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
+  return client
+    .from("maintenanceFailureMode")
+    .update(sanitize(mode))
+    .eq("id", mode.id);
 }
 
 export async function upsertMaintenanceDispatch(
@@ -6424,7 +6400,7 @@ export async function notifyScheduleInputsChanged(
 
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
 // Execution lives in MES (the operation view's batch mode); ERP composes
-// batches on the schedule board, mutates them via the batch-operations edge fn,
+// batches on the schedule board, mutates them via the batch-operations server fn,
 // and lists past/active batches at /x/production/batches.
 
 // Count of operations that COULD be batched but aren't yet — unbatched ops on a
@@ -6746,6 +6722,7 @@ export async function getBatchableProcesses(
 /** @mcp create */
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationIds: string[];
     locationId: string;
@@ -6761,14 +6738,19 @@ export async function createJobOperationBatch(
     userId: string;
   }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "create", ...args }
-  });
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "create",
+      ...input
+    });
 }
 
 /** @mcp update */
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
     batchId: string;
@@ -6778,30 +6760,41 @@ export async function updateJobOperationBatch(
     userId: string;
   }
 ) {
-  const { type, ...rest } = args;
-  return client.functions.invoke("batch-operations", {
-    body: { type, ...rest }
-  });
+  const { companyId, userId, ...input } = args;
+  // add/remove need jobOperationIds; the operation re-validates the shape.
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", input as ServerFnInput<"batch-operations">);
 }
 
 /** @mcp update */
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "release", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "release",
+      batchId
+    });
 }
 
 /** @mcp action */
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "unrelease", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "unrelease",
+      batchId
+    });
 }
 
 // --- Assembly Instructions ---------------------------------------------
@@ -7100,6 +7093,9 @@ export async function copyAssemblyInstructionAsVersion(
         assemblyInstructionId: newInstructionId,
         parentStepId: step.parentStepId
           ? (stepIdMap.get(step.parentStepId) ?? null)
+          : null,
+        usedInStepId: step.usedInStepId
+          ? (stepIdMap.get(step.usedInStepId) ?? null)
           : null,
         // Lineage across versions: a step copied from v1 roots at v1's step, and
         // a v3 copied from v2 still roots at v1 — the chain stays flat so
@@ -7523,25 +7519,52 @@ export async function invalidateAssemblyModelCache(
     .eq("id", modelUploadId);
 }
 
+type AssemblyStepFields = {
+  title?: string | null;
+  type?: Database["public"]["Enums"]["procedureStepType"];
+  description?: Json;
+  required?: boolean;
+  unitOfMeasureCode?: string | null;
+  minValue?: number | null;
+  maxValue?: number | null;
+  listValues?: string[] | null;
+  componentNodeIds?: string[];
+  motion?: z.infer<typeof motionSchema>;
+  camera?: z.infer<typeof cameraSchema> | null;
+  fastener?: z.infer<typeof fastenerSchema> | null;
+  durationSeconds?: number | null;
+};
+
+/** A new step's columns, shared by both insert paths. */
+function newAssemblyStepColumns(data: AssemblyStepFields) {
+  return {
+    title: data.title ?? null,
+    type: data.type ?? "Task",
+    description: data.description ?? {},
+    instructionText:
+      data.description !== undefined
+        ? tiptapToText(data.description as JSONContent) || null
+        : null,
+    required: data.required ?? false,
+    unitOfMeasureCode:
+      data.type === "Measurement" ? (data.unitOfMeasureCode ?? null) : null,
+    minValue: data.type === "Measurement" ? (data.minValue ?? null) : null,
+    maxValue: data.type === "Measurement" ? (data.maxValue ?? null) : null,
+    listValues: data.type === "List" ? (data.listValues ?? null) : null,
+    componentNodeIds: data.componentNodeIds ?? [],
+    motion: (data.motion ?? { type: "none" }) as Json,
+    camera: (data.camera ?? null) as Json | null,
+    fastener: (data.fastener ?? null) as Json | null,
+    durationSeconds: data.durationSeconds ?? null
+  };
+}
+
 /** @mcp upsert */
 export async function upsertAssemblyInstructionStep(
   client: SupabaseClient<Database>,
-  data: {
+  data: AssemblyStepFields & {
     id?: string;
     assemblyInstructionId: string;
-    title?: string | null;
-    type?: Database["public"]["Enums"]["procedureStepType"];
-    description?: Json;
-    required?: boolean;
-    unitOfMeasureCode?: string | null;
-    minValue?: number | null;
-    maxValue?: number | null;
-    listValues?: string[] | null;
-    componentNodeIds?: string[];
-    motion?: z.infer<typeof motionSchema>;
-    camera?: z.infer<typeof cameraSchema> | null;
-    fastener?: z.infer<typeof fastenerSchema> | null;
-    durationSeconds?: number | null;
     sortOrder?: number;
     companyId: string;
     createdBy: string;
@@ -7607,24 +7630,7 @@ export async function upsertAssemblyInstructionStep(
     .from("assemblyInstructionStep")
     .insert({
       assemblyInstructionId: data.assemblyInstructionId,
-      title: data.title ?? null,
-      type: data.type ?? "Task",
-      description: data.description ?? {},
-      instructionText:
-        data.description !== undefined
-          ? tiptapToText(data.description as JSONContent) || null
-          : null,
-      required: data.required ?? false,
-      unitOfMeasureCode:
-        data.type === "Measurement" ? (data.unitOfMeasureCode ?? null) : null,
-      minValue: data.type === "Measurement" ? (data.minValue ?? null) : null,
-      maxValue: data.type === "Measurement" ? (data.maxValue ?? null) : null,
-      listValues: data.type === "List" ? (data.listValues ?? null) : null,
-      componentNodeIds: data.componentNodeIds ?? [],
-      motion: (data.motion ?? { type: "none" }) as Json,
-      camera: (data.camera ?? null) as Json | null,
-      fastener: (data.fastener ?? null) as Json | null,
-      durationSeconds: data.durationSeconds ?? null,
+      ...newAssemblyStepColumns(data),
       sortOrder: data.sortOrder ?? (await getNextStepSortOrder(client, data)),
       companyId: data.companyId,
       createdBy: data.createdBy
@@ -7714,56 +7720,394 @@ export async function updateAssemblyStepHiddenComponents(
     .single();
 }
 
-// Sub-assembly staging: `parentStepId` = the later JOIN step this step is built
-// aside for (NULL = built in place). Which links are allowed is `joinTargets`,
-// the one rule the select and playback share.
-/** @mcp update */
-export async function updateAssemblyStepJoin(
-  client: SupabaseClient<Database>,
-  data: {
-    assemblyInstructionId: string;
-    stepId: string;
-    joinStepId: string | null;
+// Sub-assemblies: a header row (`isSubAssembly`) plus the steps whose
+// `parentStepId` is the header, stored directly before it (play order). A
+// header's `usedInStepId` is the later step that fits the finished unit.
+// Every structural write loads the instruction's steps, applies the change in
+// memory, checks `validateSubAssemblies` (the same rules the editor offers
+// actions by) and writes the new order in one transaction.
+
+type StepStructureRow = {
+  id: string;
+  sortOrder: number;
+  componentNodeIds: string[];
+  parentStepId: string | null;
+  usedInStepId: string | null;
+  isSubAssembly: boolean;
+};
+
+async function loadStepStructure(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  assemblyInstructionId: string
+): Promise<StepStructureRow[]> {
+  // Locking the instruction row serializes every structural write on it, so
+  // each one validates against the order the previous one committed.
+  const instruction = await db
+    .selectFrom("assemblyInstruction")
+    .select("status")
+    .where("id", "=", assemblyInstructionId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!instruction) throw new Error("Assembly instruction not found");
+  if (instruction.status !== "Draft") {
+    throw new Error("Only draft instructions can be edited");
+  }
+
+  return db
+    .selectFrom("assemblyInstructionStep")
+    .select([
+      "id",
+      "sortOrder",
+      "componentNodeIds",
+      "parentStepId",
+      "usedInStepId",
+      "isSubAssembly"
+    ])
+    .where("assemblyInstructionId", "=", assemblyInstructionId)
+    .where("companyId", "=", companyId)
+    .orderBy("sortOrder", "asc")
+    .execute();
+}
+
+function assertValidStepStructure(steps: StepStructureRow[]) {
+  const [violation] = validateSubAssemblies(steps);
+  if (violation) throw new Error(violation.message);
+}
+
+/**
+ * Write `next` (the instruction's steps in their new play order) as sortOrder
+ * 1..n plus each row's sub-assembly links. Only rows that changed are touched.
+ */
+async function saveStepStructure(
+  db: Kysely<KyselyDatabase>,
+  args: {
     companyId: string;
-    updatedBy: string;
+    userId: string;
+    assemblyInstructionId: string;
+    before: StepStructureRow[];
+    next: StepStructureRow[];
   }
 ) {
-  const steps = await client
-    .from("assemblyInstructionStep")
-    .select("id, parentStepId")
-    .eq("assemblyInstructionId", data.assemblyInstructionId)
-    .eq("companyId", data.companyId)
-    .order("sortOrder", { ascending: true });
-  if (steps.error) return { data: null, error: steps.error };
+  const beforeById = new Map(args.before.map((step) => [step.id, step]));
+  const changed = args.next
+    .map((step, index) => ({ ...step, sortOrder: index + 1 }))
+    .filter((step) => {
+      const was = beforeById.get(step.id);
+      return (
+        !was ||
+        was.sortOrder !== step.sortOrder ||
+        was.parentStepId !== step.parentStepId ||
+        was.usedInStepId !== step.usedInStepId
+      );
+    });
+  if (changed.length === 0) return;
 
-  const rows = steps.data.map((row) => ({
-    id: row.id,
-    joinStepId: row.parentStepId
-  }));
-  if (!rows.some((row) => row.id === data.stepId)) {
-    return { data: null, error: { message: "Step not found" } };
+  const values = sql.join(
+    changed.map(
+      (step) =>
+        sql`(${step.id}::text, ${step.sortOrder}::double precision, ${step.parentStepId}::text, ${step.usedInStepId}::text)`
+    )
+  );
+  const { rows } = await sql<{ id: string }>`
+    UPDATE "assemblyInstructionStep" AS t
+    SET "sortOrder" = v."sortOrder",
+        "parentStepId" = v."parentStepId",
+        "usedInStepId" = v."usedInStepId",
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${datetime.timestamp()}
+    FROM (VALUES ${values}) AS v("id", "sortOrder", "parentStepId", "usedInStepId")
+    WHERE t."id" = v."id"
+      AND t."companyId" = ${args.companyId}
+      AND t."assemblyInstructionId" = ${args.assemblyInstructionId}
+    RETURNING t."id"
+  `.execute(db);
+  if (rows.length !== changed.length) {
+    throw new Error("Some steps are not on this instruction");
   }
-  if (
-    data.joinStepId &&
-    !joinTargets(rows, data.stepId).targets.includes(data.joinStepId)
-  ) {
-    return {
-      data: null,
-      error: { message: "That step can't be the join step for this one" }
+}
+
+/**
+ * Wrap a top-level step into a new sub-assembly; the step becomes its first step.
+ * @mcp action
+ */
+export async function makeAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    stepId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, stepId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const step = before.find((s) => s.id === stepId);
+    if (!step) throw new Error("Step not found");
+    if (step.isSubAssembly) {
+      throw new Error("This step is already a sub-assembly");
+    }
+    if (step.parentStepId) {
+      throw new Error("This step is already in a sub-assembly");
+    }
+
+    const header = await trx
+      .insertInto("assemblyInstructionStep")
+      .values({
+        assemblyInstructionId,
+        companyId,
+        sortOrder: step.sortOrder,
+        isSubAssembly: true,
+        createdBy: userId
+      })
+      .returning(["id", "sortOrder"])
+      .executeTakeFirstOrThrow();
+
+    const headerRow: StepStructureRow = {
+      id: header.id,
+      sortOrder: header.sortOrder,
+      componentNodeIds: [],
+      parentStepId: null,
+      usedInStepId: null,
+      isSubAssembly: true
     };
-  }
+    const next = before.flatMap((s) =>
+      s.id === stepId ? [{ ...s, parentStepId: header.id }, headerRow] : [s]
+    );
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: [...before, headerRow],
+      next
+    });
+    return header.id;
+  });
+}
 
-  return client
-    .from("assemblyInstructionStep")
-    .update({
-      parentStepId: data.joinStepId,
-      updatedBy: data.updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", data.stepId)
-    .eq("companyId", data.companyId)
-    .select("id")
-    .single();
+/**
+ * Add a step at the end of the instruction, or at the end of the sub-assembly
+ * `parentStepId` names (directly before its header).
+ * @mcp create
+ */
+export async function insertAssemblyInstructionStep(
+  db: Kysely<KyselyDatabase>,
+  args: AssemblyStepFields & {
+    assemblyInstructionId: string;
+    parentStepId?: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, parentStepId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    if (
+      parentStepId &&
+      !before.find((s) => s.id === parentStepId)?.isSubAssembly
+    ) {
+      throw new Error("Sub-assembly not found");
+    }
+
+    const step = await trx
+      .insertInto("assemblyInstructionStep")
+      .values({
+        assemblyInstructionId,
+        companyId,
+        ...newAssemblyStepColumns(args),
+        sortOrder: before.length + 1,
+        parentStepId: parentStepId ?? null,
+        createdBy: userId
+      })
+      .returning(["id", "sortOrder", "componentNodeIds"])
+      .executeTakeFirstOrThrow();
+
+    const stepRow: StepStructureRow = {
+      ...step,
+      parentStepId: parentStepId ?? null,
+      usedInStepId: null,
+      isSubAssembly: false
+    };
+    const next = parentStepId
+      ? before.flatMap((s) => (s.id === parentStepId ? [stepRow, s] : [s]))
+      : [...before, stepRow];
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: [...before, stepRow],
+      next
+    });
+    return step.id;
+  });
+}
+
+/**
+ * Rename a sub-assembly and/or set the step that uses it (`null` = it joins the
+ * main build). `undefined` leaves a field unchanged.
+ * @mcp update
+ */
+export async function updateAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    title?: string;
+    usedInStepId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    if (args.usedInStepId !== undefined) {
+      assertValidStepStructure(
+        before.map((s) =>
+          s.id === headerId ? { ...s, usedInStepId: args.usedInStepId! } : s
+        )
+      );
+    }
+
+    await trx
+      .updateTable("assemblyInstructionStep")
+      .set({
+        ...(args.title !== undefined ? { title: args.title } : {}),
+        ...(args.usedInStepId !== undefined
+          ? { usedInStepId: args.usedInStepId }
+          : {}),
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", headerId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+  });
+}
+
+/**
+ * Remove the sub-assembly but keep its steps: they return to the top level in place.
+ * @mcp action destructive
+ */
+export async function ungroupAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    const next = before
+      .filter((s) => s.id !== headerId)
+      .map((s) =>
+        s.parentStepId === headerId ? { ...s, parentStepId: null } : s
+      );
+    assertValidStepStructure(next);
+
+    await trx
+      .deleteFrom("assemblyInstructionStep")
+      .where("id", "=", headerId)
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before,
+      next
+    });
+  });
+}
+
+/**
+ * Delete a sub-assembly together with its steps.
+ * @mcp delete
+ */
+export async function deleteAssemblySubAssembly(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    assemblyInstructionId: string;
+    headerId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { assemblyInstructionId, headerId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const header = before.find((s) => s.id === headerId);
+    if (!header?.isSubAssembly) throw new Error("Sub-assembly not found");
+
+    const removed = new Set(
+      before
+        .filter((s) => s.id === headerId || s.parentStepId === headerId)
+        .map((s) => s.id)
+    );
+    // Deleting a step that used another sub-assembly makes that one join the
+    // main build (FK ON DELETE SET NULL); mirror it before validating.
+    const next = before
+      .filter((s) => !removed.has(s.id))
+      .map((s) =>
+        s.usedInStepId && removed.has(s.usedInStepId)
+          ? { ...s, usedInStepId: null }
+          : s
+      );
+    assertValidStepStructure(next);
+
+    await trx
+      .deleteFrom("assemblyInstructionStep")
+      .where("id", "in", [...removed])
+      .where("companyId", "=", companyId)
+      .where("assemblyInstructionId", "=", assemblyInstructionId)
+      .execute();
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before: before.map((s) =>
+        s.usedInStepId && removed.has(s.usedInStepId)
+          ? { ...s, usedInStepId: null }
+          : s
+      ),
+      next
+    });
+  });
 }
 
 // Assign a set of component instances to a target step. `duplicate` unions them
@@ -7950,40 +8294,55 @@ export async function updateAssemblyInstructionStepStatus(
     .single();
 }
 
-/** @mcp update */
+/**
+ * Drag-sort of the step list: each step's new position and sub-assembly
+ * (`parentStepId`, `null` = top level; omitted = unchanged). The result must
+ * satisfy the sub-assembly rules or nothing is written.
+ * @mcp update
+ */
 export async function updateAssemblyInstructionStepOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   assemblyInstructionId: string,
-  updates: { id: string; sortOrder: number }[]
+  updates: { id: string; sortOrder: number; parentStepId?: string | null }[]
 ) {
-  return updateSortOrder(db, {
-    table: "assemblyInstructionStep",
-    column: "sortOrder",
-    companyId,
-    userId,
-    parent: { column: "assemblyInstructionId", id: assemblyInstructionId },
-    updates,
-    // A step built aside must still come before its join step; a reorder that
-    // breaks that turns it back into a built-in-place step.
-    afterUpdate: async (trx) => {
-      await trx
-        .updateTable("assemblyInstructionStep as s")
-        .set({ parentStepId: null })
-        .where("s.companyId", "=", companyId)
-        .where("s.assemblyInstructionId", "=", assemblyInstructionId)
-        .where("s.parentStepId", "is not", null)
-        .where(({ exists, selectFrom }) =>
-          exists(
-            selectFrom("assemblyInstructionStep as j")
-              .select("j.id")
-              .whereRef("j.id", "=", "s.parentStepId")
-              .whereRef("j.sortOrder", "<=", "s.sortOrder")
-          )
-        )
-        .execute();
+  return db.transaction().execute(async (trx) => {
+    const before = await loadStepStructure(
+      trx,
+      companyId,
+      assemblyInstructionId
+    );
+    const updateById = new Map(updates.map((update) => [update.id, update]));
+    if (updateById.size !== updates.length) {
+      throw new Error("A step appears twice in the new order");
     }
+    if (updates.some((update) => !before.some((s) => s.id === update.id))) {
+      throw new Error("Some steps are not on this instruction");
+    }
+
+    const next = before
+      .map((step) => {
+        const update = updateById.get(step.id);
+        if (!update) return step;
+        return {
+          ...step,
+          sortOrder: update.sortOrder,
+          parentStepId:
+            update.parentStepId === undefined
+              ? step.parentStepId
+              : update.parentStepId
+        };
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    assertValidStepStructure(next);
+    await saveStepStructure(trx, {
+      companyId,
+      userId,
+      assemblyInstructionId,
+      before,
+      next
+    });
   });
 }
 
@@ -8981,9 +9340,13 @@ function assemblyStepName(title: string | null, index: number) {
  * inserts duplicates beside them.
  *
  * Deliberately conservative: an orphan is claimed only when it matches a source
- * step on BOTH sortOrder and name AND no already-marked step claims that source
+ * step on BOTH position and name AND no already-marked step claims that source
  * step. Genuinely hand-authored steps match no source step and are untouched;
  * ambiguous cases are left alone rather than guessed at.
+ *
+ * Position is where the sync wrote the step: after the operation's own steps
+ * (the unmarked steps that share no name with a source step), in source order.
+ * Steps synced before that numbering sit at the source step's own sortOrder.
  */
 export function planOrphanStepAdoption(
   sourceSteps: { id: string; title: string | null; sortOrder: number | null }[],
@@ -8993,14 +9356,25 @@ export function planOrphanStepAdoption(
   const adoption = new Map<string, string>();
   const takenOrphans = new Set<string>();
 
+  const sourceNames = new Set(
+    sourceSteps.map((source, index) => assemblyStepName(source.title, index))
+  );
+  const lastOwnSortOrder = Math.max(
+    0,
+    ...orphanSteps
+      .filter((orphan) => orphan.name === null || !sourceNames.has(orphan.name))
+      .map((orphan) => orphan.sortOrder ?? 0)
+  );
+
   sourceSteps.forEach((source, index) => {
     if (claimedSourceIds.has(source.id)) return;
     const sourceName = assemblyStepName(source.title, index);
     const match = orphanSteps.find(
       (orphan) =>
         !takenOrphans.has(orphan.id) &&
-        orphan.sortOrder === source.sortOrder &&
-        orphan.name === sourceName
+        orphan.name === sourceName &&
+        (orphan.sortOrder === lastOwnSortOrder + 1 + index ||
+          orphan.sortOrder === source.sortOrder)
     );
     if (match) {
       adoption.set(match.id, source.id);
@@ -9151,6 +9525,10 @@ export async function syncAssemblyInstructionToOperation(
       ])
       .where("assemblyInstructionId", "=", instruction.id)
       .where("companyId", "=", companyId)
+      // A sub-assembly (header) row is not a build action to record: it is
+      // never a job step, and a job step synced from a row that has since
+      // become a header is removed as stale below.
+      .where("isSubAssembly", "=", false)
       .orderBy("sortOrder", "asc")
       .execute();
     if (sourceSteps.length === 0) {
@@ -9293,6 +9671,17 @@ export async function syncAssemblyInstructionToOperation(
       existingSynced
     );
 
+    // The operation's own steps number from 1 as well: the instruction's
+    // steps follow them, or the two interleave.
+    const syncedIds = new Set(existingSynced.map((step) => step.id));
+    const firstSortOrder =
+      Math.max(
+        0,
+        ...existingSteps
+          .filter((step) => !syncedIds.has(step.id))
+          .map((step) => step.sortOrder ?? 0)
+      ) + 1;
+
     const now = new Date().toISOString();
     let created = 0;
     let updated = 0;
@@ -9321,7 +9710,7 @@ export async function syncAssemblyInstructionToOperation(
         maxValue: source.maxValue,
         listValues: source.listValues,
         fileTypes: source.fileTypes,
-        sortOrder: source.sortOrder ?? index + 1
+        sortOrder: firstSortOrder + index
       };
 
       const existingId = targetIdBySourceId.get(source.id);
@@ -9838,7 +10227,9 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     instructionText: step.instructionText,
     componentNodeIds: step.componentNodeIds ?? [],
     hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
-    joinStepId: step.parentStepId ?? null,
+    isSubAssembly: step.isSubAssembly,
+    parentStepId: step.parentStepId ?? null,
+    usedInStepId: step.usedInStepId ?? null,
     motion: motion.success ? motion.data : { type: "none" },
     camera: camera.success ? camera.data : null,
     fastener: fastener.success ? fastener.data : null,
@@ -9923,7 +10314,7 @@ export async function getJobMaterialSupplyJobLines(
 // ---------------------------------------------------------------------------
 // MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
 //
-// Each wraps the SAME edge function / RPC the MES/ERP UI uses, so an MCP caller drives
+// Each wraps the SAME server function / RPC the MES/ERP UI uses, so an MCP caller drives
 // production as the connected user — companyId/userId come from the OAuth token (injected by the
 // MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
@@ -9937,7 +10328,7 @@ export async function getJobMaterialSupplyJobLines(
  * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
  * drives it as the connected user:
  *   1. record the produced quantity (productionQuantity insert),
- *   2. backflush consumed material (`issue` edge fn, type "jobOperation"),
+ *   2. backflush consumed material (`issue` server fn, type "jobOperation"),
  *   3. when good + reworked quantity reaches the operation's target, mark it Done — the
  *      sync_finish_job_operation DB trigger then completes the job to inventory if this was the
  *      last operation — post any ended-but-unposted production events for GL, and return picked
@@ -9952,6 +10343,7 @@ export async function getJobMaterialSupplyJobLines(
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   args: {
@@ -9995,7 +10387,7 @@ export async function completeOperation(
       sanitize({
         jobOperationId: args.operationId,
         quantity: args.quantity,
-        type: "Production",
+        type: "Production" as const,
         companyId,
         createdBy: userId
       })
@@ -10015,16 +10407,14 @@ export async function completeOperation(
   }
 
   // 2. Backflush consumed material.
-  const issue = await client.functions.invoke("issue", {
-    body: {
+  const backflush = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("issue", {
       id: args.operationId,
       type: "jobOperation",
-      quantity: args.quantity,
-      companyId,
-      userId
-    }
-  });
-  if (issue.error) return { data: null, error: issue.error };
+      quantity: args.quantity
+    });
+  if (backflush.error) return { data: null, error: backflush.error };
 
   // 3. Finish when good + reworked quantity reaches target (scrap excluded, mirroring the
   //    sync_update_job_operation_quantities DB predicate).
@@ -10051,44 +10441,29 @@ export async function completeOperation(
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
-      await Promise.all(
-        unposted.data.map((event) =>
-          client.functions.invoke("post-production-event", {
-            body: { productionEventId: event.id, userId, companyId }
-          })
-        )
+      await async.map(
+        unposted.data,
+        (event) =>
+          serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("post-production-event", {
+              productionEventId: event.id
+            }),
+        { concurrency: 4 }
       );
     }
 
-    // Return picked-but-unconsumed stock (the SQL trigger can't call edge functions).
     const jobId = operation.data.jobId;
     if (jobId) {
-      const job = await client
-        .from("job")
-        .select("status")
-        .eq("id", jobId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      const returnBody =
-        job.data?.status === "Completed"
-          ? { type: "returnJobRemainders" as const, jobId, userId, companyId }
-          : {
-              type: "returnOperationRemainders" as const,
-              jobOperationId: args.operationId,
-              userId,
-              companyId
-            };
-      const { error: returnError } = await client.functions.invoke(
-        "post-picking",
-        {
-          body: returnBody
-        }
+      const { error: returnError } = await returnPickedRemaindersForOperation(
+        client,
+        db,
+        { jobOperationId: args.operationId, userId, companyId }
       );
       if (returnError) {
         logger.error("picked-material return sweep failed", {
           error: returnError,
           jobId,
-          scope: returnBody.type,
           companyId
         });
       }
@@ -10111,7 +10486,7 @@ export async function completeOperation(
     }
   }
 
-  return issue;
+  return backflush;
 }
 
 // ── Planning actions (spec §P1) ────────────────────────────────────────────

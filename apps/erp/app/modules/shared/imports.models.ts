@@ -143,7 +143,7 @@ const supplierPartImportFields = {
 // Item-level purchasing fields. Spread into every real item-type entry
 // (part / material / tool / fixture / consumable). These write to the
 // item's "itemReplenishment" row (auto-created by the create_item_related_records
-// trigger) in the edge function's post-pass — the same fields the in-app
+// trigger) in the server function's post-pass — the same fields the in-app
 // "Purchasing" tab edits.
 const itemPurchasingImportFields = {
   leadTime: {
@@ -155,7 +155,7 @@ const itemPurchasingImportFields = {
 
 // Item-level cost. Spread into every real item-type entry; written to the
 // item's "itemCost" row (auto-created by the create_item_related_records
-// trigger) in the edge function's post-pass.
+// trigger) in the server function's post-pass.
 const itemCostImportFields = {
   unitCost: {
     label: "Unit Cost",
@@ -170,7 +170,7 @@ const itemCostImportFields = {
 // The combined `partWithMethod` file is the union of every group below (wide,
 // mostly-empty rows); the focused BOM / Operations files carry a subset. Field-level
 // `required` here is kept loose because a column's necessity depends on the row kind —
-// the authoritative per-row validation lives in the import-csv edge function (ADR-0001).
+// the authoritative per-row validation lives in the import-csv server function (ADR-0001).
 const methodRowTypes = ["PART", "BOM", "BOP", "STEP", "TOOL", "PARAM"] as const;
 
 const unitOfMeasureFetcher = async (
@@ -348,7 +348,7 @@ const methodBomFields = {
 
 // BOP operation. In-house operations (anything but Outside Processing) require time
 // units; Outside Processing operations carry costing and an optional supplier-process
-// link — enforced in the edge function, which also normalizes the legacy
+// link — enforced in the server function, which also normalizes the legacy
 // Inside/Outside values from older CSV templates.
 const methodBopFields = {
   operationType: {
@@ -461,7 +461,7 @@ const methodBopFields = {
 } as const;
 
 // Procedure step under an operation. Measurement steps require a unit of measure;
-// List steps require pipe-delimited values — enforced in the edge function.
+// List steps require pipe-delimited values — enforced in the server function.
 const methodStepFields = {
   stepName: {
     label: "Step Name",
@@ -630,7 +630,7 @@ const partImportFields = {
 
 // Shared address + payment + incoterm fields. Spread into supplier and
 // customer entries — they write to side-tables (supplierLocation/address +
-// supplierPayment + supplierShipping; same for customer) in the edge
+// supplierPayment + supplierShipping; same for customer) in the server
 // function's post-pass.
 const partnerLocationImportFields = {
   locationName: {
@@ -1422,7 +1422,7 @@ export const fieldMappings = {
     // No Default Method column: a service is Non-Inventory, so its method is
     // fully determined by the replenishment system and "Pull from Inventory" is
     // not a valid value for it. `ServiceForm` derives it and renders it hidden
-    // for the same reason; the edge function derives it identically. Offering
+    // for the same reason; the server function derives it identically. Offering
     // the column would admit both an invalid method and one that contradicts
     // the replenishment system on the same row.
     unitOfMeasureCode: {
@@ -2129,7 +2129,7 @@ const quoteImportSchemaFields = {
 
 // Zod fragments for the method imports. Every method cell is an optional string at
 // the mapping layer (a column's necessity depends on the row kind); the import-csv
-// edge function performs the authoritative per-row validation (ADR-0001).
+// server function performs the authoritative per-row validation (ADR-0001).
 const methodParentKeySchema = {
   rowType: z.string().optional(),
   parentId: z.string().optional(),
@@ -2196,7 +2196,7 @@ const methodPartSchema = {
 };
 
 // Zod fragments for the opening-stock imports. The mapping layer only checks a
-// column is mapped; the import-csv edge function does the per-row validation
+// column is mapped; the import-csv server function does the per-row validation
 // (item resolution, tracking type, positive quantity, ISO dates, duplicates).
 const stockImportItemSchema = {
   readableId: z

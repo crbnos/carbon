@@ -20,6 +20,7 @@ import {
 } from "~/modules/items";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -133,7 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let affectedError: Parameters<typeof error>[0] =
     submittedItems?.error ?? null;
   for (const itemId of affectedItemIds) {
-    const add = await addChangeNoticeAffectedItem(client, {
+    const add = await addChangeNoticeAffectedItem(client, getDatabaseClient(), {
       changeNoticeId: createResult.data.id,
       itemId,
       changeType: "Version",

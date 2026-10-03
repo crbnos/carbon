@@ -130,8 +130,8 @@ export type EmployeeShiftRow = {
   timezone: string;
 };
 
-// Row types live in people-utils.ts (pure module) so the deno tests don't pull
-// the DB dependency graph
+// Row types live in people-utils.ts (pure module) so its tests don't pull the
+// DB dependency graph
 import type { PeopleAbsenceRow, PeopleAssignmentRow } from "./people-utils.ts";
 export type { PeopleAbsenceRow, PeopleAssignmentRow };
 

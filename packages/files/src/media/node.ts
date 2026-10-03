@@ -73,3 +73,5 @@ export function initNodeImageCodecs(): Promise<void> {
   })();
   return initialized;
 }
+
+export * from "./label-logo";

@@ -51,7 +51,8 @@ export async function syncActionTaskNotes(
       : null;
 
     if (!result?.success) {
-      logger.error(`Failed to sync notes to ${target}`, {
+      logger.error("Failed to sync notes to {target}", {
+        target,
         actionId,
         entityType,
         status: response.status,
@@ -59,7 +60,8 @@ export async function syncActionTaskNotes(
       });
     }
   } catch (e) {
-    logger.error(`Failed to sync notes to ${target}`, {
+    logger.error("Failed to sync notes to {target}", {
+      target,
       actionId,
       entityType,
       error: e

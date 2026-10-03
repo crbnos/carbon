@@ -44,7 +44,6 @@ import {
   useNavigate
 } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { useSettings, useUser } from "~/hooks";
 import {
   setCustomerPreview,
@@ -133,9 +132,15 @@ const resolveVideoUrl = (videoKey: string): string | undefined => {
   return video?.academyUrl ?? video?.videoUrl;
 };
 
+function GetStartedSidebar() {
+  const { groups } = useImplementationSubmodules();
+  return <GroupedContentSidebar groups={groups} exactMatch />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Get Started`,
-  to: path.to.getStarted
+  to: path.to.getStarted,
+  sidebar: GetStartedSidebar
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
@@ -177,7 +182,6 @@ export default function GetStartedLayout() {
     (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
   const previewingAsCustomer = useCustomerPreview();
   useImplementationRealtime(company.id);
-  const { groups } = useImplementationSubmodules();
 
   const loaderData = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
@@ -258,29 +262,22 @@ export default function GetStartedLayout() {
   );
 
   return (
-    <CollapsibleSidebarProvider>
-      <div className="bg-card grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
-        <GroupedContentSidebar groups={groups} exactMatch />
-        <div className="relative min-w-0 overflow-hidden bg-card">
-          <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
-            {isInternal ? (
-              <PreviewBar previewing={previewingAsCustomer} />
-            ) : null}
-            <div className="p-8">
-              <HubProvider
-                data={hubData}
-                flags={flags}
-                dispatch={dispatch}
-                resolveScreenUrl={resolveScreenUrl}
-                resolveVideoUrl={resolveVideoUrl}
-              >
-                <Outlet />
-              </HubProvider>
-            </div>
-          </div>
+    <div className="relative min-w-0 h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden bg-card">
+      <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">
+        {isInternal ? <PreviewBar previewing={previewingAsCustomer} /> : null}
+        <div className="p-8">
+          <HubProvider
+            data={hubData}
+            flags={flags}
+            dispatch={dispatch}
+            resolveScreenUrl={resolveScreenUrl}
+            resolveVideoUrl={resolveVideoUrl}
+          >
+            <Outlet />
+          </HubProvider>
         </div>
       </div>
-    </CollapsibleSidebarProvider>
+    </div>
   );
 }
 

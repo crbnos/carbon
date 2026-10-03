@@ -4,9 +4,9 @@
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -17,6 +17,7 @@ import {
 } from "~/modules/production";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources";
+import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -90,21 +91,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   let postingError: string | null = null;
   if (d.endTime) {
-    const serviceRole = await getCarbonServiceRole();
-    const posting = await serviceRole.functions.invoke<{
-      success: boolean;
-      reason?: string;
-      error?: string;
-    }>("post-production-event", {
-      body: {
-        productionEventId: id,
-        userId,
-        companyId
-      }
-    });
+    const posting = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-production-event", { productionEventId: id });
     if (posting.error) {
-      postingError = posting.error.message;
-    } else if (posting.data && posting.data.success === false) {
+      postingError = posting.error.message || "unknown error";
+    } else if (posting.data.success === false) {
       postingError = posting.data.reason ?? "unknown reason";
     }
   }

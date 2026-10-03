@@ -3,20 +3,30 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  NODE_ENV,
-  SUPABASE_INTERNAL_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-  VERCEL_URL
-} from "@carbon/env";
 import { storage } from "@carbon/files";
-import { nanoid } from "nanoid";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
+import {
+  ASSEMBLER_CONCURRENCY,
+  assemblerEnabled,
+  internalizeStorageUrl,
+  runAssemblerJob
+} from "./assembler-client";
 
+const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
+const MAX_THUMBNAIL_WAIT_MS = 5 * 60 * 1000;
+
+/**
+ * Renders a model's preview thumbnail. The assembler draws the model's GLB
+ * (the optimised one, else the lossless assembly GLB) to a PNG and uploads it
+ * through a late-minted signed URL; this function then points
+ * `modelUpload.thumbnailPath` at it.
+ */
 export const modelThumbnailFunction = inngest.createFunction(
   {
     id: "model-thumbnail",
     retries: 3,
+    concurrency: ASSEMBLER_CONCURRENCY,
     // One render per model at a time — overlapping runs (regenerate + the
     // optimise-chained event, or rapid clicks) would race the "delete previous
     // thumbnail" step and can strand a just-published object. (This event's
@@ -27,114 +37,123 @@ export const modelThumbnailFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { modelId, companyId } = event.data;
 
-    const isLocal = NODE_ENV !== "production";
-    // Dev opt-in: render via a local Chromium container (`crbn up --thumbnails`).
-    const renderLocal = process.env.THUMBNAIL_RENDER_LOCAL === "true";
-
-    // `VERCEL_URL` is the ERP's own URL in every env — prod app URL, or the
-    // portless `https://erp.<prefix>.dev` host locally. The local Chromium
-    // container reaches that host through the portless proxy (host-gateway),
-    // the same way the inngest container reaches the ERP; the raw ERP port only
-    // binds 127.0.0.1 and isn't reachable from a container.
-    const getModelUrl = (id: string) => {
-      const domain = VERCEL_URL?.startsWith("https://")
-        ? VERCEL_URL
-        : `https://${VERCEL_URL}`;
-      return `${domain}/file/model/${id}`;
-    };
-
-    if (isLocal && !renderLocal) {
-      logger.info(
-        "Skipping model-thumbnail on local (run `crbn up --thumbnails` to render via local Chromium)",
-        { payload: event.data }
-      );
-      return;
+    if (!assemblerEnabled()) {
+      logger.info("model thumbnail skipped — assembler not configured", {
+        modelId
+      });
+      return { modelId, status: "Skipped" as const };
     }
 
-    await step.run("generate-and-upload-thumbnail", async () => {
-      logger.info("Starting model-thumbnail task", { payload: event.data });
+    const model = await step.run("resolve", async () => {
       const client = getCarbonServiceRole();
-
-      // The previous thumbnail's path — deleted after the new one lands so a
-      // regeneration doesn't leak an orphan (the filename is now unique per run).
-      const previous = await client
+      const upload = await client
         .from("modelUpload")
-        .select("thumbnailPath")
+        .select("glbPath, optimizedModelPath, thumbnailPath")
         .eq("id", modelId)
+        .eq("companyId", companyId)
         .maybeSingle();
-      const previousPath = previous.data?.thumbnailPath ?? null;
-
-      const url = getModelUrl(modelId);
-      const imageUrl = `${SUPABASE_INTERNAL_URL}/functions/v1/thumbnail`;
-
-      const response = await fetch(imageUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
-        },
-        body: JSON.stringify({ url })
-      });
-
-      if (response.status !== 200) {
-        logger.error("Failed to generate thumbnail", { response });
-        throw new Error("Failed to generate thumbnail");
+      if (upload.error) {
+        throw new Error(`Failed to read model upload: ${upload.error.message}`);
       }
+      return {
+        glbPath:
+          upload.data?.optimizedModelPath ?? upload.data?.glbPath ?? null,
+        // Deleted after the new one lands, so a regeneration leaves no orphan.
+        previousPath: upload.data?.thumbnailPath ?? null
+      };
+    });
 
-      const blob = new Blob([await response.arrayBuffer()], {
-        type: "image/png"
-      });
+    // The assembler writes the GLB; model-optimize sends this event again once
+    // it has.
+    if (!model.glbPath) {
+      logger.info("model thumbnail skipped — no GLB yet", { modelId });
+      return { modelId, status: "Skipped" as const };
+    }
+    const glbPath = model.glbPath;
 
-      // Unique filename per generation: the preview is served from a STABLE
-      // proxy URL (`/file/preview/...`), so reusing `{modelId}.png` would leave a
-      // regenerated thumbnail showing the browser-cached old image. A fresh path
-      // changes the URL (cache-bust) and the stored `thumbnailPath` value (so the
-      // UI actually re-renders).
-      const fileName = `${modelId}-${nanoid(8)}.png`;
-      const thumbnailFile = new File([blob], fileName, {
-        type: "image/png"
-      });
+    // Unique per triggering event: the preview is served from a STABLE proxy
+    // URL (`/file/preview/...`), so reusing `{modelId}.png` would leave a
+    // regenerated thumbnail showing the browser-cached old image, and the
+    // assembler's job store would answer a repeat job id with the last result.
+    const run = event.id ?? event.ts ?? "run";
+    const thumbnailPath = `${companyId}/thumbnails/${modelId}/${modelId}-${run}.png`;
 
-      logger.info("Uploading thumbnail", { fileName });
-
-      const { data, error } = await storage(client)
-        .company(companyId)
-        .upload(
-          `${companyId}/thumbnails/${modelId}/${fileName}`,
-          thumbnailFile,
-          {
-            upsert: true
+    await runAssemblerJob(step, {
+      idPrefix: "thumbnail",
+      action: "thumbnail",
+      jobId: `thumbnail-${modelId}-${run}`,
+      maxWaitMs: MAX_THUMBNAIL_WAIT_MS,
+      logger,
+      buildBody: async () => {
+        const client = getCarbonServiceRole();
+        const signed = await storage(client)
+          .company(companyId)
+          .createSignedUrl(glbPath, SIGNED_URL_EXPIRY);
+        if (signed.error) {
+          if (/not.?found/i.test(signed.error.message)) {
+            throw new NonRetriableError(
+              `Model GLB no longer exists in storage: ${glbPath}`
+            );
           }
-        );
-
-      if (error) {
-        logger.error("Failed to upload thumbnail", { error });
-        throw new Error(`Failed to upload thumbnail: ${error.message}`);
+          throw new Error(`Failed to sign GLB URL: ${signed.error.message}`);
+        }
+        return {
+          source: { url: internalizeStorageUrl(signed.data.signedUrl) },
+          output: { path: thumbnailPath }
+        };
+      },
+      mintUploadUrls: async () => {
+        const client = getCarbonServiceRole();
+        const upload = await storage(client)
+          .company(companyId)
+          .createSignedUploadUrl(thumbnailPath, { upsert: true });
+        if (upload.error) {
+          throw new Error(
+            `Failed to sign thumbnail upload URL: ${upload.error.message}`
+          );
+        }
+        return { thumbnail: internalizeStorageUrl(upload.data.signedUrl) };
       }
+    });
 
+    await step.run("persist", async () => {
+      const client = getCarbonServiceRole();
+      // The upload goes through a late-minted URL: confirm it landed before repointing.
+      const uploaded = await storage(client)
+        .company(companyId)
+        .info(thumbnailPath);
+      if (uploaded.error) {
+        throw new Error(
+          `Thumbnail was not uploaded to ${thumbnailPath}: ${uploaded.error.message}`
+        );
+      }
       const result = await client
         .from("modelUpload")
-        .update({
-          thumbnailPath: data?.path
-        })
-        .eq("id", modelId);
-
+        .update({ thumbnailPath })
+        .eq("id", modelId)
+        .eq("companyId", companyId);
       if (result.error) {
-        logger.error("Failed to update thumbnail path", {
-          error: result.error
-        });
         throw new Error(
           `Failed to update thumbnail path: ${result.error.message}`
         );
       }
 
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
-      if (previousPath && previousPath !== data?.path) {
-        await storage(client)
+      if (model.previousPath && model.previousPath !== thumbnailPath) {
+        const removed = await storage(client)
           .company(companyId)
-          .remove([previousPath])
-          .catch(() => undefined);
+          .remove([model.previousPath])
+          .catch((error: unknown) => ({ error }));
+        if (removed.error) {
+          logger.warn("failed to remove the superseded thumbnail", {
+            modelId,
+            path: model.previousPath,
+            error: removed.error
+          });
+        }
       }
     });
+
+    return { modelId, status: "Success" as const };
   }
 );

@@ -1,6 +1,6 @@
 # Create Job
 
-Last tested: 2026-06-06
+Last tested: 2026-09-30
 Route: /x/job/new
 
 ## Prerequisites
@@ -20,12 +20,18 @@ Route: /x/job/new
 - Deadline Type defaults to "Low Priority No Deadline"
 
 ### 3. Submit
-- Button: "Save"
-- Note: Save button becomes disabled while submitting. Wait 3-5 seconds for redirect.
+- `requestSubmit` the form with its submit button as submitter (NOT a click). The button's
+  text is "Savemod+enter" (keyboard hint), so match with `startsWith("Save")`.
+- Wait ~10-15 s for redirect (get-method copies the method server-side).
 
 ### 4. Verify
 - Expected redirect: /x/job/<new-id> (e.g., /x/job/J000002)
 - Success indicator: Page shows heading with Job ID, buttons like "Release", "Complete", "Cancel", and a tree view of the item's bill of process
+
+### 5. Verify in the DB (get-method parity)
+- `jobMaterial` count + Σquantity and `jobOperation` count for the job equal the item's
+  `activeMakeMethods` `methodMaterial` / `methodOperation` (e.g. BUS-STR-001: 5 materials,
+  Σ80.75, 4 operations → J000030).
 
 ## Selector Notes
 - Item combobox is the first combobox after the Job ID field

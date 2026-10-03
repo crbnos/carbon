@@ -19,6 +19,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -126,6 +127,7 @@ const SalesRFQHeader = () => {
                 <Trans>Reopen</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   isLocked ||
                   !permissions.can("delete", "sales") ||
@@ -421,7 +423,7 @@ function ConvertToQuoteModal({
   );
 
   // Converting re-evaluates sales rules across the RFQ's mapped lines (the
-  // terminal gate in the action) before the edge function mints quote lines.
+  // terminal gate in the action) before the server function mints quote lines.
   // Route the submission through the violations hook so a blocked convert
   // opens the shared modal instead of silently doing nothing.
   const ruleViolations = useRuleViolations({

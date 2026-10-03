@@ -3,13 +3,13 @@ title: Period close
 description: "Locking and closing a fiscal period: the close checklist, what a locked period stops, and how to reopen."
 ---
 
-Bookkeeping happens continuously, but the books get *finalized* one period at a time. An <Term id="accounting-period">accounting period</Term> is a dated window (a calendar month) that every posting falls into by its posting date. <Term id="period-close">Closing it</Term> is the act of declaring that month's numbers final: no more postings land in it, and its balances are snapshotted for reporting. Carbon runs this as a three-state lifecycle with a NetSuite-style checklist gating the close.
+An <Term id="accounting-period">accounting period</Term> is a calendar month assigned to transactions by posting date. <Term id="period-close">Closing a period</Term> prevents further postings and snapshots its balances for reporting. Carbon uses a three-state lifecycle and requires the close checklist to pass before closure.
 
-The whole surface is gated on **accounting enabled** (`companySettings.accountingEnabled`). With accounting off, no journals are written, so there is nothing to close.
+Period close is available only when accounting is enabled (`companySettings.accountingEnabled`). When accounting is disabled, Carbon does not create journals or periods to close.
 
 ## The close lifecycle
 
-A period carries a **close status** (`periodCloseStatus`) that moves in one direction, then back only by explicit reopen. This is a separate axis from the legacy `Active`/`Inactive` flag, which just marks the current period for lazy auto-creation.
+A period's **close status** (`periodCloseStatus`) advances in one direction unless explicitly reopened. It is independent of the legacy `Active`/`Inactive` flag, which marks the current period for lazy auto-creation.
 
 <StatusFlow entity="accountingPeriod">
   <Status name="Open">Postings land freely. Operational documents (receipts, shipments, invoices, payments) and journals both post by their date.</Status>
@@ -33,7 +33,7 @@ The gate lives in `getOrCreateAccountingPeriod`, which every posting path calls 
   <Field name="Open">Everything posts normally.</Field>
 </FieldTable>
 
-A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a <Term>journal</Term> into or out of a **Closed** period, so even a service-role job or edge function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period.
+A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a <Term>journal</Term> into or out of a **Closed** period, so even a service-role job or server function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period.
 
 ## The close checklist
 

@@ -11,6 +11,7 @@ import {
   getStockMovementEffectiveQuantity,
   stockMovementCorrectionValidator
 } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
 // The modal pre-fills its corrected-quantity field from this — the page's
 // visible rows can miss off-page corrections (or descendants of a correction
@@ -53,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const correction = await correctStockMovement(client, {
+  const correction = await correctStockMovement(client, getDatabaseClient(), {
     ...validation.data,
     itemLedgerId: ledgerId,
     companyId,

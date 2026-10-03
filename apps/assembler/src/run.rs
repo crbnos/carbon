@@ -12,7 +12,7 @@
 //! Spec (JSON, from `argv[2]` or `$ASSEMBLER_JOB_SPEC`) — the same shape as the
 //! HTTP body plus an `action` and an `upload_urls` map:
 //! ```json
-//! { "action": "optimize"|"convert"|"plan",
+//! { "action": "optimize"|"convert"|"plan"|"compact"|"thumbnail",
 //!   "job_id": "…",                                  // optional
 //!   "source": { "url": "<signed GET>", "format": "auto" },
 //!   "output" | "outputs" | "options" | "quality": { … },   // per action, as HTTP
@@ -23,7 +23,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use crate::{actions, build_state, config, optimize_opts, AppState};
+use crate::{actions, build_state, config, optimize_opts, thumbnail_req, AppState};
 
 /// Overall wall-clock ceiling for a one-shot job. Generous: ECS has no 15-min
 /// cap (that's exactly why the overflow path exists); Lambda's own timeout bounds
@@ -143,6 +143,9 @@ pub fn spawn_from_spec(
                     raw_path: spec["output"]["path"].as_str().map(str::to_string),
                 },
             )
+        }
+        "thumbnail" => {
+            actions::thumbnail::spawn(state, job_id, thumbnail_req(&source_url, &spec["output"]))
         }
         other => return Err(format!("unsupported action: {other}")),
     }

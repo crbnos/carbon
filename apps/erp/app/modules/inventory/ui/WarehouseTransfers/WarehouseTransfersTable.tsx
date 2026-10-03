@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -197,6 +202,11 @@ const WarehouseTransfersTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                row.status !== "Draft"
+                  ? MENU_ITEM_SHORTCUTS.view
+                  : MENU_ITEM_SHORTCUTS.edit
+              }
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -210,6 +220,7 @@ const WarehouseTransfersTable = memo(
               {row.status !== "Draft" ? t`View Transfer` : t`Edit Transfer`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "inventory") ||
                 row.status === "Draft"

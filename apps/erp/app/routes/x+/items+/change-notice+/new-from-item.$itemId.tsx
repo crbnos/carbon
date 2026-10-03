@@ -16,6 +16,7 @@ import {
   insertChangeNotice
 } from "~/modules/items";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // One-click "Create Change Notice" for a part/tool: mint a CO and attach the item
@@ -70,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const add = await addChangeNoticeAffectedItem(client, {
+  const add = await addChangeNoticeAffectedItem(client, getDatabaseClient(), {
     changeNoticeId: co.data.id,
     itemId,
     changeType,

@@ -6,6 +6,7 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
@@ -34,10 +35,10 @@ import {
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.
- * Wraps the `issue` edge function (type "partToOperation").
+ * Wraps the `issue` server function (type "partToOperation").
  *
  * The work-center rule check fails closed: a failed or empty operation lookup throws rather
- * than silently skipping the rule and letting the edge function run unchecked.
+ * than silently skipping the rule and letting the server function run unchecked.
  */
 export async function issueMaterial(
   client: SupabaseClient<Database>,
@@ -60,7 +61,7 @@ export async function issueMaterial(
     .eq("companyId", companyId)
     .maybeSingle();
   // Fail closed: a failed or empty lookup must not silently skip the work-center
-  // material-issue rule and let the `issue` edge function run unchecked.
+  // material-issue rule and let the `issue` server function run unchecked.
   if (jobOpError || !jobOp) {
     throw new Error(`Job operation ${args.operationId} was not found.`);
   }
@@ -99,19 +100,20 @@ export async function issueMaterial(
     }
   }
 
-  return client.functions.invoke("issue", {
-    body: {
+  return serverFns
+    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       id: args.operationId,
       type: "partToOperation",
       itemId: args.itemId,
       materialId: args.materialId,
       jobOperationStepId: args.jobOperationStepId,
       quantity: args.quantity,
-      adjustmentType: args.adjustmentType,
-      companyId,
-      userId
-    }
-  });
+      adjustmentType: args.adjustmentType as
+        | "Negative Adjmt."
+        | "Positive Adjmt."
+        | "Set Quantity"
+    });
 }
 
 /**
@@ -153,9 +155,9 @@ export async function completeJob(
  * Schedule or reschedule a job's operations. Routes through
  * `recalculateJobOperationDependencies`, which resolves the job's location and
  * regenerates the whole location IN-PROCESS via `@carbon/planning`
- * (`runLocationSchedule`) — the same in-process path the rest of the app uses now
- * that the `schedule` edge function is gone. Forecast-first scheduling is a single
- * forward-ASAP pass, so there are no `mode`/`direction` knobs to validate.
+ * (`runLocationSchedule`) — the same in-process path the rest of the app uses.
+ * Forecast-first scheduling is a single forward-ASAP pass, so there are no
+ * `mode`/`direction` knobs to validate.
  *
  * The scheduling path has no gate of its own — every ERP route that reschedules
  * does `requirePermissions({ update: "production" })` first — so the same
@@ -259,12 +261,16 @@ export async function upsertJobMaterial(
   const jobMaterialId = upserted.data.id;
 
   if (jobMaterial.methodType === "Make to Order" && !wasMakeToOrder) {
-    const makeMethod = await pullJobMaterialMakeMethod(client, {
-      jobMaterialId,
-      itemId: jobMaterial.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      client,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: jobMaterial.itemId,
+        companyId,
+        userId
+      }
+    );
     if (makeMethod.error) {
       return { data: upserted.data, error: makeMethod.error };
     }
@@ -289,11 +295,15 @@ export async function upsertJobMaterial(
   }
 
   if (recalcRequirements) {
-    const requirements = await recalculateJobMakeMethodRequirements(client, {
-      id: jobMaterial.jobMakeMethodId,
-      companyId,
-      userId
-    });
+    const requirements = await recalculateJobMakeMethodRequirements(
+      client,
+      getDatabaseClient(),
+      {
+        id: jobMaterial.jobMakeMethodId,
+        companyId,
+        userId
+      }
+    );
     if (requirements.error) {
       return { data: upserted.data, error: requirements.error };
     }

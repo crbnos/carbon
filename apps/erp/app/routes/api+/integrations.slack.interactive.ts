@@ -14,6 +14,7 @@ import {
   getSlackIntegrationByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -23,6 +24,7 @@ import {
   getIssueWorkflowsList,
   insertIssue
 } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // nodejs runtime: the Slack signature check uses node:crypto.
@@ -522,14 +524,16 @@ async function handleViewSubmission(
           channelId: configuredChannelId
         }
       ),
-      serviceRole.functions.invoke("create", {
-        body: {
-          type: "nonConformanceTasks",
-          id: ncrId,
+      serverFns
+        .system({
+          db: getDatabaseClient(),
           companyId,
           userId: employee.data?.id ?? "system"
-        }
-      })
+        })
+        .invoke("create", {
+          type: "nonConformanceTasks",
+          id: ncrId
+        })
     ]);
 
     if (tasksResult.error) {

@@ -9,9 +9,8 @@ import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.serv
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
-import { deriveRate, taxableBase } from "@carbon/utils";
+import { deriveRate, getErrorMessage, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
@@ -25,7 +24,7 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -49,13 +48,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sourceDocument = url.searchParams.get("sourceDocument") ?? undefined;
   const sourceDocumentId = url.searchParams.get("sourceDocumentId") ?? "";
 
-  let result: FunctionsResponse<{ id: string }>;
+  let result: Awaited<
+    ReturnType<typeof createPurchaseInvoiceFromPurchaseOrder>
+  >;
 
   switch (sourceDocument) {
     case "Purchase Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createPurchaseInvoiceFromPurchaseOrder(
         getCarbonServiceRole(),
+        getDatabaseClient(),
         sourceDocumentId,
         companyId,
         userId
@@ -68,10 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create purchase invoice"
-              )
+              getErrorMessage(result.error, "Failed to create purchase invoice")
             )
           )
         );

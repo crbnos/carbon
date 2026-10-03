@@ -1332,12 +1332,12 @@ async function rollbackInvite(
     serviceRole
       .from("customerAccount")
       .delete()
-      .eq("userId", userId)
+      .eq("id", userId)
       .eq("companyId", companyId),
     serviceRole
       .from("supplierAccount")
       .delete()
-      .eq("userId", userId)
+      .eq("id", userId)
       .eq("companyId", companyId)
   ]);
 }

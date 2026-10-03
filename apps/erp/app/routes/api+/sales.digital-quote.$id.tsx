@@ -23,6 +23,7 @@ import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "sales", "digital-quote");
 
@@ -181,7 +182,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       const [convert] = await Promise.all([
-        convertQuoteToOrder(serviceRole, {
+        convertQuoteToOrder(serviceRole, getDatabaseClient(), {
           id: quote.data.id,
           companyId: quote.data.companyId,
           userId: quote.data.createdBy,

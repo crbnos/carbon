@@ -16,7 +16,7 @@ import {
 } from "./sales.service";
 
 // App-side bulk quote importer. Unlike the master-data imports (which run in the
-// `import-csv` Deno edge function with direct Kysely writes), quotes are created
+// `import-csv` server function with direct Kysely writes), quotes are created
 // through the real sales services so their side effects — opportunity,
 // quotePayment, quoteShipment, external portal link, sequence number — are
 // preserved (see `.ai/specs/2026-07-28-quote-bulk-import.md`, Option B).

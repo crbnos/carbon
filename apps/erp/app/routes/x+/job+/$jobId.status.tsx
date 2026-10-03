@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
@@ -144,7 +145,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
-    await recalculateJobRequirements(serviceRole, {
+    await recalculateJobRequirements(serviceRole, getDatabaseClient(), {
       id,
       companyId,
       userId
@@ -157,8 +158,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
-  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // Commit the new status BEFORE invoking the scheduler. The scheduler
+  // only batches jobs whose status is already Ready/In Progress/Paused,
   // so a job released here must be persisted as Ready first — otherwise it is
   // filtered out of its own scheduling run and never lands in the forecast.
   //
@@ -167,11 +168,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
   if (status === "Cancelled") {
-    const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), {
-      jobId: id,
-      userId,
-      companyId
-    });
+    const sweep = await returnPickedRemaindersForJob(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        jobId: id,
+        userId,
+        companyId
+      }
+    );
     if (sweep.error) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
@@ -228,15 +233,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
-        getCarbonServiceRole().functions.invoke("create", {
-          body: {
+        serverFns
+          .system({ db: getDatabaseClient(), companyId, userId })
+          .invoke("create", {
             type: "purchaseOrderFromJob",
             jobId: id,
-            purchaseOrdersBySupplierId,
-            companyId,
-            userId
-          }
-        })
+            purchaseOrdersBySupplierId
+          })
       ]);
     } catch (err) {
       logger.error("Error", { error: err });
@@ -248,10 +251,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Closed") {
-    const serviceRole = await getCarbonServiceRole();
-    await serviceRole.functions.invoke("close-job", {
-      body: { jobId: id, userId, companyId }
-    });
+    const closed = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("close-job", { jobId: id });
+    if (closed.error) {
+      // The status change stands; only the WIP write-off failed, as before.
+      logger.error("Failed to write off WIP for closed job", {
+        jobId: id,
+        companyId,
+        error: closed.error
+      });
+    }
   }
 
   if (status === "Planned") {
@@ -268,7 +278,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 // Forecast-first scheduling regenerates the whole location the job is in,
-// in-process (Node) — no edge cold-start or HTTP hop. Throws on failure.
+// in-process (Node). Throws on failure.
 async function scheduleJobLocation({
   id,
   companyId,

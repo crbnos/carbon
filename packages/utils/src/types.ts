@@ -43,6 +43,8 @@ export interface TrackedEntityAttributes {
   Customer?: string;
   Job?: string;
   "Job Make Method"?: string;
+  "Job Operation"?: string;
+  "Job Operation Index"?: number;
   "Purchase Order"?: string;
   "Purchase Order Line"?: string;
   "Receipt Line Index"?: number;
@@ -58,6 +60,7 @@ export interface TrackedEntityAttributes {
   "Split Entity ID"?: string;
   "Split From Entity ID"?: string;
   "Merged From Entity IDs"?: string[];
+  Shelf?: string;
   "Stock Transfer Line"?: string;
   "Stock Transfer"?: string;
   expirationDate?: string;

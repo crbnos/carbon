@@ -29,11 +29,11 @@
 // widen the fence on screen without a run. Nothing here reads the horizon.
 
 import type { Database } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
-import { getFunctionLogger } from "@carbon/database/logging";
-import { computePlanningOrders, equals, round } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import { computePlanningOrders, datetime, equals, round } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
@@ -41,7 +41,7 @@ import { toIsoDate } from "../scheduling/date-utils.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
 import { purchaseOrderLineArrivalDate } from "./supply-date.ts";
 
-const logger = getFunctionLogger("planning-actions");
+const logger = getLogger("planning", "planning-actions");
 
 const KEY_SEP = "\x1f";
 const WEEKS_TO_PLAN = 48;

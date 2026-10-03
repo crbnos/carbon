@@ -11,14 +11,14 @@ import {
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -292,6 +292,31 @@ export async function getItemLedgerActivity(
   const rows =
     direction === "newer" ? (data ?? []).slice().reverse() : (data ?? []);
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
+}
+
+/**
+ * On-hand quantity of an item at a location right after ledger entry
+ * `entryNumber` (omit it for on-hand now), on the same definition as the
+ * inventory table's On Hand column. The Activity panel fetches this once for
+ * its newest loaded entry and derives every other row's balance from the
+ * contiguous pages — see `withRunningBalance`.
+ * @mcp read
+ */
+export async function getItemLedgerBalance(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    entryNumber?: number;
+  }
+) {
+  return client.rpc("get_item_ledger_balance", {
+    company_id: args.companyId,
+    location_id: args.locationId,
+    item_id: args.itemId,
+    entry_number: args.entryNumber
+  });
 }
 
 /** @mcp read */
@@ -1418,10 +1443,11 @@ export async function getShippingTermsList(
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
 // quantity, earliest expiry) with genealogy back to every parent. The issue
-// edge fn owns the writes; see shared/batch-merge.ts.
+// server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).
 /** @mcp action */
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     trackedEntityIds: string[];
     readableId?: string | null;
@@ -1429,16 +1455,12 @@ export async function mergeTrackedEntities(
     userId: string;
   }
 ) {
-  return client.functions.invoke<{
-    trackedEntityId?: string;
-    readableId?: string | null;
-    error?: string;
-  }>("issue", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("issue", {
       type: "mergeTrackedEntities",
       ...args
-    }
-  });
+    });
 }
 
 /** @mcp read */
@@ -1675,8 +1697,8 @@ export async function getWarehouseTransferLines(
     .eq("transferId", transferId);
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the single
-// write path for manual adjustments (shared with MES). The edge function owns
+// Thin wrapper over the post-inventory-adjustment server function — the single
+// write path for manual adjustments (shared with MES). The server function owns
 // Set Quantity resolution, storage-unit transfers, serial/batch stock-target
 // resolution, tracked-entity updates, cost layers, and GL posting (only when
 // companySettings.accountingEnabled) in one transaction.
@@ -1686,6 +1708,7 @@ export async function getWarehouseTransferLines(
  */
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   // `requiresSerialTracking` is a form-only flag for the validator's serial
   // quantity guard — the route strips it before calling this.
   inventoryAdjustment: Omit<
@@ -1698,19 +1721,18 @@ export async function insertManualInventoryAdjustment(
 ) {
   const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("post-inventory-adjustment", {
-    body: { ...adjustment, companyId, userId: createdBy }
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("post-inventory-adjustment", {
+      ...adjustment
+    });
 
   if (result.error) {
     // Bare-string error, matching the old service's validation-branch
     // contract — the adjustment route compares `error === "<message>"`.
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
+      error: getErrorMessage(
         result.error,
         "Failed to create manual inventory adjustment"
       )
@@ -1723,7 +1745,7 @@ export async function insertManualInventoryAdjustment(
 // Authoritative effective quantity for a movement's correction group: resolve
 // the ultimate root by walking correctionOfItemLedgerId, then sum the root and
 // every correction in the group (BFS — historical count corrections chained
-// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// fix→fix). Mirrors the walk inside the correct-stock-movement server function;
 // the modal pre-fills from this so the user never submits a value derived from
 // an incomplete page of movements.
 /** @mcp read */
@@ -1777,13 +1799,13 @@ export async function getStockMovementEffectiveQuantity(
   return { data: { rootId: root.id, effectiveQuantity }, error: null };
 }
 
-// Thin wrapper over the correct-stock-movement edge function: books ONE
-// opposite (delta) movement linked to the corrected movement via
+// Books ONE opposite (delta) movement linked to the corrected movement via
 // correctionOfItemLedgerId, dated with the original's postingDate and posted
-// into the original's accounting period.
+// into the original's accounting period (the correct-stock-movement operation).
 /** @mcp action */
 export async function correctStockMovement(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   correction: z.infer<typeof stockMovementCorrectionValidator> & {
     itemLedgerId: string;
     companyId: string;
@@ -1792,24 +1814,20 @@ export async function correctStockMovement(
 ) {
   const { companyId, createdBy, ...rest } = correction;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("correct-stock-movement", {
-    body: { ...rest, companyId, userId: createdBy }
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("correct-stock-movement", {
+      ...rest
+    });
 
   if (result.error) {
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
-        result.error,
-        "Failed to correct stock movement"
-      )
+      error: getErrorMessage(result.error, "Failed to correct stock movement")
     };
   }
 
-  return { data: result.data?.itemLedger ?? null, error: null };
+  return { data: result.data.itemLedger, error: null };
 }
 
 // ===========================================================================
@@ -2190,7 +2208,9 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  // batchProperty has no group column; the group is not stored.
+  const { batchPropertyGroupId: _group, ...order } = data;
+  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
 /** @mcp update */
@@ -2224,7 +2244,11 @@ export async function upsertBatchProperty(
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  const {
+    userId,
+    configurationParameterGroupId: _group,
+    ...data
+  } = batchProperty;
   if (batchProperty.id) {
     return client
       .from("batchProperty")
@@ -2259,22 +2283,18 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in kanban) {
-    return client
-      .from("kanban")
-      .insert({
-        ...kanban
-      })
-      .select("id")
-      .single();
+  // kanban has no customFields column.
+  const { customFields: _customFields, ...row } = kanban;
+  if ("createdBy" in row) {
+    return client.from("kanban").insert(row).select("id").single();
   }
   return client
     .from("kanban")
     .update({
-      ...sanitize(kanban),
+      ...sanitize(row),
       updatedAt: datetime.timestamp()
     })
-    .eq("id", kanban.id)
+    .eq("id", row.id)
     .select("id")
     .single();
 }
@@ -3085,12 +3105,13 @@ export async function getPickingListLineTrackedEntities(
 /**
  * Pick (or unpick) a tracked (serial/batch) lot for a picking line. A pick
  * MOVES the chosen lot from its warehouse bin to the line's lineside shelf via
- * the `post-picking` edge function (serial/batch), records it on the line, and
+ * the `post-picking` server function (serial/batch), records it on the line, and
  * points the job material at lineside. `unpick` reverses it.
  * @mcp update
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     trackedEntityId: string;
@@ -3108,7 +3129,7 @@ export async function setPickingListLineTrackedEntity(
     )
     .eq("id", args.pickingListLineId)
     // Callers pass the service role: the company scope is the tenant boundary,
-    // and the edge function below acts in args.companyId, never the row's.
+    // and the server function below acts in args.companyId, never the row's.
     .eq("companyId", args.companyId)
     .single();
 
@@ -3167,21 +3188,20 @@ export async function setPickingListLineTrackedEntity(
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;
     // A batch pick may be fractional (0.5 kg): send the requested quantity as
     // is and fall back to 1 only when none was given. Flooring at 1 turned
-    // every sub-1 remainder into an over-pick the edge function refused.
+    // every sub-1 remainder into an over-pick post-picking refused.
     if (isBatch) {
       body.quantity =
         args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
     }
   }
 
-  const result = await client.functions.invoke("post-picking", { body });
+  const result = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", body as ServerFnInput<"post-picking">);
   if (result.error) {
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
-        result.error,
-        "Failed to pick material"
-      )
+      error: getErrorMessage(result.error, "Failed to pick material")
     };
   }
 
@@ -4088,7 +4108,7 @@ export async function generatePickingList(
 /**
  * Pick, partial-pick (short), or unpick a picking line. A pick TRANSFERS the
  * material from its warehouse source shelf to the work center's lineside shelf
- * via the `post-picking` edge function (consumption happens later at
+ * via the `post-picking` server function (consumption happens later at
  * production). The DELTA between the desired picked quantity and what's already
  * picked is what moves: positive transfers in, negative reverses.
  *   - Pick (full):  quantity = quantityToPick
@@ -4099,6 +4119,7 @@ export async function generatePickingList(
  */
 export async function pickPickingListLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     quantity: number;
@@ -4114,7 +4135,7 @@ export async function pickPickingListLine(
     )
     .eq("id", args.pickingListLineId)
     // Callers pass the service role: the company scope is the tenant boundary,
-    // and the edge function below acts in args.companyId, never the row's.
+    // and the server function below acts in args.companyId, never the row's.
     .eq("companyId", args.companyId)
     .single();
 
@@ -4187,20 +4208,19 @@ export async function pickPickingListLine(
             companyId: args.companyId
           };
 
-    const result = await client.functions.invoke("post-picking", { body });
+    const result = await serverFns
+      .as({ client, db, companyId: body.companyId, userId: body.userId })
+      .invoke("post-picking", body as ServerFnInput<"post-picking">);
 
     if (result.error) {
       return {
         data: null,
-        error: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to pick material"
-        )
+        error: getErrorMessage(result.error, "Failed to pick material")
       };
     }
   }
 
-  // Short overrides the status the edge function derived from quantities.
+  // Short overrides the status the server function derived from quantities.
   if (args.markShort) {
     const update = await client
       .from("pickingListLine")

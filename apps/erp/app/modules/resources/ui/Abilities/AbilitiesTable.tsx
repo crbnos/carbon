@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -98,6 +98,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
     (row) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
           onClick={() => {
             navigate(`${path.to.ability(row.id!)}?${params?.toString()}`);
           }}

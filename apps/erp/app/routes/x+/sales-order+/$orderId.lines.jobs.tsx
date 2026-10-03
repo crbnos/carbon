@@ -10,6 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { convertSalesOrderLinesToJobs } from "~/modules/production/production.service";
 import { getSalesOrder } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -37,11 +38,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const convertedJobs = await convertSalesOrderLinesToJobs(serviceRole, {
-    orderId,
-    companyId,
-    userId
-  });
+  const convertedJobs = await convertSalesOrderLinesToJobs(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      orderId,
+      companyId,
+      userId
+    }
+  );
 
   if (convertedJobs.error) {
     const errorObj = convertedJobs.error as any;

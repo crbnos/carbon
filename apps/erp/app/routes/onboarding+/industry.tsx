@@ -18,7 +18,8 @@ import {
   ChoiceCardGroup,
   type ChoiceCardOption,
   cn,
-  HStack
+  HStack,
+  PrefetchLink
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { type ReactNode, useState } from "react";
@@ -35,7 +36,6 @@ import {
 import {
   type ActionFunctionArgs,
   Form,
-  Link,
   redirect,
   useLoaderData,
   useNavigation
@@ -419,9 +419,7 @@ export default function OnboardingIndustry() {
                   asChild
                   tabIndex={-1}
                 >
-                  <Link to={previous} prefetch="intent">
-                    Previous
-                  </Link>
+                  <PrefetchLink to={previous}>Previous</PrefetchLink>
                 </Button>
                 {dataChoice === "none" ? (
                   <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>

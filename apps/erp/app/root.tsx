@@ -10,13 +10,12 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
-import {
-  requestContextMiddleware,
-  requestIdMiddleware
-} from "@carbon/logger/middleware.server";
+import { requestMiddleware } from "@carbon/logger/middleware.server";
+import { timedMiddleware } from "@carbon/logger/tracing.server";
 import {
   OperatingSystemContextProvider,
   Toaster,
@@ -64,13 +63,13 @@ import "@carbon/lib/shims";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [
-  // First: publishes the request context so server code can reach it via ALS.
-  requestContextMiddleware,
-  requestIdMiddleware,
-  securityMiddleware,
-  flashMiddleware
-];
+export const middleware = timedMiddleware({
+  // First: the request scope (context, request id, access log).
+  request: requestMiddleware,
+  security: securityMiddleware,
+  formBody: formBodyMiddleware,
+  flash: flashMiddleware
+});
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {

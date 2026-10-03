@@ -207,7 +207,7 @@ export async function syncAuthz(root: string, dbPort: number): Promise<string> {
     process.stderr.write(r.stderr?.toString() ?? "");
     process.stdout.write(r.stdout?.toString() ?? "");
     throw new Error(
-      "authz sync failed: fix packages/database/src/authz/manifest.ts, then migrate again"
+      "authz sync failed: fix the rule or function file named above (packages/database/src/authz, src/event-system/functions), then migrate again"
     );
   }
   const counts = (r.stdout ?? "").match(/changed \d+ (helper|table)\(s\)/g);
@@ -300,11 +300,11 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   });
 }
 
-// The singleton "config" row is what SECURITY DEFINER functions
-// (wake_event_queue and the other pg_net callers) read to POST to edge
-// functions via pg_net. Without it those pushes silently no-op, so the
-// event-queue wake never fires in dev — and since webhooks now ride the event
-// system, they don't either. `apiUrl` must be the in-network Kong URL — pg_net
+// The singleton "config" row (the API URL and anon key some database
+// functions read), and the Vault `inngest_event_url` that
+// util.send_inngest_event posts database events to. Without the URL the
+// event-queue wake never fires in dev — and since webhooks ride the event
+// system, they don't either. Both URLs are in-network (Kong, Inngest): pg_net
 // runs inside the postgres container, which can't reach host ports.
 export async function ensureConfigRow(
   dbPort: number,
@@ -317,6 +317,12 @@ export async function ensureConfigRow(
        ON CONFLICT ("id") DO UPDATE
          SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey"`,
       [anonKey]
+    )
+  );
+  // Postgres sends its Inngest events to the dev server on the compose network.
+  await withClient(dbPort, (c) =>
+    c.query(
+      `SELECT public.set_inngest_event_url('http://inngest:8288/e/NO_EVENT_KEY_SET')`
     )
   );
 }

@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
@@ -127,12 +128,15 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     readableId: string;
   } | null>(null);
 
-  // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
+  // "Delete" is the server fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => navigate(path.to.operationBatch(row.id))}
+        >
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>

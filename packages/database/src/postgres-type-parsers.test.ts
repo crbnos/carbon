@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
  * module-load side effect. The import is the subject of these tests, not a
  * dependency of them — hence the bare side-effect import.
  */
-import "../supabase/functions/lib/postgres/index";
+import "./client.ts";
 
 const NUMERIC_OID = 1700;
 const DATE_OID = 1082;

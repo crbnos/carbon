@@ -12,15 +12,15 @@ import type { ConformanceCheck, Violation } from "../check";
  * 1. **Unrounded arithmetic reaching storage.** A lot left holding
  *    `0.020000000000000018` after an earlier split reads "0.02" in every UI and
  *    behaves like 0.02 nowhere. Round at the persist boundary — via `round()`
- *    from `functions/shared/precision.ts` / `@carbon/utils`, or (better) via
- *    `settleQuantity()` from `functions/shared/entity-drain.ts`, which rounds,
+ *    from `@carbon/utils`, or (better) via
+ *    `settleQuantity()` from `@carbon/utils` (`entity-drain.ts`), which rounds,
  *    refuses a negative, and applies the drain-to-Consumed rule in one step.
  *
  * 2. **A raw compare on that stored float deciding a split.** `entity.quantity
  *    !== drawn` reads a residue full draw as PARTIAL, and the split builder then
  *    throws its own `draw >= parentQty` guard as a 500 on a legitimate full
  *    pick — or mints a child entity holding 1.8e-17. Use `isFullDraw()` from
- *    `functions/shared/batch-split.ts` (the one split gate, so a caller's
+ *    `@carbon/utils` (`batch-split.ts`, the one split gate, so a caller's
  *    decision and the builder's guard can never disagree) or `equals()` on
  *    rounded values.
  *
@@ -47,10 +47,10 @@ import type { ConformanceCheck, Violation } from "../check";
  */
 
 const MESSAGE_WRITE =
-  "Unrounded arithmetic written to trackedEntity.quantity — the column is bare NUMERIC, so this float is what gets stored. Round at the persist boundary with round(), or settle the whole write with settleQuantity() from shared/entity-drain.ts.";
+  "Unrounded arithmetic written to trackedEntity.quantity — the column is bare NUMERIC, so this float is what gets stored. Round at the persist boundary with round(), or settle the whole write with settleQuantity() from @carbon/utils.";
 
 const MESSAGE_COMPARE =
-  "Raw compare on a stored tracked-entity quantity — a residue value (0.020000000000000018) makes a full draw read as partial. Use isFullDraw() from shared/batch-split.ts for a split gate, or round both sides.";
+  "Raw compare on a stored tracked-entity quantity — a residue value (0.020000000000000018) makes a full draw read as partial. Use isFullDraw() from @carbon/utils for a split gate, or round both sides.";
 
 /** The helpers that satisfy the standard. `equals`/`isFullDraw` are compare-side. */
 const SANCTIONED =
@@ -58,10 +58,10 @@ const SANCTIONED =
 
 /** The modules that IMPLEMENT the standard; they are where the rounding lives. */
 const EXCLUDED_FILES = new Set([
-  "packages/database/supabase/functions/shared/precision.ts",
-  "packages/database/supabase/functions/shared/batch-split.ts",
-  "packages/database/supabase/functions/shared/batch-merge.ts",
-  "packages/database/supabase/functions/shared/entity-drain.ts"
+  "packages/database/src/precision.ts",
+  "packages/utils/src/batch-split.ts",
+  "packages/utils/src/batch-merge.ts",
+  "packages/utils/src/entity-drain.ts"
 ]);
 
 const isComment = (text: string) => /^\s*(?:\/\/|\/\*|\*)/.test(text);
@@ -154,7 +154,7 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
     deprecates:
       'inline unrounded arithmetic in .updateTable("trackedEntity").set({ quantity }) and raw ===/!==/< split gates on trackedEntity.quantity',
     replacedBy:
-      "round() / settleQuantity() (functions/shared/entity-drain.ts) at the write, isFullDraw() (functions/shared/batch-split.ts) at the gate",
+      "round() / settleQuantity() (@carbon/utils entity-drain.ts) at the write, isFullDraw() (@carbon/utils batch-split.ts) at the gate",
     since: "2026-09-23"
   },
   scan(file: string, contents: string): Violation[] {

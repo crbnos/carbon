@@ -7,8 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueTrackedEntityValidator } from "~/services/models";
 
 const log = getLogger("mes", "unconsume");
@@ -113,19 +115,17 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       type: "unconsumeTrackedEntities",
       materialId,
-      parentTrackedEntityId,
-      children,
-      companyId,
-      userId
-    }
-  });
+      parentTrackedEntityId: parentTrackedEntityId!,
+      children
+    });
 
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
+  if (issued.error) {
+    log.error("Failed to issue material", { error: issued.error });
     return data(
       { success: false, message: "Failed to issue material" },
       { status: 400 }

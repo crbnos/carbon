@@ -4,9 +4,14 @@
 
 import { CarbonProvider } from "@carbon/auth";
 import { requireAuthSession } from "@carbon/auth/session.server";
-import type { LoaderFunctionArgs, MiddlewareFunction } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  MiddlewareFunction,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { userMiddleware } from "~/middleware/user";
+import { path } from "~/utils/path";
 
 /**
  * Layout for the wall-mounted work center displays.
@@ -24,6 +29,13 @@ import { userMiddleware } from "~/middleware/user";
  * are meant to hang on a wall for months, so an hour of uptime is no uptime.
  */
 export const middleware: MiddlewareFunction[] = [userMiddleware];
+
+// The refreshed session reaches the client through this loader, and the
+// refresh asks for no other loader to re-run.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate
+}) => formAction === path.to.refreshSession || defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // `verify: false` skips the `auth.getUser` round-trip on every load. The

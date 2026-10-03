@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getRemainingQuantityToInvoice } from "@carbon/utils";
+
 import type { Insertable } from "kysely";
-import { getRemainingQuantityToInvoice } from "../../../../../database/supabase/functions/shared/short-close";
 import type { RampBillDraft } from "./ramp-sync-bill-stage";
 
 /** Reconcile only the Ramp-covered lines, retaining Carbon's PO lineage/UOM. */

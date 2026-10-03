@@ -13,7 +13,6 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { useInventorySubmodules } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
@@ -24,10 +23,16 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Inventory" }];
 };
 
+function InventorySidebar() {
+  const { groups } = useInventorySubmodules();
+  return <GroupedContentSidebar groups={groups} />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
-  module: "inventory"
+  module: "inventory",
+  sidebar: InventorySidebar
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
@@ -50,16 +55,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InventoryRoute() {
-  const { groups } = useInventorySubmodules();
-
   return (
-    <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full">
-        <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="h-full">
-          <Outlet />
-        </VStack>
-      </div>
-    </CollapsibleSidebarProvider>
+    <VStack spacing={0} className="h-full">
+      <Outlet />
+    </VStack>
   );
 }

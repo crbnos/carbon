@@ -22,6 +22,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -51,7 +52,7 @@ export async function getAccountsPayableBillingAddress(
     .from("companyAccountsPayableBillingAddress")
     .select("*")
     .eq("id", companyId)
-    .single();
+    .maybeSingle();
 }
 
 /** @mcp read */
@@ -63,7 +64,7 @@ export async function getAccountsReceivableBillingAddress(
     .from("companyAccountsReceivableBillingAddress")
     .select("*")
     .eq("id", companyId)
-    .single();
+    .maybeSingle();
 }
 
 /** @mcp update */
@@ -256,7 +257,11 @@ export async function getCompanyPlan(
   client: SupabaseClient,
   companyId: string
 ) {
-  return client.from("companyPlan").select("*").eq("id", companyId).single();
+  return client
+    .from("companyPlan")
+    .select("*")
+    .eq("id", companyId)
+    .maybeSingle();
 }
 
 /** @mcp read */
@@ -383,7 +388,10 @@ export async function getKanbanOutputSetting(
     .single();
 }
 
-/** @mcp read */
+/**
+ * Takes the next number of a sequence, which advances it.
+ * @mcp action
+ */
 export async function getNextSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -684,7 +692,10 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
-/** @mcp upsert */
+/**
+ * @mcp upsert
+ * @mcp key documentSection id
+ */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {
@@ -849,7 +860,8 @@ export async function insertSubsidiary(
     isEliminationEntity?: boolean;
   }
 ) {
-  const { id: _, ...data } = subsidiary;
+  // company has no createdBy column.
+  const { id: _, createdBy: _createdBy, ...data } = subsidiary;
   return client.from("company").insert(data).select("id").single();
 }
 
@@ -867,18 +879,17 @@ export async function updateSubsidiary(
 
 export async function seedCompany(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
-  return client.functions.invoke("seed-company", {
-    body: {
-      companyId,
-      userId,
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("seed-company", {
       parentCompanyId: opts?.parentCompanyId,
       identityOnly: opts?.identityOnly ?? false
-    }
-  });
+    });
 }
 
 export async function updateCompanyPlan(

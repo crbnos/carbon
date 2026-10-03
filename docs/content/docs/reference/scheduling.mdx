@@ -3,7 +3,7 @@ title: Scheduling
 description: Finite-capacity scheduling — how jobs are placed onto real work-center and operator calendars, and the boards that show and steer the result.
 ---
 
-Scheduling in Carbon answers three questions for the floor: *when* will each [job](/docs/reference/jobs) actually run, *in what order* does each [work center](/docs/reference/work-centers) pick up its operations, and *does the plan fit* the capacity you really have. The engine is **finite-capacity**: it places every operation forward onto real work-center operating hours and, where an operation needs a qualified operator, onto real people's shifts. A machine can hold one operation at a time, so a busy shop genuinely pushes work out rather than pretending everything fits.
+Scheduling assigns each [job](/docs/reference/jobs) operation a time and sequence on a [work center](/docs/reference/work-centers). The **finite-capacity** engine places operations within work-center operating hours and, when required, qualified employees' shifts. Because a machine can run only one operation at a time, existing work delays later operations.
 
 ## Where scheduling lives
 
@@ -30,8 +30,8 @@ When a process can run on more than one work center, the engine picks the candid
 
 The dispatch order the boards show falls straight out of placement. The engine groups placed operations by work center, sorts by projected start, and numbers them 1, 2, 3. The top card in a column is the next thing to run there. The job's <Term id="job-deadline-type">deadline type</Term> matters here as a *ranking* signal: jobs claim capacity in deadline-class order (ASAP first, then Hard Deadline, Soft Deadline, No Deadline), then by due date. No deadline type blocks or gates placement.
 
-<Callout type="info" title="Capacity is finite, and that's the point">
-The old model computed dates as if every machine had infinite room, and load only picked which station won a tie. Now a full machine or a booked-up operator pool delays the operation, and the delay is visible and explained. A job with no due date still schedules fine; the due date is the yardstick lateness is measured against, not a placement anchor.
+<Callout type="info" title="Finite capacity affects completion dates">
+A full machine or unavailable operator pool delays the operation, and Carbon explains the delay. Jobs without due dates still schedule; the due date measures lateness but does not anchor placement.
 </Callout>
 
 ## People are part of capacity
@@ -41,7 +41,7 @@ A process can be marked as **requiring an ability**. Operations of that process 
 Each location also has a staffing policy on the Production settings page, described there as: *"Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."* With **"Staffing required"** on, the floater fallback is off and even ability-free operations need a manned station, so work routes only to where you've put people.
 
 <Callout type="warn" title="Moving your only qualified operator strands the work">
-If one person holds the ability a station needs and you man them elsewhere, that station's operations become unschedulable rather than double-booking the person or sneaking onto an unmanned night shift. The Forecast flags them as "can't be scheduled" so you can see the gap and fix the manning.
+If the only qualified employee is assigned elsewhere, the station's operations become unschedulable. Carbon does not double-book the employee or place the operation on an unmanned shift. Forecast marks the operations **"Can't be scheduled"** so you can correct staffing.
 </Callout>
 
 ## Two dates on every operation
@@ -82,7 +82,7 @@ The engine always produces a complete answer. Late work is placed and flagged, u
 
 Scheduling reacts to its inputs. Editing anything the engine reads — a due date on the Priorities board, a manning assignment, a shift, a work center's hours or active flag, an operator qualification, a process's ability requirement, machine downtime — stamps the affected jobs **schedule outdated** and queues a **replan wave**. The wave is debounced about 30 seconds, so a burst of edits triggers a single regeneration of each affected location rather than one run per keystroke. The Forecast's **Regenerate** button runs the same whole-location regeneration on demand.
 
-Two paths skip the wave and reschedule immediately: releasing or changing the status of a job, and the kanban auto-release flow. And a nightly pass re-anchors any schedule whose planned start has slipped into the past, so a quiet shop's forecast doesn't drift stale.
+Job release or status changes and the kanban auto-release flow reschedule immediately. A nightly pass also recalculates schedules whose planned start is in the past.
 
 When a regeneration pushes jobs past their due dates that were previously on time, each affected job's assignee gets a **"Jobs projected late"** notification listing the newly late jobs. Silence means the change fit.
 

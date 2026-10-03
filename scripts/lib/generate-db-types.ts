@@ -114,11 +114,8 @@ export function sortRelationships(source: string): string {
 
 export function generateDatabaseTypes(databaseUrl: string | undefined): void {
   const dbUrl = validateDatabaseUrl(databaseUrl);
-  const targets = [
-    resolve("packages/database/src/types.ts"),
-    resolve("packages/database/supabase/functions/lib/types.ts")
-  ];
-  const directory = mkdtempSync(join(dirname(targets[0]!), ".db-types-"));
+  const target = resolve("packages/database/src/types.ts");
+  const directory = mkdtempSync(join(dirname(target), ".db-types-"));
   try {
     const candidate = join(directory, "types.ts");
     const out = openSync(candidate, "wx");
@@ -148,7 +145,7 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
             ? "could not complete"
             : `exited ${result.status}`;
         throw new Error(
-          `Supabase type generation ${status}; existing type files were preserved.`
+          `Supabase type generation ${status}; the existing type file was preserved.`
         );
       }
     } finally {
@@ -159,14 +156,12 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
     );
     if (!/^export type Database\b/m.test(normalized)) {
       throw new Error(
-        "Database type generation did not produce an exported Database type; existing type files were preserved."
+        "Database type generation did not produce an exported Database type; the existing type file was preserved."
       );
     }
-    for (const target of targets) {
-      const staged = join(directory, "staged.ts");
-      writeFileSync(staged, normalized);
-      renameSync(staged, target);
-    }
+    const staged = join(directory, "staged.ts");
+    writeFileSync(staged, normalized);
+    renameSync(staged, target);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

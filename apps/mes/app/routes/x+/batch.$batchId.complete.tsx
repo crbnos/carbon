@@ -8,8 +8,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import {
   getJobOperationBatch,
@@ -21,7 +23,7 @@ const logger = getLogger("mes", "batch-complete");
 // A batch planned with a combined output merges every member's produced lot
 // into the planned lot number once completion lands. Parent ids are derived
 // SERVER-SIDE from membership: this route invokes `issue` with the SERVICE
-// ROLE, so the edge fn's `inventory` check validates the service role rather
+// ROLE, so the server fn's `inventory` check validates the service role rather
 // than the operator. A second call finds nothing (parents are Consumed), so a
 // resume never double-merges.
 async function getPlannedMergeLots(
@@ -75,8 +77,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Lot identity was planned at creation: a merged batch stamps its one lot
   // number on every member's output; otherwise each member keeps its own
   // planned number (null leaves the entity's readableId untouched, and the
-  // edge fn refuses an output with no number at all).
-  // The edge function is invoked with the service role, so the submitted
+  // server fn refuses an output with no number at all).
+  // The server function is invoked with the service role, so the submitted
   // member ids must be this batch's members, and any tracked entity this
   // company's — one scoped query for the entity list.
   const memberIds = new Set(
@@ -121,15 +123,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? planned.data.outputLotNumber
     : null;
 
-  // The edge function owns the whole completion: slice events + record quantities
+  // The batch-operations operation owns the whole completion: slice events + record quantities
   // (phase 1, one txn), then issue each member's BOM + flip members Done + post GL
   // (phase 2, idempotent). A phase-2 failure leaves the batch 'Completing'; the
   // operator re-submitting this form re-invokes and resumes without double effects.
-  const completeResult = await serviceRole.functions.invoke<{
-    memberIds?: string[];
-    error?: string;
-  }>("batch-operations", {
-    body: {
+  const completeResult = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("batch-operations", {
       type: "complete",
       batchId,
       // An excluded ("not in this run") member detaches back to the schedule;
@@ -145,11 +145,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           batchNumber: plannedLotNumber,
           excluded
         };
-      }),
-      companyId,
-      userId
-    }
-  });
+      })
+    });
 
   // "Already completed" is not a failure: a duplicate submit (double click,
   // a retry after a slow first attempt) means the work landed. Fall through to
@@ -157,24 +154,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // then, so it finds no groups — and report success. Reporting this as
   // an error told the operator the completion failed when it had just
   // succeeded, with the lots and the merged lot already written.
-  const completionErrorMessage =
-    completeResult.data?.error ??
-    (completeResult.error ? String(completeResult.error.message ?? "") : "");
-  const alreadyCompleted = /already been completed|already completed/i.test(
-    completionErrorMessage
-  );
-  if (
-    (completeResult.error || completeResult.data?.error) &&
-    !alreadyCompleted
-  ) {
+  const alreadyCompleted = completeResult.error?.body.alreadyCompleted === true;
+  if (completeResult.error && !alreadyCompleted) {
     return data(
       {},
       await flash(
         request,
-        error(
-          completeResult.error ?? completeResult.data?.error,
-          "Failed to complete batch"
-        )
+        error(completeResult.error.message || null, "Failed to complete batch")
       )
     );
   }
@@ -198,25 +184,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   if (mergeLots && mergeLots.length >= 2) {
-    const mergeResult = await serviceRole.functions.invoke<{ error?: string }>(
-      "issue",
-      {
-        body: {
-          type: "mergeTrackedEntities",
-          trackedEntityIds: mergeLots,
-          readableId: plannedLotNumber,
-          companyId,
-          userId
-        }
-      }
-    );
-    if (mergeResult.error || mergeResult.data?.error) {
+    const mergeResult = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        type: "mergeTrackedEntities",
+        trackedEntityIds: mergeLots,
+        readableId: plannedLotNumber
+      });
+    if (mergeResult.error) {
       return data(
         { completed: true },
         await flash(
           request,
           error(
-            mergeResult.error ?? mergeResult.data?.error,
+            mergeResult.error,
             `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
           )
         )

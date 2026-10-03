@@ -167,6 +167,9 @@ msgstr "모두 재작업"
 msgid "All scrap"
 msgstr "모든 스크랩"
 
+msgid "All steps"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
 
@@ -516,6 +519,9 @@ msgstr "오늘 예정됨?"
 msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
+msgid "Duplicate or copy"
+msgstr ""
+
 msgid "Duplicate serial number"
 msgstr "중복된 시리얼 번호"
 
@@ -711,6 +717,9 @@ msgstr "야드파운드법"
 #. placeholder {0}: precise?.text
 msgid "in {0}"
 msgstr "{0} 후"
+
+msgid "In an open menu"
+msgstr ""
 
 msgid "In Progress"
 msgstr "진행 중"
@@ -1138,6 +1147,11 @@ msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 msgid "Open Jobs"
 msgstr "작업 지시 열기"
 
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
 msgid "Operations"
 msgstr "공정작업"
 
@@ -1225,6 +1239,9 @@ msgstr "{substitutedFrom} 대신 피킹, 작업의 품목"
 
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
@@ -1352,6 +1369,9 @@ msgstr "재고 제거"
 
 msgid "Remove part"
 msgstr "품목 제거"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
@@ -1640,6 +1660,21 @@ msgstr "단계가 누락되었습니다"
 msgid "Storage Unit"
 msgstr "보관 단위"
 
+msgid "Sub-Assembly"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
@@ -1829,6 +1864,11 @@ msgstr "다른 계정 사용"
 msgid "Used automatically at completion"
 msgstr "완료 시 자동으로 사용됨"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
 msgid "Value"
 msgstr "값"
 
@@ -1837,6 +1877,9 @@ msgstr "확인"
 
 msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
+
+msgid "View or open"
+msgstr ""
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."

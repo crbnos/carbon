@@ -15,6 +15,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDebounce,
@@ -124,13 +125,14 @@ const AttributeCategoryDetail = ({
   const renderContextMenu = (attributeId: string) => {
     return (
       <>
-        <MenuItem asChild>
+        <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
           <Link to={attributeId}>
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Attribute</Trans>
           </Link>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           onClick={() => onDelete(attributeMap[attributeId])}
         >

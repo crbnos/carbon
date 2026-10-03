@@ -16,13 +16,15 @@ import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ServiceSummary } from "~/modules/items";
 import {
-  getMakeMethodById,
-  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   serviceValidator,
   upsertService
 } from "~/modules/items";
+import {
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce
+} from "~/modules/items/items.server";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -48,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const makeMethods = await getMakeMethodsOnce(client, itemId, companyId);
   const makeMethod = requestedMethodId
     ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
       makeMethods.data?.find((m) => m.status === "Active") ??
@@ -60,7 +62,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { methodData: null, tags: [] };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodByIdOnce(
+    client,
+    makeMethod.id,
+    companyId
+  );
   if (fullMethod.error || !fullMethod.data) {
     return { methodData: null, tags: [] };
   }

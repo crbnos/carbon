@@ -3,26 +3,44 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
   getNonce,
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
+import { getProcessPool } from "@carbon/database/client";
+import { inngest } from "@carbon/lib/inngest";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
 import { createTracing } from "@carbon/logger/tracing.server";
-import { waitUntil } from "@vercel/functions";
+import { async } from "@carbon/utils";
+import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
+import { InngestSpanProcessor } from "inngest/experimental";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
+installFormBodyGuard();
+
+// Vercel freezes an instance once its response is sent: keep it up until idle
+// database connections have closed and background work has finished.
+if (process.env.VERCEL) {
+  attachDatabasePool(getProcessPool());
+  async.onBackground(waitUntil);
+}
 
 export const instrumentations = createTracing({
   serviceName: "carbon-erp",
   // Vercel can suspend the instance once the response is sent.
-  afterRequest: process.env.VERCEL ? (flush) => waitUntil(flush()) : undefined
+  afterRequest: process.env.VERCEL ? (flush) => waitUntil(flush()) : undefined,
+  // Sends the spans of a function run to Inngest, so its run timeline shows
+  // the queries and HTTP calls each step made. Registered here, not through
+  // Inngest's middleware on the client: that module is reachable from browser
+  // code (`trigger`) and must not pull in the tracing SDK.
+  spanProcessors: [new InngestSpanProcessor(inngest)]
 });
 scheduleInngestSelfSync();
 

@@ -8,15 +8,13 @@ import type { ConformanceCheck, Violation } from "../check";
 // guarantees: Math.round breaks tie parity with Postgres, Math.ceil on a
 // quantity inflates fractional targets (the 4.5 -> 5 consumption bug), and
 // toFixed is string arithmetic. Use round/scrapAllowance/applyRate/deriveRate from
-// @carbon/utils (or functions/shared/precision.ts in edge functions).
+// @carbon/utils (defined in @carbon/database/precision).
 // Genuinely-integer sites (counts, pagination, geometry, day buckets) are
 // baselined, not exempted here.
 const RAW_ROUNDING = /Math\.(?:round|ceil|floor)\(|\.toFixed\(/;
 
 // The precision module IS the implementation of rounding.
-const EXCLUDED_FILES = new Set([
-  "packages/database/supabase/functions/shared/precision.ts"
-]);
+const EXCLUDED_FILES = new Set(["packages/database/src/precision.ts"]);
 
 export const noRawRounding: ConformanceCheck = {
   id: "no-raw-rounding",
@@ -25,8 +23,7 @@ export const noRawRounding: ConformanceCheck = {
   provenance: {
     deprecates:
       "ad-hoc Math.round/Math.ceil/Math.floor/toFixed on prices, rates, and quantities",
-    replacedBy:
-      "round/scrapAllowance/applyRate/deriveRate from @carbon/utils (functions/shared/precision.ts)",
+    replacedBy: "round/scrapAllowance/applyRate/deriveRate from @carbon/utils",
     since: "2026-08-11"
   },
   scan(file: string, contents: string): Violation[] {

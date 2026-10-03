@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
+import { getDatabaseClient } from "~/services/database.server";
 import {
   getAvailableTrackedEntities,
   getCompanySettings,
@@ -105,15 +106,19 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(serviceRole, {
-    pickingListLineId: lineId,
-    trackedEntityId,
-    fromStorageUnitId,
-    quantity,
-    unpick,
-    userId: effectiveUserId,
-    companyId
-  });
+  const result = await setPickingListLineTrackedEntity(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      pickingListLineId: lineId,
+      trackedEntityId,
+      fromStorageUnitId,
+      quantity,
+      unpick,
+      userId: effectiveUserId,
+      companyId
+    }
+  );
 
   if (result.error) {
     logger.error("Failed to pick tracked entity", {

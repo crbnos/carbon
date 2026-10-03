@@ -134,7 +134,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // The totals guard, BEFORE any edge-function call.
+  // The totals guard, BEFORE any server-function call.
   const willPost = intent === "save-and-post";
   if (
     willPost &&

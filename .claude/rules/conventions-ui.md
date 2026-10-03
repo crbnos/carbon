@@ -66,6 +66,19 @@ document keydown listener; the library already handles typing-in-input
 suppression and physical-key (`event.code`) matching. `useShortcutSequence`
 is the one hand-rolled exception (the library has no sequence support).
 
+**Menu item keys.** `DropdownMenuItem` / `ContextMenuItem` / `MenuItem` take
+`shortcut={MENU_ITEM_SHORTCUTS.<verb>}` (`packages/react/src/shortcuts.ts`:
+Edit E, Rename R, Pin P, Duplicate/Copy C, Download D, View/Open O,
+Delete Backspace — the Backspace or Delete key).
+The item shows a keycap and runs when its key is pressed — only while its menu
+is open, because the handler (`utils/menuShortcut.ts`) sits on the menu
+content's `onKeyDown`, not on the document. Unowned letters fall through to
+Radix typeahead; keys typed into a field inside the menu are ignored. Give a
+Delete item the key only when choosing it opens a confirmation first; an item
+that deletes immediately gets none. An item with a keycap never wraps
+(`whitespace-nowrap`), so give its menu a `min-w-*`, not a fixed `w-*`. Never
+give two items in one menu the same key.
+
 **Interaction design rules** (apply per screen, don't bind mechanically):
 
 - **Enter** is the shortcut when there is one obvious action: a single input

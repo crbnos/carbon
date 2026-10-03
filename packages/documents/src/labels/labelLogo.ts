@@ -20,15 +20,13 @@ export interface ResolvedLabelLogo {
 /**
  * If the tracking-label template has a visible logo block, resolve the company
  * logo into a color URL (PDF), a monochrome PNG (PDF B&W) and a ZPL `^GFA`
- * graphic — the last two via the `logo-resizer` edge function (shared image pipeline).
- * Returns null when there's no logo block or no company logo. `supabaseUrl` is
- * passed in so this stays free of app-specific auth imports.
+ * graphic — the last two via the shared image pipeline (`renderLabelLogo`).
+ * Returns null when there's no logo block or no company logo.
  */
 export async function resolveLabelLogo(
   company: { logoLight?: string | null; logoLightIcon?: string | null } | null,
   template: DocumentTemplate | null,
-  labelSize: LabelSize,
-  { supabaseUrl }: { supabaseUrl: string }
+  labelSize: LabelSize
 ): Promise<ResolvedLabelLogo | null> {
   const resolved = resolveTemplate("trackingLabel", template);
   const logoBlock = resolved.blocks.find(
@@ -49,34 +47,21 @@ export async function resolveLabelLogo(
 
   try {
     const imgRes = await fetch(color);
-    const blob = await imgRes.blob();
-    const formData = new FormData();
-    formData.append("file", blob, "logo.png");
-    formData.append("widthDots", String(widthDots));
-    if (crop) {
-      // ZPL/mono can't clip at render — crop server-side before threshold.
-      formData.append("cropX", String(crop.x));
-      formData.append("cropY", String(crop.y));
-      formData.append("cropW", String(crop.width));
-      formData.append("cropH", String(crop.height));
-    }
-    const res = await fetch(`${supabaseUrl}/functions/v1/logo-resizer`, {
-      method: "POST",
-      body: formData
-    });
-    const json = (await res.json()) as {
-      monoPng?: string;
-      gfa?: string;
-      widthDots?: number;
-    };
+    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+    const { renderLabelLogo } = await import("@carbon/files/media/node");
+    // ZPL/mono can't clip at render — crop before the threshold.
+    // The company logo may be a JPEG or WebP, not only a PNG.
+    const extension =
+      imgRes.headers.get("content-type")?.split("/")[1]?.split(";")[0] ?? "png";
+    const logo = await renderLabelLogo(bytes, extension, { widthDots, crop });
     return {
       color,
-      mono: json.monoPng,
-      gfa: json.gfa,
-      widthDots: json.widthDots
+      mono: logo.monoPng,
+      gfa: logo.gfa,
+      widthDots: logo.widthDots
     };
   } catch {
-    // Edge function unavailable — color logo still works in the PDF.
+    // Logo unreadable — color logo still works in the PDF.
     return { color };
   }
 }

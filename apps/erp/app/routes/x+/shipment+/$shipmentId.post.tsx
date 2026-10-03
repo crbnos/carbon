@@ -19,6 +19,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -30,6 +31,7 @@ import {
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -202,7 +204,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Expired-batch policy check. Mirrors post-stock-transfer / issue edge
+  // Expired-batch policy check. Mirrors post-stock-transfer / issue server
   // functions: pulls inventoryShelfLife.expiredEntityPolicy from
   // companySettings and refuses to post when any tracked entity attached to
   // the shipment is past its expirationDate (unless policy is "Warn").
@@ -265,7 +267,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", shipmentId);
+    .eq("id", shipmentId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     throw redirect(
@@ -273,6 +278,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(setPendingState.error, "Failed to post shipment")
+      )
+    );
+  }
+
+  if (!setPendingState.data?.length) {
+    throw redirect(
+      path.to.shipments,
+      await flash(
+        request,
+        error(null, "This shipment has already been posted or voided")
       )
     );
   }
@@ -355,16 +370,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const postShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-shipment", {
         type: "post",
-        shipmentId: shipmentId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
+        shipmentId: shipmentId
+      });
 
-    if (postShipment.error) {
+    if (posted.error) {
       await client
         .from("shipment")
         .update({
@@ -374,10 +387,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       throw redirect(
         path.to.shipmentDetails(shipmentId),
-        await flash(
-          request,
-          error(postShipment.error, "Failed to post shipment")
-        )
+        await flash(request, error(posted.error, "Failed to post shipment"))
       );
     }
 
@@ -415,7 +425,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // RETAINED shelf lots (their quantity changed in the split) — existing
     // entities being reprinted, hence sourceDocument "Entity". The shipped
     // child departed Consumed and gets no label.
-    const splitEntityIds = postShipment.data?.splitEntityIds || [];
+    const splitEntityIds = posted.data?.splitEntityIds || [];
     if (splitEntityIds.length > 0) {
       try {
         for (const entityId of splitEntityIds) {

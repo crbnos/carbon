@@ -513,6 +513,57 @@ describe("buildRowTransforms", () => {
     );
     expect(out.email).toBe("redacted@example.test");
   });
+
+  it("rewrites a FK-less id ref through idRewrite (inspection.sourceDocumentLineId)", () => {
+    // The source company's inspection still holds ("Receipt", "line-old"); a
+    // verbatim copy collides on the cross-company unique index.
+    const t = table("inspection", [
+      col("id"),
+      col("companyId"),
+      col("sourceDocumentId"),
+      col("sourceDocumentLineId", { nullable: true })
+    ]);
+    const idRewrite = new Map([
+      ["receipt-old", "receipt-new"],
+      ["line-old", "line-new"]
+    ]);
+    const out = apply(
+      t,
+      {
+        id: "i1",
+        companyId: "src-co",
+        sourceDocumentId: "receipt-old",
+        sourceDocumentLineId: "line-old"
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.sourceDocumentId).toBe("receipt-new");
+    expect(out.sourceDocumentLineId).toBe("line-new");
+  });
+
+  it("rewrites each element of a FK-less id-array ref, keeping unmapped values", () => {
+    const t = table("pricingRule", [
+      col("id"),
+      col("companyId"),
+      col("itemIds", { nullable: true })
+    ]);
+    const out = apply(
+      t,
+      { id: "r1", companyId: "src-co", itemIds: ["a-old", "global-1"] },
+      ctx({ idRewrite: new Map([["a-old", "a-new"]]) })
+    );
+    expect(out.itemIds).toEqual(["a-new", "global-1"]);
+  });
+
+  it("leaves an id ref verbatim on an own restore (remap=false)", () => {
+    const t = table("inspection", [col("id"), col("sourceDocumentLineId")]);
+    const out = apply(
+      t,
+      { id: "i1", sourceDocumentLineId: "line-old" },
+      ctx({ remap: false, idRewrite: new Map([["line-old", "line-new"]]) })
+    );
+    expect(out.sourceDocumentLineId).toBe("line-old");
+  });
 });
 
 describe("buildIdMaps", () => {

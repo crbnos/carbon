@@ -7,7 +7,7 @@ import { optionalTiptapDoc, toTiptapDoc } from "./shared.models";
 
 // Rich-text columns are `json` and must hold a tiptap document OBJECT. A JSON
 // string scalar stored there later breaks every Kysely copy of the row
-// (deno-postgres sends a string parameter as raw text). These pin the one
+// (the Postgres driver sends a string parameter as raw text). These pin the one
 // coercion every writer goes through.
 
 const doc = {

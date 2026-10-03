@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   missingPartyFacts,
@@ -68,12 +69,12 @@ export async function checkPartyContactRequirement(
     client
       .from(contactTable)
       .select("contact(email)")
-      .eq(partyColumn, party.id)
+      .eq(unchecked(partyColumn), party.id)
       .eq("companyId", companyId),
     client
       .from(locationTable)
       .select("address(countryCode, stateProvince)")
-      .eq(partyColumn, party.id)
+      .eq(unchecked(partyColumn), party.id)
       .eq("companyId", companyId)
   ]);
 

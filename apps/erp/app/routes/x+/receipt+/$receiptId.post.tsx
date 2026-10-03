@@ -16,10 +16,12 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { serverFns } from "@carbon/server-functions";
 import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { reconcileReceiptSerialEntities } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "receiptid-post");
@@ -61,11 +63,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // A voided receipt has already been reversed — re-posting would duplicate
   // ledger entries, cost layers and journal lines. Block it before mutating
   // any state (the route flips status to "Pending" below, which is why this
-  // guard lives here and not in the edge function).
+  // guard lives here and not in the server function).
   if (receiptForSurface?.status === "Voided") {
     throw redirect(
       path.to.receipt(receiptId),
-      await flash(request, error(null, "Cannot post a voided receipt"))
+      await flash(
+        request,
+        error(null, "This receipt has already been posted or voided")
+      )
     );
   }
 
@@ -170,11 +175,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     lines: lines ?? []
   });
 
-  // Make the transition to Pending atomic with the voided guard above: the
-  // early check and this update are separated by rule evaluation + reconcile,
-  // so a concurrent void could slip in between. Conditioning the write on the
-  // status still not being "Voided" (and detecting a zero-row match) closes
-  // that race — a voided receipt won't be flipped back to Pending and reposted.
+  // Conditional on a postable status, so a concurrent void or post is not
+  // flipped back to Pending.
   const setPendingState = await client
     .from("receipt")
     .update({
@@ -182,7 +184,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .eq("id", receiptId)
     .eq("companyId", companyId)
-    .neq("status", "Voided")
+    .in("status", ["Draft", "Pending"])
     .select("id");
 
   if (setPendingState.error) {
@@ -217,15 +219,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", companyId)
       .single();
 
-    const postReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-receipt", {
+        receiptId: receiptId
+      });
 
-    if (postReceipt.error) {
+    if (posted.error) {
       await client
         .from("receipt")
         .update({
@@ -235,7 +235,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       throw redirect(
         path.to.receipt(receiptId),
-        await flash(request, error(postReceipt.error, "Failed to post receipt"))
+        await flash(request, error(posted.error, "Failed to post receipt"))
       );
     }
 
@@ -249,19 +249,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       receiptMetadata.data?.sourceDocument === "Purchase Order" &&
       receiptMetadata.data?.sourceDocumentId
     ) {
-      const leadTimeUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
-        {
-          body: {
-            source: "purchaseOrder",
-            purchaseOrderId: receiptMetadata.data.sourceDocumentId,
-            companyId,
-            userId,
-            updatePrices: false,
-            updateLeadTimes: true
-          }
-        }
-      );
+      // System: the poster needs no purchasing rights to refresh lead times.
+      const leadTimeUpdate = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("update-purchased-prices", {
+          source: "purchaseOrder",
+          purchaseOrderId: receiptMetadata.data.sourceDocumentId,
+          updatePrices: false,
+          updateLeadTimes: true
+        });
 
       if (leadTimeUpdate.error) {
         logger.error(

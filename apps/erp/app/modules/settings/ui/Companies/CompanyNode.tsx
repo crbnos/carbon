@@ -7,7 +7,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -95,6 +96,7 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
 
             {company.parentCompanyId && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete(company.id!)}
               >

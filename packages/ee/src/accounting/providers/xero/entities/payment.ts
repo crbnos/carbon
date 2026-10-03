@@ -20,7 +20,7 @@ import type { XeroProvider } from "../provider";
  * endpoint) settles exactly ONE invoice: an ACCPAY invoice (a bill → AP,
  * settling a Carbon purchaseInvoice) or an ACCREC invoice (a sales invoice →
  * AR, settling a Carbon salesInvoice). The base writes a Draft `payment` +
- * `invoiceSettlement` and then invokes the native `post-payment` edge function
+ * `invoiceSettlement` and then invokes the native `post-payment` server function
  * (GL journal + Posted/Voided status). Two-way as of Phase G: a Carbon-born
  * Posted payment pushes back out as a Xero `/Payments` document (see
  * `pushRemotePayment`).

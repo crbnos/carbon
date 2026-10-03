@@ -26,7 +26,7 @@ function trackedMembers(selected: BatchCandidate[]) {
 }
 
 // Merging needs every selected operation to produce ONE batch-tracked item —
-// the edge fn enforces the same rule, this just hides an option it would refuse.
+// the server fn enforces the same rule, this just hides an option it would refuse.
 export function canCombineOutput(selected: BatchCandidate[]) {
   const tracked = trackedMembers(selected);
   if (tracked.length < 2 || tracked.length !== selected.length) return false;

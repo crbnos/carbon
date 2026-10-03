@@ -19,6 +19,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
 import {
   createAndSendConnectInvoice,
@@ -555,7 +556,7 @@ export async function action(args: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   // Everything below reads and writes through the service role (and the
-  // Stripe preflight runs before the edge function re-checks the invoice), so
+  // Stripe preflight runs before the server function re-checks the invoice), so
   // the URL's invoiceId must belong to this company before anything happens.
   await requireCompanyRecord(serviceRole, "salesInvoice", companyId, {
     id: invoiceId
@@ -575,7 +576,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // Sales-rule terminal gate. Posting is the revenue checkpoint and the only
   // gate an invoice raised with no upstream document ever passes — lines can
-  // arrive from the convert edge function, the API, or MCP without the
+  // arrive from the convert server function, the API, or MCP without the
   // per-line check. Re-reads the whole document, so it also catches
   // staleness (a rule authored after the lines were written). Must run
   // BEFORE the optimistic `Pending` write below, or a blocked post strands
@@ -681,7 +682,10 @@ export async function action(args: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     return {
@@ -690,19 +694,19 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  try {
-    const postSalesInvoice = await serviceRole.functions.invoke(
-      "post-sales-invoice",
-      {
-        body: {
-          invoiceId: invoiceId,
-          userId: userId,
-          companyId: companyId
-        }
-      }
-    );
+  if (!setPendingState.data?.length) {
+    return {
+      success: false,
+      message: "This sales invoice has already been posted"
+    };
+  }
 
-    if (postSalesInvoice.error) {
+  try {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-sales-invoice", { invoiceId });
+
+    if (posted.error) {
       await client
         .from("salesInvoice")
         .update({

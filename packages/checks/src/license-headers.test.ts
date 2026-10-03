@@ -54,11 +54,9 @@ describe("classifyPath", () => {
       "apps/erp/sst-env.d.ts",
       "packages/ee/sst-env.d.ts",
       "packages/database/src/types.ts",
-      "packages/database/supabase/functions/lib/types.ts",
       "packages/database/src/swagger-docs-schema.ts",
       "packages/ee/src/workflows/catalog/events.generated.ts",
       "packages/ee/src/paperless-parts/lib/client.ts",
-      "packages/database/supabase/functions/lib/postgres/kysely-supabase.types.ts",
       "apps/erp/public/pdf.worker.min.mjs"
     ]) {
       const result = classifyPath(path);

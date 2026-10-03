@@ -17,6 +17,7 @@ import {
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { qualityDocumentStatus } from "~/modules/quality/quality.models";
@@ -200,11 +201,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "name":
       return await client
         .from("qualityDocument")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
     case "status": {

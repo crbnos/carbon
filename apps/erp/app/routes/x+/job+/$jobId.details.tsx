@@ -59,6 +59,7 @@ import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools"
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { getTagsList } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
@@ -197,11 +198,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id,
-    companyId,
-    userId
-  });
+  const recalculate = await recalculateJobRequirements(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      id,
+      companyId,
+      userId
+    }
+  );
   if (recalculate.error) {
     throw redirect(
       path.to.job(id),

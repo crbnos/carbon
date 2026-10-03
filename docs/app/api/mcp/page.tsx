@@ -24,7 +24,7 @@ import { pageSeo, SEO } from "@/lib/seo";
 import { toolCounts } from "@/lib/tools-data";
 
 export const metadata = pageSeo({
-  title: `${SEO.carbonApi.mcp.title} — Carbon`,
+  title: `${SEO.carbonApi.mcp.title} | Carbon`,
   ogTitle: SEO.carbonApi.mcp.title,
   description: SEO.carbonApi.mcp.description,
   path: "/api/mcp",

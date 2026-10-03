@@ -181,15 +181,46 @@ pub fn plan_step(
     max_parts: Option<usize>,
     units: Option<Vec<PlanUnit>>,
     sequence: Option<Vec<Vec<String>>>,
+    tolerance: Option<f64>,
+) -> Result<PlanResult, ConvertError> {
+    plan_step_observed(
+        step_path,
+        linear_deflection,
+        angular_deflection,
+        clearance,
+        path_samples,
+        max_parts,
+        units,
+        sequence,
+        tolerance,
+        &|_| {},
+    )
+}
+
+/// [`plan_step`], telling `on_parts` the part count as soon as the model is
+/// read — before the sweeps, which are where a plan's memory goes. The service
+/// sizes the job's memory reservation from it.
+#[allow(clippy::too_many_arguments)]
+pub fn plan_step_observed(
+    step_path: &str,
+    linear_deflection: f64,
+    angular_deflection: f64,
+    clearance: f64,
+    path_samples: usize,
+    max_parts: Option<usize>,
+    units: Option<Vec<PlanUnit>>,
+    sequence: Option<Vec<Vec<String>>>,
     // Penetration tolerance override (mm). None => inferred from the meshing
     // deflection via `mesh_tolerance` (max(0.15, 2.5 * linear_deflection)) --
     // the tolerance must scale with tessellation error or clean seated
     // contacts read as collisions. Explicit values are honored as-is.
     tolerance: Option<f64>,
+    on_parts: &dyn Fn(usize),
 ) -> Result<PlanResult, ConvertError> {
     let root = build_tree(step_path, linear_deflection, angular_deflection)?;
     let mut parts = collect_world_parts(&root);
     let leaf_count = parts.len() as i64;
+    on_parts(parts.len());
 
     // Caller units → merged bodies (expansion maps unit id → members).
     let mut expansion: HashMap<String, (Vec<String>, Option<String>)> = HashMap::new();

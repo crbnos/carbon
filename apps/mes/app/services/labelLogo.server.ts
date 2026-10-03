@@ -4,15 +4,12 @@
 
 import { SUPABASE_INTERNAL_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import {
-  type ResolvedLabelLogo,
-  resolveLabelLogo as resolve
-} from "@carbon/documents/labels";
-import type { DocumentTemplate } from "@carbon/documents/template";
-import type { LabelSize } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type { ResolvedLabelLogo };
+export {
+  type ResolvedLabelLogo,
+  resolveLabelLogo
+} from "@carbon/documents/labels";
 
 type CompanyLogoPaths = {
   logoLight: string | null;
@@ -49,20 +46,4 @@ export async function getCompanyLogoForLabel(
     logoLight: expand(data.logoLight),
     logoLightIcon: expand(data.logoLightIcon)
   };
-}
-
-/**
- * Binds the shared label-logo resolver to this app's Supabase URL. The
- * `logo-resizer` edge function call this feeds is a server-to-server request
- * with no browser consumer, so it uses the internal URL. Pass
- * `getCompanyLogoForLabel`'s result here, not `getCompany`'s.
- */
-export function resolveLabelLogo(
-  company: CompanyLogoPaths | null,
-  template: DocumentTemplate | null,
-  labelSize: LabelSize
-): Promise<ResolvedLabelLogo | null> {
-  return resolve(company, template, labelSize, {
-    supabaseUrl: SUPABASE_INTERNAL_URL ?? ""
-  });
 }

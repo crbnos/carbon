@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -284,9 +286,8 @@ function SalesInvoiceLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.salesInvoiceLine(invoiceId, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -323,6 +324,7 @@ function SalesInvoiceLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -336,6 +338,7 @@ function SalesInvoiceLineItem({
                 {/* @ts-expect-error */}
                 {itemType.includes(line.invoiceLineType ?? "") && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -356,7 +359,7 @@ function SalesInvoiceLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

@@ -242,8 +242,8 @@ resolves the job's `locationId` first — it dynamic-imports `@carbon/planning`
 code), `recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
 route actions, which CAN import `@carbon/planning` + `~/services/database.server`
 directly since React Router strips their server code from the client bundle). The
-expedite what-if uses `runExpediteWhatIf`. A `functions/reschedule/` dir exists but
-is legacy.
+expedite what-if uses `runExpediteWhatIf`. `reschedule` (`packages/server-functions/src/reschedule/`)
+is a separate per-job backward re-plan, not a whole-location regen.
 
 ## Engine pipeline (`scheduling-engine.ts` `run()`)
 
@@ -369,7 +369,9 @@ only; its output is read by nothing in the placement path (spec
   dispatch-sequencing policy** — the old per-work-center policy table, its rule enum,
   and the FIFO/EDD/SPT/… comparators were all removed; placement order is the only
   sequence.
-- **`persistChanges` (one transaction, only when `persist`)** writes, for every op, the
+- **`persistChanges` (one transaction, only when `persist`)** writes, for every op whose
+  values changed (`isDistinctFromAny` guards the UPDATE in SQL, so a quiet regen writes no
+  `jobOperation` or `job` row and queues no audit/search event), the
   forward placement's results — `startDate` (projected start, business day) +
   `jobOperation.projectedCompletionAt` (exact placed-end instant, timestamptz) +
   `priority` + `workCenterId` + conflict flags. `dueDate` is the backward need-by and

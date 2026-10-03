@@ -15,6 +15,7 @@ import {
   upsertMakeMethodVersion
 } from "~/modules/items";
 import { getPathToMakeMethod } from "~/modules/items/ui/Methods/utils";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -67,13 +68,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // @ts-expect-error TS2345 - TODO: fix type
-  const copy = await copyMakeMethod(getCarbonServiceRole(), {
-    sourceId: validation.data.copyFromId,
-    targetId: methodOperationId,
-    companyId,
-    userId
-  });
+  const copy = await copyMakeMethod(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    // @ts-expect-error TS2345 - TODO: fix type
+    {
+      sourceId: validation.data.copyFromId,
+      targetId: methodOperationId,
+      companyId,
+      userId
+    }
+  );
 
   if (copy.error) {
     return {

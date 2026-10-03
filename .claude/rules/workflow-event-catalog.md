@@ -152,8 +152,8 @@ dispatch and the `gate()` middleware). A
   route-level raise silently misses every MCP caller. After changing a service signature, run
   `pnpm run generate:mcp` — the executor maps arguments by declared parameter name.
 - **Raise after the write commits, and only if it did.** For the four posting moments the write
-  happens inside a Deno edge function that cannot import app code, so the route raises once the
-  invoke returns cleanly. Place the raise **below** the route's rollback `catch`, not inside the
+  happens inside a server function (`@carbon/server-functions`) that cannot import app code, so the
+  route raises once the call returns cleanly. Place the raise **below** the route's rollback `catch`, not inside the
   `try`: `raiseMoment` not throwing stops it from *causing* a rollback, but not from being
   reached before later code throws and reverts the document to Draft. Announcing a post that
   then got rolled back would fire workflows on a record the UI still shows as Draft.

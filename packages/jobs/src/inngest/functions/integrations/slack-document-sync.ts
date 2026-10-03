@@ -82,7 +82,10 @@ export const slackDocumentCreatedFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} to Slack`, { error });
+      logger.error("Error posting {documentType} to Slack", {
+        documentType,
+        error
+      });
       throw error;
     }
   }
@@ -177,7 +180,8 @@ export const slackDocumentStatusUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} status update to Slack`, {
+      logger.error("Error posting {documentType} status update to Slack", {
+        documentType,
         error
       });
       throw error;
@@ -277,7 +281,8 @@ export const slackDocumentTaskUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} task update to Slack`, {
+      logger.error("Error posting {documentType} task update to Slack", {
+        documentType,
         error
       });
       throw error;
@@ -371,7 +376,8 @@ export const slackDocumentAssignmentUpdateFunction = inngest.createFunction(
 
       return { success: true };
     } catch (error) {
-      logger.error(`Error posting ${documentType} assignment update to Slack`, {
+      logger.error("Error posting {documentType} assignment update to Slack", {
+        documentType,
         error
       });
       throw error;

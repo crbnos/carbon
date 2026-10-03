@@ -28,10 +28,7 @@ import {
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const targets = [
-  "packages/database/src/types.ts",
-  "packages/database/supabase/functions/lib/types.ts"
-] as const;
+const targets = ["packages/database/src/types.ts"] as const;
 const original = "export type Database = { public: { Tables: {} } };\n";
 const generated =
   "export type Database = { public: { Tables: { example: {} } } };\n";
@@ -131,22 +128,22 @@ test(".env.local overrides the caller's URL before the local-host safety check",
   });
   assert.notEqual(result.status, 0);
   assert.equal(result.invoked, false);
-  assert.deepEqual(result.contents, [original, original]);
+  assert.deepEqual(result.contents, [original]);
 });
 
-test("failed subprocess preserves both last-good outputs and cleans temporary files", () => {
+test("failed subprocess preserves the last-good output and cleans temporary files", () => {
   const result = runGenerator("partial output", { exit: 7 });
   assert.equal(result.invoked, true, result.stderr);
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.contents, [original, original]);
-  assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
+  assert.deepEqual(result.contents, [original]);
+  assert.deepEqual(result.remaining, [["types.ts"]]);
 });
 
-test("missing generator executable preserves both last-good outputs", () => {
+test("missing generator executable preserves the last-good output", () => {
   const result = runGenerator(generated, { missingExecutable: true });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.contents, [original, original]);
-  assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
+  assert.deepEqual(result.contents, [original]);
+  assert.deepEqual(result.remaining, [["types.ts"]]);
 });
 
 for (const output of ["", "   \n", "export const unrelated = 42;", "type Database = {};"]) {
@@ -154,8 +151,8 @@ for (const output of ["", "   \n", "export const unrelated = 42;", "type Databas
     const result = runGenerator(output);
     assert.equal(result.invoked, true, result.stderr);
     assert.notEqual(result.status, 0);
-    assert.deepEqual(result.contents, [original, original]);
-    assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
+    assert.deepEqual(result.contents, [original]);
+    assert.deepEqual(result.remaining, [["types.ts"]]);
   });
 }
 
@@ -172,7 +169,7 @@ for (const databaseUrl of [
     const result = runGenerator(generated, { databaseUrl });
     assert.notEqual(result.status, 0);
     assert.equal(result.invoked, false);
-    assert.deepEqual(result.contents, [original, original]);
+    assert.deepEqual(result.contents, [original]);
     assert.doesNotMatch(
       result.stdout + result.stderr,
       /synthetic-secret|example\.com/
@@ -186,8 +183,8 @@ for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
       databaseUrl: `postgresql://example:synthetic@${host}:5432/example`
     });
     assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual(result.contents, [generated, generated]);
-    assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
+    assert.deepEqual(result.contents, [generated]);
+    assert.deepEqual(result.remaining, [["types.ts"]]);
   });
 }
 

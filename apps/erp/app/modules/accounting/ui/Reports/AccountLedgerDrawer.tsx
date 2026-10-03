@@ -10,6 +10,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   IconButton,
+  PrefetchLink,
   Table,
   Tbody,
   Td,
@@ -20,7 +21,7 @@ import {
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type {
   AccountClass,
@@ -178,13 +179,12 @@ const AccountLedgerDrawer = ({
                       </Td>
                       <Td className="px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <Link
+                          <PrefetchLink
                             to={path.to.journalEntryDetails(line.journalId)}
-                            prefetch="intent"
                             className="font-mono text-xs text-foreground hover:underline"
                           >
                             {line.journalEntryId}
-                          </Link>
+                          </PrefetchLink>
                           {line.status !== "Posted" && (
                             <JournalEntryStatus status={line.status} />
                           )}

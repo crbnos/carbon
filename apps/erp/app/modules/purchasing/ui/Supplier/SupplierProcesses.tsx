@@ -15,9 +15,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, unchecked } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
@@ -61,10 +62,12 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
       if (!carbon) throw new Error("Carbon client not found");
       return await carbon
         .from("supplierProcess")
-        .update({
-          [id]: value,
-          updatedBy: userId
-        })
+        .update(
+          unchecked({
+            [id]: value,
+            updatedBy: userId
+          })
+        )
         .eq("id", row.id!);
     },
     [carbon, userId]
@@ -97,6 +100,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
                     onClick={() =>
                       navigate(
                         path.to.supplierProcess(supplierId, row.original.id!)
@@ -108,6 +112,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                     <Trans>Edit Process</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     onClick={() =>
                       navigate(
                         path.to.deleteSupplierProcess(

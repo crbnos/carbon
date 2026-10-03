@@ -307,7 +307,7 @@ const PaymentApplyTable = ({
   const overApplied = totalCash > maxApplicable + EPSILON;
   // A row can't settle more than the invoice's open balance
   // (applied + discount + write-off). Mirrors the authoritative cap in the
-  // post-payment edge function, so a manual discount that over-settles is caught
+  // post-payment server function, so a manual discount that over-settles is caught
   // here — before Post — instead of failing server-side.
   const overSettled = useMemo(
     () =>

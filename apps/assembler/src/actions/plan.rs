@@ -7,10 +7,9 @@
 //! late-mint uploaded (a `planPath` was given) or returned inline in the result.
 
 use crate::jobs::{opts_hash, Done, Output};
-use crate::{config, http, AppState};
+use crate::{admission, config, http, AppState};
 use planner::steps::PlanUnit;
 use serde_json::{json, Value};
-use std::sync::Arc;
 use std::time::Instant;
 
 /// Everything a plan task needs from the request.
@@ -26,10 +25,9 @@ pub struct PlanReq {
 
 pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
     let jobs = state.jobs.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
     tokio::spawn(async move {
-        let _permit = slots.acquire().await;
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -67,8 +65,16 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             parse_options(&req.options);
         let mp = config::max_parts();
 
+        // Sized by the source until the model is read, then by its part count:
+        // the sweeps, not the read, are where a plan's memory goes.
+        let source_bytes = http::file_len(&tmp).await;
+        let grant = admission
+            .acquire(admission::plan_estimate_mb(source_bytes, None))
+            .await;
+        let runtime = tokio::runtime::Handle::current();
         let res = tokio::task::spawn_blocking(move || {
-            planner::steps::plan_step(
+            let grant = std::sync::Mutex::new(grant);
+            planner::steps::plan_step_observed(
                 &tmp_str,
                 lin,
                 ang,
@@ -78,6 +84,11 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                 units,
                 sequence,
                 tolerance,
+                &|parts| {
+                    let estimate = admission::plan_estimate_mb(source_bytes, Some(parts));
+                    let mut grant = grant.lock().unwrap_or_else(|e| e.into_inner());
+                    runtime.block_on(grant.resize(estimate));
+                },
             )
         })
         .await;
@@ -129,7 +140,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                         let outputs = vec![Output {
                             name: "plan".into(),
                             content_type: "application/json".into(),
-                            bytes,
+                            bytes: bytes.into(),
                         }];
                         jobs.finish(&job_id, outputs, done, cache).await;
                     }

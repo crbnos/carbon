@@ -25,6 +25,23 @@ export const activeJobStatuses = [
 ] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
 
 /**
+ * `journalLine.documentLineReference` values: which source line a posted
+ * journal line came from (`purchase-invoice:<id>`, `receipt:<id>`, …).
+ */
+export const journalReference = {
+  to: {
+    purchaseInvoice: (id: string) => `purchase-invoice:${id}`,
+    receipt: (id: string) => `receipt:${id}`,
+    salesInvoice: (id: string) => `sales-invoice:${id}`,
+    shipment: (id: string) => `shipment:${id}`,
+    job: (id: string) => `job:${id}`,
+    materialIssue: (id: string) => `material-issue:${id}`,
+    productionEvent: (id: string) => `production-event:${id}`,
+    maintenanceEvent: (id: string) => `maintenance-event:${id}`
+  }
+};
+
+/**
  * Either data-access handle a helper might receive: a Supabase client or a
  * Kysely handle (a `Kysely` instance or an active `Transaction`). Use it to
  * overload a helper that some callers reach with a client and others with
@@ -79,8 +96,8 @@ type PageQuery<T extends object> = {
  *
  * Takes a FACTORY, not a query: supabase-js builders are mutable — `.range()`
  * sets `this.url.searchParams` and returns `this` — so concurrent awaits on one
- * builder would all fetch whichever range was set last. Mirrors the Deno sibling
- * `supabase/functions/lib/fetch-all.ts`.
+ * builder would all fetch whichever range was set last. `fetchAll`
+ * (`./fetch-all.ts`) is the serial, loosely typed variant.
  */
 export async function fetchAllRecords<T extends object>(
   buildQuery: () => PageQuery<T>

@@ -3,11 +3,11 @@ title: Inventory & locations
 description: Where stock lives, how on-hand is tracked, and how it moves.
 ---
 
-Stock in Carbon lives at a **location** and, within it, in a **storage unit**. What's actually on hand is derived from a ledger of movements, not a single editable number, so every quantity has a trail behind it.
+Carbon stores stock at a **location** and, optionally, in a **storage unit**. On-hand quantity is derived from an append-only movement ledger rather than an editable balance.
 
 ## Locations and storage units
 
-A **location** is a site or warehouse. Within one, stock sits in **storage units**: bins and shelves that can nest (aisle › shelf › bin) and be typed (cold, hazardous, returns). A storage unit attached to a work center is a **lineside** bin, used to stage material at the point of use; everything else is a warehouse bin.
+A **location** is a site or warehouse. **Storage units** are nested bins or shelves within a location, such as aisle › shelf › bin, and can be typed as cold, hazardous, or returns. A storage unit attached to a work center is a **lineside** bin for point-of-use material; other storage units are warehouse bins.
 
 ## On hand is a ledger
 
@@ -30,7 +30,9 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 ## Movements
 
-Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** posts a positive or negative entry to the ledger, or a *Set Quantity* that books the difference to a target. When accounting is enabled, every adjustment also posts a <Term id="journal">journal</Term>: a loss debits the inventory adjustment account and credits inventory, a gain is the mirror image, valued at the item's current cost. Inventory count variances post the same way. Moving stock between storage units posts no journal, because the value never left the location. [Scrapping](/docs/reference/scrap) stock is a negative adjustment with a reason, offset to the scrap account instead of the adjustment account.
+A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target.
+
+When accounting is enabled, adjustments also post a <Term id="journal">journal</Term>. A loss debits inventory adjustment and credits inventory; a gain posts the reverse, valued at current item cost. Inventory count variances use the same accounts. Storage-unit transfers create no journal because value remains at the location. [Scrap](/docs/reference/scrap) uses a negative adjustment offset to the scrap account.
 
 ## Correcting a movement
 
@@ -38,7 +40,7 @@ The ledger is append-only — a posted movement is never edited or deleted. To f
 
 ## Value
 
-Inventory value is on-hand quantity times the item's unit cost, summed per item and location. The Valuation report shows it by location or by item, and its **"Tie-Out"** panel compares that subledger value to the GL inventory account balances. If the two disagree (adjustments made before the books were turned on are the usual reason), **"Reconcile"** drafts an adjusting journal for an accountant to review and post.
+Inventory value is on-hand quantity multiplied by item unit cost, aggregated by item and location. The Valuation report groups by location or item. Its **Tie-Out** panel compares subledger value with GL inventory balances. If they differ, **Reconcile** creates a draft adjusting journal for review and posting.
 
 ## Related
 

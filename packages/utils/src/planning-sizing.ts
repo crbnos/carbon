@@ -14,8 +14,8 @@
 // today; server: datetime.today(companyTimeZone)) so this module never reads a
 // timezone. No React, no DB, no app imports.
 
+import { RoundingMode, round } from "@carbon/database/precision";
 import { parseDate } from "@internationalized/date";
-import { RoundingMode, round } from "./precision";
 
 export type PlanningSizingParams = {
   reorderPoint: number;

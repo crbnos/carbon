@@ -26,7 +26,8 @@ export const updatePermissionsFunction = inngest.createFunction(
       if (success) {
         logger.info(`Permission Update for ${payload.id} succeeded`);
       } else {
-        logger.error(`Permission Update for ${payload.id} failed`, {
+        logger.error("Permission Update for {payloadId} failed", {
+          payloadId: payload.id,
           message
         });
       }

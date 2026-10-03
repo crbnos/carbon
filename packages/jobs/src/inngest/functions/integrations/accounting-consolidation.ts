@@ -2,6 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  aggregateJournalEntriesForDate,
+  claimPendingOperations,
+  completeOperation,
+  createMappingService,
+  enqueueSyncOperation,
+  failOperation,
+  getAccountingIntegration,
+  getPostingSyncSourceTypeSkipReason,
+  getProviderIntegration,
+  getSyncOperations,
+  isAccountingSyncEnabled,
+  JournalEntrySyncError,
+  type JournalEntrySyncer,
+  mapJournalEntryToManualJournal,
+  type PostingSyncSettings,
+  ProviderID,
+  parseJournalEntrySyncEntityId,
+  RatelimitError,
+  resolvePostingSyncSettings,
+  runJournalEntryPreflight,
+  type SyncContext,
+  SyncFactory,
+  type SyncOperation,
+  type XeroProvider
+} from "@carbon/ee/accounting";
 /**
  * Daily-consolidation cron (posting sync, spec Phase B §6).
  *
@@ -44,37 +71,7 @@
  * arrives). A RatelimitError aborts the company's step so Inngest retries;
  * claimed rows stay In Flight and become re-claimable once stale.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  aggregateJournalEntriesForDate,
-  claimPendingOperations,
-  completeOperation,
-  createMappingService,
-  enqueueSyncOperation,
-  failOperation,
-  getAccountingIntegration,
-  getPostingSyncSourceTypeSkipReason,
-  getProviderIntegration,
-  getSyncOperations,
-  JournalEntrySyncError,
-  type JournalEntrySyncer,
-  mapJournalEntryToManualJournal,
-  type PostingSyncSettings,
-  ProviderID,
-  parseJournalEntrySyncEntityId,
-  RatelimitError,
-  resolvePostingSyncSettings,
-  runJournalEntryPreflight,
-  type SyncContext,
-  SyncFactory,
-  type SyncOperation,
-  type XeroProvider
-} from "@carbon/ee/accounting";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type IsolatedStepOutcome,
@@ -738,6 +735,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
 
         return (integrations.data ?? [])
           .filter((row) => {
+            if (!isAccountingSyncEnabled(row.metadata)) return false;
             const settings = resolvePostingSyncSettings(row.metadata);
             return (
               settings.consolidation === "daily" ||
@@ -770,10 +768,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
         id: `consolidate-${target.companyId}-${target.providerId}`,
         target,
         fn: async () => {
-          // Process-lifetime cached pool shared with events/sync.ts and the
-          // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
+          const database = getJobDatabaseClient();
           return await consolidateCompany({
             companyId: target.companyId,
             providerId: target.providerId as ProviderID,

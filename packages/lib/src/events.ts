@@ -422,9 +422,12 @@ export type Events = {
     };
   };
 
-  // Wake event for the PGMQ drainer (event-queue). Pushed by the database via
-  // the event-wake edge function whenever events are enqueued or pending.
+  // Wake events for the PGMQ drainers. Sent by the database itself
+  // (util.send_inngest_event) whenever messages are enqueued or pending.
   "carbon/event-queue.process": {
+    data: Record<string, never>;
+  };
+  "carbon/embedding-queue.process": {
     data: Record<string, never>;
   };
 

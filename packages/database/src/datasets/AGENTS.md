@@ -35,7 +35,7 @@ parameters + content, supplier-process rates; no rule code, no method steps), `r
 (`seedReturnCredit` — the memo a return's "Issue Credit" writes), `posting-journals.ts` (PURE
 journal builders — `salesInvoiceJournal`, `purchaseInvoiceJournal`, `paymentJournal`,
 `memoJournal`, `receiptJournal`, `shipmentJournal`, `scrapJournal`, `voidJournal`,
-`consumeFifo` — wrapping the edge functions' own builders or copying their inline shapes, and
+`consumeFifo` — wrapping the server functions' own builders or copying their inline shapes, and
 imported by BOTH tier 09 and the validator so the two derive identical lines),
 `post-documents.ts` (the DB side tier 09 calls: `loadPostingContext`, `postInventoryDocuments`,
 `postSalesInvoices`, `postPurchaseInvoices`, `postMemos`, `postPayment` — they read the seeded

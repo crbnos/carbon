@@ -2,40 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  type AccountClass,
+  type AccountType,
+  credit,
+  debit
+} from "@carbon/database/ledger";
 import type { CalendarDate } from "@internationalized/date";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { formatDate } from "./date";
 
-type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
-type AccountClass = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
-
-export const credit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return -amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
-
-export const debit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return -amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
+export {
+  type AccountClass,
+  type AccountType,
+  accountTypeFromClass,
+  credit,
+  debit,
+  isAccountClass
+} from "@carbon/database/ledger";
 
 function isNaturalDebitAccount(cls: AccountClass): boolean {
   return cls === "Asset" || cls === "Expense";

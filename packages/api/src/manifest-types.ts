@@ -18,6 +18,20 @@ export type AuthField =
   | "updatedBy"
   | "userId";
 
+/** What the dispatcher fills a positional service parameter with. */
+export type ContextSource =
+  | "client"
+  | "db"
+  | "userId"
+  | "companyId"
+  | "companyGroupId";
+
+/**
+ * How the service reports failure in the value it returns, read off its return
+ * type by the generator (`scripts/lib/result-shape.ts`).
+ */
+export type ResultShape = "envelope" | "envelopes" | "flag" | "plain";
+
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
@@ -38,7 +52,14 @@ export interface ManifestEntry {
   description: string;
   paramCount: number;
   serviceParams: string[];
+  /** The positional params the dispatcher fills from the authenticated context,
+   *  and with what. The generator decides this from the service's signature and
+   *  body; the dispatcher keeps no list of its own. A param absent here carries
+   *  the caller's payload. */
+  contextParams: Record<string, ContextSource>;
   injectAuth: AuthField[];
+  /** Where dispatch looks for a failure in the service's result. */
+  resultShape: ResultShape;
   permission: ToolPermission;
   /** Whether the service itself applies limit/offset (`setGenericQueryFilters`
    *  or a direct `.range(`). A list operation with `paginates: false` is a
@@ -56,6 +77,12 @@ export interface ManifestEntry {
     keys: string[];
     lookups?: Array<{ table: string; match: Record<string, string> }>;
   };
+  /** When the dispatcher fills the defaults the schema publishes: on every
+   *  call (`always` — a read, a create, an action), or only when an upsert
+   *  resolves to a create (`create` — an update that leaves a field out keeps
+   *  the stored value). Absent when the schema publishes none; the generator
+   *  strips a default nothing would apply. */
+  defaults?: "always" | "create";
   /** The JSON Schema for the operation's input. */
   schema: Record<string, unknown>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the

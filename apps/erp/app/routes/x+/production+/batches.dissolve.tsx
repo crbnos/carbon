@@ -4,12 +4,13 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { updateJobOperationBatch } from "~/modules/production";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 
-// Bulk dissolve — one edge-fn dissolve per selected batch. Each is independent:
-// a batch that has recorded production is refused (the edge fn's own guard) and
+// Bulk dissolve — one server-fn dissolve per selected batch. Each is independent:
+// a batch that has recorded production is refused (the server fn's own guard) and
 // reported in `failed` while the rest still dissolve. Fetcher-driven; the table
 // toasts the summary and the loader revalidates.
 export async function action({ request }: ActionFunctionArgs) {
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let dissolved = 0;
   const failed: { readableId: string; message: string }[] = [];
   for (const batchId of ids) {
-    const result = await updateJobOperationBatch(client, {
+    const result = await updateJobOperationBatch(client, getDatabaseClient(), {
       type: "dissolve",
       batchId,
       companyId,
@@ -46,10 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (result.error) {
       failed.push({
         readableId: readableById.get(batchId) ?? batchId,
-        message: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to dissolve"
-        )
+        message: getErrorMessage(result.error, "Failed to dissolve")
       });
     } else {
       dissolved += 1;

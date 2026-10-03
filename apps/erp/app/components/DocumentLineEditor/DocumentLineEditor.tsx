@@ -73,11 +73,11 @@ const DocumentLineEditor = ({
     () => lines.reduce((sum, line) => sum + (line.amount ?? 0), 0),
     [lines]
   );
-  // EPSILON, not a cent. `requireLineSum` in the post-reimbursement edge
+  // EPSILON, not a cent. `requireLineSum` in the post-reimbursement server
   // function compares the line sum to the header with `EPSILON` (1e-6) — its
   // BALANCE_TOLERANCE of 0.01 governs the journal's debit/credit residual, a
   // different question. A looser threshold here would let the editor call a
-  // document Balanced that the edge function then refuses with a raw error,
+  // document Balanced that the server function then refuses with a raw error,
   // which is precisely what this guard exists to prevent.
   const isBalanced = Math.abs(total - headerAmount) <= EPSILON;
 

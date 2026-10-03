@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { EPSILON } from "./precision";
+import { EPSILON } from "@carbon/database/precision";
 
 type SalesOrderLine = Pick<
   Database["public"]["Tables"]["salesOrderLine"]["Row"],

@@ -4,6 +4,7 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
+import { ID_REF_COLUMNS } from "../../../backups/id-refs";
 import {
   type Catalog,
   type ColumnInfo,
@@ -350,6 +351,12 @@ export function buildRowTransforms(
           ? rewriteToTemplateAssetPath(v, sourceCompanyId, templateIndustryId)
           : rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite);
       };
+    }
+    if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
+      const { idRewrite } = ctx;
+      const rewrite = (id: unknown) =>
+        typeof id === "string" ? (idRewrite.get(id) ?? id) : id;
+      return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
     }
     if (fk) {
       if (USER_REF_TABLES.has(fk.refTable)) {

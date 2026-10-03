@@ -23,6 +23,7 @@ import {
   updateJobStatus,
   upsertJobMethod
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -236,6 +237,7 @@ export async function action({ request }: ActionFunctionArgs) {
               // Create new job
               const createJob = await insertJob(
                 client,
+                getDatabaseClient(),
                 {
                   itemId: item.id,
                   quantity: order.quantity,
@@ -267,12 +269,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
-                sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
-              });
+              const upsertMethod = await upsertJobMethod(
+                client,
+                getDatabaseClient(),
+                "itemToJob",
+                {
+                  sourceId: item.id,
+                  targetId: id,
+                  companyId,
+                  userId
+                }
+              );
 
               if (upsertMethod.error) {
                 const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
@@ -388,7 +395,7 @@ export async function action({ request }: ActionFunctionArgs) {
         // Trigger recalculation for all jobs
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
+            await recalculateJobRequirements(client, getDatabaseClient(), {
               id: jobId,
               companyId,
               userId
@@ -547,7 +554,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       if (parsedJob.data.field === "quantity") {
-        await recalculateJobRequirements(client, {
+        await recalculateJobRequirements(client, getDatabaseClient(), {
           id: target.data.id,
           companyId,
           userId
@@ -744,7 +751,7 @@ export async function action({ request }: ActionFunctionArgs) {
             );
             continue;
           }
-          await recalculateJobRequirements(client, {
+          await recalculateJobRequirements(client, getDatabaseClient(), {
             id: job.data.id,
             companyId,
             userId

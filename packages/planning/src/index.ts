@@ -2,14 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// @carbon/planning — the planning engines (MRP + finite scheduling),
-// relocated from the Supabase edge runtime to run in-process in Node. Every
-// entry point takes an injected Kysely handle (and, for MRP, a service-role
-// Supabase client); callers authenticate first. Server-only — pulls in
-// pg/Kysely and @logtape, so import from route actions, *.service.ts,
-// *.server.ts, or @carbon/jobs handlers, never client code.
+// @carbon/planning — the planning engines (MRP + finite scheduling), run
+// in-process in Node. Every entry point takes an injected Kysely handle (and,
+// for MRP, a service-role Supabase client); callers authenticate first.
+// Server-only — pulls in pg/Kysely and @logtape, so import from route actions,
+// *.service.ts, *.server.ts, or @carbon/jobs handlers, never client code.
 
-// Material Requirements Planning (formerly the `mrp` edge function).
+// Material Requirements Planning.
 export { type MrpPayload, type MrpResult, runMrp } from "./mrp/mrp.ts";
 // Planning action messages (spec §P1): run by runMrp after Phase 7; exported
 // for callers that need to regenerate actions without a full MRP run.

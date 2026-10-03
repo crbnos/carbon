@@ -105,9 +105,7 @@ describe("no-unrounded-tracked-quantity — the write", () => {
       "  .set({ quantity: a - b })",
       "  .execute();"
     ].join("\n");
-    expect(
-      scan(src, "packages/database/supabase/functions/shared/entity-drain.ts")
-    ).toHaveLength(0);
+    expect(scan(src, "packages/utils/src/entity-drain.ts")).toHaveLength(0);
   });
 });
 

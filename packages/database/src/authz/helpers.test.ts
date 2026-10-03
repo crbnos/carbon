@@ -4,7 +4,7 @@
 
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { loadHelpers, validateHelper } from "./helpers";
+import { helperKey, loadHelpers, validateHelper } from "./helpers";
 import { syncAuthz } from "./sync";
 
 const fn = (name: string, body = "SELECT 1") =>
@@ -29,14 +29,32 @@ describe("validateHelper: a helper file is one function, and the right one", () 
     ).rejects.toThrow();
   });
 
+  test("a file named for a schema defines the function in that schema", async () => {
+    const sql = fn("h").replace("public.h", "util.h");
+    await expect(
+      validateHelper({ schema: "util", name: "h", sql })
+    ).resolves.toBeUndefined();
+    await expect(validateHelper({ name: "h", sql })).rejects.toThrow();
+    await expect(
+      validateHelper({ schema: "util", name: "h", sql: fn("h") })
+    ).rejects.toThrow();
+  });
+
   test("rejects CREATE without OR REPLACE", async () => {
     await expect(
       validateHelper({ name: "h", sql: fn("h").replace("OR REPLACE ", "") })
     ).rejects.toThrow();
   });
 
-  test("every committed helper file passes", async () => {
-    expect((await loadHelpers()).length).toBeGreaterThan(0);
+  test("every committed file passes, RLS helpers and event-system functions", async () => {
+    const helpers = await loadHelpers();
+    expect(helpers.map(helperKey)).toEqual(
+      expect.arrayContaining([
+        "get_companies_with_employee_role",
+        "dispatch_event_batch",
+        "util.wake_event_queue"
+      ])
+    );
   });
 });
 

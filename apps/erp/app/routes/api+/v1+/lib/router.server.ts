@@ -8,6 +8,7 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
+import { annotateRequestSpan, withSpan } from "@carbon/logger/tracing.server";
 import { base, gate, mapThrownErrors } from "./base.server";
 import { dispatchOperation } from "./dispatch.server";
 import {
@@ -28,6 +29,18 @@ const RESERVED_KEYS = new Set([
   "toJSON"
 ]);
 
+// Every caller (HTTP, MCP call_tool, the agent, workflows) runs an operation
+// through its procedure, so this is the one place a trace learns its name.
+const traced = (meta: ManifestEntry) =>
+  base.middleware(({ next }) => {
+    const attributes = {
+      "carbon.operation": meta.name,
+      "carbon.operation.module": meta.module
+    };
+    annotateRequestSpan(attributes);
+    return withSpan(`operation ${meta.name}`, attributes, async () => next());
+  });
+
 // `module`/`id` name the route; `meta` is the operation it runs. They differ only
 // for a deprecated alias, which keeps its old path but runs (and is gated as) its
 // replacement.
@@ -39,6 +52,7 @@ function buildProcedure(
 ) {
   return (
     base
+      .use(traced(meta))
       // Outside the gate so it also covers anything the gate itself throws
       // through — it re-raises ORPCErrors untouched, so 403s/404s are unaffected.
       .use(mapThrownErrors)

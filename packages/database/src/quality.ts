@@ -14,16 +14,15 @@
  */
 import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
-
-import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
+import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
   computeLotStatus,
   deriveSampleStatus,
   valuateMeasurement
-} from "../supabase/functions/shared/inspection-verdict.ts";
-import type { Kysely, KyselyDatabase } from "./client.ts";
+} from "./inspection-verdict.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import { getNextSequence } from "./sequence.ts";
 
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };
@@ -575,8 +574,8 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance edge function, which the route invokes AFTER this
-      // transaction commits (cost/GL logic is Deno-only). The `inspection.status
+      // post-nonconformance operation, which the route runs AFTER this
+      // transaction commits. The `inspection.status
       // !== "Failed"` guard is intentionally dropped: post-nonconformance is
       // idempotent per (documentType, documentId), so a re-reject / retry is
       // safe. Tracked items are handled by the status flip above; Non-Inventory

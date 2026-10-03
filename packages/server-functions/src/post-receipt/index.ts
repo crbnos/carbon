@@ -1,0 +1,3434 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  type Database,
+  getCompanyTimeZone,
+  journalReference
+} from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  contains,
+  inOrder,
+  lt,
+  many,
+  maybeSingle,
+  neq,
+  single,
+  type Tables,
+  updateRows
+} from "@carbon/database/rows";
+import {
+  resolveFeatureSamplingPlan,
+  resolveSamplingPlan,
+  type SamplingStandard
+} from "@carbon/database/sampling";
+import { getNextSequence } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
+import {
+  buildJournalLineDimensionInserts,
+  credit,
+  datetime,
+  debit,
+  type JournalDimensionMeta,
+  resolveReturnUnitCost,
+  round,
+  settleQuantity,
+  type TrackedEntityAttributes
+} from "@carbon/utils";
+import type { Insertable } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { defineServerFn } from "../define-server-fn";
+import { NotFoundError } from "../errors";
+import { calculateCOGS } from "../lib/calculate-cogs";
+import { FixedAssetWrites } from "../lib/fixed-asset-writes";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount
+} from "../lib/get-posting-group";
+import { assertPostable } from "../lib/postable";
+
+const logger = getLogger("server-functions", "post-receipt");
+
+export const postReceiptInput = z.object({
+  type: z.enum(["post", "void"]).default("post"),
+  receiptId: z.string()
+});
+
+/** Posts or voids a receipt: stock, tracked entities, cost layers and journal. */
+const postReceipt = defineServerFn({
+  name: "post-receipt",
+  input: postReceiptInput,
+  permissions: { update: "inventory" },
+  async run(ctx, { type, receiptId }) {
+    const { db, companyId, userId } = ctx;
+
+    logger.info({ type, receiptId, userId, companyId });
+    const fixedAssetWrites = new FixedAssetWrites();
+    if (type === "post")
+      await assertPostable(db, "receipt", receiptId, companyId);
+    try {
+      const today = datetime
+        .today(await getCompanyTimeZone(db, companyId))
+        .toString();
+
+      const [companyRecord, accountingSettings] = await inOrder([
+        () =>
+          single(
+            db,
+            "company",
+            { id: companyId },
+            { columns: ["companyGroupId"] }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["accountingEnabled"] }
+          )
+      ]);
+      if (companyRecord.error) throw new Error("Failed to fetch company");
+      const companyGroupId = companyRecord.data.companyGroupId;
+      const accountingEnabled =
+        accountingSettings.data?.accountingEnabled ?? false;
+
+      const [receipt, receiptLines, receiptLineTracking, dimensions] =
+        await inOrder([
+          // The client is service-role: authorization proved the caller may
+          // act in companyId, not that receiptId belongs to it.
+          () => maybeSingle(db, "receipt", { id: receiptId, companyId }),
+          () => many(db, "receiptLine", { receiptId, companyId }),
+          () =>
+            many(db, "trackedEntity", {
+              attributes: contains({ Receipt: receiptId }),
+              companyId
+            }),
+          () =>
+            many(
+              db,
+              "dimension",
+              {
+                companyGroupId: companyGroupId!,
+                active: true,
+                entityType: [
+                  "SupplierType",
+                  "Supplier",
+                  "CustomerType",
+                  "Customer",
+                  "ItemPostingGroup",
+                  "Item",
+                  "Location",
+                  "Process",
+                  "FixedAssetClass"
+                ]
+              },
+              { columns: ["id", "entityType"] }
+            )
+        ]);
+
+      if (receipt.error) throw new Error("Failed to fetch receipt");
+      if (!receipt.data) throw new NotFoundError("Receipt not found");
+      const receiptHeader = receipt.data;
+      if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
+      if (dimensions.error) {
+        logger.error("Failed to fetch dimensions", { error: dimensions.error });
+      }
+
+      const dimensionMap = new Map<string, string>();
+      for (const dim of dimensions.data ?? []) {
+        if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+      }
+
+      const itemIds = receiptLines.data.reduce<string[]>((acc, receiptLine) => {
+        if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
+          acc.push(receiptLine.itemId);
+        }
+        return acc;
+      }, []);
+      const [items, itemCosts, companySettings] = await inOrder([
+        () =>
+          many(
+            db,
+            "item",
+            { id: itemIds, companyId },
+            { columns: ["id", "itemTrackingType", "replenishmentSystem"] }
+          ),
+        () =>
+          many(
+            db,
+            "itemCost",
+            { itemId: itemIds },
+            { columns: ["itemId", "itemPostingGroupId"] }
+          ),
+        () =>
+          single(
+            db,
+            "companySettings",
+            { id: companyId },
+            { columns: ["samplingStandard"] }
+          )
+      ]);
+      if (items.error) {
+        throw new Error("Failed to fetch items");
+      }
+      if (itemCosts.error) {
+        throw new Error("Failed to fetch item costs");
+      }
+
+      const samplingStandard: SamplingStandard =
+        (companySettings.data as any)?.samplingStandard ?? "ANSI_Z1_4";
+
+      // Receipt-usage inspection document assignments drive per-feature
+      // measurement plans on the created lots.
+      const inspectionDocumentAssignments = await many(
+        db,
+        "itemInspectionDocumentAssignment",
+        { companyId, usage: "Receipt", itemId: itemIds },
+        { columns: ["itemId", "inspectionDocumentId"] }
+      );
+      const assignmentByItemId = new Map<string, string>(
+        ((inspectionDocumentAssignments.data as any[]) ?? []).map((a) => [
+          a.itemId,
+          a.inspectionDocumentId
+        ])
+      );
+      const assignedDocumentIds = [...new Set(assignmentByItemId.values())];
+      const inspectionFeaturesByDocumentId = new Map<string, any[]>();
+      if (assignedDocumentIds.length > 0) {
+        const inspectionFeatures = await many(
+          db,
+          "inspectionFeature",
+          { inspectionDocumentId: assignedDocumentIds, companyId },
+          {
+            columns: [
+              "id",
+              "inspectionDocumentId",
+              "type",
+              "samplingPlanType",
+              "samplingSampleSize",
+              "samplingPercentage",
+              "samplingAql",
+              "samplingInspectionLevel",
+              "samplingSeverity"
+            ]
+          }
+        );
+        for (const feature of (inspectionFeatures.data as any[]) ?? []) {
+          const list =
+            inspectionFeaturesByDocumentId.get(feature.inspectionDocumentId) ??
+            [];
+          list.push(feature);
+          inspectionFeaturesByDocumentId.set(
+            feature.inspectionDocumentId,
+            list
+          );
+        }
+      }
+
+      // The document's default sampling rule is the lot-level plan base and the
+      // fallback for features without their own rule (feature rule -> document
+      // default -> All).
+      const documentDefaultByDocumentId = new Map<string, any>();
+      if (assignedDocumentIds.length > 0) {
+        const assignedDocuments = await many(
+          db,
+          "inspectionDocument",
+          { id: assignedDocumentIds, companyId },
+          {
+            columns: [
+              "id",
+              "samplingPlanType",
+              "samplingSampleSize",
+              "samplingPercentage",
+              "samplingAql",
+              "samplingInspectionLevel",
+              "samplingSeverity"
+            ]
+          }
+        );
+        for (const doc of (assignedDocuments.data as any[]) ?? []) {
+          if (!doc.samplingPlanType) continue;
+          documentDefaultByDocumentId.set(doc.id, {
+            type: doc.samplingPlanType,
+            sampleSize: doc.samplingSampleSize,
+            percentage:
+              doc.samplingPercentage == null
+                ? null
+                : Number(doc.samplingPercentage),
+            aql: doc.samplingAql == null ? null : Number(doc.samplingAql),
+            inspectionLevel: doc.samplingInspectionLevel,
+            severity: doc.samplingSeverity
+          });
+        }
+      }
+
+      if (type === "void") {
+        if (receiptHeader.status !== "Posted") {
+          throw new Error("Can only void posted receipts");
+        }
+
+        if (receiptHeader.invoiced) {
+          throw new Error(
+            "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
+          );
+        }
+
+        if (
+          receiptHeader.sourceDocument !== "Purchase Order" &&
+          receiptHeader.sourceDocument !== "Sales Return Order"
+        ) {
+          throw new Error(
+            `Void is only supported for receipts with source document "Purchase Order" or "Sales Return Order"`
+          );
+        }
+
+        if (!receiptHeader.sourceDocumentId) {
+          throw new Error("Receipt has no sourceDocumentId");
+        }
+
+        if (receiptHeader.sourceDocument === "Sales Return Order") {
+          // Reverse a posted sales-return receipt: sign-flip the ledger +
+          // journal, roll back the RMA quantities and status ladder, flip the
+          // reactivated entities back to Consumed (their pre-receipt state), and
+          // zero this receipt's own cost layers so FIFO can never consume voided
+          // return stock.
+          const salesReturnOrderId = receiptHeader.sourceDocumentId;
+
+          // The PO void path blocks voiding an invoiced receipt; the analogous
+          // hazard here is a credit memo. Voiding after crediting would leave
+          // quantityCredited > quantityReceived with no path to reconcile.
+          const creditMemos = await many(
+            db,
+            "memo",
+            { salesReturnOrderId, companyId, status: neq("Voided") },
+            { columns: ["id", "status"] }
+          );
+          if (creditMemos.error)
+            throw new Error("Failed to check for credit memos");
+          if ((creditMemos.data ?? []).length > 0) {
+            throw new Error(
+              "Cannot void: a credit memo exists for this return order. Void it first."
+            );
+          }
+
+          const [originalItemLedger, originalJournalLines, returnLinesVoid] =
+            await inOrder([
+              () =>
+                many(db, "itemLedger", {
+                  documentId: receiptId,
+                  documentType: "Sales Return Receipt",
+                  companyId
+                }),
+              () =>
+                many(db, "journalLine", {
+                  documentId: receiptId,
+                  documentType: "Receipt",
+                  companyId
+                }),
+              () =>
+                many(db, "salesReturnOrderLine", {
+                  salesReturnOrderId,
+                  companyId
+                })
+            ]);
+          if (originalItemLedger.error)
+            throw new Error("Failed to fetch original item ledger entries");
+          if (originalJournalLines.error)
+            throw new Error("Failed to fetch original journal lines");
+          if (returnLinesVoid.error)
+            throw new Error("Failed to fetch return order lines");
+
+          const reversingItemLedger = (originalItemLedger.data ?? []).map(
+            (entry) => ({
+              postingDate: today,
+              itemId: entry.itemId,
+              quantity: -entry.quantity,
+              locationId: entry.locationId,
+              storageUnitId: entry.storageUnitId,
+              entryType:
+                entry.entryType === "Positive Adjmt."
+                  ? ("Negative Adjmt." as const)
+                  : ("Positive Adjmt." as const),
+              documentType: "Sales Return Receipt" as const,
+              documentId: entry.documentId,
+              externalDocumentId: entry.externalDocumentId,
+              trackedEntityId: entry.trackedEntityId,
+              createdBy: userId,
+              companyId
+            })
+          );
+
+          const reversingJournalLines = (originalJournalLines.data ?? []).map(
+            (line) => ({
+              accountId: line.accountId,
+              description: `VOID: ${line.description ?? ""}`,
+              amount: -line.amount,
+              quantity: line.quantity == null ? undefined : -line.quantity,
+              documentType: line.documentType,
+              documentId: line.documentId,
+              externalDocumentId: line.externalDocumentId ?? undefined,
+              documentLineReference: line.documentLineReference ?? undefined,
+              journalLineReference: line.journalLineReference,
+              companyId
+            })
+          );
+
+          const receivedByLine = new Map<string, number>();
+          for (const receiptLine of receiptLines.data ?? []) {
+            if (!receiptLine.lineId) continue;
+            const qty = Number(receiptLine.receivedQuantity ?? 0);
+            receivedByLine.set(
+              receiptLine.lineId,
+              (receivedByLine.get(receiptLine.lineId) ?? 0) + qty
+            );
+          }
+
+          const accountingPeriodId =
+            accountingEnabled && reversingJournalLines.length > 0
+              ? await getCurrentAccountingPeriod(companyId, db, today)
+              : null;
+
+          await db.transaction().execute(async (trx) => {
+            // Refuse to void when this receipt's cost layers were already
+            // (partially) consumed — the returned stock moved on (dispositioned,
+            // sold, scrapped), so reversing the full receipt would drive stock
+            // negative and double-count COGS. The remainder is a manual
+            // inventory adjustment, not a void.
+            const receiptLayers = await trx
+              .selectFrom("costLedger")
+              .select(["quantity", "remainingQuantity"])
+              .where("documentId", "=", receiptId)
+              .where("documentType", "=", "Sales Return Receipt")
+              .where("companyId", "=", companyId)
+              .forUpdate()
+              .execute();
+            const consumed = receiptLayers.some(
+              (layer) =>
+                Number(layer.quantity) > 0 &&
+                Number(layer.remainingQuantity) < Number(layer.quantity)
+            );
+            if (consumed) {
+              throw new Error(
+                "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
+              );
+            }
+
+            if (reversingItemLedger.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(reversingItemLedger)
+                .execute();
+            }
+
+            if (accountingEnabled && reversingJournalLines.length > 0) {
+              const journalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId,
+                  description: `VOID Sales Return Receipt ${receiptHeader.receiptId}`,
+                  postingDate: today,
+                  companyId,
+                  sourceType: "Sales Return Receipt",
+                  status: "Posted",
+                  postedAt: datetime.timestamp(),
+                  postedBy: userId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              await trx
+                .insertInto("journalLine")
+                .values(
+                  reversingJournalLines.map((line) => ({
+                    ...line,
+                    journalId: journalResult.id
+                  }))
+                )
+                .execute();
+            }
+
+            await trx
+              .updateTable("costLedger")
+              .set({ remainingQuantity: 0 })
+              .where("documentId", "=", receiptId)
+              .where("documentType", "=", "Sales Return Receipt")
+              .where("companyId", "=", companyId)
+              .execute();
+
+            for await (const [lineId, received] of receivedByLine) {
+              const line = returnLinesVoid.data?.find((l) => l.id === lineId);
+              if (!line) continue;
+              await trx
+                .updateTable("salesReturnOrderLine")
+                .set({
+                  quantityReceived: Math.max(
+                    0,
+                    Number(line.quantityReceived ?? 0) - received
+                  ),
+                  updatedBy: userId
+                })
+                .where("id", "=", lineId)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            const remainingLines = await trx
+              .selectFrom("salesReturnOrderLine")
+              .select(["quantity", "quantityReceived", "closedComplete"])
+              .where("salesReturnOrderId", "=", salesReturnOrderId)
+              .execute();
+            // Derived status (mirrors getSalesReturnOrderStatus): a void that
+            // drops received quantity below the authorized total returns the RMA
+            // to To Receive; otherwise it stays Completed.
+            const allReceived =
+              remainingLines.length > 0 &&
+              remainingLines.every(
+                (l) =>
+                  l.closedComplete ||
+                  Number(l.quantityReceived) >= Number(l.quantity)
+              );
+            const returnStatus = allReceived
+              ? ("Completed" as const)
+              : ("To Receive" as const);
+            await trx
+              .updateTable("salesReturnOrder")
+              .set({ status: returnStatus, updatedBy: userId })
+              .where("id", "=", salesReturnOrderId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            const voidActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Void Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
+                attributes: {
+                  "Sales Return Order": salesReturnOrderId,
+                  Receipt: receiptId,
+                  Employee: userId
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today
+              })
+              .returning(["id"])
+              .execute();
+            const voidActivityId = voidActivity[0]?.id;
+
+            for await (const entity of receiptLineTracking.data ?? []) {
+              await trx
+                .updateTable("trackedEntity")
+                .set({ status: "Consumed" })
+                .where("id", "=", entity.id)
+                .where("companyId", "=", companyId)
+                .execute();
+
+              if (voidActivityId) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: entity.id,
+                    quantity: entity.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                  .execute();
+              }
+            }
+
+            await trx
+              .updateTable("receipt")
+              .set({
+                status: "Voided",
+                updatedAt: today,
+                updatedBy: userId
+              })
+              .where("id", "=", receiptId)
+              .where("companyId", "=", companyId)
+              .execute();
+          });
+
+          return { success: true };
+        }
+
+        const [
+          originalItemLedger,
+          originalJournalLines,
+          purchaseOrderLinesVoid
+        ] = await inOrder([
+          () =>
+            many(db, "itemLedger", {
+              documentId: receiptId,
+              documentType: "Purchase Receipt",
+              companyId
+            }),
+          () =>
+            many(db, "journalLine", {
+              documentId: receiptId,
+              documentType: "Receipt",
+              companyId
+            }),
+          () =>
+            many(db, "purchaseOrderLine", {
+              purchaseOrderId: receiptHeader.sourceDocumentId
+            })
+        ]);
+
+        if (originalItemLedger.error)
+          throw new Error("Failed to fetch item ledger entries");
+        if (originalJournalLines.error)
+          throw new Error("Failed to fetch journal lines");
+        if (purchaseOrderLinesVoid.error)
+          throw new Error("Failed to fetch purchase order lines");
+
+        const reversingItemLedger: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          originalItemLedger.data.map((entry) => ({
+            postingDate: today,
+            itemId: entry.itemId,
+            quantity: -entry.quantity,
+            locationId: entry.locationId,
+            storageUnitId: entry.storageUnitId,
+            trackedEntityId: entry.trackedEntityId,
+            entryType:
+              entry.entryType === "Positive Adjmt."
+                ? "Negative Adjmt."
+                : entry.entryType === "Negative Adjmt."
+                  ? "Positive Adjmt."
+                  : entry.entryType,
+            documentType: entry.documentType,
+            documentId: entry.documentId,
+            externalDocumentId: entry.externalDocumentId,
+            createdBy: userId,
+            companyId
+          }));
+
+        const reversingJournalLines: Omit<
+          Database["public"]["Tables"]["journalLine"]["Insert"],
+          "journalId"
+        >[] = accountingEnabled
+          ? originalJournalLines.data.map((entry) => ({
+              accountId: entry.accountId,
+              accrual: entry.accrual,
+              description: `VOID: ${entry.description}`,
+              // A reversal is a sign flip of an already-posted value, which is
+              // exact — no rounding to do.
+              amount: -entry.amount,
+              quantity: -entry.quantity,
+              documentType: entry.documentType,
+              documentId: entry.documentId,
+              externalDocumentId: entry.externalDocumentId,
+              documentLineReference: entry.documentLineReference,
+              journalLineReference: entry.journalLineReference,
+              companyId
+            }))
+          : [];
+
+        const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
+          Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
+        >((acc, receiptLine) => {
+          if (receiptLine.lineId) {
+            acc[receiptLine.lineId] = [
+              ...(acc[receiptLine.lineId] ?? []),
+              receiptLine
+            ];
+          }
+          return acc;
+        }, {});
+
+        const purchaseOrderLineUpdatesVoid = purchaseOrderLinesVoid.data.reduce<
+          Record<
+            string,
+            Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+          >
+        >((acc, purchaseOrderLine) => {
+          const receiptLinesForPoLine =
+            receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
+          if (
+            receiptLinesForPoLine &&
+            receiptLinesForPoLine.length > 0 &&
+            purchaseOrderLine.purchaseQuantity &&
+            purchaseOrderLine.purchaseQuantity > 0
+          ) {
+            const receivedQuantityInPurchaseUnit =
+              receiptLinesForPoLine.reduce((sum, receiptLine) => {
+                const safe =
+                  isNaN(receiptLine.receivedQuantity) ||
+                  receiptLine.receivedQuantity == null
+                    ? 0
+                    : receiptLine.receivedQuantity;
+                return sum + safe;
+              }, 0) / (receiptLinesForPoLine[0]!.conversionFactor ?? 1);
+
+            const newQuantityReceived = Math.max(
+              0,
+              (purchaseOrderLine.quantityReceived ?? 0) -
+                receivedQuantityInPurchaseUnit
+            );
+
+            const receivedComplete =
+              newQuantityReceived >= purchaseOrderLine.purchaseQuantity;
+
+            acc[purchaseOrderLine.id] = {
+              quantityReceived: newQuantityReceived,
+              receivedComplete
+            };
+          }
+          return acc;
+        }, {});
+
+        // Reverse FA PO line received status on void
+        const faPoLinesForVoid = purchaseOrderLinesVoid.data.filter(
+          (pol) =>
+            pol.purchaseOrderLineType === "Fixed Asset" &&
+            pol.assetId &&
+            pol.receivedComplete
+        );
+
+        for (const faPoLine of faPoLinesForVoid) {
+          const hasReceiptEntries = originalJournalLines.data.some(
+            (jl) =>
+              jl.documentLineReference ===
+              journalReference.to.receipt(faPoLine.id)
+          );
+
+          if (hasReceiptEntries) {
+            purchaseOrderLineUpdatesVoid[faPoLine.id] = {
+              quantityReceived: 0,
+              receivedComplete: false
+            };
+
+            const receiptCost = originalJournalLines.data
+              .filter(
+                (jl) =>
+                  jl.documentLineReference ===
+                    journalReference.to.receipt(faPoLine.id) &&
+                  (jl.amount ?? 0) > 0
+              )
+              .reduce((sum, jl) => sum + Math.abs(jl.amount ?? 0), 0);
+
+            const assetRecord = await single(
+              db,
+              "fixedAsset",
+              { id: faPoLine.assetId! },
+              { columns: ["id", "acquisitionCost", "status"] }
+            );
+
+            if (!assetRecord.error && assetRecord.data) {
+              fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+              const newAcquisitionCost = Math.max(
+                0,
+                Number(assetRecord.data.acquisitionCost) - receiptCost
+              );
+              const faUpdate: Database["public"]["Tables"]["fixedAsset"]["Update"] =
+                {
+                  acquisitionCost: newAcquisitionCost,
+                  updatedBy: userId
+                };
+              if (
+                newAcquisitionCost === 0 &&
+                assetRecord.data.status === "Active"
+              ) {
+                faUpdate.status = "Draft";
+                faUpdate.acquisitionDate = null;
+                faUpdate.depreciationStartDate = null;
+              }
+              fixedAssetWrites.patch(faPoLine.assetId!, faUpdate);
+            }
+          }
+        }
+
+        const projectedPurchaseOrderLines = purchaseOrderLinesVoid.data.map(
+          (line) => {
+            const update = purchaseOrderLineUpdatesVoid[line.id];
+            if (update && update.quantityReceived !== undefined) {
+              return {
+                ...line,
+                quantityReceived: update.quantityReceived
+              };
+            }
+            return line;
+          }
+        );
+
+        const areAllLinesInvoicedProjected = projectedPurchaseOrderLines.every(
+          (line) => {
+            if (line.purchaseOrderLineType === "Comment") return true;
+            const target = line.purchaseQuantity ?? 0;
+            if (target <= 0) return true;
+            return (line.quantityInvoiced ?? 0) >= target;
+          }
+        );
+
+        const areAllLinesReceivedProjected = projectedPurchaseOrderLines.every(
+          (line) => {
+            if (
+              line.purchaseOrderLineType === "Comment" ||
+              line.purchaseOrderLineType === "G/L Account" ||
+              line.purchaseOrderLineType === "Service"
+            )
+              return true;
+            const target = line.purchaseQuantity ?? 0;
+            if (target <= 0) return true;
+            return (line.quantityReceived ?? 0) >= target;
+          }
+        );
+
+        let purchaseOrderStatusVoid: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
+          "To Receive and Invoice";
+        if (areAllLinesInvoicedProjected && areAllLinesReceivedProjected) {
+          purchaseOrderStatusVoid = "Completed";
+        } else if (areAllLinesInvoicedProjected) {
+          purchaseOrderStatusVoid = "To Receive";
+        } else if (areAllLinesReceivedProjected) {
+          purchaseOrderStatusVoid = "To Invoice";
+        }
+
+        const trackedEntityUpdatesVoid =
+          receiptLineTracking.data?.reduce<
+            Record<
+              string,
+              Database["public"]["Tables"]["trackedEntity"]["Update"]
+            >
+          >((acc, trackedEntity) => {
+            // Voiding restores the lot, but a lot with nothing in it must not
+            // come back Available — that is the zero-quantity husk the drain
+            // rule forbids. Scrapped/Rejected are terminal quality states and
+            // must survive a void, so keep them; everything else returns to
+            // Available (the helper then drains a zero-quantity lot to Consumed).
+            acc[trackedEntity.id] = settleQuantity({
+              quantity: Number(trackedEntity.quantity ?? 0),
+              status:
+                trackedEntity.status === "Scrapped" ||
+                trackedEntity.status === "Rejected"
+                  ? trackedEntity.status
+                  : ("Available" as const)
+            });
+            return acc;
+          }, {}) ?? {};
+
+        const accountingPeriodId = await getCurrentAccountingPeriod(
+          companyId,
+          db,
+          today
+        );
+
+        await db.transaction().execute(async (trx) => {
+          await fixedAssetWrites.apply(trx, companyId);
+          for await (const [purchaseOrderLineId, update] of Object.entries(
+            purchaseOrderLineUpdatesVoid
+          )) {
+            await trx
+              .updateTable("purchaseOrderLine")
+              .set(update)
+              .where("id", "=", purchaseOrderLineId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          await trx
+            .updateTable("purchaseOrder")
+            .set({ status: purchaseOrderStatusVoid })
+            .where("id", "=", receiptHeader.sourceDocumentId!)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          if (reversingJournalLines.length > 0) {
+            const voidJournalEntryId = await getNextSequence(
+              trx,
+              "journalEntry",
+              companyId
+            );
+
+            const journal = await trx
+              .insertInto("journal")
+              .values({
+                journalEntryId: voidJournalEntryId,
+                accountingPeriodId,
+                description: `VOID Purchase Receipt ${receiptHeader.receiptId}`,
+                postingDate: today,
+                companyId,
+                sourceType: "Purchase Receipt",
+                status: "Posted",
+                postedAt: datetime.timestamp(),
+                postedBy: userId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .execute();
+
+            const journalId = journal[0]!.id;
+            if (!journalId) throw new Error("Failed to insert journal");
+
+            await trx
+              .insertInto("journalLine")
+              .values(
+                reversingJournalLines.map((journalLine) => ({
+                  ...journalLine,
+                  journalId
+                }))
+              )
+              .execute();
+          }
+
+          if (reversingItemLedger.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(reversingItemLedger)
+              .execute();
+          }
+
+          if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
+            const voidActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Void Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
+                attributes: {
+                  "Purchase Order": receiptHeader.sourceDocumentId,
+                  Receipt: receiptId,
+                  Employee: userId
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today
+              })
+              .returning(["id"])
+              .execute();
+
+            const voidActivityId = voidActivity[0]!.id;
+
+            for await (const [id, update] of Object.entries(
+              trackedEntityUpdatesVoid
+            )) {
+              await trx
+                .updateTable("trackedEntity")
+                .set(update)
+                .where("id", "=", id)
+                .where("companyId", "=", companyId)
+                .execute();
+
+              if (voidActivityId) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: id,
+                    quantity: update.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                  .execute();
+              }
+            }
+          }
+
+          await trx
+            .updateTable("receipt")
+            .set({
+              status: "Voided",
+              updatedAt: today,
+              updatedBy: userId
+            })
+            .where("id", "=", receiptId)
+            .where("companyId", "=", companyId)
+            .execute();
+        });
+
+        return { success: true };
+      }
+
+      if (receiptHeader.status === "Voided") {
+        throw new Error("Cannot post a voided receipt");
+      }
+
+      switch (receiptHeader.sourceDocument) {
+        case "Purchase Order": {
+          if (!receiptHeader.sourceDocumentId)
+            throw new Error("Receipt has no sourceDocumentId");
+
+          const [purchaseOrder, purchaseOrderLines, purchaseOrderDelivery] =
+            await inOrder([
+              () =>
+                single(db, "purchaseOrder", {
+                  id: receiptHeader.sourceDocumentId
+                }),
+              () =>
+                many(db, "purchaseOrderLine", {
+                  purchaseOrderId: receiptHeader.sourceDocumentId
+                }),
+              () =>
+                single(
+                  db,
+                  "purchaseOrderDelivery",
+                  { id: receiptHeader.sourceDocumentId },
+                  { columns: ["supplierShippingCost"] }
+                )
+            ]);
+          if (purchaseOrder.error)
+            throw new Error("Failed to fetch purchase order");
+          if (purchaseOrderLines.error)
+            throw new Error("Failed to fetch purchase order lines");
+          if (purchaseOrderDelivery.error)
+            throw new Error("Failed to fetch purchase order delivery");
+
+          // supplierShippingCost is a supplier-currency amount and the order's
+          // exchangeRate is foreign-units-per-base, so supplier -> base is
+          // DIVIDE. It is mixed into base line costs below and becomes the
+          // cost-ledger layer value, so multiplying inflated every foreign
+          // receipt's capitalised cost by the rate squared. Matches
+          // post-purchase-invoice (supplierShippingCost) and migration
+          // 20260702061504, which fixed the same expression in the
+          // purchaseOrders/purchaseInvoices views.
+          const shippingCost =
+            (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) /
+            (purchaseOrder.data?.exchangeRate || 1);
+
+          const totalLinesCost = receiptLines.data.reduce(
+            (acc, receiptLine) => {
+              const safeReceivedQuantity =
+                isNaN(receiptLine.receivedQuantity) ||
+                receiptLine.receivedQuantity == null
+                  ? 0
+                  : receiptLine.receivedQuantity;
+              const lineCost =
+                Math.abs(safeReceivedQuantity) * (receiptLine.unitPrice ?? 0);
+              return acc + lineCost;
+            },
+            0
+          );
+
+          const supplier = await single(db, "supplier", {
+            id: purchaseOrder.data.supplierId,
+            companyId
+          });
+          if (supplier.error) throw new Error("Failed to fetch supplier");
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          // Cost layers created by this receipt (the receipt is the sole creator
+          // of purchase layers; the invoice adjusts them later). Rows flagged
+          // isInvoiceFirst carry their PO line so the flush can exclude quantity
+          // already represented by a legacy invoice-created layer (documents
+          // posted before receipt-created layers shipped).
+          const costLedgerInserts: (Database["public"]["Tables"]["costLedger"]["Insert"] & {
+            isInvoiceFirst?: boolean;
+            poLineId?: string;
+          })[] = [];
+          // Negative receipts consume layers at layer cost inside the
+          // transaction (calculateCOGS); GL amounts are patched to match.
+          // fallbackCost (PO cost) is used when no layers yield a cost.
+          const negativeReceiptConsumptions: {
+            itemId: string;
+            quantity: number;
+            fallbackCost: number;
+            grIrLineIndex: number | null;
+            inventoryLineIndex: number | null;
+          }[] = [];
+          const journalLineInserts: Omit<
+            Database["public"]["Tables"]["journalLine"]["Insert"],
+            "journalId"
+          >[] = [];
+          const journalLineDimensionsMeta: {
+            supplierTypeId: string | null;
+            itemPostingGroupId: string | null;
+            itemId: string | null;
+            locationId: string | null;
+            processId: string | null;
+            fixedAssetClassId: string | null;
+          }[] = [];
+
+          const isOutsideProcessing =
+            purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+          const processIdByJobOperationId = new Map<string, string>();
+          if (isOutsideProcessing) {
+            const jobOpIds = purchaseOrderLines.data
+              .map((pol) => pol.jobOperationId)
+              .filter((id): id is string => !!id);
+            if (jobOpIds.length > 0) {
+              const jobOps = await many(
+                db,
+                "jobOperation",
+                { id: jobOpIds },
+                { columns: ["id", "processId"] }
+              );
+              for (const op of jobOps.data ?? []) {
+                if (op.processId)
+                  processIdByJobOperationId.set(op.id, op.processId);
+              }
+            }
+          }
+
+          const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
+            Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
+          >((acc, receiptLine) => {
+            if (receiptLine.lineId) {
+              acc[receiptLine.lineId] = [
+                ...(acc[receiptLine.lineId] ?? []),
+                receiptLine
+              ];
+            }
+            return acc;
+          }, {});
+
+          // Build one inspection lot per receiptLine whose item has a Receipt-usage
+          // inspection plan (a document assignment). The assigned document is the
+          // plan for the receipt; without one, no lot is created. Compute the
+          // sampling plan snapshot from the company's chosen standard and the
+          // document's default plan (or "Inspect All" when the document has none).
+          const inspectionInserts: Array<Record<string, any>> = [];
+          // Per-feature resolved plans, keyed by receiptLineId until the lot ids
+          // exist (they are joined after the insert returns ids).
+          type InspectionSamplingPlanInsert = {
+            inspectionFeatureId: string;
+            sampleSize: number;
+            acceptanceNumber: number;
+            rejectionNumber: number;
+            codeLetter: string | null;
+            companyId: string;
+            createdBy: string;
+          };
+          const samplingPlanInsertsByReceiptLineId = new Map<
+            string,
+            Array<InspectionSamplingPlanInsert>
+          >();
+          for (const receiptLine of receiptLines.data ?? []) {
+            if (!receiptLine.itemId) continue;
+
+            // An item is inspected at receipt when it has a Receipt-usage
+            // inspection plan (document assignment); without one, no lot.
+            const assignedDocumentId =
+              assignmentByItemId.get(receiptLine.itemId) ?? null;
+            if (!assignedDocumentId) continue;
+
+            const safeReceivedQuantity =
+              isNaN(receiptLine.receivedQuantity as any) ||
+              receiptLine.receivedQuantity == null
+                ? 0
+                : receiptLine.receivedQuantity;
+            if (safeReceivedQuantity <= 0) continue;
+
+            const documentDefault = assignedDocumentId
+              ? (documentDefaultByDocumentId.get(assignedDocumentId) ?? null)
+              : null;
+
+            const plan = documentDefault ?? {
+              type: "All",
+              sampleSize: null,
+              percentage: null,
+              aql: null,
+              inspectionLevel: "II",
+              severity: "Normal"
+            };
+
+            const snapshot = resolveSamplingPlan(
+              plan,
+              safeReceivedQuantity,
+              samplingStandard
+            );
+
+            const documentFeatures = assignedDocumentId
+              ? (inspectionFeaturesByDocumentId.get(assignedDocumentId) ?? [])
+              : [];
+            const featurePlans = documentFeatures.map((feature) => ({
+              inspectionFeatureId: feature.id,
+              resolved: resolveFeatureSamplingPlan(
+                feature,
+                documentDefault,
+                safeReceivedQuantity,
+                samplingStandard
+              )
+            }));
+            if (featurePlans.length > 0) {
+              samplingPlanInsertsByReceiptLineId.set(
+                receiptLine.id,
+                featurePlans.map((p) => ({
+                  inspectionFeatureId: p.inspectionFeatureId,
+                  sampleSize: p.resolved.sampleSize,
+                  acceptanceNumber: p.resolved.acceptance,
+                  rejectionNumber: p.resolved.rejection,
+                  codeLetter: p.resolved.codeLetter,
+                  companyId,
+                  createdBy: userId
+                }))
+              );
+            }
+
+            inspectionInserts.push({
+              sourceDocument: "Receipt",
+              sourceDocumentId: receiptId,
+              sourceDocumentLineId: receiptLine.id,
+              sourceDocumentReadableId: receiptHeader.receiptId ?? null,
+              itemId: receiptLine.itemId,
+              supplierId: purchaseOrder.data.supplierId ?? null,
+              lotSize: safeReceivedQuantity,
+              samplingStandard,
+              samplingPlanType: plan.type,
+              // With a document attached, the lot-level sample size is the max
+              // across the per-feature plans (SAP-style); Ac/Re remain the
+              // item-plan fallback numbers used by the no-document flow.
+              sampleSize:
+                featurePlans.length > 0
+                  ? Math.max(...featurePlans.map((p) => p.resolved.sampleSize))
+                  : snapshot.sampleSize,
+              acceptanceNumber: snapshot.acceptance,
+              rejectionNumber: snapshot.rejection,
+              aql: plan.aql ?? null,
+              inspectionLevel: plan.inspectionLevel ?? null,
+              severity: plan.severity ?? null,
+              codeLetter: snapshot.codeLetter,
+              inspectionDocumentId: assignedDocumentId,
+              status: "Pending",
+              companyId,
+              createdBy: userId
+            });
+          }
+
+          // Tracked entities for items with a Receipt-usage inspection plan stay
+          // On Hold after posting (they are released individually by the sample
+          // inspection or en masse by lot disposition). Everything else flips to
+          // Available.
+          const trackedEntityUpdates =
+            receiptLineTracking.data?.reduce<
+              Record<
+                string,
+                Database["public"]["Tables"]["trackedEntity"]["Update"]
+              >
+            >((acc, itemTracking) => {
+              const receiptLine = receiptLines.data?.find(
+                (receiptLine) =>
+                  receiptLine.id ===
+                  (itemTracking.attributes as TrackedEntityAttributes)?.[
+                    "Receipt Line"
+                  ]?.toString()
+              );
+
+              const safeReceivedQuantity =
+                // @ts-ignore - chillllllll
+                isNaN(receiptLine?.receivedQuantity) ||
+                receiptLine?.receivedQuantity == null
+                  ? 0
+                  : receiptLine.receivedQuantity;
+              const quantity = receiptLine?.requiresSerialTracking
+                ? 1
+                : safeReceivedQuantity || itemTracking.quantity;
+
+              const requiresInspection = receiptLine?.itemId
+                ? assignmentByItemId.has(receiptLine.itemId)
+                : false;
+
+              acc[itemTracking.id] = {
+                status: requiresInspection ? "On Hold" : "Available",
+                quantity: quantity
+              };
+
+              return acc;
+            }, {}) ?? {};
+
+          const jobOperationUpdates = isOutsideProcessing
+            ? purchaseOrderLines.data.reduce<
+                Record<
+                  string,
+                  Database["public"]["Tables"]["jobOperation"]["Update"]
+                >
+              >((acc, purchaseOrderLine) => {
+                const receiptLines =
+                  receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
+                if (
+                  receiptLines &&
+                  receiptLines.length > 0 &&
+                  purchaseOrderLine.purchaseQuantity &&
+                  purchaseOrderLine.purchaseQuantity > 0 &&
+                  purchaseOrderLine.jobOperationId
+                ) {
+                  const recivedQuantityInPurchaseUnit =
+                    receiptLines.reduce((acc, receiptLine) => {
+                      const safeReceivedQuantity =
+                        isNaN(receiptLine.receivedQuantity) ||
+                        receiptLine.receivedQuantity == null
+                          ? 0
+                          : receiptLine.receivedQuantity;
+                      return acc + safeReceivedQuantity;
+                    }, 0) / (receiptLines[0]!.conversionFactor ?? 1);
+
+                  const receivedComplete =
+                    purchaseOrderLine.receivedComplete ||
+                    recivedQuantityInPurchaseUnit >=
+                      (purchaseOrderLine.quantityToReceive ??
+                        purchaseOrderLine.purchaseQuantity);
+
+                  return {
+                    ...acc,
+                    [purchaseOrderLine.jobOperationId]: {
+                      status: receivedComplete ? "Done" : "In Progress"
+                    }
+                  };
+                }
+
+                return acc;
+              }, {})
+            : {};
+
+          const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
+            Record<
+              string,
+              Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+            >
+          >((acc, purchaseOrderLine) => {
+            const receiptLines =
+              receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
+            if (
+              receiptLines &&
+              receiptLines.length > 0 &&
+              purchaseOrderLine.purchaseQuantity &&
+              purchaseOrderLine.purchaseQuantity > 0
+            ) {
+              const recivedQuantityInPurchaseUnit =
+                receiptLines.reduce((acc, receiptLine) => {
+                  const safeReceivedQuantity =
+                    isNaN(receiptLine.receivedQuantity) ||
+                    receiptLine.receivedQuantity == null
+                      ? 0
+                      : receiptLine.receivedQuantity;
+                  return acc + safeReceivedQuantity;
+                }, 0) / (receiptLines[0]!.conversionFactor ?? 1);
+
+              const newQuantityReceived =
+                (purchaseOrderLine.quantityReceived ?? 0) +
+                recivedQuantityInPurchaseUnit;
+
+              const receivedComplete =
+                purchaseOrderLine.receivedComplete ||
+                recivedQuantityInPurchaseUnit >=
+                  (purchaseOrderLine.quantityToReceive ??
+                    purchaseOrderLine.purchaseQuantity);
+
+              return {
+                ...acc,
+                [purchaseOrderLine.id]: {
+                  quantityReceived: newQuantityReceived,
+                  receivedComplete,
+                  receivedDate: today
+                }
+              };
+            }
+
+            return acc;
+          }, {});
+
+          // Get account defaults (once for all lines) - only needed for journal entries
+          const accountDefaults = accountingEnabled
+            ? await getDefaultPostingGroup(db, companyId)
+            : null;
+          if (
+            accountingEnabled &&
+            (accountDefaults?.error || !accountDefaults?.data)
+          ) {
+            throw new Error("Error getting account defaults");
+          }
+
+          // Detect invoice-first scenario: PO lines where qty invoiced > qty received
+          const invoiceFirstQtyByPoLine = new Map<string, number>();
+          const accrualUnitCostByPoLine = new Map<string, number>();
+          const receivedBeforeInvUnitsByPoLine = new Map<string, number>();
+
+          if (accountingEnabled) {
+            for (const pol of purchaseOrderLines.data) {
+              const invoicedInInventoryUnit =
+                (pol.quantityInvoiced ?? 0) * (pol.conversionFactor ?? 1);
+              const receivedInInventoryUnit =
+                (pol.quantityReceived ?? 0) * (pol.conversionFactor ?? 1);
+              const invoiceFirstQty = Math.max(
+                0,
+                invoicedInInventoryUnit - receivedInInventoryUnit
+              );
+              if (invoiceFirstQty > 0) {
+                invoiceFirstQtyByPoLine.set(pol.id, invoiceFirstQty);
+                receivedBeforeInvUnitsByPoLine.set(
+                  pol.id,
+                  receivedInInventoryUnit
+                );
+              }
+            }
+
+            if (invoiceFirstQtyByPoLine.size > 0) {
+              const accrualDocRefs = [...invoiceFirstQtyByPoLine.keys()].map(
+                (id) => journalReference.to.purchaseInvoice(id)
+              );
+
+              const accrualJournalLines = await many(
+                db,
+                "journalLine",
+                {
+                  documentLineReference: accrualDocRefs,
+                  accrual: true,
+                  companyId
+                },
+                {
+                  columns: [
+                    "documentLineReference",
+                    "amount",
+                    "quantity",
+                    "accountId"
+                  ]
+                }
+              );
+
+              if (accrualJournalLines.error) {
+                throw new Error("Failed to fetch accrual journal lines");
+              }
+
+              // GR/IR debit entries have non-positive amounts (debit on a
+              // liability; zero-priced invoices accrue at exactly 0). Matching
+              // the GR/IR account keeps the paired AP credit lines, which are
+              // also 0 on zero-priced invoices, out of the quantity sum.
+              const accrualCostByPoLine: Record<
+                string,
+                { totalCost: number; totalQty: number }
+              > = {};
+              for (const jl of accrualJournalLines.data ?? []) {
+                if (
+                  (jl.amount ?? 0) <= 0 &&
+                  (jl.quantity ?? 0) > 0 &&
+                  jl.accountId ===
+                    accountDefaults?.data?.goodsReceivedNotInvoicedAccount
+                ) {
+                  const [, poLineId] = (jl.documentLineReference ?? "").split(
+                    ":"
+                  ) as [string, string];
+                  if (!accrualCostByPoLine[poLineId]) {
+                    accrualCostByPoLine[poLineId] = {
+                      totalCost: 0,
+                      totalQty: 0
+                    };
+                  }
+                  accrualCostByPoLine[poLineId].totalCost += Math.abs(
+                    jl.amount ?? 0
+                  );
+                  accrualCostByPoLine[poLineId].totalQty += jl.quantity ?? 0;
+                }
+              }
+
+              for (const [poLineId, info] of Object.entries(
+                accrualCostByPoLine
+              )) {
+                if (info.totalQty > 0) {
+                  accrualUnitCostByPoLine.set(
+                    poLineId,
+                    info.totalCost / info.totalQty
+                  );
+                }
+              }
+            }
+          }
+
+          for await (const receiptLine of receiptLines.data) {
+            const jlStartIdx = journalLineInserts.length;
+
+            const receiptLineItem = items.data.find(
+              (item) => item.id === receiptLine.itemId
+            );
+            const itemTrackingType =
+              receiptLineItem?.itemTrackingType ?? "Inventory";
+
+            const receivedQuantity =
+              isNaN(receiptLine.receivedQuantity) ||
+              receiptLine.receivedQuantity == null
+                ? 0
+                : receiptLine.receivedQuantity;
+            const isNegativeReceipt = receivedQuantity < 0;
+            const absReceivedQuantity = Math.abs(receivedQuantity);
+
+            // Line cost at PO price + proportional shipping. Computed outside
+            // the accounting gate: cost layers are created regardless of
+            // whether GL posting is enabled.
+            const lineCost = absReceivedQuantity * receiptLine.unitPrice;
+            const lineValuePercentage =
+              totalLinesCost === 0 ? 0 : lineCost / totalLinesCost;
+            const lineWeightedShippingCost = shippingCost * lineValuePercentage;
+            const cost = lineCost + lineWeightedShippingCost;
+            const poUnitCost =
+              absReceivedQuantity > 0 ? cost / absReceivedQuantity : 0;
+
+            const createsLayers =
+              itemTrackingType !== "Non-Inventory" &&
+              !isOutsideProcessing &&
+              !!receiptLine.itemId &&
+              absReceivedQuantity > 0;
+
+            // Invoice-first split: the portion of this line that was invoiced
+            // before receipt is valued at the accrual (invoice) unit cost — the
+            // actual cost is already known, so no variance arises. The
+            // remainder stays at PO cost until its invoice adjusts it.
+            const poLineId = receiptLine.lineId;
+            let invoiceFirstQty = 0;
+            let accrualUnitCost = 0;
+            if (
+              !isNegativeReceipt &&
+              poLineId &&
+              invoiceFirstQtyByPoLine.has(poLineId)
+            ) {
+              const remainingInvoiceFirstQty =
+                invoiceFirstQtyByPoLine.get(poLineId)!;
+              const claimedQty = Math.min(
+                absReceivedQuantity,
+                remainingInvoiceFirstQty
+              );
+              const claimedUnitCost = accrualUnitCostByPoLine.get(poLineId);
+              // A recorded accrual basis is claimed even at zero unit cost
+              // (zero-priced invoices); only a missing basis falls through to
+              // the normal PO-cost path.
+              if (claimedQty > 0 && claimedUnitCost !== undefined) {
+                invoiceFirstQty = claimedQty;
+                accrualUnitCost = claimedUnitCost;
+                invoiceFirstQtyByPoLine.set(
+                  poLineId,
+                  remainingInvoiceFirstQty - claimedQty
+                );
+              }
+            }
+            const normalQty = absReceivedQuantity - invoiceFirstQty;
+            const invoiceFirstPortionCost = invoiceFirstQty * accrualUnitCost;
+            const normalPortionCost = normalQty * poUnitCost;
+            const glCost = invoiceFirstPortionCost + normalPortionCost;
+
+            if (
+              accountingEnabled &&
+              accountDefaults?.data &&
+              absReceivedQuantity > 0
+            ) {
+              const journalLineReference = nanoid();
+
+              // Determine the debit account based on item type
+              let debitAccount: string;
+              let debitDescription: string;
+
+              if (
+                itemTrackingType !== "Non-Inventory" &&
+                !isOutsideProcessing
+              ) {
+                const inventoryAccount = resolveInventoryAccount(
+                  receiptLineItem?.replenishmentSystem ?? null,
+                  accountDefaults.data
+                );
+                debitAccount = inventoryAccount.account;
+                debitDescription = inventoryAccount.description;
+              } else if (isOutsideProcessing) {
+                debitAccount = accountDefaults.data.workInProgressAccount;
+                debitDescription = "WIP Account";
+              } else {
+                debitAccount = accountDefaults.data.indirectCostAccount;
+                debitDescription = "Indirect Cost Account";
+              }
+
+              if (isNegativeReceipt) {
+                // Amounts are placeholders at PO cost; for layer-backed lines
+                // they are patched to the consumed layer cost inside the
+                // transaction (calculateCOGS).
+                const grIrLineIndex = journalLineInserts.length;
+                journalLineInserts.push({
+                  accountId:
+                    accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                  description: "Goods Received Not Invoiced",
+                  amount: round(debit("liability", cost)),
+                  quantity: round(absReceivedQuantity),
+                  documentType: "Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    purchaseOrder.data?.supplierReference ?? undefined,
+                  documentLineReference: journalReference.to.receipt(
+                    receiptLine.lineId!
+                  ),
+                  journalLineReference,
+                  companyId
+                });
+
+                const inventoryLineIndex = journalLineInserts.length;
+                journalLineInserts.push({
+                  accountId: debitAccount,
+                  description: debitDescription,
+                  amount: round(credit("asset", cost)),
+                  quantity: round(absReceivedQuantity),
+                  documentType: "Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    purchaseOrder.data?.supplierReference ?? undefined,
+                  documentLineReference: journalReference.to.receipt(
+                    receiptLine.lineId!
+                  ),
+                  journalLineReference,
+                  companyId
+                });
+
+                if (createsLayers) {
+                  negativeReceiptConsumptions.push({
+                    itemId: receiptLine.itemId!,
+                    quantity: absReceivedQuantity,
+                    fallbackCost: cost,
+                    grIrLineIndex,
+                    inventoryLineIndex
+                  });
+                }
+              } else {
+                // The invoice-first portion posts at accrual (invoice) cost so
+                // the invoice's GR/IR debit accrual clears exactly — no PPV.
+                journalLineInserts.push({
+                  accountId: debitAccount,
+                  description: debitDescription,
+                  amount: round(debit("asset", glCost)),
+                  quantity: round(absReceivedQuantity),
+                  documentType: "Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    purchaseOrder.data?.supplierReference ?? undefined,
+                  documentLineReference: journalReference.to.receipt(
+                    receiptLine.lineId!
+                  ),
+                  journalLineReference,
+                  companyId
+                });
+
+                journalLineInserts.push({
+                  accountId:
+                    accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                  description: "Goods Received Not Invoiced",
+                  amount: round(credit("liability", glCost)),
+                  quantity: round(absReceivedQuantity),
+                  documentType: "Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    purchaseOrder.data?.supplierReference ?? undefined,
+                  documentLineReference: journalReference.to.receipt(
+                    receiptLine.lineId!
+                  ),
+                  journalLineReference,
+                  companyId
+                });
+              }
+            } else if (isNegativeReceipt && createsLayers) {
+              // Accounting disabled: still consume layers in the subledger
+              negativeReceiptConsumptions.push({
+                itemId: receiptLine.itemId!,
+                quantity: absReceivedQuantity,
+                fallbackCost: cost,
+                grIrLineIndex: null,
+                inventoryLineIndex: null
+              });
+            }
+
+            // Cost layers: the receipt is the sole creator of purchase layers.
+            // The invoice later adjusts them via appliesToCostLedgerId children.
+            if (createsLayers && !isNegativeReceipt) {
+              if (invoiceFirstQty > 0) {
+                costLedgerInserts.push({
+                  itemLedgerType: "Purchase",
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Purchase Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  itemId: receiptLine.itemId,
+                  quantity: round(invoiceFirstQty),
+                  nominalCost: round(
+                    invoiceFirstQty * (receiptLine.unitPrice ?? 0)
+                  ),
+                  cost: round(invoiceFirstPortionCost),
+                  remainingQuantity: round(invoiceFirstQty),
+                  supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  companyId,
+                  postingDate: today,
+                  isInvoiceFirst: true,
+                  poLineId: poLineId ?? undefined
+                });
+              }
+              if (normalQty > 0) {
+                costLedgerInserts.push({
+                  itemLedgerType: "Purchase",
+                  costLedgerType: "Direct Cost",
+                  adjustment: false,
+                  documentType: "Purchase Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  itemId: receiptLine.itemId,
+                  quantity: round(normalQty),
+                  nominalCost: round(normalQty * (receiptLine.unitPrice ?? 0)),
+                  cost: round(normalPortionCost),
+                  remainingQuantity: round(normalQty),
+                  supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  companyId,
+                  postingDate: today
+                });
+              }
+            }
+
+            if (itemTrackingType === "Inventory" && !isOutsideProcessing) {
+              // For inventory entries, use the appropriate entry type based on quantity sign
+              const entryType =
+                receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                quantity: round(receivedQuantity),
+                locationId: receiptLine.locationId,
+                storageUnitId: receiptLine.storageUnitId,
+                entryType,
+                documentType: "Purchase Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId
+              });
+            }
+
+            if (receiptLine.requiresBatchTracking && !isOutsideProcessing) {
+              const entryType =
+                receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                quantity: round(receivedQuantity),
+                locationId: receiptLine.locationId,
+                storageUnitId: receiptLine.storageUnitId,
+                entryType,
+                documentType: "Purchase Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                trackedEntityId: receiptLineTracking.data?.find(
+                  (tracking) =>
+                    (
+                      tracking.attributes as TrackedEntityAttributes | undefined
+                    )?.["Receipt Line"] === receiptLine.id
+                )?.id,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId
+              });
+            }
+
+            if (receiptLine.requiresSerialTracking && !isOutsideProcessing) {
+              const lineTracking = receiptLineTracking.data?.filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              );
+
+              const safeReceiptLineQuantity =
+                isNaN(receiptLine.receivedQuantity) ||
+                receiptLine.receivedQuantity == null
+                  ? 0
+                  : receiptLine.receivedQuantity;
+              const absReceivedQuantity = Math.abs(safeReceiptLineQuantity);
+              const entryType =
+                receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+              const quantityPerEntry = receivedQuantity < 0 ? -1 : 1;
+
+              for (let i = 0; i < absReceivedQuantity; i++) {
+                const trackingWithIndex = lineTracking?.find(
+                  (tracking) =>
+                    (
+                      tracking.attributes as TrackedEntityAttributes | undefined
+                    )?.["Receipt Line Index"] === i
+                );
+
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: receiptLine.itemId,
+                  quantity: round(quantityPerEntry),
+                  locationId: receiptLine.locationId,
+                  storageUnitId: receiptLine.storageUnitId,
+                  entryType,
+                  documentType: "Purchase Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  trackedEntityId: trackingWithIndex?.id,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId
+                });
+              }
+            }
+
+            // Track dimensions for this receipt line's journal lines
+            if (accountingEnabled) {
+              const jlCount = journalLineInserts.length - jlStartIdx;
+              const lineItemPostingGroupId =
+                itemCosts.data.find(
+                  (cost) => cost.itemId === receiptLine.itemId
+                )?.itemPostingGroupId ?? null;
+              const poLine = purchaseOrderLines.data.find(
+                (pol) => pol.id === receiptLine.lineId
+              );
+              const lineProcessId = poLine?.jobOperationId
+                ? (processIdByJobOperationId.get(poLine.jobOperationId) ?? null)
+                : null;
+              for (let i = 0; i < jlCount; i++) {
+                journalLineDimensionsMeta.push({
+                  supplierTypeId: supplier.data.supplierTypeId ?? null,
+                  itemPostingGroupId: lineItemPostingGroupId,
+                  itemId: receiptLine.itemId ?? null,
+                  locationId: receiptLine.locationId ?? null,
+                  processId: lineProcessId,
+                  fixedAssetClassId: null
+                });
+              }
+            }
+          }
+
+          // Process Fixed Asset PO lines (no receipt lines — handled directly from PO)
+          const { data: receiptFaLines } = await many(
+            db,
+            "receiptFixedAssetLine",
+            { receiptId, received: true },
+            { columns: ["purchaseOrderLineId", "serialNumber"] }
+          );
+          const receivedFaPoLineIds = new Set(
+            (receiptFaLines ?? []).map((r) => r.purchaseOrderLineId)
+          );
+          const faSerialNumbers = new Map(
+            (receiptFaLines ?? []).map((r) => [
+              r.purchaseOrderLineId,
+              r.serialNumber
+            ])
+          );
+
+          const faPurchaseOrderLines = purchaseOrderLines.data.filter(
+            (pol) =>
+              pol.purchaseOrderLineType === "Fixed Asset" &&
+              pol.assetId &&
+              !pol.receivedComplete &&
+              pol.purchaseQuantity &&
+              pol.purchaseQuantity > 0 &&
+              receivedFaPoLineIds.has(pol.id)
+          );
+
+          for (const faPoLine of faPurchaseOrderLines) {
+            if (accountingEnabled && accountDefaults?.data) {
+              const quantity = faPoLine.purchaseQuantity ?? 1;
+              const unitPrice = faPoLine.unitPrice ?? 0;
+              const cost = quantity * unitPrice;
+
+              const assetRecord = await single<
+                "fixedAsset",
+                Pick<
+                  Tables["fixedAsset"]["Row"],
+                  | "id"
+                  | "status"
+                  | "acquisitionDate"
+                  | "depreciationStartDate"
+                  | "acquisitionCost"
+                  | "locationId"
+                  | "fixedAssetClassId"
+                > & {
+                  fixedAssetClass: Pick<
+                    Tables["fixedAssetClass"]["Row"],
+                    "assetAccountId"
+                  > | null;
+                }
+              >(
+                db,
+                "fixedAsset",
+                { id: faPoLine.assetId! },
+                {
+                  columns: [
+                    "id",
+                    "status",
+                    "acquisitionDate",
+                    "depreciationStartDate",
+                    "acquisitionCost",
+                    "locationId",
+                    "fixedAssetClassId"
+                  ],
+                  embed: {
+                    fixedAssetClass: {
+                      table: "fixedAssetClass",
+                      via: "fixedAssetClassId",
+                      columns: ["assetAccountId"]
+                    }
+                  }
+                }
+              );
+
+              if (assetRecord.error)
+                throw new Error("Failed to fetch fixed asset");
+              fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
+
+              const journalLineRef = nanoid();
+
+              journalLineInserts.push({
+                accountId: (assetRecord.data.fixedAssetClass as any)
+                  .assetAccountId,
+                description: "Fixed Asset Acquisition",
+                amount: round(debit("asset", cost)),
+                quantity: round(quantity),
+                documentType: "Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: journalReference.to.receipt(
+                  faPoLine.id!
+                ),
+                journalLineReference: journalLineRef,
+                companyId
+              });
+
+              journalLineInserts.push({
+                accountId: accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                description: "Goods Received Not Invoiced",
+                amount: round(credit("liability", cost)),
+                quantity: round(quantity),
+                documentType: "Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: journalReference.to.receipt(
+                  faPoLine.id!
+                ),
+                journalLineReference: journalLineRef,
+                companyId
+              });
+
+              for (let i = 0; i < 2; i++) {
+                journalLineDimensionsMeta.push({
+                  supplierTypeId: supplier.data.supplierTypeId ?? null,
+                  itemPostingGroupId: null,
+                  itemId: null,
+                  locationId:
+                    faPoLine.locationId ??
+                    receiptHeader.locationId ??
+                    assetRecord.data.locationId ??
+                    null,
+                  processId: null,
+                  fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null
+                });
+              }
+
+              const updateData: Database["public"]["Tables"]["fixedAsset"]["Update"] =
+                {
+                  acquisitionCost:
+                    (Number(assetRecord.data.acquisitionCost) ?? 0) + cost,
+                  updatedBy: userId
+                };
+              if (!assetRecord.data.acquisitionDate) {
+                updateData.acquisitionDate = today;
+              }
+              if (!assetRecord.data.depreciationStartDate) {
+                updateData.depreciationStartDate = today;
+              }
+              if (assetRecord.data.status === "Draft") {
+                updateData.status = "Active";
+              }
+
+              const serialNumber = faSerialNumbers.get(faPoLine.id!);
+              if (serialNumber) {
+                updateData.serialNumber = serialNumber;
+              }
+
+              const faLineLocationId =
+                faPoLine.locationId ?? receiptHeader.locationId;
+              if (faLineLocationId) {
+                updateData.locationId = faLineLocationId;
+              }
+
+              fixedAssetWrites.patch(faPoLine.assetId!, updateData);
+            }
+
+            purchaseOrderLineUpdates[faPoLine.id!] = {
+              quantityReceived: faPoLine.purchaseQuantity,
+              receivedComplete: true,
+              receivedDate: today
+            };
+          }
+
+          const accountingPeriodId = accountingEnabled
+            ? await getCurrentAccountingPeriod(companyId, db, today)
+            : null;
+
+          await db.transaction().execute(async (trx) => {
+            await fixedAssetWrites.apply(trx, companyId);
+            // Negative receipts: consume layers at layer cost (FIFO/LIFO with
+            // adjustment children) and patch the placeholder GL amounts so the
+            // GL credit matches what actually left the subledger.
+            for (const consumption of negativeReceiptConsumptions) {
+              const cogsResult = await calculateCOGS(trx, {
+                itemId: consumption.itemId,
+                quantity: consumption.quantity,
+                companyId
+              });
+              // A consumed layer's total is authoritative even at zero or
+              // negative (free goods, credit-adjusted layers): the GL credit
+              // must match the value actually relieved from the subledger. The
+              // PO-cost fallback applies only when nothing was consumed and no
+              // cost basis was found.
+              const consumedCost =
+                cogsResult.layersConsumed.length > 0 || cogsResult.totalCost > 0
+                  ? cogsResult.totalCost
+                  : consumption.fallbackCost;
+              if (consumption.grIrLineIndex !== null) {
+                journalLineInserts[consumption.grIrLineIndex]!.amount = round(
+                  debit("liability", consumedCost)
+                );
+              }
+              if (consumption.inventoryLineIndex !== null) {
+                journalLineInserts[consumption.inventoryLineIndex]!.amount =
+                  round(credit("asset", consumedCost));
+              }
+              costLedgerInserts.push({
+                itemLedgerType: "Purchase",
+                costLedgerType: "Direct Cost",
+                adjustment: false,
+                documentType: "Purchase Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                itemId: consumption.itemId,
+                quantity: round(-consumption.quantity),
+                cost: round(-consumedCost),
+                remainingQuantity: 0,
+                supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                companyId,
+                postingDate: today
+              });
+            }
+
+            // Flush cost layers. Transition guard: invoices posted before
+            // receipt-created layers shipped created their own layers, so the
+            // invoice-first quantity those legacy layers already represent must
+            // not create a second one. Coverage is matched to the receipt's PO
+            // lines through the legacy invoices' own lines, net of quantity
+            // received before this receipt (which already consumed coverage);
+            // only the covered quantity is excluded — any remainder still
+            // creates a layer.
+            if (costLedgerInserts.length > 0) {
+              const invoiceFirstRows = costLedgerInserts.filter(
+                (row) => row.isInvoiceFirst && row.itemId && row.poLineId
+              );
+              const legacyCoverageByPoLine = new Map<string, number>();
+              if (invoiceFirstRows.length > 0) {
+                const invoiceFirstItemIds = [
+                  ...new Set(invoiceFirstRows.map((row) => row.itemId!))
+                ];
+                const legacyLayers = await trx
+                  .selectFrom("costLedger")
+                  .select(["documentId"])
+                  .where("documentType", "=", "Purchase Invoice")
+                  .where("itemId", "in", invoiceFirstItemIds)
+                  .where("companyId", "=", companyId)
+                  .where("remainingQuantity", ">", 0)
+                  // adjustment children are corrections on receipt layers, not
+                  // legacy invoice-created layers — must not trip this guard
+                  .where("adjustment", "=", false)
+                  .where("appliesToCostLedgerId", "is", null)
+                  .execute();
+                const legacyInvoiceIds = [
+                  ...new Set(
+                    legacyLayers
+                      .map((layer) => layer.documentId)
+                      .filter((id): id is string => !!id)
+                  )
+                ];
+                if (legacyInvoiceIds.length > 0) {
+                  const invoiceFirstPoLineIds = [
+                    ...new Set(invoiceFirstRows.map((row) => row.poLineId!))
+                  ];
+                  const legacyInvoiceLines = await trx
+                    .selectFrom("purchaseInvoiceLine")
+                    .select([
+                      "purchaseOrderLineId",
+                      "quantity",
+                      "conversionFactor"
+                    ])
+                    .where("invoiceId", "in", legacyInvoiceIds)
+                    .where("purchaseOrderLineId", "in", invoiceFirstPoLineIds)
+                    .where("companyId", "=", companyId)
+                    .execute();
+                  for (const line of legacyInvoiceLines) {
+                    if (!line.purchaseOrderLineId) continue;
+                    legacyCoverageByPoLine.set(
+                      line.purchaseOrderLineId,
+                      (legacyCoverageByPoLine.get(line.purchaseOrderLineId) ??
+                        0) +
+                        Number(line.quantity ?? 0) *
+                          Number(line.conversionFactor ?? 1)
+                    );
+                  }
+                  // Legacy layers were created for the full invoiced quantity,
+                  // and units received earlier consumed that coverage first —
+                  // subtracting received-to-date leaves exactly the coverage
+                  // this and future receipts may still exclude.
+                  for (const [linePoId, covered] of legacyCoverageByPoLine) {
+                    const receivedBefore =
+                      receivedBeforeInvUnitsByPoLine.get(linePoId) ?? 0;
+                    legacyCoverageByPoLine.set(
+                      linePoId,
+                      Math.max(0, covered - receivedBefore)
+                    );
+                  }
+                }
+              }
+              const costLedgerRows: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+                [];
+              for (const row of costLedgerInserts) {
+                const {
+                  isInvoiceFirst,
+                  poLineId: rowPoLineId,
+                  ...insertRow
+                } = row;
+                if (isInvoiceFirst && rowPoLineId) {
+                  const coverage = legacyCoverageByPoLine.get(rowPoLineId) ?? 0;
+                  const rowQty = Number(insertRow.quantity ?? 0);
+                  const excludedQty = Math.min(rowQty, coverage);
+                  if (excludedQty > 0) {
+                    legacyCoverageByPoLine.set(
+                      rowPoLineId,
+                      coverage - excludedQty
+                    );
+                    logger.info(
+                      "excluding invoice-first quantity already represented by legacy invoice-created layers",
+                      {
+                        itemId: insertRow.itemId,
+                        purchaseOrderLineId: rowPoLineId,
+                        excludedQty
+                      }
+                    );
+                    const layerQty = rowQty - excludedQty;
+                    if (layerQty <= 0) continue;
+                    const scale = layerQty / rowQty;
+                    insertRow.quantity = round(layerQty);
+                    insertRow.cost = round(Number(insertRow.cost ?? 0) * scale);
+                    insertRow.nominalCost = round(
+                      Number(insertRow.nominalCost ?? 0) * scale
+                    );
+                    insertRow.remainingQuantity = round(layerQty);
+                  }
+                }
+                costLedgerRows.push(insertRow);
+              }
+              if (costLedgerRows.length > 0) {
+                await trx
+                  .insertInto("costLedger")
+                  .values(costLedgerRows)
+                  .execute();
+              }
+            }
+
+            for await (const [purchaseOrderLineId, update] of Object.entries(
+              purchaseOrderLineUpdates
+            )) {
+              await trx
+                .updateTable("purchaseOrderLine")
+                .set(update)
+                .where("id", "=", purchaseOrderLineId)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            for await (const [jobOperationId, update] of Object.entries(
+              jobOperationUpdates
+            )) {
+              await trx
+                .updateTable("jobOperation")
+                .set(update)
+                .where("id", "=", jobOperationId)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            const purchaseOrderLines = await trx
+              .selectFrom("purchaseOrderLine")
+              .select([
+                "id",
+                "purchaseOrderLineType",
+                "invoicedComplete",
+                "receivedComplete"
+              ])
+              .where("purchaseOrderId", "=", purchaseOrder.data.id)
+              .execute();
+
+            const areAllLinesInvoiced = purchaseOrderLines.every(
+              (line) =>
+                line.purchaseOrderLineType === "Comment" ||
+                line.invoicedComplete
+            );
+
+            const areAllLinesReceived = purchaseOrderLines.every(
+              (line) =>
+                line.purchaseOrderLineType === "Comment" ||
+                line.purchaseOrderLineType === "G/L Account" ||
+                line.purchaseOrderLineType === "Service" ||
+                line.receivedComplete
+            );
+
+            let status: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
+              "To Receive and Invoice";
+            if (areAllLinesInvoiced && areAllLinesReceived) {
+              status = "Completed";
+            } else if (areAllLinesInvoiced) {
+              status = "To Receive";
+            } else if (areAllLinesReceived) {
+              status = "To Invoice";
+            }
+
+            await trx
+              .updateTable("purchaseOrder")
+              .set({
+                status
+              })
+              .where("id", "=", purchaseOrder.data.id)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            await trx
+              .updateTable("purchaseOrderDelivery")
+              .set({
+                deliveryDate: today,
+                locationId: receiptHeader.locationId
+              })
+              .where("id", "=", receiptHeader.sourceDocumentId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            if (accountingEnabled && journalLineInserts.length > 0) {
+              const journalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId,
+                  description: `Purchase Receipt ${receiptHeader.receiptId}`,
+                  postingDate: today,
+                  companyId,
+                  sourceType: "Purchase Receipt",
+                  status: "Posted",
+                  postedAt: datetime.timestamp(),
+                  postedBy: userId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              const journalLineResults = await trx
+                .insertInto("journalLine")
+                .values(
+                  journalLineInserts.map((line) => ({
+                    ...line,
+                    journalId: journalResult.id
+                  }))
+                )
+                .returning(["id"])
+                .execute();
+
+              // Insert automatic dimensions for journal lines
+              if (dimensionMap.size > 0) {
+                const journalLineDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+
+                journalLineResults.forEach((jl, index) => {
+                  const meta = journalLineDimensionsMeta[index];
+                  if (!meta) return;
+
+                  if (meta.supplierTypeId && dimensionMap.has("SupplierType")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("SupplierType")!,
+                      valueId: meta.supplierTypeId,
+                      companyId
+                    });
+                  }
+                  if (
+                    meta.itemPostingGroupId &&
+                    dimensionMap.has("ItemPostingGroup")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("ItemPostingGroup")!,
+                      valueId: meta.itemPostingGroupId,
+                      companyId
+                    });
+                  }
+                  if (meta.itemId && dimensionMap.has("Item")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Item")!,
+                      valueId: meta.itemId,
+                      companyId
+                    });
+                  }
+                  if (
+                    purchaseOrder.data.supplierId &&
+                    dimensionMap.has("Supplier")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Supplier")!,
+                      valueId: purchaseOrder.data.supplierId,
+                      companyId
+                    });
+                  }
+                  if (meta.locationId && dimensionMap.has("Location")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Location")!,
+                      valueId: meta.locationId,
+                      companyId
+                    });
+                  }
+                  if (meta.processId && dimensionMap.has("Process")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Process")!,
+                      valueId: meta.processId,
+                      companyId
+                    });
+                  }
+                  if (
+                    meta.fixedAssetClassId &&
+                    dimensionMap.has("FixedAssetClass")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("FixedAssetClass")!,
+                      valueId: meta.fixedAssetClassId,
+                      companyId
+                    });
+                  }
+                });
+
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
+              }
+            }
+
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .returning(["id"])
+                .execute();
+            }
+
+            await trx
+              .updateTable("receipt")
+              .set({
+                status: "Posted",
+                postingDate: today,
+                postedBy: userId
+              })
+              .where("id", "=", receiptId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            if (Object.keys(trackedEntityUpdates).length > 0) {
+              const trackedActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Receive",
+                  sourceDocument: "Receipt",
+                  sourceDocumentId: receiptId,
+                  sourceDocumentReadableId: receiptHeader.receiptId,
+                  attributes: {
+                    "Purchase Order": receiptHeader.sourceDocumentId,
+                    Receipt: receiptId,
+                    Employee: userId
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+                .returning(["id"])
+                .execute();
+
+              const trackedActivityId = trackedActivity[0]!.id;
+
+              for await (const [id, update] of Object.entries(
+                trackedEntityUpdates
+              )) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set(update)
+                  .where("id", "=", id)
+                  .where("companyId", "=", companyId)
+                  .execute();
+
+                if (trackedActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                    .execute();
+                }
+              }
+            }
+
+            if (inspectionInserts.length > 0) {
+              for (const row of inspectionInserts) {
+                row.inspectionId = await getNextSequence(
+                  trx,
+                  "inspection",
+                  companyId
+                );
+              }
+              const insertedInspections = await trx
+                .insertInto("inspection")
+                .values(
+                  inspectionInserts as Insertable<
+                    KyselyDatabase["inspection"]
+                  >[]
+                )
+                .returning(["id", "sourceDocumentLineId"])
+                .execute();
+
+              const samplingPlanInserts: Array<
+                InspectionSamplingPlanInsert & { inspectionId: string }
+              > = [];
+              for (const inspection of insertedInspections) {
+                const featureRows = inspection.sourceDocumentLineId
+                  ? samplingPlanInsertsByReceiptLineId.get(
+                      inspection.sourceDocumentLineId
+                    )
+                  : undefined;
+                if (!featureRows) continue;
+                for (const featureRow of featureRows) {
+                  samplingPlanInserts.push({
+                    ...featureRow,
+                    inspectionId: inspection.id
+                  });
+                }
+              }
+              if (samplingPlanInserts.length > 0) {
+                await trx
+                  .insertInto("inspectionSamplingPlan")
+                  .values(samplingPlanInserts)
+                  .execute();
+              }
+            }
+          });
+          break;
+        }
+        case "Sales Return Order": {
+          // Customer RMA receipt: goods re-enter inventory at the ORIGINAL
+          // outbound cost when the line links a shipment (exact cost reversing),
+          // at current cost for blind returns, and at ZERO when the line's
+          // return reason flags inventoryValueZero. Entities re-enter On Hold —
+          // disposition is the only path to Available.
+          if (!receiptHeader.sourceDocumentId)
+            throw new Error("Receipt has no sourceDocumentId");
+          const salesReturnOrderId = receiptHeader.sourceDocumentId;
+
+          const [salesReturnOrder, salesReturnOrderLines, itemCostDetails] =
+            await inOrder([
+              () =>
+                single(db, "salesReturnOrder", {
+                  id: salesReturnOrderId,
+                  companyId
+                }),
+              () =>
+                many<
+                  "salesReturnOrderLine",
+                  Tables["salesReturnOrderLine"]["Row"] & {
+                    returnReason: Pick<
+                      Tables["returnReason"]["Row"],
+                      "inventoryValueZero"
+                    > | null;
+                  }
+                >(
+                  db,
+                  "salesReturnOrderLine",
+                  { salesReturnOrderId, companyId },
+                  {
+                    embed: {
+                      returnReason: {
+                        table: "returnReason",
+                        via: "returnReasonId",
+                        columns: ["inventoryValueZero"]
+                      }
+                    }
+                  }
+                ),
+              () =>
+                many(
+                  db,
+                  "itemCost",
+                  { itemId: itemIds, companyId },
+                  { columns: ["itemId", "unitCost"] }
+                )
+            ]);
+          if (salesReturnOrder.error)
+            throw new Error("Failed to fetch sales return order");
+          if (salesReturnOrderLines.error)
+            throw new Error("Failed to fetch sales return order lines");
+          if (itemCostDetails.error)
+            throw new Error("Failed to fetch item costs for cost resolution");
+          // Allowlist, matching the create-side gate: a Draft RMA has never had
+          // its caps validated, so it must be confirmed (To Receive) before
+          // receiving.
+          if (salesReturnOrder.data.status !== "To Receive") {
+            throw new Error(
+              `Cannot post a receipt against a return order in ${salesReturnOrder.data.status} status`
+            );
+          }
+
+          const returnLineById = new Map(
+            (salesReturnOrderLines.data ?? []).map((l) => [l.id, l])
+          );
+          const currentCostByItem = new Map(
+            (itemCostDetails.data ?? []).map((c) => [
+              c.itemId,
+              Number(c.unitCost ?? 0)
+            ])
+          );
+
+          // Original-outbound-cost resolution: the shipment's consumption rows
+          // are per (shipment, item) — post-shipment aggregates across lines —
+          // so resolve the shipment ids behind the linked shipment lines, then
+          // average that shipment's consumption rows for the item.
+          const linkedShipmentLineIds = [
+            ...new Set(
+              (salesReturnOrderLines.data ?? [])
+                .map((l) => l.shipmentLineId)
+                .filter(Boolean) as string[]
+            )
+          ];
+          const shipmentIdByShipmentLine = new Map<string, string>();
+          if (linkedShipmentLineIds.length > 0) {
+            const shipmentLines = await many(
+              db,
+              "shipmentLine",
+              { id: linkedShipmentLineIds },
+              { columns: ["id", "shipmentId"] }
+            );
+            // A failed read must abort, not fall back: an empty map here would
+            // silently book every linked line at CURRENT cost instead of the
+            // original outbound cost, defeating exact-cost reversing unnoticed.
+            if (shipmentLines.error)
+              throw new Error(
+                "Failed to resolve shipments for original-cost lookup"
+              );
+            for (const line of shipmentLines.data ?? []) {
+              if (line.shipmentId)
+                shipmentIdByShipmentLine.set(line.id, line.shipmentId);
+            }
+          }
+          const shipmentIds = [...new Set(shipmentIdByShipmentLine.values())];
+          const consumptionRowsByShipmentItem = new Map<
+            string,
+            { quantity: number; cost: number }[]
+          >();
+          if (shipmentIds.length > 0) {
+            const consumptionRows = await many(
+              db,
+              "costLedger",
+              {
+                documentId: shipmentIds,
+                documentType: "Sales Shipment",
+                companyId,
+                quantity: lt(0)
+              },
+              { columns: ["documentId", "itemId", "quantity", "cost"] }
+            );
+            if (consumptionRows.error)
+              throw new Error(
+                "Failed to fetch shipment cost layers for original-cost lookup"
+              );
+            for (const row of consumptionRows.data ?? []) {
+              const key = `${row.documentId}::${row.itemId}`;
+              const list = consumptionRowsByShipmentItem.get(key) ?? [];
+              list.push({
+                quantity: Number(row.quantity ?? 0),
+                cost: Number(row.cost ?? 0)
+              });
+              consumptionRowsByShipmentItem.set(key, list);
+            }
+          }
+
+          const accountDefaults = accountingEnabled
+            ? await getDefaultPostingGroup(db, companyId)
+            : null;
+
+          // Customer type for the return-receipt journal's GL dimensions.
+          const customer = accountingEnabled
+            ? await single(
+                db,
+                "customer",
+                { id: salesReturnOrder.data.customerId, companyId },
+                { columns: ["id", "customerTypeId"] }
+              )
+            : null;
+          const customerTypeId = customer?.data?.customerTypeId ?? null;
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+            [];
+          const journalLineInserts: Omit<
+            Database["public"]["Tables"]["journalLine"]["Insert"],
+            "journalId"
+          >[] = [];
+          // Index-parallel to journalLineInserts: dimension #i belongs to
+          // journal line #i.
+          const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
+          const returnLineUpdates: Record<
+            string,
+            { quantityReceived: number; updatedBy: string }
+          > = {};
+          const trackedEntityUpdates: Record<
+            string,
+            {
+              status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+              quantity: number;
+            }
+          > = {};
+
+          for (const receiptLine of receiptLines.data ?? []) {
+            if (!receiptLine.itemId || !receiptLine.lineId) continue;
+            const returnLine = returnLineById.get(receiptLine.lineId);
+            if (!returnLine) {
+              throw new Error(
+                `Receipt line ${receiptLine.id} does not map to a return order line`
+              );
+            }
+
+            const safeReceivedQuantity =
+              isNaN(receiptLine.receivedQuantity) ||
+              receiptLine.receivedQuantity == null
+                ? 0
+                : receiptLine.receivedQuantity;
+            if (safeReceivedQuantity <= 0) continue;
+            const receivedQuantity = safeReceivedQuantity;
+
+            const item = items.data.find((i) => i.id === receiptLine.itemId);
+            const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+            // Cost resolution: zero-value reason -> 0; linked -> original
+            // outbound cost from the shipment's consumption rows; else current.
+            let unitCost: number;
+            if (
+              (
+                returnLine.returnReason as {
+                  inventoryValueZero: boolean;
+                } | null
+              )?.inventoryValueZero
+            ) {
+              unitCost = 0;
+            } else if (
+              returnLine.shipmentLineId &&
+              shipmentIdByShipmentLine.has(returnLine.shipmentLineId)
+            ) {
+              const shipmentId = shipmentIdByShipmentLine.get(
+                returnLine.shipmentLineId
+              )!;
+              const rows =
+                consumptionRowsByShipmentItem.get(
+                  `${shipmentId}::${receiptLine.itemId}`
+                ) ?? [];
+              // Falls back to current cost only when the resolved shipment
+              // genuinely has no usable consumption rows for the item (empty,
+              // zero-quantity, or NaN — resolveReturnUnitCost returns null).
+              // Read failures throw above rather than reaching this fallback.
+              unitCost =
+                resolveReturnUnitCost(rows) ??
+                currentCostByItem.get(receiptLine.itemId) ??
+                0;
+            } else {
+              unitCost = currentCostByItem.get(receiptLine.itemId) ?? 0;
+            }
+
+            const cost = receivedQuantity * unitCost;
+            const createsLayers =
+              itemTrackingType !== "Non-Inventory" &&
+              !!receiptLine.itemId &&
+              receivedQuantity > 0;
+
+            // itemLedger — mirrors the Purchase Order branch's three sites,
+            // with the Sales Return Receipt document identity.
+            if (itemTrackingType === "Inventory") {
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                quantity: round(receivedQuantity),
+                locationId: receiptLine.locationId,
+                storageUnitId: receiptLine.storageUnitId,
+                entryType: "Positive Adjmt.",
+                documentType: "Sales Return Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId
+              });
+            }
+
+            if (receiptLine.requiresBatchTracking) {
+              const entity = receiptLineTracking.data?.find(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              );
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                quantity: round(receivedQuantity),
+                locationId: receiptLine.locationId,
+                storageUnitId: receiptLine.storageUnitId,
+                entryType: "Positive Adjmt.",
+                documentType: "Sales Return Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                trackedEntityId: entity?.id,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId
+              });
+              if (entity) {
+                trackedEntityUpdates[entity.id] = {
+                  status: "On Hold",
+                  quantity: receivedQuantity
+                };
+              }
+            }
+
+            if (receiptLine.requiresSerialTracking) {
+              const lineTracking = receiptLineTracking.data?.filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              );
+              for (let i = 0; i < receivedQuantity; i++) {
+                const trackingWithIndex = lineTracking?.find(
+                  (tracking) =>
+                    (
+                      tracking.attributes as TrackedEntityAttributes | undefined
+                    )?.["Receipt Line Index"] === i
+                );
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: receiptLine.itemId,
+                  quantity: 1,
+                  locationId: receiptLine.locationId,
+                  storageUnitId: receiptLine.storageUnitId,
+                  entryType: "Positive Adjmt.",
+                  documentType: "Sales Return Receipt",
+                  documentId: receiptHeader.id ?? undefined,
+                  trackedEntityId: trackingWithIndex?.id,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId
+                });
+                if (trackingWithIndex) {
+                  trackedEntityUpdates[trackingWithIndex.id] = {
+                    status: "On Hold",
+                    quantity: 1
+                  };
+                }
+              }
+            }
+
+            // Cost layer: consumable re-entry at the resolved cost. A
+            // zero-value reason still creates the (0-cost) layer so FIFO
+            // consumption stays quantity-consistent.
+            if (createsLayers) {
+              costLedgerInserts.push({
+                itemLedgerType: "Sale",
+                costLedgerType: "Direct Cost",
+                adjustment: false,
+                documentType: "Sales Return Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                itemId: receiptLine.itemId,
+                quantity: round(receivedQuantity),
+                nominalCost: round(cost),
+                cost: round(cost),
+                remainingQuantity: round(receivedQuantity),
+                companyId,
+                postingDate: today
+              });
+            }
+
+            // Journal: Dr Inventory / Cr COGS at the re-entry value. Zero-value
+            // re-entries post no journal.
+            if (accountingEnabled && accountDefaults?.data && cost > 0) {
+              const journalLineReference = nanoid();
+              const inventoryAccount = resolveInventoryAccount(
+                item?.replenishmentSystem ?? null,
+                accountDefaults.data
+              );
+
+              journalLineInserts.push({
+                accountId: inventoryAccount.account,
+                description: inventoryAccount.description,
+                amount: round(debit("asset", cost)),
+                quantity: round(receivedQuantity),
+                documentType: "Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                documentLineReference: journalReference.to.receipt(
+                  receiptLine.lineId
+                ),
+                journalLineReference,
+                companyId
+              });
+
+              journalLineInserts.push({
+                accountId: accountDefaults.data.costOfGoodsSoldAccount,
+                description: "Cost of Goods Sold",
+                amount: round(credit("expense", cost)),
+                quantity: round(receivedQuantity),
+                documentType: "Receipt",
+                documentId: receiptHeader.id ?? undefined,
+                externalDocumentId:
+                  receiptHeader.externalDocumentId ?? undefined,
+                documentLineReference: journalReference.to.receipt(
+                  receiptLine.lineId
+                ),
+                journalLineReference,
+                companyId
+              });
+              // Two journal lines were pushed for this line — one dimension meta
+              // entry each, index-aligned.
+              const meta = {
+                itemId: receiptLine.itemId,
+                itemPostingGroupId:
+                  itemCosts.data.find((c) => c.itemId === receiptLine.itemId)
+                    ?.itemPostingGroupId ?? null,
+                locationId: receiptLine.locationId,
+                customerId: salesReturnOrder.data.customerId,
+                customerTypeId
+              };
+              journalLineDimensionsMeta.push(meta, { ...meta });
+            }
+
+            const existingUpdate = returnLineUpdates[returnLine.id];
+            returnLineUpdates[returnLine.id] = {
+              quantityReceived:
+                (existingUpdate?.quantityReceived ??
+                  Number(returnLine.quantityReceived ?? 0)) + receivedQuantity,
+              updatedBy: userId
+            };
+          }
+
+          const accountingPeriodId =
+            accountingEnabled && journalLineInserts.length > 0
+              ? await getCurrentAccountingPeriod(companyId, db, today)
+              : null;
+
+          await db.transaction().execute(async (trx) => {
+            // Double-post guard: serialize on the receipt row — a second
+            // concurrent post waits here, then sees Posted and aborts, so
+            // ledger rows, journals, and quantityReceived can never double.
+            const lockedReceipt = await trx
+              .selectFrom("receipt")
+              .select(["status"])
+              .where("id", "=", receiptId)
+              .forUpdate()
+              .executeTakeFirstOrThrow();
+            if (
+              lockedReceipt.status === "Posted" ||
+              lockedReceipt.status === "Voided"
+            ) {
+              throw new Error(`Receipt is already ${lockedReceipt.status}`);
+            }
+
+            // cancelSalesReturnOrder locks this same order row — re-check the
+            // status under the lock so a cancel committed after our
+            // pre-transaction read cannot be posted over (which would leave a
+            // Cancelled order with received stock and a freed cap).
+            const lockedOrder = await trx
+              .selectFrom("salesReturnOrder")
+              .select(["status"])
+              .where("id", "=", salesReturnOrderId)
+              .forUpdate()
+              .executeTakeFirstOrThrow();
+            if (lockedOrder.status !== "To Receive") {
+              throw new Error(
+                `Cannot post a receipt against a return order in ${lockedOrder.status} status`
+              );
+            }
+
+            if (costLedgerInserts.length > 0) {
+              await trx
+                .insertInto("costLedger")
+                .values(costLedgerInserts)
+                .execute();
+            }
+
+            for await (const [lineId, update] of Object.entries(
+              returnLineUpdates
+            )) {
+              await trx
+                .updateTable("salesReturnOrderLine")
+                .set(update)
+                .where("id", "=", lineId)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            // Derived status (mirrors getSalesReturnOrderStatus): the RMA is
+            // Completed once every line has received its authorized quantity or
+            // been short-closed, otherwise it stays To Receive.
+            const allLines = await trx
+              .selectFrom("salesReturnOrderLine")
+              .select(["quantity", "quantityReceived", "closedComplete"])
+              .where("salesReturnOrderId", "=", salesReturnOrderId)
+              .execute();
+            const allReceived =
+              allLines.length > 0 &&
+              allLines.every(
+                (l) =>
+                  l.closedComplete ||
+                  Number(l.quantityReceived) >= Number(l.quantity)
+              );
+            const returnStatus = allReceived
+              ? ("Completed" as const)
+              : ("To Receive" as const);
+            await trx
+              .updateTable("salesReturnOrder")
+              .set({ status: returnStatus, updatedBy: userId })
+              .where("id", "=", salesReturnOrderId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            if (
+              accountingEnabled &&
+              journalLineInserts.length > 0 &&
+              accountingPeriodId
+            ) {
+              const journalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId,
+                  description: `Sales Return Receipt ${receiptHeader.receiptId}`,
+                  postingDate: today,
+                  companyId,
+                  sourceType: "Sales Return Receipt",
+                  status: "Posted",
+                  postedAt: datetime.timestamp(),
+                  postedBy: userId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              const journalLineResults = await trx
+                .insertInto("journalLine")
+                .values(
+                  journalLineInserts.map((line) => ({
+                    ...line,
+                    journalId: journalResult.id
+                  }))
+                )
+                .returning(["id"])
+                .execute();
+
+              const journalLineDimensionInserts =
+                buildJournalLineDimensionInserts({
+                  journalLineIds: journalLineResults.map((jl) => jl.id),
+                  meta: journalLineDimensionsMeta,
+                  dimensionMap,
+                  companyId
+                });
+              if (journalLineDimensionInserts.length > 0) {
+                await trx
+                  .insertInto("journalLineDimension")
+                  .values(journalLineDimensionInserts)
+                  .execute();
+              }
+            }
+
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .execute();
+            }
+
+            await trx
+              .updateTable("receipt")
+              .set({
+                status: "Posted",
+                postingDate: today,
+                postedBy: userId
+              })
+              .where("id", "=", receiptId)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            if (Object.keys(trackedEntityUpdates).length > 0) {
+              const trackedActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Return Receipt",
+                  sourceDocument: "Receipt",
+                  sourceDocumentId: receiptId,
+                  sourceDocumentReadableId: receiptHeader.receiptId,
+                  attributes: {
+                    "Sales Return Order": salesReturnOrderId,
+                    Receipt: receiptId,
+                    Employee: userId
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+                .returning(["id"])
+                .execute();
+
+              const trackedActivityId = trackedActivity[0]!.id;
+
+              for await (const [id, update] of Object.entries(
+                trackedEntityUpdates
+              )) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set(update)
+                  .where("id", "=", id)
+                  .where("companyId", "=", companyId)
+                  .execute();
+
+                if (trackedActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId,
+                      trackedEntityId: id,
+                      quantity: update.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today
+                    })
+                    .execute();
+                }
+              }
+            }
+          });
+          break;
+        }
+        case "Inbound Transfer": {
+          if (!receiptHeader.sourceDocumentId)
+            throw new Error("Receipt has no sourceDocumentId");
+
+          const [warehouseTransfer, warehouseTransferLines] = await inOrder([
+            () =>
+              single(db, "warehouseTransfer", {
+                id: receiptHeader.sourceDocumentId
+              }),
+            () =>
+              many(db, "warehouseTransferLine", {
+                transferId: receiptHeader.sourceDocumentId
+              })
+          ]);
+
+          if (warehouseTransfer.error)
+            throw new Error("Failed to fetch warehouse transfer");
+          if (warehouseTransferLines.error)
+            throw new Error("Failed to fetch warehouse transfer lines");
+
+          // Get item costs for valuation
+          const transferItemIds = warehouseTransferLines.data
+            .map((line) => line.itemId)
+            .filter(Boolean) as string[];
+          const [itemCosts, transferItems] = await inOrder([
+            () =>
+              many(
+                db,
+                "itemCost",
+                { itemId: transferItemIds },
+                { columns: ["itemId", "itemPostingGroupId", "unitCost"] }
+              ),
+            () =>
+              many(
+                db,
+                "item",
+                { id: transferItemIds, companyId },
+                { columns: ["id", "replenishmentSystem"] }
+              )
+          ]);
+
+          if (itemCosts.error) {
+            throw new Error("Failed to fetch item costs");
+          }
+          if (transferItems.error) {
+            throw new Error("Failed to fetch items");
+          }
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const journalLineInserts: Omit<
+            Database["public"]["Tables"]["journalLine"]["Insert"],
+            "journalId"
+          >[] = [];
+          const journalLineDimensionsMeta: {
+            itemPostingGroupId: string | null;
+            itemId: string | null;
+            locationId: string | null;
+            fixedAssetClassId: string | null;
+          }[] = [];
+          const warehouseTransferLineUpdates: Record<
+            string,
+            Database["public"]["Tables"]["warehouseTransferLine"]["Update"]
+          > = {};
+
+          // Get account defaults (once for all lines) - only needed for journal entries
+          const accountDefaults = accountingEnabled
+            ? await getDefaultPostingGroup(db, companyId)
+            : null;
+          if (
+            accountingEnabled &&
+            (accountDefaults?.error || !accountDefaults?.data)
+          ) {
+            throw new Error("Error getting account defaults");
+          }
+
+          // Process each receipt line
+          for await (const receiptLine of receiptLines.data) {
+            const jlStartIdx = journalLineInserts.length;
+
+            const warehouseTransferLine = warehouseTransferLines.data.find(
+              (line) => line.id === receiptLine.lineId
+            );
+
+            if (!warehouseTransferLine) continue;
+
+            const receivedQuantity =
+              isNaN(receiptLine.receivedQuantity) ||
+              receiptLine.receivedQuantity == null
+                ? 0
+                : receiptLine.receivedQuantity;
+            if (receivedQuantity === 0) continue;
+
+            // Update warehouse transfer line received quantity
+            const newReceivedQuantity =
+              (warehouseTransferLine.receivedQuantity ?? 0) + receivedQuantity;
+
+            warehouseTransferLineUpdates[warehouseTransferLine.id] = {
+              receivedQuantity: newReceivedQuantity
+            };
+
+            // Get item cost for this item
+            const itemCost = itemCosts.data?.find(
+              (cost) => cost.itemId === receiptLine.itemId
+            );
+            const unitCost = itemCost?.unitCost ?? 0;
+            const totalValue = Math.abs(receivedQuantity) * unitCost;
+
+            // Create item ledger entry for positive adjustment at destination
+            itemLedgerInserts.push({
+              postingDate: today,
+              itemId: receiptLine.itemId,
+              quantity: receivedQuantity,
+              locationId: receiptLine.locationId,
+              storageUnitId: receiptLine.storageUnitId,
+              entryType: "Transfer",
+              documentType: "Transfer Receipt",
+              documentId: warehouseTransfer.data?.transferId,
+              externalDocumentId: receiptHeader.externalDocumentId ?? undefined,
+              createdBy: userId,
+              companyId
+            });
+
+            // Create journal entries for inventory movement if there's value
+            if (accountingEnabled && accountDefaults?.data && totalValue > 0) {
+              const journalLineReference = nanoid();
+              // Same account on both sides: a transfer moves stock between
+              // locations, not between inventory classes.
+              const inventoryAccount = resolveInventoryAccount(
+                transferItems.data.find(
+                  (item: { id: string }) => item.id === receiptLine.itemId
+                )?.replenishmentSystem ?? null,
+                accountDefaults.data
+              );
+
+              journalLineInserts.push({
+                accountId: inventoryAccount.account,
+                description: `Transfer Out - ${warehouseTransfer.data?.transferId}`,
+                amount: round(credit("asset", totalValue)),
+                quantity: round(Math.abs(receivedQuantity)),
+                documentType: "Receipt",
+                documentId: receiptHeader.id,
+                externalDocumentId: warehouseTransfer.data?.transferId,
+                documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId
+              });
+
+              journalLineInserts.push({
+                accountId: inventoryAccount.account,
+                description: `Transfer In - ${warehouseTransfer.data?.transferId}`,
+                amount: round(debit("asset", totalValue)),
+                quantity: round(Math.abs(receivedQuantity)),
+                documentType: "Receipt",
+                documentId: receiptHeader.id,
+                externalDocumentId: warehouseTransfer.data?.transferId,
+                documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId
+              });
+            }
+
+            // Track dimensions for this receipt line's journal lines
+            if (accountingEnabled) {
+              const jlCount = journalLineInserts.length - jlStartIdx;
+              for (let i = 0; i < jlCount; i++) {
+                journalLineDimensionsMeta.push({
+                  itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+                  itemId: receiptLine.itemId ?? null,
+                  locationId: receiptLine.locationId ?? null,
+                  fixedAssetClassId: null
+                });
+              }
+            }
+          }
+
+          // Check if all lines are fully received
+          const allLinesFullyReceived = warehouseTransferLines.data.every(
+            (line) => {
+              const updates = warehouseTransferLineUpdates[line.id];
+              const receivedQty =
+                updates?.receivedQuantity ?? line.receivedQuantity ?? 0;
+              return receivedQty >= (line.quantity ?? 0);
+            }
+          );
+
+          // Check if all lines are fully shipped
+          const allLinesFullyShipped = warehouseTransferLines.data.every(
+            (line) => {
+              const shippedQty = line.shippedQuantity ?? 0;
+              return shippedQty >= (line.quantity ?? 0);
+            }
+          );
+
+          // Determine new warehouse transfer status
+          let newStatus: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"] =
+            warehouseTransfer.data.status;
+
+          if (allLinesFullyReceived && allLinesFullyShipped) {
+            newStatus = "Completed";
+          } else if (allLinesFullyReceived && !allLinesFullyShipped) {
+            newStatus = "To Ship";
+          } else if (!allLinesFullyReceived && allLinesFullyShipped) {
+            newStatus = "To Receive";
+          }
+
+          const accountingPeriodId = accountingEnabled
+            ? await getCurrentAccountingPeriod(companyId, db, today)
+            : null;
+
+          await db.transaction().execute(async (trx) => {
+            // Update warehouse transfer lines
+            for await (const [lineId, update] of Object.entries(
+              warehouseTransferLineUpdates
+            )) {
+              await trx
+                .updateTable("warehouseTransferLine")
+                .set(update)
+                .where("id", "=", lineId)
+                .where("companyId", "=", companyId)
+                .execute();
+            }
+
+            // Update warehouse transfer status
+            await trx
+              .updateTable("warehouseTransfer")
+              .set({
+                status: newStatus,
+                updatedBy: userId
+              })
+              .where("id", "=", warehouseTransfer.data.id)
+              .where("companyId", "=", companyId)
+              .execute();
+
+            // Create journal entries if there are any
+            if (accountingEnabled && journalLineInserts.length > 0) {
+              const transferJournalEntryId = await getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+
+              const transferJournalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId: transferJournalEntryId,
+                  accountingPeriodId,
+                  description: `Transfer Receipt ${receiptHeader.receiptId}`,
+                  postingDate: today,
+                  companyId,
+                  sourceType: "Transfer Receipt",
+                  status: "Posted",
+                  postedAt: datetime.timestamp(),
+                  postedBy: userId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              const journalLineResults = await trx
+                .insertInto("journalLine")
+                .values(
+                  journalLineInserts.map((line) => ({
+                    ...line,
+                    journalId: transferJournalResult.id
+                  }))
+                )
+                .returning(["id"])
+                .execute();
+
+              // Insert automatic dimensions for transfer journal lines
+              if (dimensionMap.size > 0) {
+                const journalLineDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+
+                journalLineResults.forEach((jl, index) => {
+                  const meta = journalLineDimensionsMeta[index];
+                  if (!meta) return;
+
+                  if (
+                    meta.itemPostingGroupId &&
+                    dimensionMap.has("ItemPostingGroup")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("ItemPostingGroup")!,
+                      valueId: meta.itemPostingGroupId,
+                      companyId
+                    });
+                  }
+                  if (meta.itemId && dimensionMap.has("Item")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Item")!,
+                      valueId: meta.itemId,
+                      companyId
+                    });
+                  }
+                  if (meta.locationId && dimensionMap.has("Location")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Location")!,
+                      valueId: meta.locationId,
+                      companyId
+                    });
+                  }
+                  if (
+                    meta.fixedAssetClassId &&
+                    dimensionMap.has("FixedAssetClass")
+                  ) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("FixedAssetClass")!,
+                      valueId: meta.fixedAssetClassId,
+                      companyId
+                    });
+                  }
+                });
+
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
+              }
+            }
+
+            // Create item ledger entries
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .returning(["id"])
+                .execute();
+            }
+
+            // Update receipt status
+            await trx
+              .updateTable("receipt")
+              .set({
+                status: "Posted",
+                postingDate: today,
+                postedBy: userId
+              })
+              .where("id", "=", receiptId)
+              .where("companyId", "=", companyId)
+              .execute();
+          });
+
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+
+      return { success: true };
+    } catch (err) {
+      // A failed VOID leaves the receipt Posted: its rows still stand.
+      if (type !== "void") {
+        await updateRows(
+          db,
+          "receipt",
+          { status: "Draft" },
+          { id: receiptId, companyId }
+        );
+      }
+      throw err;
+    }
+  }
+});
+
+export default postReceipt;

@@ -10,7 +10,7 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
-  - "packages/database/supabase/functions/post-receipt/index.ts"
+  - "packages/server-functions/src/post-receipt/index.ts"
 ---
 
 # Inspection System
@@ -176,16 +176,16 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   station is its operation's `workCenterId`; **all receipts are one station**.
   No Gauge column on the no-document "Overall result" row.
 
-## Receipt → inspection flow (`post-receipt/index.ts`, Supabase edge fn)
+## Receipt → inspection flow (`post-receipt/index.ts`, server function)
 
-`packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 700):
+`packages/server-functions/src/post-receipt/index.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
    Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
    assigned documents' `inspectionFeature` rows + default sampling columns.
 2. Per receipt line whose item **has a Receipt-usage assignment** (`assignmentByItemId.get(itemId)`)
    and `receivedQuantity > 0`: the assigned document is the plan gate — no assignment, no lot.
    Resolves the lot plan via `resolveSamplingPlan(plan, lotSize, standard)` from
-   `packages/database/supabase/functions/shared/sampling-engine.ts` (ANSI Z1.4 / ISO 2859-1
+   `packages/database/src/sampling.ts` (ANSI Z1.4 / ISO 2859-1
    tables; returns `{ sampleSize, acceptance, rejection, codeLetter }`). Document with no
    default rule → `type: "All"`, level `II`, `Normal`. Always resolves **each feature** via
    `resolveFeatureSamplingPlan(feature, documentDefault, lotSize, standard)` (feature rule →
@@ -295,7 +295,7 @@ discrete entity per sample; non-serial (Batch/Inventory/Non-Inventory) record pa
 status to flip, so a Reject posts a compensating write-off instead (see disposition).
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
-route their inventory value through the **`post-nonconformance` edge function** (`itemLedger` +
+route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
 `costLedger` relief + a `journal` offset to `accountDefault.scrapAccount`, gated on
 `accountingEnabled`; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,
@@ -345,8 +345,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `quality.server.ts` curries `getDatabaseClient()` into those engine calls, and
   also holds the plan editor's server-only helpers (legacy save-payload
   translation, the balloon-region vision call). `packages/database/src/sampling.ts`
-  re-exports the pure Deno `shared/sampling-engine.ts` node-side (client.ts
-  pattern); the engine consumes it, so package + edge share ONE resolver copy
+  is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
@@ -401,7 +400,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `inspectionDocumentUsages` const.
 - **Sampling engines** (kept in sync manually): `resolveSamplingPlan` +
   `resolveFeatureSamplingPlan` in both `apps/erp/app/modules/quality/samplingStandards.ts` and
-  `packages/database/supabase/functions/shared/sampling-engine.ts`.
+  `packages/database/src/sampling.ts`.
 
 ## Gotchas
 

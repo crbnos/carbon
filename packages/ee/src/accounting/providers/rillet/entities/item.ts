@@ -2,7 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { datetime } from "@carbon/database/datetime";
+import { datetime } from "@carbon/utils";
 import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";

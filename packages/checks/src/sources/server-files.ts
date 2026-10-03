@@ -14,7 +14,9 @@ import type { SourceFile } from "../check";
 const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
-  "packages/database/supabase/functions"
+  "packages/database/supabase/functions",
+  "packages/database/src",
+  "packages/server-functions/src"
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */

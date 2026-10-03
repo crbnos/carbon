@@ -13,6 +13,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure,
   VStack
@@ -57,7 +58,7 @@ const ServiceHeader = () => {
     } | null>;
   }>(path.to.service(itemId));
 
-  const supersession = useResolved(routeData?.supersession, null);
+  const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(
     supersession?.supersessionMode
   );
@@ -93,6 +94,7 @@ const ServiceHeader = () => {
                 {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !permissions.can("delete", "parts") ||
                     !permissions.is("employee")

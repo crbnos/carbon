@@ -58,6 +58,7 @@ vi.mock("@carbon/react", () => {
     CardTitle: Box,
     DropdownMenuIcon: Box,
     DropdownMenuItem: Box,
+    MENU_ITEM_SHORTCUTS: { delete: "backspace" },
     Status: Box,
     VStack: Box,
     useDisclosure: () => ({ isOpen: false }),

@@ -52,7 +52,7 @@ helpers a loader calls ARE scanned. Instead:
 - `datetime.timestamp()` — UTC instant string for `createdAt`/`updatedAt`/instant columns (the only tz-free method).
 - `datetime.today(tz)` / `datetime.now(tz)` — calendar day / zoned now in an explicit IANA timezone.
 - `datetime.businessDay(instantStr, tz)` — which day a stored instant falls on in tz.
-- Resolve `tz` with `getCompanyTimeZone(client, companyId)` (ledger-scoped: posting dates, accounting periods, sequences, aging) or `getLocationTimeZone(client, locationId, companyId)` (operational: scheduling, shifts, MES, expiry) from `@carbon/database`. Deno edge functions use the mirror in `functions/lib/datetime.ts` (`getCompanyTimeZoneDb`/`getLocationTimeZoneDb` for Kysely).
+- Resolve `tz` with `getCompanyTimeZone(client, companyId)` (ledger-scoped: posting dates, accounting periods, sequences, aging) or `getLocationTimeZone(client, locationId, companyId)` (operational: scheduling, shifts, MES, expiry) from `@carbon/database`; both accept a Supabase client or a Kysely handle.
 - SQL functions use `company_today(p_company_id)` (migration `20260805023439`) or `location_today(p_location_id, p_company_id)` (migration `20260805201623`) instead of `CURRENT_DATE` for business dates. Read-only "is it overdue?" views still compare against `CURRENT_DATE` — they render a status rather than storing one.
 
 Client components keep `today(getLocalTimeZone())` etc. for **display** — in the

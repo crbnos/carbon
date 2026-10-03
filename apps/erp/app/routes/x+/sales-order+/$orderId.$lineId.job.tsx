@@ -13,6 +13,7 @@ import { redirect } from "react-router";
 import { insertJob, salesOrderToJobValidator } from "~/modules/production";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -103,6 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const createJob = await insertJob(
     serviceRole,
+    getDatabaseClient(),
     {
       ...d,
       configuration: configuration ?? d.configuration,

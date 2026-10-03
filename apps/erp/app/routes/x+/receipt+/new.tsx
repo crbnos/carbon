@@ -4,14 +4,15 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -31,22 +32,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const sourceDocumentId = (formData.get("sourceDocumentId") as string) ?? "";
 
   const defaults = await getUserDefaults(client, userId, companyId);
-  const serviceRole = getCarbonServiceRole();
 
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
+      const purchaseOrderReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromPurchaseOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
+          locationId: defaults.data?.locationId as string | undefined,
           purchaseOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
+          receiptId: undefined
+        });
       if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
         throw redirect(
           path.to.purchaseOrder(sourceDocumentId),
@@ -87,20 +83,16 @@ export async function action({ request }: ActionFunctionArgs) {
         throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
       }
 
-      // No default-location guard: the create edge function falls back to
+      // No default-location guard: the create server function falls back to
       // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
+      const salesReturnOrderReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromSalesReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
+          locationId: defaults.data?.locationId as string | undefined,
           salesReturnOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
+          receiptId: undefined
+        });
       if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
         throw redirect(
           path.to.salesReturnOrderDetails(sourceDocumentId),
@@ -108,7 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               salesReturnOrderReceipt.error,
-              await getEdgeFunctionErrorMessage(
+              getErrorMessage(
                 salesReturnOrderReceipt.error,
                 "Failed to create receipt"
               )
@@ -119,17 +111,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
+      const warehouseTransferReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromInboundTransfer",
-          companyId,
           warehouseTransferId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
+          receiptId: undefined
+        });
       if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
         throw redirect(
           path.to.warehouseTransfer(sourceDocumentId),
@@ -142,21 +130,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
     default:
-      const defaultReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
+      const defaultReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptDefault",
-          companyId,
-          locationId: defaults.data?.locationId,
-          userId: userId
-        }
-      });
+          locationId: defaults.data?.locationId as string
+        });
 
       if (!defaultReceipt.data || defaultReceipt.error) {
         throw redirect(
           path.to.receipts,
-          await flash(request, error(error, "Failed to create receipt"))
+          await flash(
+            request,
+            error(defaultReceipt.error, "Failed to create receipt")
+          )
         );
       }
 

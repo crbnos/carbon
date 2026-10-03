@@ -21,11 +21,11 @@ Server-only Inngest jobs for event draining, integrations, notifications, workfl
 
 ## Never
 
-- Never import `@carbon/jobs/inngest` or worker modules into browser bundles. App code normally imports only `@carbon/jobs`.
+- Never import `@carbon/jobs/inngest` into browser bundles. App code normally imports only `@carbon/jobs`.
 - Never use the async event system for data-integrity or real-time guarantees; use database constraints/interceptors.
 - Never write handler tables directly; database triggers route changes through `dispatch_event_batch()` and PGMQ.
 - Never give workflow actions a service-role/untagged business client; it bypasses the owner's permissions and workflow loop guards.
-- Never close the shared pool from a job function.
+- Never close the shared pool from a job function. A Node process has one pool (`getProcessPool()`, 16 connections) shared with the app's requests; `getJobDatabaseClient()` takes no size.
 
 ## Validation Commands
 
@@ -45,7 +45,6 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `./events` | `Events` type |
 | `./inngest` | Inngest client plus workflow dispatch/manual-run server seams |
 | `./backups` | Import-light backup catalog, scope, and compatibility helpers |
-| `./worker` | Inngest worker entry point |
 
 ## Durable Entry Points
 
@@ -60,11 +59,14 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `embedding-queue` | `carbon/embedding-queue.process` (sent by the 10 s `process-embeddings` pg_cron doorbell while visible messages wait) | Drain the pgmq `embedding_jobs` queue and write embeddings |
 | `mrp` | `0 */3 * * *` | Scheduled MRP for every company (`company`, not `companyPlan`; Cloud skips canceled subscriptions via `selectCompaniesForMrp`) — one `step.run` per company |
 
 ## Safety Notes
 
 - `src/inngest/functions/events/queue.ts` archives unknown handler types to `pgmq.a_event_system`; a poison message must not wedge the drain.
+- `src/inngest/functions/events/embedding.ts` (`embedding-queue`) deletes embedded messages and archives (`pgmq.archive`) permanent failures (unknown table, no text) and any message read `MAX_READS` (5) times; other failures become visible again after the 300 s visibility timeout.
+- Jobs that post or recalculate (`tasks/post-transaction.ts`, `tasks/recalculate.ts`, the Ramp families) call `@carbon/server-functions` directly, in-process — not over HTTP.
 - `src/inngest/functions/events/sync-tables.ts` is the import-light table→accounting-entity map. `subscriptions-mapping.test.ts` pins it to provider subscriptions/syncers.
 - `src/inngest/functions/integrations/ramp-sync.ts` owns step ids, ordering, result aggregation, and notification only; changing a family module must preserve that durable public shape.
 - `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.

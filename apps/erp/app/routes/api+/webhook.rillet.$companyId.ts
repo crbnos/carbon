@@ -5,6 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getRilletPaymentSyncEntityId,
+  isAccountingSyncEnabled,
   ProviderID,
   parseStoredCredentials,
   verifyRilletWebhookSignature
@@ -104,6 +105,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (!verified) {
     return data({ success: false }, { status: 401 });
+  }
+
+  // Sync is turned off while the integration is being set up: acknowledge so
+  // Rillet does not retry, and do nothing.
+  if (!isAccountingSyncEnabled(integration.data.metadata)) {
+    return { success: true, ignored: true };
   }
 
   // VERIFY(Phase 1.3): AP bill payments are POLL-ONLY. Rillet documents only

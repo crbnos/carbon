@@ -1,0 +1,321 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`server function permissions > match the reviewed manifest 1`] = `
+{
+  "assign-serial-numbers": {
+    "update": "production",
+  },
+  "batch-operations": {
+    "update": "production",
+  },
+  "close-job": {
+    "update": "production",
+  },
+  "convert": {
+    "by": "type",
+    "rules": {
+      "methodVersionToActive": {
+        "update": "resources",
+      },
+      "purchaseOrderToPurchaseInvoice": {
+        "update": "invoicing",
+      },
+      "quoteToSalesOrder": {
+        "update": "sales",
+      },
+      "salesOrderToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "salesRfqToQuote": {
+        "update": "sales",
+      },
+      "shipmentToSalesInvoice": {
+        "update": "invoicing",
+      },
+      "supplierQuoteToPurchaseOrder": {
+        "update": "purchasing",
+      },
+      "warehouseTransferToReceipt": {
+        "update": "inventory",
+      },
+      "warehouseTransferToShipment": {
+        "update": "inventory",
+      },
+    },
+  },
+  "correct-stock-movement": {
+    "update": "inventory",
+  },
+  "create": {
+    "by": "type",
+    "rules": {
+      "journalEntry": {
+        "create": "accounting",
+      },
+      "nonConformanceTasks": {
+        "update": "quality",
+      },
+      "purchaseOrderFromJob": {
+        "create": [
+          "purchasing",
+          "production",
+        ],
+      },
+      "receiptDefault": {
+        "create": "inventory",
+      },
+      "receiptFromInboundTransfer": {
+        "create": "inventory",
+      },
+      "receiptFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "receiptFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "receiptFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "receiptLineSplit": {
+        "create": "inventory",
+      },
+      "shipmentDefault": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromPurchaseReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesOrderLine": {
+        "create": "inventory",
+      },
+      "shipmentFromSalesReturnOrder": {
+        "create": "inventory",
+      },
+      "shipmentFromWarehouseTransfer": {
+        "create": "inventory",
+      },
+      "shipmentLineSplit": {
+        "create": "inventory",
+      },
+    },
+  },
+  "get-method": {
+    "update": "production",
+  },
+  "import-csv": {
+    "by": "table",
+    "rules": {
+      "batchQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "bom": {
+        "update": "parts",
+      },
+      "consumable": {
+        "update": "parts",
+      },
+      "customer": {
+        "update": "sales",
+      },
+      "customerContact": {
+        "update": "sales",
+      },
+      "department": {
+        "update": "people",
+      },
+      "fixture": {
+        "update": "parts",
+      },
+      "inventoryQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "itemPostingGroup": {
+        "update": "accounting",
+      },
+      "material": {
+        "update": "parts",
+      },
+      "materialDimension": {
+        "update": "parts",
+      },
+      "materialFinish": {
+        "update": "parts",
+      },
+      "materialForm": {
+        "update": "parts",
+      },
+      "materialGrade": {
+        "update": "parts",
+      },
+      "materialSubstance": {
+        "update": "parts",
+      },
+      "materialType": {
+        "update": "parts",
+      },
+      "operations": {
+        "update": "parts",
+      },
+      "part": {
+        "update": "parts",
+      },
+      "partWithMethod": {
+        "update": "parts",
+      },
+      "process": {
+        "update": "production",
+      },
+      "scrapReason": {
+        "update": "production",
+      },
+      "serialQuantity": {
+        "create": "inventory",
+        "update": "inventory",
+      },
+      "service": {
+        "update": "parts",
+      },
+      "storageType": {
+        "update": "parts",
+      },
+      "storageUnit": {
+        "update": "inventory",
+      },
+      "supplier": {
+        "update": "purchasing",
+      },
+      "supplierContact": {
+        "update": "purchasing",
+      },
+      "tool": {
+        "update": "parts",
+      },
+      "unitOfMeasure": {
+        "update": "parts",
+      },
+      "workCenter": {
+        "update": "production",
+      },
+    },
+  },
+  "issue": {
+    "by": "type",
+    "rules": {
+      "convertEntity": {
+        "update": "inventory",
+      },
+      "jobCompleteMakeToOrder": {},
+      "jobOperation": {
+        "update": "production",
+      },
+      "jobOperationBatchComplete": {
+        "update": "production",
+      },
+      "jobOperationBatchOutput": {
+        "update": "production",
+      },
+      "jobOperationScrap": {
+        "update": "production",
+      },
+      "jobOperationSerialComplete": {
+        "update": "production",
+      },
+      "maintenanceDispatchInventory": {
+        "update": "resources",
+      },
+      "maintenanceDispatchTrackedEntities": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnconsume": {
+        "update": "resources",
+      },
+      "maintenanceDispatchUnissue": {
+        "update": "resources",
+      },
+      "mergeTrackedEntities": {
+        "update": "inventory",
+      },
+      "partToOperation": {
+        "update": "production",
+      },
+      "scrapTrackedEntity": {
+        "update": "production",
+      },
+      "trackedEntitiesToBatch": {
+        "update": "production",
+      },
+      "trackedEntitiesToOperation": {
+        "update": "production",
+      },
+      "unconsumeTrackedEntities": {
+        "update": "production",
+      },
+    },
+  },
+  "post-charge": {
+    "update": "invoicing",
+  },
+  "post-inventory-adjustment": {
+    "update": "inventory",
+  },
+  "post-inventory-count": {
+    "update": "inventory",
+  },
+  "post-maintenance-event": {
+    "update": "resources",
+  },
+  "post-memo": {
+    "update": "invoicing",
+  },
+  "post-nonconformance": {
+    "update": "quality",
+  },
+  "post-payment": {
+    "update": "invoicing",
+  },
+  "post-picking": {},
+  "post-production-event": {
+    "update": "production",
+  },
+  "post-purchase-invoice": {
+    "update": "invoicing",
+  },
+  "post-receipt": {
+    "update": "inventory",
+  },
+  "post-reimbursement": {
+    "update": "invoicing",
+  },
+  "post-sales-invoice": {
+    "update": "invoicing",
+  },
+  "post-shipment": {
+    "update": "inventory",
+  },
+  "post-stock-transfer": {},
+  "recalculate": {
+    "update": "production",
+  },
+  "reschedule": {
+    "update": "production",
+  },
+  "seed-company": "system",
+  "sync": {
+    "update": "resources",
+  },
+  "trigger-rework": {
+    "update": "production",
+  },
+  "update-purchased-prices": {
+    "update": "purchasing",
+  },
+}
+`;

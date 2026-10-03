@@ -12,6 +12,7 @@ import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import { upsertQuoteLineMethod } from "~/modules/sales/sales.service";
 import { resolveBuyUnitCost } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -60,14 +61,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId: lineId,
-      itemId: quoteLine.data.itemId,
-      configuration,
-      companyId,
-      userId
-    });
+    const upsertMethod = await upsertQuoteLineMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        quoteId,
+        quoteLineId: lineId,
+        itemId: quoteLine.data.itemId,
+        configuration,
+        companyId,
+        userId
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

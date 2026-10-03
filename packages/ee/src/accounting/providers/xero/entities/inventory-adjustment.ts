@@ -132,7 +132,7 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
 
     for (const row of rows) {
       // Buy → Raw Materials; Make / Buy and Make → Finished Goods (mirrors
-      // resolveInventoryAccount in the posting edge functions)
+      // resolveInventoryAccount in the posting server functions)
       const inventoryAccount =
         row.replenishmentSystem === "Make" ||
         row.replenishmentSystem === "Buy and Make"

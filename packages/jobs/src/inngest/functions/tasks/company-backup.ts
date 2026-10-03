@@ -107,7 +107,7 @@ export const READABLE_ID_TABLES = new Set([
  * into every onboarded company's `{companyId}/` prefix.
  *
  * NOTE: `ci/src/upload-backup-templates.ts` (a plain Node script that can't
- * import this Deno/Inngest module cheaply) hardcodes the same literal — keep
+ * import this Inngest module cheaply) hardcodes the same literal — keep
  * the two in sync.
  */
 export const TEMPLATE_ASSET_PREFIX = "_templates";

@@ -8,8 +8,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
@@ -20,7 +20,7 @@ import {
   salesInvoiceValidator
 } from "~/modules/invoicing";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -43,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sourceDocument = url.searchParams.get("sourceDocument") ?? undefined;
   const sourceDocumentId = url.searchParams.get("sourceDocumentId") ?? "";
 
-  let result: FunctionsResponse<{ id: string }>;
+  let result: Awaited<ReturnType<typeof createSalesInvoiceFromSalesOrder>>;
 
   switch (sourceDocument) {
     case "Sales Order":
@@ -51,6 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       result = await createSalesInvoiceFromSalesOrder(
         getCarbonServiceRole(),
+        getDatabaseClient(),
         sourceDocumentId,
         companyId,
         userId
@@ -63,10 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create sales invoice"
-              )
+              getErrorMessage(result.error, "Failed to create sales invoice")
             )
           )
         );
@@ -78,6 +76,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createSalesInvoiceFromShipment(
         getCarbonServiceRole(),
+        getDatabaseClient(),
         sourceDocumentId,
         companyId,
         userId
@@ -90,10 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create sales invoice"
-              )
+              getErrorMessage(result.error, "Failed to create sales invoice")
             )
           )
         );

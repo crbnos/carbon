@@ -9,6 +9,7 @@ import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { PickPartial } from "@carbon/utils";
 import {
   datetime,
@@ -149,23 +150,24 @@ export async function closeSalesOrder(
 /** @mcp update */
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "salesRfqToQuote",
-      ...payload
-    }
+  const { companyId, userId, id } = payload;
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
+    type: "salesRfqToQuote",
+    id
   });
 }
 
 /** @mcp update */
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     selectedLines: z.infer<typeof selectedLinesValidator>;
@@ -176,15 +178,13 @@ export async function convertQuoteToOrder(
     digitalQuoteAcceptedByEmail?: string;
   }
 ) {
-  const result = await client.functions.invoke<{ convertedId: string }>(
-    "convert",
-    {
-      body: {
-        type: "quoteToSalesOrder",
-        ...payload
-      }
-    }
-  );
+  const { companyId, userId, ...input } = payload;
+  const result = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("convert", {
+      type: "quoteToSalesOrder",
+      ...input
+    });
 
   if (!result.error && result.data?.convertedId) {
     await raiseMoment("sales.quoteAccepted", {
@@ -216,13 +216,15 @@ export async function convertQuoteToOrder(
 /** @mcp create */
 export async function copyQuoteLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ copiedId: string }>("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
+    .invoke("get-method", {
       ...payload,
       type: "quoteLineToQuoteLine",
       parts: {
@@ -233,24 +235,28 @@ export async function copyQuoteLine(
         steps: payload.steps,
         workInstructions: payload.workInstructions
       }
-    }
-  });
+    });
 }
 
 /** @mcp create */
 export async function copyQuote(
   client: SupabaseClient<Database>,
-  payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
+  db: Kysely<KyselyDatabase>,
+  payload: {
+    /** The quote to copy. */
+    sourceId: string;
+    /** The same quote id for a new revision, "" for a new quote. */
+    targetId: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ newQuoteId: string }>("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
+    .invoke("get-method", {
       ...payload,
       type: "quoteToQuote"
-    }
-  });
+    });
 }
 
 /** @mcp create */
@@ -2185,15 +2191,18 @@ export async function insertSalesOrderLines(
     customFields?: Json;
   })[]
 ) {
-  const linesWithDefaults = salesOrderLines.map((line) => ({
-    ...line,
-    setupPrice: line.setupPrice ?? 0,
-    unitPrice: line.unitPrice ?? 0,
-    shippingCost: line.shippingCost ?? 0,
-    addOnCost: line.addOnCost ?? 0,
-    nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-    taxPercent: line.taxPercent ?? 0
-  }));
+  // salesOrderLine has no serviceId column.
+  const linesWithDefaults = salesOrderLines.map(
+    ({ serviceId: _serviceId, ...line }) => ({
+      ...line,
+      setupPrice: line.setupPrice ?? 0,
+      unitPrice: line.unitPrice ?? 0,
+      shippingCost: line.shippingCost ?? 0,
+      addOnCost: line.addOnCost ?? 0,
+      nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
+      taxPercent: line.taxPercent ?? 0
+    })
+  );
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
@@ -3260,9 +3269,16 @@ export async function updateCustomerContact(
       return customFieldUpdate;
     }
   }
+  // The contact id is the row key and the location is set on customerContact
+  // above; neither is a contact column.
+  const {
+    contactId: _contactId,
+    customerLocationId: _customerLocationId,
+    ...contact
+  } = customerContact.contact;
   return client
     .from("contact")
-    .update(sanitize(customerContact.contact))
+    .update(sanitize(contact))
     .eq("id", customerContact.contactId)
     .select("id")
     .single();
@@ -3625,6 +3641,7 @@ export async function updateQuoteStatus(
 /** @mcp upsert */
 export async function upsertMakeMethodFromQuoteLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   lineMethod: {
     itemId: string;
     quoteId: string;
@@ -3641,21 +3658,25 @@ export async function upsertMakeMethodFromQuoteLine(
     };
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({
+      client,
+      db,
+      companyId: lineMethod.companyId,
+      userId: lineMethod.userId
+    })
+    .invoke("get-method", {
       type: "quoteLineToItem",
       sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
       targetId: lineMethod.itemId,
-      companyId: lineMethod.companyId,
-      userId: lineMethod.userId,
       parts: lineMethod.parts
-    }
-  });
+    });
 }
 
 /** @mcp upsert */
 export async function upsertMakeMethodFromQuoteMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteMethod: {
     sourceId: string;
     targetId: string;
@@ -3671,16 +3692,19 @@ export async function upsertMakeMethodFromQuoteMethod(
     };
   }
 ) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
+  const { error } = await serverFns
+    .as({
+      client,
+      db,
+      companyId: quoteMethod.companyId,
+      userId: quoteMethod.userId
+    })
+    .invoke("get-method", {
       type: "quoteMakeMethodToItem",
       sourceId: quoteMethod.sourceId,
       targetId: quoteMethod.targetId,
-      companyId: quoteMethod.companyId,
-      userId: quoteMethod.userId,
       parts: quoteMethod.parts
-    }
-  });
+    });
 
   if (error) {
     return {
@@ -4114,7 +4138,13 @@ export async function upsertQuote(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
+    // quote has no name column, and stores notes as internalNotes/externalNotes.
+    const {
+      companyGroupId: _cgId,
+      name: _name,
+      notes: _notes,
+      ...quoteUpdateData
+    } = quote;
     return client
       .from("quote")
       .update({
@@ -5494,6 +5524,7 @@ export async function repriceQuoteLineFromRules(
 /** @mcp upsert */
 export async function upsertQuoteLineMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   lineMethod: {
     itemId: string;
     quoteId: string;
@@ -5544,9 +5575,9 @@ export async function upsertQuoteLineMethod(
     body.parts = lineMethod.parts;
   }
 
-  return client.functions.invoke("get-method", {
-    body
-  });
+  return serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 }
 
 /**
@@ -5603,6 +5634,7 @@ export async function upsertQuoteMaterial(
 /** @mcp upsert */
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteMethod: {
     sourceId: string;
     targetId: string;
@@ -5652,9 +5684,9 @@ export async function upsertQuoteMaterialMakeMethod(
     body.parts = quoteMethod.parts;
   }
 
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 
   if (error) {
     return {
@@ -6315,7 +6347,16 @@ export async function upsertSalesOrder(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
+    // Dates live on salesOrderShipment, the quote link on the opportunity, and
+    // notes as internalNotes/externalNotes; none is a salesOrder column.
+    const {
+      companyGroupId: _cgId,
+      notes: _notes,
+      requestedDate: _requestedDate,
+      promisedDate: _promisedDate,
+      quoteId: _quoteId,
+      ...salesOrderUpdateData
+    } = salesOrder;
     return client
       .from("salesOrder")
       .update(sanitize(salesOrderUpdateData))
@@ -6490,9 +6531,11 @@ export async function upsertSalesOrderLine(
       })
 ) {
   if ("id" in salesOrderLine) {
+    // salesOrderLine has no serviceId column.
+    const { serviceId: _serviceId, ...lineUpdate } = salesOrderLine;
     return client
       .from("salesOrderLine")
-      .update(sanitize(salesOrderLine))
+      .update(sanitize(lineUpdate))
       .eq("id", salesOrderLine.id)
       .select("id")
       .single();
@@ -6578,10 +6621,12 @@ export async function upsertSalesOrderPayment(
         customFields?: Json;
       })
 ) {
+  // The currency is the order's; salesOrderPayment has no currencyCode column.
   if ("id" in salesOrderPayment) {
+    const { currencyCode: _currencyCode, ...paymentUpdate } = salesOrderPayment;
     return client
       .from("salesOrderPayment")
-      .update(sanitize(salesOrderPayment))
+      .update(sanitize(paymentUpdate))
       .eq("id", salesOrderPayment.id)
       .select("id")
       .single();

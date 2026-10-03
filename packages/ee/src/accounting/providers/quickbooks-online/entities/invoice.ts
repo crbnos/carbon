@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { createMappingService } from "../../../core/external-mapping";
 import {

@@ -103,8 +103,13 @@ export type OperationParameter = z.infer<typeof operationParameterValidator> & {
 };
 export type OptimisticFileObject = Omit<
   StorageItem,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 
 export type QuantityEffect = (quantity: number) => number;
 

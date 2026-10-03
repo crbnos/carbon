@@ -1,0 +1,1347 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { many, neq, updateRows } from "@carbon/database/rows";
+import { getNextSequence } from "@carbon/database/sequence";
+import {
+  assertAllOperationsClaimed,
+  assertBatchCompletionMembership,
+  assertBatchWorkCenterMutable,
+  BATCH_RULE_DIMENSIONS,
+  type BatchRules,
+  buildBatchCompletionPlan,
+  datetime,
+  type MemberValueSets,
+  mustViolations,
+  planBatchCompletion,
+  resolveBatchRules,
+  round
+} from "@carbon/utils";
+import { type Kysely, sql, type Transaction } from "kysely";
+import { z } from "zod";
+import { assertCompanyRecords } from "../company-records";
+import { defineServerFn } from "../define-server-fn";
+import { NotFoundError, ServerFnError } from "../errors";
+import issue from "../issue";
+import postProductionEvent from "../post-production-event";
+import { ServerFnContext } from "../server-fn-context";
+
+const NOT_STARTED = ["Todo", "Ready", "Waiting"];
+
+export const batchOperationsInput = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("create"),
+    jobOperationIds: z.array(z.string()).min(1),
+    locationId: z.string(),
+    workCenterId: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    // Create straight onto the floor (Active) instead of staging as Planned.
+    release: z.boolean().optional(),
+    // Output lot identity is planned, never typed on the floor: either every
+    // member completes into one lot (mergeOutput + outputLotNumber), or each
+    // batch-tracked member gets its own number (lotNumbers).
+    mergeOutput: z.boolean().optional(),
+    outputLotNumber: z.string().trim().min(1).optional().nullable(),
+    lotNumbers: z
+      .array(
+        z.object({
+          jobOperationId: z.string(),
+          lotNumber: z.string().trim().min(1)
+        })
+      )
+      .optional()
+  }),
+  z.object({
+    type: z.literal("add"),
+    batchId: z.string(),
+    jobOperationIds: z.array(z.string()).min(1)
+  }),
+  z.object({
+    type: z.literal("remove"),
+    batchId: z.string(),
+    jobOperationIds: z.array(z.string()).min(1)
+  }),
+  z.object({
+    type: z.literal("update"),
+    batchId: z.string(),
+    workCenterId: z.string().nullable().optional()
+  }),
+  z.object({
+    type: z.literal("release"),
+    batchId: z.string()
+  }),
+  z.object({
+    type: z.literal("unrelease"),
+    batchId: z.string()
+  }),
+  z.object({
+    type: z.literal("dissolve"),
+    batchId: z.string()
+  }),
+  z.object({
+    type: z.literal("complete"),
+    batchId: z.string(),
+    members: z
+      .array(
+        z.object({
+          jobOperationId: z.string(),
+          // Decimal, matching the MES validator: productionQuantity.quantity is
+          // NUMERIC. An `.int()` here rejected every fractional completion the
+          // (already decimal) MES validator let through. Rounded at parse.
+          quantity: z
+            .number()
+            .min(0)
+            .transform((v) => round(v)),
+          scrapQuantity: z
+            .number()
+            .min(0)
+            .transform((v) => round(v))
+            .optional(),
+          // Batch-tracked output: the member's WIP entity to finalize as the
+          // produced lot, and the batch number to stamp on it.
+          trackedEntityId: z.string().optional().nullable(),
+          batchNumber: z.string().optional().nullable(),
+          // "Not in this run": detach the member back to the schedule instead
+          // of completing it. Its quantities must be 0.
+          excluded: z.boolean().optional()
+        })
+      )
+      .min(1)
+  })
+]);
+
+// The produced item + tracking of each member, and its live WIP entity (the
+// entity a member's output lot is finalized from; its readableId is the lot
+// number).
+async function loadMemberOutputs(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobMakeMethodIds: string[]
+) {
+  if (jobMakeMethodIds.length === 0) return new Map();
+  const makeMethods = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id", "itemId", "requiresBatchTracking"])
+    .where("id", "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select([
+      "id",
+      "createdAt",
+      sql<string>`"attributes"->>'Job Make Method'`.as("jobMakeMethodId")
+    ])
+    .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+    // Deterministic among tied `createdAt` (bulk-minted serials).
+    .orderBy("createdAt", "asc")
+    .orderBy("readableId", "asc")
+    .orderBy("id", "asc")
+    .execute();
+  const entityByMakeMethod = new Map<string, string>();
+  for (const e of entities) {
+    if (!entityByMakeMethod.has(e.jobMakeMethodId)) {
+      entityByMakeMethod.set(e.jobMakeMethodId, e.id);
+    }
+  }
+  return new Map(
+    makeMethods.map((m) => [
+      m.id,
+      {
+        itemId: m.itemId as string | null,
+        requiresBatchTracking: Boolean(m.requiresBatchTracking),
+        trackedEntityId: entityByMakeMethod.get(m.id) ?? null
+      }
+    ])
+  );
+}
+
+// A merged batch's members must all produce ONE batch-tracked item: lots of
+// different items can never merge, and an untracked item has no lot at all.
+function assertMergeable(
+  operations: Array<{ jobMakeMethodId: string | null }>,
+  outputs: Map<
+    string,
+    { itemId: string | null; requiresBatchTracking: boolean }
+  >
+) {
+  const items = new Set<string>();
+  for (const op of operations) {
+    const out = op.jobMakeMethodId
+      ? outputs.get(op.jobMakeMethodId)
+      : undefined;
+    if (!out?.requiresBatchTracking || !out.itemId) {
+      throw new Error(
+        "Only operations that produce a batch-tracked item can combine into one lot"
+      );
+    }
+    items.add(out.itemId);
+  }
+  if (items.size > 1) {
+    throw new Error("Lots of different items can't combine into one lot");
+  }
+}
+
+async function assertEligible(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  jobOperationIds: string[],
+  expectedProcessId?: string
+) {
+  const operations = await trx
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("id", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (operations.length !== jobOperationIds.length) {
+    throw new NotFoundError("One or more operations not found");
+  }
+  const processId = expectedProcessId ?? operations[0]!.processId;
+  const process = await trx
+    .selectFrom("process")
+    .select(["id", "batchable"])
+    .where("id", "=", processId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!process?.batchable) {
+    throw new Error("The process is not batchable");
+  }
+  for (const op of operations) {
+    if (op.processId !== processId) {
+      throw new Error(`Operation ${op.id} is not on the batch's process`);
+    }
+    if (op.jobOperationBatchId) {
+      throw new Error(`Operation ${op.id} is already in a batch`);
+    }
+    if (!NOT_STARTED.includes(op.status)) {
+      throw new Error(`Operation ${op.id} has already started`);
+    }
+  }
+  const events = await trx
+    .selectFrom("productionEvent")
+    .select("id")
+    .where("jobOperationId", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
+    .limit(1)
+    .execute();
+  if (events.length > 0) {
+    throw new Error(
+      "Operations with recorded production events cannot be batched"
+    );
+  }
+  return { operations, processId };
+}
+
+// Record ids in the payload come straight from the caller and prove nothing
+// about tenancy — the permission check only authorizes the CALLER for companyId.
+// Re-read the record under companyId and refuse on a miss (the same rule the
+// composite FKs enforce at the schema level; this gives the caller a named
+// error instead of a constraint violation).
+// Enforce the process's "must match" compatibility rules across the WHOLE batch
+// membership (create: the incoming set; add: existing members + incoming). Skips
+// entirely when the process has no "must" dimension. Uses ids where the client
+// (BatchBuilder) uses names — mustViolations is value-agnostic, so both agree.
+async function assertMaterialCompatible(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  processId: string,
+  jobOperationIds: string[]
+) {
+  const process = await trx
+    .selectFrom("process")
+    .select(["batchRules"])
+    .where("id", "=", processId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const rules = resolveBatchRules(
+    (process?.batchRules ?? null) as BatchRules | null
+  );
+  if (!BATCH_RULE_DIMENSIONS.some((d) => rules[d] === "must")) return;
+
+  // Mirror the get_batchable_operations fallback: an op's materials are its
+  // op-linked BOM lines, or — when it has none — the JOB's unassigned lines
+  // (jobOperationId IS NULL). The gate must judge the same materials the
+  // builder shows, or a visible "must" match could still be refused (and vice
+  // versa).
+  // Produced item mirrors the builder's candidate `itemReadableId` (the JOB's
+  // item — get_batchable_operations joins item on job.itemId), so the gate and
+  // the builder judge the producedItem dimension by the same value.
+  const memberOps = await trx
+    .selectFrom("jobOperation")
+    .innerJoin("job", (join: any) =>
+      join
+        .onRef("job.id", "=", "jobOperation.jobId")
+        .onRef("job.companyId", "=", "jobOperation.companyId")
+    )
+    .leftJoin("item as pi", (join: any) =>
+      join
+        .onRef("pi.id", "=", "job.itemId")
+        .onRef("pi.companyId", "=", "job.companyId")
+    )
+    .select([
+      "jobOperation.id as id",
+      "jobOperation.jobId as jobId",
+      "pi.readableId as producedItemReadableId"
+    ])
+    .where("jobOperation.id", "in", jobOperationIds)
+    .where("jobOperation.companyId", "=", companyId)
+    .execute();
+  const jobIdByOp = new Map(memberOps.map((o) => [o.id, o.jobId]));
+  const producedByOp = new Map(
+    memberOps.map((o) => [o.id, o.producedItemReadableId])
+  );
+  const memberJobIds = [...new Set(memberOps.map((o) => o.jobId))];
+
+  const rows = await trx
+    .selectFrom("jobMaterial as jm")
+    .innerJoin("item as mi", (join: any) =>
+      join
+        .onRef("mi.id", "=", "jm.itemId")
+        .onRef("mi.companyId", "=", "jm.companyId")
+    )
+    .leftJoin("material as m", (join: any) =>
+      join
+        .onRef("m.id", "=", "mi.readableId")
+        .onRef("m.companyId", "=", "mi.companyId")
+    )
+    .select([
+      "jm.jobOperationId as opId",
+      "jm.jobId as jobId",
+      "mi.readableId as itemReadableId",
+      "m.materialSubstanceId as substanceId",
+      "m.gradeId as gradeId",
+      "m.dimensionId as dimensionId",
+      "m.materialFormId as formId",
+      "m.finishId as finishId"
+    ])
+    .where("jm.companyId", "=", companyId)
+    .where((eb: any) =>
+      eb.or([
+        eb("jm.jobOperationId", "in", jobOperationIds),
+        eb.and([
+          eb("jm.jobOperationId", "is", null),
+          eb("jm.jobId", "in", memberJobIds)
+        ])
+      ])
+    )
+    .execute();
+
+  type MaterialRow = (typeof rows)[number];
+  const pushRow = (sets: MemberValueSets, r: MaterialRow) => {
+    if (r.itemReadableId) sets.item!.push(r.itemReadableId);
+    if (r.substanceId) sets.substance!.push(r.substanceId);
+    if (r.gradeId) sets.grade!.push(r.gradeId);
+    if (r.dimensionId) sets.dimension!.push(r.dimensionId);
+    if (r.formId) sets.form!.push(r.formId);
+    if (r.finishId) sets.finish!.push(r.finishId);
+  };
+
+  const byOp = new Map<string, MemberValueSets>();
+  for (const id of jobOperationIds) {
+    const produced = producedByOp.get(id);
+    byOp.set(id, {
+      item: [],
+      substance: [],
+      grade: [],
+      dimension: [],
+      form: [],
+      finish: [],
+      producedItem: produced ? [produced] : []
+    });
+  }
+  const opsWithLinkedRows = new Set(
+    rows.map((r) => r.opId).filter(Boolean) as string[]
+  );
+  const unassignedByJob = new Map<string, MaterialRow[]>();
+  for (const r of rows) {
+    if (r.opId) {
+      const sets = byOp.get(r.opId);
+      if (sets) pushRow(sets, r);
+    } else if (r.jobId) {
+      const list = unassignedByJob.get(r.jobId) ?? [];
+      list.push(r);
+      unassignedByJob.set(r.jobId, list);
+    }
+  }
+  for (const id of jobOperationIds) {
+    if (opsWithLinkedRows.has(id)) continue;
+    const jobId = jobIdByOp.get(id);
+    const fallback = jobId ? unassignedByJob.get(jobId) : undefined;
+    if (!fallback) continue;
+    const sets = byOp.get(id)!;
+    for (const r of fallback) pushRow(sets, r);
+  }
+
+  const violations = mustViolations(rules, Array.from(byOp.values()));
+  if (violations.length > 0) {
+    throw new Error(
+      `These operations can't share a batch — the ${violations.join(
+        ", "
+      )} must match on this process`
+    );
+  }
+}
+
+// Two-phase, resumable batch completion.
+//
+// Phase 1 (one Kysely transaction, runs once): FOR UPDATE the batch row to
+// serialize completers, then slice the recorded aggregate timers into per-member
+// productionEvent rows (∝ operationQuantity) + write per-member productionQuantity
+// rows, and flip the batch Active -> Completing (guarded). productionEvent.duration
+// is a GENERATED column, so the proportional windows make each member's duration —
+// and thus GL cost — proportional with no manual duration write.
+//
+// Phase 2 (post-commit, idempotent): issue each member's own BOM (backflush-capped),
+// flip members Done (skipping already-Done), and post GL per sliced event (skipping
+// already-posted). Any throw here leaves the batch Completing; re-running with the
+// same payload re-enters via planBatchCompletion -> "resume" and finishes phase 2
+// without re-slicing. Only after every phase-2 effect succeeds is the batch flipped
+// Completing -> Completed. This removes the old failure mode where a post-commit
+// error left the batch Completed with unissued materials or unposted GL and no
+// recovery path.
+async function completeBatch(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    batchId: string;
+    members: {
+      jobOperationId: string;
+      quantity: number;
+      scrapQuantity?: number;
+      trackedEntityId?: string | null;
+      batchNumber?: string | null;
+      excluded?: boolean;
+    }[];
+  }
+): Promise<Record<string, unknown>> {
+  const { companyId, userId, batchId } = args;
+  // Partition "not in this run" members: they were never physically part of the
+  // batch run, so they detach back to the schedule un-run instead of completing.
+  // They may not carry quantities, and a batch cannot exclude everyone —
+  // dissolve exists for that.
+  const members = args.members.filter((m) => !m.excluded);
+  const excluded = args.members.filter((m) => m.excluded);
+  if (members.length === 0) {
+    throw new Error(
+      "Every operation is excluded — dissolve the batch instead of completing it"
+    );
+  }
+  for (const m of excluded) {
+    if (m.quantity > 0 || (m.scrapQuantity ?? 0) > 0) {
+      throw new Error(
+        `Excluded operation ${m.jobOperationId} cannot record quantities`
+      );
+    }
+  }
+  const memberIds = members.map((m) => m.jobOperationId);
+  const excludedIds = excluded.map((m) => m.jobOperationId);
+  const now = datetime.timestamp();
+
+  // The per-member sliced events whose GL is posted AFTER the transaction commits.
+  // postedToGL lets a resume skip events a prior attempt already posted. Populated
+  // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
+  let glEvents: { id: string; postedToGL: boolean }[] = [];
+
+  await db.transaction().execute(async (trx) => {
+    const batch = await trx
+      .selectFrom("jobOperationBatch")
+      .select(["id", "status"])
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!batch) throw new NotFoundError(`Batch ${batchId} was not found`);
+
+    if (batch.status === "Completed") {
+      throw new ServerFnError("This batch has already been completed", 409, {
+        alreadyCompleted: true
+      });
+    }
+    // "resume" if the batch is already Completing (a prior phase-2 step failed);
+    // "slice" if Active; throws for a terminal status.
+    const phase = planBatchCompletion(batch.status);
+
+    if (phase === "resume") {
+      // The payload must cover EXACTLY the batch's membership — phase 2 flips
+      // every member Done batch-wide but issues materials only for the submitted
+      // members, so a short payload would strand an omitted member Done with
+      // unissued BOM. Re-assert membership on resume just as the slice path does.
+      const currentMembers = await trx
+        .selectFrom("jobOperation")
+        .select("id")
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const currentIds = new Set(currentMembers.map((o: any) => o.id));
+      // An exclusion that phase 1 already applied is a stale-form resubmission
+      // and passes (the op is no longer a member). Excluding an op that IS still
+      // a member would rewrite phase 1's committed decision — reject it like a
+      // changed quantity.
+      const lateExclusion = excludedIds.find((id) => currentIds.has(id));
+      if (lateExclusion) {
+        throw new Error(
+          `Operation ${lateExclusion} was included when completion started — ` +
+            `retry with the recorded values; corrections happen after completion.`
+        );
+      }
+      assertBatchCompletionMembership(memberIds, [...currentIds]);
+
+      // Resume contract: the payload must match what phase 1 already recorded —
+      // an edited quantity on retry is rejected, never silently ignored and never
+      // rewritten (phase 1's slices/quantities are already committed). Batch
+      // members were unstarted at batch time and batch completion is the only
+      // productionQuantity writer between Active and Completing, so per-op sums
+      // equal the phase-1 inserts.
+      const recordedQuantities = await trx
+        .selectFrom("productionQuantity")
+        .select(["jobOperationId", "type", "quantity"])
+        .where("jobOperationId", "in", memberIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      const sums = new Map<string, { produced: number; scrap: number }>();
+      for (const r of recordedQuantities as any[]) {
+        const s = sums.get(r.jobOperationId) ?? { produced: 0, scrap: 0 };
+        if (r.type === "Production") s.produced += Number(r.quantity);
+        if (r.type === "Scrap") s.scrap += Number(r.quantity);
+        sums.set(r.jobOperationId, s);
+      }
+      const mismatches = members.filter((m) => {
+        const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
+        return s.produced !== m.quantity || s.scrap !== (m.scrapQuantity ?? 0);
+      });
+      if (mismatches.length > 0) {
+        const detail = mismatches
+          .map((m) => {
+            const s = sums.get(m.jobOperationId) ?? { produced: 0, scrap: 0 };
+            return `${m.jobOperationId}: ${s.produced} produced / ${s.scrap} scrap`;
+          })
+          .join(", ");
+        throw new Error(
+          `Quantities were already recorded for this batch (${detail}). ` +
+            `Retry with the recorded values; corrections happen after completion.`
+        );
+      }
+
+      const existing = await trx
+        .selectFrom("productionEvent")
+        .select(["id", "postedToGL"])
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("endTime", "is not", null)
+        .execute();
+      glEvents = existing.map((e: any) => ({
+        id: e.id,
+        postedToGL: e.postedToGL ?? false
+      }));
+      return;
+    }
+
+    // phase === "slice": first attempt.
+    const operations = await trx
+      .selectFrom("jobOperation")
+      .select(["id", "operationQuantity"])
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (operations.length === 0)
+      throw new NotFoundError("Batch not found or empty");
+
+    // Reject dupes / unknown ids / omitted members — any would corrupt
+    // quantities or material issue. Included AND excluded together must cover
+    // the membership exactly; the excluded ones then detach below.
+    assertBatchCompletionMembership(
+      [...memberIds, ...excludedIds],
+      operations.map((o: any) => o.id)
+    );
+
+    // Detach "not in this run" members inside the same transaction: back to the
+    // schedule un-run — no time slice, no quantities, and phase 2's batch-wide
+    // Done flip no longer reaches them.
+    if (excludedIds.length > 0) {
+      const detached = await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("id", "in", excludedIds)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (Number(detached?.numUpdatedRows ?? 0) !== excludedIds.length) {
+        throw new Error("Failed to detach excluded operations — retry");
+      }
+    }
+    const excludedIdSet = new Set(excludedIds);
+    const runOperations = operations.filter(
+      (o: any) => !excludedIdSet.has(o.id)
+    );
+
+    const opById = new Map(runOperations.map((o: any) => [o.id, o]));
+
+    // Auto-stop any still-running batch timer, mirroring the single-operation
+    // flow: writing jobOperation.status = 'Done' fires sync_finish_job_operation,
+    // which closes that op's open productionEvents with endTime = NOW(). A batch
+    // completes the same way — stop the shared timer here rather than refusing —
+    // so the just-closed aggregate is sliced per member below and its cost posts
+    // once in phase 2. (This is inside the phase-1 txn; the batch-tagged End path
+    // deliberately skips post-production-event, so there is no double GL post.)
+    await trx
+      .updateTable("productionEvent")
+      .set({ endTime: datetime.timestamp() })
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("endTime", "is", null)
+      .execute();
+
+    const recorded = await trx
+      .selectFrom("productionEvent")
+      .select([
+        "id",
+        "type",
+        "startTime",
+        "endTime",
+        "workCenterId",
+        "employeeId"
+      ])
+      .where("jobOperationBatchId", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("endTime", "is not", null)
+      .execute();
+
+    const plan = buildBatchCompletionPlan(
+      recorded
+        .filter((e: any) => e.endTime)
+        .map((e: any) => ({
+          id: e.id,
+          type: e.type,
+          startTime: e.startTime,
+          endTime: e.endTime as string,
+          workCenterId: e.workCenterId,
+          employeeId: e.employeeId
+        })),
+      members.map((m) => ({
+        jobOperationId: m.jobOperationId,
+        operationQuantity: Number(
+          opById.get(m.jobOperationId)?.operationQuantity ?? 0
+        ),
+        quantity: m.quantity,
+        scrapQuantity: m.scrapQuantity
+      }))
+    );
+
+    // Replace the aggregate timers with the per-member slices.
+    if (recorded.length > 0) {
+      await trx
+        .deleteFrom("productionEvent")
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .where("endTime", "is not", null)
+        .execute();
+    }
+
+    for (const e of plan.memberEvents) {
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({
+          // The shared plan types `type` as `string | null`; narrow it back to
+          // the column's enum here rather than casting the whole insert object.
+          type: e.type as
+            | Database["public"]["Enums"]["productionEventType"]
+            | null,
+          employeeId: e.employeeId,
+          workCenterId: e.workCenterId,
+          companyId,
+          createdBy: userId,
+          jobOperationBatchId: batchId,
+          jobOperationId: e.jobOperationId,
+          startTime: e.startTime,
+          endTime: e.endTime,
+          postedToGL: false
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      glEvents.push({ id: inserted.id, postedToGL: false });
+    }
+
+    if (plan.quantities.length > 0) {
+      await trx
+        .insertInto("productionQuantity")
+        .values(
+          // q.type is "Production" | "Scrap", a subset of productionQuantityType,
+          // so the insert types cleanly without a cast.
+          plan.quantities.map((q) => ({
+            jobOperationId: q.jobOperationId,
+            type: q.type,
+            quantity: q.quantity,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+
+    // Guarded Active -> Completing. WHERE status='Active' is the backstop to the
+    // FOR UPDATE lock: 0 rows means a concurrent completer won — throw and roll
+    // back every write in this transaction.
+    const marked = await trx
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completing", updatedBy: userId, updatedAt: now })
+      .where("id", "=", batchId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Active")
+      .returning("id")
+      .executeTakeFirst();
+    if (!marked) throw new Error("Only an active batch can be completed");
+  });
+
+  // Phase 2 (post-commit, idempotent). Any throw leaves the batch Completing; a
+  // retry re-runs these steps alone. Runs as the system: the batch completion
+  // itself was authorized.
+  const system = ServerFnContext.system({ db, companyId, userId });
+  for (const m of members) {
+    if (m.quantity <= 0) continue;
+    const issued = await issue(system, {
+      id: m.jobOperationId,
+      type: "jobOperation",
+      quantity: m.quantity
+    });
+    if (issued.error) {
+      throw new Error(
+        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`
+      );
+    }
+  }
+
+  // Finalize batch-tracked outputs: for each member producing a batch-tracked
+  // item, flip its WIP entity to an Available lot via the lean
+  // jobOperationBatchOutput case (Produce activity + entity flip only — the
+  // productionQuantity rows were written in Phase 1 and the member's materials
+  // were issued above). Idempotent: an already-Available entity is a no-op, so
+  // a resume fast-forwards. Runs BEFORE the Done flip so a failure here leaves
+  // the batch resumable with no member stranded Done without its output lot.
+  const memberOpRows = await many(
+    db,
+    "jobOperation",
+    { id: memberIds, companyId },
+    { columns: ["id", "jobMakeMethodId"] }
+  );
+  if (memberOpRows.error) {
+    throw new Error(
+      `Failed to load member operations: ${memberOpRows.error.message}`
+    );
+  }
+  const makeMethodIds = [
+    ...new Set(
+      (memberOpRows.data ?? [])
+        .map((o: any) => o.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  const makeMethods = makeMethodIds.length
+    ? await many(
+        db,
+        "jobMakeMethod",
+        { id: makeMethodIds, companyId },
+        { columns: ["id", "requiresBatchTracking"] }
+      )
+    : { data: [], error: null };
+  if (makeMethods.error) {
+    throw new Error(
+      `Failed to load make methods: ${makeMethods.error.message}`
+    );
+  }
+  const requiresBatchByMakeMethod = new Map(
+    (makeMethods.data ?? []).map((m: any) => [m.id, m.requiresBatchTracking])
+  );
+  const makeMethodByOp = new Map(
+    (memberOpRows.data ?? []).map((o: any) => [o.id, o.jobMakeMethodId])
+  );
+
+  const outputTrackedEntityIds: string[] = [];
+  for (const m of members) {
+    const makeMethodId = makeMethodByOp.get(m.jobOperationId);
+    const requiresBatch = makeMethodId
+      ? (requiresBatchByMakeMethod.get(makeMethodId) ?? false)
+      : false;
+    if (!requiresBatch) continue;
+    if (m.quantity <= 0) continue;
+    if (!m.trackedEntityId) {
+      throw new Error(
+        `Operation ${m.jobOperationId} produces a batch-tracked item — its output lot is required`
+      );
+    }
+    const output = await issue(system, {
+      type: "jobOperationBatchOutput",
+      jobOperationId: m.jobOperationId,
+      trackedEntityId: m.trackedEntityId,
+      quantity: m.quantity,
+      readableId: m.batchNumber ?? null
+    });
+    if (output.error) {
+      throw new Error(
+        `Failed to create the output lot for operation ${m.jobOperationId}: ${output.error.message}`
+      );
+    }
+    outputTrackedEntityIds.push(m.trackedEntityId);
+  }
+
+  // Flip members Done — sync_finish_job_operation readies each member job's next
+  // operation and completes the job independently. Skip already-Done so a resume
+  // does not re-fire the trigger.
+  const done = await updateRows(
+    db,
+    "jobOperation",
+    { status: "Done", updatedBy: userId },
+    { jobOperationBatchId: batchId, companyId, status: neq("Done") }
+  );
+  if (done.error) {
+    throw new Error(`Failed to finish batch operations: ${done.error.message}`);
+  }
+
+  // Post GL per sliced event; skip events a prior attempt already posted, and
+  // propagate errors so a GL failure keeps the batch resumable.
+  for (const e of glEvents) {
+    if (e.postedToGL) continue;
+    const posted = await postProductionEvent(system, {
+      productionEventId: e.id
+    });
+    if (posted.error) {
+      throw new Error(
+        `Failed to post GL for production event ${e.id}: ${posted.error.message}`
+      );
+    }
+  }
+
+  // Finalize: Completing -> Completed now that every phase-2 effect succeeded.
+  const finalized = await updateRows(
+    db,
+    "jobOperationBatch",
+    { status: "Completed", updatedBy: userId, updatedAt: now },
+    { id: batchId, companyId, status: "Completing" }
+  );
+  if (finalized.error) {
+    throw new Error(
+      `Failed to finalize batch completion: ${finalized.error.message}`
+    );
+  }
+
+  return {
+    completed: members.length,
+    excluded: excludedIds.length,
+    memberIds,
+    eventIds: glEvents.map((e) => e.id),
+    outputTrackedEntityIds
+  };
+}
+
+/** Job-operation batches: create, change membership, release, dissolve and complete. */
+const batchOperations = defineServerFn({
+  name: "batch-operations",
+  input: batchOperationsInput,
+  permissions: { update: "production" },
+  async run(ctx, payload) {
+    const { db, companyId, userId } = ctx;
+
+    let result: Record<string, unknown> = {};
+
+    switch (payload.type) {
+      case "create": {
+        result = await db.transaction().execute(async (trx) => {
+          const { operations, processId } = await assertEligible(
+            trx,
+            companyId,
+            payload.jobOperationIds
+          );
+          await assertCompanyRecords(
+            trx,
+            "location",
+            [payload.locationId],
+            companyId,
+            "Location"
+          );
+          await assertCompanyRecords(
+            trx,
+            "workCenter",
+            [payload.workCenterId],
+            companyId,
+            "Work center"
+          );
+          await assertMaterialCompatible(
+            trx,
+            companyId,
+            processId,
+            payload.jobOperationIds
+          );
+          // The board's "Create batch" sends no work center (assignment is a
+          // drag) — but when every member already sits on the same one, that IS
+          // the batch's work center; adopt it so the header isn't blank.
+          const memberWorkCenters = new Set(
+            operations.map((o: any) => o.workCenterId).filter(Boolean)
+          );
+          const workCenterId =
+            payload.workCenterId ??
+            (memberWorkCenters.size === 1
+              ? ([...memberWorkCenters][0] as string)
+              : null);
+          // Creating straight onto the floor (release: true) needs no work
+          // center: the scheduler's batch pre-pass auto-selects the
+          // earliest-finish candidate (load balancing, like single ops) for
+          // any Released batch still lacking one, and persists it.
+          const outputs = await loadMemberOutputs(
+            trx,
+            companyId,
+            operations.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+          );
+          const mergeOutput = payload.mergeOutput === true;
+          if (mergeOutput) {
+            if (!payload.outputLotNumber) {
+              throw new Error("A combined output needs its lot number");
+            }
+            assertMergeable(operations, outputs);
+          }
+          // Split mode: one number per batch-tracked member, never repeated —
+          // two separate lots sharing a number is exactly the ambiguity the
+          // merge option exists to remove.
+          const lotNumbers = mergeOutput ? [] : (payload.lotNumbers ?? []);
+          const seen = new Set<string>();
+          const lotWrites: Array<{
+            trackedEntityId: string;
+            lotNumber: string;
+          }> = [];
+          for (const entry of lotNumbers) {
+            const op = operations.find(
+              (o: any) => o.id === entry.jobOperationId
+            );
+            const out = op?.jobMakeMethodId
+              ? outputs.get(op.jobMakeMethodId)
+              : undefined;
+            if (!out?.requiresBatchTracking || !out.trackedEntityId) {
+              throw new Error(
+                `Operation ${entry.jobOperationId} does not produce a batch-tracked lot`
+              );
+            }
+            const key = entry.lotNumber.toLowerCase();
+            if (seen.has(key)) {
+              throw new Error(
+                `Lot number ${entry.lotNumber} is used twice — give each job its own, or combine them into one lot`
+              );
+            }
+            seen.add(key);
+            lotWrites.push({
+              trackedEntityId: out.trackedEntityId,
+              lotNumber: entry.lotNumber
+            });
+          }
+
+          const readableId = await getNextSequence(
+            trx,
+            "jobOperationBatch",
+            companyId
+          );
+          const batch = await trx
+            .insertInto("jobOperationBatch")
+            .values({
+              readableId,
+              companyId,
+              processId,
+              workCenterId,
+              locationId: payload.locationId,
+              status: payload.release ? "Active" : "Planned",
+              notes: payload.notes ?? null,
+              mergeOutput,
+              outputLotNumber: mergeOutput ? payload.outputLotNumber : null,
+              createdBy: userId
+            })
+            .returning(["id", "readableId"])
+            .executeTakeFirstOrThrow();
+
+          for (const write of lotWrites) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ readableId: write.lotNumber, updatedBy: userId })
+              .where("id", "=", write.trackedEntityId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          const memberUpdate: Record<string, unknown> = {
+            jobOperationBatchId: batch.id,
+            updatedBy: userId
+          };
+          if (payload.workCenterId)
+            memberUpdate.workCenterId = payload.workCenterId;
+          // Claim only ops still unbatched (IS NULL) and in this company: two
+          // concurrent creates sharing an op both pass assertEligible's read, so
+          // the IS NULL predicate + row-count assert is what actually serializes
+          // the claim (assertEligible is not FOR UPDATE).
+          const claimed = await trx
+            .updateTable("jobOperation")
+            .set(memberUpdate)
+            .where("id", "in", payload.jobOperationIds)
+            .where("companyId", "=", companyId)
+            .where("jobOperationBatchId", "is", null)
+            .executeTakeFirst();
+          assertAllOperationsClaimed(
+            payload.jobOperationIds,
+            Number(claimed?.numUpdatedRows ?? 0)
+          );
+          return batch;
+        });
+        break;
+      }
+
+      case "add": {
+        result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .selectAll()
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!batch) throw new NotFoundError("Batch not found");
+          // Membership is mutable while the batch is staged (Planned) or on
+          // the floor but unstarted (Active); the production-event check below
+          // is what actually freezes it.
+          if (batch.status !== "Planned" && batch.status !== "Active") {
+            throw new Error(
+              `Cannot add operations to a batch with status ${batch.status}`
+            );
+          }
+
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "The batch has already started — complete it instead"
+            );
+          }
+
+          const { operations: incoming } = await assertEligible(
+            trx,
+            companyId,
+            payload.jobOperationIds,
+            batch.processId
+          );
+
+          // Compatibility is a property of the whole run: check existing members
+          // plus the incoming ops together, not the newcomers in isolation.
+          const existingMembers = await trx
+            .selectFrom("jobOperation")
+            .select(["id", "jobMakeMethodId"])
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+
+          // A combined-output batch stays one item: a newcomer producing
+          // something else could never merge into the planned lot.
+          if (batch.mergeOutput) {
+            const all = [...existingMembers, ...incoming];
+            const outputs = await loadMemberOutputs(
+              trx,
+              companyId,
+              all.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+            );
+            assertMergeable(all, outputs);
+          }
+          await assertMaterialCompatible(trx, companyId, batch.processId, [
+            ...existingMembers.map((m: any) => m.id as string),
+            ...payload.jobOperationIds
+          ]);
+
+          const memberUpdate: Record<string, unknown> = {
+            jobOperationBatchId: batch.id,
+            updatedBy: userId
+          };
+          if (batch.workCenterId)
+            memberUpdate.workCenterId = batch.workCenterId;
+          const claimed = await trx
+            .updateTable("jobOperation")
+            .set(memberUpdate)
+            .where("id", "in", payload.jobOperationIds)
+            .where("companyId", "=", companyId)
+            .where("jobOperationBatchId", "is", null)
+            .executeTakeFirst();
+          assertAllOperationsClaimed(
+            payload.jobOperationIds,
+            Number(claimed?.numUpdatedRows ?? 0)
+          );
+          return { added: payload.jobOperationIds.length };
+        });
+        break;
+      }
+
+      case "remove": {
+        result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new NotFoundError("Batch not found");
+          if (batch.status !== "Planned" && batch.status !== "Active") {
+            throw new Error(
+              `Cannot remove operations from a batch with status ${batch.status}`
+            );
+          }
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "Cannot remove operations: production has been recorded. Complete the batch instead."
+            );
+          }
+          // Count actual detaches — an id that isn't a member of this batch
+          // (already removed, or never belonged) must not be reported removed.
+          const removedResult = await trx
+            .updateTable("jobOperation")
+            .set({ jobOperationBatchId: null, updatedBy: userId })
+            .where("id", "in", payload.jobOperationIds)
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          const removed = Number(removedResult?.numUpdatedRows ?? 0);
+
+          const remaining = await trx
+            .selectFrom("jobOperation")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (remaining.length === 0) {
+            await trx
+              .deleteFrom("jobOperationBatch")
+              .where("id", "=", payload.batchId)
+              .where("companyId", "=", companyId)
+              .execute();
+            return { removed, dissolved: true };
+          }
+          return { removed, dissolved: false };
+        });
+        break;
+      }
+
+      case "update": {
+        const nextWorkCenterId = payload.workCenterId ?? null;
+        result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!batch) throw new NotFoundError("Batch not found");
+          await assertCompanyRecords(
+            trx,
+            "workCenter",
+            [nextWorkCenterId],
+            companyId,
+            "Work center"
+          );
+          // A Completed/Completing batch's events are already attributed to a
+          // machine — re-pointing the work center would rewrite that history.
+          assertBatchWorkCenterMutable(batch.status);
+          // And once any production event exists, production has started against
+          // the current work center, so the reassignment is no longer safe.
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "Cannot change the work center: production has been recorded."
+            );
+          }
+          await trx
+            .updateTable("jobOperationBatch")
+            .set({
+              workCenterId: nextWorkCenterId,
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          // Members mirror the header in BOTH directions: assigning pushes the
+          // work center down, and clearing (nextWorkCenterId === null) clears it
+          // on the members too — otherwise they keep a stale workCenterId the
+          // header no longer has.
+          await trx
+            .updateTable("jobOperation")
+            .set({ workCenterId: nextWorkCenterId, updatedBy: userId })
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          return { updated: true };
+        });
+        break;
+      }
+
+      case "release": {
+        result = await db.transaction().execute(async (trx) => {
+          // FOR UPDATE serializes against concurrent release/complete/dissolve
+          // on the same batch; the WHERE status='Planned' on the flip below is
+          // the backstop.
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select(["id", "status", "workCenterId"])
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new NotFoundError("Batch not found");
+          if (batch.status !== "Planned") {
+            throw new Error(
+              `Cannot release a batch with status ${batch.status}`
+            );
+          }
+          // No work-center requirement: release must never wait on a human
+          // picking a machine. The scheduler's batch pre-pass auto-selects the
+          // earliest-finish work center among the process's candidates (the
+          // same load-balancing rule single operations get) and persists it.
+          const members = await trx
+            .selectFrom("jobOperation")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (members.length === 0) {
+            throw new Error("Cannot release an empty batch");
+          }
+          const released = await trx
+            .updateTable("jobOperationBatch")
+            .set({
+              status: "Active",
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Planned")
+            .returning("id")
+            .executeTakeFirst();
+          if (!released) {
+            throw new Error("Only a planned batch can be released");
+          }
+          return { success: true };
+        });
+        break;
+      }
+
+      case "unrelease": {
+        result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select(["id", "status"])
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new NotFoundError("Batch not found");
+          if (batch.status !== "Active") {
+            throw new Error(
+              `Cannot unrelease a batch with status ${batch.status}`
+            );
+          }
+          // Once anything has run against the batch, pulling it back off the
+          // floor would orphan that recorded time.
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "production has been recorded — complete the batch instead"
+            );
+          }
+          const unreleased = await trx
+            .updateTable("jobOperationBatch")
+            .set({
+              status: "Planned",
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Active")
+            .returning("id")
+            .executeTakeFirst();
+          if (!unreleased) {
+            throw new Error("Only an active batch can be unreleased");
+          }
+          return { success: true };
+        });
+        break;
+      }
+
+      case "dissolve": {
+        result = await db.transaction().execute(async (trx) => {
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "Cannot dissolve: production has been recorded. Complete the batch instead — member jobs then proceed independently."
+            );
+          }
+          const members = await trx
+            .updateTable("jobOperation")
+            .set({ jobOperationBatchId: null, updatedBy: userId })
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .returning("id")
+            .execute();
+          await trx
+            .deleteFrom("jobOperationBatch")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          return { dissolved: members.length };
+        });
+        break;
+      }
+
+      case "complete": {
+        result = await completeBatch(db, {
+          companyId,
+          userId,
+          batchId: payload.batchId,
+          members: payload.members
+        });
+        break;
+      }
+    }
+
+    return { success: true, ...result };
+  }
+});
+
+export default batchOperations;

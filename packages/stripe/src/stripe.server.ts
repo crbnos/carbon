@@ -15,7 +15,7 @@ import {
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
-import { companyPlanCacheKey, Edition, Plan } from "@carbon/utils";
+import { async, companyPlanCacheKey, Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
 import { z } from "zod";
@@ -483,9 +483,10 @@ export async function processStripeEvent({
     eventType === "invoice.payment_succeeded" ||
     eventType === "invoice.payment_failed"
   ) {
-    forwardToGtm(eventType, { invoice: event.data.object }).catch((err) => {
-      log.error("gtm-events forward failed", { error: err });
-    });
+    async.background(
+      () => forwardToGtm(eventType, { invoice: event.data.object }),
+      (error) => log.error("gtm-events forward failed", { error })
+    );
   }
 }
 

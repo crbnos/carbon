@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  CollapsibleSidebar,
-  CollapsibleSidebarProvider,
-  CollapsibleSidebarTrigger
+  CollapsibleSidebarTrigger,
+  ModuleSidebarLayout
 } from "./CollapsibleSidebar";
 import ContentSidebar from "./ContentSidebar";
 import DetailSidebar from "./DetailSidebar";
@@ -14,12 +13,11 @@ import GroupedContentSidebar from "./GroupedContentSidebar";
 import PrimaryNavigation from "./PrimaryNavigation";
 
 export {
-  CollapsibleSidebar,
-  CollapsibleSidebarProvider,
   CollapsibleSidebarTrigger,
   ContentSidebar,
   DetailSidebar,
   DetailsTopbar,
   GroupedContentSidebar,
+  ModuleSidebarLayout,
   PrimaryNavigation
 };

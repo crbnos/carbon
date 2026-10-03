@@ -2,19 +2,17 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getCompanyTimeZone } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
 /**
  * Stripe Connect payment recording — shared between the webhook handler in the
  * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
  * callers can import it without crossing the app→package dependency boundary.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getCompanyTimeZone } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,
@@ -31,9 +29,9 @@ const logger = getLogger("ee", "stripe-connect", "payments");
 const INTEGRATION = "stripe-connect";
 const SYSTEM_USER = "system";
 
-// Module-level Kysely pool — one connection is enough; we only use it for the
-// replaceInvoiceSettlements transaction path.
-const _pool = getPostgresConnectionPool(1);
+// Settlement replacement and the post-payment / void server functions run
+// their transactions on this client, over the process pool.
+const _pool = getProcessPool();
 const _db = getPostgresClient<KyselyDatabase>(_pool, PostgresDriver);
 
 export type StripeConnectPaymentResult =
@@ -545,15 +543,9 @@ export async function recordStripeConnectPayment({
     );
   }
 
-  const posted = await serviceRole.functions.invoke("post-payment", {
-    body: {
-      type: "post",
-      paymentId,
-      userId: SYSTEM_USER,
-      companyId,
-      fee: journalFee
-    }
-  });
+  const posted = await serverFns
+    .system({ db: _db, companyId, userId: SYSTEM_USER })
+    .invoke("post-payment", { type: "post", paymentId, fee: journalFee });
 
   if (posted.error) {
     // The payment and its settlement are correct — only the posting failed, so
@@ -658,14 +650,9 @@ export async function voidStripeConnectPayment({
 
   const voidedIds: string[] = [];
   for (const payment of voidable) {
-    const voided = await serviceRole.functions.invoke("post-payment", {
-      body: {
-        type: "void",
-        paymentId: payment.id,
-        userId: SYSTEM_USER,
-        companyId
-      }
-    });
+    const voided = await serverFns
+      .system({ db: _db, companyId, userId: SYSTEM_USER })
+      .invoke("post-payment", { type: "void", paymentId: payment.id });
 
     if (voided.error) {
       logger.error("Failed to void a Stripe Connect payment", {

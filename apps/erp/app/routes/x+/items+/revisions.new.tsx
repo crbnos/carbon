@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
 import { requireItemChangeNoticeUnlocked } from "~/modules/items/items.server";
 import { createRevision, getItem } from "~/modules/items/items.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "items-revisions-new");
@@ -60,11 +61,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, error: "Failed to get current item" };
   }
 
-  const result = await createRevision(getCarbonServiceRole(), {
-    item: currentItem.data,
-    revision: validation.data.revision,
-    createdBy: userId
-  });
+  const result = await createRevision(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      item: currentItem.data,
+      revision: validation.data.revision,
+      createdBy: userId
+    }
+  );
 
   if (result.error) {
     return { success: false, error: "Failed to create revision" };
