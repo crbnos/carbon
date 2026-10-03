@@ -115,9 +115,9 @@ const RentalAgreementHeader = ({
     },
     invoice: {
       action: path.to.rentalAgreementInvoice(id),
-      title: t`Generate invoices for ${readableId}`,
-      text: t`Draft a sales invoice for every billing period and charge due today, exactly as the daily billing job would.`,
-      confirmText: t`Generate Invoices`
+      title: t`Invoice ${readableId} now`,
+      text: t`Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting.`,
+      confirmText: t`Invoice Now`
     },
     close: {
       action: path.to.rentalAgreementStatus(id),
@@ -185,12 +185,12 @@ const RentalAgreementHeader = ({
           <HStack>
             {isActive && (
               <Button
-                variant={allPeriodsBilled ? "secondary" : "primary"}
+                variant="secondary"
                 leftIcon={<LuCreditCard />}
                 isDisabled={!canUpdate}
                 onClick={() => open("invoice")}
               >
-                <Trans>Invoice</Trans>
+                <Trans>Invoice Now</Trans>
               </Button>
             )}
             {(isDraft || isActive) &&

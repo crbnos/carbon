@@ -13,6 +13,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { LuImage } from "react-icons/lu";
 import { Link } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
@@ -23,6 +24,7 @@ import RentalStatus from "./RentalStatus";
 import type {
   RentalAgreement,
   RentalAgreementLine,
+  RentalAgreementStatusType,
   RentalBillingPeriod
 } from "./types";
 import { rentalUnitLabel } from "./useRentalLineActions";
@@ -52,6 +54,11 @@ const RentalAgreementSummary = ({
     lines.length > 0 && lines.every((line) => line.rateUnit === "Month")
       ? lines.reduce((sum, line) => sum + Number(line.rate), 0)
       : null;
+  const invoicingSchedule = invoicingScheduleText(
+    rentalAgreement.status,
+    rentalAgreement.nextDueOn,
+    rentalAgreement.effectiveInvoiceAutomation
+  );
 
   return (
     <Card>
@@ -151,6 +158,11 @@ const RentalAgreementSummary = ({
               )}
             </span>
           </HStack>
+          {invoicingSchedule && (
+            <p className="text-xs text-muted-foreground w-full">
+              {invoicingSchedule}
+            </p>
+          )}
         </VStack>
       </CardContent>
     </Card>
@@ -236,6 +248,53 @@ function SummaryLine({
       </HStack>
     </div>
   );
+}
+
+/** When the next invoice is created and what then happens to it, under the
+ *  agreement's effective invoicing setting. Nothing for a finished agreement. */
+function invoicingScheduleText(
+  status: RentalAgreementStatusType | null,
+  nextDueOn: string | null,
+  mode: RentalAgreement["effectiveInvoiceAutomation"]
+): ReactNode {
+  if (status === "Draft") {
+    return (
+      <Trans>
+        Invoices are created automatically once the agreement is active.
+      </Trans>
+    );
+  }
+  if (status !== "Active") return null;
+  if (!nextDueOn) {
+    return (
+      <Trans>
+        Nothing is due. Invoices are created automatically when a period comes
+        due.
+      </Trans>
+    );
+  }
+  const date = <DateTime value={nextDueOn} variant="date" />;
+  switch (mode) {
+    case "Post and Email":
+      return (
+        <Trans>
+          Next invoice {date} is created automatically, then posted and emailed.
+        </Trans>
+      );
+    case "Post":
+      return (
+        <Trans>
+          Next invoice {date} is created automatically, then posted.
+        </Trans>
+      );
+    default:
+      return (
+        <Trans>
+          Next invoice {date} is created automatically, and left as a draft for
+          review.
+        </Trans>
+      );
+  }
 }
 
 export default RentalAgreementSummary;
