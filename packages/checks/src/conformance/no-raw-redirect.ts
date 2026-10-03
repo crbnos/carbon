@@ -30,7 +30,9 @@ export const noRawRedirect: ConformanceCheck = {
         line,
         snippet: `import { ${match[1]} } from "react-router"`,
         message:
-          "Import redirect from @carbon/utils; use redirectExternal to leave this origin"
+          match[1] === "redirect"
+            ? "Import redirect from @carbon/utils; use redirectExternal to leave this origin"
+            : `${match[1]} from react-router goes wherever it is told; use redirect from @carbon/utils`
       });
     }
     return violations;

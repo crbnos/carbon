@@ -42,15 +42,19 @@ const HOME = "/";
 
 type RedirectTarget = FormDataEntryValue | null | undefined;
 
+// Never a real host: only what a target resolves to against it is compared.
+const BASE = "https://own.invalid";
+
 function isOwnPath(to: RedirectTarget): to is string {
-  // Browsers read `/\host` like `//host` (a protocol-relative URL to another
-  // origin), so a backslash in second place is refused along with `//`.
-  return (
-    typeof to === "string" &&
-    to.startsWith("/") &&
-    !to.startsWith("//") &&
-    !to.startsWith("/\\")
-  );
+  if (typeof to !== "string" || !to.startsWith("/")) return false;
+  // Resolved the way a browser resolves a Location header, rather than by
+  // listing the spellings of another origin: `//host`, `/\host`, and `/` then
+  // a tab or newline then `/host` (browsers drop those characters) all leave.
+  try {
+    return new URL(to, BASE).origin === BASE;
+  } catch {
+    return false;
+  }
 }
 
 /** `to` when it is a path on this origin, otherwise `fallback`. */
