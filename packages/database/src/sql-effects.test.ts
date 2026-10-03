@@ -153,5 +153,7 @@ describe("the repo's own functions", () => {
     expect(effects.effectOf("get_unit_of_measure_usage")).toEqual({
       kind: "reads"
     });
-  });
+    // It parses over a thousand migration files; a CI runner needs more than
+    // vitest's five seconds.
+  }, 60_000);
 });
