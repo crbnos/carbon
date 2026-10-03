@@ -41,7 +41,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [ ] Task 15: Generate Invoices / Sell to Customer fire automation
 - [ ] Task 16: Agreement cards show held invoices
 - [ ] Task 17: Invoice header badges + Send route
-- [ ] Task 18: Invoices list — needsReview column + Needs Review link
+- [x] Task 18: Invoices list — needsReview column + Needs Review link
 - [ ] Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
 - [ ] Task 20: Docs — AGENTS.md, rules, spec changelog
 - [ ] Task 21: Browser verification (`/test`)

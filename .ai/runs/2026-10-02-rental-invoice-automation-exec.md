@@ -8,3 +8,4 @@ Plan: `.ai/plans/2026-10-02-rental-invoice-automation.md`. Context: `.ai/runs/20
 - Environment: the shell profile exports `SUPABASE_DB_URL` on port 54322, overriding this worktree's `.env.local` (58145). DB gates and `@carbon/database` tests need `SUPABASE_DB_URL` from `.env.local`; with it, everything passes.
 - Baseline: typecheck erp, mes, jobs, lib, database, documents, utils — all green. Tests: jobs 853 passed, database 82 passed, lib 44 passed.
 - Task 5b: the plan's deno-check verify greps colour-coded output and always counts 0; ran with NO_COLOR=1 — 41 identical lines before/after. rental-posting tests 15/15.
+- Task 18: nav entry omits `table: "salesInvoice"` (it would list the saved views twice). Known limit: the sidebar highlights by pathname, so Sales Invoices stays highlighted on the filtered page.

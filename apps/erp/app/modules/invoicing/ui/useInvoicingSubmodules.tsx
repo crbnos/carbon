@@ -8,6 +8,7 @@ import {
   LuCreditCard,
   LuReceipt,
   LuReceiptText,
+  LuTriangleAlert,
   LuWallet
 } from "react-icons/lu";
 import {
@@ -91,6 +92,12 @@ export default function useInvoicingSubmodules() {
           to: path.to.invoicingSales,
           icon: <LuCreditCard />,
           table: "salesInvoice",
+          permission: "invoicing"
+        },
+        {
+          name: t`Needs Review`,
+          to: `${path.to.invoicingSales}?filter=needsReview:eq:true`,
+          icon: <LuTriangleAlert />,
           permission: "invoicing"
         },
         {

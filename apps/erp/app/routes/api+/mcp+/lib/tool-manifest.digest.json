@@ -1,5 +1,5 @@
 {
-  "totalTools": 1529,
+  "totalTools": 1530,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1346,6 +1346,7 @@
     {"name":"sales_updateQuoteOperationOrder","classification":"WRITE","paramCount":1,"schema":"c822495a7892","response":"646de62ab761","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateQuoteStatus","classification":"WRITE","paramCount":3,"schema":"35467c4f9528","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateRentalAgreement","classification":"WRITE","paramCount":22,"schema":"ea42378f3633","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
+    {"name":"sales_updateRentalAgreementInvoiceAutomation","classification":"WRITE","paramCount":2,"schema":"89335870b5e4","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateSalesOrder","classification":"WRITE","paramCount":9,"schema":"d9b815fe7f4c","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateSalesOrderExchangeRate","classification":"WRITE","paramCount":2,"schema":"bca4d06461aa","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateSalesOrderLineOrder","classification":"WRITE","paramCount":2,"schema":"fc73ab432ad8","response":"none","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},

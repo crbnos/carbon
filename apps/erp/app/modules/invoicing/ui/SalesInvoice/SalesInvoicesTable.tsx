@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Checkbox,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -22,6 +23,7 @@ import {
   LuQrCode,
   LuStar,
   LuTrash,
+  LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
@@ -147,6 +149,21 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           },
           pluralHeader: t`Statuses`,
           icon: <LuStar />
+        }
+      },
+      {
+        accessorKey: "needsReview",
+        header: t`Needs Review`,
+        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: t`Yes` },
+              { value: "false", label: t`No` }
+            ]
+          },
+          icon: <LuTriangleAlert />
         }
       },
       {
@@ -333,6 +350,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         }}
         defaultColumnVisibility={{
           invoiceCustomerId: false,
+          needsReview: false,
           paymentTermName: false,
           dateIssued: false,
           datePaid: false,
