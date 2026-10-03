@@ -54,14 +54,16 @@ export const rentalBillingFunction = inngest.createFunction(
           const asOf = datetime.today(tz).toString();
 
           // Posting stays a human action in the ERP; this only drafts invoices.
-          const { invoiceIds } = await createRentalInvoicesForDuePeriods(
-            getJobDatabaseClient(),
-            { companyId: company.id, asOf, userId: "system" }
-          );
+          const { invoices, invoiceIds } =
+            await createRentalInvoicesForDuePeriods(getJobDatabaseClient(), {
+              companyId: company.id,
+              asOf,
+              userId: "system"
+            });
 
           logger.info(
-            invoiceIds.length > 0
-              ? `Drafted ${invoiceIds.length} rental invoice(s) for ${company.name} as of ${asOf}: ${invoiceIds.join(", ")}`
+            invoices.length > 0
+              ? `Drafted ${invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${invoiceIds.join(", ")}`
               : `Nothing due for ${company.name} as of ${asOf}`
           );
 

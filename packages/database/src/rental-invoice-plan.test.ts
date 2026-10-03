@@ -93,7 +93,7 @@ describe("planRentalInvoices", () => {
         role: "rent"
       }
     ]);
-    expect(planned[0].holdReason).toBe("Re-billing INV-7, which was voided");
+    expect(planned[0]?.holdReason).toBe("Re-billing INV-7, which was voided");
   });
 
   it("the re-bill hold wins over the early-return hold", () => {
@@ -101,7 +101,7 @@ describe("planRentalInvoices", () => {
       line("p1", "Rent", { voidedInvoiceReadableId: "INV-7" }),
       line("credit", "Rent", { isAdjustment: true })
     ]);
-    expect(planned[0].holdReason).toBe(rentalHoldRebill(["INV-7"]));
+    expect(planned[0]?.holdReason).toBe(rentalHoldRebill(["INV-7"]));
   });
 
   it("names every voided invoice once, in first-seen order", () => {
@@ -113,7 +113,7 @@ describe("planRentalInvoices", () => {
       line("p2", "Rent", { voidedInvoiceReadableId: "INV-7" }),
       line("p3", "Rent", { voidedInvoiceReadableId: "INV-9" })
     ]);
-    expect(planned[0].holdReason).toBe(rentalHoldRebill(["INV-9", "INV-7"]));
+    expect(planned[0]?.holdReason).toBe(rentalHoldRebill(["INV-9", "INV-7"]));
   });
 
   it("Draft Only never holds, even a re-bill", () => {

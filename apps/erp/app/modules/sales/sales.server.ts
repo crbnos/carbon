@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   createRentalInvoicesForDuePeriods,
+  type DraftedRentalInvoice,
   type RentalInvoiceGenerationArgs,
   releaseRentalInvoiceStamps
 } from "@carbon/database/rental-billing";
@@ -386,7 +387,7 @@ export async function insertRentalPurchaseOptionCharge(
 export async function generateRentalInvoicesNow(
   db: Kysely<KyselyDatabase>,
   args: RentalInvoiceGenerationArgs
-): Promise<{ invoiceIds: string[] }> {
+): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
   return createRentalInvoicesForDuePeriods(db, args);
 }
 

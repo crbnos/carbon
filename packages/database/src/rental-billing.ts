@@ -7,7 +7,7 @@
 // periods. Posting stays with post-sales-invoice: this only drafts invoices.
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3
 
-import { sql } from "kysely";
+import { type Selectable, sql } from "kysely";
 import { round } from "../supabase/functions/shared/precision.ts";
 import {
   billingHorizon,
@@ -15,6 +15,11 @@ import {
   wholeRateUnits
 } from "../supabase/functions/shared/rental-billing.ts";
 import type { Kysely, KyselyDatabase, KyselyTx } from "./client";
+import {
+  effectiveInvoiceAutomation,
+  type InvoiceAutomation,
+  planRentalInvoices
+} from "./rental-invoice-plan";
 import { getNextSequence } from "./sequence";
 import type { Database } from "./types";
 
@@ -30,8 +35,18 @@ export type RentalInvoiceGenerationArgs = {
   userId: string;
 };
 
+/** One invoice the generator drafted, and what automation may do with it. */
+export type DraftedRentalInvoice = {
+  invoiceId: string;
+  rentalAgreementId: string;
+  /** The agreement's effective invoice automation. */
+  mode: InvoiceAutomation;
+  /** Set when a person must review the draft before it is posted. */
+  holdReason: string | null;
+};
+
 /**
- * Drafts one sales invoice per Active agreement that has something due: every
+ * Drafts the sales invoices of every Active agreement that has something due: every
  * Pending billing period with `dueOn <= asOf` and every unbilled charge dated
  * on or before `asOf`. First it rolls every live line's periods forward to
  * `billingHorizon(asOf)` — activation only cuts periods to one cycle ahead,
@@ -39,12 +54,13 @@ export type RentalInvoiceGenerationArgs = {
  * agreement's failure never rolls back another's invoice. The billed rows are
  * stamped with their invoice line, which is what makes a second call for the
  * same day a no-op; deleting the Draft invoice releases them
- * (`releaseRentalInvoiceStamps`).
+ * (`releaseRentalInvoiceStamps`). Under invoice automation an agreement's
+ * rent and its charges become separate invoices (`planRentalInvoices`).
  */
 export async function createRentalInvoicesForDuePeriods(
   db: Kysely<KyselyDatabase>,
   args: RentalInvoiceGenerationArgs
-): Promise<{ invoiceIds: string[] }> {
+): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
   const { companyId, asOf, rentalAgreementId } = args;
 
   // One read for every agreement with anything due; the per-agreement
@@ -101,21 +117,35 @@ export async function createRentalInvoicesForDuePeriods(
   }
   const agreements = await dueQuery.execute();
 
-  const invoiceIds: string[] = [];
+  const invoices: DraftedRentalInvoice[] = [];
   for (const agreement of agreements) {
-    const invoiceId = await db
+    const drafted = await db
       .transaction()
-      .execute((trx) => draftAgreementInvoice(trx, args, agreement.id));
-    if (invoiceId) invoiceIds.push(invoiceId);
+      .execute((trx) => draftAgreementInvoices(trx, args, agreement.id));
+    invoices.push(...drafted);
   }
-  return { invoiceIds };
+  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId) };
 }
 
-async function draftAgreementInvoice(
+type AgreementRow = Selectable<KyselyDatabase["rentalAgreement"]>;
+
+type LineValues = {
+  rentalAgreementLineId: string;
+  rentalBillingPeriodId: string | null;
+  rentalAgreementChargeId: string | null;
+  rentalInvoiceLineKind: Database["public"]["Enums"]["rentalInvoiceLineKind"];
+  description: string;
+  unitPrice: number;
+  taxPercent: number;
+  serviceStartDate: string | null;
+  serviceEndDate: string | null;
+};
+
+async function draftAgreementInvoices(
   trx: KyselyTx,
   args: RentalInvoiceGenerationArgs,
   agreementId: string
-): Promise<string | null> {
+): Promise<DraftedRentalInvoice[]> {
   const { companyId, asOf, userId } = args;
 
   const agreement = await trx
@@ -126,7 +156,17 @@ async function draftAgreementInvoice(
     .where("status", "=", "Active")
     .forUpdate()
     .executeTakeFirst();
-  if (!agreement) return null;
+  if (!agreement) return [];
+
+  const company = await trx
+    .selectFrom("companySettings")
+    .select("invoiceAutomation")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const mode = effectiveInvoiceAutomation(
+    agreement.invoiceAutomation,
+    company.invoiceAutomation
+  );
 
   await rollBillingPeriodsForward(trx, {
     companyId,
@@ -162,6 +202,7 @@ async function draftAgreementInvoice(
       "p.amount",
       "p.rateUnitApplied",
       "p.isAdjustment",
+      "p.voidedSalesInvoiceId",
       "fa.name as assetName",
       "fa.serialNumber"
     ])
@@ -187,7 +228,8 @@ async function draftAgreementInvoice(
       "c.kind",
       "c.description",
       "c.amount",
-      "c.taxPercent"
+      "c.taxPercent",
+      "c.voidedSalesInvoiceId"
     ])
     .where("l.rentalAgreementId", "=", agreement.id)
     .where("c.companyId", "=", companyId)
@@ -197,47 +239,114 @@ async function draftAgreementInvoice(
     .forUpdate("c")
     .execute();
 
-  if (periods.length === 0 && charges.length === 0) return null;
+  if (periods.length === 0 && charges.length === 0) return [];
 
-  type LineValues = {
-    rentalAgreementLineId: string;
-    rentalBillingPeriodId: string | null;
-    rentalAgreementChargeId: string | null;
-    rentalInvoiceLineKind: Database["public"]["Enums"]["rentalInvoiceLineKind"];
-    description: string;
-    unitPrice: number;
-    taxPercent: number;
-    serviceStartDate: string | null;
-    serviceEndDate: string | null;
-  };
+  // The readable ids of the voided invoices these rows were billed on, so a
+  // re-bill's hold names them. One read; a deleted invoice keeps its raw id.
+  const voidedIds = [
+    ...new Set(
+      [...periods, ...charges]
+        .map((row) => row.voidedSalesInvoiceId)
+        .filter((voidedId): voidedId is string => !!voidedId)
+    )
+  ];
+  const voidedReadableIds = new Map<string, string>();
+  if (voidedIds.length > 0) {
+    const voided = await trx
+      .selectFrom("salesInvoice")
+      .select(["id", "invoiceId"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", voidedIds)
+      .execute();
+    for (const invoice of voided) {
+      voidedReadableIds.set(invoice.id, invoice.invoiceId);
+    }
+  }
+  const voidedReadableId = (voidedId: string | null) =>
+    voidedId ? (voidedReadableIds.get(voidedId) ?? voidedId) : null;
 
-  const lines: LineValues[] = [
+  const lines: {
+    values: LineValues;
+    isAdjustment: boolean;
+    voidedInvoiceReadableId: string | null;
+  }[] = [
     ...periods.map((period) => ({
-      rentalAgreementLineId: period.rentalAgreementLineId,
-      rentalBillingPeriodId: period.id,
-      rentalAgreementChargeId: null,
-      rentalInvoiceLineKind: "Rent" as const,
-      description: rentLineDescription({
-        ...period,
-        cycle: agreement.billingCycle
-      }),
-      unitPrice: Number(period.amount),
-      taxPercent: Number(agreement.taxPercent),
-      serviceStartDate: period.periodStart,
-      serviceEndDate: period.periodEnd
+      values: {
+        rentalAgreementLineId: period.rentalAgreementLineId,
+        rentalBillingPeriodId: period.id,
+        rentalAgreementChargeId: null,
+        rentalInvoiceLineKind: "Rent" as const,
+        description: rentLineDescription({
+          ...period,
+          cycle: agreement.billingCycle
+        }),
+        unitPrice: Number(period.amount),
+        taxPercent: Number(agreement.taxPercent),
+        serviceStartDate: period.periodStart,
+        serviceEndDate: period.periodEnd
+      },
+      isAdjustment: period.isAdjustment ?? false,
+      voidedInvoiceReadableId: voidedReadableId(period.voidedSalesInvoiceId)
     })),
     ...charges.map((charge) => ({
-      rentalAgreementLineId: charge.rentalAgreementLineId,
-      rentalBillingPeriodId: null,
-      rentalAgreementChargeId: charge.id,
-      rentalInvoiceLineKind: charge.kind,
-      description: charge.description,
-      unitPrice: Number(charge.amount),
-      taxPercent: Number(charge.taxPercent),
-      serviceStartDate: null,
-      serviceEndDate: null
+      values: {
+        rentalAgreementLineId: charge.rentalAgreementLineId,
+        rentalBillingPeriodId: null,
+        rentalAgreementChargeId: charge.id,
+        rentalInvoiceLineKind: charge.kind,
+        description: charge.description,
+        unitPrice: Number(charge.amount),
+        taxPercent: Number(charge.taxPercent),
+        serviceStartDate: null,
+        serviceEndDate: null
+      },
+      isAdjustment: false,
+      voidedInvoiceReadableId: voidedReadableId(charge.voidedSalesInvoiceId)
     }))
   ];
+
+  const planned = planRentalInvoices(
+    mode,
+    lines.map((line) => ({
+      item: line.values,
+      kind: line.values.rentalInvoiceLineKind,
+      isAdjustment: line.isAdjustment,
+      voidedInvoiceReadableId: line.voidedInvoiceReadableId
+    }))
+  );
+
+  const drafted: DraftedRentalInvoice[] = [];
+  for (const invoice of planned) {
+    const invoiceId = await insertRentalInvoice(
+      trx,
+      args,
+      agreement,
+      invoice.lines,
+      invoice.holdReason
+    );
+    drafted.push({
+      invoiceId,
+      rentalAgreementId: agreement.id,
+      mode,
+      holdReason: invoice.holdReason
+    });
+  }
+  return drafted;
+}
+
+/**
+ * Inserts one Draft rental invoice (opportunity, header, shipment, lines) and
+ * stamps the periods and charges it bills with their invoice line. Returns
+ * the invoice id.
+ */
+async function insertRentalInvoice(
+  trx: KyselyTx,
+  args: RentalInvoiceGenerationArgs,
+  agreement: AgreementRow,
+  lines: LineValues[],
+  holdReason: string | null
+): Promise<string> {
+  const { companyId, asOf, userId } = args;
 
   const subtotal = round(lines.reduce((sum, line) => sum + line.unitPrice, 0));
   const totalTax = round(
@@ -276,6 +385,7 @@ async function draftAgreementInvoice(
       totalTax,
       totalAmount: round(subtotal + totalTax),
       opportunityId: opportunity.id,
+      automationHoldReason: holdReason,
       companyId,
       createdBy: userId
     })
