@@ -93,54 +93,64 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const quoteId = convert.data?.convertedId!;
 
-  // Seed `quoteLinePrice` rows for every new line. The convert function
-  // creates the `quoteLine` records (and, for Make to Order, kicks off
-  // `get-method itemToQuoteLine` to populate methods/materials), but it
-  // never writes any prices — so the new quote opens with empty pricing.
-  // The standard "add quote line" path in `$quoteId.new.tsx` calls these
-  // same helpers per methodType; mirror that here.
-  const newLines = await serviceRole
-    .from("quoteLine")
-    .select("id, methodType, quantity")
-    .eq("quoteId", quoteId);
+  // Seed `quoteLinePrice` rows for the new lines that have none, so the quote
+  // does not open with empty pricing. A Make to Order line whose method was
+  // copied (`get-method itemToQuoteLine`) is priced already; seeding it again
+  // was a duplicate insert the database refused. The "add quote line" path in
+  // `$quoteId.new.tsx` calls these same helpers per methodType.
+  const [newLines, priced] = await Promise.all([
+    serviceRole
+      .from("quoteLine")
+      .select("id, methodType, quantity")
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId),
+    serviceRole
+      .from("quoteLinePrice")
+      .select("quoteLineId")
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId)
+  ]);
+  const pricedLineIds = new Set(priced.data?.map((p) => p.quoteLineId));
 
   if (!newLines.error && newLines.data) {
     await Promise.all(
-      newLines.data.map((line) => {
-        const quantities = line.quantity ?? [1];
-        if (quantities.length === 0) return null;
+      newLines.data
+        .filter((line) => !pricedLineIds.has(line.id))
+        .map((line) => {
+          const quantities = line.quantity ?? [1];
+          if (quantities.length === 0) return null;
 
-        switch (line.methodType) {
-          case "Make to Order":
-            return calculatePricesForQuantities(
-              serviceRole,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
-          case "Pull from Inventory":
-            return resolveQuoteLinePrices(
-              serviceRole,
-              companyId,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
-          case "Purchase to Order":
-            return resolvePurchaseToOrderPrices(
-              serviceRole,
-              companyId,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
-          default:
-            return null;
-        }
-      })
+          switch (line.methodType) {
+            case "Make to Order":
+              return calculatePricesForQuantities(
+                serviceRole,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            case "Pull from Inventory":
+              return resolveQuoteLinePrices(
+                serviceRole,
+                companyId,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            case "Purchase to Order":
+              return resolvePurchaseToOrderPrices(
+                serviceRole,
+                companyId,
+                quoteId,
+                line.id,
+                quantities,
+                userId
+              );
+            default:
+              return null;
+          }
+        })
     );
   }
 
