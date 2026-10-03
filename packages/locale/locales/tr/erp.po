@@ -3907,8 +3907,14 @@ msgstr "PDF çizimi yüklemek için tıklayın"
 msgid "Clock In"
 msgstr "İş başlangıcı"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "İş bitişi"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> tarihinden beri saatlenmiş"
@@ -16556,9 +16562,6 @@ msgstr "Carbon'u şirketinizin nasıl çalıştığına göre kurun: lokasyonlar
 msgid "Set Clock Out"
 msgstr "İş bitişi ayarla"
 
-msgid "Set clock-out time"
-msgstr "Çıkış zamanını ayarla"
-
 msgid "Set Console PIN"
 msgstr "Konsol PIN Ayarla"
 
@@ -16576,6 +16579,9 @@ msgstr "Fiyatlandırmayı Ayarla"
 
 msgid "Set Quantity"
 msgstr "Miktarı Ayarla"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
@@ -21334,9 +21340,6 @@ msgstr "Kullanıcı arayüzü stilini tema ayarları aracılığıyla istediğin
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde saklayın."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Saatinizi <0/> tarihinde kaydettiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

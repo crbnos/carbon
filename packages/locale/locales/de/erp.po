@@ -3907,8 +3907,14 @@ msgstr "Klicken Sie hier, um eine PDF-Zeichnung hochzuladen."
 msgid "Clock In"
 msgstr "Einstempeln"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Ausstempeln"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Angemeldet seit <0/>"
@@ -16556,9 +16562,6 @@ msgstr "Richten Sie Carbon um die Betriebsweise Ihres Unternehmens ein: Betriebs
 msgid "Set Clock Out"
 msgstr "Ausstempeln festlegen"
 
-msgid "Set clock-out time"
-msgstr "Abmeldungszeit festlegen"
-
 msgid "Set Console PIN"
 msgstr "Console-PIN festlegen"
 
@@ -16576,6 +16579,9 @@ msgstr "Preisfindung festlegen"
 
 msgid "Set Quantity"
 msgstr "Menge festlegen"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Authentifizierungs-App einrichten"
@@ -21334,9 +21340,6 @@ msgstr "Sie können den UI-Stil jederzeit über die Design-Einstellung ändern"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Du kannst diesen Schlüssel nur einmal sehen. Speichere ihn sicher."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie sind um <0/> eingestempelt. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

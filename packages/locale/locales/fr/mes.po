@@ -310,8 +310,14 @@ msgstr "Effacer la station par défaut"
 msgid "Clock In"
 msgstr "Pointage début"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Pointage fin"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Session verrouillée"
 msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
 
-msgid "Set clock-out time"
-msgstr "Définir l'heure de sortie"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Configurer dans Carbon"
@@ -1904,9 +1910,6 @@ msgstr "Modes opératoires"
 
 msgid "Yes"
 msgstr "Oui"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ ci-dessous ou confirmer que vous travaillez toujours."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé(e) depuis {hoursElapsed} heures. Avez-vous oublié le pointage fin ?"

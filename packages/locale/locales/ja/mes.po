@@ -310,8 +310,14 @@ msgstr "既定ステーションをクリア"
 msgid "Clock In"
 msgstr "作業開始"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "作業終了"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
@@ -1562,8 +1568,8 @@ msgstr "セッションはロック中です。"
 msgid "Set Clock Out"
 msgstr "作業終了を設定"
 
-msgid "Set clock-out time"
-msgstr "退勤時間を設定"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Carbonで設定"
@@ -1904,9 +1910,6 @@ msgstr "作業手順書"
 
 msgid "Yes"
 msgstr "はい"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "あなたは<0/>にクロックインしました。下記でクロックアウト時間を編集するか、まだ作業中であることを確認できます。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"

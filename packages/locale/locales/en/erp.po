@@ -3907,8 +3907,14 @@ msgstr "Click to upload a PDF drawing"
 msgid "Clock In"
 msgstr "Clock In"
 
+msgid "Clock out"
+msgstr "Clock out"
+
 msgid "Clock Out"
 msgstr "Clock Out"
+
+msgid "Clocked in"
+msgstr "Clocked in"
 
 msgid "Clocked in since <0/>"
 msgstr "Clocked in since <0/>"
@@ -16556,9 +16562,6 @@ msgstr "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of 
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 
-msgid "Set clock-out time"
-msgstr "Set clock-out time"
-
 msgid "Set Console PIN"
 msgstr "Set Console PIN"
 
@@ -16576,6 +16579,9 @@ msgstr "Set Pricing"
 
 msgid "Set Quantity"
 msgstr "Set Quantity"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "Set the time you stopped working, or acknowledge that you're still working."
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"
@@ -21334,9 +21340,6 @@ msgstr "You can change the UI style any time through the theme setting"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "You can only see this key once. Store it safely."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

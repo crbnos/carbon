@@ -3907,8 +3907,14 @@ msgstr "点击上传 PDF 图纸"
 msgid "Clock In"
 msgstr "开工"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "收工"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 打卡"
@@ -16556,9 +16562,6 @@ msgstr "根据公司运营方式设置 Carbon：地点、零件、BOM、工序�
 msgid "Set Clock Out"
 msgstr "设置收工"
 
-msgid "Set clock-out time"
-msgstr "设置打卡下班时间"
-
 msgid "Set Console PIN"
 msgstr "设置控制台PIN"
 
@@ -16576,6 +16579,9 @@ msgstr "设置定价"
 
 msgid "Set Quantity"
 msgstr "设置数量"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
@@ -21334,9 +21340,6 @@ msgstr "您可以随时通过主题设置更改UI样式"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "您只能看到此密钥一次。请妥善保管。"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "您于 <0/> 打卡上班。您可以在下方编辑打卡下班时间，或确认您仍在工作。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

@@ -310,8 +310,14 @@ msgstr "İstasyon varsayılanını temizle"
 msgid "Clock In"
 msgstr "İş başlangıcı"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "İş bitişi"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
@@ -1562,8 +1568,8 @@ msgstr "Oturum kilitlendi"
 msgid "Set Clock Out"
 msgstr "İş bitişini ayarla"
 
-msgid "Set clock-out time"
-msgstr "Çıkış zamanını ayarla"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Carbon'da ayarla"
@@ -1904,9 +1910,6 @@ msgstr "İş talimatları"
 
 msgid "Yes"
 msgstr "Evet"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Saat <0/>'te kaydedildiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"

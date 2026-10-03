@@ -3907,8 +3907,14 @@ msgstr "클릭하여 PDF 도면을 업로드하세요"
 msgid "Clock In"
 msgstr "작업 시작"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "작업 종료"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> 이후로 근무 중"
@@ -16556,9 +16562,6 @@ msgstr "회사의 운영 방식에 맞게 Carbon을 설정하세요: 사업장, 
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
-msgid "Set clock-out time"
-msgstr "퇴근 시간 설정"
-
 msgid "Set Console PIN"
 msgstr "콘솔 PIN 설정"
 
@@ -16576,6 +16579,9 @@ msgstr "가격 책정 설정"
 
 msgid "Set Quantity"
 msgstr "수량 설정"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"
@@ -21334,9 +21340,6 @@ msgstr "테마 설정을 통해 언제든지 UI 스타일을 변경할 수 있�
 
 msgid "You can only see this key once. Store it safely."
 msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하세요."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "당신은 <0/>에 근무를 시작했습니다. 아래에서 근무 종료 시간을 편집하거나 아직 작업 중임을 확인할 수 있습니다."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

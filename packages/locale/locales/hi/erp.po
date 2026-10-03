@@ -3907,8 +3907,14 @@ msgstr "PDF ड्राइंग अपलोड करने के लिए 
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "कार्य समाप्त"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से काम में आए"
@@ -16556,9 +16562,6 @@ msgstr "Carbon को अपनी कंपनी के संचालन क
 msgid "Set Clock Out"
 msgstr "कार्य समाप्त सेट करें"
 
-msgid "Set clock-out time"
-msgstr "घड़ी बंद करने का समय सेट करें"
-
 msgid "Set Console PIN"
 msgstr "कंसोल पिन सेट करें"
 
@@ -16576,6 +16579,9 @@ msgstr "मूल्य निर्धारण सेट करें"
 
 msgid "Set Quantity"
 msgstr "मात्रा निर्धारित करें"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
@@ -21334,9 +21340,6 @@ msgstr "आप किसी भी समय थीम सेटिंग के
 
 msgid "You can only see this key once. Store it safely."
 msgstr "आप इस कुंजी को केवल एक बार देख सकते हैं। इसे सुरक्षित रूप से संग्रहीत करें।"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आपने <0/> पर घड़ी में प्रवेश किया। आप नीचे अपने घड़ी से बाहर का समय संपादित कर सकते हैं या यह स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

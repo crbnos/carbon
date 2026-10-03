@@ -310,8 +310,14 @@ msgstr "Очистить станцию по умолчанию"
 msgid "Clock In"
 msgstr "Начало работы"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Окончание работы"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Отметился в системе с <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Сеанс заблокирован"
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 
-msgid "Set clock-out time"
-msgstr "Установить время ухода"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Настроить в Carbon"
@@ -1904,9 +1910,6 @@ msgstr "Рабочие инструкции"
 
 msgid "Yes"
 msgstr "Да"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Вы начали работу в <0/>. Ниже вы можете изменить время окончания работы или подтвердить, что вы все еще работаете."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"

@@ -310,8 +310,14 @@ msgstr "Borrar estación predeterminada"
 msgid "Clock In"
 msgstr "Fichar entrada"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Fichar salida"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Marcado entrada desde <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Sesión bloqueada"
 msgid "Set Clock Out"
 msgstr "Establecer Fichar salida"
 
-msgid "Set clock-out time"
-msgstr "Establecer hora de salida"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Configurar en Carbon"
@@ -1904,9 +1910,6 @@ msgstr "Instrucciones de trabajo"
 
 msgid "Yes"
 msgstr "Sí"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuación o confirmar que aún estás trabajando."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado fichado durante {hoursElapsed} horas. ¿Olvidó fichar salida?"

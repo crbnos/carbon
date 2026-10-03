@@ -310,8 +310,14 @@ msgstr "Wyczyść domyślną stację"
 msgid "Clock In"
 msgstr "Rozpoczęcie pracy"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Zakończenie pracy"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Sesja zablokowana"
 msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
 
-msgid "Set clock-out time"
-msgstr "Ustaw czas zakończenia zmiany"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Skonfiguruj w aplikacji Carbon"
@@ -1904,9 +1910,6 @@ msgstr "Instrukcje robocze"
 
 msgid "Yes"
 msgstr "Tak"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej lub potwierdzić, że nadal pracujesz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Pracujesz od {hoursElapsed} godzin. Zapomniałeś o zakończeniu pracy?"

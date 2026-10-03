@@ -310,8 +310,14 @@ msgstr "स्टेशन डिफ़ॉल्ट को साफ़ कर�
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "कार्य समाप्त"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
@@ -1562,8 +1568,8 @@ msgstr "सत्र लॉक किया गया"
 msgid "Set Clock Out"
 msgstr "कार्य समाप्ति सेट करें"
 
-msgid "Set clock-out time"
-msgstr "घड़ी बंद करने का समय सेट करें"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Carbon में सेट अप करें"
@@ -1904,9 +1910,6 @@ msgstr "कार्य निर्देश"
 
 msgid "Yes"
 msgstr "हां"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आप <0/> पर घड़ी में आए हैं। आप नीचे अपने घड़ी से बाहर का समय संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"

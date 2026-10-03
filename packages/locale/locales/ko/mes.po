@@ -310,8 +310,14 @@ msgstr "스테이션 기본값 초기화"
 msgid "Clock In"
 msgstr "작업 시작"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "작업 종료"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
@@ -1562,8 +1568,8 @@ msgstr "세션 잠김"
 msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
-msgid "Set clock-out time"
-msgstr "퇴근 시간 설정"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Carbon에서 설정하기"
@@ -1904,9 +1910,6 @@ msgstr "작업 표준서"
 
 msgid "Yes"
 msgstr "예"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"

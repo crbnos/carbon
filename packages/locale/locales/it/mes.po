@@ -310,8 +310,14 @@ msgstr "Cancella impostazione predefinita della stazione"
 msgid "Clock In"
 msgstr "Timbra inizio"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Timbra fine"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Connesso da <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Sessione bloccata"
 msgid "Set Clock Out"
 msgstr "Registra timbra fine"
 
-msgid "Set clock-out time"
-msgstr "Imposta orario di uscita"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "Configura in Carbon"
@@ -1904,9 +1910,6 @@ msgstr "Istruzioni di lavoro"
 
 msgid "Yes"
 msgstr "Sì"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Ti sei connesso a <0/>. Puoi modificare l'orario di disconnessione di seguito o confermare che stai ancora lavorando."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"

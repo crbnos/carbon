@@ -3907,8 +3907,14 @@ msgstr "Нажмите, чтобы загрузить чертеж PDF"
 msgid "Clock In"
 msgstr "Начало работы"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Окончание работы"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Работаю с <0/>"
@@ -16556,9 +16562,6 @@ msgstr "Настройте Carbon в соответствии с тем, как 
 msgid "Set Clock Out"
 msgstr "Установить окончание работы"
 
-msgid "Set clock-out time"
-msgstr "Установить время выхода"
-
 msgid "Set Console PIN"
 msgstr "Установить PIN консоли"
 
@@ -16576,6 +16579,9 @@ msgstr "Установить ценообразование"
 
 msgid "Set Quantity"
 msgstr "Установить количество"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
@@ -21334,9 +21340,6 @@ msgstr "Вы можете изменить стиль интерфейса в л
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Вы можете увидеть этот ключ только один раз. Сохраните его в безопасном месте."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Вы зарегистрировались на работу в <0/>. Вы можете изменить время выхода ниже или подтвердить, что вы все еще работаете."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

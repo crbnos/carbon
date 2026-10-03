@@ -310,8 +310,14 @@ msgstr "Standardstation löschen"
 msgid "Clock In"
 msgstr "Einstempeln"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Ausstempeln"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Eingecheckt seit <0/>"
@@ -1562,8 +1568,8 @@ msgstr "Sitzung gesperrt"
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 
-msgid "Set clock-out time"
-msgstr "Ausstempelzeit festlegen"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up in Carbon"
 msgstr "In Carbon einrichten"
@@ -1904,9 +1910,6 @@ msgstr "Arbeitsanweisungen"
 
 msgid "Yes"
 msgstr "Ja"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausstempeln vergessen?"

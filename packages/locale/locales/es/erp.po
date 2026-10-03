@@ -3907,8 +3907,14 @@ msgstr "Haga clic para subir un dibujo PDF"
 msgid "Clock In"
 msgstr "Fichar entrada"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Fichar salida"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Fichado desde <0/>"
@@ -16556,9 +16562,6 @@ msgstr "Configure Carbon de acuerdo con cómo funciona su empresa: ubicaciones, 
 msgid "Set Clock Out"
 msgstr "Establecer ficha de salida"
 
-msgid "Set clock-out time"
-msgstr "Establecer hora de salida"
-
 msgid "Set Console PIN"
 msgstr "Establecer PIN de Consola"
 
@@ -16576,6 +16579,9 @@ msgstr "Establecer precios"
 
 msgid "Set Quantity"
 msgstr "Establecer Cantidad"
+
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Configurar aplicación autenticadora"
@@ -21334,9 +21340,6 @@ msgstr "Puedes cambiar el estilo de la interfaz en cualquier momento a través l
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Solo puedes ver esta clave una vez. Guárdala de forma segura."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Te fichaste en <0/>. Puedes editar tu hora de salida a continuación o confirmar que aún estás trabajando."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
