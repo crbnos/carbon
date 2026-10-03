@@ -23,3 +23,4 @@ Plan: `.ai/plans/2026-10-02-rental-invoice-automation.md`. Context: `.ai/runs/20
   - Tests follow the ramp-sync-bill precedent (stateful fake rows) and assert on outcomes/stored rows, per testing-no-mock-theater; 14 (12 behavioural + 2 pure header helpers).
 - Task 12: email body now spreads the loader's `email` (same sources as the old reads); kept the route's existing timestamped file name; early returns (missing contact/seller) don't stamp sendError.
 - Task 17: badges use Status's `tooltip` prop (`title` would add a native tooltip). "Posted" = postingDate set and not Voided, as the header already reads it.
+- Task 10: digest results are keyed by `sourceId` (source-agnostic, U4). "N posted" counts every invoice that was posted (emailed and unsent included); Draft Only drafts are not reported; an invoice whose automation step threw is reported as needing review. 5 digest tests (plan's 4 + 'links posted invoices when nothing needs review').
