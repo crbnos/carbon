@@ -52,7 +52,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import { datetime, scrapAllowance, textToTiptap } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { sql, type Transaction } from "kysely";
+import { type QueryCreator, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -1684,16 +1684,18 @@ export const getMethod = defineServerFn({
                     .execute();
                 }
 
+                const newMakeMethodIds = madeChildren.map(() => nanoid());
+                await renameJobMakeMethods(trx, {
+                  companyId,
+                  rows: madeChildren.map((_, index) => ({
+                    parentMaterialId: madeMaterialsWithIds[index]!.id,
+                    id: newMakeMethodIds[index]!
+                  }))
+                });
+
                 for (const [index, child] of madeChildren.entries()) {
                   const materialId = madeMaterialsWithIds[index]!.id;
-                  const newMakeMethodId = nanoid();
-
-                  await trx
-                    .updateTable("jobMakeMethod")
-                    .set({ id: newMakeMethodId })
-                    .where("parentMaterialId", "=", materialId)
-                    .where("companyId", "=", companyId)
-                    .execute();
+                  const newMakeMethodId = newMakeMethodIds[index]!;
 
                   // Get the total quantity (estimated + scrap) for this child material
                   // This is what we pass to children for the cascade
@@ -2436,16 +2438,18 @@ export const getMethod = defineServerFn({
                     .execute();
                 }
 
+                const newMakeMethodIds = madeChildren.map(() => nanoid());
+                await renameJobMakeMethods(trx, {
+                  companyId,
+                  rows: madeChildren.map((_, index) => ({
+                    parentMaterialId: madeMaterialsWithIds[index]!.id,
+                    id: newMakeMethodIds[index]!
+                  }))
+                });
+
                 for (const [index, child] of madeChildren.entries()) {
                   const materialId = madeMaterialsWithIds[index]!.id;
-                  const newMakeMethodId = nanoid();
-
-                  await trx
-                    .updateTable("jobMakeMethod")
-                    .set({ id: newMakeMethodId })
-                    .where("parentMaterialId", "=", materialId)
-                    .where("companyId", "=", companyId)
-                    .execute();
+                  const newMakeMethodId = newMakeMethodIds[index]!;
 
                   // Get the total quantity (estimated + scrap) for this child material
                   // This is what we pass to children for the cascade
@@ -4863,18 +4867,15 @@ export const getMethod = defineServerFn({
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
-                for await (const insert of jobMakeMethodInserts) {
-                  await trx
-                    .updateTable("jobMakeMethod")
-                    .set({
-                      id: insert.id,
-                      quantityPerParent: insert.quantityPerParent
-                    })
-                    .where("jobId", "=", targetJobId)
-                    .where("parentMaterialId", "=", insert.parentMaterialId!)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await renameJobMakeMethods(trx, {
+                  companyId,
+                  jobId: targetJobId,
+                  rows: jobMakeMethodInserts.map((insert) => ({
+                    parentMaterialId: insert.parentMaterialId!,
+                    id: insert.id!,
+                    quantityPerParent: insert.quantityPerParent
+                  }))
+                });
               }
             }
           );
@@ -6608,18 +6609,15 @@ export const getMethod = defineServerFn({
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
-                for await (const insert of jobMakeMethodInserts) {
-                  await trx
-                    .updateTable("jobMakeMethod")
-                    .set({
-                      id: insert.id,
-                      quantityPerParent: insert.quantityPerParent
-                    })
-                    .where("jobId", "=", jobId)
-                    .where("parentMaterialId", "=", insert.parentMaterialId!)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await renameJobMakeMethods(trx, {
+                  companyId,
+                  jobId: jobId,
+                  rows: jobMakeMethodInserts.map((insert) => ({
+                    parentMaterialId: insert.parentMaterialId!,
+                    id: insert.id!,
+                    quantityPerParent: insert.quantityPerParent
+                  }))
+                });
               }
             }
           );
@@ -8462,6 +8460,46 @@ function getFieldKey(field: string, id: string) {
   return `${field}:${id}`;
 }
 
+type ProcedureForJob = {
+  content: unknown;
+  steps: Record<string, unknown>[];
+  parameters: Record<string, unknown>[];
+};
+
+// One read per procedure per transaction, however many operations use it.
+const procedureCacheByTransaction = new WeakMap<
+  object,
+  Map<string, Promise<ProcedureForJob | undefined>>
+>();
+
+function readProcedureForJob(
+  trx: Transaction<KyselyDatabase>,
+  procedureId: string,
+  companyId: string
+) {
+  let cache = procedureCacheByTransaction.get(trx);
+  if (!cache) {
+    cache = new Map();
+    procedureCacheByTransaction.set(trx, cache);
+  }
+  let procedure = cache.get(procedureId);
+  if (!procedure) {
+    procedure = sql<ProcedureForJob>`
+      SELECT p."content",
+        (SELECT coalesce(jsonb_agg(to_jsonb(s)), '[]'::jsonb)
+           FROM "procedureStep" s WHERE s."procedureId" = p."id") AS "steps",
+        (SELECT coalesce(jsonb_agg(to_jsonb(pp)), '[]'::jsonb)
+           FROM "procedureParameter" pp WHERE pp."procedureId" = p."id") AS "parameters"
+      FROM "procedure" p
+      WHERE p."id" = ${procedureId} AND p."companyId" = ${companyId}
+    `
+      .execute(trx)
+      .then((result) => result.rows[0]);
+    cache.set(procedureId, procedure);
+  }
+  return procedure;
+}
+
 async function insertProcedureDataForJobOperation(
   trx: Transaction<KyselyDatabase>,
   args: {
@@ -8472,82 +8510,79 @@ async function insertProcedureDataForJobOperation(
   }
 ) {
   const { operationId, procedureId, companyId, userId } = args;
-  // On `trx`: this runs inside the caller's transaction, once per operation
-  // that has a procedure, so a PostgREST call here was a slow round trip per
-  // operation while the transaction held its connection.
-  const procedure = await trx
-    .selectFrom("procedure")
-    .select(["content"])
-    .where("id", "=", procedureId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-
+  const procedure = await readProcedureForJob(trx, procedureId, companyId);
   if (!procedure) return;
 
-  const attributes = await trx
-    .selectFrom("procedureStep")
-    .selectAll()
-    .where("procedureId", "=", procedureId)
-    .execute();
-  const parameters = await trx
-    .selectFrom("procedureParameter")
-    .selectAll()
-    .where("procedureId", "=", procedureId)
-    .execute();
+  const copy = (row: Record<string, unknown>) => {
+    const {
+      id: _id,
+      procedureId: _procedureId,
+      createdAt: _createdAt,
+      ...rest
+    } = row;
+    return { ...rest, operationId, companyId, createdBy: userId };
+  };
+  const steps = procedure.steps.map((step) => ({
+    ...copy(step),
+    description: toTiptapDoc(step.description as never)
+  }));
+  const parameters = procedure.parameters.map(copy);
 
-  if (attributes.length > 0) {
-    await trx
-      .insertInto("jobOperationStep")
-      .values(
-        attributes.map((attr) => {
-          const {
-            id: _id,
-            procedureId: _procedureId,
-            createdAt: _createdAt,
-            ...rest
-          } = attr;
-          return {
-            ...rest,
-            description: toTiptapDoc(rest.description),
-            operationId,
-            companyId,
-            createdBy: userId
-          };
-        })
-      )
-      .execute();
+  // The steps, parameters and work instruction go in one statement: each
+  // data-modifying CTE runs once, whether or not the outer UPDATE reads it.
+  let write: QueryCreator<KyselyDatabase> = trx;
+  if (steps.length > 0) {
+    write = write.with("steps", (db) =>
+      db.insertInto("jobOperationStep").values(steps as never)
+    ) as unknown as QueryCreator<KyselyDatabase>;
   }
-
   if (parameters.length > 0) {
-    await trx
-      .insertInto("jobOperationParameter")
-      .values(
-        parameters.map((param) => {
-          const {
-            id: _id,
-            procedureId: _procedureId,
-            createdAt: _createdAt,
-            ...rest
-          } = param;
-          return {
-            ...rest,
-            operationId,
-            companyId,
-            createdBy: userId
-          };
-        })
-      )
-      .execute();
+    write = write.with("parameters", (db) =>
+      db.insertInto("jobOperationParameter").values(parameters as never)
+    ) as unknown as QueryCreator<KyselyDatabase>;
   }
-
-  await trx
+  await write
     .updateTable("jobOperation")
-    .set({
-      workInstruction: toJson(procedure.content ?? {})
-    })
+    .set({ workInstruction: toJson(procedure.content ?? {}) })
     .where("id", "=", operationId)
     .where("companyId", "=", companyId)
     .execute();
+}
+
+/**
+ * Gives the jobMakeMethod rows that the jobMaterial insert trigger created
+ * their planned ids, for every made material of an insert in ONE statement.
+ */
+async function renameJobMakeMethods(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    jobId?: string;
+    /** Left unchanged where undefined, as `.set()` would. */
+    rows: {
+      parentMaterialId: string;
+      id: string;
+      quantityPerParent?: number | null;
+    }[];
+  }
+) {
+  const { companyId, jobId, rows } = args;
+  if (rows.length === 0) return;
+  const values = sql.join(
+    rows.map(
+      (row) =>
+        sql`(${row.parentMaterialId}::text, ${row.id}::text, ${row.quantityPerParent ?? null}::numeric, ${row.quantityPerParent !== undefined}::boolean)`
+    )
+  );
+  await sql`
+    UPDATE "jobMakeMethod" AS t
+    SET "id" = v."id",
+      "quantityPerParent" = CASE WHEN v."setQuantity" THEN v."quantityPerParent" ELSE t."quantityPerParent" END
+    FROM (VALUES ${values}) AS v("parentMaterialId", "id", "quantityPerParent", "setQuantity")
+    WHERE t."parentMaterialId" = v."parentMaterialId"
+      AND t."companyId" = ${companyId}
+      ${jobId ? sql`AND t."jobId" = ${jobId}` : sql``}
+  `.execute(trx);
 }
 
 // Assembly analog of insertProcedureDataForJobOperation: an Assembly operation
