@@ -20,7 +20,6 @@ import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry
 import { InngestSpanProcessor } from "inngest/experimental";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
-import { scheduleInngestEventUrlSync } from "./utils/inngest-event-url.server";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
@@ -44,7 +43,6 @@ export const instrumentations = createTracing({
   spanProcessors: [new InngestSpanProcessor(inngest)]
 });
 scheduleInngestSelfSync();
-scheduleInngestEventUrlSync();
 
 const log = getLogger("erp");
 
