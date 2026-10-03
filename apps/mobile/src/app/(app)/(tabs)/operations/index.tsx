@@ -26,6 +26,7 @@ import {
   Skeleton
 } from "~/components/ui";
 import { useLayout } from "~/components/useLayout";
+import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { useThemeColors } from "~/components/useThemeColor";
 import { BoardFilterSheet } from "~/features/operations/BoardFilterSheet";
 import {
@@ -184,6 +185,7 @@ export default function Operations() {
   // The server applies the station default unless told otherwise, so asking
   // for the whole floor is the DEFAULT request this screen makes.
   const query = useOperationsQuery([], !onlyMyStation);
+  const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
 
   // The floor moves while the operator is on another screen.
   useFocusEffect(
@@ -336,8 +338,8 @@ export default function Operations() {
               isBlocked={column.isBlocked ?? false}
               operations={byColumn.get(column.id) ?? []}
               width={columnWidth}
-              refreshing={query.isFetching}
-              onRefresh={() => void query.refetch()}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
             />
           ))}
         </ScrollView>

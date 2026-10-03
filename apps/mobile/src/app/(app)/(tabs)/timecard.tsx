@@ -20,6 +20,7 @@ import {
   Screen,
   Skeleton
 } from "~/components/ui";
+import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { ClockOutDialog } from "~/features/timecard/ClockOutDialog";
 import { commandMessage, useClockIn } from "~/features/timecard/commands";
 import { EndShiftDialog } from "~/features/timecard/EndShiftDialog";
@@ -74,6 +75,7 @@ export default function Timecard() {
   const moreSheet = useRef<SheetHandle>(null);
 
   const query = useTimecardQuery(weekOffset);
+  const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
   const screen = query.data;
   const openEntry = screen?.openEntry ?? null;
   const clockedIn = clockAction(openEntry) === "clock_out";
@@ -143,10 +145,7 @@ export default function Timecard() {
             contentContainerClassName="gap-4 pb-8"
             keyboardShouldPersistTaps="handled"
             refreshControl={
-              <RefreshControl
-                refreshing={query.isFetching}
-                onRefresh={() => void query.refetch()}
-              />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
             <Heading>

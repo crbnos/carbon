@@ -14,6 +14,7 @@ import {
   Screen,
   Skeleton
 } from "~/components/ui";
+import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { commandMessage } from "~/features/picking/commands";
 import { PickingListCard } from "~/features/picking/PickingListCard";
 import { usePickingQuery } from "~/features/picking/usePickingQueries";
@@ -32,6 +33,7 @@ export default function PickingLists() {
   const { t } = useLingui();
   const { me, locationId } = useAuth();
   const query = usePickingQuery();
+  const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,10 +76,7 @@ export default function PickingLists() {
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerClassName="pb-6"
           refreshControl={
-            <RefreshControl
-              refreshing={query.isFetching}
-              onRefresh={() => void query.refetch()}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
             <EmptyState

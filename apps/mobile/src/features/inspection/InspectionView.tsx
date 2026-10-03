@@ -29,6 +29,7 @@ import {
   WarningNote
 } from "~/components/ui";
 import { useIsTablet } from "~/components/useIsTablet";
+import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { useThemeColors } from "~/components/useThemeColor";
 import { commandMessage } from "~/features/operations/commands";
 import { CameraScanner } from "~/features/scan/CameraScanner";
@@ -102,6 +103,7 @@ export function InspectionView({
   useKeepAwake();
 
   const query = useInspectionQuery(operationId);
+  const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
   const screen = query.data;
 
   const [selected, setSelected] = useState(0);
@@ -466,8 +468,8 @@ export function InspectionView({
             keyboardShouldPersistTaps="handled"
             refreshControl={
               <RefreshControl
-                refreshing={query.isRefetching}
-                onRefresh={() => query.refetch()}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
                 tintColor={colors.mutedForeground}
               />
             }

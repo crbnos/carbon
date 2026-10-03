@@ -17,6 +17,7 @@ import {
   Screen,
   Skeleton
 } from "~/components/ui";
+import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { OperationCard } from "./OperationCard";
 import { QueueSwitcher, type QueueView } from "./QueueSwitcher";
 import { filterOperationCards, toOperationCard } from "./queues";
@@ -61,6 +62,7 @@ export function OperationQueue({
   const { t } = useLingui();
   const [search, setSearch] = useState("");
   const refetch = query.refetch;
+  const { refreshing, onRefresh } = usePullToRefresh(refetch);
 
   // The floor moves while the operator is on another screen: a supervisor
   // reassigns work, another operator stops a timer they were sharing.
@@ -126,10 +128,7 @@ export function OperationQueue({
           ItemSeparatorComponent={() => <View className="h-3" />}
           contentContainerClassName="px-4 pb-8"
           refreshControl={
-            <RefreshControl
-              refreshing={query.isFetching}
-              onRefresh={() => void refetch()}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           // Deliberately not `EmptyState`, which is `flex-1`: a flexed child of
           // a scroll view's content container has no parent height to take a
