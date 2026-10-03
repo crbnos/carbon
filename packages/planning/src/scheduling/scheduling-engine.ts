@@ -490,24 +490,7 @@ export class SchedulingEngine {
     // interleaved delete/insert then violates jobOperationDependency_pk. The
     // lock serializes the rebuild per job, and onConflict absorbs any edge that
     // survives a race with trigger-rework's inserts.
-    //
-    // A regen of a job whose structure has not changed computes the edges it
-    // already has; rebuilding them would delete and re-insert every row.
-    const isRework = new Set(reworkOpIds);
-    const edge = (d: { operationId: string; dependsOnId: string }) =>
-      `${d.operationId}>${d.dependsOnId}`;
-    const existing = new Set(
-      this.dependencies
-        .filter(
-          (d) => !isRework.has(d.operationId) && !isRework.has(d.dependsOnId)
-        )
-        .map(edge)
-    );
-    const unchanged =
-      existing.size === records.length &&
-      records.every((r) => existing.has(edge(r)));
-
-    if (this.persist && !unchanged) {
+    if (this.persist) {
       await this.db.transaction().execute(async (trx) => {
         await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:dependencies:${this.jobId}`}, 0))`.execute(
           trx
