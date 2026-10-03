@@ -12,6 +12,7 @@ import {
   Button,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -308,6 +309,7 @@ const WorkCentersTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.workCenter(row.id!)}?${params?.toString()}`);
             }}

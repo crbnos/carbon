@@ -14,7 +14,7 @@ import type {
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
-  SalesRulesTable,
+  SalesRulesGroups,
   SalesRulesUpgradeOverlay
 } from "~/modules/sales/ui/SalesRules";
 import {
@@ -61,11 +61,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignmentCount: countsData[r.id] ?? 0
   }));
 
-  return { rows, count: rules.count ?? rows.length };
+  return { rows };
 }
 
 export default function SalesRulesRoute() {
-  const { rows, count } = useLoaderData<typeof loader>();
+  const { rows } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "SALES_RULES" });
 
   if (isGated) {
@@ -74,7 +74,7 @@ export default function SalesRulesRoute() {
 
   return (
     <>
-      <SalesRulesTable data={rows as never} count={count} />
+      <SalesRulesGroups rules={rows as never} />
       <Outlet />
     </>
   );

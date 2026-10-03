@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -402,6 +403,7 @@ const QuoteLineForm = ({
                       <DropdownMenuContent align="end">
                         {!isLocked && (
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
                             destructive
                             onClick={deleteDisclosure.onOpen}
                           >
@@ -409,7 +411,10 @@ const QuoteLineForm = ({
                             <Trans>Delete Line</Trans>
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.view}
+                          asChild
+                        >
                           <Link
                             to={getLinkToItemDetails(
                               lineType,

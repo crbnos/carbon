@@ -3,7 +3,7 @@ title: Local development
 description: Run the full Carbon stack locally with the crbn CLI, in isolated per-worktree environments.
 ---
 
-Carbon is a **pnpm + Turborepo** monorepo, the ERP and MES apps plus their shared packages. Local development runs on the **`crbn` CLI** (in `packages/dev`), a per-worktree environment manager: every git worktree gets its own compose stack (Postgres, Kong, Supabase, Inngest, and Inbucket for mail) with its own ports, Redis database, and JWT credentials. So you can work several branches at once without their stacks colliding.
+Carbon is a **pnpm and Turborepo** monorepo containing the ERP and MES applications and shared packages. The **`crbn` CLI** in `packages/dev` manages local environments. Each Git worktree receives an isolated Compose stack, ports, Redis database, and JWT credentials, so multiple branches can run concurrently.
 
 ## Setup
 
@@ -11,7 +11,7 @@ Carbon is a **pnpm + Turborepo** monorepo, the ERP and MES apps plus their share
   <Step>
   ### Add `crbn` to your `PATH`
 
-  Source the setup script. It installs a small shell wrapper:
+  Source the setup script to install the shell wrapper:
 
   ```bash
   source ./setup.sh
@@ -20,18 +20,18 @@ Carbon is a **pnpm + Turborepo** monorepo, the ERP and MES apps plus their share
   <Step>
   ### Bring up the stack
 
-  From any worktree, boot the compose stack and the ERP and MES dev servers:
+  From a worktree, start the Compose services and the ERP and MES development servers:
 
   ```bash
   crbn up
   ```
 
-  This generates a `.env.local` with per-worktree ports, local Supabase keys, `REDIS_URL`, Inngest dev settings, and `DEV_BYPASS_EMAIL` so you can sign in without a magic link.
+  This generates `.env.local` with worktree-specific ports, local Supabase keys, `REDIS_URL`, Inngest development settings, and `DEV_BYPASS_EMAIL`.
   </Step>
   <Step>
   ### Reach the apps
 
-  Open the apps at their portless `.dev` URLs or at `localhost:<port>`.
+  Open the applications at their portless `.dev` URLs or `localhost:<port>`.
   </Step>
 </Steps>
 
@@ -75,7 +75,7 @@ Each branch gets an isolated worktree and stack, so several can run side by side
 
 ## Portless vs localhost
 
-By default `crbn up` uses **portless** to serve a TLS `.dev` URL per app (for example `erp.<branch>.dev`), giving each worktree stable, shareable hostnames. Pass `--no-portless`, or set `CARBON_PORTLESS=0`, for **localhost** mode on fixed ports:
+By default, `crbn up` uses **portless** to assign each application a stable TLS `.dev` URL, such as `erp.<branch>.dev`. Pass `--no-portless` or set `CARBON_PORTLESS=0` to use fixed localhost ports:
 
 | Service | Port |
 | --- | --- |
@@ -85,7 +85,7 @@ By default `crbn up` uses **portless** to serve a TLS `.dev` URL per app (for ex
 
 ## Sync files from main
 
-A fresh worktree doesn't carry your gitignored local files. Pull them across from the main checkout:
+A new worktree does not include Git-ignored local files. Copy them from the main checkout:
 
 | Command | What it does |
 | --- | --- |

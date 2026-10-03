@@ -24,9 +24,14 @@ Phase-7 write) and throws on failure.
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
    — every 3 hours. A `find-companies` step selects all rows from `company`,
-   then **one `step.run` per company** (`mrp-<companyId>`) calls
-   `runMrp(serviceRole, getJobDatabaseClient(), { type: "company", id,
-   companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
+   narrowed by `companiesWithPlanningWork` (`scheduled/mrp-companies.ts`): one
+   UNION over the open demand/supply views, `demandProjection`, and the rows an
+   earlier run wrote (`demandForecast` with `forecastMethod = 'mrp'`,
+   `demandForecastSource`, `supplyForecast`, non-zero actuals). A company in
+   none of them would read nothing and write nothing, so it is skipped; a
+   failed lookup plans for every company. Then **one `step.run` per company**
+   (`mrp-<companyId>`) calls `runMrp(serviceRole, getJobDatabaseClient(),
+   { type: "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
    the loop try/catches per step and returns `{ companies, failed }`). Every
    Inngest step is one HTTP request to `/api/inngest`, so a step's ceiling is
    that Vercel function's max duration — set project-wide in the Vercel

@@ -8,6 +8,7 @@ import {
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { async } from "@carbon/utils";
 import {
   WORK_EVENT_MODULE,
   WORK_EVENT_RECORD_KEY,
@@ -194,15 +195,20 @@ export async function captureWorkEvent<E extends WorkEventName>(
 /**
  * Fire-and-forget form, for call sites that should not await telemetry.
  *
- * Prefer this everywhere in a request path. The returned promise is already
- * handled; ignoring it will not produce an unhandled rejection.
+ * Prefer this everywhere in a request path. The capture runs as background
+ * work (`async.background`), which the apps hand to Vercel's `waitUntil`
+ * (`async.onBackground` in `entry.server.tsx`): a bare unawaited fetch froze
+ * with the instance and finished, or was lost, a request later.
  */
 export function trackWorkEvent<E extends WorkEventName>(
   event: E,
   payload: WorkEvents[E],
   options?: { discriminator?: string | number | null }
 ): void {
-  void captureWorkEvent(event, payload, options);
+  async.background(
+    () => captureWorkEvent(event, payload, options),
+    (error) => log.error("work event failed", { event, error })
+  );
 }
 
 export type {

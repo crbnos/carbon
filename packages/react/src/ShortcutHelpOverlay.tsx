@@ -17,7 +17,7 @@ import {
 } from "./Modal";
 import { ShortcutKey } from "./ShortcutKey";
 import { Subheading } from "./Subheading";
-import { SHORTCUTS } from "./shortcuts";
+import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
 import { cn } from "./utils/cn";
 
 export type ShortcutHelpEntry = {
@@ -71,7 +71,9 @@ export function ShortcutHelpKeys({
 /**
  * The `?` shortcut help overlay. Entries are declared by the app from its
  * central shortcut definition files — there is deliberately no runtime
- * registry. Inert while any dialog is open or while typing (map semantics).
+ * registry. Keys owned by shared components (menu items) are appended here,
+ * since every app gets them. Inert while any dialog is open or while typing
+ * (map semantics).
  */
 export function ShortcutHelpOverlay({
   title,
@@ -79,6 +81,7 @@ export function ShortcutHelpOverlay({
   entries,
   emptyLabel
 }: ShortcutHelpOverlayProps) {
+  const { t } = useLingui();
   const [open, setOpen] = useState(false);
 
   useShortcutKeyMap(
@@ -88,15 +91,44 @@ export function ShortcutHelpOverlay({
     )
   );
 
+  const menuEntries = useMemo<ShortcutHelpEntry[]>(() => {
+    const group = t`In an open menu`;
+    return [
+      { shortcut: MENU_ITEM_SHORTCUTS.edit, description: t`Edit`, group },
+      { shortcut: MENU_ITEM_SHORTCUTS.rename, description: t`Rename`, group },
+      {
+        shortcut: MENU_ITEM_SHORTCUTS.pin,
+        description: t`Pin or unpin`,
+        group
+      },
+      {
+        shortcut: MENU_ITEM_SHORTCUTS.duplicate,
+        description: t`Duplicate or copy`,
+        group
+      },
+      {
+        shortcut: MENU_ITEM_SHORTCUTS.download,
+        description: t`Download`,
+        group
+      },
+      {
+        shortcut: MENU_ITEM_SHORTCUTS.view,
+        description: t`View or open`,
+        group
+      },
+      { shortcut: MENU_ITEM_SHORTCUTS.delete, description: t`Delete`, group }
+    ];
+  }, [t]);
+
   const groups = useMemo(() => {
     const byGroup = new Map<string, ShortcutHelpEntry[]>();
-    for (const entry of entries) {
+    for (const entry of [...entries, ...menuEntries]) {
       const list = byGroup.get(entry.group) ?? [];
       list.push(entry);
       byGroup.set(entry.group, list);
     }
     return [...byGroup.entries()];
-  }, [entries]);
+  }, [entries, menuEntries]);
 
   return (
     <Modal open={open} onOpenChange={setOpen}>

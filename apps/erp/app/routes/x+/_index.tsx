@@ -21,6 +21,7 @@ import {
   CardContent,
   cn,
   IconButton,
+  PrefetchLink,
   Skeleton,
   Tooltip,
   TooltipContent,
@@ -137,9 +138,7 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
       onDismiss={dismiss}
       action={
         <Button asChild>
-          <Link to={path.to.getStarted} prefetch="intent">
-            Open
-          </Link>
+          <PrefetchLink to={path.to.getStarted}>Open</PrefetchLink>
         </Button>
       }
     />
@@ -469,9 +468,8 @@ const RecentDocumentRow = ({
   const { locale } = useLocale();
   return (
     <div className="relative group">
-      <Link
+      <PrefetchLink
         to={doc.url}
-        prefetch="intent"
         className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg border border-border hover:border-foreground/20 transition-colors"
       >
         <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-muted">
@@ -486,7 +484,7 @@ const RecentDocumentRow = ({
             {formatRelativeTime(doc.viewedAt, locale)}
           </div>
         </div>
-      </Link>
+      </PrefetchLink>
       <IconButton
         aria-label={t`Remove`}
         icon={<LuX />}
@@ -499,20 +497,22 @@ const RecentDocumentRow = ({
   );
 };
 
-const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
-  <Link
-    to={module.to}
-    prefetch={module.external ? "none" : "intent"}
-    {...(module.external
-      ? { target: "_blank", rel: "noopener noreferrer" }
-      : {})}
-    className="flex items-center gap-4 p-4 rounded-lg border border-border group bg-muted/20 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
-  >
-    <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors">
-      <module.icon className="text-xl" />
-    </div>
-    <span className="text-sm py-1 px-4 border border-border rounded-full group-hover:bg-background font-medium tracking-tight transition-colors">
-      {module.name}
-    </span>
-  </Link>
-);
+const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => {
+  const Anchor = module.external ? Link : PrefetchLink;
+  return (
+    <Anchor
+      to={module.to}
+      {...(module.external
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {})}
+      className="flex items-center gap-4 p-4 rounded-lg border border-border group bg-muted/20 hover:border-foreground/20 cursor-pointer transition-colors duration-200"
+    >
+      <div className="shrink-0 p-2.5 rounded-lg border border-border group-hover:border-foreground/20 transition-colors">
+        <module.icon className="text-xl" />
+      </div>
+      <span className="text-sm py-1 px-4 border border-border rounded-full group-hover:bg-background font-medium tracking-tight transition-colors">
+        {module.name}
+      </span>
+    </Anchor>
+  );
+};

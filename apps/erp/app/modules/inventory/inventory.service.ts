@@ -297,6 +297,31 @@ export async function getItemLedgerActivity(
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
 }
 
+/**
+ * On-hand quantity of an item at a location right after ledger entry
+ * `entryNumber` (omit it for on-hand now), on the same definition as the
+ * inventory table's On Hand column. The Activity panel fetches this once for
+ * its newest loaded entry and derives every other row's balance from the
+ * contiguous pages — see `withRunningBalance`.
+ * @mcp read
+ */
+export async function getItemLedgerBalance(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    entryNumber?: number;
+  }
+) {
+  return client.rpc("get_item_ledger_balance", {
+    company_id: args.companyId,
+    location_id: args.locationId,
+    item_id: args.itemId,
+    entry_number: args.entryNumber
+  });
+}
+
 /** @mcp read */
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
@@ -2310,7 +2335,9 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  // batchProperty has no group column; the group is not stored.
+  const { batchPropertyGroupId: _group, ...order } = data;
+  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
 /** @mcp update */
@@ -2344,7 +2371,11 @@ export async function upsertBatchProperty(
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  const {
+    userId,
+    configurationParameterGroupId: _group,
+    ...data
+  } = batchProperty;
   if (batchProperty.id) {
     return client
       .from("batchProperty")
@@ -2379,22 +2410,18 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in kanban) {
-    return client
-      .from("kanban")
-      .insert({
-        ...kanban
-      })
-      .select("id")
-      .single();
+  // kanban has no customFields column.
+  const { customFields: _customFields, ...row } = kanban;
+  if ("createdBy" in row) {
+    return client.from("kanban").insert(row).select("id").single();
   }
   return client
     .from("kanban")
     .update({
-      ...sanitize(kanban),
+      ...sanitize(row),
       updatedAt: datetime.timestamp()
     })
-    .eq("id", kanban.id)
+    .eq("id", row.id)
     .select("id")
     .single();
 }

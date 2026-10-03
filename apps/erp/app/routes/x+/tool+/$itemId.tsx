@@ -37,10 +37,7 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ToolSummary } from "~/modules/items";
 import {
-  findChangeNoticesForItem,
   getItemFiles,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodTree,
   getPartUsedIn,
   getPickMethods,
@@ -49,6 +46,9 @@ import {
   isChangeNoticeOpen
 } from "~/modules/items";
 import {
+  findChangeNoticesForItemOnce,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
 } from "~/modules/items/items.server";
@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "tool"),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
-    findChangeNoticesForItem(client, { itemId, companyId }),
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
     // Locks the Active toggle while the change notice that minted this item is
     // still open — release is what activates it.
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
@@ -130,7 +130,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
+  const methodTree = getMakeMethodsOnce(client, itemId, companyId).then(
     async (makeMethods) => {
       const makeMethod = requestedMethodId
         ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
@@ -140,7 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           makeMethods.data?.[0]);
       if (!makeMethod) return null;
 
-      const fullMethod = await getMakeMethodById(
+      const fullMethod = await getMakeMethodByIdOnce(
         client,
         makeMethod.id,
         companyId
@@ -166,7 +166,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,

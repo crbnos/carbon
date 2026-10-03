@@ -7,6 +7,7 @@ import {
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -80,6 +81,7 @@ const DepreciationRunHeader = () => {
               )}
               {isDraft && (
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={!permissions.can("delete", "accounting")}
                   destructive
                   onClick={deleteModal.onOpen}

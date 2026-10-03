@@ -2142,8 +2142,15 @@ export async function upsertIssue(
 
     return result;
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { items, ...data } = nonConformance;
+    // The link fields live on their own tables, as in the insert above.
+    const {
+      items: _items,
+      jobOperationId: _jobOperationId,
+      customerId: _customerId,
+      salesOrderLineId: _salesOrderLineId,
+      operationSupplierProcessId: _operationSupplierProcessId,
+      ...data
+    } = nonConformance;
     return client
       .from("nonConformance")
       .update(sanitize(data))

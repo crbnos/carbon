@@ -19,7 +19,8 @@ import {
   round,
   toDisplayCredit,
   toDisplayDebit,
-  toStoredAmount
+  toStoredAmount,
+  unchecked
 } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -3034,14 +3035,25 @@ export async function getPeriodExternalGlSyncReadiness(
 ): Promise<{ failing: boolean; count: number; postingSyncEnabled: boolean }> {
   const integrations = await client
     .from("companyIntegration")
-    .select("id")
+    .select("id, metadata")
     .eq("companyId", companyId)
     .eq("active", true)
     .in("id", ACCOUNTING_SYNC_INTEGRATION_IDS);
 
-  const enabledIntegrationIds = (integrations.data ?? []).map(
-    (integration) => integration.id
-  );
+  // An integration with sync turned off (still being set up) delivers nothing,
+  // so it is treated like a disconnected one. Mirrors `isAccountingSyncEnabled`
+  // in @carbon/ee/accounting, which this module cannot import (see above):
+  // absent means on, only an explicit false is off.
+  const enabledIntegrationIds = (integrations.data ?? [])
+    .filter(
+      (integration) =>
+        (
+          integration.metadata as {
+            settings?: { syncEnabled?: unknown };
+          } | null
+        )?.settings?.syncEnabled !== false
+    )
+    .map((integration) => integration.id);
 
   if (enabledIntegrationIds.length === 0) {
     return { failing: false, count: 0, postingSyncEnabled: false };
@@ -6662,7 +6674,7 @@ export async function upsertFixedAssetClass(
   const { id, ...rest } = data;
   return client
     .from("fixedAssetClass")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();
@@ -6897,7 +6909,7 @@ export async function upsertFixedAsset(
   const { id, ...rest } = data;
   return client
     .from("fixedAsset")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();

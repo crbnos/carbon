@@ -4,8 +4,13 @@
 
 import { badRequest } from "@carbon/auth";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import type { GenericSchema } from "@supabase/supabase-js/dist/module/lib/types";
 import { getPageOffset, getPageSize } from "./pagination";
+
+type GenericSchema = {
+  Tables: Record<string, unknown>;
+  Views: Record<string, unknown>;
+  Functions: Record<string, unknown>;
+};
 
 /**
  * Count mode for every paged list endpoint — any query that goes through

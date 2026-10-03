@@ -74,18 +74,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, files, orgHasCredits, currency, rampMapping] =
+  const [supplier, interaction, orgHasCredits, currency, rampMapping] =
     await Promise.all([
       purchaseInvoice.data?.supplierId
         ? getSupplier(client, purchaseInvoice.data.supplierId)
         : null,
       getSupplierInteraction(
         client,
-        purchaseInvoice.data.supplierInteractionId!
-      ),
-      getSupplierInteractionDocuments(
-        client,
-        companyId,
         purchaseInvoice.data.supplierInteractionId!
       ),
       getCompanyHasOpenCredits(client, companyId, "purchase"),
@@ -113,7 +108,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
-    files,
+    files: getSupplierInteractionDocuments(
+      client,
+      companyId,
+      purchaseInvoice.data.supplierInteractionId!
+    ),
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
     orgHasCredits,

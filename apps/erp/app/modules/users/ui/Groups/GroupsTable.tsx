@@ -7,6 +7,7 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   DropdownMenuIcon,
+  MENU_ITEM_SHORTCUTS,
   MenuItem
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -100,6 +101,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={
               row.isEmployeeTypeGroup ||
               row.isCustomerTypeGroup ||
@@ -114,6 +116,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             <Trans>Edit Group</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={
               row.isEmployeeTypeGroup ||

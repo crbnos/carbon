@@ -12,6 +12,7 @@ import {
   CardTitle,
   cn,
   HStack,
+  PrefetchLink,
   RadioGroup,
   RadioGroupButton,
   useMode,
@@ -26,7 +27,6 @@ import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  Link,
   redirect,
   useFetcher,
   useLoaderData,
@@ -224,9 +224,9 @@ export default function OnboardingTheme() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
           )}
 

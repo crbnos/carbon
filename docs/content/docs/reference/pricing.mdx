@@ -3,7 +3,7 @@ title: Pricing rules and overrides
 description: How Carbon resolves the price on a line, from base price through overrides and rules.
 ---
 
-When you add an item to a <Term>quote</Term> line or a <Term id="sales-order">sales order</Term> line, Carbon doesn't just copy the item's list price. It runs a resolution engine: it starts from a base price, applies any customer-specific override, then layers on discount and markup rules, and records the whole computation as a trace on the line. Two mechanisms feed that engine — <Term id="price-override">price overrides</Term> (per-customer negotiated prices with quantity breaks) and <Term id="pricing-rule">pricing rules</Term> (company-wide discount/markup logic). This page covers both, and exactly what wins when several apply.
+Carbon resolves the unit price for each <Term>quote</Term> or <Term id="sales-order">sales order</Term> line. It starts with a base price, selects an applicable <Term id="price-override">price override</Term>, applies matching <Term id="pricing-rule">pricing rules</Term>, and stores a trace of the calculation on the line. Overrides define negotiated prices and quantity breaks; rules define company-wide discounts and markups.
 
 ## Pricing rules
 
@@ -107,7 +107,7 @@ Resolution runs when the item or quantity changes on a line and fills in the uni
 
 The same engine prices both surfaces. On a **quote line** it runs during cost rollup and re-price. On a **sales order line** the line form calls the same resolution as you pick an item or change the quantity, filling the unit price and storing the trace. Both line types carry the resolved price and its provenance, so a price traces back to the exact override and rule that produced it.
 
-There's no separate "price list" document in Carbon — the price list is simply the set of overrides scoped to a customer or customer type, and the resolution is computed in the application, not in the database.
+Carbon has no separate price-list document. A price list is the set of overrides scoped to a customer or customer type. The application resolves prices; the database does not.
 
 ## Related
 

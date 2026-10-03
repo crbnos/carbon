@@ -376,8 +376,7 @@ function useTaskNotes({
     async (content: JSONContent) => {
       // Update notes in Carbon database
       await carbon
-        // @ts-expect-error -
-        ?.from(table)
+        ?.from(table as "nonConformanceActionTask")
         .update({
           notes: content,
           updatedBy: userId

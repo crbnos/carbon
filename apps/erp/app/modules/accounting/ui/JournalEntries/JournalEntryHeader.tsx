@@ -6,6 +6,7 @@ import {
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -94,6 +95,7 @@ const JournalEntryHeader = () => {
               )}
               {isDraft && (
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !permissions.can("delete", "accounting") ||
                     !permissions.is("employee")

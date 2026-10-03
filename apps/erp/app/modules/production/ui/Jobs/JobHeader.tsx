@@ -21,6 +21,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -275,6 +276,7 @@ const JobHeader = () => {
                 Reopen
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   !permissions.can("delete", "production") ||
                   !permissions.is("employee") ||

@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Checkbox, cn } from "@carbon/react";
+import { Checkbox, cn, PrefetchLink } from "@carbon/react";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { LuPaperclip } from "react-icons/lu";
-import { Link } from "react-router";
 import { DateTime } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
@@ -71,14 +70,13 @@ export function StepRecordsList({ records, jobId }: Props) {
         return (
           <li key={r.id}>
             {href ? (
-              <Link
+              <PrefetchLink
                 to={href}
-                prefetch="intent"
                 className="block px-2 py-1.5 -mx-2 rounded-md hover:bg-accent/50 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 {body}
-              </Link>
+              </PrefetchLink>
             ) : (
               <div className="py-1.5 first:pt-0 last:pb-0">{body}</div>
             )}

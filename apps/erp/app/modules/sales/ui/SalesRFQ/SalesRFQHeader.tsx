@@ -19,6 +19,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -126,6 +127,7 @@ const SalesRFQHeader = () => {
                 <Trans>Reopen</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   isLocked ||
                   !permissions.can("delete", "sales") ||

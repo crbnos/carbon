@@ -7,6 +7,7 @@ import {
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -97,6 +98,7 @@ const PaymentHeader = () => {
             </DropdownMenuItem>
           ) : isDraft ? (
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!canDelete}
               destructive
               onClick={deleteModal.onOpen}

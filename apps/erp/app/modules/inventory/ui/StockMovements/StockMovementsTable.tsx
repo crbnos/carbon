@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, HStack, MenuIcon, MenuItem, VStack } from "@carbon/react";
+import {
+  Badge,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  PrefetchLink,
+  VStack
+} from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -22,7 +29,6 @@ import {
   LuWarehouse,
   LuWrench
 } from "react-icons/lu";
-import { Link } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
@@ -207,13 +213,12 @@ const StockMovementsTable = memo(
               row.original.trackedEntityReadableId || trackedEntityId;
             if (!trackedEntityId) return label ?? "";
             return (
-              <Link
-                prefetch="intent"
+              <PrefetchLink
                 to={`${path.to.traceabilityGraph}?trackedEntityId=${trackedEntityId}`}
                 className="text-foreground hover:underline"
               >
                 {label}
-              </Link>
+              </PrefetchLink>
             );
           },
           meta: {

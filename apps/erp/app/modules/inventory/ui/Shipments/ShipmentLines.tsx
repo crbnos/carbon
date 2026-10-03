@@ -24,6 +24,7 @@ import {
   Input,
   InputGroup,
   InputRightElement,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -469,6 +470,7 @@ function ShipmentLineItem({
                 {t`Split shipment line`}
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={isReadOnly}
                 onClick={deleteDisclosure.onOpen}

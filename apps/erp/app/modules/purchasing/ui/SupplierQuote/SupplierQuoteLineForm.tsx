@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -286,6 +287,7 @@ const SupplierQuoteLineForm = ({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
+                                shortcut={MENU_ITEM_SHORTCUTS.delete}
                                 destructive
                                 onClick={deleteDisclosure.onOpen}
                               >

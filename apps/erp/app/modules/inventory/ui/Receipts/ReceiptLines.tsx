@@ -23,6 +23,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -482,6 +483,7 @@ function ReceiptLineItem({
               {t`Split receipt line`}
             </DropdownMenuItem>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={isReadOnly}
               onClick={deleteDisclosure.onOpen}

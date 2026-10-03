@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -203,6 +204,7 @@ function WarehouseTransferLineListItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   disabled={isDisabled}
                   onClick={() =>
                     navigate(
@@ -216,6 +218,7 @@ function WarehouseTransferLineListItem({
                   <Trans>Edit</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={isDisabled}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}

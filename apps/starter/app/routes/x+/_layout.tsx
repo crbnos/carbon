@@ -14,8 +14,19 @@ import {
   requireAuthSession
 } from "@carbon/auth/session.server";
 import { Toaster, useNProgress } from "@carbon/react";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { path } from "~/utils/path";
+
+// The refreshed session reaches the client through this loader, and the
+// refresh asks for no other loader to re-run.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate
+}) => formAction === path.to.refreshSession || defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =

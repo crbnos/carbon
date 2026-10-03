@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
   getValidChildren,
   HStack,
+  PrefetchLink,
   ScrollArea,
   useIsMobile,
   useMode
@@ -25,7 +26,7 @@ import type { ComponentProps } from "react";
 import { cloneElement, forwardRef, useMemo } from "react";
 import { LuChevronsUpDown } from "react-icons/lu";
 import type { LinkProps } from "react-router";
-import { Form, Link, useMatches } from "react-router";
+import { Form, useMatches } from "react-router";
 import { z } from "zod";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -95,9 +96,9 @@ const BreadcrumbLink = forwardRef<
           {children}
         </span>
       ) : (
-        <Link ref={ref} {...props} prefetch="intent">
+        <PrefetchLink ref={ref} {...props}>
           {children}
-        </Link>
+        </PrefetchLink>
       )}
     </Button>
   );

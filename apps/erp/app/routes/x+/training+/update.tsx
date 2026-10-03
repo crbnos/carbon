@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -29,11 +30,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "description":
       return await client
         .from("training")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
     case "grantsAbilityId":
       return await client

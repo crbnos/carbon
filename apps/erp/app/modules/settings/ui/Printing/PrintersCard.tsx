@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -152,6 +153,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({

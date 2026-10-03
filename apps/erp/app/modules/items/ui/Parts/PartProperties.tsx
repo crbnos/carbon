@@ -155,8 +155,16 @@ const PartProperties = ({
     // Set while the change notice that minted this item is still open.
     unreleasedChangeOrder?: UnreleasedChangeOrderItem | null;
   }>(path.to.part(itemId));
-  const supersession = useResolved(routeDataFromRoute?.supersession, null);
-  const supersededBy = useResolved(routeDataFromRoute?.supersededBy, null);
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const locations = data?.locations ?? sharedPartsData?.locations ?? [];

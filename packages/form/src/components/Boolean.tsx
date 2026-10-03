@@ -27,6 +27,7 @@ type FormBooleanProps = {
   value?: boolean;
   helperText?: string;
   isDisabled?: boolean;
+  isOptional?: boolean;
   bordered?: boolean;
   className?: string;
   description?: string | JSX.Element;
@@ -45,6 +46,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
       variant,
       bordered,
       isDisabled: isDisabledProp,
+      isOptional,
       value: controlledValue,
       className,
       ...props
@@ -109,7 +111,10 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
     return (
       <FormControl isInvalid={!!error} className={cn("pt-2", className)}>
         {label && (
-          <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
+          <FormLabel
+            htmlFor={name}
+            isOptional={isOptional ?? fieldIsOptional ?? false}
+          >
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}

@@ -54,6 +54,13 @@ unless they start with `apps/` or `packages/`.
 Both set `handle.module` so the rail stays highlighted. A detail route nested under a module
 folder hides the sub-nav with `handle.hideModuleSidebar` (`utils/handle.ts`).
 
+There is ONE sub-nav, owned by the shell (`ModuleSidebarLayout`, rendered in `x+/_layout.tsx`).
+A module `_layout.tsx` does not render a sidebar: it names its sub-nav component on the route
+handle (`handle.sidebar`, a small component that calls `use{Module}Submodules` and returns
+`<GroupedContentSidebar groups={groups} />`) and its default export is only the page column.
+The frame, its width and its collapsed state therefore persist from module to module; only the
+links change.
+
 ## 3. Archetype A — Module list page
 
 ```

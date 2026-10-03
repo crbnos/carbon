@@ -9,7 +9,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { useState } from "react";
 import {
@@ -118,6 +119,7 @@ function CompaniesRow({
                 )}
                 {canDelete && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     className="text-destructive focus:text-destructive"
                     onClick={() => onDelete(company.id!)}
                   >

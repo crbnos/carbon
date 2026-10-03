@@ -44,6 +44,7 @@ import {
   getJournalEntrySyncEntityId,
   getJournalPostingPolicyDecision,
   insertTerminalSyncOperation,
+  isAccountingSyncEnabled,
   isJournalEntrySyncFailure,
   netJournalLinesPerAccount,
   type PostingSyncSettings,
@@ -949,6 +950,15 @@ export async function drainSyncOperations(args: {
    * silently push daily-consolidation journal operations individually.
    */
   integrationMetadata: unknown;
+  /**
+   * Claim only these operations. A master-data import passes its own entity
+   * type and the pull direction, so it drains what it enqueued and nothing
+   * else that is waiting.
+   */
+  only?: {
+    entityTypes: AccountingEntityType[];
+    direction: SyncOperationDirection;
+  };
 }): Promise<DrainSummary> {
   const summary: DrainSummary = {
     claimed: 0,
@@ -957,6 +967,19 @@ export async function drainSyncOperations(args: {
     skipped: 0,
     groups: []
   };
+
+  // Sync is turned off (an accounting integration still being set up): leave
+  // every row Pending. The entry points already skip enqueueing; this is the
+  // backstop for a Retry clicked in Sync Activity, which the first drain after
+  // sync is turned on then picks up. The one exception is a scoped PULL — a
+  // customer/vendor import only writes into Carbon, and the links it creates
+  // are what stop the first push after sync is on from duplicating records.
+  if (
+    !isAccountingSyncEnabled(args.integrationMetadata) &&
+    args.only?.direction !== "pull-from-accounting"
+  ) {
+    return summary;
+  }
 
   const postingSyncSettings = resolvePostingSyncSettings(
     args.integrationMetadata
@@ -975,9 +998,14 @@ export async function drainSyncOperations(args: {
     const claimed = await claimPendingOperations(args.client, {
       companyId: args.companyId,
       integration: args.integration,
-      ...(excludeEntityTypes
-        ? { excludeEntityTypes }
-        : { holdDailySummaryJournalEntries: true })
+      ...(args.only
+        ? {
+            entityTypes: args.only.entityTypes,
+            direction: args.only.direction
+          }
+        : excludeEntityTypes
+          ? { excludeEntityTypes }
+          : { holdDailySummaryJournalEntries: true })
     });
 
     if (claimed.error) {

@@ -28,6 +28,7 @@ import {
   IconButton,
   Label,
   Loading,
+  MENU_ITEM_SHORTCUTS,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -1399,10 +1400,14 @@ function AttributesListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -1620,10 +1625,14 @@ function ParametersListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -2643,10 +2652,14 @@ function ToolsListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >

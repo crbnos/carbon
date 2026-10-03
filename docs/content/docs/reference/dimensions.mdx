@@ -3,13 +3,13 @@ title: Dimensions & cost centers
 description: "Tag axes on journal lines that slice the general ledger without multiplying the chart of accounts."
 ---
 
-A shop wants to know COGS *by location*, spend *by department*, revenue *by customer*, without carving a separate account for every combination. A <Term id="reporting-dimension">reporting dimension</Term> is how Carbon does that: a company-defined tag axis that gets attached to individual <Term>journal</Term> lines, so the same handful of accounts can be sliced along whatever axes the business reports on. **Cost centers** are one such axis, plus a standalone hierarchy for organizing cost ownership.
+A <Term id="reporting-dimension">reporting dimension</Term> is a company-defined axis attached to individual <Term>journal</Term> lines. Dimensions support reporting by location, department, customer, and other attributes without adding accounts for every combination. **Cost centers** can serve as a dimension and as a hierarchy for cost ownership.
 
 Dimensions and cost centers live in the [accounting](/docs/reference/accounting) module and are defined once per company group, alongside the chart of accounts.
 
 ## What a dimension is
 
-A **dimension** is a named tag axis with an **entity type** that decides where its values come from. You define it once (`dimension` table, `name` + `entityType`, scoped by `companyGroupId`); every posted journal line can then carry at most one value on that axis.
+A dimension has a name and an **entity type** that determines its values. It is stored in the `dimension` table and scoped by `companyGroupId`. A posted journal line can contain at most one value for each dimension.
 
 <FieldTable>
   <Field name="Entity-type dimension" type="from a source table">The values *are* rows of an existing table. A `Location` dimension draws its values from your locations, an `Employee` dimension from your people. You don't type the values in — they resolve from the entity the posting already references.</Field>
@@ -28,13 +28,13 @@ A dimension carries two flags: **active** (an inactive dimension stops being att
 
 Dimensions are stored in a join table, `journalLineDimension`, with one row per tag: `journalLineId`, `dimensionId`, and a **`valueId`**. That `valueId` is deliberately **polymorphic** — for a `Custom` dimension it points at a `dimensionValue.id`; for an entity-type dimension it points straight at the entity row's id (`location.id`, `customer.id`, `costCenter.id`). It is intentionally *not* a foreign key; the reference target depends on the dimension's entity type and is enforced in application code (`20260228024512_dimensions.sql:131`). A line can hold at most one value per dimension (`UNIQUE("journalLineId", "dimensionId")`).
 
-The interesting part is that you rarely set these by hand. When accounting is enabled and a document posts, the posting path resolves them automatically:
+When accounting is enabled, operational posting resolves dimensions automatically:
 
 1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts:171`).
 2. As it builds each journal line, it already knows the source facts — the customer, the item, the item posting group, the location, the cost center behind that line.
 3. For each of those facts, **if an active dimension exists for that entity type**, it attaches a `journalLineDimension` row pointing the `valueId` at that entity's id (`post-shipment/index.ts:1222`). No dimension defined for an axis means no tag on that axis — defining the dimension is what turns tagging on.
 
-So a `Location` dimension isn't a field you fill in on the shipment. You define the dimension once, and from then on every shipment, receipt, invoice, and inventory posting carries its location automatically, because the posting already knew the location. The same pattern runs in `post-receipt`, `post-sales-invoice`, `post-purchase-invoice`, `post-inventory-adjustment`, `post-payment`, and the other posting functions.
+For example, a `Location` dimension is not entered on each shipment. After the dimension is defined, shipment, receipt, invoice, and inventory postings attach the location already present on the source document. Other posting functions use the same pattern.
 
 <Callout type="info" title="Manual journal entries tag their lines directly">
 A hand-entered <Term>journal</Term> doesn't have a source document to resolve tags from, so its lines carry the dimension values you assign in the entry form. `saveJournalLineDimensions` (`accounting.service.ts:2647`) replaces a line's tags wholesale — it clears the line's existing `journalLineDimension` rows and inserts the new set.
@@ -53,7 +53,7 @@ There is no `costCenterId` column on `journalLine` itself. A cost center reaches
 
 ## Using dimensions in reports
 
-Dimensions exist to be sliced. Because the tag lives on the individual journal line, any report built from journal lines can group or filter by a dimension value: COGS by location, expense by department, revenue by customer. The chart of accounts stays small — you don't create *COGS – West* and *COGS – East* accounts, you post to one COGS account and slice it by the `Location` dimension.
+Reports built from journal lines can group or filter by dimension value, such as COGS by location, expense by department, or revenue by customer. This keeps the chart of accounts compact: post to one COGS account and segment it with the `Location` dimension.
 
 <Callout type="warn" title="The core statements are unsliced; dimensions drive the analytical cut">
 The trial balance, balance sheet, and income statement (`getTrialBalance`, `getFinancialStatementBalances`) report the *whole* company's balances — they don't take a dimension filter. Dimension slicing is the analytical layer on top of those totals: it answers "of this account's balance, how much belongs to each location / department / cost center", not "restate the whole balance sheet for one project".

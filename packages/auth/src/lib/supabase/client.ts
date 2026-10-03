@@ -13,101 +13,79 @@ import {
   SUPABASE_URL
 } from "../../config/env";
 
-const PER_ATTEMPT_TIMEOUT_MS = 25_000;
-const MAX_RETRIES = 2;
-const BACKOFF_MS = [500, 1000];
-const RETRYABLE_STATUS = new Set([500, 502, 503, 504, 512, 408, 524]);
+// Retries are supabase-js's own: a read (GET/HEAD) is retried up to three
+// times on a rejected fetch, a 503 or a 520, and a write is never replayed.
+// The timeout bounds a database call that hangs; an aborted call is not retried.
+const db = { timeout: 25_000 } as const;
 
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+const STORAGE_WAIT_MS = 25_000;
+const STORAGE_BACKOFF_MS = [500, 1000];
 
-const methodOf = (input: RequestInfo | URL, init?: RequestInit) =>
-  (
+// supabase-js retries database reads only. A storage read (a download, an
+// info or exists check, a listing) gets the same here: a bounded wait for the
+// response headers and two retries on a 5xx or a dropped connection. The body
+// itself is not timed, so a large download is never cut off. Uploads, deletes
+// and everything outside storage pass straight through.
+export const isStorageRead = (url: string, method: string) =>
+  url.includes("/storage/v1/") &&
+  (method === "GET" ||
+    method === "HEAD" ||
+    (method === "POST" && url.includes("/storage/v1/object/list")));
+
+export const urlAndMethod = (input: RequestInfo | URL, init?: RequestInit) => ({
+  url: input instanceof Request ? input.url : String(input),
+  method: (
     init?.method ?? (input instanceof Request ? input.method : "GET")
-  ).toUpperCase();
+  ).toUpperCase()
+});
 
-// Storage object writes (uploads) must NOT go through the retry/timeout wrapper:
-// re-sending a multi-GB PUT on a 5xx is wasteful, and the 25s per-attempt timeout
-// would abort any legitimately long upload. Fail fast — pass straight through and
-// honor only the caller's own signal.
-const isStorageUpload = (input: RequestInfo | URL, init?: RequestInit) => {
-  const method = methodOf(input, init);
-  if (method !== "POST" && method !== "PUT") return false;
-  const url = input instanceof Request ? input.url : String(input);
-  return url.includes("/storage/v1/object/");
-};
+export const storageReadFetch: typeof fetch = async (input, init) => {
+  const { url, method } = urlAndMethod(input, init);
+  if (!isStorageRead(url, method)) return fetch(input, init);
 
-const isEdgeFunctionInvoke = (input: RequestInfo | URL) => {
-  const url = input instanceof Request ? input.url : String(input);
-  return url.includes("/functions/v1/");
-};
-
-// Only a READ may be replayed. A 5xx or a lost response does not mean the write
-// did not land — PostgREST commits before it answers, so a retried insert is a
-// duplicate row and a retried RPC re-runs a transaction. None of PostgREST's
-// write verbs carry an idempotency key: insert/upsert/rpc are POST, update is
-// PATCH, delete is DELETE. This is the same rule the Edge Function carve-out
-// above encodes (.ai/lessons.md — the quoteToQuote duplicate-quote incidents,
-// "a retry wrapper must never blindly retry a write with real side effects and
-// no idempotency key"); that fix covered `/functions/v1/` and left every
-// PostgREST write still replaying. The per-attempt timeout still applies to
-// writes — it bounds latency without duplicating anything.
-const isReplayable = (input: RequestInfo | URL, init?: RequestInit) => {
-  const method = methodOf(input, init);
-  return method === "GET" || method === "HEAD";
-};
-
-export const fetchWithRetry: typeof fetch = async (input, init) => {
-  if (isStorageUpload(input, init) || isEdgeFunctionInvoke(input)) {
-    return fetch(input, init);
-  }
-
-  const maxRetries = isReplayable(input, init) ? MAX_RETRIES : 0;
-
-  let lastError: unknown;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const timeoutSignal = AbortSignal.timeout(PER_ATTEMPT_TIMEOUT_MS);
+  for (let attempt = 0; ; attempt++) {
+    const retry = attempt < STORAGE_BACKOFF_MS.length;
+    const waited = new AbortController();
+    const timer = setTimeout(() => waited.abort(), STORAGE_WAIT_MS);
     const signal = init?.signal
-      ? AbortSignal.any([init.signal, timeoutSignal])
-      : timeoutSignal;
-
+      ? AbortSignal.any([init.signal, waited.signal])
+      : waited.signal;
     try {
       const response = await fetch(input, { ...init, signal });
-      if (RETRYABLE_STATUS.has(response.status) && attempt < maxRetries) {
-        await sleep(BACKOFF_MS[attempt] ?? 1000);
-        continue;
-      }
-      return response;
+      clearTimeout(timer);
+      if (!retry || response.status < 500) return response;
+      await response.body?.cancel();
     } catch (error) {
-      lastError = error;
-      if (init?.signal?.aborted) throw error;
-      if (attempt >= maxRetries) throw error;
-      await sleep(BACKOFF_MS[attempt] ?? 1000);
+      clearTimeout(timer);
+      if (!retry || init?.signal?.aborted) throw error;
     }
+    await new Promise((resolve) =>
+      setTimeout(resolve, STORAGE_BACKOFF_MS[attempt])
+    );
   }
-  throw lastError;
 };
 
+/** `fetch` replaces `storageReadFetch` — on the server, `requestFetch()`. */
 export const getCarbonClient = (
   supabaseKey: string,
-  accessToken?: string
+  accessToken?: string,
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
-  const headers = accessToken
-    ? { Authorization: `Bearer ${accessToken}` }
-    : undefined;
+  // Always explicit. Left to supabase-js, a new-format key (`sb_secret_…`) is
+  // not sent as the bearer on Edge Function calls, and those functions tell a
+  // service-role caller from anyone else by this header.
+  const headers = { Authorization: `Bearer ${accessToken ?? supabaseKey}` };
 
   const client = createClient<Database, "public">(
     SUPABASE_INTERNAL_URL!,
     supabaseKey,
     {
+      db,
       auth: {
         autoRefreshToken: false,
         persistSession: false
       },
-      global: {
-        fetch: fetchWithRetry,
-        ...(headers ? { headers } : {})
-      }
+      global: { headers, fetch }
     }
   );
 
@@ -115,12 +93,15 @@ export const getCarbonClient = (
 };
 
 export const getCarbonAPIKeyClient = (
-  apiKey: string
+  apiKey: string,
+  fetch: typeof globalThis.fetch = storageReadFetch
 ): SupabaseClient<Database, "public"> => {
   const client = createClient(SUPABASE_INTERNAL_URL!, SUPABASE_ANON_KEY!, {
+    db,
     global: {
-      fetch: fetchWithRetry,
+      fetch,
       headers: {
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         "carbon-key": apiKey
       }
     }
@@ -133,12 +114,11 @@ export const createCarbonWithAuthGetter = (
   store: MutableRefObject<StoreApi<{ accessToken: string }>>
 ): SupabaseClient<Database, "public"> => {
   return createClient<Database, "public">(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+    db,
+    global: { fetch: storageReadFetch },
     auth: {
       autoRefreshToken: false,
       persistSession: false
-    },
-    global: {
-      fetch: fetchWithRetry
     },
     async accessToken() {
       if (!store.current) return null;

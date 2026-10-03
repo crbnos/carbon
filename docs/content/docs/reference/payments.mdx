@@ -3,10 +3,10 @@ title: Payments
 description: Cash receipts, disbursements, and credit or debit memos — the posted transactions that settle AR and AP.
 ---
 
-A **payment** is a posted cash event that settles what a party owes you or you owe them. A **Receipt** is money in from a customer; a **Disbursement** is money out to a supplier. Alongside cash, a **credit or debit memo** adjusts a balance without cash. Both are standalone documents with their own lifecycle, and both settle invoices through one shared row: the [invoice settlement](/docs/reference/invoices#settling-an-invoice). This page is the entity view. For settlement seen from the invoice's side, see [Invoices](/docs/reference/invoices).
+A **payment** is a posted cash transaction that settles receivables or payables. A **Receipt** records incoming cash; a **Disbursement** records outgoing cash. A **credit or debit memo** adjusts a balance without moving cash. Payments and memos are independent documents with separate lifecycles, but both apply to invoices through an [invoice settlement](/docs/reference/invoices#settling-an-invoice). See [Invoices](/docs/reference/invoices) for the invoice-side view.
 
 <Callout type="note">
-A payment is a real transaction record, not a field on an invoice. You create a payment, stage which invoices it applies to, then post it. Marking an invoice "Paid" is a *derived* status that follows from posted settlements, not something you set.
+A payment is a transaction record, not an invoice field. Create the payment, stage its invoice applications, and post it. **Paid** is a derived invoice status based on posted settlements.
 </Callout>
 
 ## Payments

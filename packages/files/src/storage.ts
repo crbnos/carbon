@@ -9,9 +9,10 @@
  * Object keys keep the legacy `${companyId}/...` first segment so paths
  * stored in the database stay valid and the legacy→company copy is same-key.
  *
- * The legacy shared `private` bucket is a read-only fallback until the copy
- * script has run everywhere; every fallback lives in this file so removing
- * it later is a one-file change.
+ * The legacy shared `private` bucket is a read-only fallback: the one-off copy
+ * (`scripts/one-off/migrate-private-buckets.ts`) moved what existed when it
+ * ran, but files have landed there since. Every fallback lives in this file so
+ * removing it later is a one-file change.
  *
  *   const { data, error } = await storage(client).company(companyId).download(path);
  *   await storage(client).company(companyId).upload(path, file, { upsert: true });
@@ -20,7 +21,8 @@
 
 import {
   type DownloadResult,
-  type SearchOptions,
+  type FileObject,
+  type SearchV2Result,
   type StorageClient,
   StorageError,
   type TransformOptions
@@ -131,9 +133,13 @@ type Bucket = ReturnType<StorageClient["from"]>;
  * tenant boundary on the shared legacy bucket, and a company bucket must never
  * hold a key that `getPrivateUrl` would resolve to another company's bucket.
  *
- * Deliberately absent: `getPublicUrl` (private bucket), `createSignedUrls`
- * and `listV2` (batch shapes with no single fallback answer). Use `.from()`
- * if one is ever needed.
+ * `list(folder)` returns EVERY entry directly inside the folder, sorted by
+ * name, in the shape the old list endpoint used (a sub-folder is an entry with
+ * a null `id`). It takes no options — it reads the cursor-paged list endpoint
+ * to the end, so there is no limit or offset to pass.
+ *
+ * Deliberately absent: `getPublicUrl` (private bucket) and `createSignedUrls`.
+ * Use `.from()` if one is ever needed.
  */
 export type CompanyBucket = {
   upload: Bucket["upload"];
@@ -149,8 +155,8 @@ export type CompanyBucket = {
     options?: { transform?: TransformOptions }
   ): Promise<DownloadResult<Blob>>;
   createSignedUrl: Bucket["createSignedUrl"];
-  list(prefix: string, options?: SearchOptions): ReturnType<Bucket["list"]>;
-  remove: Bucket["remove"];
+  list(folder: string): ReturnType<Bucket["list"]>;
+  remove(paths: string[]): ReturnType<Bucket["remove"]>;
 };
 
 export type CarbonStorage = {
@@ -198,6 +204,63 @@ export async function isStorageNotFound(error: unknown): Promise<boolean> {
     .json()
     .catch(() => null);
   return body?.statusCode === "404";
+}
+
+const lastSegment = (path: string) =>
+  path.replace(/\/+$/, "").split("/").pop() ?? "";
+
+// What the old endpoint returned for a folder, and every caller checks:
+// the paged endpoint gives a folder only its name and key.
+const FOLDER_FIELDS = {
+  id: null,
+  updated_at: null,
+  created_at: null,
+  last_accessed_at: null,
+  metadata: null
+};
+
+type ListedEntry =
+  | (SearchV2Result["folders"][number] & typeof FOLDER_FIELDS)
+  | SearchV2Result["objects"][number];
+
+/**
+ * The cursor-paged endpoint names an entry by its full key; callers expect the
+ * old endpoint's shape, where `name` is the entry's own name inside the folder.
+ */
+function toFileObjects(entries: ListedEntry[]): FileObject[] {
+  return entries.map((entry) => ({
+    ...entry,
+    name: lastSegment(entry.key ?? entry.name)
+  })) as unknown as FileObject[];
+}
+
+/** Everything directly inside `prefix`, read to the last page. */
+async function listFolder(bucket: Bucket, prefix: string) {
+  const entries: ListedEntry[] = [];
+  let cursor: string | undefined;
+  do {
+    const { data, error } = await bucket.listV2({
+      prefix,
+      with_delimiter: true,
+      cursor
+    });
+    if (error) return { data: null, error };
+    entries.push(
+      ...data.folders.map((folder) => ({ ...FOLDER_FIELDS, ...folder })),
+      ...data.objects
+    );
+    if (!data.hasNext) break;
+    // More pages promised with no way to reach them: a repeated cursor would
+    // loop forever, a missing one would pass a partial list off as complete.
+    if (!data.nextCursor || data.nextCursor === cursor) {
+      return {
+        data: null,
+        error: new StorageError(`Listing "${prefix}" did not advance`)
+      };
+    }
+    cursor = data.nextCursor;
+  } while (cursor);
+  return { data: toFileObjects(entries), error: null };
 }
 
 export function storage(client: { storage: StorageClient }): CarbonStorage {
@@ -254,11 +317,10 @@ function companyBucket(
       owns(path) ? own.update(path, ...rest) : refuse(path),
     uploadToSignedUrl: (path, ...rest) =>
       owns(path) ? own.uploadToSignedUrl(path, ...rest) : refuse(path),
-    // A file uploaded before the per-company copy ran still lives only in the
-    // legacy bucket, so a move within the company bucket finds nothing. Retry
-    // it as a cross-bucket move OUT of legacy: `/object/move` takes a
-    // `destinationBucket`, so this stays one server-side operation rather than
-    // a download/upload/remove dance. Honours an explicit destinationBucket.
+    // A file that exists only in the legacy bucket is not found by a move
+    // within the company bucket. Retry it as a cross-bucket move OUT of
+    // legacy: `/object/move` takes a `destinationBucket`, so this stays one
+    // server-side operation. Honours an explicit destinationBucket.
     move: async (from, to, options) => {
       if (!owns(from, to)) return refuse(from, to);
       const primary = await own.move(from, to, options);
@@ -289,18 +351,24 @@ function companyBucket(
         ? withFallback((b) => b.createSignedUrl(path, expiresIn, options))
         : refuse(path),
 
-    list: async (prefix, options) => {
-      if (!owns(prefix)) return refuse(prefix);
+    list: async (folder) => {
+      if (!owns(folder)) return refuse(folder);
+      // The endpoint matches a plain key prefix, so without the trailing slash
+      // it would answer with the folder itself rather than what is inside it.
+      const prefix = `${folder.replace(/\/+$/, "")}/`;
       const [primary, fallback] = await Promise.all([
-        own.list(prefix, options),
-        legacy.list(prefix, options)
+        listFolder(own, prefix),
+        listFolder(legacy, prefix)
       ]);
       if (primary.error && fallback.error) return primary;
-      // Union by name with the company copy winning: during the fallback
-      // window a file sits in either bucket, after the copy script in both.
+      // Union by name with the company copy winning: a file sits in either
+      // bucket, and after the copy script in both.
       const byName = new Map((fallback.data ?? []).map((f) => [f.name, f]));
       for (const f of primary.data ?? []) byName.set(f.name, f);
-      return { data: [...byName.values()], error: null };
+      const files = [...byName.values()].sort((a, b) =>
+        a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+      );
+      return { data: files, error: null };
     },
 
     remove: async (paths) => {

@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -174,6 +179,9 @@ const FixedAssetsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
+              }
               disabled={!permissions.can("view", "accounting")}
               onClick={() => navigate(path.to.fixedAsset(row.id))}
             >
@@ -182,6 +190,7 @@ const FixedAssetsTable = memo(
             </MenuItem>
             {isDraft && (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={!permissions.can("delete", "accounting")}
                 destructive
                 onClick={() => {

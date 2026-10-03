@@ -5,11 +5,11 @@ label: "(V)"
 index: 4
 ---
 
-Building the satellite is most of the work, but it isn't the whole job. You still have to prove it was built right, and close the loop with the customer and your books.
+After production, verify quality, preserve traceability, ship the finished units, and invoice the customer.
 
 ## Raise an issue
 
-Say an operator flags a short in the EPS wiring harness. You open an Issue, Carbon's name for a <Term id="nonconformance">non-conformance</Term>. It moves through a clear lifecycle, from Registered to In Progress to Closed, and it links to the part and the job operation it was found on, so the bus now carries that open issue everywhere it appears in the system.
+When an operator finds a defect, such as a short in the EPS wiring harness, create an Issue to record the <Term id="nonconformance">non-conformance</Term>. The issue moves from **Registered** to **In Progress** to **Closed** and links to the affected part and job operation.
 
 <Figure illustration="eight-d" caption="An issue moves through its workflow (contain, correct, verify) until the fix is proven." />
 
@@ -17,48 +17,50 @@ Say an operator flags a short in the EPS wiring harness. You open an Issue, Carb
 
 ## Workflows & actions
 
-An issue doesn't just sit there — it runs a workflow you define. A classic <Term>8D</Term> is one such workflow; a quick containment-only response is another. Whichever you pick, it spins up the required actions as tasks, each one started and completed on its own:
+Each issue follows a configured workflow, such as <Term>8D</Term> or a containment-only response. The workflow creates required actions as independently tracked tasks:
 
 <Figure illustration="issue-workflow" caption="An issue moves Registered → In Progress → Closed, spinning up its required-action tasks along the way." />
 
-- <Term id="containment-action">Containment</Term>: stop the bad parts from spreading. Set it on the affected process and it surfaces on the shop floor, so the next operator can't keep building the defect.
-- <Term id="corrective-action">Corrective</Term>: find and fix the root cause.
-- <Term id="preventive-action">Preventive</Term>: change something so it can't recur.
-- Verification: prove the fix actually worked.
-- Communication: keep the customer in the loop.
+- <Term id="containment-action">Containment</Term>: prevent affected parts from proceeding. When applied to a process, it appears on the shop floor.
+- <Term id="corrective-action">Corrective</Term>: identify and correct the root cause.
+- <Term id="preventive-action">Preventive</Term>: prevent recurrence.
+- Verification: confirm that the correction worked.
+- Communication: update the customer.
 
 <Callout tone="amber" badge="DISPOSITION" title="Held material doesn't move until someone signs off.">
-A review step gates what happens to the non-conforming assemblies: use as is, <Term>rework</Term>, <Term>scrap</Term>, or return to the supplier. Nothing is dispositioned on a hunch; the decision is recorded against the issue alongside its actions.
+A review determines the disposition of non-conforming assemblies: use as is, <Term>rework</Term>, <Term>scrap</Term>, or return to supplier. Carbon records the decision and related actions on the issue.
 </Callout>
 
 ## Versioned procedures
 
-Those work instructions the operator followed didn't appear from nowhere. They're generated from versioned procedures, the same Draft / Active / Archived discipline you saw on <Term id="method">methods</Term>. When a corrective action changes how the structural frame is assembled, you publish a new revision; every future job picks it up, and every job already running keeps the revision it started on.
+Work instructions come from versioned procedures with **Draft**, **Active**, and **Archived** states, like <Term id="method">methods</Term>. Publishing a corrective revision applies it to future jobs while in-progress jobs retain their original revision.
 
 <Callout tone="green" badge="REVISIONS" title="Change the procedure once; the floor follows everywhere.">
-New jobs pick up the latest published version; in-flight jobs never shift mid-build. And every satellite's record pins the exact procedure revision it was actually built to.
+New jobs use the latest published version. In-progress jobs retain their assigned version, and each finished unit records the procedure revision used to build it.
 </Callout>
 
 <Screenshot src="/screens/ship-procedure-versions.png" label="Procedure version history" caption="V2 of the Structural Frame Assembly procedure, active, with V1 archived behind it." ratio="wide" />
 
 ## Traceability
 
-Because everything was captured at build time, the <Term>genealogy</Term> of a finished satellite is complete. Carbon stores it as a graph of <Term id="tracked-entity">tracked entities</Term> and the activities that link them, so from one serial you can walk backward to every ancestor (which frame, which battery lot, which plate of aluminium) or forward to every place a lot was used.
+Carbon stores the finished unit's <Term>genealogy</Term> as a graph of <Term id="tracked-entity">tracked entities</Term> and their activities. From one serial, you can trace backward to its components and material lots or forward from a lot to every unit that consumed it.
 
 <Figure illustration="traceability-graph" caption="The genealogy of one finished robot, from serial number down to material lots." />
 
-One click, or one scan of the satellite's QR label, answers the question every auditor and every recall asks: what exactly went into this unit, and where else did that lot go?
+Open the record or scan its QR label to identify the material in the unit and every other use of the same lots.
 
 <Screenshot src="/screens/ship-traceability-graph.png" label="Traceability graph" caption="The full as-built genealogy for SAT-1000 serial SAT1000-SN-0001, down to the aluminium plate and reaction wheels it consumed." ratio="wide" />
 
 ## Ship & invoice
 
-The first finished units are ready. You create a [shipment](/guides/order-to-cash) against the <Term id="sales-order">sales order</Term>. It drafts its lines from what's outstanding, and you ship only what's actually built: on SHP000001 the line reads 2 shipped against 3 ordered, so 1 stays outstanding. Post it, then <Term id="invoice">invoice</Term> that same 2. Because the order still has a unit to ship, it stays at "To Ship and Invoice" and simply carries the remainder forward; the line's shipped count rolls up as each batch goes.
+Create a [shipment](/guides/order-to-cash) against the <Term id="sales-order">sales order</Term>. Carbon drafts lines from the outstanding quantity. If SHP000001 ships 2 of 3 ordered units, 1 remains outstanding. Post the shipment, then <Term id="invoice">invoice</Term> the 2 shipped units. Because shipping and invoicing both remain, the sales order stays **"To Ship and Invoice"**.
 
-Carbon ties the invoice straight into your accounting system, so the build that started at the [sales desk](/guides/quote-to-cash) closes on the books — partial quantity and all.
+After the final unit ships, the sales order moves to **"To Invoice"** until that unit is invoiced; it then becomes **"Completed"**.
+
+Posting submits the invoice. When accounting is enabled and the invoice produces journal lines, Carbon also creates a posted sales-invoice journal. Payment remains separate: applying a posted payment or credit creates settlements and moves the invoice to **"Partially Paid"** or **"Paid"**.
 
 <Screenshot src="/screens/ship-partial-shipment.png" label="Partial shipment" caption="Shipping part of the order — SHP000001 sends 2 of the 3 ordered, leaving 1 outstanding, so the order stays open." ratio="wide" />
 
 <Divider />
 
-That's the whole loop: a 90-unit promise became three jobs, a tree of made and bought parts, a forecast-aware plan, traceable work on the floor, a quality save, and a shipped, invoiced, fully-traceable satellite. Every entity you saw (methods, kits, policies, operations, issues) has its own page in the Reference when you're ready for the detail.
+The complete flow converts demand into planned production, traceable floor execution, quality control, shipment, and invoicing. See the Reference for details about methods, kits, policies, operations, and issues.

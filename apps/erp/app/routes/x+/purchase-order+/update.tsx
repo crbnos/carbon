@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import { isPurchaseOrderLocked } from "~/modules/purchasing";
@@ -91,11 +92,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "deliveryDate":
       return await client
         .from("purchaseOrderDelivery")
-        .update({
-          [field]: value ?? undefined,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ?? undefined,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
     case "receiptPromisedDate":
       const lineUpdates = await client
@@ -144,11 +147,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "orderDate":
       return await client
         .from("purchaseOrder")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
     default:
       return { error: { message: "Invalid field" }, data: null };

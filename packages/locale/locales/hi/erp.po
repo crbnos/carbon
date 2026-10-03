@@ -51,6 +51,10 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
+#. placeholder {0}: memberIds.length
+msgid "{0, plural, one {# component in this group} other {# components in this group}}"
+msgstr ""
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# दिन का अतिरिक्त समय} other {# दिन का अतिरिक्त समय}}"
@@ -70,6 +74,10 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
+
+#. placeholder {0}: componentNodeIds.length
+msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
+msgstr ""
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -368,6 +376,9 @@ msgstr "{load} कतार में"
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
+msgid "{memberCount, plural, one {# step} other {# steps}}"
+msgstr ""
+
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} महीने बेमेल कुल के साथ"
 
@@ -398,6 +409,9 @@ msgstr "{noDemandItemCount} पार्ट्स छोड़ा गया — 
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
+
+msgid "{partCount, plural, one {# part} other {# parts}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
@@ -443,6 +457,9 @@ msgstr "{unbatchedBatchableOperations} बैचेबल ऑपरेशन ब
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# अनगिनती लाइन} other {# अनगिनती लाइनें}}"
+
+msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
+msgstr ""
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
@@ -1479,6 +1496,10 @@ msgstr "जोड़ें"
 msgid "Add {0} operations"
 msgstr "{0} ऑपरेशन जोड़ें"
 
+#. placeholder {0}: addableIds.length
+msgid "Add {0} selected"
+msgstr ""
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
@@ -1930,6 +1951,9 @@ msgstr "सभी शिफ्ट"
 
 msgid "All slotted dimension values are mapped"
 msgstr "सभी स्लॉटेड आयाम मान मैप किए गए हैं"
+
+msgid "All steps"
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "सभी आपूर्तिकर्ता"
@@ -2733,6 +2757,9 @@ msgstr "क्या आप इस जोखिम को हटाना चा
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "क्या आप इस जोखिम को हटाना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr ""
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "क्या आप इस सुझाव को हटाना चाहते हैं? यह क्रिया वापस नहीं की जा सकती।"
 
@@ -3166,8 +3193,14 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 msgid "Backflush"
 msgstr "बैकफ्लश"
 
+msgid "Backup"
+msgstr ""
+
 msgid "Backup failed"
 msgstr "बैकअप विफल रहा"
+
+msgid "Backup uploaded"
+msgstr ""
 
 msgid "Backups"
 msgstr "बैकअप"
@@ -3475,9 +3508,6 @@ msgstr "ब्रेडक्रम्ब"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "अपने पार्ट्स, BOM, प्रक्रिया सूची, और लागत निर्धारण लाएं — Carbon के आयात उपकरण, CSV, या LLM सहायता के साथ।"
 
-msgid "Brings in steps"
-msgstr "चरण लाता है"
-
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
@@ -3508,9 +3538,6 @@ msgstr "फ्लीट के लिए निर्माण करें"
 msgid "Build integrations and customizations"
 msgstr "एकीकरण और अनुकूलन बनाएं"
 
-msgid "Build off to the side"
-msgstr "बग़ल में बनाएँ"
-
 msgid "Build quotes pulling live part, cost, and Bill of Process data"
 msgstr "लाइव पार्ट, लागत और प्रक्रिया सूची डेटा खींचकर कोटेशन बनाएँ"
 
@@ -3520,14 +3547,11 @@ msgstr "भूमिका-आधारित प्रशिक्षण सा
 msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
 
-msgid "Builds this step's components beside the model as a group, then carries the group in at a later join step."
-msgstr "इस चरण के घटकों को मॉडल के बगल में एक समूह के रूप में बनाता है, फिर समूह को बाद के जॉइन चरण में ले जाता है।"
+msgid "Built after this step"
+msgstr ""
 
 msgid "Built and costed as its own method"
 msgstr "अपनी स्वयं की विधि के रूप में निर्मित और लागत निर्धारित"
-
-msgid "Built off to the side, then carried in at its join step"
-msgstr "बग़ल में बनाया गया, फिर इसके जॉइन चरण में ले जाया गया"
 
 msgid "Bulk Import"
 msgstr "बल्क आयात"
@@ -3968,6 +3992,9 @@ msgstr "परिवर्तन न्यूजलेटर"
 msgid "Changes"
 msgstr "परिवर्तन"
 
+msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
+msgstr ""
+
 msgid "Changing this will overwrite the existing method"
 msgstr "इसे बदलने से मौजूदा विधि अधिलेखित हो जाएगी"
 
@@ -4030,6 +4057,9 @@ msgstr "चेकपॉइंट ·"
 
 msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
+
+msgid "Choose a backup"
+msgstr ""
 
 msgid "Choose a batch number"
 msgstr "एक बैच नंबर चुनें"
@@ -4208,6 +4238,9 @@ msgstr "संक्षिप्त करें"
 msgid "Collapse {0}"
 msgstr "{0} को संक्षिप्त करें"
 
+msgid "Collapse {name}"
+msgstr ""
+
 msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
 
@@ -4371,6 +4404,12 @@ msgstr "पूर्ण होने का समय"
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
 msgstr "घटक विवरण: {0}"
+
+msgid "Component group name"
+msgstr ""
+
+msgid "Component group updated — re-run motion planning to apply the change"
+msgstr ""
 
 msgid "Components"
 msgstr "घटक"
@@ -6159,6 +6198,10 @@ msgstr "परिवर्तन सूचना हटाएं"
 msgid "Delete charge"
 msgstr "शुल्क हटाएँ"
 
+#. placeholder {0}: unit.name
+msgid "Delete component group {0}"
+msgstr ""
+
 msgid "Delete Consumable"
 msgstr "उपभोग्य सामग्री हटाएँ"
 
@@ -6378,9 +6421,8 @@ msgstr "स्टोरेज प्रकार हटाएं"
 msgid "Delete Storage Unit"
 msgstr "भंडारण इकाई हटाएँ"
 
-#. placeholder {0}: unit.name
-msgid "Delete subassembly {0}"
-msgstr "सब-असेंबली {0} हटाएँ"
+msgid "Delete Sub-Assembly"
+msgstr ""
 
 msgid "Delete Substance"
 msgstr "पदार्थ हटाएं"
@@ -6406,6 +6448,9 @@ msgstr "आपूर्तिकर्ता प्रकार हटाएं"
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य स्तर हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
+msgstr ""
 
 msgid "Delete Timecard"
 msgstr "टाइमकार्ड हटाएं"
@@ -6831,6 +6876,9 @@ msgstr "पथ संपादन पूरा किया"
 msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
 
+msgid "Double-click to open this sub-assembly"
+msgstr ""
+
 msgid "Double-click to play this step"
 msgstr "इस चरण को चलाने के लिए डबल-क्लिक करें"
 
@@ -6879,6 +6927,9 @@ msgstr "एक क्रय आदेश PDF को यहाँ खींचे
 
 msgid "Drag handle"
 msgstr "ड्रैग हैंडल"
+
+msgid "Drag steps here to build them on their own."
+msgstr ""
 
 msgid "Drag the red waypoints in the viewer"
 msgstr "दर्शक में लाल waypoints को ड्रैग करें"
@@ -6995,6 +7046,9 @@ msgstr "छवि रूपांतरण के बाद डुप्लि�
 
 msgid "Duplicate Item"
 msgstr "आइटम डुप्लिकेट करें"
+
+msgid "Duplicate or copy"
+msgstr ""
 
 msgid "Duplicate Price List"
 msgstr "मूल्य सूची डुप्लिकेट करें"
@@ -7169,6 +7223,13 @@ msgstr "परिवर्तन सूचना प्रकार संपा
 
 msgid "Edit column visibility"
 msgstr "कॉलम दृश्यता संपादित करें"
+
+msgid "Edit Component Group"
+msgstr ""
+
+#. placeholder {0}: unit.name
+msgid "Edit component group {0}"
+msgstr ""
 
 msgid "Edit Contact"
 msgstr "संपर्क संपादित करें"
@@ -7403,10 +7464,6 @@ msgstr "स्टोरेज प्रकार संपादित करे
 
 msgid "Edit Storage Unit"
 msgstr "भंडारण इकाई संपादित करें"
-
-#. placeholder {0}: unit.name
-msgid "Edit subassembly {0}"
-msgstr "सब-असेंबली {0} संपादित करें"
 
 msgid "Edit Substance"
 msgstr "पदार्थ संपादित करें"
@@ -7964,6 +8021,9 @@ msgstr "विस्तार करें"
 #. placeholder {0}: unit.name
 msgid "Expand {0}"
 msgstr "विस्तार करें {0}"
+
+msgid "Expand {name}"
+msgstr ""
 
 msgid "Expand all"
 msgstr "सभी को विस्तृत करें"
@@ -8535,6 +8595,9 @@ msgstr "PDF अपलोड करने में विफल"
 msgid "Failed to upload thumbnail"
 msgstr "थंबनेल अपलोड करने में विफल"
 
+msgid "Failed to upload: {reason}"
+msgstr ""
+
 msgid "Failure"
 msgstr "विफलता"
 
@@ -8674,6 +8737,9 @@ msgstr "एक अधूरी पिक को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
+
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "पहली रोशनी, {name}।"
@@ -9204,6 +9270,9 @@ msgstr "सकल लाभ"
 msgid "Group"
 msgstr "समूह"
 
+msgid "Group as One Component"
+msgstr ""
+
 msgid "Group by"
 msgstr "द्वारा समूह"
 
@@ -9251,6 +9320,9 @@ msgstr "ऐसे ऑपरेशन हैं जिन्हें शेड�
 
 msgid "Headers"
 msgstr "हेडर"
+
+msgid "healthy"
+msgstr ""
 
 msgid "Help"
 msgstr "मदद"
@@ -9438,6 +9510,9 @@ msgstr "यह रखरखाव कितनी बार दोहराय�
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "ऑपरेशन को इस प्रक्रिया पर एक बैच साझा करने के लिए प्रत्येक सामग्री संपत्ति कितनी सख्ती से मेल खानी चाहिए।"
 
+msgid "How the finished sub-assembly joins the main build."
+msgstr ""
+
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "जब शेड्यूलर क्षमता देता है तो जॉब कैसे रैंक करता है — ASAP पहले दावे करता है, फिर कठोर समय सीमा, नरम समय सीमा, और कोई समय सीमा नहीं अंतिम। केवल एक रैंकिंग संकेत; कोई समय सीमा प्रकार प्लेसमेंट को रोकता या प्रतिबंधित नहीं करता है।"
 
@@ -9619,6 +9694,9 @@ msgstr "अपना BOM आयात करें"
 msgid "in {0}"
 msgstr "{0} में"
 
+msgid "In an open menu"
+msgstr ""
+
 msgid "In Maintenance"
 msgstr "रखरखाव में"
 
@@ -9690,6 +9768,9 @@ msgstr "इन-ऐप सूचनाएं हमेशा दी जाती 
 
 msgid "In-Service Date"
 msgstr "सेवा में तारीख"
+
+msgid "inactive"
+msgstr ""
 
 msgid "Inactive"
 msgstr "निष्क्रिय"
@@ -9795,6 +9876,10 @@ msgstr "इनपुट्स"
 
 msgid "Insert token"
 msgstr "टोकन डालें"
+
+#. placeholder {0}: stepTitles.get(headerId) ?? ""
+msgid "inside {0}"
+msgstr ""
 
 msgid "Inspect"
 msgstr "निरीक्षण करें"
@@ -10339,13 +10424,6 @@ msgstr "जॉब जिनकी सामग्री सूची में �
 #. placeholder {0}: company?.name ?? "Company"
 msgid "Join {0}"
 msgstr "{0} में शामिल हों"
-
-#. placeholder {0}: selected.number
-msgid "Joins step {0}"
-msgstr "चरण {0} में जुड़ता है"
-
-msgid "Joins step {number}: {title}"
-msgstr "चरण {number} में जुड़ता है: {title}"
 
 msgid "Journal"
 msgstr "जर्नल"
@@ -11002,6 +11080,9 @@ msgstr "MACRS संपत्ति वर्ग"
 msgid "Magic link"
 msgstr "मैजिक लिंक"
 
+msgid "Main build (after its last step)"
+msgstr ""
+
 msgid "Maintain a single part and item master"
 msgstr "एक एकल भाग और आइटम मास्टर बनाए रखें"
 
@@ -11067,6 +11148,9 @@ msgstr "क्या रिवीजन {0} को डिफ़ॉल्ट ब�
 #. placeholder {0}: selectedRevision.revision
 msgid "Make size {0} default?"
 msgstr "आकार {0} को डिफ़ॉल्ट बनाएं?"
+
+msgid "Make Sub-Assembly"
+msgstr ""
 
 msgid "Make the final go / no-go call"
 msgstr "अंतिम निर्णय लें - आगे बढ़ें या न बढ़ें"
@@ -11672,8 +11756,14 @@ msgstr "संस्थाओं को स्थानांतरित कर
 msgid "Move entities…"
 msgstr "संस्थाओं को स्थानांतरित करें…"
 
+msgid "Move Into"
+msgstr ""
+
 msgid "Move item"
 msgstr "आइटम को स्थानांतरित करें"
+
+msgid "Move Out of Sub-Assembly"
+msgstr ""
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "कुछ मात्रा को एक नई निपटान पंक्ति में स्थानांतरित करें ताकि MRB प्रत्येक भाग का अलग से निर्णय ले सके (जैसे कुछ स्क्रैप करें, कुछ पुनः कार्य करें)।"
@@ -11703,6 +11793,10 @@ msgstr "खाता स्थानांतरित किया गया"
 
 msgid "Movements"
 msgstr "मूवमेंट्स"
+
+#. placeholder {0}: plainTitle(active.id)
+msgid "Moving step {0} was cancelled"
+msgstr ""
 
 msgid "Mpn"
 msgstr "MPN"
@@ -11807,6 +11901,9 @@ msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
 
 msgid "Net Unit Price"
+msgstr ""
+
+msgid "Network error"
 msgstr ""
 
 msgid "Never"
@@ -12323,6 +12420,9 @@ msgstr "रेंज में कोई पूर्ण जॉब नहीं"
 msgid "No completion date"
 msgstr "कोई पूर्णता तारीख नहीं"
 
+msgid "No components — add a selection or cancel."
+msgstr ""
+
 msgid "No components yet"
 msgstr "अभी कोई घटक नहीं"
 
@@ -12717,6 +12817,12 @@ msgstr "इस दृश्य पर कोई सॉर्ट लागू न
 msgid "No step selected"
 msgstr "कोई चरण चयनित नहीं"
 
+msgid "No steps match \"{search}\""
+msgstr ""
+
+msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
+msgstr ""
+
 msgid "No stock"
 msgstr "स्टॉक नहीं"
 
@@ -12788,12 +12894,6 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
-
-msgid "No, build in place"
-msgstr "नहीं, यहाँ निर्माण करें"
-
-msgid "No, it's the base"
-msgstr "नहीं, यह आधार है"
 
 msgid "Nom"
 msgstr "नाम"
@@ -12928,6 +13028,12 @@ msgstr "यहां कुछ भी आपकी खोज और फ़िल
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
+msgid "Nothing is synced until you turn sync on."
+msgstr ""
+
+msgid "Nothing is synced until you turn sync on. Every required account is mapped."
+msgstr ""
+
 msgid "Nothing scheduled — add a station below."
 msgstr "कुछ भी शेड्यूल नहीं किया गया — नीचे एक स्टेशन जोड़ें।"
 
@@ -12989,6 +13095,9 @@ msgstr "का"
 msgid "of {0}h"
 msgstr "का {0}h"
 
+msgid "Off"
+msgstr ""
+
 msgid "Off — handled outside the sync"
 msgstr "बंद — सिंक के बाहर संभाला गया"
 
@@ -13003,6 +13112,9 @@ msgstr "ठीक है"
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
+
+msgid "On"
+msgstr ""
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "कटओवर दिन पर, नीचे दी गई चेकलिस्ट को क्रम में काम करें। स्वीकृति परीक्षण आपकी स्कोप में शामिल आवश्यकताओं से आते हैं। समर्थन विवरण नीचे हैं।"
@@ -13021,6 +13133,9 @@ msgstr "हाथ में"
 
 msgid "On Hand"
 msgstr "हाथ में"
+
+msgid "On hand {before} to {after}"
+msgstr "हाथ में: {before} से {after}"
 
 msgid "On Hold"
 msgstr "होल्ड पर"
@@ -13186,6 +13301,9 @@ msgstr "खोलें"
 msgid "Open a change notice"
 msgstr "एक परिवर्तन सूचना खोलें"
 
+msgid "Open Account Mapping"
+msgstr ""
+
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
 
@@ -13272,6 +13390,9 @@ msgstr "खुले विक्रय आदेश"
 
 msgid "Open Scheduled"
 msgstr "खुली अनुसूचित"
+
+msgid "Open Sub-Assembly"
+msgstr ""
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
@@ -14057,6 +14178,10 @@ msgstr "अलग घटकों के रूप में चुना और
 msgid "Picked quantity"
 msgstr "चुना गया मात्रा"
 
+#. placeholder {0}: plainTitle(active.id)
+msgid "Picked up step {0}"
+msgstr ""
+
 msgid "picking in place of {substitutedFrom}, the item on the job"
 msgstr "जॉब पर आइटम {substitutedFrom} की जगह में पिकिंग"
 
@@ -14100,6 +14225,9 @@ msgstr "पिन"
 #. placeholder {0}: view.name
 msgid "Pin {0}"
 msgstr "{0} को पिन करें"
+
+msgid "Pin or unpin"
+msgstr ""
 
 msgid "Pinned"
 msgstr "पिन किया गया"
@@ -14287,6 +14415,9 @@ msgstr "संभावित डेटा हानि"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr ""
+
 msgid "Predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी करें"
 
@@ -14298,6 +14429,9 @@ msgstr "पसंदीदा आपूर्तिकर्ता"
 
 msgid "Prefix"
 msgstr "उपसर्ग"
+
+msgid "Preparing the backup for restore…"
+msgstr ""
 
 msgid "Prepayments"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
@@ -15394,6 +15528,9 @@ msgstr "दर्ज किया गया कि इस अंशांकन 
 msgid "Records"
 msgstr "रिकॉर्ड"
 
+msgid "Records and posted journals are being sent to and received from this provider."
+msgstr ""
+
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
 
@@ -15435,9 +15572,6 @@ msgstr "इस स्थान के लिए अभी शेड्यूल 
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
-
-msgid "Regenerating removes \"Build off to the side\" settings."
-msgstr "पुनः जनरेट करना «Build off to the side» सेटिंग्स को हटाता है।"
 
 msgid "Regenerating thumbnail…"
 msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
@@ -15558,6 +15692,11 @@ msgstr "निकालें"
 msgid "Remove {0}"
 msgstr "निकालें {0}"
 
+#. placeholder {0}: group.name
+#. placeholder {1}: unit.name
+msgid "Remove {0} from {1}"
+msgstr ""
+
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
 msgstr "बैच से {0} निकालें"
@@ -15662,6 +15801,9 @@ msgstr "हटाया गया"
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "इस पथ को हटाने से {count} कनेक्शन{0} भी डिस्कनेक्ट हो जाएंगे। जारी रखें?"
+
+msgid "Rename"
+msgstr ""
 
 msgid "Rename Workflow"
 msgstr "वर्कफ़्लो का नाम बदलें"
@@ -16528,6 +16670,9 @@ msgstr "विक्रय चालान"
 msgid "Sales Invoice"
 msgstr "विक्रय चालान"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "विक्रय चालान पंक्ति"
 
@@ -16579,8 +16724,18 @@ msgstr "विक्रय रिटर्न"
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
 
+msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "बिक्री नियम उल्लंघन"
+
+msgid "Sales rules"
+msgstr ""
 
 msgid "Sales Rules"
 msgstr "बिक्री नियम"
@@ -16916,6 +17071,9 @@ msgstr "चर खोजें…"
 msgid "Search..."
 msgstr "खोजें..."
 
+msgid "Search…"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "पूरा करने के सेकंड"
 
@@ -16945,6 +17103,9 @@ msgstr "ऐसे सेगमेंट जो ग्राहक मूल्�
 
 msgid "Select"
 msgstr "चुनें"
+
+msgid "Select a .carbon.tar.gz backup"
+msgstr ""
 
 msgid "Select a assignee"
 msgstr "एक असाइनी चुनें"
@@ -18115,9 +18276,31 @@ msgstr "इस पृष्ठ पर रहें"
 msgid "Step"
 msgstr "चरण"
 
-#. placeholder {0}: stepIndex + 1
-msgid "Step {0} of {stepCount}"
-msgstr "{stepCount} में से चरण {0}"
+#. placeholder {0}: subPlan.get(usedIn)?.number ?? ""
+#. placeholder {1}: titleOf(usedIn)
+msgid "Step {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: plainTitle(active.id)
+msgid "Step {0} is no longer over a drop position"
+msgstr ""
+
+#. placeholder {0}: plainTitle(active.id)
+#. placeholder {1}: plainTitle(over.id)
+msgid "Step {0} is over {1}"
+msgstr ""
+
+#. placeholder {0}: plainTitle(active.id)
+msgid "Step {0} was dropped"
+msgstr ""
+
+#. placeholder {0}: plainTitle(active.id)
+#. placeholder {1}: plainTitle(over.id)
+msgid "Step {0} was dropped at {1}"
+msgstr ""
+
+msgid "Step {number}"
+msgstr ""
 
 msgid "Step added"
 msgstr "चरण जोड़ा गया"
@@ -18148,6 +18331,9 @@ msgstr "चरण विधानसभा निर्देश से वि�
 
 msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
+
+msgid "Steps built on their own, then fitted as one piece: in the step that uses it, or, when nothing uses it, right after its own steps."
+msgstr ""
 
 msgid "Still dark out on the floor."
 msgstr "अभी भी फर्श पर अंधकार है।"
@@ -18191,6 +18377,10 @@ msgstr "प्राप्ति को रोकें"
 
 msgid "Stop Shipping"
 msgstr "शिपिंग बंद करें"
+
+#. placeholder {0}: used.title
+msgid "Stop using {0} in this step"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
@@ -18263,6 +18453,35 @@ msgstr "Stripe के पास इस Carbon ग्राहक के लि�
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "कानबान तालिका में दिखाने के लिए कानबान आउटपुट की शैली"
+
+msgid "Sub-assembly"
+msgstr ""
+
+msgid "Sub-Assembly"
+msgstr ""
+
+msgid "Sub-Assembly · joins main build"
+msgstr ""
+
+msgid "Sub-Assembly · used in {usedInNumber}"
+msgstr ""
+
+#. placeholder {0}: used.number
+#. placeholder {1}: used.partCount
+msgid "Sub-Assembly {0} · {1, plural, one {# part} other {# parts}}"
+msgstr ""
+
+#. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
+#. placeholder {1}: subAssemblyName( activeInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr ""
+
+#. placeholder {0}: openInfo.number
+msgid "Sub-Assembly {0} · {openTitle}"
+msgstr ""
+
+msgid "Sub-Assembly {number}"
+msgstr ""
 
 msgid "Sub-assembly expiries only"
 msgstr "उप-विधानसभा समाप्ति केवल"
@@ -18616,6 +18835,9 @@ msgstr "सिंक करें"
 
 msgid "Sync Activity"
 msgstr "सिंक गतिविधि"
+
+msgid "sync off"
+msgstr ""
 
 msgid "Sync operation"
 msgstr "सिंक संचालन"
@@ -19320,6 +19542,9 @@ msgstr "सामग्री एक विशेष आदेश के लि�
 
 msgid "The material types you organize your stock by"
 msgstr "आप अपने स्टॉक को जिन सामग्री प्रकारों से व्यवस्थित करते हैं"
+
+msgid "The model is still loading."
+msgstr ""
 
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "वह महीना जब आपका वित्तीय वर्ष शुरू होता है; अवधियों को इस महीने से गिना जाता है।"
@@ -20063,6 +20288,9 @@ msgstr "यह स्टेशन कौशल-गेटेड कार्य �
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "यह स्टेशन कोई कौशल आवश्यकता के बिना काम चलाता है; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
 
+msgid "This step is part of it"
+msgstr ""
+
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
 msgstr "यह भंडारण प्रकार वर्तमान में {usageCount} भंडारण इकाई{0} द्वारा उपयोग किया जा रहा है।"
@@ -20744,8 +20972,14 @@ msgstr "अधिकतम मात्रा नीति के तहत, य
 msgid "Undo"
 msgstr "पूर्ववत करें"
 
+msgid "Ungroup"
+msgstr ""
+
 msgid "Unguaranteed Residual Value"
 msgstr "गारंटीहीन अवशिष्ट मूल्य"
+
+msgid "unhealthy"
+msgstr ""
 
 msgid "Uninstall"
 msgstr "अनइंस्टॉल करें"
@@ -21052,6 +21286,9 @@ msgstr "CSV अपलोड करें"
 msgid "Upload failed. Please try again."
 msgstr "अपलोड विफल रहा। कृपया पुनः प्रयास करें।"
 
+msgid "Upload new backup…"
+msgstr ""
+
 msgid "Uploaded model"
 msgstr "अपलोड किया गया मॉडल"
 
@@ -21068,6 +21305,18 @@ msgstr "अपलोड किया जा रहा है {0}"
 
 msgid "Uploading {fileName}"
 msgstr "अपलोड किया जा रहा है {fileName}"
+
+msgid "Uploading backup"
+msgstr ""
+
+msgid "Uploading model"
+msgstr ""
+
+msgid "Uploading the backup file"
+msgstr ""
+
+msgid "Uploading the CAD file"
+msgstr ""
 
 msgid "Uploading..."
 msgstr "अपलोड हो रहा है..."
@@ -21105,20 +21354,36 @@ msgstr "एक अलग खाता उपयोग करें"
 msgid "Use a different email"
 msgstr "एक अलग ईमेल का उपयोग करें"
 
+msgid "Use a finished sub-assembly in this step"
+msgstr ""
+
 msgid "Use Current View"
 msgstr "वर्तमान दृश्य का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
 
+msgid "Use Sub-Assembly"
+msgstr ""
+
+msgid "Used in"
+msgstr ""
+
 msgid "Used In"
 msgstr "में उपयोग किया गया"
+
+#. placeholder {0}: subPlan.get(usedIn)?.number ?? ""
+msgid "Used in {0} — moves here"
+msgstr ""
 
 msgid "Used in the navigation and on documents like sales orders"
 msgstr "नेविगेशन में और विक्रय आदेश जैसे दस्तावेज़ों पर उपयोग किया जाता है"
 
 msgid "Used in the navigation in dark mode"
 msgstr "डार्क मोड में नेविगेशन में उपयोग किया जाता है"
+
+msgid "Used in this step"
+msgstr ""
 
 msgid "Used on the home screen and digital quotes"
 msgstr "होम स्क्रीन और डिजिटल उद्धरणों पर उपयोग किया जाता है"
@@ -21173,6 +21438,20 @@ msgstr "कवर किए गए डोमेन पर उपयोगकर�
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
+
+#. placeholder {0}: use.number
+msgid "Uses {0}"
+msgstr ""
+
+#. placeholder {0}: subPlan.get(headerId)?.number ?? ""
+#. placeholder {1}: subAssemblyName(headerId)
+msgid "Uses {0} · {1}"
+msgstr ""
+
+#. placeholder {0}: use.number
+#. placeholder {1}: use.title
+msgid "Uses sub-assembly {0} · {1}"
+msgstr ""
 
 msgid "Valid"
 msgstr ""
@@ -21414,6 +21693,9 @@ msgstr "खुली उद्धरणें देखें"
 
 msgid "View Open RFQs"
 msgstr "खुले RFQ देखें"
+
+msgid "View or open"
+msgstr ""
 
 msgid "View Payables"
 msgstr "देय राशि देखें"
@@ -21917,6 +22199,9 @@ msgstr "जहां और कैसे आप चीजें बनाते 
 msgid "Where goods on this PO are shipped to by default; per-line delivery locations on the PO override this for drop-ship and split-delivery scenarios."
 msgstr "इस पीओ पर माल डिफ़ॉल्ट रूप से आपूर्तिकर्ता द्वारा कहां भेजे जाते हैं; पीओ पर प्रति-पंक्ति डिलीवरी स्थान ड्रॉप-शिप और विभाजित-डिलीवरी परिदृश्यों के लिए इसे ओवरराइड करते हैं।"
 
+msgid "Where it goes"
+msgstr ""
+
 msgid "Where it lives today"
 msgstr "आज यह कहां रहता है"
 
@@ -22302,6 +22587,9 @@ msgstr "आप {hoursElapsed} घंटे से साइन इन हैं�
 
 msgid "Your account stays safe even if your login is stolen"
 msgstr "यहां तक कि अगर आपका लॉगिन चोरी हो जाता है तो आपका खाता सुरक्षित रहता है"
+
+msgid "Your backups"
+msgstr ""
 
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"

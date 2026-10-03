@@ -1,6 +1,7 @@
 ---
 paths:
   - "packages/database/src/authz/**"
+  - "packages/database/src/event-system/**"
   - "packages/database/supabase/migrations/**"
   - "packages/database/supabase/tests/authz-*.test.sql"
   - "packages/checks/src/conformance/no-authz-ddl-in-migrations.ts"
@@ -9,17 +10,21 @@ paths:
 
 # Authz manifest: RLS policies and helpers
 
-Every RLS policy on a `public` table, and the 20 RLS/auth helper functions, are authored in
+Every RLS policy on a `public` table, and the 16 RLS/auth helper functions, are authored in
 `packages/database/src/authz/` and nowhere else. Migrations create tables; they never write
 `CREATE POLICY` / `ALTER POLICY` on a public table or define a managed helper
 (`no-authz-ddl-in-migrations` in `@carbon/checks` fails them, from `20260927000000` on).
 `storage.objects` (bucket) policies are not in the manifest and stay in migrations.
+
+The same machinery owns the event system's 39 functions — see
+[Event-system functions](#event-system-functions) below.
 
 | File | What it is |
 |---|---|
 | `manifest.ts` | one rule per public table, typed by table name (`satisfies Manifest`) |
 | `rules.ts` | the pieces and builders; `render()` compiles a rule to `CREATE POLICY` SQL with Kysely |
 | `helpers/<name>.sql` | one `CREATE OR REPLACE FUNCTION public.<name>` per file (validated with Postgres's parser) |
+| `../event-system/functions/<name>.sql` | the event system's functions, same format; `util.<name>.sql` for one in the `util` schema |
 | `sync.ts` | `authz sync` / `check`: make a database match, in one transaction |
 | `migration.ts` | `authz migration`: ship changes to databases that do not sync; `unshipped()` |
 | `baseline.json` | what production had when the manifest took over — written once, never regenerated |
@@ -67,6 +72,33 @@ so a new table cannot deploy without policies and an edited rule cannot silently
 It also refuses a generated file containing anything `authz migration` does not write, so the
 header exemption cannot be borrowed by a hand-written file. Never edit a generated migration
 or `baseline.json` by hand.
+
+## Event-system functions
+
+`packages/database/src/event-system/functions/` holds one file per function for dispatch,
+subscriptions, the queue wake-up, the audit log, the search index and embeddings (39:
+31 in `public`, 8 in `util`). They are loaded, synced, shipped and guarded exactly like the
+RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries its `schema`.
+
+- **File name is the function**: `dispatch_event_batch.sql` defines
+  `public.dispatch_event_batch`; `util.wake_event_queue.sql` defines
+  `util.wake_event_queue`. A file whose function is in another schema, or named
+  differently, fails `validateHelper`. Everywhere a helper is reported (sync output,
+  `unshipped()`, the generated migration's name list) it is `name` or `schema.name`.
+- **Changing one**: edit the file, `pnpm db:migrate` (syncs it locally), then
+  `authz migration <name>`. Never fork the definition into a hand-written migration —
+  that is how `create_audit_log_table` came to run `CREATE TRIGGER` on every audit write
+  and how `dispatch_event_batch` lost its composite-key pairing once.
+- **Cutoff**: `no-authz-ddl-in-migrations` checks these from `20261002114954` (the
+  takeover migration, `EVENT_SYSTEM_SINCE`), the RLS helpers from `20260927000000`. Each
+  directory has its own cutoff in `MANAGED_FUNCTION_SETS`.
+- **Not in `baseline.json`**: the takeover migration ships all 39, so every one has a
+  generated block for `unshipped()` to compare against.
+- **Signature changes and new functions** still need a hand-written migration for the
+  `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
+  goes in the file.
+- **Not managed**: the per-table interceptors (`sync_*`) stay in their table's migration,
+  and `util.api_url()` is not in the set.
 
 ## Commands
 

@@ -9,6 +9,7 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -132,6 +133,7 @@ const StockTransferHeader = () => {
               </>
             )}
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "inventory") ||
                 !permissions.is("employee") ||

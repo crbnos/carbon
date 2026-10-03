@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import type { BankCodeLabelKey } from "@carbon/utils";
@@ -202,6 +203,7 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
                           disabled={!permissions.can("update", "accounting")}
                           onClick={() => navigate(account.id)}
                         >
@@ -209,6 +211,7 @@ const CustomerBankAccounts = ({ bankAccounts }: CustomerBankAccountsProps) => {
                           <Trans>Edit</Trans>
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.delete}
                           destructive
                           disabled={!permissions.can("delete", "accounting")}
                           onClick={() => {

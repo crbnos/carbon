@@ -22,6 +22,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getAccountingIntegration,
+  isAccountingSyncEnabled,
   ProviderID,
   resolvePostingSyncSettings
 } from "@carbon/ee/accounting";
@@ -84,6 +85,11 @@ export const accountingJournalBackfillFunction = inngest.createFunction(
         truncated: false,
         skippedReason: null as string | null
       };
+
+      if (!isAccountingSyncEnabled(phaseIntegration.metadata)) {
+        summary.skippedReason = "sync is turned off for this integration";
+        return summary;
+      }
 
       if (!isJournalEntryPostingEnabled(phaseIntegration.metadata)) {
         summary.skippedReason = "posting sync (journalEntry) disabled";

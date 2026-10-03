@@ -8,6 +8,7 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -141,6 +142,7 @@ const WarehouseTransferHeader = () => {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 isLocked ||
                 !permissions.can("delete", "inventory") ||

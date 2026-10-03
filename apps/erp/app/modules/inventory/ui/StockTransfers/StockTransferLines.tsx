@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -217,6 +218,7 @@ function StockTransferLineComponent({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   disabled={
                     !isEditable || !permissions.can("update", "inventory")
                   }
@@ -233,6 +235,7 @@ function StockTransferLineComponent({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !isEditable || !permissions.can("delete", "inventory")
                   }

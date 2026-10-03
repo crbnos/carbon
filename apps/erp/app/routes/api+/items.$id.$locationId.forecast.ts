@@ -214,10 +214,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     periods.map((p) => p.id ?? "")
   );
 
-  if (demand.actuals.length === 0 && demandForecast.length === 0) {
+  // An item with no demand yet is not a failure: it still has stock and
+  // supply to chart.
+  if (demand.error) {
     return data(
       defaultResponse,
-      await flash(request, error(null, "Failed to load demand"))
+      await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
 

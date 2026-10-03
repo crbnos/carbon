@@ -13,6 +13,7 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { useResolved } from "~/hooks/useResolved";
 import type { Document } from "~/modules/documents";
 import {
   DocumentsTable,
@@ -46,7 +47,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [documents, labels, extensions] = await Promise.all([
+  // Only the file-type filter needs this, so it streams rather than holding
+  // the page.
+  const extensions = getDocumentExtensions(client, companyId).then(
+    (result) => result.data?.map(({ extension }) => extension) ?? []
+  );
+
+  const [documents, labels] = await Promise.all([
     getDocuments(client, companyId, {
       search,
       favorite,
@@ -58,8 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getDocumentLabels(client, userId),
-    getDocumentExtensions(client)
+    getDocumentLabels(client, userId)
   ]);
 
   if (documents.error) {
@@ -89,13 +95,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: documents.count ?? 0,
     documents: documentsWithDownloadTokens,
     labels: labels.data ?? [],
-    extensions: extensions.data?.map(({ extension }) => extension) ?? []
+    extensions
   };
 }
 
 export default function DocumentsAllRoute() {
-  const { count, documents, labels, extensions } =
-    useLoaderData<typeof loader>();
+  const { count, documents, labels, ...data } = useLoaderData<typeof loader>();
+  const extensions = useResolved(data.extensions, []);
 
   return (
     <VStack spacing={0} className="h-full ">

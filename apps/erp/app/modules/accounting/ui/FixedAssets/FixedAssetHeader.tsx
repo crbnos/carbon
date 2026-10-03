@@ -7,6 +7,7 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -117,6 +118,7 @@ const FixedAssetHeader = () => {
         menuItems={
           <>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!canUpdate}
               onClick={() => navigate(path.to.fixedAssetDetails(fixedAssetId))}
             >
@@ -149,6 +151,7 @@ const FixedAssetHeader = () => {
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={!permissions.can("delete", "accounting")}
                   destructive
                   onClick={deleteModal.onOpen}

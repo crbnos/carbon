@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
@@ -48,11 +49,13 @@ export async function action({ request }: ActionFunctionArgs) {
       const arrayValue = value ? value.split(",") : [];
       const update = await client
         .from("nonConformance")
-        .update({
-          [field]: arrayValue,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: arrayValue,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
 
@@ -104,11 +107,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierId":
       return await client
         .from("nonConformance")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
     default:

@@ -13,6 +13,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -92,6 +93,7 @@ const TrainingHeader = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   !permissions.can("delete", "resources") ||
                   !permissions.is("employee")

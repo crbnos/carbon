@@ -45,7 +45,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
-import { ModelUploadProgress } from "~/components/ModelUploadProgress";
+import { UploadProgress } from "~/components/UploadProgress";
 import {
   useCompanySettings,
   useCurrencyDecimals,
@@ -370,7 +370,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 >
                   <input id="model-upload" {...getInputProps()} />
                   {upload !== null ? (
-                    <ModelUploadProgress
+                    <UploadProgress
+                      label={t`Uploading model`}
+                      description={t`Uploading the CAD file`}
                       percent={upload.percent}
                       uploaded={upload.uploaded}
                       total={upload.total}

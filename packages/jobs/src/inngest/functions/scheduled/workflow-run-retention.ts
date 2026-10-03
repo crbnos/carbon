@@ -169,7 +169,7 @@ export const workflowRunRetentionFunction = inngest.createFunction(
   { id: "workflow-run-retention", retries: 2 },
   { cron: "0 4 * * *" },
   async ({ step, logger }) => {
-    const db = getJobDatabaseClient(5);
+    const db = getJobDatabaseClient();
 
     // 1. A run whose function died without reaching "finish" sits in Running
     // forever: permanently in flight in the UI, and invisible to every pass

@@ -23,10 +23,12 @@ import type {
 } from "@carbon/viewer";
 import {
   AssemblyPlayer,
+  buildSubAssemblyPlan,
   indexAssemblyGraph,
-  stagedGroupNodeIds
+  subAssemblyPartIds
 } from "@carbon/viewer";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ActionFunctionArgs,
@@ -39,7 +41,8 @@ import {
   useFetcher,
   useLoaderData,
   useParams,
-  useRevalidator
+  useRevalidator,
+  useSearchParams
 } from "react-router";
 import { Empty } from "~/components";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
@@ -65,6 +68,7 @@ import { isAssemblerServiceHealthy } from "~/modules/production/production.serve
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
 import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
+import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyStepList";
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -238,9 +242,8 @@ export default function AssemblyInstructionRoute() {
   // steps in rather than animating fallback paths the plan is about to replace.
   const isPlanning = isAssemblyPlanRunning(planJob);
 
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(
-    steps[0]?.id ?? null
-  );
+  // null = the default below (the first row of the list).
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [draftComponentNodeIds, setDraftComponentNodeIds] = useState<
     string[] | null
   >(null);
@@ -267,8 +270,11 @@ export default function AssemblyInstructionRoute() {
   const [isAddingComponents, setIsAddingComponents] = useState(false);
 
   const { selectedStep, activeStepIndex } = useMemo(() => {
+    // Default to the first row of the list (a sub-assembly's steps are stored
+    // before its header).
     const step =
       steps.find((candidate) => candidate.id === selectedStepId) ??
+      steps.find((candidate) => !candidate.parentStepId) ??
       steps[0] ??
       null;
     return {
@@ -334,14 +340,21 @@ export default function AssemblyInstructionRoute() {
     [steps, draftHiddenNodeIds, selectedStep]
   );
 
-  // A join step also "owns" the group built aside for it: those parts move on
-  // it, so they get the This-step badge and can't be hidden there.
+  const subPlan = useMemo(
+    () => buildSubAssemblyPlan(viewerSteps),
+    [viewerSteps]
+  );
+
+  // A step that carries a finished sub-assembly in also "owns" its parts:
+  // they move on it, so they get the This-step badge and can't be hidden there.
   const selectedOwnNodeIds = useMemo(() => {
     const own = draftComponentNodeIds ?? selectedStep?.componentNodeIds ?? [];
     if (!selectedStep) return own;
-    const staged = stagedGroupNodeIds(viewerSteps, selectedStep.id);
-    return staged.length === 0 ? own : [...new Set([...own, ...staged])];
-  }, [draftComponentNodeIds, selectedStep, viewerSteps]);
+    const carried = (subPlan.get(selectedStep.id)?.carriesIn ?? []).flatMap(
+      (headerId) => subAssemblyPartIds(viewerSteps, headerId)
+    );
+    return carried.length === 0 ? own : [...new Set([...own, ...carried])];
+  }, [draftComponentNodeIds, selectedStep, viewerSteps, subPlan]);
   // Mirrors the DB trigger for the in-flight drafts: a part the step installs is
   // never listed as hidden on it (e.g. right after adding it to the step).
   const selectedHiddenNodeIds = useMemo(() => {
@@ -362,6 +375,75 @@ export default function AssemblyInstructionRoute() {
     [isDisabled, selectedStep, saveHiddenNodeIds]
   );
 
+  // An opened sub-assembly (?subAssembly=) scopes the player to its steps.
+  const { t } = useLingui();
+  const [searchParams] = useSearchParams();
+  const requestedSubAssembly = searchParams.get(SUB_ASSEMBLY_PARAM);
+  const openSubAssemblyId =
+    requestedSubAssembly && subPlan.get(requestedSubAssembly)?.isHeader
+      ? requestedSubAssembly
+      : null;
+  const scopeStepIds = useMemo(
+    () =>
+      openSubAssemblyId
+        ? viewerSteps
+            .filter((step) => step.parentStepId === openSubAssemblyId)
+            .map((step) => step.id)
+        : null,
+    [openSubAssemblyId, viewerSteps]
+  );
+
+  // A used sub-assembly's header plays nothing (the unit joins at the step
+  // that uses it), so selecting it shows its finished last step instead.
+  const playerStepIndex = useMemo(() => {
+    const info = selectedStep ? subPlan.get(selectedStep.id) : undefined;
+    if (!info?.isHeader || info.plays) return activeStepIndex;
+    const members = viewerSteps.filter(
+      (step) => step.parentStepId === info.stepId
+    );
+    const last = members[members.length - 1];
+    return last
+      ? viewerSteps.findIndex((step) => step.id === last.id)
+      : activeStepIndex;
+  }, [selectedStep, subPlan, viewerSteps, activeStepIndex]);
+
+  // With a sub-assembly row selected, Play builds it from its first step.
+  const playFromStepIndex = useMemo(() => {
+    if (!selectedStep?.isSubAssembly) return null;
+    const first = viewerSteps.findIndex(
+      (step) => step.parentStepId === selectedStep.id
+    );
+    return first >= 0 ? first : null;
+  }, [selectedStep, viewerSteps]);
+
+  const subAssemblyName = useCallback(
+    (headerId: string) =>
+      viewerSteps.find((step) => step.id === headerId)?.title ||
+      t`Sub-Assembly`,
+    [viewerSteps, t]
+  );
+  // Labels follow the step the player shows (a used header shows its last step).
+  const playerStepId = viewerSteps[playerStepIndex]?.id;
+  const activeInfo = playerStepId ? subPlan.get(playerStepId) : undefined;
+  const isolationLabel =
+    activeInfo && !activeInfo.isHeader && activeInfo.headerId
+      ? t`Sub-Assembly ${subPlan.get(activeInfo.headerId)?.number ?? ""} · ${subAssemblyName(
+          activeInfo.headerId
+        )} — shown on its own`
+      : null;
+  const carriedIn = (activeInfo?.carriesIn ?? []).filter(
+    (headerId) => headerId !== playerStepId
+  );
+  const carryInLabel =
+    carriedIn.length > 0
+      ? carriedIn
+          .map(
+            (headerId) =>
+              t`Uses ${subPlan.get(headerId)?.number ?? ""} · ${subAssemblyName(headerId)}`
+          )
+          .join(", ")
+      : null;
+
   // Bumped to preview (play) the active step — a double-click in the Explorer.
   const [playStepNonce, setPlayStepNonce] = useState(0);
 
@@ -380,15 +462,25 @@ export default function AssemblyInstructionRoute() {
       // viewer, marked in the Components panel. Viewer-driven changes (playback,
       // scrub, on-screen nav) pass selectComponents:false so auto-advance doesn't
       // stomp the selection the user is working with.
-      if (options?.selectComponents !== false) {
-        const step = stepsRef.current.find(
-          (candidate) => candidate.id === stepId
-        );
-        if (step) setSelectedNodeIds(step.componentNodeIds ?? []);
+      const step = stepsRef.current.find(
+        (candidate) => candidate.id === stepId
+      );
+      if (options?.selectComponents !== false && step) {
+        setSelectedNodeIds(step.componentNodeIds ?? []);
       }
     },
     []
   );
+
+  // Opening a sub-assembly lands on its first step (the player only plays its
+  // steps). Keyed on the opened id alone so picking another step afterwards
+  // (its header in Properties, say) isn't bounced back.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs only when a sub-assembly is opened
+  useEffect(() => {
+    if (!scopeStepIds || scopeStepIds.length === 0) return;
+    if (selectedStep && scopeStepIds.includes(selectedStep.id)) return;
+    onSelectStep(scopeStepIds[0]);
+  }, [openSubAssemblyId]);
 
   // Double-clicking a step previews it: select it, then bump the nonce so the
   // player animates its insertion (single-click just shows it seated).
@@ -629,6 +721,7 @@ export default function AssemblyInstructionRoute() {
                   ownNodeIds={selectedOwnNodeIds}
                   hiddenNodeIds={selectedHiddenNodeIds}
                   onSetHiddenComponents={onSetHiddenComponents}
+                  openSubAssemblyId={openSubAssemblyId}
                 />
               }
               content={
@@ -668,7 +761,11 @@ export default function AssemblyInstructionRoute() {
                           glbUrl={getPrivateUrl(glbPath)}
                           graphUrl={getPrivateUrl(graphPath)}
                           steps={viewerSteps}
-                          activeStepIndex={Math.max(activeStepIndex, 0)}
+                          scopeStepIds={scopeStepIds}
+                          isolationLabel={isolationLabel}
+                          carryInLabel={carryInLabel}
+                          activeStepIndex={Math.max(playerStepIndex, 0)}
+                          playFromStepIndex={playFromStepIndex}
                           playStepNonce={playStepNonce}
                           onStepChange={(index) => {
                             const step = steps[index];
@@ -748,8 +845,6 @@ export default function AssemblyInstructionRoute() {
                 <AssemblyInstructionProperties
                   key={selectedStep?.id ?? "empty"}
                   step={selectedStep}
-                  stepIndex={selectedStep ? activeStepIndex : null}
-                  stepCount={steps.length}
                   draftComponentNodeIds={draftComponentNodeIds}
                   selectedNodeIds={selectedNodeIds}
                   isAddingComponents={isAddingComponents}

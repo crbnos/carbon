@@ -17,6 +17,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  PrefetchLink,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -28,7 +29,7 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, useEffect, useState } from "react";
 import { LuCircleStop, LuLoaderCircle } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -94,9 +95,8 @@ function SourceReference({
   }
 
   return (
-    <Link
+    <PrefetchLink
       to={to}
-      prefetch="intent"
       className="group inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-foreground"
     >
       <span className="text-muted-foreground group-hover:text-foreground">
@@ -105,7 +105,7 @@ function SourceReference({
       <span className="font-medium tabular-nums text-foreground/70 group-hover:text-foreground">
         {value}
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 

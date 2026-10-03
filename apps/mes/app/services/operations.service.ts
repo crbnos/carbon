@@ -680,7 +680,7 @@ export async function getAssemblyPlaybackByOperationId(
   const steps = await client
     .from("assemblyInstructionStep")
     .select(
-      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, motion, camera, fastener, durationSeconds, warnings"
+      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, usedInStepId, isSubAssembly, motion, camera, fastener, durationSeconds, warnings"
     )
     .eq("assemblyInstructionId", instructionId)
     .order("sortOrder", { ascending: true });
@@ -2408,10 +2408,18 @@ export async function insertReworkQuantity(
     .insert(
       sanitize({
         ...insert,
-        type: "Rework"
+        type: "Rework" as const
       })
     )
     .select("*");
+}
+
+// The tracked entity is recorded by the issue path, not on productionQuantity.
+function withoutTracking<
+  T extends { trackedEntityId?: unknown; trackingType?: unknown }
+>(data: T): Omit<T, "trackedEntityId" | "trackingType"> {
+  const { trackedEntityId: _entity, trackingType: _tracking, ...rest } = data;
+  return rest;
 }
 
 export async function insertProductionQuantity(
@@ -2431,8 +2439,8 @@ export async function insertProductionQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Production"
+        ...withoutTracking(data),
+        type: "Production" as const
       })
     )
     .select("*");
@@ -2465,8 +2473,8 @@ export async function insertScrapQuantity(
     .from("productionQuantity")
     .insert(
       sanitize({
-        ...data,
-        type: "Scrap"
+        ...withoutTracking(data),
+        type: "Scrap" as const
       })
     )
     .select("*");
@@ -2651,7 +2659,7 @@ export async function startProductionEvent(
   client: SupabaseClient<Database>,
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex"
+    "id" | "action" | "hasActiveEvents" | "unitIndex" | "exclusive"
   > & {
     startTime: string;
     employeeId: string;
@@ -2674,11 +2682,14 @@ export async function startProductionEvent(
   });
   if (!refs.ok) return notFoundResponse(refs.message);
 
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(data).select("id").single(),
+      client.from("productionEvent").insert(event).select("id").single(),
       client
         .from("jobOperation")
         .select("*")
@@ -2757,7 +2768,7 @@ export async function startProductionEvent(
 
   const eventInsert = await client
     .from("productionEvent")
-    .insert(data)
+    .insert(event)
     .select("*");
 
   if (!eventInsert.error) {

@@ -56140,6 +56140,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -56295,6 +56301,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -56402,6 +56414,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -99432,7 +99450,6 @@ export default {
                 "p_company_id",
                 "p_user_id",
                 "p_posting_date",
-                "p_description",
                 "p_lines",
                 "p_delete_ids"
               ],
@@ -99753,6 +99770,63 @@ export default {
           }
         },
         tags: ["(rpc) workflow_merge_custom_fields"]
+      }
+    },
+    "/rpc/get_document_extensions": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_document_extensions"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_document_extensions"]
       }
     },
     "/rpc/get_jobs_by_date_range": {
@@ -107318,6 +107392,96 @@ export default {
           }
         },
         tags: ["(rpc) sync_insert_company_related_records"]
+      }
+    },
+    "/rpc/get_item_ledger_balance": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "entry_number",
+            required: false,
+            type: "integer"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                entry_number: {
+                  format: "integer",
+                  type: "integer"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "item_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
       }
     },
     "/rpc/sync_add_employee_to_type_group": {
@@ -137073,7 +137237,8 @@ export default {
         "createdBy",
         "createdAt",
         "status",
-        "hiddenComponentNodeIds"
+        "hiddenComponentNodeIds",
+        "isSubAssembly"
       ],
       properties: {
         id: {
@@ -137240,6 +137405,17 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        usedInStepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        isSubAssembly: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -150172,7 +150348,7 @@ export default {
           format: "jsonb"
         },
         rateLimit: {
-          default: 60,
+          default: 20,
           format: "integer",
           type: "integer"
         },
@@ -187137,6 +187313,18 @@ export default {
     },
     "rowFilter.assemblyInstructionStep.hiddenComponentNodeIds": {
       name: "hiddenComponentNodeIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.usedInStepId": {
+      name: "usedInStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.isSubAssembly": {
+      name: "isSubAssembly",
       required: false,
       in: "query",
       type: "string"

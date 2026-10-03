@@ -8,7 +8,10 @@ import { runMrp } from "@carbon/planning";
 import { Edition } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
-import { selectCompaniesForMrp } from "./mrp-companies";
+import {
+  companiesWithPlanningWork,
+  selectCompaniesForMrp
+} from "./mrp-companies";
 
 export const mrpFunction = inngest.createFunction(
   { id: "mrp", retries: 2 },
@@ -64,7 +67,23 @@ export const mrpFunction = inngest.createFunction(
         }
       }
 
-      const scheduled = selectCompaniesForMrp(companies.data, plans);
+      // Deliberately not a throw: a failed lookup plans for everyone.
+      const withPlanningWork = await companiesWithPlanningWork(
+        getJobDatabaseClient()
+      ).catch((error) => {
+        logger.error("Failed to find companies with planning work", { error });
+        return null;
+      });
+
+      const scheduled = selectCompaniesForMrp(
+        companies.data,
+        plans,
+        withPlanningWork
+      );
+      logger.info("Companies scheduled for MRP", {
+        companies: companies.data.length,
+        scheduled: scheduled.length
+      });
 
       if (scheduled.length === 0) {
         logger.warn("No companies to run MRP for", {

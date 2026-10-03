@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -312,6 +317,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "quality")}
             onClick={() => {
               navigate(`${path.to.gauge(row.id!)}?${params?.toString()}`);
@@ -349,6 +355,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
             </MenuItem>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "quality")}
             onClick={() => {

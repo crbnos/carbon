@@ -2,6 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  type AccountingProvider,
+  createMappingService,
+  getAccountingIntegration,
+  getProviderIntegration,
+  isAccountingSyncEnabled,
+  ProviderID,
+  providerSupportsMasterDataImport,
+  type SyncContext,
+  type SyncDirection
+} from "@carbon/ee/accounting";
+import { getLogger } from "@carbon/logger";
+import { chunkArray } from "@carbon/utils";
+import z from "zod";
 /**
  * One-shot master-data sync — customers, vendors and items, in either
  * direction, for any accounting provider.
@@ -33,25 +48,7 @@
  * and pushes through the shared mapping service, so adding a provider needs no
  * edit here.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  type AccountingProvider,
-  createMappingService,
-  getAccountingIntegration,
-  getProviderIntegration,
-  ProviderID,
-  providerSupportsMasterDataImport,
-  type SyncContext,
-  type SyncDirection
-} from "@carbon/ee/accounting";
-import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
-import z from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { runUnmappedPushLoop } from "./accounting-master-sync-loop";
 import {
@@ -164,10 +161,24 @@ export const accountingMasterSyncFunction = inngest.createFunction(
       integration.id,
       integration.metadata
     ) as AccountingProvider;
-    const database = getPostgresClient(
-      getPostgresConnectionPool(5),
-      PostgresDriver
-    );
+    const database = getJobDatabaseClient();
+
+    // A push while sync is off is refused by the API route; this covers an
+    // event sent some other way, or sync turned off after the route accepted
+    // it. An import (pull) runs either way — it only writes into Carbon, and
+    // the links it creates are what keep the first push after sync is turned
+    // on from duplicating customers and vendors in the ledger.
+    if (
+      payload.direction === "push-to-accounting" &&
+      !isAccountingSyncEnabled(integration.metadata)
+    ) {
+      return {
+        provider: payload.provider,
+        direction: payload.direction,
+        entities: {},
+        skippedReason: "sync is turned off for this integration"
+      };
+    }
 
     const createdBy = getSyncOperationActor(integration);
     const result: Record<string, EntityCounts> = {};
@@ -349,13 +360,23 @@ async function syncBatch(args: {
     companyId: args.companyId,
     integration: args.integrationId,
     provider: args.provider,
-    integrationMetadata: args.integrationMetadata
+    integrationMetadata: args.integrationMetadata,
+    // An import drains only its own pulls — which is also what lets it run
+    // while sync is off without flushing anything else that is waiting.
+    ...(args.direction === "pull-from-accounting"
+      ? {
+          only: {
+            entityTypes: [args.entityType],
+            direction: args.direction
+          }
+        }
+      : {})
   });
 
   counts.claimed = drained.claimed;
 
-  // A drain processes every claimable operation for the company, not just this
-  // batch's. Attributing its result to THIS batch is correct only because
+  // A push drain processes every claimable operation for the company, not just
+  // this batch's (an import's is scoped to its own pulls, above). Attributing its result to THIS batch is correct only because
   // `concurrency: { limit: 1 }` plus the sequential batch loop mean earlier
   // batches are already Completed (never re-claimed) and later ones are not
   // enqueued yet — so the only ops in flight for this (direction, entityType)

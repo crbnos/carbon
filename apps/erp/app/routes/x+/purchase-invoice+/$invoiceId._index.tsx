@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { notFound } from "@carbon/auth";
+import { redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -12,3 +13,5 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!invoiceId) throw notFound("Could not find invoiceId");
   throw redirect(path.to.purchaseInvoiceDetails(invoiceId));
 }
+
+export const middleware = [redirectBeforeLoaders(loader)];

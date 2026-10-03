@@ -7,7 +7,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "libpg-query";
-import { type Helper, RETIRED_HELPERS } from "./helpers";
+import { type Helper, helperKey, RETIRED_HELPERS } from "./helpers";
 import { type AnyRule, type Manifest, render } from "./rules";
 import { assertOnlyPolicies } from "./sync";
 
@@ -143,8 +143,9 @@ async function readShipped(dir: string, managed: Set<string>) {
       const policy = node.CreatePolicyStmt?.table;
       if (fn) {
         const [schema, name] = fn.funcname.map((n: Ast) => n.String?.sval);
-        if (schema === "public" && managed.has(name)) {
-          shipped.helpers.set(name, { file, text });
+        const key = schema === "public" ? name : `${schema}.${name}`;
+        if (managed.has(key)) {
+          shipped.helpers.set(key, { file, text });
           continue;
         }
         if (schema === "public" && RETIRED_HELPERS[name] === file) continue;
@@ -202,7 +203,7 @@ export async function unshipped(
     tables: Record<string, string>;
     helpers: Record<string, string>;
   } = JSON.parse(readFileSync(BASELINE, "utf8"));
-  const shipped = await readShipped(dir, new Set(helpers.map((h) => h.name)));
+  const shipped = await readShipped(dir, new Set(helpers.map(helperKey)));
   const result: Unshipped = {
     tables: [],
     helpers: [],
@@ -220,11 +221,12 @@ export async function unshipped(
   }
 
   for (const helper of helpers) {
-    const got = shipped.helpers.get(helper.name);
+    const key = helperKey(helper);
+    const got = shipped.helpers.get(key);
     const same = got
       ? got.text === (await statements(helper.sql))[0]?.text
-      : baseline.helpers[helper.name] === hash(helper.sql);
-    if (!same) result.helpers.push(helper.name);
+      : baseline.helpers[key] === hash(helper.sql);
+    if (!same) result.helpers.push(key);
   }
 
   return result;

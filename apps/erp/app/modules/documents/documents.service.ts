@@ -105,8 +105,11 @@ export async function getDocuments(
 }
 
 /** @mcp read */
-export async function getDocumentExtensions(client: SupabaseClient<Database>) {
-  return client.from("documentExtensions").select("extension");
+export async function getDocumentExtensions(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_document_extensions", { company_id: companyId });
 }
 
 /** @mcp read */
@@ -201,8 +204,8 @@ export async function upsertDocument(
     );
   }
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { extension, ...data } = document;
+  // Labels live in documentLabel, not on the document row.
+  const { extension: _extension, labels: _labels, ...data } = document;
   return client
     .from("document")
     .update(

@@ -7,6 +7,7 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -153,6 +154,7 @@ const PickingListHeader = () => {
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 status !== "Draft" ||
                 hasPickedLines ||

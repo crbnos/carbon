@@ -586,6 +586,9 @@ interface IntegrationFormProps {
   tabs?: IntegrationFormTab[];
   /** Initially-selected tab value (defaults to the Settings tab). */
   defaultTab?: string;
+  /** Rendered in the header under the connection details of an installed
+   * integration (e.g. an accounting integration's sync switch). */
+  headerExtra?: ReactNode;
 }
 
 export function IntegrationForm({
@@ -596,7 +599,8 @@ export function IntegrationForm({
   onClose,
   dynamicOptions = {},
   tabs = [],
-  defaultTab
+  defaultTab,
+  headerExtra
 }: IntegrationFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -928,6 +932,7 @@ export function IntegrationForm({
           </p>
         </div>
       )}
+      {installed && headerExtra}
     </div>
   );
 

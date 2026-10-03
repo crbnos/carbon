@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -231,6 +231,7 @@ const TrackedEntitiesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -242,6 +243,7 @@ const TrackedEntitiesTable = memo(
               <Trans>View Traceability Graph</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
                 !permissions.can("update", "inventory") ||
                 row.status === "Consumed"

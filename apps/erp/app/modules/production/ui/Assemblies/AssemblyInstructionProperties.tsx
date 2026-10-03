@@ -17,6 +17,11 @@ import {
   Badge,
   Button,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Label,
@@ -35,19 +40,27 @@ import { Editor } from "@carbon/react/Editor";
 import type {
   AssemblyGraphIndex,
   AssemblyStep,
-  NamedUnit
+  NamedUnit,
+  SubAssemblyInfo
 } from "@carbon/viewer";
-import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
-import { memo, useEffect, useMemo, useState } from "react";
 import {
+  buildSubAssemblyPlan,
+  describeStep,
+  groupComponentNodeIds,
+  subAssemblyPartIds,
+  usableSubAssemblies
+} from "@carbon/viewer";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  LuBoxes,
   LuCirclePlus,
   LuEyeOff,
   LuMousePointerClick,
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useFetcher, useParams, useSearchParams } from "react-router";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { useImageUpload, usePermissions } from "~/hooks";
@@ -67,18 +80,15 @@ import type {
 } from "../../types";
 import PlaybackRow from "./AssemblyPlaybackRow";
 import { ComponentColorSwatch } from "./AssemblyStepBom";
-import AssemblyStepJoin from "./AssemblyStepJoin";
+import { SUB_ASSEMBLY_PARAM } from "./AssemblyStepList";
 import AssemblyStepMaterials from "./AssemblyStepMaterials";
 import AssemblyStepSlides from "./AssemblyStepSlides";
 import { AssemblyStepStatus, normalizeStepStatus } from "./AssemblyStepStatus";
 import AssemblyStepTools from "./AssemblyStepTools";
+import AssemblySubAssemblyProperties from "./AssemblySubAssemblyProperties";
 
 type AssemblyInstructionPropertiesProps = {
   step: AssemblyInstructionStepRow | null;
-  /** Zero-based index of the selected step; null when nothing is selected */
-  stepIndex: number | null;
-  /** Total step count, for the "Step N of M" header */
-  stepCount: number;
   draftComponentNodeIds: string[] | null;
   /** Current viewer/Components-panel selection — marks the matching component rows */
   selectedNodeIds: string[];
@@ -104,15 +114,13 @@ type AssemblyInstructionPropertiesProps = {
   onStopEditMotion: () => void;
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
-  /** Every step of the instruction, in order — for the "Build off to the side" select */
+  /** Every step of the instruction, in play order — numbering and sub-assemblies */
   viewerSteps: AssemblyStep[];
   onSelectStep: (stepId: string) => void;
 };
 
 const AssemblyInstructionProperties = ({
   step,
-  stepIndex,
-  stepCount,
   draftComponentNodeIds,
   selectedNodeIds,
   isAddingComponents,
@@ -141,13 +149,46 @@ const AssemblyInstructionProperties = ({
   if (!instructionId) throw new Error("Could not find id");
   const { t } = useLingui();
 
+  const subPlan = useMemo(
+    () => buildSubAssemblyPlan(viewerSteps),
+    [viewerSteps]
+  );
+  const viewerStepsById = useMemo(
+    () => new Map(viewerSteps.map((viewerStep) => [viewerStep.id, viewerStep])),
+    [viewerSteps]
+  );
+  const titleOf = useCallback(
+    (stepId: string) => {
+      const viewerStep = viewerStepsById.get(stepId);
+      if (!viewerStep) return "";
+      if (subPlan.get(stepId)?.isHeader) {
+        return viewerStep.title || t`Sub-Assembly`;
+      }
+      return describeStep(viewerStep, graphIndex, units) ?? t`Untitled step`;
+    },
+    [viewerStepsById, subPlan, graphIndex, units, t]
+  );
+  const info = step ? subPlan.get(step.id) : undefined;
+  const isHeader = info?.isHeader === true;
+  const number = info?.number ?? null;
+  const memberCount = step
+    ? viewerSteps.filter((viewerStep) => viewerStep.parentStepId === step.id)
+        .length
+    : 0;
+  const partCount = useMemo(
+    () =>
+      step && isHeader ? subAssemblyPartIds(viewerSteps, step.id).length : 0,
+    [step, isHeader, viewerSteps]
+  );
+
   const componentCount = (draftComponentNodeIds ?? step?.componentNodeIds ?? [])
     .length;
-  const title =
-    (step &&
-      (step.title ||
-        describeStep(toStepDescriptor(step), graphIndex, units))) ||
-    t`Untitled step`;
+  const title = isHeader
+    ? step?.title || t`Sub-Assembly`
+    : (step &&
+        (step.title ||
+          describeStep(toStepDescriptor(step), graphIndex, units))) ||
+      t`Untitled step`;
   const planFlag = useMemo(
     () => (step ? getPlanFlag(step.warnings, graphIndex) : null),
     [step, graphIndex]
@@ -180,9 +221,11 @@ const AssemblyInstructionProperties = ({
           <VStack spacing={1} className="w-full min-w-0">
             <HStack className="w-full min-w-0 items-center justify-between gap-2">
               <Subheading variant="heavy" className="shrink-0 tabular-nums">
-                {stepIndex != null
-                  ? t`Step ${stepIndex + 1} of ${stepCount}`
-                  : t`Step`}
+                {isHeader
+                  ? t`Sub-Assembly ${number}`
+                  : number
+                    ? t`Step ${number}`
+                    : t`Step`}
               </Subheading>
               <AssemblyStepStatus status={normalizeStepStatus(step.status)} />
             </HStack>
@@ -190,13 +233,21 @@ const AssemblyInstructionProperties = ({
               {title}
             </h3>
             <HStack className="w-full min-w-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-              <span>
-                <Plural
-                  value={componentCount}
-                  one="# component"
-                  other="# components"
-                />
-              </span>
+              {isHeader ? (
+                <span>
+                  <Plural value={memberCount} one="# step" other="# steps" />
+                  {" · "}
+                  <Plural value={partCount} one="# part" other="# parts" />
+                </span>
+              ) : (
+                <span>
+                  <Plural
+                    value={componentCount}
+                    one="# component"
+                    other="# components"
+                  />
+                </span>
+              )}
               {planFlag && (
                 <>
                   <span aria-hidden>·</span>
@@ -211,7 +262,20 @@ const AssemblyInstructionProperties = ({
           </Subheading>
         )}
       </div>
-      {step ? (
+      {step && isHeader ? (
+        <AssemblySubAssemblyProperties
+          key={step.id}
+          step={step}
+          viewerSteps={viewerSteps}
+          subPlan={subPlan}
+          titleOf={titleOf}
+          isDisabled={isDisabled}
+          itemMentions={itemMentions}
+          onSelectStep={onSelectStep}
+          onSetCamera={onSetCamera}
+          onClearCamera={onClearCamera}
+        />
+      ) : step ? (
         <Tabs defaultValue="details" className="w-full px-4 pb-2 pt-3">
           <TabsList className="w-full mb-4">
             <TabsTrigger className="flex-1" value="details">
@@ -252,6 +316,8 @@ const AssemblyInstructionProperties = ({
               onSetCamera={onSetCamera}
               onClearCamera={onClearCamera}
               viewerSteps={viewerSteps}
+              subPlan={subPlan}
+              titleOf={titleOf}
               onSelectStep={onSelectStep}
             />
           </TabsContent>
@@ -373,6 +439,8 @@ function StepForm({
   onSetCamera,
   onClearCamera,
   viewerSteps,
+  subPlan,
+  titleOf,
   onSelectStep
 }: {
   step: AssemblyInstructionStepRow;
@@ -395,6 +463,8 @@ function StepForm({
   onSetCamera: (stepId: string) => void;
   onClearCamera: (stepId: string) => void;
   viewerSteps: AssemblyStep[];
+  subPlan: Map<string, SubAssemblyInfo>;
+  titleOf: (stepId: string) => string;
   onSelectStep: (stepId: string) => void;
 }) {
   const { id: instructionId } = useParams();
@@ -548,6 +618,11 @@ function StepForm({
         />
 
         <StepComponentsEditor
+          stepId={step.id}
+          viewerSteps={viewerSteps}
+          subPlan={subPlan}
+          titleOf={titleOf}
+          onSelectStep={onSelectStep}
           componentNodeIds={componentNodeIds}
           graphIndex={graphIndex}
           selectedNodeIds={selectedNodeIds}
@@ -640,14 +715,6 @@ function StepForm({
                 </HStack>
               )}
             </PlaybackRow>
-            <AssemblyStepJoin
-              stepId={step.id}
-              steps={viewerSteps}
-              graphIndex={graphIndex}
-              units={units}
-              isDisabled={isDisabled}
-              onSelectStep={onSelectStep}
-            />
           </div>
         </VStack>
 
@@ -674,6 +741,11 @@ function StepForm({
  * autosave immediately.
  */
 function StepComponentsEditor({
+  stepId,
+  viewerSteps,
+  subPlan,
+  titleOf,
+  onSelectStep,
   componentNodeIds,
   graphIndex,
   selectedNodeIds,
@@ -684,6 +756,11 @@ function StepComponentsEditor({
   onStopAddComponents,
   onRemoveComponents
 }: {
+  stepId: string;
+  viewerSteps: AssemblyStep[];
+  subPlan: Map<string, SubAssemblyInfo>;
+  titleOf: (stepId: string) => string;
+  onSelectStep: (stepId: string) => void;
   componentNodeIds: string[];
   graphIndex: AssemblyGraphIndex | null;
   selectedNodeIds: string[];
@@ -705,30 +782,126 @@ function StepComponentsEditor({
   );
 
   const { t } = useLingui();
+  const { id: instructionId } = useParams();
+  if (!instructionId) throw new Error("Could not find id");
+  const [, setSearchParams] = useSearchParams();
+  const subAssemblyFetcher = useFetcher<{ success: boolean }>();
+
+  // Sub-assemblies this step fits as one piece, and the ones it could.
+  const usedSubAssemblies = viewerSteps
+    .filter(
+      (viewerStep) =>
+        subPlan.get(viewerStep.id)?.isHeader &&
+        viewerStep.usedInStepId === stepId
+    )
+    .map((header) => ({
+      headerId: header.id,
+      number: subPlan.get(header.id)?.number ?? "",
+      title: titleOf(header.id),
+      partCount: subAssemblyPartIds(viewerSteps, header.id).length
+    }));
+  const useOptions = usableSubAssemblies(viewerSteps, stepId).map((option) => {
+    const header = viewerSteps.find((s) => s.id === option.headerId);
+    const usedIn = header?.usedInStepId ?? null;
+    const note =
+      option.reason === "own"
+        ? t`This step is part of it`
+        : option.reason === "before"
+          ? t`Built after this step`
+          : usedIn === stepId
+            ? t`Used in this step`
+            : usedIn
+              ? t`Used in ${subPlan.get(usedIn)?.number ?? ""} — moves here`
+              : null;
+    return {
+      headerId: option.headerId,
+      label: `${subPlan.get(option.headerId)?.number ?? ""} · ${titleOf(
+        option.headerId
+      )}`,
+      note,
+      isDisabled: option.reason !== null || usedIn === stepId
+    };
+  });
+  const setUsedIn = (headerId: string, usedInStepId: string) => {
+    const formData = new FormData();
+    formData.append("usedInStepId", usedInStepId);
+    subAssemblyFetcher.submit(formData, {
+      method: "post",
+      action: path.to.assemblySubAssembly(instructionId, headerId)
+    });
+  };
+  const openSubAssembly = (headerId: string) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set(SUB_ASSEMBLY_PARAM, headerId);
+        return next;
+      },
+      { preventScrollReset: true }
+    );
 
   return (
     <VStack spacing={2} className="w-full">
-      <HStack className="w-full justify-between">
-        <Subheading as="h4" variant="heavy" className="tabular-nums">
+      <HStack className="w-full flex-wrap justify-between gap-y-2">
+        <Subheading
+          as="h4"
+          variant="heavy"
+          className="shrink-0 whitespace-nowrap tabular-nums"
+        >
           <Trans>Components</Trans> · {componentNodeIds.length}
         </Subheading>
         {!isDisabled && (
-          <Button
-            variant={isAddingComponents ? "primary" : "secondary"}
-            size="sm"
-            leftIcon={isAddingComponents ? undefined : <LuCirclePlus />}
-            onClick={() =>
-              isAddingComponents
-                ? onStopAddComponents()
-                : onStartAddComponents()
-            }
-          >
-            {isAddingComponents ? (
-              <Trans>Done Adding</Trans>
-            ) : (
-              <Trans>Add</Trans>
+          <HStack spacing={1} className="ml-auto">
+            {useOptions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" leftIcon={<LuBoxes />}>
+                    <Trans>Use Sub-Assembly</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="min-w-[16rem] max-w-[20rem]"
+                >
+                  <DropdownMenuLabel>
+                    <Trans>Use a finished sub-assembly in this step</Trans>
+                  </DropdownMenuLabel>
+                  {useOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.headerId}
+                      disabled={option.isDisabled}
+                      onClick={() => setUsedIn(option.headerId, stepId)}
+                    >
+                      <div className="min-w-0">
+                        <span className="block truncate">{option.label}</span>
+                        {option.note && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {option.note}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-          </Button>
+            <Button
+              variant={isAddingComponents ? "primary" : "secondary"}
+              size="sm"
+              leftIcon={isAddingComponents ? undefined : <LuCirclePlus />}
+              onClick={() =>
+                isAddingComponents
+                  ? onStopAddComponents()
+                  : onStartAddComponents()
+              }
+            >
+              {isAddingComponents ? (
+                <Trans>Done Adding</Trans>
+              ) : (
+                <Trans>Add</Trans>
+              )}
+            </Button>
+          </HStack>
         )}
       </HStack>
       {isAddingComponents && (
@@ -739,10 +912,60 @@ function StepComponentsEditor({
           </Trans>
         </p>
       )}
+      {usedSubAssemblies.length > 0 && (
+        <ul className="w-full divide-y divide-border rounded-lg border border-border">
+          {usedSubAssemblies.map((used) => (
+            <li
+              key={used.headerId}
+              className="group flex w-full items-center gap-2 px-2 py-1.5 text-sm"
+            >
+              <span className="inline-flex size-[22px] shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
+                <LuBoxes className="size-3.5" />
+              </span>
+              <button
+                type="button"
+                className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                onClick={() => onSelectStep(used.headerId)}
+              >
+                <span className="block truncate font-medium">{used.title}</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  <Trans>
+                    Sub-Assembly {used.number} ·{" "}
+                    <Plural
+                      value={used.partCount}
+                      one="# part"
+                      other="# parts"
+                    />
+                  </Trans>
+                </span>
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openSubAssembly(used.headerId)}
+              >
+                <Trans>Open</Trans>
+              </Button>
+              {!isDisabled && (
+                <IconButton
+                  aria-label={t`Stop using ${used.title} in this step`}
+                  icon={<LuX />}
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  onClick={() => setUsedIn(used.headerId, "")}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {groups.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          <Trans>No components yet</Trans>
-        </p>
+        usedSubAssemblies.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            <Trans>No components yet</Trans>
+          </p>
+        )
       ) : (
         <ul className="max-h-64 w-full divide-y divide-border overflow-y-auto rounded-lg border border-border scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           {groups.map((group) => {

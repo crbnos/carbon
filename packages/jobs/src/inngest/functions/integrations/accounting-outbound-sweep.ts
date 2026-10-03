@@ -2,6 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  createMappingService,
+  ensureProviderSubscriptions,
+  getAccountingIntegration,
+  getProviderIntegration,
+  isAccountingSyncEnabled,
+  PAYMENT_PUSH_PROVIDERS,
+  ProviderID,
+  resolvePostingSyncSettings,
+  type SyncContext
+} from "@carbon/ee/accounting";
+import { trigger } from "@carbon/lib/trigger";
+import { NotificationEvent } from "@carbon/notifications";
+import { today } from "@internationalized/date";
 /**
  * Outbound accounting reconciliation sweep — the correctness guarantee
  * behind OUTBOUND push sync (v4 Pillar B, transport unified under the v5
@@ -21,25 +36,7 @@
  * The window is deliberately short (SWEEP_LOOKBACK_DAYS) — history beyond
  * it is the explicit backfill's job, never a silent mass-push.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  createMappingService,
-  ensureProviderSubscriptions,
-  getAccountingIntegration,
-  getProviderIntegration,
-  PAYMENT_PUSH_PROVIDERS,
-  ProviderID,
-  resolvePostingSyncSettings,
-  type SyncContext
-} from "@carbon/ee/accounting";
-import { trigger } from "@carbon/lib/trigger";
-import { NotificationEvent } from "@carbon/notifications";
-import { today } from "@internationalized/date";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
   type IsolatedStepOutcome,
@@ -667,7 +664,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId, updatedBy")
+        .select("id, companyId, metadata, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -677,11 +674,14 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
         );
       }
 
-      return (integrations.data ?? []).map((row) => ({
-        companyId: row.companyId,
-        providerId: row.id as ProviderID,
-        updatedBy: row.updatedBy
-      }));
+      // An integration with sync turned off is still being set up.
+      return (integrations.data ?? [])
+        .filter((row) => isAccountingSyncEnabled(row.metadata))
+        .map((row) => ({
+          companyId: row.companyId,
+          providerId: row.id as ProviderID,
+          updatedBy: row.updatedBy
+        }));
     });
 
     if (targets.length === 0) {
@@ -702,10 +702,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
         id: `outbound-sweep-${target.providerId}-${target.companyId}`,
         target,
         fn: async () => {
-          // Process-lifetime cached pool shared with events/sync.ts and the
-          // pull sweep — never end it here (see accounting-pull-sweep.ts).
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
+          const database = getJobDatabaseClient();
           return await sweepCompanyProvider({
             companyId: target.companyId,
             providerId: target.providerId,

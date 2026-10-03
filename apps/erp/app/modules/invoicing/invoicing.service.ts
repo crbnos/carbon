@@ -852,11 +852,14 @@ export async function upsertPurchaseInvoice(
         customFields?: Json;
       })
 ) {
+  // Shipping cost belongs to purchaseInvoiceDelivery, not the invoice row.
   if ("id" in purchaseInvoice) {
+    const { supplierShippingCost: _shipping, ...invoiceUpdate } =
+      purchaseInvoice;
     return client
       .from("purchaseInvoice")
       .update({
-        ...sanitize(purchaseInvoice),
+        ...sanitize(invoiceUpdate),
         updatedAt: datetime.timestamp()
       })
       .eq("id", purchaseInvoice.id)
@@ -905,8 +908,11 @@ export async function upsertPurchaseInvoice(
   const locationId =
     purchaseInvoice.locationId ?? purchaser?.data?.locationId ?? null;
 
-  const { companyGroupId: _companyGroupId, ...purchaseInvoiceData } =
-    purchaseInvoice;
+  const {
+    companyGroupId: _companyGroupId,
+    supplierShippingCost: _shipping,
+    ...purchaseInvoiceData
+  } = purchaseInvoice;
 
   const invoice = await client
     .from("purchaseInvoice")
@@ -1236,10 +1242,11 @@ export async function upsertSalesInvoice(
       })
 ) {
   if ("id" in salesInvoice) {
+    const { supplierShippingCost: _shipping, ...invoiceUpdate } = salesInvoice;
     return client
       .from("salesInvoice")
       .update({
-        ...sanitize(salesInvoice),
+        ...sanitize(invoiceUpdate),
         updatedAt: datetime.timestamp()
       })
       .eq("id", salesInvoice.id)
@@ -1288,7 +1295,11 @@ export async function upsertSalesInvoice(
   const locationId =
     salesInvoice.locationId ?? salesPerson?.data?.locationId ?? null;
 
-  const { companyGroupId: _companyGroupId, ...salesInvoiceData } = salesInvoice;
+  const {
+    companyGroupId: _companyGroupId,
+    supplierShippingCost: _shipping,
+    ...salesInvoiceData
+  } = salesInvoice;
 
   const invoice = await client
     .from("salesInvoice")
@@ -1373,30 +1384,34 @@ export async function upsertSalesInvoiceLine(
         customFields?: Json;
       })
 ) {
+  // salesInvoiceLine has no purchase order columns.
+  const {
+    purchaseOrderId: _purchaseOrderId,
+    purchaseOrderLineId: _purchaseOrderLineId,
+    ...line
+  } = salesInvoiceLine;
+
   // Only a Service line has a service period (a Rental line carries its
   // billing period) — every other item type is a physical good, earned when it
   // ships. A cleared DatePicker posts "", which a DATE column rejects, so both
   // collapse to null.
   const hasServicePeriod =
-    salesInvoiceLine.invoiceLineType === "Service" ||
-    salesInvoiceLine.invoiceLineType === "Rental";
+    line.invoiceLineType === "Service" || line.invoiceLineType === "Rental";
   const servicePeriod = {
-    serviceStartDate:
-      (hasServicePeriod && salesInvoiceLine.serviceStartDate) || null,
-    serviceEndDate:
-      (hasServicePeriod && salesInvoiceLine.serviceEndDate) || null
+    serviceStartDate: (hasServicePeriod && line.serviceStartDate) || null,
+    serviceEndDate: (hasServicePeriod && line.serviceEndDate) || null
   };
 
-  if ("id" in salesInvoiceLine) {
+  if ("id" in line) {
     return client
       .from("salesInvoiceLine")
       .update(
         sanitize({
-          ...salesInvoiceLine,
+          ...line,
           ...servicePeriod
         })
       )
-      .eq("id", salesInvoiceLine.id)
+      .eq("id", line.id)
       .select("id")
       .single();
   }
@@ -1404,7 +1419,7 @@ export async function upsertSalesInvoiceLine(
   const existing = await client
     .from("salesInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", salesInvoiceLine.invoiceId);
+    .eq("invoiceId", line.invoiceId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1413,13 +1428,7 @@ export async function upsertSalesInvoiceLine(
 
   return client
     .from("salesInvoiceLine")
-    .insert([
-      {
-        ...salesInvoiceLine,
-        ...servicePeriod,
-        sortOrder: maxSortOrder + 1
-      }
-    ])
+    .insert([{ ...line, ...servicePeriod, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }
