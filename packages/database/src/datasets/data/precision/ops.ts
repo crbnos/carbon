@@ -7,7 +7,6 @@ import type {
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
-  OpenTimecardSpec,
   OpsData,
   PeopleAbsenceSpec,
   PeopleAssignmentSpec,
@@ -424,9 +423,6 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "11:02:00", clockOut: "14:33:00" }
 ];
 
-// Clocked in before the first timer on the floor started this morning.
-export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "05:57:00" };
-
 // None on today itself, so the MES schedule opens on every work center instead of one station.
 export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
   { dayOffset: -2, workCenter: "VMC Cell 1", shift: "First Shift" },
@@ -569,7 +565,6 @@ export const precisionOps: OpsData = {
   replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
-  openTimecard: OPEN_TIMECARD,
   peopleAssignments: PEOPLE_ASSIGNMENTS,
   peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,
