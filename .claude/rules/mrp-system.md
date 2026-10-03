@@ -13,8 +13,9 @@ MRP nets demand against supply per item/location/period and projects on-hand
 forward so users can create planned purchase orders (purchasing) and jobs
 (production). It runs **IN-PROCESS in Node** via `runMrp` (exported from
 `@carbon/planning`, source `packages/planning/src/mrp/mrp.ts`), driven
-either by an **Inngest** scheduled cron or a manual route POST — NOT a Supabase
-edge function (the old `mrp` Deno function and its `config.toml` entry were
+by an **Inngest** scheduled cron, a manual route POST, or a status change on a
+document that moves demand or supply (below) — NOT a Supabase edge function
+(the old `mrp` Deno function and its `config.toml` entry were
 DELETED), and NOT Trigger.dev. `runMrp(client, db, payload)` takes an injected
 service-role Supabase client (PostgREST reads) and a Kysely handle (the atomic
 Phase-7 write) and throws on failure.
@@ -45,7 +46,9 @@ Phase-7 write) and throws on failure.
    silently never ran MRP, reporting a green Inngest run. Do not reintroduce it:
    the work list is `company`, and a company with no plan row must still run.
    On **Cloud only**, companies whose `stripeSubscriptionStatus` is `'Canceled'`
-   are skipped, because `weekly.ts` deletes those. The selection rule is the pure
+   are skipped: the company is on its way out (Stripe removes the plan row when
+   the subscription ends, and `weekly.ts` then deletes the planless company).
+   The selection rule is the pure
    `selectCompaniesForMrp` (`scheduled/mrp-companies.ts`), unit-tested in its
    sibling `.test.ts`; the scheduler logs a `warn` when the list comes back
    empty, so "no work" can never again look like "worked fine".
@@ -59,17 +62,27 @@ Phase-7 write) and throws on failure.
    plans for everyone, which is the fail-safe direction.
 
 2. **Manual trigger** — POST `apps/erp/app/routes/api+/mrp.ts` (permission
-   `update: "inventory"`). Reads `?location` query param; calls
-   `runMRP(getCarbonServiceRole(), { type: locationId ? "location" : "company",
-   id: locationId ?? companyId, companyId, userId })`. `runMRP` lives in
+   `update: "inventory"`). Reads the `?location` query param, confirms it
+   belongs to the company (`requireCompanyRecord`), then calls
+   `runMRP(getCarbonServiceRole(), getDatabaseClient(), { type: locationId ?
+   "location" : "company", id: locationId ?? companyId, companyId, userId })`.
+   `runMRP(client, db, params)` lives in
    `apps/erp/app/modules/production/production.service.ts`; it dynamic-imports
-   `runMrp` from `@carbon/planning`, gets a Kysely handle via
-   `getSchedulingDb()`, calls `runMrp(client, db, params)` **in-process**, and
-   preserves the `{ data, error }` shape (catching the throw). The planning tables
-   submit to this via `path.to.api.mrp(locationId)`.
+   `runMrp` from `@carbon/planning`, calls it **in-process** with the Kysely
+   handle the route passed in (never built in the service file), and preserves
+   the `{ data, error }` shape (catching the throw). The planning tables submit
+   to this via `path.to.api.mrp(locationId)`.
+
+   **Event triggers** — the same `runMRP` runs after a document changes demand
+   or supply: job status changes (`x+/job+/$jobId.status.tsx`, and
+   `releaseJobs` in `production.server.ts`), PO status changes
+   (`x+/purchase-order+/$orderId.status.tsx`), sales order confirm
+   (`x+/sales-order+/$orderId.confirm.tsx`) and kanban
+   (`api+/kanban.$id.tsx`). The demo template's `planDemoCompany`
+   (`packages/jobs/src/demo-planning.ts`) calls `runMrp` directly.
 
 3. **In-process engine** — `packages/planning/src/mrp/mrp.ts`
-   (`runMrp(client, db, payload)`, Node, ~1130 lines). Reads go through the
+   (`runMrp(client, db, payload)`, Node, ~1390 lines). Reads go through the
    injected service-role Supabase client (PostgREST); the atomic Phase-7 write
    goes through the injected Kysely handle. Payload validator accepts
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
@@ -80,8 +93,9 @@ Phase-7 write) and throws on failure.
    job-quantities-engine) and is reached from Node via the
    `@carbon/database/mrp-engine` barrel.
 
-   - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
-     forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
+   - **Periods**: generates/fetches weekly `period` rows 72 weeks forward from
+     today on the company's clock (`WEEKS_TO_FORECAST = 18 * 4`, `"Week"`
+     granularity).
    - **Inputs (demand)**: views `openSalesOrderLines`, `openJobMaterialLines`,
      plus the user-entered `demandProjection`. Don't conflate it with the
      output: MRP reads `demandProjection` (user-entered) and **writes
@@ -100,7 +114,9 @@ Phase-7 write) and throws on failure.
      `UPDATE … FROM (VALUES …)`, an UPDATE never an upsert) and every read
      path nets with `GREATEST("forecastQuantity" - "consumedQuantity", 0)`:
      both planning RPCs, `generatePlanningActions`' union,
-     `get_inventory_quantities`, and `getItemDemand`. Regenerative: nothing to
+     `get_inventory_quantities`, and the item forecast API
+     (`api+/items.$id.$locationId.forecast.ts`, which nets the raw projections
+     `getItemDemand` returns). Regenerative: nothing to
      un-consume — cancelled orders/edited forecasts re-net on the next run.
      Unit tests: `forecast-consumption.test.ts`. Spec:
      `.ai/specs/2026-09-11-demand-forecast-consumption.md`.
@@ -127,10 +143,18 @@ Phase-7 write) and throws on failure.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
      netting, and lead-time offsetting.
-   - **Outputs (DB writes)**: deletes prior MRP forecast rows, then batch-inserts
+   - **Outputs (DB writes)**: deletes prior MRP forecast rows — including EVERY
+     `supplyForecast` row at the company's locations (MRP never inserts
+     `supplyForecast`; the planning.update routes do) — then batch-inserts
      (500/chunk) `demandForecast` (`forecastMethod: "mrp"`), `demandForecastSource`
-     (lineage), `demandActual`, and `supplyActual`. Writes are stamped with the
-     payload `userId` (`"system"` for cron).
+     (lineage), `demandActual`, and `supplyActual`, and persists
+     `demandProjection.consumedQuantity`. Writes are stamped with the payload
+     `userId` (`"system"` for cron).
+   - **Planning actions**: after the Phase-7 transaction commits, `runMrp` calls
+     `generatePlanningActions` (`planning-actions.ts`), which diff-writes the
+     `planningAction` worklist in its own transaction. Its errors propagate, so
+     a run whose actions failed reports failure even though the forecast rows
+     are already committed.
 
 ## Planning data model (tables — all in newest schema)
 
@@ -143,7 +167,8 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20260911150012`), never user-edited |
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
-| `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs), not by MRP |
+| `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20260911041811`, `20260930233016`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, period, target) via a partial unique index |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 
@@ -160,8 +185,11 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 
 ## Planning split functions
 
-Latest definition of BOTH: `20260911150012_demand-forecast-consumption.sql`
-(supersedes `20260715195226` for production, `20260831190142` for purchasing).
+Latest definitions: `get_production_planning` in
+`20260911150012_demand-forecast-consumption.sql` (supersedes `20260715195226`);
+`get_purchasing_planning` — and `get_inventory_quantities` — in
+`20261002192627_planning-rpcs-guard-and-forecast-netting.sql`, forked from the
+guarded `20260925121735` bodies and opening with `assert_company_access`.
 Their `demand_data` CTEs read the projection arm net of consumption
 (`GREATEST("forecastQuantity" - "consumedQuantity", 0)`).
 
@@ -187,9 +215,10 @@ to child demand. Note current `methodType` enum is
 
 ## Source views (open demand/supply)
 
-Newest defs in `20260417000300_storage-unit-recreate-dependents.sql`
-(`openPurchaseOrderLines` in `20260529074512_open-po-lines-required-date.sql`,
-`openSalesOrderLines` in `20260710051147_mto-sales-lines-drive-demand.sql`).
+Newest defs: `openPurchaseOrderLines` in `20260811123616_widen-purchasing-scale.sql`,
+`openProductionOrders` in `20260811123619_widen-sales-production-scale.sql`,
+`openJobMaterialLines` in `20260926093417_open-job-material-lines-invoker.sql`,
+`openSalesOrderLines` in `20260911150012_demand-forecast-consumption.sql`.
 All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`,
 `itemTrackingType`.
 
@@ -347,9 +376,12 @@ anywhere else.
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
-    which re-reads the record under the company and applies the same
-    commitment gate as Apply: a PO past Planned, or a job past Planned, returns
-    409 and is never edited from planning. Locked rows render as plain cells
+    which re-reads the record under the company and refuses a committed record
+    with 409: `updateJob` allows only Draft / Planned jobs; `updateLine` refuses
+    a PO that `isPurchaseOrderLocked` (To Receive and later). The gates are NOT
+    yet identical to Apply's — Apply blocks only Ready / In Progress / Paused
+    jobs, and neither PO gate blocks Needs Approval / To Review / Rejected.
+    Locked rows render as plain cells
     (`Grid isRowEditable`). Each row carries the planning action that targets
     it — type, suggested value, reason, Apply / Review — so there is no
     separate action table. Released jobs (Ready / In Progress / Paused) are
@@ -409,8 +441,10 @@ anywhere else.
   The engine itself is in-process Node (`runMrp` from `@carbon/planning`), NOT
   a Supabase edge function — the `mrp` Deno function was deleted.
 - MRP itself writes `demandForecast`/`demandActual`/`supplyActual`/
-  `demandForecastSource`; it does **not** write `supplyForecast` — that comes from
-  the user-driven `planning.update` routes (planned orders).
-- The engine currently runs full MRP regardless of `type`/`id` scope
-  (effectively company-wide). <!-- UNVERIFIED: scope-narrowing TODO not re-confirmed in current code -->
+  `demandForecastSource`/`planningAction`; it never inserts `supplyForecast` —
+  that comes from the user-driven `planning.update` routes (planned orders) —
+  but Phase 7 deletes every `supplyForecast` row at the company's locations.
+- The engine runs full MRP regardless of `type`/`id` scope: `type` is only
+  logged (`run started`), never used to narrow the reads, so every run is
+  company-wide.
 - Don't rebuild the DB to test schema; ask the user (per AGENTS.md).

@@ -62,6 +62,7 @@ pnpm run lint
 | `apiKey` | Hashed API keys with per-module scopes |
 | `webhook` / `webhookTable` | Outbound webhooks and the tables they may subscribe to |
 | `companyAccountsPayableBillingAddress` / `companyAccountsReceivableBillingAddress` | Remit-to / bill-to addresses printed on documents |
+| `itemPostingGroupResponsibility` | Planning ownership: the responsible employee for an item group AT a location (`locationId`, `itemPostingGroupId`) — one rung of the MRP action owner ladder (see Planning below) |
 | `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting` (now in the commercial `@carbon/ee/console.server`, gated to Business via the `PERMISSIONS` feature), which provisions a "Console Operator" type |
 
 ## Key Service Functions
@@ -77,6 +78,7 @@ pnpm run lint
 - `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
 - `updateLogoLight|LightIcon|Dark|DarkIcon|Watermark` — store the storage path on `company`, not a URL (readers prefix it)
 - `exportCompanyBackup` / `listCompanyBackupFolders` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); `getCompanyBackups` — the Backups loader's list, which computes each backup's live compatibility verdict via `@carbon/jobs/backups` — and the restore triggers live in `backups.server.ts`
+- Planning (Settings → Planning, `x+/settings+/planning.tsx`, cards in `ui/Planning/`): `setRescheduleToleranceDays` / `setDefaultPlanningHorizonDays` / `setForecastConsumptionWindow` (`companySettings`), and the action owner ladder — `setDefaultResponsibleEmployee` (company), `setLocationResponsibleEmployee` (`location.responsibleEmployee`), `upsertItemPostingGroupResponsibility` (item group at a location; a null employee deletes the row). The item rung is `itemPlanning.responsibleEmployee`, edited on the item.
 - `resolveLabelLogo` (`labelLogo.server.ts`) — binds `@carbon/documents/labels`' resolver to this app's `SUPABASE_URL`; used by every ERP `file+/**/$id.labels[.]pdf|zpl` route (MES keeps its own copy at `apps/mes/app/services/labelLogo.server.ts`)
 
 ## Document Preview

@@ -10,7 +10,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via the `convert` edge function.
 - **RFQ (Request for Quotation)** — solicits pricing from multiple suppliers. Links to supplier quotes via `purchasingRfqToSupplierQuote`. Statuses managed by `updatePurchasingRFQStatus`.
 - **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.claude/rules/purchasing-conversion-factors.md`.
-- **Purchasing Planning** — MRP-driven planned orders surfaced via `getPurchasingPlanning` (calls `get_purchasing_planning` RPC).
+- **Purchasing Planning** — MRP-driven planned orders surfaced via `getPurchasingPlanning` (calls the `get_purchasing_planning_grid` RPC, which wraps `get_purchasing_planning` with the planning-horizon fence, first negative week, latest order date and the database-side action filters). Planning actions on PO lines are applied by `x+/purchasing+/planning.update.tsx` through `updatePurchaseOrderLineSchedule` (required date / purchase quantity on an unlocked line) and `shortClosePurchaseOrderLine` (Cancel).
 
 ## Safety
 
@@ -64,7 +64,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `duplicatePurchaseOrder` — copies a PO with new sequence
 - `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing
 - `sendSupplierQuote` — sends quote to supplier
-- `getPurchasingPlanning` — MRP-driven planned order view (RPC `get_purchasing_planning`)
+- `getPurchasingPlanning` — MRP-driven planned order view (RPC `get_purchasing_planning_grid`)
 - `getSupplierApprovalContext` — reads approval workflow state
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison

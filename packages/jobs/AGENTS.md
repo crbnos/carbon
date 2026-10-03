@@ -60,6 +60,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `mrp` | `0 */3 * * *` | Scheduled MRP for every company (`company`, not `companyPlan`; Cloud skips canceled subscriptions via `selectCompaniesForMrp`) — one `step.run` per company |
 
 ## Safety Notes
 
