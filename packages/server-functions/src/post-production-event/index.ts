@@ -46,7 +46,6 @@ export const postProductionEvent = defineServerFn({
     { productionEventId, reverse }
   ): Promise<PostProductionEventResult> {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
@@ -367,7 +366,6 @@ export const postProductionEvent = defineServerFn({
     ];
 
     const accountingPeriodId = await getCurrentAccountingPeriod(
-      client,
       companyId,
       db,
       today

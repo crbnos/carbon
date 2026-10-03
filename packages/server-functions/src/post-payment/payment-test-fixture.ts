@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { connectLocalTestDatabase } from "../local-database-test-fixture";
 
@@ -222,27 +220,11 @@ export async function paymentFixture() {
       )
       .execute();
   });
-  const client = {
-    from: () => {
-      const query = {
-        select: () => query,
-        eq: () => query,
-        gte: () => query,
-        lte: () => query,
-        single: async () => ({
-          data: { id: periodId, status: "Active", closeStatus: "Open" },
-          error: null
-        })
-      };
-      return query;
-    }
-  } as unknown as SupabaseClient<Database>;
   const args = {
     type: "post" as const,
     companyId,
     userId: "system",
-    today: "2026-09-07",
-    client
+    today: "2026-09-07"
   };
   return {
     db,

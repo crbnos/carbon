@@ -155,4 +155,26 @@ describe("noUnscopedKyselyWrite", () => {
       expect(scan(ts, file)).toHaveLength(0);
     }
   });
+  it("holds updateRows and deleteRows to the same rule", () => {
+    const fn = "packages/server-functions/src/post-receipt/index.ts";
+    expect(
+      scan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId });',
+        fn
+      )
+    ).toHaveLength(1);
+    expect(
+      scan('await deleteRows(trx, "fixedAssetDisposal", { fixedAssetId });', fn)
+    ).toHaveLength(1);
+    expect(
+      scan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId, companyId });',
+        fn
+      )
+    ).toHaveLength(0);
+    // A companyId in the SET is not a filter.
+    expect(
+      scan('await updateRows(db, "item", { companyId }, { id });', fn)
+    ).toHaveLength(1);
+  });
 });

@@ -107,16 +107,28 @@ export const modelThumbnailFunction = inngest.createFunction(
         const upload = await storage(client)
           .company(companyId)
           .createSignedUploadUrl(thumbnailPath, { upsert: true });
-        const urls: Record<string, string> = {};
-        if (upload.data) {
-          urls.thumbnail = internalizeStorageUrl(upload.data.signedUrl);
+        if (upload.error) {
+          throw new Error(
+            `Failed to sign thumbnail upload URL: ${upload.error.message}`
+          );
         }
-        return urls;
+        return { thumbnail: internalizeStorageUrl(upload.data.signedUrl) };
       }
     });
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();
+      // The assembler reports success once the render is done; the upload goes
+      // through a URL minted later. Repointing the model at an object that never
+      // landed would replace a working thumbnail with a broken one.
+      const uploaded = await storage(client)
+        .company(companyId)
+        .info(thumbnailPath);
+      if (uploaded.error) {
+        throw new Error(
+          `Thumbnail was not uploaded to ${thumbnailPath}: ${uploaded.error.message}`
+        );
+      }
       const result = await client
         .from("modelUpload")
         .update({ thumbnailPath })
@@ -130,10 +142,17 @@ export const modelThumbnailFunction = inngest.createFunction(
 
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
       if (model.previousPath && model.previousPath !== thumbnailPath) {
-        await storage(client)
+        const removed = await storage(client)
           .company(companyId)
           .remove([model.previousPath])
-          .catch(() => undefined);
+          .catch((error: unknown) => ({ error }));
+        if (removed.error) {
+          logger.warn("failed to remove the superseded thumbnail", {
+            modelId,
+            path: model.previousPath,
+            error: removed.error
+          });
+        }
       }
     });
 

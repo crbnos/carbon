@@ -2,13 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type AnyPostgresClient,
-  type Database,
-  getCompanyTimeZone,
-  isKysely,
-  type Json
-} from "@carbon/database";
+import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { toJson, toJsonColumns } from "@carbon/database/json";
 import {
@@ -52,7 +46,6 @@ import {
 } from "@carbon/database/supersession-pick";
 import { getLogger } from "@carbon/logger";
 import { datetime, scrapAllowance, textToTiptap } from "@carbon/utils";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type QueryCreator, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -7734,50 +7727,23 @@ export const getMethod = defineServerFn({
   }
 });
 
-type Method = NonNullable<
-  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
->[number];
+type Method =
+  Database["public"]["Functions"]["get_method_tree"]["Returns"][number];
 type MethodTreeItem = {
   id: string;
   data: Method;
   children: MethodTreeItem[];
 };
 
-/**
- * A make method's tree. Given a Kysely handle it reads over the direct
- * connection and throws on failure; given a Supabase client it goes through
- * PostgREST and returns the error. A PostgREST call costs about ten times a
- * statement, so server functions pass `db` (or `trx` inside a transaction).
- */
+/** A make method's tree, read on the caller's connection (`db`, or `trx`). */
 export async function getMethodTree(
-  client: AnyPostgresClient,
+  db: Kysely<KyselyDatabase>,
   makeMethodId: string
-): Promise<{ data: MethodTreeItem[] | null; error: PostgrestError | null }> {
-  if (isKysely(client)) {
-    const { rows } = await sql<Method>`
-      SELECT * FROM get_method_tree(${makeMethodId})
-    `.execute(client);
-    return { data: getMethodTreeArrayToTree(rows), error: null };
-  }
-
-  const items = await getMethodTreeArray(client, makeMethodId);
-  if (items.error) return items;
-
-  const tree = getMethodTreeArrayToTree(items.data);
-
-  return {
-    data: tree,
-    error: null
-  };
-}
-
-export function getMethodTreeArray(
-  client: SupabaseClient<Database>,
-  makeMethodId: string
-) {
-  return client.rpc("get_method_tree", {
-    uid: makeMethodId
-  });
+): Promise<{ data: MethodTreeItem[]; error: null }> {
+  const { rows } = await sql<Method>`
+    SELECT * FROM get_method_tree(${makeMethodId})
+  `.execute(db);
+  return { data: getMethodTreeArrayToTree(rows), error: null };
 }
 
 // Build date for a job's supersession / effectivity decisions: prefer the planned

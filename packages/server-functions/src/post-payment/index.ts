@@ -31,7 +31,6 @@ export const postPayment = defineServerFn({
   permissions: { update: "invoicing" },
   async run(ctx, { type, paymentId, fee }) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
@@ -42,7 +41,6 @@ export const postPayment = defineServerFn({
       companyId,
       userId,
       today,
-      client,
       fee
     });
     return { success: true, ...result };

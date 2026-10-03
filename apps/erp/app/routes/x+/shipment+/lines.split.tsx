@@ -5,7 +5,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import type { ServerFnResult } from "@carbon/server-functions";
 import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
@@ -47,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const salesOrderShipment = await (create(
+  const salesOrderShipment = await create(
     ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
     {
       type: "shipmentLineSplit",
@@ -56,11 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
       shipmentLineId: documentLineId,
       quantity
     }
-  ) as Promise<
-    ServerFnResult<{
-      id: string;
-    }>
-  >);
+  );
 
   if (salesOrderShipment.error) {
     return {

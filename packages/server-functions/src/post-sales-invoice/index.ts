@@ -43,6 +43,7 @@ import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { assertPostable } from "../lib/postable";
 
 const logger = getLogger("server-functions", "post-sales-invoice");
 
@@ -60,8 +61,8 @@ export const postSalesInvoice = defineServerFn({
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, invoiceId, userId, companyId });
-
-    const client = await ctx.supabase();
+    if (type === "post")
+      await assertPostable(db, "salesInvoice", invoiceId, companyId);
     try {
       const today = datetime
         .today(await getCompanyTimeZone(db, companyId))
@@ -828,7 +829,7 @@ export const postSalesInvoice = defineServerFn({
           }
 
           const accountingPeriodId = accountingEnabled
-            ? await getCurrentAccountingPeriod(client, companyId, db, today)
+            ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
           await db.transaction().execute(async (trx) => {
@@ -1520,7 +1521,7 @@ export const postSalesInvoice = defineServerFn({
           }
 
           const accountingPeriodId = accountingEnabled
-            ? await getCurrentAccountingPeriod(client, companyId, db, today)
+            ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
           await db.transaction().execute(async (trx) => {

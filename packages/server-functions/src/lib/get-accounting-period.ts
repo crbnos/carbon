@@ -2,12 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 
 const MONTH_NUMBER: Record<string, number> = {
@@ -181,7 +179,6 @@ export async function resolveAccountingPeriod(
 
 /** Original-period corrections retain the existing public calling contract. */
 export async function getAccountingPeriodForDate(
-  _client: SupabaseClient<Database>,
   companyId: string,
   db: Kysely<DB>,
   date: string
@@ -191,7 +188,6 @@ export async function getAccountingPeriodForDate(
 
 /** Pass the same business day used by the caller's journal and ledger rows. */
 export async function getCurrentAccountingPeriod(
-  _client: SupabaseClient<Database>,
   companyId: string,
   db: Kysely<DB>,
   forDate?: string

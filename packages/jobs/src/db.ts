@@ -18,19 +18,12 @@ let clientPool: ReturnType<typeof getProcessPool> | undefined;
  * built once: the engine, matcher and queue drainer ask for it on every step,
  * and a fresh instance per call rebuilds the whole query-compiler graph. It is
  * rebuilt only if a script ended the pool and a new one replaced it.
- *
- * `getPostgresClient` is typed against the edge runtime's vendored kysely, so
- * the structurally-identical instance needs a cast for this package's copy.
  */
 export function getJobDatabaseClient(): Kysely<KyselyDatabase> {
   const pool = getProcessPool();
   if (!client || clientPool !== pool) {
     clientPool = traceConnectionWaits(pool);
-    client = getPostgresClient(
-      pool,
-      PostgresDriver,
-      queryLog
-    ) as unknown as Kysely<KyselyDatabase>;
+    client = getPostgresClient(pool, PostgresDriver, queryLog);
   }
   return client;
 }

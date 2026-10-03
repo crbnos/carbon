@@ -17,11 +17,17 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
-import { defineServerFn } from "../define-server-fn";
+import {
+  defineServerFn,
+  type ServerFn,
+  type ServerFnResult
+} from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import type { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "create");
 
@@ -145,8 +151,31 @@ export const createInput = z.discriminatedUnion("type", [
     type: z.literal("journalEntry")
   })
 ]);
-/** Each `type` returns its own fields (`id`, `receiptId`, …). */
-export type CreateResult = Record<string, unknown>;
+type CreateInput = z.input<typeof createInput>;
+type CreateResults = {
+  nonConformanceTasks: { success: true };
+  purchaseOrderFromJob: {
+    success: true;
+    purchaseOrderIdsBySupplierId: Record<string, string>;
+  };
+};
+/** What a `type` returns: the two above, and the created row's id for the rest. */
+export type CreateResultFor<T extends CreateInput["type"]> =
+  T extends keyof CreateResults ? CreateResults[T] : { id: string };
+export type CreateResult = CreateResultFor<CreateInput["type"]>;
+
+/** `create`, with the result narrowed by the input's `type`. */
+type Create = {
+  <I extends CreateInput>(
+    ctx: ServerFnContext,
+    input: I
+  ): Promise<ServerFnResult<CreateResultFor<I["type"]>>>;
+  withClient<I extends CreateInput>(
+    client: SupabaseClient<Database>,
+    db: Kysely<KyselyDatabase>,
+    input: I & { companyId: string; userId: string }
+  ): Promise<ServerFnResult<CreateResultFor<I["type"]>>>;
+} & ServerFn<typeof createInput, CreateResult>;
 
 /** Creates receipts, shipments, NCR tasks, purchase orders and journal entries, per `type`. */
 export const create = defineServerFn({
@@ -829,7 +858,7 @@ export const create = defineServerFn({
         const { locationId } = payload;
         let createdDocumentId;
         logger.info({ type, locationId, companyId, userId });
-        await db.transaction().execute(async (trx) => {
+        const id = await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
             .insertInto("receipt")
@@ -844,9 +873,10 @@ export const create = defineServerFn({
 
           createdDocumentId = newReceipt?.[0]?.id;
           if (!createdDocumentId) throw new Error("Failed to create receipt");
+          return createdDocumentId;
         });
 
-        return { id: createdDocumentId };
+        return { id };
       }
       case "receiptFromPurchaseOrder": {
         const {
@@ -1793,7 +1823,7 @@ export const create = defineServerFn({
         const effectiveLocationId =
           locationId ?? (await getFallbackLocationId(db, companyId, userId));
 
-        await db.transaction().execute(async (trx) => {
+        const id = await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "shipment", companyId);
 
           const newShipment = await trx
@@ -1809,9 +1839,10 @@ export const create = defineServerFn({
 
           createdDocumentId = newShipment?.[0]?.id;
           if (!createdDocumentId) throw new Error("Failed to create shipment");
+          return createdDocumentId;
         });
 
-        return { id: createdDocumentId };
+        return { id };
       }
       case "shipmentFromWarehouseTransfer": {
         const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
@@ -3348,7 +3379,7 @@ export const create = defineServerFn({
       }
       case "journalEntry": {
         let createdDocumentId;
-        await db.transaction().execute(async (trx) => {
+        const id = await db.transaction().execute(async (trx) => {
           const journalEntryId = await getNextSequence(
             trx,
             "journalEntry",
@@ -3373,15 +3404,16 @@ export const create = defineServerFn({
           createdDocumentId = newJournalEntry?.[0]?.id;
           if (!createdDocumentId)
             throw new Error("Failed to create journal entry");
+          return createdDocumentId;
         });
 
-        return { id: createdDocumentId };
+        return { id };
       }
       default:
         throw new InvalidInputError("Invalid document type");
     }
   }
-});
+}) as Create;
 
 export type ReceiptLineItem = Omit<
   Database["public"]["Tables"]["receiptLine"]["Insert"],

@@ -116,7 +116,11 @@ databaseTest(
             trx,
             "trackedEntity",
             { quantity: 4, readableId: null, expirationDate: undefined },
-            { id: row.id, status: neq("Consumed") }
+            {
+              id: row.id,
+              companyId: owner.companyId,
+              status: neq("Consumed")
+            }
           );
           const updated = await selectRow(trx, "trackedEntity", { id: row.id });
           expect(updated?.quantity).toBe(4);

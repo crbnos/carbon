@@ -44,8 +44,6 @@ export const correctStockMovement = defineServerFn({
   permissions: { update: "inventory" },
   async run(ctx, { itemLedgerId, correctedQuantity, comment }) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
-
     const ledgerColumns = [
       "id",
       "itemId",
@@ -305,12 +303,7 @@ export const correctStockMovement = defineServerFn({
     // the one containing the ORIGINAL movement's postingDate; Locked/Closed
     // periods throw here with a user-facing message.
     const accountingPeriodId = accountingEnabled
-      ? await getAccountingPeriodForDate(
-          client,
-          companyId,
-          db,
-          root.postingDate
-        )
+      ? await getAccountingPeriodForDate(companyId, db, root.postingDate)
       : null;
     const accounting =
       accountingEnabled && accountDefaults?.data && accountingPeriodId

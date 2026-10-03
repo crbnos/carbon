@@ -272,7 +272,7 @@ export async function importStockQuantities(
     throw new Error("Error getting account defaults");
   }
   const accountingPeriodId = accountingEnabled
-    ? await getCurrentAccountingPeriod(client, companyId, db, today)
+    ? await getCurrentAccountingPeriod(companyId, db, today)
     : null;
 
   // Active dimensions for the company group — journal lines get Item /

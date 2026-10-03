@@ -149,7 +149,10 @@ export async function selectRow<T extends RelationName, R = RowOf<T>>(
   where: Where<T>,
   options: ReadOptions<T> = {}
 ): Promise<R | undefined> {
-  const rows = await selectRows<T, R>(db, table, where, options);
+  const rows = await selectRows<T, R>(db, table, where, {
+    limit: 1,
+    ...options
+  });
   return rows[0];
 }
 

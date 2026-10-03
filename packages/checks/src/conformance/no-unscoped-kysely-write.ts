@@ -39,6 +39,10 @@ import type { ConformanceCheck, Violation } from "../check";
  * bracket that closes around it), comments blanked.
  * A statement built across several variables (`let q = …; q = q.where(…)`)
  * ends at the first `;` and is flagged — inline it or baseline it.
+ *
+ * `updateRows` / `deleteRows` (`@carbon/database/rows`) are the same writes in
+ * another spelling: their last argument is the WHERE, and it must name
+ * `companyId`.
  */
 
 const MESSAGE =
@@ -52,13 +56,38 @@ const SCOPED_PREFIXES = [
   "packages/server-functions/src/"
 ];
 
-/** Tables whose own `id` is the tenant key. */
-const EXEMPT_TABLES = new Set(["company"]);
+/** Tables whose own `id` is the tenant key, or that are keyed by user alone. */
+const EXEMPT_TABLES = new Set(["company", "userPermission"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =
   /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyId["'`]/;
 const STATEMENT_END = /^\.(?:execute\w*|compile)\s*\(/;
+const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
+const ROWS_MESSAGE =
+  "Kysely bypasses RLS: this updateRows/deleteRows filter has no companyId, so ids from the request can reach another tenant's rows. Add companyId to the filter (the last argument).";
+
+/** A call's top-level arguments, from just after its opening parenthesis. */
+function callArguments(text: string, from: number): string[] {
+  const args: string[] = [];
+  let depth = 0;
+  let start = from;
+  for (let i = from; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      if (depth === 0) {
+        args.push(text.slice(start, i));
+        break;
+      }
+      depth--;
+    } else if (ch === "," && depth === 0) {
+      args.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  return args.filter((arg) => arg.trim() !== "");
+}
 
 /**
  * Replace comment text with spaces (newlines kept, so offsets and line numbers
@@ -141,10 +170,7 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
   },
   scan(file, contents) {
     if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];
-    if (
-      !contents.includes(".updateTable") &&
-      !contents.includes(".deleteFrom")
-    ) {
+    if (!/\.updateTable|\.deleteFrom|updateRows|deleteRows/.test(contents)) {
       return [];
     }
 
@@ -165,6 +191,21 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
         line: text.slice(0, start).split("\n").length,
         snippet: call.length <= 80 ? call : m[0],
         message: MESSAGE
+      });
+    }
+    for (const m of text.matchAll(ROWS_WRITE)) {
+      const start = m.index ?? 0;
+      // (db, table, set, where) and (db, table, where): fewer is a declaration.
+      const args = callArguments(text, start + m[0].length);
+      if (args.length < 3) continue;
+      const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");
+      if (table && EXEMPT_TABLES.has(table)) continue;
+      if (/\bcompanyId\b/.test(args[args.length - 1] ?? "")) continue;
+      violations.push({
+        file,
+        line: text.slice(0, start).split("\n").length,
+        snippet: `${m[1]}(…, ${args[1]?.trim()}, …)`,
+        message: ROWS_MESSAGE
       });
     }
     return violations;

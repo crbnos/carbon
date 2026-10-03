@@ -43,11 +43,13 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { assertPostable } from "../lib/postable";
 
 const logger = getLogger("server-functions", "post-receipt");
 
@@ -65,8 +67,9 @@ export const postReceipt = defineServerFn({
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, receiptId, userId, companyId });
-
-    const client = await ctx.supabase();
+    const fixedAssetWrites = new FixedAssetWrites();
+    if (type === "post")
+      await assertPostable(db, "receipt", receiptId, companyId);
     try {
       const today = datetime
         .today(await getCompanyTimeZone(db, companyId))
@@ -386,7 +389,7 @@ export const postReceipt = defineServerFn({
 
           const accountingPeriodId =
             accountingEnabled && reversingJournalLines.length > 0
-              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              ? await getCurrentAccountingPeriod(companyId, db, today)
               : null;
 
           await db.transaction().execute(async (trx) => {
@@ -726,6 +729,7 @@ export const postReceipt = defineServerFn({
             );
 
             if (!assetRecord.error && assetRecord.data) {
+              fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
               const newAcquisitionCost = Math.max(
                 0,
                 Number(assetRecord.data.acquisitionCost) - receiptCost
@@ -743,9 +747,7 @@ export const postReceipt = defineServerFn({
                 faUpdate.acquisitionDate = null;
                 faUpdate.depreciationStartDate = null;
               }
-              await updateRows(db, "fixedAsset", faUpdate, {
-                id: faPoLine.assetId!
-              });
+              fixedAssetWrites.patch(faPoLine.assetId!, faUpdate);
             }
           }
         }
@@ -820,13 +822,13 @@ export const postReceipt = defineServerFn({
           }, {}) ?? {};
 
         const accountingPeriodId = await getCurrentAccountingPeriod(
-          client,
           companyId,
           db,
           today
         );
 
         await db.transaction().execute(async (trx) => {
+          await fixedAssetWrites.apply(trx, companyId);
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdatesVoid
           )) {
@@ -1872,6 +1874,7 @@ export const postReceipt = defineServerFn({
 
               if (assetRecord.error)
                 throw new Error("Failed to fetch fixed asset");
+              fixedAssetWrites.overlay(faPoLine.assetId!, assetRecord.data);
 
               const journalLineRef = nanoid();
 
@@ -1950,9 +1953,7 @@ export const postReceipt = defineServerFn({
                 updateData.locationId = faLineLocationId;
               }
 
-              await updateRows(db, "fixedAsset", updateData, {
-                id: faPoLine.assetId!
-              });
+              fixedAssetWrites.patch(faPoLine.assetId!, updateData);
             }
 
             purchaseOrderLineUpdates[faPoLine.id!] = {
@@ -1963,10 +1964,11 @@ export const postReceipt = defineServerFn({
           }
 
           const accountingPeriodId = accountingEnabled
-            ? await getCurrentAccountingPeriod(client, companyId, db, today)
+            ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
           await db.transaction().execute(async (trx) => {
+            await fixedAssetWrites.apply(trx, companyId);
             // Negative receipts: consume layers at layer cost (FIFO/LIFO with
             // adjustment children) and patch the placeholder GL amounts so the
             // GL credit matches what actually left the subledger.
@@ -2851,7 +2853,7 @@ export const postReceipt = defineServerFn({
 
           const accountingPeriodId =
             accountingEnabled && journalLineInserts.length > 0
-              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              ? await getCurrentAccountingPeriod(companyId, db, today)
               : null;
 
           await db.transaction().execute(async (trx) => {
@@ -3259,7 +3261,7 @@ export const postReceipt = defineServerFn({
           }
 
           const accountingPeriodId = accountingEnabled
-            ? await getCurrentAccountingPeriod(client, companyId, db, today)
+            ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
           await db.transaction().execute(async (trx) => {

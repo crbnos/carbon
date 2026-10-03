@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import { createClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -12,20 +10,6 @@ import {
 } from "../lib/get-accounting-period";
 import { databaseTest } from "../local-database-test-fixture";
 import { chargeFixture } from "./post-charge-test-fixture";
-
-// A caller already holding a transaction must not read periods through REST:
-// those reads cannot see its uncommitted changes and escape its locks.
-const noRestReads = createClient<Database>(
-  "http://unexpected-period-read.invalid",
-  "test-key",
-  {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: () =>
-        Promise.reject(new Error("Period reads escaped the transaction"))
-    }
-  }
-);
 
 for (const [name, resolve] of [
   ["historical", getAccountingPeriodForDate],
@@ -55,9 +39,9 @@ for (const [name, resolve] of [
             })
             .returning("id")
             .executeTakeFirstOrThrow();
-          expect(
-            await resolve(noRestReads, f.companyId, trx, "2024-02-29")
-          ).toEqual(period.id);
+          expect(await resolve(f.companyId, trx, "2024-02-29")).toEqual(
+            period.id
+          );
         });
       } finally {
         await f.cleanup();
@@ -87,7 +71,6 @@ databaseTest(
         )
         .execute();
       const id = await getCurrentAccountingPeriod(
-        noRestReads,
         f.companyId,
         f.db,
         "2024-02-29"
@@ -128,18 +111,8 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       const periods = await Promise.all([
-        getAccountingPeriodForDate(
-          noRestReads,
-          f.companyId,
-          left,
-          "2024-02-29"
-        ),
-        getAccountingPeriodForDate(
-          noRestReads,
-          f.companyId,
-          right,
-          "2024-02-29"
-        )
+        getAccountingPeriodForDate(f.companyId, left, "2024-02-29"),
+        getAccountingPeriodForDate(f.companyId, right, "2024-02-29")
       ]);
       expect(periods[0]).toEqual(periods[1]);
       expect(

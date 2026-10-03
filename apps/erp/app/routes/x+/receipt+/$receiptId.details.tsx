@@ -7,7 +7,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import type { ServerFnResult } from "@carbon/server-functions";
 import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
@@ -62,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (receiptDataHasChanged) {
     switch (d.sourceDocument) {
       case "Purchase Order":
-        const purchaseOrderReceipt = await (create(
+        const purchaseOrderReceipt = await create(
           ServerFnContext.system({
             db: getDatabaseClient(),
             companyId,
@@ -74,11 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
             purchaseOrderId: d.sourceDocumentId,
             receiptId: id
           }
-        ) as Promise<
-          ServerFnResult<{
-            id: string;
-          }>
-        >);
+        );
         if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
           throw redirect(
             path.to.receipt(id),
@@ -91,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
 
       case "Sales Return Order":
-        const salesReturnOrderReceipt = await (create(
+        const salesReturnOrderReceipt = await create(
           ServerFnContext.system({
             db: getDatabaseClient(),
             companyId,
@@ -103,11 +98,7 @@ export async function action({ request }: ActionFunctionArgs) {
             salesReturnOrderId: d.sourceDocumentId,
             receiptId: id
           }
-        ) as Promise<
-          ServerFnResult<{
-            id: string;
-          }>
-        >);
+        );
         if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
           throw redirect(
             path.to.receipt(id),
@@ -120,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
 
       case "Inbound Transfer":
-        const warehouseTransferReceipt = await (create(
+        const warehouseTransferReceipt = await create(
           ServerFnContext.system({
             db: getDatabaseClient(),
             companyId,
@@ -131,11 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
             warehouseTransferId: d.sourceDocumentId,
             receiptId: id
           }
-        ) as Promise<
-          ServerFnResult<{
-            id: string;
-          }>
-        >);
+        );
         if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
           throw redirect(
             path.to.receipt(id),

@@ -6,7 +6,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import type { ServerFnResult } from "@carbon/server-functions";
 import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
@@ -21,14 +20,10 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "accounting"
   });
 
-  const journalEntry = await (create(
+  const journalEntry = await create(
     ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
     { type: "journalEntry" }
-  ) as Promise<
-    ServerFnResult<{
-      id: string;
-    }>
-  >);
+  );
 
   if (!journalEntry.data || journalEntry.error) {
     logger.error(journalEntry.error);

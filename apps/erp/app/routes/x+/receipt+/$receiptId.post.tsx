@@ -69,7 +69,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (receiptForSurface?.status === "Voided") {
     throw redirect(
       path.to.receipt(receiptId),
-      await flash(request, error(null, "Cannot post a voided receipt"))
+      await flash(
+        request,
+        error(null, "This receipt has already been posted or voided")
+      )
     );
   }
 
@@ -176,9 +179,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Make the transition to Pending atomic with the voided guard above: the
   // early check and this update are separated by rule evaluation + reconcile,
-  // so a concurrent void could slip in between. Conditioning the write on the
-  // status still not being "Voided" (and detecting a zero-row match) closes
-  // that race — a voided receipt won't be flipped back to Pending and reposted.
+  // so a concurrent void or post could slip in between. Conditioning the write
+  // on the status still being postable (and detecting a zero-row match) closes
+  // that race — a voided or posted receipt won't be flipped back to Pending.
   const setPendingState = await client
     .from("receipt")
     .update({
@@ -186,7 +189,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .eq("id", receiptId)
     .eq("companyId", companyId)
-    .neq("status", "Voided")
+    .in("status", ["Draft", "Pending"])
     .select("id");
 
   if (setPendingState.error) {

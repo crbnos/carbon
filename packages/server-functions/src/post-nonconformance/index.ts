@@ -63,8 +63,6 @@ export const postNonConformance = defineServerFn({
     }
   ) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
-
     const postingDate =
       providedPostingDate ||
       datetime.today(await getCompanyTimeZone(db, companyId)).toString();
@@ -216,7 +214,7 @@ export const postNonConformance = defineServerFn({
     // getCurrentAccountingPeriod uses the REST client and calling it
     // mid-transaction parks the (size 1) pool in idle-in-transaction.
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db, postingDate)
+      ? await getCurrentAccountingPeriod(companyId, db, postingDate)
       : null;
 
     const journalDescription =

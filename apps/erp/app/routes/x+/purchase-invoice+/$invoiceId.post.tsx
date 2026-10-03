@@ -70,12 +70,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     return {
       success: false,
       message: "Failed to post purchase invoice"
+    };
+  }
+
+  if (!setPendingState.data?.length) {
+    return {
+      success: false,
+      message: "This purchase invoice has already been posted"
     };
   }
 

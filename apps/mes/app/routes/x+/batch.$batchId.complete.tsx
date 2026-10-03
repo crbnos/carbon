@@ -157,10 +157,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // then, so it finds no groups — and report success. Reporting this as
   // an error told the operator the completion failed when it had just
   // succeeded, with the lots and the merged lot already written.
-  const completionErrorMessage = completeResult.error?.message ?? "";
-  const alreadyCompleted = /already been completed|already completed/i.test(
-    completionErrorMessage
-  );
+  const alreadyCompleted = completeResult.error?.body.alreadyCompleted === true;
   if (completeResult.error && !alreadyCompleted) {
     return data(
       {},
