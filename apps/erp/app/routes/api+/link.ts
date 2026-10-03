@@ -95,6 +95,10 @@ function resolve(
       return path.to.pickingList(documentId);
     case NotificationEvent.SuggestionResponse:
       return path.to.suggestion(documentId);
+    case NotificationEvent.RecurringInvoicing:
+      // documentId is only the digest's first invoice; land on the list of
+      // invoices that need review (same target as the topbar row).
+      return `${path.to.invoicingSales}?filter=needsReview:eq:true`;
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:

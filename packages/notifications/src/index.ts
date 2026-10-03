@@ -41,6 +41,10 @@ export enum NotificationEvent {
   PurchasingRfqAssignment = "purchasing-rfq-assignment",
   QuoteAssignment = "quote-assignment",
   QuoteExpired = "quote-expired",
+  // Daily digest from the recurring-billing job, shared by every recurring
+  // invoice source. Payload-carried like IntegrationSync: the counts arrive as
+  // `body` ("2 posted, 1 emailed, 1 need review") and nothing is read.
+  RecurringInvoicing = "recurring-invoicing",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -181,6 +185,7 @@ export function getNotificationTopic(
     case NotificationEvent.SalesOrderAssignment:
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
+    case NotificationEvent.RecurringInvoicing:
       return NotificationTopic.Sales;
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:
@@ -297,6 +302,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Workflow";
     case NotificationEvent.IntegrationSync:
       return "Accounting sync needs attention";
+    case NotificationEvent.RecurringInvoicing:
+      return "Recurring invoicing summary";
     default:
       return "You have a new notification";
   }
@@ -335,6 +342,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View details";
     case NotificationEvent.IntegrationSync:
       return "View sync activity";
+    case NotificationEvent.RecurringInvoicing:
+      return "Review invoices";
     default:
       return "View details";
   }
