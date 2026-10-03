@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import { LuRocket } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
+import { useResolved } from "./useResolved";
 
 const NO_SIGNALS = {
   hasItems: false,
@@ -29,26 +30,42 @@ const NO_SIGNALS = {
   hasTrackedEntity: false
 };
 
+type ImplementationProgress = {
+  checkStates: CheckStateRow[];
+  signals: Signals | null;
+};
+
 export type ImplementationHubData = {
   implementationHub: { tier: Tier; status: HubStatus } | null;
   implementationCheckStates: CheckStateRow[];
   implementationSignals: Signals | null;
+  // False until the streamed progress lands. Until then the counts are not
+  // known: show the item and the card, leave the numbers out.
+  ready: boolean;
 };
 
 const isFinished = (status: HubStatus) =>
   status === "complete" || status === "archived";
 
-// Shared reader: the enrolled hub (a row only exists once the company is
-// enrolled), or null. Both nav entries below key off this.
-function useImplementation() {
-  return useRouteData<{ implementation?: ImplementationHubData }>(
-    path.to.authenticatedRoot
-  )?.implementation;
+// Shared reader. The hub row (null until the company enrols) is awaited by the
+// layout loader; progress is streamed and fills in after.
+function useImplementation(): ImplementationHubData | undefined {
+  const data = useRouteData<{
+    implementationHub?: ImplementationHubData["implementationHub"];
+    implementationProgress?: Promise<ImplementationProgress>;
+  }>(path.to.authenticatedRoot);
+  const progress = useResolved(data?.implementationProgress, null);
+  if (!data) return undefined;
+  return {
+    implementationHub: data.implementationHub ?? null,
+    implementationCheckStates: progress?.checkStates ?? [],
+    implementationSignals: progress?.signals ?? null,
+    ready: progress !== null
+  };
 }
 
-// The layout loader awaits this, so it is in the first paint: the nav item and
-// the home card are there from the start instead of arriving and pushing the
-// page around.
+// Whether the item and the card exist is known at first paint, so neither
+// arrives late and pushes the page around.
 export function ImplementationData({
   children
 }: {
@@ -83,7 +100,7 @@ export function getImplementationNavItem(
     name: i18n._(labelForTier(hub.tier)),
     to: path.to.getStarted,
     icon: LuRocket,
-    tag: remaining > 0 ? remaining : undefined
+    tag: data.ready && remaining > 0 ? remaining : undefined
   };
 }
 

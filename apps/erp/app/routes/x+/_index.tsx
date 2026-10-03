@@ -126,7 +126,7 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
   const done = gatesDone(spine, map, signals);
   const total = spine.length;
   // Auto-hide once everything's done, or once the user dismissed it.
-  if (done === total || dismissed) return null;
+  if ((data.ready && done === total) || dismissed) return null;
 
   const next = nextAction(spine, map, signals);
   return (
@@ -134,6 +134,7 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
       label={i18n._(labelForTier(hub.tier))}
       done={done}
       total={total}
+      pending={!data.ready}
       nextLabel={next?.title ? i18n._(next.title) : undefined}
       onDismiss={dismiss}
       action={

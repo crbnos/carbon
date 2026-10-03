@@ -114,7 +114,9 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   and read with `useResolved` (`~/hooks/useResolved`) when a late value is harmless.
   Data that adds or removes something on first paint (a nav item, a card) is awaited
   instead: streamed in, it arrives after the page is drawn and pushes it around — the
-  Implementation Hub's nav item and home card did exactly that.
+  Implementation Hub's nav item and home card did exactly that. Await only the part
+  that decides whether the thing exists (the hub row) and stream what fills it in
+  (its progress), holding the layout until it lands.
   `useResolved` keeps the last value while a revalidation is pending, so a
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's

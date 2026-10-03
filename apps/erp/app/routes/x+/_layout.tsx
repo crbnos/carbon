@@ -154,7 +154,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // home card + nav badge count gates the same way the hub page does. Chained
   // off the hub query rather than awaited after the fan-out below, so the
   // probes overlap the rest of it instead of forming a second serial wave.
-  const implementationHubPromise = getImplementationHub(client, companyId);
+  // Promise.resolve: the query builder is only thenable, and runs the query
+  // again for every `.then` — chained twice below, it hit the table twice.
+  const implementationHubPromise = Promise.resolve(
+    getImplementationHub(client, companyId)
+  );
   const implementationSignalsPromise = implementationHubPromise.then((hub) =>
     hub.data ? detectImplementationSignals(client, companyId) : null
   );
@@ -166,27 +170,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
-  // Awaited at the return below, not streamed: the hub puts an item in the
-  // primary nav and a card at the top of the home page, so streaming it in
-  // after first paint made both jump. It still overlaps the fan-out below. It
-  // catches: the loader can exit early with nothing awaiting it.
-  const implementation = Promise.all([
-    implementationHubPromise,
+  // The hub row decides whether the primary nav has a Get Started item and the
+  // home page a card, so it is awaited (at the return below): streamed, both
+  // arrived after first paint and pushed the page down. Progress only fills in
+  // the badge count and the card's bar, in place, so it stays streamed. Each
+  // catches: the loader can exit early with nothing awaiting them.
+  const implementationHub = implementationHubPromise
+    .then((hub) => hub.data ?? null)
+    .catch((error) => {
+      log.error("Failed to load implementation hub", { companyId, error });
+      return null;
+    });
+  const implementationProgress = Promise.all([
     getImplementationCheckStates(client, companyId),
     implementationSignalsPromise
   ])
-    .then(([hub, checkStates, signals]) => ({
-      implementationHub: hub.data ?? null,
-      implementationCheckStates: checkStates.data ?? [],
-      implementationSignals: signals
+    .then(([checkStates, signals]) => ({
+      checkStates: checkStates.data ?? [],
+      signals
     }))
     .catch((error) => {
-      log.error("Failed to load implementation hub", { companyId, error });
-      return {
-        implementationHub: null,
-        implementationCheckStates: [],
-        implementationSignals: null
-      };
+      log.error("Failed to load implementation progress", {
+        companyId,
+        error
+      });
+      return { checkStates: [], signals: null };
     });
   const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
     () => false
@@ -345,7 +353,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementation: await implementation,
+    implementationHub: await implementationHub,
+    implementationProgress,
     changelog,
     itarCertification: {
       ...itarCertification,
