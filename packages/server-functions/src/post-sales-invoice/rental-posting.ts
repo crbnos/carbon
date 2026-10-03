@@ -11,16 +11,12 @@
 
 import { credit, debit } from "@carbon/database/ledger";
 import { EPSILON, round } from "@carbon/database/precision";
-import {
-  addDays,
-  type ScheduleRow,
-  spreadStraightLine
-} from "@carbon/database/revenue-schedule";
 import type {
   SalesPostingAccount,
   SalesPostingJournalLine,
   SalesRevenueLeg
 } from "@carbon/database/sales-posting-amounts";
+import { addDays, type ScheduleRow, spreadStraightLine } from "@carbon/utils";
 
 export type RentalLineKind = "Rent" | "Charge" | "Purchase Option";
 export type RentalClassification = "Rental" | "Sale" | "Financing";

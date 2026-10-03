@@ -3,18 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import {
-  createRentalInvoicesForDuePeriods,
-  type DraftedRentalInvoice,
-  type RentalInvoiceGenerationArgs,
-  releaseRentalInvoiceStamps
-} from "@carbon/database/rental-billing";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { serverFns } from "@carbon/server-functions";
+import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -382,19 +379,66 @@ export async function insertRentalPurchaseOptionCharge(
     .single();
 }
 
-/** The agreement page's "Generate invoices": drafts an invoice for whatever
- *  the agreement has due today, exactly as the daily job would. */
+/** The agreement page's "Invoice Now" (and Sell to Customer): drafts the
+ *  invoices for whatever the agreement has due, exactly as the daily job
+ *  would — the `create-rental-invoices` server function. */
 export async function generateRentalInvoicesNow(
   db: Kysely<KyselyDatabase>,
-  args: RentalInvoiceGenerationArgs
+  args: {
+    companyId: string;
+    userId: string;
+    /** `YYYY-MM-DD` in the company's timezone. */
+    asOf: string;
+    rentalAgreementId: string;
+  }
 ): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
+  const { companyId, userId, asOf, rentalAgreementId } = args;
+  const { invoices, invoiceIds, failures } = await serverFns
+    .system({ db, companyId, userId })
+    .invokeOrThrow("create-rental-invoices", { asOf, rentalAgreementId });
   // One agreement is billed here, so its failure is the action's failure.
-  const { invoices, invoiceIds, failures } =
-    await createRentalInvoicesForDuePeriods(db, args);
   if (failures.length > 0) {
     throw new Error(failures.map((f) => f.error).join("; "));
   }
   return { invoices, invoiceIds };
+}
+
+/**
+ * Releases the billing periods and charges a Draft invoice (or some of its
+ * lines) billed, so the next generation bills them again. Called in the same
+ * transaction as the delete: `salesInvoiceLineId` has no foreign key, so a
+ * delete alone would leave the rows stamped as billed by a line that no
+ * longer exists.
+ */
+async function releaseRentalInvoiceStamps(
+  trx: KyselyTx,
+  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, salesInvoiceLineIds, userId } = args;
+  if (salesInvoiceLineIds.length === 0) return;
+
+  await trx
+    .updateTable("rentalBillingPeriod")
+    .set({
+      status: "Pending",
+      salesInvoiceLineId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .execute();
+
+  await trx
+    .updateTable("rentalAgreementCharge")
+    .set({
+      salesInvoiceLineId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .execute();
 }
 
 /**

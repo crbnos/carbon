@@ -5,7 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { createRevenueRecognitionRunProposal } from "@carbon/database/revenue-recognition";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
@@ -68,10 +68,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const proposal = await createRevenueRecognitionRunProposal(
-      getDatabaseClient(),
-      { companyId, periodEnd, userId }
-    );
+    const proposal = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
 
     if (!proposal) {
       throw redirect(

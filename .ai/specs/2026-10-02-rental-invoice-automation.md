@@ -34,7 +34,7 @@ An invoice whose contact has no email is posted and flagged, not sent. A daily n
 
 ```
 recurring-billing cron (05:00 UTC, per company step; renamed from `rental-billing`)
-  └─ createRentalInvoicesForDuePeriods            (packages/database/src/rental-billing.ts)
+  └─ create-rental-invoices server function      (packages/server-functions/src/create-rental-invoices/)
        ├─ effective mode = agreement.invoiceAutomation ?? companySettings.invoiceAutomation
        ├─ Draft Only  → one Draft invoice per agreement (today's behaviour, unchanged)
        └─ Post / Post and Email →
@@ -125,7 +125,7 @@ ALTER TABLE "salesInvoice"
 
 ## API / Service Changes
 
-**`packages/database/src/rental-billing.ts`**
+**`packages/server-functions/src/create-rental-invoices/`** (was `packages/database/src/rental-billing.ts`)
 - `createRentalInvoicesForDuePeriods` reads the effective mode per agreement (one join to `companySettings`). When the mode is not `Draft Only` it drafts up to two invoices: rent and charges. It returns `{ invoices: { invoiceId, rentalAgreementId, mode, holdReason }[] }`; keep `invoiceIds` for existing callers or migrate them.
 - Rent invoices with an `isAdjustment` row are stamped with the early-return hold.
 - Stamping and idempotency are unchanged: periods and charges are stamped in the same transaction.
@@ -252,12 +252,13 @@ Folded in from `.ai/plans/2026-10-02-rental-invoice-automation.md` ("Plan-level 
 4. **"Needs review" is the `salesInvoices.needsReview` view column** plus a Receivables → Needs Review sidebar link.
 5. **Send on a posted invoice with `sendError`** is `x+/sales-invoice+/$invoiceId.send.tsx`, firing `carbon/invoice.automate` with `mode: "Post and Email"`.
 6. **The event carries an optional `mode`**; absent, the function resolves the invoice's agreement's effective mode.
-7. **The split and hold decision is pure**: `planRentalInvoices` in `packages/database/src/rental-invoice-plan.ts`, vitest-pinned.
+7. **The split and hold decision is pure**: `planRentalInvoices` in `packages/utils/src/rental-invoice-plan.ts` (`@carbon/utils`; first written in `@carbon/database`), vitest-pinned.
 8. **A re-bill after a VOID is always held** (D26): VOID stamps `voidedSalesInvoiceId` on the periods and charges it releases; sticky across a deleted draft.
 9. **Owners are notified with no setup** (D16): each agreement's `salesPersonId ?? createdBy` gets one digest over their invoices; "Also notify" gets the company digest; an owner listed there gets only the company one.
 10. **`automateSalesInvoice` is two functions**, `postSalesInvoiceUnattended` and `emailPostedInvoice` (`packages/jobs/src/invoicing/automate-invoice.ts`), so the cron and the `invoice-automate` function run them as separate memoized steps. A post failure resets the claim to Draft with the error as the hold reason; any email-step failure stamps `sendError`.
 11. **Source-agnostic names in the shared layer** (grill U1): `INVOICE_SEND_NO_EMAIL`, `invoiceNotificationValidator` / `updateInvoiceNotificationSetting`, digest results keyed by `sourceId`.
 12. **Posting is in-process** (2026-10-03, after main replaced the edge functions with Node server functions): the automation calls `post-sales-invoice` through `serverFns.system({ db, companyId, userId: "system" })`, so a failure's message comes back directly (no edge-function body to unwrap; `getEdgeFunctionErrorMessage` and `@carbon/lib/edge-function-error` are gone). The manual Post route keeps a Draft-only claim even though `assertPostable` admits Pending — an automation claim is a Pending row.
+13. **Generator and run proposal are server functions** (2026-10-03, for consistency with main's server-functions rule — Kysely, multi-table, shared by the ERP and jobs): `create-rental-invoices` (`{ asOf, rentalAgreementId? }`, `update: sales` + `create: invoicing`) and `propose-revenue-recognition-run` (`{ periodEnd }`, `create: accounting`). The pure rental/lease/automation libs (`rental-periods`, `revenue-schedule`, `lessor-lease`, `rental-invoice-plan`) live in `@carbon/utils`, since nothing in `@carbon/database` needs them any more. `releaseRentalInvoiceStamps` moved into the ERP's `sales.server.ts`, its only caller.
 
 ## Changelog
 

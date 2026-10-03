@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  earnsInterest,
-  type LessorClassification,
-  type LessorScheduleLine
-} from "@carbon/database/lessor-lease";
 import { assertBalanced, EPSILON, round } from "@carbon/database/precision";
 import {
   billingHorizon,
+  earnsInterest,
+  type LessorClassification,
+  type LessorScheduleLine,
   type PeriodSpec,
   type RentalBillingCycle
-} from "@carbon/database/rental-periods";
+} from "@carbon/utils";
 import type { ResidualDestination } from "./validators";
 
 /**
@@ -33,7 +31,7 @@ export {
   leasePaymentTerms,
   salesTypeRequirementError,
   wholeMonthsInTerm
-} from "@carbon/database/lessor-lease";
+} from "@carbon/utils";
 
 /** The classification a line is booked under: an overridden line keeps the
  *  value the override stored; every other line takes the tests' answer. */

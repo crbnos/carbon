@@ -2,17 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { round, RoundingMode, SCALE } from "./precision.ts";
+import { RoundingMode, round, SCALE } from "@carbon/database/precision";
 import {
-  rateCharge,
   type RateUnit,
   type RentalBillingCycle,
+  rateCharge
 } from "./rental-periods.ts";
 import {
   addDays,
   daysBetweenInclusive,
   monthEnd,
-  parseIsoDate,
+  parseIsoDate
 } from "./revenue-schedule.ts";
 
 // Lessor lease math (ASC 842) shared by activation, the recognition run and
@@ -32,7 +32,9 @@ function assertLeaseInputs(periods: number, annualRate: number): void {
     throw new Error(`A lease needs a whole number of periods, got ${periods}`);
   }
   if (!Number.isFinite(annualRate) || annualRate < 0) {
-    throw new Error(`The discount rate must be zero or more, got ${annualRate}`);
+    throw new Error(
+      `The discount rate must be zero or more, got ${annualRate}`
+    );
   }
 }
 
@@ -46,7 +48,7 @@ function annuity(
   payment: number,
   periods: number,
   r: number,
-  timing: Timing,
+  timing: Timing
 ): number {
   if (r === 0) return payment * periods;
   const immediate = (payment * (1 - discount(r, periods))) / r;
@@ -82,7 +84,8 @@ export function presentValue(args: {
   const atTermEnd = discount(r, periods);
 
   const rent = annuity(payment, periods, r, timing);
-  const payments = rent +
+  const payments =
+    rent +
     ((args.purchaseOption ?? 0) + (args.guaranteedResidual ?? 0)) * atTermEnd;
   const residual = (args.unguaranteedResidual ?? 0) * atTermEnd;
 
@@ -90,7 +93,7 @@ export function presentValue(args: {
     pvRent: round(rent),
     pvPayments: round(payments),
     pvResidual: round(residual),
-    netInvestment: round(payments + residual),
+    netInvestment: round(payments + residual)
   };
 }
 
@@ -112,7 +115,7 @@ export function classifyLessorLease(
     fairValue: number | null;
     specializedAsset: boolean;
   },
-  thresholds: { majorPartPercent: number; substantiallyAllPercent: number },
+  thresholds: { majorPartPercent: number; substantiallyAllPercent: number }
 ): {
   classification: LessorClassification;
   tests: { a: boolean; b: boolean; c: boolean; d: boolean; e: boolean };
@@ -125,18 +128,21 @@ export function classifyLessorLease(
     termMonths !== null && economicLifeMonths !== null && economicLifeMonths > 0
       ? round((termMonths / economicLifeMonths) * 100)
       : null;
-  const pvToFairValuePercent = fairValue !== null && fairValue > 0
-    ? round((pvPayments / fairValue) * 100)
-    : null;
+  const pvToFairValuePercent =
+    fairValue !== null && fairValue > 0
+      ? round((pvPayments / fairValue) * 100)
+      : null;
 
   const tests = {
     a: inputs.ownershipTransfers,
     b: inputs.purchaseOptionReasonablyCertain,
-    c: termToLifePercent !== null &&
+    c:
+      termToLifePercent !== null &&
       termToLifePercent >= thresholds.majorPartPercent,
-    d: pvToFairValuePercent !== null &&
+    d:
+      pvToFairValuePercent !== null &&
       pvToFairValuePercent >= thresholds.substantiallyAllPercent,
-    e: inputs.specializedAsset,
+    e: inputs.specializedAsset
   };
 
   const anyTest = tests.a || tests.b || tests.c || tests.d || tests.e;
@@ -144,7 +150,7 @@ export function classifyLessorLease(
     classification: termMonths !== null && anyTest ? "Sale" : "Rental",
     tests,
     pvToFairValuePercent,
-    termToLifePercent,
+    termToLifePercent
   };
 }
 
@@ -176,7 +182,7 @@ export function buildLessorSchedule(args: {
   assertLeaseInputs(periods, annualRate);
   if (args.periodDates.length !== periods) {
     throw new Error(
-      `A ${periods}-period schedule needs ${periods} dates, got ${args.periodDates.length}`,
+      `A ${periods}-period schedule needs ${periods} dates, got ${args.periodDates.length}`
     );
   }
   const r = monthlyRate(annualRate);
@@ -191,14 +197,16 @@ export function buildLessorSchedule(args: {
       ? round(args.closingTarget - opening + payment)
       : round(earningBase * r);
     const principal = round(payment - interest);
-    const closing = last ? round(args.closingTarget) : round(opening - principal);
+    const closing = last
+      ? round(args.closingTarget)
+      : round(opening - principal);
     lines.push({
       periodDate,
       openingNetInvestment: opening,
       paymentAmount: payment,
       interestAmount: interest,
       principalAmount: principal,
-      closingNetInvestment: closing,
+      closingNetInvestment: closing
     });
     opening = closing;
   }
@@ -227,8 +235,8 @@ export function wholeMonthsInTerm(startDate: string, endDate: string): number {
   daysBetweenInclusive(startDate, endDate);
   const start = parseIsoDate(startDate);
   const after = parseIsoDate(addDays(endDate, 1));
-  const months = (after.year - start.year) * MONTHS_PER_YEAR +
-    (after.month - start.month);
+  const months =
+    (after.year - start.year) * MONTHS_PER_YEAR + (after.month - start.month);
   return after.day < start.day ? months - 1 : months;
 }
 
@@ -277,39 +285,44 @@ export function leasePaymentTerms(args: {
   endDate: string | null;
 }): LeasePaymentTerms {
   const { cycle, rateUnit, rate, startDate, endDate } = args;
-  const termMonths = endDate === null
-    ? null
-    : wholeMonthsInTerm(startDate, endDate);
+  const termMonths =
+    endDate === null ? null : wholeMonthsInTerm(startDate, endDate);
 
   if (cycle === "Calendar Month") {
-    const payment = rateUnit === "Month" ? rate : round(
-      MONTH_LENGTHS.reduce(
-        (sum, days) => sum + rateCharge(days, rateUnit, rate).amount,
-        0,
-      ) / MONTHS_PER_YEAR,
-    );
+    const payment =
+      rateUnit === "Month"
+        ? rate
+        : round(
+            MONTH_LENGTHS.reduce(
+              (sum, days) => sum + rateCharge(days, rateUnit, rate).amount,
+              0
+            ) / MONTHS_PER_YEAR
+          );
     return {
       termMonths,
       payment,
       periods: Math.max(1, termMonths ?? 1),
-      annualRate: args.discountRate,
+      annualRate: args.discountRate
     };
   }
 
   const charge = rateCharge(DAYS_PER_28_DAY_PERIOD, rateUnit, rate);
-  const wholePeriods = endDate === null ? 1 : round(
-    daysBetweenInclusive(startDate, endDate) / DAYS_PER_28_DAY_PERIOD,
-    0,
-    RoundingMode.Down,
-  );
+  const wholePeriods =
+    endDate === null
+      ? 1
+      : round(
+          daysBetweenInclusive(startDate, endDate) / DAYS_PER_28_DAY_PERIOD,
+          0,
+          RoundingMode.Down
+        );
   return {
     termMonths,
     payment: charge.amount,
     periods: Math.max(1, wholePeriods),
     annualRate: round(
       (args.discountRate * MONTHS_PER_YEAR * DAYS_PER_28_DAY_PERIOD) /
-        DAYS_PER_YEAR,
-    ),
+        DAYS_PER_YEAR
+    )
   };
 }
 
@@ -338,7 +351,7 @@ export function certainPurchaseOption(agreement: {
   purchaseOptionReasonablyCertain: boolean;
 }): number {
   return agreement.purchaseOptionReasonablyCertain
-    ? agreement.purchaseOptionAmount ?? 0
+    ? (agreement.purchaseOptionAmount ?? 0)
     : 0;
 }
 
@@ -377,7 +390,7 @@ export function classifyRentalLine(args: {
     timing,
     purchaseOption: certainPurchaseOption(agreement),
     guaranteedResidual: line.guaranteedResidualValue,
-    unguaranteedResidual: line.unguaranteedResidualValue,
+    unguaranteedResidual: line.unguaranteedResidualValue
   });
   const inputs = {
     ownershipTransfers: agreement.ownershipTransfers,
@@ -386,7 +399,7 @@ export function classifyRentalLine(args: {
     economicLifeMonths: line.economicLifeMonths,
     pvPayments: pv.pvPayments,
     fairValue: line.fairValue,
-    specializedAsset: agreement.specializedAsset,
+    specializedAsset: agreement.specializedAsset
   };
   const result = classifyLessorLease(inputs, thresholds);
   return {
@@ -395,7 +408,7 @@ export function classifyRentalLine(args: {
       inputs,
       thresholds: {
         majorPartPercent: thresholds.majorPartPercent,
-        substantiallyAllPercent: thresholds.substantiallyAllPercent,
+        substantiallyAllPercent: thresholds.substantiallyAllPercent
       },
       tests: result.tests,
       pvToFairValuePercent: result.pvToFairValuePercent,
@@ -404,13 +417,13 @@ export function classifyRentalLine(args: {
         pvRent: pv.pvRent,
         pvPayments: pv.pvPayments,
         pvResidual: pv.pvResidual,
-        netInvestment: round(pv.pvPayments + pv.pvResidual),
+        netInvestment: round(pv.pvPayments + pv.pvResidual)
       },
       payment: terms.payment,
       periods: terms.periods,
       annualRate: terms.annualRate,
-      timing,
-    },
+      timing
+    }
   };
 }
 

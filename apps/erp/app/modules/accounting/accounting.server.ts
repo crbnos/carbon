@@ -836,7 +836,7 @@ export async function postDepreciationRun(
 
 // ── Revenue recognition runs ─────────────────────────────────────────────────
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1. Proposals are
-// built by @carbon/database/revenue-recognition (shared with the Inngest job);
+// built by the `propose-revenue-recognition-run` server function (shared with the Inngest job);
 // posting and deletion are human actions and live here, beside the
 // depreciation-run posters they mirror.
 

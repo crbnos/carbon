@@ -5,8 +5,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { DraftedRentalInvoice } from "@carbon/database/rental-billing";
 import { batchTrigger } from "@carbon/jobs";
+import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";

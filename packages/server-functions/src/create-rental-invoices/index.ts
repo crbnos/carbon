@@ -2,26 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Rental invoice generation — shared by the ERP "Generate invoices" action and
-// the daily Inngest job, so a human and the scheduler bill exactly the same
-// periods. Posting stays with post-sales-invoice: this only drafts invoices.
+// Rental invoice generation — shared by the ERP "Invoice Now" / "Sell to
+// Customer" actions and the daily recurring-billing job, so a human and the
+// scheduler bill exactly the same periods. Posting stays with
+// post-sales-invoice (and invoice automation): this only drafts invoices.
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3
 
-import { type Selectable, sql } from "kysely";
-import { round } from "./precision.ts";
+import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
   billingHorizon,
-  generateRentalBillingPeriods,
-  wholeRateUnits
-} from "./rental-periods.ts";
-import type { Kysely, KyselyDatabase, KyselyTx } from "./client";
-import {
   effectiveInvoiceAutomation,
+  generateRentalBillingPeriods,
   type InvoiceAutomation,
-  planRentalInvoices
-} from "./rental-invoice-plan";
-import { getNextSequence } from "./sequence";
-import type { Database } from "./types";
+  planRentalInvoices,
+  round,
+  wholeRateUnits
+} from "@carbon/utils";
+import { type Selectable, sql } from "kysely";
+import { z } from "zod";
+import { defineServerFn } from "../define-server-fn";
 
 type RateUnit = Database["public"]["Enums"]["rentalRateUnit"];
 
@@ -67,10 +68,10 @@ export type RentalInvoiceGenerationResult = {
  * agreement's failure never rolls back another's invoice. The billed rows are
  * stamped with their invoice line, which is what makes a second call for the
  * same day a no-op; deleting the Draft invoice releases them
- * (`releaseRentalInvoiceStamps`). Under invoice automation an agreement's
+ * (the ERP's `releaseRentalInvoiceStamps`). Under invoice automation an agreement's
  * rent and its charges become separate invoices (`planRentalInvoices`).
  */
-export async function createRentalInvoicesForDuePeriods(
+async function createRentalInvoicesForDuePeriods(
   db: Kysely<KyselyDatabase>,
   args: RentalInvoiceGenerationArgs
 ): Promise<RentalInvoiceGenerationResult> {
@@ -619,40 +620,28 @@ function rentLineDescription(period: {
   return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;
 }
 
-/**
- * Releases the billing periods and charges a Draft invoice (or some of its
- * lines) billed, so the next generation bills them again. Called in the same
- * transaction as the delete: `salesInvoiceLineId` has no foreign key, so a
- * delete alone would leave the rows stamped as billed by a line that no
- * longer exists.
- */
-export async function releaseRentalInvoiceStamps(
-  trx: KyselyTx,
-  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
-): Promise<void> {
-  const { companyId, salesInvoiceLineIds, userId } = args;
-  if (salesInvoiceLineIds.length === 0) return;
+export const createRentalInvoicesInput = z.object({
+  /** `YYYY-MM-DD` in the company's timezone. */
+  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Bill one agreement only. */
+  rentalAgreementId: z.string().optional()
+});
 
-  await trx
-    .updateTable("rentalBillingPeriod")
-    .set({
-      status: "Pending",
-      salesInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .execute();
+/** Drafts the rental invoices due on or before `asOf` (see
+ *  `createRentalInvoicesForDuePeriods`). An agreement that fails is reported
+ *  in `failures`, never thrown, so the others still draft. */
+const createRentalInvoices = defineServerFn({
+  name: "create-rental-invoices",
+  input: createRentalInvoicesInput,
+  permissions: { update: "sales", create: "invoicing" },
+  async run({ db, companyId, userId }, { asOf, rentalAgreementId }) {
+    return createRentalInvoicesForDuePeriods(db, {
+      companyId,
+      userId,
+      asOf,
+      rentalAgreementId
+    });
+  }
+});
 
-  await trx
-    .updateTable("rentalAgreementCharge")
-    .set({
-      salesInvoiceLineId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .execute();
-}
+export default createRentalInvoices;

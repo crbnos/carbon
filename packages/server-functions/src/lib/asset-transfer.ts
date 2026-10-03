@@ -37,7 +37,7 @@ function ledgerAmount(value: number, label: string): number {
 // already signed debits (+ debit, − credit) and a balanced journal sums to 0.
 function assertAssetLinesBalance(lines: PostingLine[], label: string): void {
   const signedDebitTotal = round(
-    lines.reduce((sum, line) => sum + line.amount, 0),
+    lines.reduce((sum, line) => sum + line.amount, 0)
   );
   assertBalanced(signedDebitTotal, 0, EPSILON, label);
 }
@@ -61,13 +61,13 @@ export function buildCapitalizationLines(args: {
     {
       accountId: args.assetAccountId,
       description: "Fixed Asset Acquisition",
-      amount: debit("asset", cost),
+      amount: debit("asset", cost)
     },
     {
       accountId: args.creditAccountId,
       description: args.creditDescription,
-      amount: credit("asset", cost),
-    },
+      amount: credit("asset", cost)
+    }
   ];
   assertAssetLinesBalance(lines, "Asset capitalization journal");
   return lines;
@@ -88,7 +88,7 @@ export function buildReturnToInventoryLines(args: {
   const cost = ledgerAmount(args.cost, "Asset cost");
   const accumulatedDepreciation = ledgerAmount(
     args.accumulatedDepreciation,
-    "Accumulated depreciation",
+    "Accumulated depreciation"
   );
   if (cost <= 0) throw new Error("Asset cost must be positive");
   if (accumulatedDepreciation < 0) {
@@ -103,20 +103,20 @@ export function buildReturnToInventoryLines(args: {
     {
       accountId: args.inventoryAccountId,
       description: args.inventoryDescription,
-      amount: debit("asset", netBookValue),
-    },
+      amount: debit("asset", netBookValue)
+    }
   ];
   if (accumulatedDepreciation !== 0) {
     lines.push({
       accountId: args.accounts.accumulatedDepreciationAccountId,
       description: "Accumulated Depreciation",
-      amount: debit("asset", accumulatedDepreciation),
+      amount: debit("asset", accumulatedDepreciation)
     });
   }
   lines.push({
     accountId: args.accounts.assetAccountId,
     description: "Fixed Asset Cost",
-    amount: credit("asset", cost),
+    amount: credit("asset", cost)
   });
   assertAssetLinesBalance(lines, "Asset return to inventory journal");
   return lines;

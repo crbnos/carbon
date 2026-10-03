@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { distributeRoundingResidual } from "./precision.ts";
+import { distributeRoundingResidual } from "@carbon/database/precision";
 
 /** One straight-line cut: the slice of a service range that falls inside a
  *  single calendar month, recognized on the slice's last day. */
@@ -54,7 +54,11 @@ export function parseIsoDate(date: string): IsoDateParts {
   return { year, month, day };
 }
 
-export function formatIsoDate(year: number, month: number, day: number): string {
+export function formatIsoDate(
+  year: number,
+  month: number,
+  day: number
+): string {
   const pad = (value: number, width: number) =>
     String(value).padStart(width, "0");
   return `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}`;

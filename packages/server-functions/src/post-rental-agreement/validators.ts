@@ -106,8 +106,8 @@ export const RENTABLE_ASSET_STATUSES: ReadonlySet<Enums["fixedAssetStatus"]> =
   new Set(["Active", "Fully Depreciated"] as const);
 
 /** Activation generates periods to the same horizon the daily billing pass
- *  rolls forward to (`billingHorizon`, @carbon/database/rental-periods). */
-export { billingHorizon as activationThrough } from "@carbon/database/rental-periods";
+ *  rolls forward to (`billingHorizon`, @carbon/utils). */
+export { billingHorizon as activationThrough } from "@carbon/utils";
 
 /** A NUMERIC rate as the billing math reads it: null stays null (no rate),
  *  anything else is a number. */

@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { buildLessorSchedule } from "@carbon/database/lessor-lease";
 import { round } from "@carbon/database/precision";
-import { generateRentalBillingPeriods } from "@carbon/database/rental-periods";
+import {
+  buildLessorSchedule,
+  generateRentalBillingPeriods
+} from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   activationBillingThrough,

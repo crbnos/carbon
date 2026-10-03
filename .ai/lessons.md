@@ -2996,5 +2996,5 @@ documents card crashed on `opportunity.id` (shown as "Couldn't load documents", 
 creates an opportunity for it in the same transaction. Nullable in the schema does not
 mean optional in the app.
 
-**Applies to:** `packages/database/src/rental-billing.ts`, any Kysely/edge-function writer
+**Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
 of `salesInvoice`; backfilled by `20261002194333_sales-invoice-opportunity-backfill.sql`.

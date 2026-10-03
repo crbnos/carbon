@@ -2,21 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Revenue recognition run proposals — shared by the ERP "New run" route and the
-// monthly Inngest job, so a human and the scheduler propose exactly the same
+// Revenue recognition run proposals — shared by the ERP "New run" / "Repeat"
+// routes and the monthly Inngest job, so a human and the scheduler propose exactly the same
 // rows for a period. Posting stays in the ERP (accounting.server.ts): it is a
 // human action under the period matrix.
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1
 
-import { sql } from "kysely";
-import { round } from "./precision.ts";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
   daysBetweenInclusive,
   formatIsoDate,
-  parseIsoDate
-} from "./revenue-schedule.ts";
-import type { Kysely, KyselyDatabase, KyselyTx } from "./client";
-import { getNextSequence } from "./sequence";
+  parseIsoDate,
+  round
+} from "@carbon/utils";
+import { sql } from "kysely";
+import { z } from "zod";
+import { defineServerFn } from "../define-server-fn";
 
 export type RunProposalContext = {
   companyId: string;
@@ -249,7 +251,7 @@ export type RunProposal = { id: string; runId: string; lineCount: number };
  * is due, so a second proposal for the same period is a no-op rather than an
  * empty run.
  */
-export async function createRevenueRecognitionRunProposal(
+async function createRevenueRecognitionRunProposal(
   db: Kysely<KyselyDatabase>,
   args: RunProposalContext
 ): Promise<RunProposal | null> {
@@ -318,3 +320,25 @@ export async function createRevenueRecognitionRunProposal(
     return { id: run.id, runId, lineCount: due.length };
   });
 }
+
+export const proposeRevenueRecognitionRunInput = z.object({
+  /** `YYYY-MM-DD`, the last day of the period being recognized. */
+  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
+/** Proposes ONE Draft run for the period, or null when nothing is due (see
+ *  `createRevenueRecognitionRunProposal`). */
+const proposeRevenueRecognitionRun = defineServerFn({
+  name: "propose-revenue-recognition-run",
+  input: proposeRevenueRecognitionRunInput,
+  permissions: { create: "accounting" },
+  async run({ db, companyId, userId }, { periodEnd }) {
+    return createRevenueRecognitionRunProposal(db, {
+      companyId,
+      periodEnd,
+      userId
+    });
+  }
+});
+
+export default proposeRevenueRecognitionRun;

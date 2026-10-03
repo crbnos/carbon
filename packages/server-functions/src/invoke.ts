@@ -16,6 +16,7 @@ const registry = {
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
+  "create-rental-invoices": () => import("./create-rental-invoices"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
@@ -39,6 +40,8 @@ const registry = {
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
   "post-stock-transfer": () => import("./post-stock-transfer"),
+  "propose-revenue-recognition-run": () =>
+    import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
   reschedule: () => import("./reschedule"),
   "seed-company": () => import("./seed-company"),

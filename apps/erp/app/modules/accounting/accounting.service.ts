@@ -3135,7 +3135,7 @@ const JOURNAL_BALANCE_TOLERANCE = 0.001;
  * Rental-treated lines that earned rent inside [startDate, endDate] which no
  * posted invoice covers and no Accrual row for this period end accrues — the
  * accrual half of the "Recognize revenue for the period" close task. Mirrors
- * `synthesizeRentalAccruals` (`@carbon/database/revenue-recognition`): a
+ * `synthesizeRentalAccruals` (the `propose-revenue-recognition-run` server function): a
  * non-adjustment billing period of an Rental-treated `On Rent` / `Returned` line,
  * overlapping the period inside the line's `[deliveredAt, returnedAt]`, that is
  * `Pending` or `Invoiced` onto a Draft/Pending invoice. Usually one query: the

@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { round, RoundingMode } from "./precision.ts";
+import { RoundingMode, round } from "@carbon/database/precision";
 import {
   addDays,
   daysBetweenInclusive,
   daysInMonth,
   monthEnd,
-  parseIsoDate,
+  parseIsoDate
 } from "./revenue-schedule.ts";
 
 // Rental billing math shared by the posting functions, the app and the jobs
@@ -60,7 +60,7 @@ export function defaultRentalRates(args: {
   const effective = scoped.filter(
     (row) =>
       (!row.validFrom || row.validFrom <= asOf) &&
-      (!row.validTo || row.validTo >= asOf),
+      (!row.validTo || row.validTo >= asOf)
   );
   const forCustomer = effective.find((row) => row.customerId === customerId);
   const forType = customerTypeId
@@ -69,7 +69,7 @@ export function defaultRentalRates(args: {
   const cards: [RateLadder | null | undefined, RentalRateSource][] = [
     [forCustomer, "Customer"],
     [forType, "Customer Type"],
-    [item, "Item"],
+    [item, "Item"]
   ];
 
   const pick = (unit: RateUnit): DefaultRentalRate | null => {
@@ -137,13 +137,13 @@ const DAYS_PER_UNIT: Record<RateUnit, number> = { Day: 1, Week: 7, Month: 28 };
 const RATE_OF: Record<RateUnit, keyof RateLadder> = {
   Day: "dayRate",
   Week: "weekRate",
-  Month: "monthRate",
+  Month: "monthRate"
 };
 
 function assertWholeDays(days: number): void {
   if (!Number.isInteger(days) || days < 1) {
     throw new Error(
-      `A rental charge needs a whole number of days, got ${days}`,
+      `A rental charge needs a whole number of days, got ${days}`
     );
   }
 }
@@ -157,7 +157,7 @@ export const wholeRateUnits = (days: number, unit: RateUnit): number =>
 export function rateCharge(
   days: number,
   unit: RateUnit,
-  rate: number,
+  rate: number
 ): RateCharge {
   assertWholeDays(days);
   if (!Number.isFinite(rate)) {
@@ -174,7 +174,7 @@ export function rateCharge(
 export function calendarMonthCharge(
   periodStart: string,
   periodEnd: string,
-  monthRate: number,
+  monthRate: number
 ): number {
   if (!Number.isFinite(monthRate)) {
     throw new Error(`Month rate must be finite, got ${monthRate}`);
@@ -183,7 +183,7 @@ export function calendarMonthCharge(
   const days = daysBetweenInclusive(periodStart, periodEnd);
   if (periodEnd > monthEnd(periodStart)) {
     throw new Error(
-      `"${periodStart}" to "${periodEnd}" is not within one calendar month`,
+      `"${periodStart}" to "${periodEnd}" is not within one calendar month`
     );
   }
   const { year, month } = parseIsoDate(periodStart);
@@ -197,7 +197,7 @@ export function calendarMonthCharge(
  *  next month; 28 Days to today + 28. */
 export function billingHorizon(
   cycle: RentalBillingCycle,
-  today: string,
+  today: string
 ): string {
   return cycle === "Calendar Month"
     ? monthEnd(addDays(monthEnd(today), 1))
@@ -222,7 +222,7 @@ export function periodCharge(args: {
     return {
       days,
       amount: calendarMonthCharge(periodStart, periodEnd, rate),
-      rateUnitApplied: "Month",
+      rateUnitApplied: "Month"
     };
   }
   const { amount, rateUnitApplied } = rateCharge(days, rateUnit, rate);
@@ -269,7 +269,7 @@ export function generateRentalBillingPeriods(args: {
     endDate,
     returnedAt,
     through,
-    existing,
+    existing
   } = args;
 
   parseIsoDate(startDate);
@@ -298,14 +298,14 @@ export function generateRentalBillingPeriods(args: {
       periodEnd,
       ...price(periodStart, periodEnd),
       dueOn: timing === "Advance" ? periodStart : periodEnd,
-      isAdjustment: false,
+      isAdjustment: false
     };
   };
 
   // The last day a period must reach: the return, the whole fixed term, or
   // `through` (holdover and open-ended).
-  const lastDay = returnedAt ??
-    (endDate !== null && endDate > through ? endDate : through);
+  const lastDay =
+    returnedAt ?? (endDate !== null && endDate > through ? endDate : through);
   const rolling = endDate === null && returnedAt === null;
 
   const periods: PeriodSpec[] = [];
@@ -318,7 +318,7 @@ export function generateRentalBillingPeriods(args: {
   if (rolling) periods.push(cut(cursor));
 
   const generatedByStart = new Map(
-    periods.map((period) => [period.periodStart, period]),
+    periods.map((period) => [period.periodStart, period])
   );
   const existingStarts = new Set<string>();
   const adjustedStarts = new Set<string>();
@@ -327,7 +327,7 @@ export function generateRentalBillingPeriods(args: {
   }
 
   const create = periods.filter(
-    (period) => !existingStarts.has(period.periodStart),
+    (period) => !existingStarts.has(period.periodStart)
   );
   const recut: RecutPeriod[] = [];
   const adjustments: PeriodSpec[] = [];
@@ -344,7 +344,7 @@ export function generateRentalBillingPeriods(args: {
           days: now.days,
           amount: now.amount,
           rateUnitApplied: now.rateUnitApplied,
-          dueOn: now.dueOn,
+          dueOn: now.dueOn
         });
       }
       continue;
@@ -366,7 +366,7 @@ export function generateRentalBillingPeriods(args: {
       amount: -credit,
       rateUnitApplied: now?.rateUnitApplied ?? null,
       dueOn: returnedAt,
-      isAdjustment: true,
+      isAdjustment: true
     });
   }
 

@@ -4,7 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
-import { createRevenueRecognitionRunProposal } from "@carbon/database/revenue-recognition";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { getJobDatabaseClient } from "../../../db";
@@ -86,11 +86,9 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
           }
 
           // Posting stays a human action in the ERP; this only drafts the run.
-          const proposal = await createRevenueRecognitionRunProposal(db, {
-            companyId: company.id,
-            periodEnd,
-            userId: "system"
-          });
+          const proposal = await serverFns
+            .system({ db, companyId: company.id, userId: "system" })
+            .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
 
           logger.info(
             proposal

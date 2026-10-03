@@ -105,6 +105,10 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "create-rental-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
   "get-method": {
     "update": "production",
   },
@@ -307,6 +311,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "inventory",
   },
   "post-stock-transfer": {},
+  "propose-revenue-recognition-run": {
+    "create": "accounting",
+  },
   "recalculate": {
     "update": "production",
   },

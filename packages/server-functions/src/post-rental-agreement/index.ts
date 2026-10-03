@@ -5,15 +5,16 @@
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
-import { buildLessorSchedule } from "@carbon/database/lessor-lease";
 import { round } from "@carbon/database/precision";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
+  buildJournalLineDimensionInserts,
+  buildLessorSchedule,
+  datetime,
   type ExistingBillingPeriod,
   generateRentalBillingPeriods,
   type PeriodSpec
-} from "@carbon/database/rental-periods";
-import { getNextSequence } from "@carbon/database/sequence";
-import { buildJournalLineDimensionInserts, datetime } from "@carbon/utils";
+} from "@carbon/utils";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { defineServerFn } from "../define-server-fn";

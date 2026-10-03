@@ -10,7 +10,6 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import type { InvoiceAutomation } from "@carbon/database/rental-invoice-plan";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import {
   dedupeViolations,
@@ -27,6 +26,7 @@ import {
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";

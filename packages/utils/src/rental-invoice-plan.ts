@@ -7,7 +7,7 @@
 // before they are posted. Pure, so the generator and its tests agree.
 // Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
 
-import type { Database } from "./types";
+import type { Database } from "@carbon/database";
 
 export type InvoiceAutomation =
   Database["public"]["Enums"]["invoiceAutomation"];

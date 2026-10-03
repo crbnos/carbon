@@ -4,11 +4,9 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import {
-  createRentalInvoicesForDuePeriods,
-  type DraftedRentalInvoice
-} from "@carbon/database/rental-billing";
 import { NotificationEvent } from "@carbon/notifications";
+import { serverFns } from "@carbon/server-functions";
+import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
@@ -76,10 +74,13 @@ export const recurringBillingFunction = inngest.createFunction(
             const tz = await getCompanyTimeZone(serviceRole, company.id);
             const asOf = datetime.today(tz).toString();
 
-            const drafted = await createRentalInvoicesForDuePeriods(
-              getJobDatabaseClient(),
-              { companyId: company.id, asOf, userId: "system" }
-            );
+            const drafted = await serverFns
+              .system({
+                db: getJobDatabaseClient(),
+                companyId: company.id,
+                userId: "system"
+              })
+              .invokeOrThrow("create-rental-invoices", { asOf });
 
             for (const failure of drafted.failures) {
               logger.error(
