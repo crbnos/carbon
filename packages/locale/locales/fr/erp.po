@@ -2605,6 +2605,9 @@ msgstr "Êtes-vous sûr de vouloir supprimer ce risque ?"
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer ce risque ? Cette action ne peut pas être annulée."
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr ""
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer cette suggestion ? Cette action ne peut pas être annulée."
 
@@ -8282,6 +8285,9 @@ msgstr "Terminer une cueillette incomplète"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "La fermeture est refusée jusqu'à ce que chaque ligne soit prélevée ou marquée comme Courte."
 
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "Aux premières lueurs, {name}."
 
@@ -13671,6 +13677,9 @@ msgstr "Perte de données potentielle"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-rempli pour un nouvel article quand la péremption est Durée fixe."
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr ""
+
 msgid "Predict lead time"
 msgstr "Prédire le délai d'approvisionnement"
 
@@ -15739,6 +15748,9 @@ msgstr "Facture de vente"
 msgid "Sales Invoice"
 msgstr "Facture de vente"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Ligne de facture de vente"
 
@@ -15790,8 +15802,18 @@ msgstr "Retour de vente"
 msgid "Sales Revenue"
 msgstr "Revenus des ventes"
 
+msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "Violations de règles de vente"
+
+msgid "Sales rules"
+msgstr ""
 
 msgid "Sales Rules"
 msgstr "Règles de vente"

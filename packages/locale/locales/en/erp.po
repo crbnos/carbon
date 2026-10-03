@@ -2605,6 +2605,9 @@ msgstr "Are you sure you want to delete this risk?"
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "Are you sure you want to delete this risk? This cannot be undone."
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr "Are you sure you want to delete this sales rule? Assignments will also be removed."
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "Are you sure you want to delete this suggestion? This action cannot be undone."
 
@@ -8282,6 +8285,9 @@ msgstr "Finishing an incomplete pick"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Finishing is refused until every line is picked or marked Short."
 
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr "Fire on quote lines, sales order lines and sales invoice lines."
+
 msgid "First light, {name}."
 msgstr "First light, {name}."
 
@@ -13671,6 +13677,9 @@ msgstr "Potential Data Loss"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-filled for a new item when expiry is Fixed Duration."
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+
 msgid "Predict lead time"
 msgstr "Predict lead time"
 
@@ -15739,6 +15748,9 @@ msgstr "Sales invoice"
 msgid "Sales Invoice"
 msgstr "Sales Invoice"
 
+msgid "Sales invoice line"
+msgstr "Sales invoice line"
+
 msgid "Sales Invoice Line"
 msgstr "Sales Invoice Line"
 
@@ -15790,8 +15802,18 @@ msgstr "Sales Return"
 msgid "Sales Revenue"
 msgstr "Sales Revenue"
 
+msgid "Sales Rule"
+msgstr "Sales Rule"
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr "Sales rule \"{0}\""
+
 msgid "Sales Rule Violations"
 msgstr "Sales Rule Violations"
+
+msgid "Sales rules"
+msgstr "Sales rules"
 
 msgid "Sales Rules"
 msgstr "Sales Rules"

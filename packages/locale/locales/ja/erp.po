@@ -2605,6 +2605,9 @@ msgstr "このリスクを削除してもよろしいですか？"
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "このリスクを削除してもよろしいですか？この操作は取り消せません。"
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr ""
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "本当にこの提案を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -8282,6 +8285,9 @@ msgstr "不完全なピック完了"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "夜明け、{name}さん。"
 
@@ -13671,6 +13677,9 @@ msgstr "潜在的データ損失"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "使用期限が固定期間の場合、新規品目に対して事前入力されます。"
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr ""
+
 msgid "Predict lead time"
 msgstr "リードタイムを予測"
 
@@ -15739,6 +15748,9 @@ msgstr "売上請求書"
 msgid "Sales Invoice"
 msgstr "売上請求書"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "売上請求書行"
 
@@ -15790,8 +15802,18 @@ msgstr "販売返品"
 msgid "Sales Revenue"
 msgstr "販売売上高"
 
+msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "販売ルール違反"
+
+msgid "Sales rules"
+msgstr ""
 
 msgid "Sales Rules"
 msgstr "販売ルール"

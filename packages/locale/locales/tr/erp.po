@@ -2605,6 +2605,9 @@ msgstr "Bu riski silmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "Bu riski silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr ""
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "Bu öneriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
@@ -8282,6 +8285,9 @@ msgstr "Eksik seçimi tamamlama"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
 
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "İlk ışık, {name}."
 
@@ -13671,6 +13677,9 @@ msgstr "Potansiyel Veri Kaybı"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr ""
+
 msgid "Predict lead time"
 msgstr "Tedarik süresini tahmin et"
 
@@ -15739,6 +15748,9 @@ msgstr "Satış faturası"
 msgid "Sales Invoice"
 msgstr "Satış Faturası"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "Satış Faturası Kalemi"
 
@@ -15790,8 +15802,18 @@ msgstr "Satış İadesi"
 msgid "Sales Revenue"
 msgstr "Satış Hasılat"
 
+msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "Satış Kuralı İhlalleri"
+
+msgid "Sales rules"
+msgstr ""
 
 msgid "Sales Rules"
 msgstr "Satış Kuralları"

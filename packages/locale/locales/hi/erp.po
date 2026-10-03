@@ -2605,6 +2605,9 @@ msgstr "क्या आप इस जोखिम को हटाना चा
 msgid "Are you sure you want to delete this risk? This cannot be undone."
 msgstr "क्या आप इस जोखिम को हटाना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
+msgid "Are you sure you want to delete this sales rule? Assignments will also be removed."
+msgstr ""
+
 msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
 msgstr "क्या आप इस सुझाव को हटाना चाहते हैं? यह क्रिया वापस नहीं की जा सकती।"
 
@@ -8282,6 +8285,9 @@ msgstr "एक अधूरी पिक को समाप्त करना"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
 
+msgid "Fire on quote lines, sales order lines and sales invoice lines."
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "पहली रोशनी, {name}।"
 
@@ -13671,6 +13677,9 @@ msgstr "संभावित डेटा हानि"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
 
+msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
+msgstr ""
+
 msgid "Predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी करें"
 
@@ -15739,6 +15748,9 @@ msgstr "विक्रय चालान"
 msgid "Sales Invoice"
 msgstr "विक्रय चालान"
 
+msgid "Sales invoice line"
+msgstr ""
+
 msgid "Sales Invoice Line"
 msgstr "विक्रय चालान पंक्ति"
 
@@ -15790,8 +15802,18 @@ msgstr "विक्रय रिटर्न"
 msgid "Sales Revenue"
 msgstr "बिक्रय राजस्व"
 
+msgid "Sales Rule"
+msgstr ""
+
+#. placeholder {0}: rule.name
+msgid "Sales rule \"{0}\""
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "बिक्री नियम उल्लंघन"
+
+msgid "Sales rules"
+msgstr ""
 
 msgid "Sales Rules"
 msgstr "बिक्री नियम"
