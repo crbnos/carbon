@@ -83,6 +83,64 @@ export function isDistinctFromAny(values: Record<string, unknown>) {
   return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
 }
 
+const PLACEMENT_CASTS = {
+  startDate: "date",
+  projectedCompletionAt: "timestamptz",
+  dueDate: "date",
+  priority: "float8",
+  workCenterId: "text",
+  hasConflict: "boolean",
+  conflictReason: "text"
+} as const;
+
+type PlacementColumn = keyof typeof PLACEMENT_CASTS;
+type PlacementWrite = Partial<Record<PlacementColumn, unknown>>;
+
+const PLACEMENT_COLUMNS = Object.keys(PLACEMENT_CASTS) as PlacementColumn[];
+
+/**
+ * Write the placements of operations that all set the same columns, in one
+ * statement. Every UPDATE is queued for the audit/search handlers, so a row
+ * whose placement is unchanged is not written at all.
+ */
+async function updatePlacements(
+  trx: Kysely<DB>,
+  rows: { id: string; placement: PlacementWrite }[],
+  userId: string
+) {
+  const columns = PLACEMENT_COLUMNS.filter(
+    (column) => rows[0]!.placement[column] !== undefined
+  );
+  const value = (column: PlacementColumn) =>
+    sql`v.${sql.ref(column)}::${sql.raw(PLACEMENT_CASTS[column])}`;
+
+  await sql`
+    update "jobOperation" as o
+    set ${sql.join([
+      ...columns.map((c) => sql`${sql.ref(c)} = ${value(c)}`),
+      sql`"updatedAt" = ${datetime.timestamp()}`,
+      sql`"updatedBy" = ${userId}`
+    ])}
+    from (values ${sql.join(
+      rows.map(
+        (row) =>
+          sql`(${sql.join([row.id, ...columns.map((c) => row.placement[c])])})`
+      )
+    )}) as v(${sql.join(["id", ...columns].map((c) => sql.ref(c)))})
+    where o."id" = v."id"
+      and ${
+        columns.length === 0
+          ? sql`true`
+          : sql`(${sql.join(
+              columns.map(
+                (c) => sql`o.${sql.ref(c)} is distinct from ${value(c)}`
+              ),
+              sql` or `
+            )})`
+      }
+  `.execute(trx);
+}
+
 /**
  * Unified Scheduling Engine
  * Orchestrates all scheduling operations for both initial scheduling and rescheduling
@@ -904,6 +962,10 @@ export class SchedulingEngine {
     // re-inserted) would free this job's capacity to other jobs' replans
     // while its operations already carry the new plan.
     await this.db.transaction().execute(async (trx) => {
+      const placements = new Map<
+        string,
+        { id: string; placement: PlacementWrite }[]
+      >();
       for (const op of this.scheduledOperations.values()) {
         const originalOp = this.operations.find((o) => o.id === op.id);
         const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
@@ -923,7 +985,7 @@ export class SchedulingEngine {
         const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
         const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
 
-        const placement = {
+        const placement: PlacementWrite = {
           startDate: op.startDate,
           projectedCompletionAt: op.projectedCompletionAt ?? null,
           ...(writeDueDate ? { dueDate: needBy } : {}),
@@ -932,19 +994,17 @@ export class SchedulingEngine {
           hasConflict: op.hasConflict,
           conflictReason: op.conflictReason
         };
+        // Rows that write the same columns go in one statement.
+        const shape = PLACEMENT_COLUMNS.filter(
+          (column) => placement[column] !== undefined
+        ).join();
+        const group = placements.get(shape);
+        if (group) group.push({ id: op.id, placement });
+        else placements.set(shape, [{ id: op.id, placement }]);
+      }
 
-        // Every UPDATE is queued for the audit/search handlers, so an op whose
-        // placement is unchanged must not be written at all.
-        await trx
-          .updateTable("jobOperation")
-          .set({
-            ...placement,
-            updatedAt: datetime.timestamp(),
-            updatedBy: this.userId
-          })
-          .where("id", "=", op.id)
-          .where(isDistinctFromAny(placement))
-          .execute();
+      for (const rows of placements.values()) {
+        await updatePlacements(trx, rows, this.userId);
       }
 
       // Rebuild this job's live capacity reservations from this run's
