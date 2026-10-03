@@ -65,7 +65,13 @@ export function ActionDock({
 
   if (asColumn) {
     return (
-      <View className="w-[260px] border-l border-border bg-card">
+      // The column runs the full height of the screen beside the content, so
+      // it owns the status bar's inset itself: without it the work-type
+      // switch sat under the clock and battery on an iPad.
+      <View
+        className="w-[260px] border-l border-border bg-card"
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      >
         <ScrollView
           contentContainerClassName="gap-4 p-4"
           showsVerticalScrollIndicator={false}
