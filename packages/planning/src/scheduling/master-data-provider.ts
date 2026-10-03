@@ -405,7 +405,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   async getJobMethodTree(
     methodId: string
   ): Promise<{ data: JobMethodTreeItem[] | null; error: unknown }> {
-    return await getJobMethodTree(this.client, methodId);
+    return await getJobMethodTree(this.db, methodId);
   }
 
   async getProcessesWithWorkCenters(): Promise<ProcessWorkCenters[]> {

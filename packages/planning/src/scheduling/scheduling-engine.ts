@@ -52,6 +52,7 @@ import {
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
 import type {
+  AssemblyNode,
   BaseOperation,
   Job,
   JobOperationDependency,
@@ -107,6 +108,8 @@ export class SchedulingEngine {
   private timezone: string = "UTC";
 
   private assemblyHandler: AssemblyHandler;
+  private assemblyTree: Promise<AssemblyNode | null> | null = null;
+  private allOperations: Promise<BaseOperation[]> | null = null;
   private workCenterSelector: WorkCenterSelector | null = null;
   private materialManager: MaterialManager;
   private reservationsWritten = 0;
@@ -259,12 +262,27 @@ export class SchedulingEngine {
     }
 
     // Build assembly tree and get depth
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (assemblyTree) {
       this.assemblyDepth = this.assemblyHandler.getAssemblyDepth(assemblyTree);
     }
+  }
+
+  /**
+   * The job's assembly tree and its full operation list are read once per
+   * run: nothing in a run changes the method structure or which operations
+   * exist, and each read was a round trip per phase per job.
+   */
+  private loadAssemblyTree(): Promise<AssemblyNode | null> {
+    this.assemblyTree ??= this.assemblyHandler.buildAssemblyTree(this.jobId);
+    return this.assemblyTree;
+  }
+
+  private loadAllOperations(): Promise<BaseOperation[]> {
+    this.allOperations ??= this.provider.getOperations(this.jobId, {
+      includeDone: true
+    });
+    return this.allOperations;
   }
 
   /**
@@ -330,14 +348,10 @@ export class SchedulingEngine {
    */
   async createDependencies(): Promise<void> {
     // Load all operations for dependency building (not just active ones)
-    const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true
-    });
+    const allOperations = await this.loadAllOperations();
 
     // Build assembly tree
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (!assemblyTree) {
       log.warning("No assembly tree found for job", { jobId: this.jobId });
       return;
@@ -497,21 +511,22 @@ export class SchedulingEngine {
           this.job.status
         );
       if (jobIsOpen) {
-        for (const [opId, deps] of allDependencies) {
-          if (deps.size === 0) {
-            await this.db
-              .updateTable("jobOperation")
-              .set({ status: "Ready" })
-              .where("id", "=", opId)
-              .where("status", "not in", [
-                "Ready",
-                "Done",
-                "Canceled",
-                "In Progress",
-                "Paused"
-              ])
-              .execute();
-          }
+        const unblocked = [...allDependencies]
+          .filter(([, deps]) => deps.size === 0)
+          .map(([opId]) => opId);
+        if (unblocked.length > 0) {
+          await this.db
+            .updateTable("jobOperation")
+            .set({ status: "Ready" })
+            .where("id", "in", unblocked)
+            .where("status", "not in", [
+              "Ready",
+              "Done",
+              "Canceled",
+              "In Progress",
+              "Paused"
+            ])
+            .execute();
         }
       }
     }
@@ -827,14 +842,10 @@ export class SchedulingEngine {
    */
   async assignMaterials(): Promise<void> {
     // Load all operations (including Done) to find first ops correctly
-    const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true
-    });
+    const allOperations = await this.loadAllOperations();
 
     // Build assembly tree
-    const assemblyTree = await this.assemblyHandler.buildAssemblyTree(
-      this.jobId
-    );
+    const assemblyTree = await this.loadAssemblyTree();
     if (!assemblyTree) {
       return;
     }
@@ -864,6 +875,7 @@ export class SchedulingEngine {
     }
 
     // Assign first operation of each method to its materials
+    const materialIdsByFirstOp = new Map<string, string[]>();
     for (const material of materials) {
       if (!material.jobMakeMethodId) continue;
 
@@ -871,16 +883,21 @@ export class SchedulingEngine {
       const sortedOps = [...methodOps].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
-      const firstOp = sortedOps[0];
+      const firstOpId = sortedOps[0]?.id;
+      if (!firstOpId) continue;
+      const ids = materialIdsByFirstOp.get(firstOpId) ?? [];
+      ids.push(material.id);
+      materialIdsByFirstOp.set(firstOpId, ids);
+    }
 
-      // Dry-run writes nothing (expedite what-if).
-      if (firstOp?.id && this.persist) {
-        await this.db
-          .updateTable("jobMaterial")
-          .set({ jobOperationId: firstOp.id })
-          .where("id", "=", material.id)
-          .execute();
-      }
+    // Dry-run writes nothing (expedite what-if).
+    if (!this.persist) return;
+    for (const [jobOperationId, ids] of materialIdsByFirstOp) {
+      await this.db
+        .updateTable("jobMaterial")
+        .set({ jobOperationId })
+        .where("id", "in", ids)
+        .execute();
     }
   }
 
