@@ -2,6 +2,7 @@
   "name": "@carbon/lib",
   "dependencies": {
     "@carbon/database": "workspace:*",
+    "@carbon/documents": "workspace:*",
     "@carbon/env": "workspace:*",
     "@carbon/files": "workspace:*",
     "@carbon/kv": "workspace:*",
@@ -9,6 +10,7 @@
     "@carbon/notifications": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@carbon/workflows-core": "workspace:*",
+    "@react-pdf/renderer": "catalog:",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",
@@ -36,6 +38,7 @@
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",
     "./resend.server": "./src/resend.server.ts",
+    "./sales-invoice-document.server": "./src/sales-invoice-document.server.tsx",
     "./shims": "./src/shims.ts",
     "./slack.server": "./src/slack.server.ts",
     "./telemetry": "./src/telemetry/capture.ts",
