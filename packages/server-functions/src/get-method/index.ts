@@ -909,6 +909,11 @@ export const getMethod = defineServerFn({
           // - jobMakeMethod
           // - jobMakeMethodOperation
           // - jobMakeMethodMaterial
+          const deferredJobMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+            [];
+          const deferredJobMaterialSteps: Database["public"]["Tables"]["jobMaterialStep"]["Insert"][] =
+            [];
+
           async function traverseMethod(
             node: MethodTreeItem,
             parentJobMakeMethodId: string | null,
@@ -1740,20 +1745,19 @@ export const getMethod = defineServerFn({
                   id: (m as { id?: string }).id ?? nanoid()
                 }));
                 insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
-                await trx
-                  .insertInto("jobMaterial")
-                  .values(
-                    pickedWithIds.map((m) => {
-                      const { __stepLinks, ...rest } = m as typeof m & {
-                        __stepLinks?: {
-                          stepId: string;
-                          quantity: number | null;
-                        }[];
-                      };
-                      return rest;
-                    })
-                  )
-                  .execute();
+                // Inserted once, after the walk: nothing below reads these rows,
+                // and their insert triggers only validate.
+                deferredJobMaterials.push(
+                  ...pickedWithIds.map((m) => {
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: {
+                        stepId: string;
+                        quantity: number | null;
+                      }[];
+                    };
+                    return rest;
+                  })
+                );
 
                 const pickedStepRows = pickedWithIds.flatMap((m) =>
                   (
@@ -1771,18 +1775,18 @@ export const getMethod = defineServerFn({
                     quantity: link.quantity
                   }))
                 );
-                if (pickedStepRows.length > 0) {
-                  await trx
-                    .insertInto("jobMaterialStep")
-                    .values(pickedStepRows)
-                    .execute();
-                }
+                deferredJobMaterialSteps.push(...pickedStepRows);
               }
             } // end if (parts.billOfMaterial)
           }
 
           // Start traversal with job quantity as the root's target/parent estimated quantity
           await traverseMethod(methodTree, jobMakeMethod.id, job.quantity ?? 1);
+          await insertDeferredJobMaterials(
+            trx,
+            deferredJobMaterials,
+            deferredJobMaterialSteps
+          );
 
           await linkAssemblyStepMaterialsForJobOperations(
             trx,
@@ -1962,6 +1966,11 @@ export const getMethod = defineServerFn({
           // - jobMakeMethod
           // - jobMakeMethodOperation
           // - jobMakeMethodMaterial
+          const deferredJobMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+            [];
+          const deferredJobMaterialSteps: Database["public"]["Tables"]["jobMaterialStep"]["Insert"][] =
+            [];
+
           async function traverseMethod(
             node: MethodTreeItem,
             parentJobMakeMethodId: string | null,
@@ -2493,20 +2502,19 @@ export const getMethod = defineServerFn({
                   id: (m as { id?: string }).id ?? nanoid()
                 }));
                 insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
-                await trx
-                  .insertInto("jobMaterial")
-                  .values(
-                    pickedWithIds.map((m) => {
-                      const { __stepLinks, ...rest } = m as typeof m & {
-                        __stepLinks?: {
-                          stepId: string;
-                          quantity: number | null;
-                        }[];
-                      };
-                      return rest;
-                    })
-                  )
-                  .execute();
+                // Inserted once, after the walk: nothing below reads these rows,
+                // and their insert triggers only validate.
+                deferredJobMaterials.push(
+                  ...pickedWithIds.map((m) => {
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: {
+                        stepId: string;
+                        quantity: number | null;
+                      }[];
+                    };
+                    return rest;
+                  })
+                );
 
                 const pickedStepRows = pickedWithIds.flatMap((m) =>
                   (
@@ -2524,12 +2532,7 @@ export const getMethod = defineServerFn({
                     quantity: link.quantity
                   }))
                 );
-                if (pickedStepRows.length > 0) {
-                  await trx
-                    .insertInto("jobMaterialStep")
-                    .values(pickedStepRows)
-                    .execute();
-                }
+                deferredJobMaterialSteps.push(...pickedStepRows);
               }
             } // end if (parts.billOfMaterial)
           }
@@ -2539,6 +2542,11 @@ export const getMethod = defineServerFn({
             methodTree,
             jobMakeMethod.data.id,
             parentEstimatedQuantity
+          );
+          await insertDeferredJobMaterials(
+            trx,
+            deferredJobMaterials,
+            deferredJobMaterialSteps
           );
 
           await linkAssemblyStepMaterialsForJobOperations(
@@ -5132,13 +5140,20 @@ export const getMethod = defineServerFn({
                 materialIdsByOperationId.set(newOperationId, ids);
               }
             }
-            for (const [operationId, materialIds] of materialIdsByOperationId) {
-              await trx
-                .updateTable("jobMaterial")
-                .set({ jobOperationId: operationId })
-                .where("id", "in", materialIds)
-                .where("companyId", "=", companyId)
-                .execute();
+            const operationByMaterial = [...materialIdsByOperationId].flatMap(
+              ([operationId, materialIds]) =>
+                materialIds.map(
+                  (materialId) =>
+                    sql`(${materialId}::text, ${operationId}::text)`
+                )
+            );
+            if (operationByMaterial.length > 0) {
+              await sql`
+                UPDATE "jobMaterial" AS t
+                SET "jobOperationId" = v."operationId"
+                FROM (VALUES ${sql.join(operationByMaterial)}) AS v("materialId", "operationId")
+                WHERE t."id" = v."materialId" AND t."companyId" = ${companyId}
+              `.execute(trx);
             }
 
             // Material ↔ step links (jobMaterialStep), remapped onto the new
@@ -8547,6 +8562,19 @@ async function insertProcedureDataForJobOperation(
     .where("id", "=", operationId)
     .where("companyId", "=", companyId)
     .execute();
+}
+
+async function insertDeferredJobMaterials(
+  trx: Transaction<KyselyDatabase>,
+  materials: Database["public"]["Tables"]["jobMaterial"]["Insert"][],
+  steps: Database["public"]["Tables"]["jobMaterialStep"]["Insert"][]
+) {
+  if (materials.length > 0) {
+    await trx.insertInto("jobMaterial").values(materials).execute();
+  }
+  if (steps.length > 0) {
+    await trx.insertInto("jobMaterialStep").values(steps).execute();
+  }
 }
 
 /**
