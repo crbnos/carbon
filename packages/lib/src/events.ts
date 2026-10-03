@@ -760,4 +760,15 @@ export type Events = {
       outputs: Record<string, { id: string }>;
     };
   };
+
+  // Invoice automation: post (and email) one drafted recurring invoice.
+  // Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
+  "carbon/invoice.automate": {
+    data: {
+      companyId: string;
+      invoiceId: string;
+      /** Absent = the agreement's effective mode. The Send route passes "Post and Email". */
+      mode?: "Draft Only" | "Post" | "Post and Email";
+    };
+  };
 };
