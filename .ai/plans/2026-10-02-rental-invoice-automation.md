@@ -44,7 +44,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 18: Invoices list — needsReview column + Needs Review link
 - [x] Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
 - [x] Task 20: Docs — AGENTS.md, rules, spec changelog
-- [ ] Task 21: Browser verification (`/test`)
+- [ ] Task 21: Browser verification (`/test`) — all non-email flows PASS 2026-10-03; email send + digest pending SMTP
 
 ## Dependencies
 
