@@ -1692,7 +1692,9 @@ serve(async (req: Request) => {
 
           // Undo what posting a Rental line consumed: its accruals are unbilled
           // again (the reversed journal restores the contract asset), and the
-          // billing periods and charges it billed are billable again.
+          // billing periods and charges it billed are billable again — and
+          // remember the voided invoice, so the automated re-bill is held for
+          // review (spec 2026-10-02-rental-invoice-automation).
           if (rentalLineIds.length > 0) {
             const updatedAt = datetime.timestamp();
             await trx
@@ -1703,13 +1705,13 @@ serve(async (req: Request) => {
               .execute();
             await trx
               .updateTable("rentalBillingPeriod")
-              .set({ status: "Pending", salesInvoiceLineId: null, updatedBy: userId, updatedAt })
+              .set({ status: "Pending", salesInvoiceLineId: null, voidedSalesInvoiceId: invoiceId, updatedBy: userId, updatedAt })
               .where("companyId", "=", companyId)
               .where("salesInvoiceLineId", "in", rentalLineIds)
               .execute();
             await trx
               .updateTable("rentalAgreementCharge")
-              .set({ salesInvoiceLineId: null, updatedBy: userId, updatedAt })
+              .set({ salesInvoiceLineId: null, voidedSalesInvoiceId: invoiceId, updatedBy: userId, updatedAt })
               .where("companyId", "=", companyId)
               .where("salesInvoiceLineId", "in", rentalLineIds)
               .execute();
