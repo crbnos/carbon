@@ -621,6 +621,12 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
     such a schema, and from any place the dispatcher's walk does not reach
     (several object alternatives of a union, a record's values), so no schema
     publishes one that is not applied.
+  A default is published only when leaving the field out really has that
+  effect. A list read's `limit` has none: `setGenericQueryFilters` pages only
+  when it is handed a limit, so the schema's old `default: 100` described a
+  page size no caller ever got, and filling it would have cut every unpaged
+  list read to 100 rows (`dispatch-parity.test.ts` a13). `offset` keeps its
+  `0`, which is what lets a `limit` sent alone page at all.
   The dispatcher fills each ARGUMENT against its own schema after the body's
   shape is known (`filled` in `dispatchOperation`), never the raw body: adding
   keys beside a `{ args: {…} }` wrapper would change which shape it is read as.

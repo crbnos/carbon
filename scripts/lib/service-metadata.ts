@@ -471,7 +471,13 @@ function typeToJsonSchema(
     const base: Record<string, unknown> = {
       type: "object",
       properties: {
-        limit: { type: "integer", default: 100 },
+        // No default: setGenericQueryFilters pages only when it is given a
+        // limit, so one left out means the whole result, as it always has.
+        // Publishing `default: 100` claimed a page size no caller ever got.
+        limit: {
+          type: "integer",
+          description: "Rows per page. Left out, the read is not paged.",
+        },
         offset: { type: "integer", default: 0 },
       },
     };
@@ -1086,7 +1092,10 @@ export function withPayloadCompanyGroup(
   let declares = false;
   for (const param of func.node.getParameters()) {
     const type = param.getType();
-    const members = type.isUnion() ? type.getUnionTypes() : [type];
+    // An optional parameter is a union with `undefined`, which is not a shape.
+    const members = (type.isUnion() ? type.getUnionTypes() : [type]).filter(
+      (member) => !member.isUndefined() && !member.isNull()
+    );
     const declaring = members.filter((member) =>
       member.getProperty("companyGroupId")
     );
@@ -1183,7 +1192,7 @@ function typed(schema: unknown, type: Type, at: Node): unknown {
  * what neither resolves — a named row type, a `ReturnType<…>`, an enum from
  * another module — used to be published as `{}`: an argument with no shape,
  * which a caller can only guess at (`getDocumentTemplate`'s `documentType` is
- * one of six strings). The type checker knows; only `any`, `unknown` and `Json`
+ * one of eleven strings). The type checker knows; only `any`, `unknown` and `Json`
  * stay blank, because they are.
  */
 export function describeUntypedArguments(
@@ -1291,11 +1300,8 @@ export function publishDefaults(
             visit(alternative, false);
           }
         }
-      } else if (isObject(child) && keyword.endsWith("roperties")) {
-        // patternProperties / additionalProperties hold schemas by name.
-        for (const property of Object.values(child)) visit(property, false);
-        visit(child, false);
       } else {
+        // A record's values, several object alternatives: never filled.
         visit(child, false);
       }
     }
@@ -1637,7 +1643,11 @@ function buildToolSchema(
         properties: { [param.name]: innerSchema },
       };
       // The wrapper is required exactly when something inside it is.
-      if (Array.isArray(innerSchema.required) && !param.optional) {
+      if (
+        Array.isArray(innerSchema.required) &&
+        innerSchema.required.length > 0 &&
+        !param.optional
+      ) {
         schema.required = [param.name];
       }
       const propCount = Object.keys(

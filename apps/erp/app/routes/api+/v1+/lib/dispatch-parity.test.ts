@@ -642,6 +642,20 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       ).toContain("Applied when creating");
     });
 
+    // The service pages only when it is handed a limit. A page size filled
+    // in for the caller would cut every unpaged list read to that many rows.
+    it("a13. a list read is not given a page size, only the offset a limit needs", () => {
+      const customers = operationsByName.get("sales_getCustomers");
+      const args = (
+        customers?.schema as { properties?: Record<string, unknown> }
+      ).properties?.args;
+      expect(withSchemaDefaults(args, {})).toEqual({ offset: 0 });
+      expect(withSchemaDefaults(args, { limit: 10 })).toEqual({
+        limit: 10,
+        offset: 0
+      });
+    });
+
     it("a12. an update tool publishes none and is handed none", async () => {
       const meta = operationsByName.get("purchasing_updateSupplierTax");
       expect(meta?.defaults).toBeUndefined();

@@ -542,6 +542,9 @@ function serviceParamName(param: ParameterDeclaration): string {
     : nameNode.getText();
 }
 
+/** Filters whose column holds values the parameter is comparable with. */
+const COMPARISONS = new Set(["eq", "in", "lte", "gte", "lt", "gt"]);
+
 /**
  * Where the function compares one of its parameters to a column: a supabase
  * `.eq("col", param)` / `.in("col", param)`, or a range test
@@ -549,9 +552,6 @@ function serviceParamName(param: ParameterDeclaration): string {
  * what a parameter IS — `jobId` compared to `job.id` is a job's record id — so
  * a caller (or a test) can supply a value that exists.
  */
-/** Filters whose column holds values the parameter is comparable with. */
-const COMPARISONS = new Set(["eq", "in", "lte", "gte", "lt", "gt"]);
-
 export function paramFilters(fn: ServiceFunctionNode): ParamFilter[] {
   const own = new Set<Node>(fn.getParameters());
   const filters: ParamFilter[] = [];
