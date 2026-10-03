@@ -59,16 +59,21 @@ Outside Vercel, set both `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTI
 <EnvVar name="INNGEST_SIGNING_KEY" type="string">Signs requests to the Inngest jobs runner. Required in production.</EnvVar>
 <EnvVar name="INNGEST_EVENT_KEY" type="string">Key for sending events to Inngest. Required in production.</EnvVar>
 <EnvVar name="INNGEST_BASE_URL" type="url">Override the Inngest endpoint (self-hosted or dev).</EnvVar>
-<EnvVar name="INNGEST_DATABASE_EVENT_URL" type="url">Full Inngest event URL the database posts to, when it reaches Inngest at a different address than the application. Unset uses `INNGEST_BASE_URL` and `INNGEST_EVENT_KEY`.</EnvVar>
 </EnvVars>
 
 <Callout type="warn" title="Inngest keys are required in production">
 `INNGEST_SIGNING_KEY` and `INNGEST_EVENT_KEY` are optional only when `INNGEST_DEV=1`. In other environments, the application does not start if either is missing. A self-hosted Inngest server supplies both; the Docker with Caddy recipe generates them.
 </Callout>
 
-The database also sends events to Inngest directly, for the event queue, search embeddings and job notifications. On every startup the ERP stores the address for that in the database, built from `INNGEST_EVENT_KEY` and `INNGEST_BASE_URL`, so no extra step is needed.
+The database also sends events to Inngest directly, for the event queue, search embeddings and job notifications. On startup the ERP stores the address for that in the database, built from `INNGEST_EVENT_KEY` and `INNGEST_BASE_URL`, so no extra step is needed.
 
-If the database reaches Inngest at a different address than the application does, set `INNGEST_DATABASE_EVENT_URL` to the full event URL (`https://inngest.example.com/e/<event key>`). The ERP stores that value instead. Do not set it by hand in SQL: the next startup would overwrite it.
+If the database reaches Inngest at a different address than the application does, set that address once:
+
+```sql
+SELECT public.set_inngest_event_url('https://inngest.example.com/e/<event key>');
+```
+
+The ERP keeps the address you set and only refreshes the event key in it, so a rotated key still reaches the database on the next startup.
 
 ## Email & billing
 
