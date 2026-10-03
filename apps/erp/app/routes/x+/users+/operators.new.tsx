@@ -20,6 +20,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
@@ -136,6 +137,7 @@ export default function NewOperatorRoute() {
   const { t } = useLingui();
   const { defaults } = useUser();
   const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const created =
     formFetcher.data && "pin" in formFetcher.data ? formFetcher.data : null;
@@ -146,7 +148,7 @@ export default function NewOperatorRoute() {
       onOpenChange={(open) => {
         if (open) return;
         if (created) navigate(path.to.operators);
-        else navigate(-1);
+        else closeRoute();
       }}
     >
       <ModalOverlay />

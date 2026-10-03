@@ -18,6 +18,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -110,6 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ResetPinRoute() {
   const { operator } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const newPin =
     formFetcher.data?.success === true ? formFetcher.data.pin : null;
@@ -122,7 +124,7 @@ export default function ResetPinRoute() {
       onOpenChange={(open) => {
         if (open) return;
         if (newPin) navigate(path.to.operators);
-        else navigate(-1);
+        else closeRoute();
       }}
     >
       <ModalOverlay />

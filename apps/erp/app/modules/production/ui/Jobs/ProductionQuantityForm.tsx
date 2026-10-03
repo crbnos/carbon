@@ -12,11 +12,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import {
   Employee,
@@ -45,8 +45,8 @@ const ProductionQuantityForm = ({
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const [type, setType] = useState<"Production" | "Scrap" | "Rework">(
     initialValues.type

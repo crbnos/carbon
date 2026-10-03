@@ -11,12 +11,12 @@ import {
   Heading,
   HStack,
   IconButton,
-  LabelWithHelp
+  LabelWithHelp,
+  useCloseRoute
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import { LuDownload } from "react-icons/lu";
-import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -69,8 +69,8 @@ const AccountDefaultsForm = ({
 }: AccountDefaultsFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
   const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
 
   const isDisabled = !permissions.can("update", "accounting");

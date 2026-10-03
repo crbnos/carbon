@@ -6,6 +6,7 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type {
@@ -13,7 +14,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   batchRuleInitialValues,
@@ -160,8 +161,8 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 
 export default function ProcessRoute() {
   const { process } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const initialValues = {
     id: process.id!,

@@ -6,9 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
+import { data } from "react-router";
 import {
   materialDimensionValidator,
   upsertMaterialDimension
@@ -86,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaterialDimensionsRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     materialFormId: ""
@@ -94,7 +95,7 @@ export default function NewMaterialDimensionsRoute() {
 
   return (
     <MaterialDimensionForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

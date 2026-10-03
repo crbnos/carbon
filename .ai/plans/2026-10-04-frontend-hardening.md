@@ -24,13 +24,13 @@ Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurre
   - `@carbon/checks` rule: no `redirect` import from `react-router`
 - [x] 5. Redirect fixes: magic link, already-signed-in, dev bypass, verify, company switchers
 - [ ] 6. Error boundaries on the `x+` layouts so a failed loader keeps the shell
-- [ ] 7. Client state: client-only nanostores → zustand; jotai (tiptap) → zustand
+- [x] 7. Client state: client-only nanostores → zustand; jotai (tiptap) → zustand
 - [ ] 8. Shared ERP/MES code
   - auth routes (login, callback, mfa, unlock, refresh-session) → `@carbon/auth`
   - identical hooks and small components → `@carbon/auth` / `@carbon/react`
   - `@carbon/checks` rule: no same-named file under both apps' components/hooks
-- [ ] 9. Route modals close to their parent route instead of `navigate(-1)`
-- [ ] 10. Small leftovers: unused Radix deps, `h-dvh` in MES, lazy images, `@ts-ignore` → `@ts-expect-error`
+- [x] 9. Route modals close to their parent route instead of `navigate(-1)`
+- [x] 10. Small leftovers: unused Radix deps, `h-dvh` in MES, lazy images, `@ts-ignore` → `@ts-expect-error`
 
 ## Needs its own plan (not in this branch)
 

@@ -6,10 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useCloseRoute, useRouteData } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import {
   getStockTransfer,
   isStockTransferLocked,
@@ -82,7 +82,7 @@ export default function NewStockTransferLinesRoute() {
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
     stockTransferLines: StockTransferLine[];
@@ -107,7 +107,7 @@ export default function NewStockTransferLinesRoute() {
   return (
     <StockTransferLineForm
       locationId={routeData?.stockTransfer.locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       // @ts-expect-error TS2739 - TODO: fix type
       initialValues={initialValues}
     />

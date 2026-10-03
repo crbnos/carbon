@@ -32,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -50,7 +51,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { z } from "zod";
 import { DateTime } from "~/components";
@@ -91,8 +92,8 @@ const CurrencyForm = ({
 }: CurrencyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
   const { locale } = useLocale();
   const resetFetcher = useFetcher<{}>();
 

@@ -12,10 +12,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import type { z } from "zod";
 import { Customer, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -30,7 +31,7 @@ type CustomerPartFormProps = {
 
 const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
   const permissions = usePermissions();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
@@ -40,7 +41,7 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const onClose = () => navigate(-1);
+  const onClose = () => closeRoute();
 
   return (
     <Drawer

@@ -15,11 +15,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { z } from "zod";
 import { Submit, Supplier } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -142,14 +142,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseFixedAssetRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const permissions = usePermissions();
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalContent>
@@ -167,7 +167,7 @@ export default function PurchaseFixedAssetRoute() {
               <Submit isDisabled={!permissions.can("create", "purchasing")}>
                 Create Purchase Order
               </Submit>
-              <Button size="md" variant="solid" onClick={() => navigate(-1)}>
+              <Button size="md" variant="solid" onClick={() => closeRoute()}>
                 Cancel
               </Button>
             </HStack>

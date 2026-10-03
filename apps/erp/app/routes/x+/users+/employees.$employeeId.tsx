@@ -21,6 +21,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { getClientIp, redirect } from "@carbon/utils";
@@ -31,7 +32,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import type { CompanyPermission } from "~/modules/users";
@@ -52,12 +53,12 @@ import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 // full-page overlay), so closing it returns to the accounts list — which stays
 // fully usable (inviting people is a Community feature).
 function PermissionsUpgradeModal() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />

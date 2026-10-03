@@ -6,9 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { fixedAssetValidator, insertFixedAsset } from "~/modules/accounting";
 import { FixedAssetForm } from "~/modules/accounting/ui/FixedAssets";
 import { path } from "~/utils/path";
@@ -49,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewFixedAssetRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     fixedAssetClassId: "",
@@ -63,7 +63,7 @@ export default function NewFixedAssetRoute() {
 
   return (
     <FixedAssetForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

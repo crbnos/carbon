@@ -6,13 +6,13 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { useNavigate } from "react-router";
 import {
   getIssueTypeByName,
   issueTypeValidator,
@@ -101,12 +101,12 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 }
 
 export default function NewCustomerStatusesRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: ""
   };
 
   return (
-    <IssueTypeForm initialValues={initialValues} onClose={() => navigate(-1)} />
+    <IssueTypeForm initialValues={initialValues} onClose={() => closeRoute()} />
   );
 }
