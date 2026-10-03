@@ -181,7 +181,7 @@ jobs:
       - name: Resolve deploy account
         run: echo "DEPLOY_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_ENV"
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
