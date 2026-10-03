@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? path.to.supplierCredits
     : path.to.creditMemos;
 
-  const remove = await deleteMemo(client, memoId);
+  const remove = await deleteMemo(client, memoId, companyId);
   if (remove.error) {
     throw redirect(
       path.to.memo(memoId),

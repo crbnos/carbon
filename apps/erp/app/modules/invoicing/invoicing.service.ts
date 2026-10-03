@@ -3962,8 +3962,12 @@ export async function upsertMemo(
 
 // RLS DELETE policy on memo restricts to status='Draft'.
 /** @mcp delete */
-export async function deleteMemo(client: SupabaseClient<Database>, id: string) {
-  return client.from("memo").delete().eq("id", id);
+export async function deleteMemo(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client.from("memo").delete().eq("id", id).eq("companyId", companyId);
 }
 
 // The party's available credit to draw on when clearing invoices alongside cash:

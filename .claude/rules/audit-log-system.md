@@ -100,8 +100,11 @@ child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
 `depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
 migration `20261002234926_audit-posting-documents.sql` attached the async triggers those tables lacked.
 (~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
-table of `item`.) A child table's INSERT is not logged (the handler skips non-root INSERTs); its UPDATE
-and DELETE are.
+table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
+(created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per
+distinct non-null parent it names (`invoiceSettlement` under the payment that made it, the one a memo
+was applied through, and the prior credit it draws on). `journalLine` sets `createFields` (account
+snapshotted to number + name), so an added line shows what it is.
 
 Other config knobs:
 - `tableLabels` — friendly per-`tableName` labels for diff provenance (fallback: camelCase → Title Case).

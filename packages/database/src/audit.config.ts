@@ -48,8 +48,8 @@ export type ColumnOf<T extends TableName> = Extract<
 /**
  * `createFields` controls which columns appear in the diff for INSERT events.
  * By default, INSERT audit entries carry a null diff (rendered as "Created").
- * List columns here to surface their initial values. Only meaningful on
- * tables that log INSERTs (today: root tables).
+ * List columns here to surface their initial values. Every table logs its
+ * INSERTs except extension tables (created 1:1 with their parent).
  *
  * `snapshotFields` declares FK columns whose target row's display values
  * should be captured into the diff at write time. The audit handler resolves
@@ -95,7 +95,13 @@ type ExtensionTable<T extends TableName> = {
 };
 
 type ChildTable<T extends TableName> = {
-  entityIdColumn: ColumnOf<T>;
+  /**
+   * The column naming the parent entity. A list attributes the row to every
+   * distinct, non-null parent it names (a settlement row belongs to the
+   * payment that made it, the one it was applied through, and the prior
+   * credit it draws on).
+   */
+  entityIdColumn: ColumnOf<T> | readonly ColumnOf<T>[];
   createFields?: readonly ColumnOf<T>[];
   snapshotFields?: SnapshotFields<T>;
 };
@@ -625,18 +631,30 @@ export const auditConfig = {
       label: "Journal Entry",
       tables: {
         journal: { role: "root" },
-        journalLine: { entityIdColumn: "journalId" }
+        journalLine: {
+          entityIdColumn: "journalId",
+          createFields: ["accountId", "description", "amount"],
+          snapshotFields: {
+            accountId: { table: "account", displayColumns: ["number", "name"] }
+          }
+        }
       }
     },
 
-    // A settlement row names the payment or the memo it applies (one of the
-    // two is usually null, and a null parent is skipped), so invoiceSettlement
-    // is a child of both.
+    // A settlement row is shown under every payment it involves — the one
+    // that made it, the one a memo was applied through, and the prior credit
+    // it draws on — and under the memo it applies; a null column is skipped.
     payment: {
       label: "Payment",
       tables: {
         payment: { role: "root" },
-        invoiceSettlement: { entityIdColumn: "paymentId" }
+        invoiceSettlement: {
+          entityIdColumn: [
+            "paymentId",
+            "appliedViaPaymentId",
+            "sourcePaymentId"
+          ]
+        }
       }
     },
 
@@ -687,6 +705,9 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    journal: "Journal Entry",
+    invoiceSettlement: "Settlement",
+    revenueRecognitionRunLine: "Recognition Line",
     customer: "Customer",
     customerPayment: "Payment",
     customerShipping: "Shipping",
@@ -1065,7 +1086,13 @@ export function getEntityLabel(entityType: AuditEntityType): string {
 /** Get human-readable label for a table name */
 export function getTableLabel(tableName: string): string {
   const labels = auditConfig.tableLabels as Record<string, string | undefined>;
-  return labels[tableName] ?? tableName.replace(/([A-Z])/g, " $1").trim();
+  return (
+    labels[tableName] ??
+    tableName
+      .replace(/([A-Z])/g, " $1")
+      .trim()
+      .replace(/^./, (c) => c.toUpperCase())
+  );
 }
 
 /**
