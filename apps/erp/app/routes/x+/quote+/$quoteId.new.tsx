@@ -13,9 +13,8 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { breakQuantities } from "@carbon/utils";
+import { breakQuantities, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getQuote,
   isQuoteLocked,

@@ -22,7 +22,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
@@ -54,7 +54,7 @@ const AttributeCategoryDetail = ({
     () =>
       Array.isArray(attributeCategory.userAttribute)
         ? attributeCategory.userAttribute.reduce<Record<string, Attribute>>(
-            // @ts-ignore
+            // @ts-expect-error
             (acc, attribute) => {
               if (!attribute) return acc;
               return {
@@ -193,21 +193,18 @@ const AttributeCategoryDetail = ({
                           variant="ghost"
                         />
                         <p className="flex-grow text-foreground">
-                          {
-                            // @ts-ignore
-                            attributeMap[sortId]?.name
-                          }
+                          {attributeMap[sortId]?.name}
                         </p>
                         <Button
                           isDisabled
                           leftIcon={getIcon(
-                            // @ts-ignore
+                            // @ts-expect-error
                             attributeMap[sortId]?.attributeDataType
                           )}
                           variant="ghost"
                         >
                           {
-                            // @ts-ignore
+                            // @ts-expect-error
                             attributeMap[sortId]?.attributeDataType?.label ??
                               t`Unknown`
                           }

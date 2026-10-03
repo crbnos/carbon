@@ -83,7 +83,7 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
       <VStack spacing={4}>
         {attributeCategory.userAttribute.map((attribute) => {
           const genericProps = getGenericProps(
-            // @ts-ignore
+            // @ts-expect-error
             attribute as PublicAttributes["userAttribute"],
             optimisticUpdates[attribute.id]
           );
@@ -101,7 +101,6 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
                   [attribute.id]: value
                 }))
               }
-              // @ts-ignore
               updateFetcher={updateFetcher}
               userId={userId}
               {...genericProps}

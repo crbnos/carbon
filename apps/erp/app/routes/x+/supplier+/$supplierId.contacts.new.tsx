@@ -7,11 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
 import {
   insertSupplierContact,
   supplierContactValidator

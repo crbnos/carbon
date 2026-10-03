@@ -40,7 +40,7 @@ import {
 } from "../../items.models";
 import type { ChangeNotice } from "../../types";
 import ChangeNoticeStatus from "./ChangeNoticeStatus";
-import { releaseDialogOpenAtom } from "./releaseDialog.store";
+import { setReleaseDialogOpen } from "./releaseDialog.store";
 
 const ChangeNoticeHeader = () => {
   const { id } = useParams();
@@ -209,7 +209,7 @@ const ChangeNoticeHeader = () => {
               leftIcon={<LuCircleCheck />}
               variant="primary"
               isDisabled={!permissions.can("update", "parts")}
-              onClick={() => releaseDialogOpenAtom.set(true)}
+              onClick={() => setReleaseDialogOpen(true)}
             >
               {t`Release`}
             </Button>

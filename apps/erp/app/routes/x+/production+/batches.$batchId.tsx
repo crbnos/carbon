@@ -5,8 +5,10 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getBatchOutputLots,
   getJobOperationBatchEvents,
@@ -45,14 +47,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function BatchRoute() {
   const { batch, events, outputLots } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <BatchDetailDrawer
       batch={batch}
       events={events}
       outputLots={outputLots}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

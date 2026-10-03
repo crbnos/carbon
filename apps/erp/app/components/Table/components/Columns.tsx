@@ -18,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import {
   LuColumns2,
   LuEye,

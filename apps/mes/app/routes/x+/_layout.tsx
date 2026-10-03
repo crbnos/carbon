@@ -42,6 +42,7 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  redirect,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
@@ -59,7 +60,6 @@ import {
   data,
   Form,
   Outlet,
-  redirect,
   useLoaderData,
   useNavigate
 } from "react-router";
@@ -480,7 +480,7 @@ export default function AuthenticatedRoute() {
   }
 
   return (
-    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
+    <div className="h-dvh w-full overflow-y-auto lg:overflow-hidden">
       {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
       {isIdle && !itarScreen && !mfaScreen && (
         <SessionLockOverlay

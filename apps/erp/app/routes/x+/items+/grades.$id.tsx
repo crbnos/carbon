@@ -6,8 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getMaterialGrade,
   materialGradeValidator,
@@ -82,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditMaterialGradesRoute() {
   const { materialGrade } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: materialGrade?.id ?? undefined,
@@ -94,7 +96,7 @@ export default function EditMaterialGradesRoute() {
     <MaterialGradeForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

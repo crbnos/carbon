@@ -10,9 +10,10 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { Outlet, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import type {
   SupplierQuote,

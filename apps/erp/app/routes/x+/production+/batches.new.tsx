@@ -5,9 +5,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useCloseRoute } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getBatchableProcesses,
   getJobOperationBatchWithMembers
@@ -144,11 +146,11 @@ export default function NewBatchRoute() {
     initialProcessId,
     batch
   } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <BatchBuilder
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       defaultLocationId={defaultLocationId}
       initialLocationId={initialLocationId}
       initialProcessId={initialProcessId}

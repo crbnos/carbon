@@ -11,6 +11,7 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  DrawerTitle,
   HStack,
   Tabs,
   TabsContent,
@@ -188,9 +189,11 @@ const DemandProjectionsForm = ({
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <CardTitle>
-              {isEditing ? t`Edit Demand Forecast` : t`New Demand Forecast`}
-            </CardTitle>
+            <DrawerTitle asChild>
+              <CardTitle>
+                {isEditing ? t`Edit Demand Forecast` : t`New Demand Forecast`}
+              </CardTitle>
+            </DrawerTitle>
             <CardDescription>
               {t`Set demand forecast values for each week`}
             </CardDescription>

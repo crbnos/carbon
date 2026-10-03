@@ -13,13 +13,31 @@ import type {
   HTMLAttributes,
   KeyboardEvent
 } from "react";
-import { forwardRef } from "react";
+import { createContext, forwardRef, useContext } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
 
-const Modal = DialogPrimitive.Root;
+// A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
+// or a click outside, so it does not offer the X. Leave `onOpenChange` off to
+// say "this cannot be dismissed" rather than passing a handler that does nothing.
+const DismissableContext = createContext(true);
+export const useDialogDismissable = () => useContext(DismissableContext);
+
+export const DialogRoot = ({
+  open,
+  onOpenChange,
+  ...props
+}: DialogPrimitive.DialogProps) => (
+  <DismissableContext.Provider
+    value={open === undefined || onOpenChange !== undefined}
+  >
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
+  </DismissableContext.Provider>
+);
+
+const Modal = DialogRoot;
 
 const ModalTrigger = DialogPrimitive.Trigger;
 
@@ -36,7 +54,7 @@ const ModalOverlay = forwardRef<
     className={cn(
       // 'z-50 fixed h-full w-full left-0 top-0',
       // 'bg-alternative/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      "bg-alternative/90 backdrop-blur-sm",
+      "bg-alternative/90",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
 
       className
@@ -90,7 +108,7 @@ const ModalContentVariants = cva(
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-    "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
+    "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%]",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
     "sm:rounded-2xl md:w-full",
     "bg-card focus-visible:outline-none focus-visible:ring-0",
@@ -131,36 +149,39 @@ const ModalContent = forwardRef<
       ...props
     },
     ref
-  ) => (
-    <ClientOnly fallback={null}>
-      {() => (
-        <ModalPortal>
-          <ModalOverlay>
-            <DialogPrimitive.Content
-              ref={ref}
-              className={cn(ModalContentVariants({ size }), className)}
-              onOpenAutoFocus={(event) => {
-                onOpenAutoFocus?.(event);
-                if (!event.defaultPrevented) focusPrimaryAction(event);
-              }}
-              {...props}
-            >
-              {children}
-              {withCloseButton && (
-                <DialogPrimitive.Close
-                  type="button"
-                  className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80"
-                >
-                  <LuX className="h-4 w-4" />
-                  <span className="sr-only">Close</span>
-                </DialogPrimitive.Close>
-              )}
-            </DialogPrimitive.Content>
-          </ModalOverlay>
-        </ModalPortal>
-      )}
-    </ClientOnly>
-  )
+  ) => {
+    const dismissable = useDialogDismissable();
+    return (
+      <ClientOnly fallback={null}>
+        {() => (
+          <ModalPortal>
+            <ModalOverlay>
+              <DialogPrimitive.Content
+                ref={ref}
+                className={cn(ModalContentVariants({ size }), className)}
+                onOpenAutoFocus={(event) => {
+                  onOpenAutoFocus?.(event);
+                  if (!event.defaultPrevented) focusPrimaryAction(event);
+                }}
+                {...props}
+              >
+                {children}
+                {withCloseButton && dismissable && (
+                  <DialogPrimitive.Close
+                    type="button"
+                    className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80"
+                  >
+                    <LuX className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                  </DialogPrimitive.Close>
+                )}
+              </DialogPrimitive.Content>
+            </ModalOverlay>
+          </ModalPortal>
+        )}
+      </ClientOnly>
+    );
+  }
 );
 ModalContent.displayName = DialogPrimitive.Content.displayName;
 

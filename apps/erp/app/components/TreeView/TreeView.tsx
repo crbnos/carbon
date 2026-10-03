@@ -5,7 +5,7 @@
 import { cn } from "@carbon/react";
 import type { VirtualItem, Virtualizer } from "@tanstack/react-virtual";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { MutableRefObject, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { NodeState, NodesState } from "./reducer";

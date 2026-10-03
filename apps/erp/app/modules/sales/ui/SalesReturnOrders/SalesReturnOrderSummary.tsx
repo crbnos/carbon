@@ -15,7 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
@@ -98,9 +98,9 @@ const SalesReturnOrderSummary = () => {
             return (
               <motion.div
                 key={line.id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="border-b border-input py-6 w-full"
               >
                 <HStack spacing={4} className="items-start">

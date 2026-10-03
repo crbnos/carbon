@@ -184,7 +184,7 @@ const JobMaterialsTable = memo(
               <HStack className="py-1">
                 <ItemThumbnail
                   size="md"
-                  // @ts-ignore
+                  // @ts-expect-error
                   type={row.original.itemType}
                 />
 

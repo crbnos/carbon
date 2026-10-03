@@ -78,7 +78,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         if (data && fresh()) setSuppliers(data as ListItem[], true);
       });
       idb.getItem(`people:${requestedCompanyId}`).then((data) => {
-        // @ts-ignore
+        // @ts-expect-error
         if (data && fresh()) setPeople(data, true);
       });
     }
@@ -456,7 +456,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               .eq("companyId", companyId)
               .order("name");
             if (data) {
-              // @ts-ignore
               setPeople(data);
             }
           }

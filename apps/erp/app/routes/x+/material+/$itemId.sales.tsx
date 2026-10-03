@@ -11,8 +11,9 @@ import {
 } from "@carbon/ee/rules";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,

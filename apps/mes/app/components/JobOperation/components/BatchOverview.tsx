@@ -809,7 +809,7 @@ export function BatchOverview({
                                               <FilePreview
                                                 bucket="private"
                                                 pathToFile={file.storagePath}
-                                                // @ts-ignore FilePreview narrows type
+                                                // @ts-expect-error FilePreview narrows type
                                                 type={type}
                                               >
                                                 {name}

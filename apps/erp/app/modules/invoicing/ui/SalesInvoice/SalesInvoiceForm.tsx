@@ -110,7 +110,6 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       });
 
       const [customerData, paymentTermData] = await Promise.all([
-        // @ts-ignore TS2589: the composite customerShipping embed sits on the
         // instantiation-depth cliff — the cliff shifts as unrelated modules
         // join the program (same class as the purchasing.service
         // suppression). ts-ignore (not ts-expect-error) is used so it

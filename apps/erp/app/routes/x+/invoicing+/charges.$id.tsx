@@ -23,14 +23,14 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation } from "@carbon/utils";
+import { formatDate, isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";

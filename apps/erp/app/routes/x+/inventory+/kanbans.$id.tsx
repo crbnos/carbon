@@ -6,8 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getKanban,
   KanbanForm,
@@ -69,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditKanbanRoute() {
   const { kanban } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: kanban?.id ?? undefined,
@@ -92,7 +94,7 @@ export default function EditKanbanRoute() {
       key={initialValues.id}
       initialValues={initialValues}
       locationId={initialValues.locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

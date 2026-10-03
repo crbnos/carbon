@@ -5,11 +5,11 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { redirect } from "react-router";
 import { deleteCustomerContact } from "~/modules/sales";
 import { path } from "~/utils/path";
 import { customerContactsQuery } from "~/utils/react-query";

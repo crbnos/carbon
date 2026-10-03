@@ -137,6 +137,15 @@ Only now. Copy `.ai/specs/template.md` to `.ai/specs/{YYYY-MM-DD}-{slug}.md`
 (today's date, kebab-case slug) and fill every section, with the Step-5
 resolutions baked into the design. Rules:
 
+- Write every sentence in STE-80 from the first draft (`.claude/rules/writing-ste.md` → Write-time habits). Never ask the human to check the style.
+- Prose follows STE-80 (`.claude/rules/writing-ste.md`): short sentences,
+  active voice, one term per concept. Tables over paragraphs for decisions.
+  Step 8 does the STE-80 review pass; the spec is not final until it passes.
+- Never paste research text or a subagent report into the spec as it is.
+  Rewrite it in STE-80 first.
+- The **Overview diagram** section holds exactly one Mermaid diagram that
+  explains the whole change (rules below). A Data Model section with new
+  tables may add a second one, an `erDiagram`. No other diagrams.
 - SQL sketches use `id('prefix')`, `companyId`, composite PK, audit columns —
   never `gen_random_uuid()`.
 - Acceptance criteria must be testable: "user creates a PO with 3 lines and sees
@@ -145,6 +154,39 @@ resolutions baked into the design. Rules:
   reason.
 - The Open Questions section records the resolved Q&A (all boxes checked, each
   with its inline answer) — it is the audit trail of Step 5, not a to-do list.
+
+### The overview diagram
+
+Choose the type with this table. The first row that matches wins.
+
+| The spec is mostly about… | Mermaid type |
+|---------------------------|--------------|
+| several independent fixes (a bundle) | `flowchart LR`, one `subgraph` per fix: old node → new node |
+| a status or lifecycle | `stateDiagram-v2`, one edge per transition, labelled with its trigger |
+| work that moves between people, modules or services | `sequenceDiagram`, one participant per actor |
+| a changed calculation or behavior | `flowchart LR`, two `subgraph`s named Before and After, the same steps in each |
+| new or changed tables only | `erDiagram` (precedent: `.ai/specs/implemented/2026-07-30-workflows-foundation.md`) |
+| none of the above | `flowchart LR` of the main steps |
+
+Syntax rules — nothing in this repo validates Mermaid, and a broken diagram
+only shows as an error in a preview. Keep to these:
+
+1. Put every node label in double quotes: `A["Pull from Inventory (old)"]`.
+   Parentheses, colons, slashes and `#` break unquoted labels.
+2. Node ids are plain letters and digits (`A`, `B2`, `oldPick`). No spaces,
+   no hyphens.
+3. Never write the word `end` as a node id or a bare label — it closes a
+   `subgraph`. Quote it: `E["end"]`.
+4. At most 12 nodes. A label is at most 30 characters.
+5. Mark what changes, do not color it: `:::hot` for a changed node, `:::new`
+   for an added node, with the two `classDef` lines from the template. Use no
+   other colors, so the diagram reads in light and dark themes.
+6. Put code identifiers in labels as plain text; backticks do not render.
+7. Every node and edge comes from the spec text or from code you opened. The
+   diagram adds no fact.
+
+Self-check before you continue: count the opening and closing lines of each
+`subgraph` (they must match), and confirm every edge names nodes that exist.
 
 ## Step 7: New questions discovered while writing
 
@@ -159,8 +201,21 @@ Writing the spec sometimes surfaces questions Step 4 missed. When that happens:
 ## Step 8: Finalize
 
 After every question is resolved: add a changelog entry, set status per
-`.ai/specs/AGENTS.md`. The spec is now ready for `/plan` (or `/feature`, which
-calls it).
+`.ai/specs/AGENTS.md`.
+
+Then do the STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement).
+Do it again after every later edit, including edits from `/grill`, `/plan`
+corrections and subagent results.
+
+1. Follow the 8 steps of the review pass in that rule, in order.
+2. Tick every box of the rule's self-check list.
+
+If a box still fails after 3 rewrite passes, STOP and report the failing lines.
+
+The spec is now ready for `/plan` (or `/feature`, which calls it).
+
+Then offer the reviewer view in one line: "Want an HTML explainer of this
+spec? (`/explain`)". Run `/explain` only on a yes.
 
 ## Done when
 
@@ -170,8 +225,12 @@ calls it).
       design reflecting the resolutions (no section contradicts an answer)
 - [ ] Research file exists and is linked from the spec
 - [ ] Every applicable heuristic (1–7) has a row in Design Decisions — no TBDs
+- [ ] The Overview diagram section has one Mermaid diagram, chosen from the
+      Step 6 table, that follows the syntax rules — not the template sample
 - [ ] Any questions surfaced during writing (Step 7) were also resolved before
       the spec was called final
+- [ ] The STE-80 review pass is done after the last edit, and every
+      self-check box is ticked
 
 ## Anti-patterns
 

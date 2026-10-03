@@ -13,8 +13,9 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
@@ -209,7 +210,7 @@ export default function NewSalesOrderLineRoute() {
 
   return (
     <SalesOrderLineForm
-      // @ts-ignore
+      // @ts-expect-error
       initialValues={initialValues}
     />
   );

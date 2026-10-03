@@ -69,6 +69,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `translate` | Fill missing i18n .po translations via cheap Haiku subagents | `packages/locale/locales/*/*.po` |
 | `test-driven-development` | Red→green→refactor discipline (vitest) | tests-first code |
 | `writing-skills` | House guide for authoring skills | skills |
+| `explain` | HTML explainer (STE-80 prose + one diagram) for a spec, plan or research file | `{source}.html` beside the `.md` |
 | `pr-explainer` | Self-contained HTML review aid for a PR | `.pr-review/*.html` |
 | `pr-splitter` | Split a large PR into reviewable stacked PRs | branches + split notes |
 | `carbon-design` | Carbon's design language: principles, page archetypes, components, states, copy, anti-patterns + mandatory design review for any ERP/MES UI | design brief + reviewed UI |
@@ -83,6 +84,11 @@ in root-cause, BLOCKED in fix) always surface to the human.
 - Typecheck is always scoped: `pnpm exec turbo run typecheck --filter=<pkg>`.
   Whole-repo typecheck OOMs — no skill may prescribe it.
 - `pnpm run generate:types` after any migration, before typechecking.
+- Every file a skill writes under `.ai/research/`, `.ai/specs/`, `.ai/plans/` or
+  `.ai/runs/`, and its hand-off message, is written in STE-80 from the first
+  draft and passes the STE-80 review pass. The human never checks the style. The skill rewrites subagent results in STE-80
+  before they go into a file, and repeats the review pass after every merge
+  (`.claude/rules/writing-ste.md` → Enforcement).
 - Commits only through `/check-and-commit` (explicit file staging, conventional
   messages); push only when the branch tracks a remote or the user asked.
 - Ephemeral output (screenshots, debug logs) goes to gitignored `.ai/scratch/`,

@@ -359,7 +359,6 @@ function NewItemAssociation() {
       <Item
         name="id"
         label={itemType}
-        // @ts-ignore
         type={itemType}
         onTypeChange={onTypeChange}
       />

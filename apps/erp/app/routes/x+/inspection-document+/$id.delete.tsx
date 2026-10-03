@@ -7,11 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { redirect } from "react-router";
 import { deleteInspectionDocument } from "~/modules/quality";
 import { path } from "~/utils/path";
 import { invalidateInspectionDocuments } from "~/utils/react-query";

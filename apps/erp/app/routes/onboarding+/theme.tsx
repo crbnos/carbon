@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { themes } from "@carbon/utils";
+import { redirect, themes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -28,7 +28,6 @@ import { BiLaptop, BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigation,
@@ -70,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { next, theme } = validation.data;
   if (!next) throw new Error("Fatal: next is required");
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: { "Set-Cookie": setTheme(theme) }
   });
 }

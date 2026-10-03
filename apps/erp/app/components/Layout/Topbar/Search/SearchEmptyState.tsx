@@ -4,7 +4,7 @@
 
 import { Skeleton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { LuSearch } from "react-icons/lu";
 import type { SearchEmptyStateProps } from "./types";
 

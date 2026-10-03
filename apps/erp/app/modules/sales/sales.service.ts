@@ -1458,7 +1458,7 @@ function getQuoteMethodTreeArrayToTree(
     const parentId = item.parentMaterialId;
 
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
-      // @ts-ignore
+      // @ts-expect-error
       lookup[itemId] = { id: itemId, children: [] };
     }
 
@@ -1471,7 +1471,7 @@ function getQuoteMethodTreeArrayToTree(
       rootItems.push(treeItem);
     } else {
       if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
-        // @ts-ignore
+        // @ts-expect-error
         lookup[parentId] = { id: parentId, children: [] };
       }
 
@@ -3168,7 +3168,6 @@ export async function getCustomerItemPriceOverrideById(
   id: string,
   companyId: string
 ): Promise<PostgrestSingleResponse<CustomerItemPriceOverrideWithRelations>> {
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("customerItemPriceOverride")
     .select(

@@ -14,7 +14,7 @@ import {
   useInterval,
   useMode
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyPlayerHandle,
@@ -37,7 +37,6 @@ import type {
 } from "react-router";
 import {
   data,
-  redirect,
   useFetcher,
   useLoaderData,
   useParams,

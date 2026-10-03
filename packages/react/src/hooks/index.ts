@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCloseRoute } from "./useCloseRoute";
 import useDebounce from "./useDebounce";
 import useDisclosure from "./useDisclosure";
 import { useEdition } from "./useEdition";
 import useEscape from "./useEscape";
 import useHydrated from "./useHydrated";
+import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import useIsMobile from "./useIsMobile";
@@ -47,6 +49,8 @@ export {
   useKeyboardWedge,
   useLocalStorage,
   useMode,
+  useCloseRoute,
+  useIdle,
   useModePreference,
   useMount,
   useNanoStore,

@@ -24,13 +24,8 @@ import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
-import {
-  detectImplementationSignals,
-  getImplementationCheckStates,
-  getImplementationHub
-} from "@carbon/onboarding/server";
+import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
-import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import {
   ItarEntityCertification,
@@ -44,6 +39,8 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  redirect,
+  redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
@@ -54,14 +51,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Await,
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
@@ -80,23 +70,12 @@ import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
-import {
-  employeeCompaniesOf,
-  getCompanies,
-  getCompanyIntegrations,
-  getCompanySettings,
-  getEmployeeCompanies
-} from "~/modules/settings";
+import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
-import { getSavedViews } from "~/modules/shared/shared.service";
 import { getItarCertificationStatus } from "~/modules/users";
-import {
-  getModulePreferences,
-  getUser,
-  getUserClaims,
-  getUserDefaults,
-  getUserGroups
-} from "~/modules/users/users.server";
+import { getUserClaims } from "~/modules/users/users.server";
+import { getAppShell } from "~/services/app-shell.server";
+import { getImplementationSignals } from "~/services/implementation-signals.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -141,7 +120,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Block ERP access when console mode is active on this terminal.
   // Console terminals should only access the MES app.
   if (authSession.console) {
-    throw redirect(getMESUrl());
+    throw redirectExternal(getMESUrl());
   }
 
   // const { computeRegion, proxyRegion } = parseVercelId(
@@ -155,14 +134,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const client = getCarbon(accessToken);
 
+  // The user's and the company's rows, in one round trip. Started here so the
+  // hub's signal probes can chain off it and overlap the fan-out below.
+  const shellPromise = getAppShell(client, companyId, userId);
+
   // Only probe product signals when the company is actually enrolled, so the
-  // home card + nav badge count gates the same way the hub page does. Chained
-  // off the hub query rather than awaited after the fan-out below, so the
-  // probes overlap the rest of it instead of forming a second serial wave.
-  const implementationHubPromise = getImplementationHub(client, companyId);
-  const implementationSignalsPromise = implementationHubPromise.then((hub) =>
-    hub.data ? detectImplementationSignals(client, companyId) : null
-  );
+  // home card + nav badge count gates the same way the hub page does.
+  const implementationSignalsPromise = shellPromise.then(({ data }) => {
+    const hub = data?.implementationHub;
+    // A finished hub shows no badge and no card, so it needs no signals.
+    return hub && hub.status !== "complete" && hub.status !== "archived"
+      ? getImplementationSignals(client, companyId)
+      : null;
+  });
 
   // ITAR gate status — only queried in controlled environments; elsewhere the
   // gate never renders, so default to "certified" and skip the round-trip.
@@ -171,64 +155,59 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
-  // Streamed, not awaited. Each catches: the loader can exit early with
-  // nothing awaiting them.
-  const implementation = Promise.all([
-    implementationHubPromise,
+  // The hub row (in the shell read, awaited below) decides whether the primary
+  // nav has a Get Started item and the home page a card: streamed, both arrived
+  // after first paint and pushed the page down. Progress only fills in the
+  // badge count and the card's bar, in place, so it stays streamed. It catches:
+  // the loader can exit early with nothing awaiting it.
+  const implementationProgress = Promise.all([
     getImplementationCheckStates(client, companyId),
     implementationSignalsPromise
   ])
-    .then(([hub, checkStates, signals]) => ({
-      implementationHub: hub.data ?? null,
-      implementationCheckStates: checkStates.data ?? [],
-      implementationSignals: signals
+    .then(([checkStates, signals]) => ({
+      checkStates: checkStates.data ?? [],
+      signals
     }))
     .catch((error) => {
-      log.error("Failed to load implementation hub", { companyId, error });
-      return {
-        implementationHub: null,
-        implementationCheckStates: [],
-        implementationSignals: null
-      };
+      log.error("Failed to load implementation progress", {
+        companyId,
+        error
+      });
+      return { checkStates: [], signals: null };
     });
   const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
     () => false
   );
+  // Streamed, not awaited; each catches for the same early-exit reason.
   // Whether this user dismissed it is a user flag, read client-side.
   const changelog = getCachedChangelogPanelEntry().catch(() => null);
 
   // Parallelize all requests
-  const [
-    companies,
-    stripeCustomer,
-    plan,
-    customFields,
-    integrations,
-    companySettings,
-    savedViews,
-    user,
-    claims,
-    groups,
-    defaults,
-    modulePreferences,
-    printerRoutes,
-    itarCertification
-  ] = await Promise.all([
-    getCompanies(client, userId),
-    getStripeCustomerByCompanyId(companyId, userId),
-    getPlan(client, companyId),
-    getCustomFieldsSchemas(client, { companyId }),
-    getCompanyIntegrations(client, companyId),
-    getCompanySettings(client, companyId),
-    getSavedViews(client, userId, companyId),
-    getUser(client, userId),
-    getUserClaims(userId, companyId),
-    getUserGroups(client, userId),
-    getUserDefaults(client, userId, companyId),
-    getModulePreferences(client, userId, companyId),
-    getPrinterRoutes(client, companyId),
-    itarCertificationPromise
-  ]);
+  const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
+    await Promise.all([
+      shellPromise,
+      getStripeCustomerByCompanyId(companyId, userId),
+      getPlan(client, companyId),
+      getCustomFieldsSchemas(client, { companyId }),
+      getUserClaims(userId, companyId),
+      itarCertificationPromise
+    ]);
+
+  // The same shapes the nine separate reads returned, so what follows reads as
+  // it did. A failed shell read fails each of them, as each could before.
+  const read = <T,>(value: T | undefined) => ({
+    data: value ?? null,
+    error: shell.error
+  });
+  const companies = read(shell.data?.companies);
+  const integrations = read(shell.data?.companyIntegrations);
+  const companySettings = read(shell.data?.companySettings ?? undefined);
+  const savedViews = read(shell.data?.savedViews);
+  const user = read(shell.data?.user ?? undefined);
+  const groups = { data: shell.data?.groups ?? [], error: shell.error };
+  const defaults = read(shell.data?.defaults ?? undefined);
+  const modulePreferences = read(shell.data?.modulePreferences);
+  const printerRoutes = read(shell.data?.printerRoutes);
 
   // Empty groups is a valid pre-onboarding state (a first-run user with no
   // company yet has zero memberships → groups is []), NOT an auth failure —
@@ -347,7 +326,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementation,
+    implementationHub: shell.data?.implementationHub ?? null,
+    implementationProgress,
     changelog,
     itarCertification: {
       ...itarCertification,

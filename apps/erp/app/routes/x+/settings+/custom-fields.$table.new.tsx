@@ -6,8 +6,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldForm, customFieldValidator } from "~/modules/settings";
@@ -54,8 +56,8 @@ export default function NewCustomFieldRoute() {
   const { table } = useParams();
   if (!table) throw new Error("table is not found");
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
   const routeData = useRouteData<{
     dataTypes: AttributeDataType[];
   }>(path.to.customFields);
@@ -64,7 +66,7 @@ export default function NewCustomFieldRoute() {
     <CustomFieldForm
       initialValues={{
         name: "",
-        // @ts-ignore
+        // @ts-expect-error
         dataTypeId: DataType.Text.toString(),
         table: table,
         tags: []

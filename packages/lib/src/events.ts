@@ -563,6 +563,15 @@ export type Events = {
     data: Record<string, never>;
   };
 
+  // The trigger of the manual inactive-company purge. Sending it does nothing:
+  // the function only runs when invoked from the Inngest dashboard, on Cloud.
+  "carbon/purge-inactive-companies": {
+    data: {
+      dryRun?: boolean;
+      limit?: number;
+    };
+  };
+
   // Dispatch
   "carbon/dispatch": {
     data: {

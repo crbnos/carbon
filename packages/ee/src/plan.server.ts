@@ -9,9 +9,8 @@ import {
 } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { Edition, normalizePlanId, Plan } from "@carbon/utils";
+import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "react-router";
 import {
   defaultUpgradeMessage,
   type GateSpec,

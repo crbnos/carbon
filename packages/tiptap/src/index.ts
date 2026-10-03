@@ -84,4 +84,8 @@ export {
 } from "./utils";
 
 // Store and Atoms
-export { queryAtom, rangeAtom } from "./utils/atoms";
+export {
+  setCommandQuery,
+  setCommandRange,
+  useCommandStore
+} from "./utils/store";

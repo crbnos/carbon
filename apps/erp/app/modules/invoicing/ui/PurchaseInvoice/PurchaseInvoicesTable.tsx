@@ -82,7 +82,7 @@ const PurchaseInvoicesTable = memo(
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
-                // @ts-ignore
+                // @ts-expect-error
                 type={row.original.itemType}
               />
               <Hyperlink to={path.to.purchaseInvoiceDetails(row.original.id!)}>

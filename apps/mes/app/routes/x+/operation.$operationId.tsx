@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
@@ -39,6 +39,7 @@ import type { OperationWithDetails } from "~/services/types";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
+import { redirect } from "@carbon/utils";
 import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";

@@ -6,15 +6,10 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Button, HStack, useDisclosure, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Form,
-  Link,
-  redirect,
-  useLoaderData,
-  useNavigation
-} from "react-router";
+import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import {

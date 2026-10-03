@@ -8,8 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertWebhook } from "@carbon/ee/webhooks.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { getWebhook, webhookValidator } from "~/modules/settings";
 import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
@@ -81,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditWebhookRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { webhook } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -99,7 +101,7 @@ export default function EditWebhookRoute() {
     <WebhookForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

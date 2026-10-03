@@ -11,20 +11,14 @@ import {
   quickInstallConnectors
 } from "@carbon/ee";
 import { toast } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useSearchParams
-} from "react-router";
+import { data, Outlet, useLoaderData, useSearchParams } from "react-router";
 import { IntegrationsList } from "~/modules/settings";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";

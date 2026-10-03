@@ -123,6 +123,8 @@ Write each plan **for the weakest plausible executor**:
 
 Finish by writing `.ai/plans/improve/README.md` with the recommended execution order, dependencies, and a status column.
 
+Every plan and the README follow STE-80 (`.claude/rules/writing-ste.md`). Do the STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement) on each file before you present them.
+
 ## Invocation variants
 
 - Bare invocation → full workflow above.

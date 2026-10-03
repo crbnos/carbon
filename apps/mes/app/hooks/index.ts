@@ -4,6 +4,7 @@
 
 import { usePrinting } from "@carbon/printing/ui";
 import {
+  useIdle,
   useNanoStore,
   useOptimisticLocation,
   useRouteData,
@@ -11,7 +12,6 @@ import {
 } from "@carbon/react";
 import { useCompanyTimeZone, useLocationTimeZone } from "./useCompanyTimeZone";
 import { useDateFormatter } from "./useDateFormatter";
-import { useIdle } from "./useIdle";
 import { useImageUpload } from "./useImageUpload";
 import { useRealtime, useRealtimeRevalidator } from "./useRealtime";
 import { useUser } from "./useUser";

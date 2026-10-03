@@ -272,7 +272,7 @@ export const ProductionPlanningOrderDrawer = memo(
             <DrawerTitle className="flex items-center gap-2">
               <span>{row.readableIdWithRevision}</span>
               <Link
-                // @ts-ignore
+                // @ts-expect-error
                 to={getLinkToItemPlanning(row.type, row.id)}
               >
                 <LuExternalLink />

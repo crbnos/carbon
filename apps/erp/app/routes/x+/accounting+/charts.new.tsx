@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
@@ -13,12 +14,10 @@ import type {
 } from "react-router";
 import {
   data,
-  redirect,
   useLoaderData,
   useNavigate,
   useSearchParams
 } from "react-router";
-
 import type { AccountClass, AccountIncomeBalance } from "~/modules/accounting";
 import {
   accountValidator,

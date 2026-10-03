@@ -248,7 +248,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         ].includes(field)
       ) {
         setMaterialPropertyUpdate({
-          // @ts-ignore
+          // @ts-expect-error
           field,
           value
         });
@@ -867,7 +867,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           }}
           onConfirm={() => {
             onUpdate(
-              // @ts-ignore
+              // @ts-expect-error
               materialPropertyUpdate?.field,
               materialPropertyUpdate?.value
             );

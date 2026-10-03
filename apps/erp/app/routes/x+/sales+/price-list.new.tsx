@@ -7,9 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { useCloseRoute } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   priceOverrideBreaksValidator,
   priceOverrideValidator,
@@ -142,7 +143,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewPriceOverrideRoute() {
   const { initial, initialScope } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <PriceOverrideForm
@@ -156,7 +157,7 @@ export default function NewPriceOverrideRoute() {
       }}
       initialBreaks={[{ quantity: 1, overridePrice: 0, active: true }]}
       initialScope={initialScope}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

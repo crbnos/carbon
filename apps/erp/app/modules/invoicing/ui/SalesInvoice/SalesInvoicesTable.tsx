@@ -75,7 +75,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType || "Part"}
             />
             <Hyperlink to={path.to.salesInvoiceDetails(row.original.id!)}>

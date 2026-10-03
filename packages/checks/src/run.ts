@@ -23,14 +23,21 @@ import {
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import {
+  findDuplicatedAppFiles,
+  NO_DUPLICATED_APP_FILE,
+  SHARED_APP_DIRS
+} from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
@@ -78,7 +85,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,
   noUnscopedKyselyWrite,
-  noUnguardedSubmit
+  noUnguardedSubmit,
+  noNoopOpenChange
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
@@ -158,14 +166,18 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,
-      noInterpolatedErrorLog
+      noInterpolatedErrorLog,
+      noRawRedirect
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS),
-    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader])
+    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
+    ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
+      (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
+    )
   ];
 }
 

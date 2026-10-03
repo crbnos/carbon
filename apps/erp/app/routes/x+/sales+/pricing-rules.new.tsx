@@ -6,8 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
 import { createPricingRule, pricingRuleValidator } from "~/modules/sales";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
@@ -51,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPricingRuleRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <PricingRuleForm
@@ -66,7 +67,7 @@ export default function NewPricingRuleRoute() {
         customerTypeIds: [],
         itemIds: []
       }}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

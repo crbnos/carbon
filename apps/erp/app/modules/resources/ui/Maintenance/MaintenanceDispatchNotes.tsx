@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
-  downloadBlob,
+  downloadUrl,
   isPreviewableDocumentType,
   storage
 } from "@carbon/files";
@@ -217,8 +217,7 @@ function MaintenanceFilesContent({
       const filePath = getFilePath(file.name);
       const url = path.to.file.previewFile(`private/${filePath}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });

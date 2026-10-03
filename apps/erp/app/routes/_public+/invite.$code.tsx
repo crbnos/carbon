@@ -24,17 +24,23 @@ import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition, getClientIp } from "@carbon/utils";
+import {
+  datetime,
+  Edition,
+  getClientIp,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { render } from "@react-email/components";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
@@ -157,9 +163,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )}`
       }
     });
-    throw redirect(magicLink.data?.properties?.action_link ?? path.to.root, {
+    const actionLink = magicLink.data?.properties?.action_link;
+    const init = {
       headers: [["Set-Cookie", setCompanyId(accept.data.companyId)]]
-    });
+    } satisfies ResponseInit;
+    throw actionLink
+      ? redirectExternal(actionLink, init)
+      : redirect(path.to.root, init);
   }
 }
 

@@ -21,7 +21,6 @@
     "@vercel/analytics": "catalog:",
     "@vercel/react-router": "catalog:",
     "cookie": "catalog:",
-    "framer-motion": "catalog:",
     "isbot": "catalog:",
     "non.geist": "catalog:",
     "posthog-js": "catalog:",

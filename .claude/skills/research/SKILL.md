@@ -54,9 +54,18 @@ Rules:
 - Be specific: `SAP S/4HANA inventory valuation methods`, not `SAP inventory`.
 - Fan searches out to subagents (one competitor or one question per subagent) to
   keep the main context clean. Each subagent returns findings + source URLs only.
+- End every subagent prompt with: "Write your report in STE-80
+  (`.claude/rules/writing-ste.md`): short sentences, active voice, no 'etc.'."
+  This makes the rewrite in Step 4 smaller. It does not replace that rewrite.
 - Focus on data models, workflows, and terminology — not screenshots or UI copy.
 
 ## Step 4: Write the findings file
+
+> 🛑 Write every sentence in STE-80 from the first draft (`.claude/rules/writing-ste.md` → Write-time habits). Never ask the human to check the style.
+>
+> Subagent reports are raw material. Never paste one into the findings file
+> as it is. Rewrite each finding in STE-80 (`.claude/rules/writing-ste.md`)
+> before it goes in. Use one term per concept across all competitors.
 
 Save to `.ai/research/{feature-slug}.md` (kebab-case slug). Use exactly this
 structure:
@@ -91,6 +100,19 @@ One paragraph: what was researched, key findings.
 - {URL}
 ```
 
+## Step 5: Do the STE-80 review pass
+
+Do the STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement) on
+`.ai/research/{feature-slug}.md`. Do it after the last subagent result is
+merged, and again after any later edit.
+
+1. Follow the 8 steps of the review pass in that rule, in order.
+2. Check every merged finding against its subagent report. A rewrite must not
+   turn a claim about one product into a claim about all products.
+3. Tick every box of the rule's self-check list.
+
+If a box still fails after 3 rewrite passes, STOP and report the failing lines.
+
 ## Done when
 
 - [ ] Every matching domain row was researched, SAP included
@@ -98,6 +120,7 @@ One paragraph: what was researched, key findings.
       unanswered — carry it into the spec's Open Questions)
 - [ ] The findings file exists at `.ai/research/{slug}.md` with all sections filled
 - [ ] Every claim has a source URL in the Sources section
+- [ ] The STE-80 review pass is done after the last edit, and every self-check box is ticked
 
 ## Next step
 

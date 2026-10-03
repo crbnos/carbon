@@ -23,7 +23,7 @@ const SubstancePreview = (
   options: { value: string; label: string | React.ReactNode; helper?: string }[]
 ) => {
   const substance = options.find((o) => o.value === value);
-  // @ts-ignore
+  // @ts-expect-error
   return <Enumerable value={substance?.label ?? null} />;
 };
 

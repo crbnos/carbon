@@ -16,6 +16,8 @@ import { getCustomerStatuses, getCustomerTypes } from "~/modules/sales";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Customer" }];
 };

@@ -83070,6 +83070,10 @@ export type Database = {
         }[]
       }
       get_api_key_scopes: { Args: never; Returns: Json }
+      get_app_shell: {
+        Args: { company_id: string; user_id: string }
+        Returns: Json
+      }
       get_ar_aging: {
         Args: {
           _aging_method?: string
