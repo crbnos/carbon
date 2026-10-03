@@ -79,7 +79,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // `client` is the service role (bypassRls) and every read keys on the URL id.
   await requireCompanyRecord(client, "job", companyId, { id: jobId });
 
-  const job = await getJob(client, jobId);
+  // After the guard, these three need only the job id: read together, not one
+  // after another.
+  const [job, rootMethod, tags] = await Promise.all([
+    getJob(client, jobId),
+    getRootMakeMethod(client, jobId, companyId),
+    getTagsList(client, companyId, "operation")
+  ]);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -87,7 +93,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
@@ -107,10 +112,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, tags, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
     getJobMakeMethodById(client, methodId, companyId)
   ]);
 
