@@ -175,6 +175,10 @@ ALTER TABLE "salesInvoice"
 - When the effective mode is Post and email and the contact has no email: an inline note, "Invoices will be posted but not emailed — the contact has no email".
 - Editable while Draft or Active.
 
+**Rental agreement header and summary**
+- The header's "Invoice" button becomes a secondary **Invoice Now**. Its dialog explains that invoices are created automatically every day, and the button is for billing right away, e.g. after adding a charge.
+- Under "Next Due" the summary states the schedule: "Next invoice <date> is created automatically, then posted and emailed" (or "…then posted" / "…and left as a draft for review"). A Draft agreement reads "Invoices are created automatically once the agreement is active."
+
 **Rental agreement details**
 - The invoices list and Billing Periods card show a held invoice's reason, e.g. "Held: charges are reviewed before posting".
 
@@ -199,6 +203,7 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 - [ ] Setting an agreement's override to `Post and Email` when its contact has no email is refused (UI disabled; the service returns `RENTAL_INVOICE_EMAIL_NO_CONTACT`).
 - [ ] Re-running the cron step for an invoice that is already `Submitted` with `sentAt` set posts and emails nothing. Pressing Generate Invoices while the cron automates the same agreement produces exactly one posted invoice (the claim test).
 - [ ] With no notification group configured, an agreement's salesperson (or creator, when none) receives exactly one "Rental invoicing" notification (in-app and email) per cron run that posted, emailed or held one of their invoices. A user added to "Also notify" additionally receives the company-wide digest, and never two digests for the same run.
+- [ ] An Active agreement's header shows a secondary "Invoice Now" button, and its summary states when the next invoice is created and what happens to it, matching the effective mode.
 - [ ] Voiding a posted rent invoice and then generating again produces a Draft rent invoice held as "Re-billing INV-…, which was voided"; nothing is posted or emailed. Deleting that draft and generating again holds it again.
 - [ ] Posting a non-rental invoice manually with Send Via = Email stamps `sentAt`. A rental invoice posted manually with Email stores its PDF under `sales-invoice/<id>/`, not `opportunity/null/`.
 - [ ] Settings → Invoicing shows the five cards. Settings → Sales no longer shows Emails or Centralized Billing Address, and their saves still work from the new page.
@@ -238,5 +243,5 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 
 ## Changelog
 
-- 2026-10-02 (later): D16 notifies each agreement's owner by default (the group becomes "Also notify"); D26 holds re-bills after a VOID. Both were user decisions made while planning.
+- 2026-10-02 (later): The agreement says invoicing is automatic (summary schedule line, "Invoice Now" button). D16 notifies each agreement's owner by default (the group becomes "Also notify"); D26 holds re-bills after a VOID. Both were user decisions made while planning.
 - 2026-10-02: Created. Questions resolved with the user before writing. Reverses Decision 10 of `2026-09-22-revenue-recognition-and-rentals.md` for rentals.

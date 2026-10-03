@@ -35,6 +35,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [ ] Task 12: Manual post route — shared PDF, storage path fix, sent stamps
 - [ ] Task 13: Settings models/services + Settings → Invoicing page (moving two cards)
 - [ ] Task 14: Agreement override — model, service, update route, properties field
+- [ ] Task 14b: Agreement shows invoicing is automatic; button becomes "Invoice Now"
 - [ ] Task 15: Generate Invoices / Sell to Customer fire automation
 - [ ] Task 16: Agreement cards show held invoices
 - [ ] Task 17: Invoice header badges + Send route
@@ -50,7 +51,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - Tasks 6, 7 and 8 are independent of each other and of Tasks 4–5 (parallel-safe after Task 3).
 - Task 9 needs Tasks 5, 6, 7 and 8. Task 10 needs Tasks 9 and 11. Task 11 is independent after Task 3.
 - Task 12 needs Task 7.
-- Tasks 13, 14, 16 and 18 are parallel-safe after Task 3 (disjoint files).
+- Tasks 13, 14, 14b, 16 and 18 are parallel-safe after Task 3 (disjoint files).
 - Tasks 15 and 17 need Task 8.
 - Tasks 19–21 run last, in order.
 
@@ -638,6 +639,36 @@ grep -n "updateRentalAgreementInvoiceAutomation" apps/erp/app/modules/sales/sale
 
 ---
 
+## Task 14b: Agreement shows invoicing is automatic; button becomes "Invoice Now"
+
+**Depends on:** 3
+**Files:**
+- Modify: `apps/erp/app/modules/sales/ui/Rentals/RentalAgreementHeader.tsx` — the header button (:186-195) and the `invoice` confirm copy (:116-121)
+- Modify: `apps/erp/app/modules/sales/ui/Rentals/RentalAgreementSummary.tsx` — under the "Next Due:" row (:142-153)
+- Copy from (precedent): the "Next Due:" `HStack` itself (`text-sm text-muted-foreground`) and `DateTime` usage at :147-148
+
+**Steps:**
+1. Header button: label `<Trans>Invoice Now</Trans>`, `variant="secondary"` always. Drop the `allPeriodsBilled ? … : "primary"` switch, since a primary button reads as a chore. If `allPeriodsBilled` is then unused, remove it. Keep the icon, the `isActive` gate and `canUpdate`.
+2. Confirm copy: title `Invoice ${readableId} now`; text "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."; confirmText `Invoice Now`.
+3. Summary: below the Next Due row, one muted line (`text-xs text-muted-foreground`) derived from `rentalAgreement.status`, `rentalAgreement.nextDueOn` and `rentalAgreement.effectiveInvoiceAutomation` (view column from Task 2). Put the choice in a small pure function at the bottom of the file, `invoicingScheduleText(status, nextDueOn, mode)`, returning a Lingui message:
+   - Draft → "Invoices are created automatically once the agreement is active."
+   - Active, `nextDueOn` set → `Post and Email`: "Next invoice {date} is created automatically, then posted and emailed." `Post`: "…, then posted." `Draft Only`: "…, and left as a draft for review." `{date}` is rendered with `<DateTime value={nextDueOn} variant="date" />` (compose with `<Trans>` placeholders, as other Rentals components do).
+   - Active, no `nextDueOn` → "Nothing is due. Invoices are created automatically when a period comes due."
+   - Closed / Cancelled → render nothing.
+4. All strings via Lingui. No JS `Date`: `nextDueOn` is a `YYYY-MM-DD` string passed straight to `DateTime`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: no new errors
+grep -n "\"primary\"" apps/erp/app/modules/sales/ui/Rentals/RentalAgreementHeader.tsx
+# Expected: no match on the Invoice Now button (other buttons may still be primary)
+```
+
+**Out of scope:** the generate route's behaviour (Task 15); the properties panel (Task 14).
+
+---
+
 ## Task 15: Generate Invoices / Sell to Customer fire automation
 
 **Depends on:** 5, 8
@@ -791,6 +822,7 @@ Use `/test` (needs `crbn up`; ask the user before starting it). Then:
 6. Open a rental invoice PDF (`file/sales-invoice/<id>.pdf`) and a non-rental invoice PDF. Both render as before.
 7. With NO notification group set, run the cron via the Inngest dev UI ("Invoke" `rental-billing`). The agreement's salesperson (or creator) gets one "Rental invoicing" notification, in the topbar and by email. Then add a different user to "Also notify" and re-run with a new due period: that user also gets one.
 8. Void the posted rent invoice from step 2 (⋯ → Void). The agreement's Billing Periods card shows the period Pending again. Click Invoice (Generate Invoices): the new rent invoice is Draft and "Held" with "Re-billing INV-…, which was voided", and nothing is posted or emailed. Delete that draft and generate again: still held.
+9. On an Active agreement the header shows a secondary "Invoice Now" button, and the summary reads "Next invoice <date> is created automatically, then posted and emailed." Switch the agreement to Draft only: the line says "…left as a draft for review."
 
 **Verify:** every step above passes; screenshots saved under `.context/`.
 
