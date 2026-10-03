@@ -8077,6 +8077,8 @@ export type Database = {
           incompletePickingListPolicy: string
           inventoryJobCompletedNotificationGroup: string[]
           inventoryShelfLife: Json
+          invoiceAutomation: Database["public"]["Enums"]["invoiceAutomation"]
+          invoiceNotificationGroup: string[]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate: number
           leaseMajorPartThresholdPercent: number
@@ -8135,6 +8137,8 @@ export type Database = {
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
+          invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
+          invoiceNotificationGroup?: string[]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -8193,6 +8197,8 @@ export type Database = {
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
+          invoiceAutomation?: Database["public"]["Enums"]["invoiceAutomation"]
+          invoiceNotificationGroup?: string[]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
           leaseMajorPartThresholdPercent?: number
@@ -51255,6 +51261,9 @@ export type Database = {
           endDate: string | null
           exchangeRate: number
           id: string
+          invoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
           locationId: string
           notes: string | null
           ownershipTransfers: boolean
@@ -51288,6 +51297,9 @@ export type Database = {
           endDate?: string | null
           exchangeRate?: number
           id?: string
+          invoiceAutomation?:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
           locationId: string
           notes?: string | null
           ownershipTransfers?: boolean
@@ -51321,6 +51333,9 @@ export type Database = {
           endDate?: string | null
           exchangeRate?: number
           id?: string
+          invoiceAutomation?:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
           locationId?: string
           notes?: string | null
           ownershipTransfers?: boolean
@@ -51536,6 +51551,7 @@ export type Database = {
           taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
+          voidedSalesInvoiceId: string | null
         }
         Insert: {
           amount: number
@@ -51551,6 +51567,7 @@ export type Database = {
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Update: {
           amount?: number
@@ -51566,6 +51583,7 @@ export type Database = {
           taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Relationships: [
           {
@@ -51988,6 +52006,7 @@ export type Database = {
           status: Database["public"]["Enums"]["rentalBillingPeriodStatus"]
           updatedAt: string | null
           updatedBy: string | null
+          voidedSalesInvoiceId: string | null
         }
         Insert: {
           amount: number
@@ -52006,6 +52025,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["rentalBillingPeriodStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Update: {
           amount?: number
@@ -52024,6 +52044,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["rentalBillingPeriodStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
         }
         Relationships: [
           {
@@ -53738,6 +53759,7 @@ export type Database = {
       salesInvoice: {
         Row: {
           assignee: string | null
+          automationHoldReason: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -53761,6 +53783,9 @@ export type Database = {
           opportunityId: string | null
           paymentTermId: string | null
           postingDate: string | null
+          sendError: string | null
+          sentAt: string | null
+          sentTo: string | null
           shipmentId: string | null
           status: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal: number
@@ -53773,6 +53798,7 @@ export type Database = {
         }
         Insert: {
           assignee?: string | null
+          automationHoldReason?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -53796,6 +53822,9 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          sendError?: string | null
+          sentAt?: string | null
+          sentTo?: string | null
           shipmentId?: string | null
           status?: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal?: number
@@ -53808,6 +53837,7 @@ export type Database = {
         }
         Update: {
           assignee?: string | null
+          automationHoldReason?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -53831,6 +53861,9 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          sendError?: string | null
+          sentAt?: string | null
+          sentTo?: string | null
           shipmentId?: string | null
           status?: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal?: number
@@ -81300,9 +81333,15 @@ export type Database = {
           customFields: Json | null
           depositAmount: number | null
           discountRate: number | null
+          effectiveInvoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
           endDate: string | null
           exchangeRate: number | null
           id: string | null
+          invoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
           lineCount: number | null
           locationId: string | null
           nextDueOn: string | null
@@ -82064,6 +82103,7 @@ export type Database = {
       salesInvoices: {
         Row: {
           assignee: string | null
+          automationHoldReason: string | null
           balance: number | null
           baseStatus: Database["public"]["Enums"]["salesInvoiceStatus"] | null
           companyId: string | null
@@ -82089,10 +82129,14 @@ export type Database = {
           itemType: Database["public"]["Enums"]["itemType"] | null
           lines: Json[] | null
           locationId: string | null
+          needsReview: boolean | null
           opportunityId: string | null
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
+          sendError: string | null
+          sentAt: string | null
+          sentTo: string | null
           shipmentId: string | null
           status: string | null
           subtotal: number | null
@@ -89367,6 +89411,7 @@ export type Database = {
         | "COGS"
         | "Capitalization"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
+      invoiceAutomation: "Draft Only" | "Post" | "Post and Email"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
       itemLedgerDocumentType:
         | "Sales Shipment"
@@ -90824,6 +90869,7 @@ export const Constants = {
         "Capitalization",
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
+      invoiceAutomation: ["Draft Only", "Post", "Post and Email"],
       itemCostingMethod: ["Standard", "Average", "LIFO", "FIFO"],
       itemLedgerDocumentType: [
         "Sales Shipment",

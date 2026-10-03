@@ -15109,6 +15109,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreements.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreements.invoiceAutomation"
+          },
+          {
             $ref: "#/parameters/rowFilter.rentalAgreements.customerName"
           },
           {
@@ -15122,6 +15125,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreements.unbilledAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreements.effectiveInvoiceAutomation"
           },
           {
             $ref: "#/parameters/select"
@@ -20461,6 +20467,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreement.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -20613,6 +20622,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreement.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -20717,6 +20729,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreement.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreement.invoiceAutomation"
           },
           {
             $ref: "#/parameters/body.rentalAgreement"
@@ -25750,6 +25765,18 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoice.automationHoldReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sendError"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -25908,6 +25935,18 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoice.automationHoldReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sendError"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -26018,6 +26057,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.automationHoldReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.sendError"
           },
           {
             $ref: "#/parameters/body.salesInvoice"
@@ -37480,6 +37531,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -37578,6 +37632,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -37628,6 +37685,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
           },
           {
             $ref: "#/parameters/body.rentalAgreementCharge"
@@ -63823,6 +63883,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -63930,6 +63993,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -63989,6 +64055,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalBillingPeriod.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalBillingPeriod.voidedSalesInvoiceId"
           },
           {
             $ref: "#/parameters/body.rentalBillingPeriod"
@@ -70001,6 +70070,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoices.baseStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.automationHoldReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.sentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.sentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.sendError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.needsReview"
           },
           {
             $ref: "#/parameters/select"
@@ -96295,6 +96379,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceAutomation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96522,6 +96612,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceAutomation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96701,6 +96797,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceAutomation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -117666,6 +117768,11 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        invoiceAutomation: {
+          enum: ["Draft Only", "Post", "Post and Email"],
+          format: 'public."invoiceAutomation"',
+          type: "string"
+        },
         customerName: {
           format: "text",
           type: "string"
@@ -117685,6 +117792,11 @@ export default {
         unbilledAmount: {
           format: "numeric",
           type: "number"
+        },
+        effectiveInvoiceAutomation: {
+          enum: ["Draft Only", "Post", "Post and Email"],
+          format: 'public."invoiceAutomation"',
+          type: "string"
         }
       },
       type: "object"
@@ -120533,6 +120645,11 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        invoiceAutomation: {
+          enum: ["Draft Only", "Post", "Post and Email"],
+          format: 'public."invoiceAutomation"',
+          type: "string"
         }
       },
       type: "object"
@@ -123078,6 +123195,22 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        automationHoldReason: {
+          format: "text",
+          type: "string"
+        },
+        sentAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        sentTo: {
+          format: "text",
+          type: "string"
+        },
+        sendError: {
           format: "text",
           type: "string"
         }
@@ -128626,6 +128759,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        voidedSalesInvoiceId: {
+          format: "text",
           type: "string"
         }
       },
@@ -140754,6 +140891,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        voidedSalesInvoiceId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143990,6 +144131,26 @@ export default {
           ],
           format: 'public."salesInvoiceStatus"',
           type: "string"
+        },
+        automationHoldReason: {
+          format: "text",
+          type: "string"
+        },
+        sentAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        sentTo: {
+          format: "text",
+          type: "string"
+        },
+        sendError: {
+          format: "text",
+          type: "string"
+        },
+        needsReview: {
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -156531,7 +156692,9 @@ export default {
         "leaseDefaultDiscountRate",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
-        "showBomExplorerReadableId"
+        "showBomExplorerReadableId",
+        "invoiceAutomation",
+        "invoiceNotificationGroup"
       ],
       properties: {
         id: {
@@ -156838,6 +157001,19 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        invoiceAutomation: {
+          default: "Post and Email",
+          enum: ["Draft Only", "Post", "Post and Email"],
+          format: 'public."invoiceAutomation"',
+          type: "string"
+        },
+        invoiceNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -165163,6 +165339,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.rentalAgreements.invoiceAutomation": {
+      name: "invoiceAutomation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.rentalAgreements.customerName": {
       name: "customerName",
       required: false,
@@ -165189,6 +165371,12 @@ export default {
     },
     "rowFilter.rentalAgreements.unbilledAmount": {
       name: "unbilledAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreements.effectiveInvoiceAutomation": {
+      name: "effectiveInvoiceAutomation",
       required: false,
       in: "query",
       type: "string"
@@ -168477,6 +168665,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.rentalAgreement.invoiceAutomation": {
+      name: "invoiceAutomation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.material": {
       name: "material",
       description: "material",
@@ -171328,6 +171522,30 @@ export default {
     },
     "rowFilter.salesInvoice.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoice.automationHoldReason": {
+      name: "automationHoldReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoice.sentAt": {
+      name: "sentAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoice.sentTo": {
+      name: "sentTo",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoice.sendError": {
+      name: "sendError",
       required: false,
       in: "query",
       type: "string"
@@ -177576,6 +177794,12 @@ export default {
     },
     "rowFilter.rentalAgreementCharge.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementCharge.voidedSalesInvoiceId": {
+      name: "voidedSalesInvoiceId",
       required: false,
       in: "query",
       type: "string"
@@ -191026,6 +191250,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.rentalBillingPeriod.voidedSalesInvoiceId": {
+      name: "voidedSalesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesRfq": {
       name: "salesRfq",
       description: "salesRfq",
@@ -194665,6 +194895,36 @@ export default {
     },
     "rowFilter.salesInvoices.baseStatus": {
       name: "baseStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoices.automationHoldReason": {
+      name: "automationHoldReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoices.sentAt": {
+      name: "sentAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoices.sentTo": {
+      name: "sentTo",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoices.sendError": {
+      name: "sendError",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoices.needsReview": {
+      name: "needsReview",
       required: false,
       in: "query",
       type: "string"
@@ -208904,6 +209164,18 @@ export default {
     },
     "rowFilter.companySettings.showBomExplorerReadableId": {
       name: "showBomExplorerReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.invoiceAutomation": {
+      name: "invoiceAutomation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.invoiceNotificationGroup": {
+      name: "invoiceNotificationGroup",
       required: false,
       in: "query",
       type: "string"
