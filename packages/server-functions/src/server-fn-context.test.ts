@@ -12,7 +12,12 @@ import {
   connectLocalTestDatabase,
   databaseTest
 } from "./local-database-test-fixture";
-import { authorize, clientUsesKey, ServerFnContext } from "./server-fn-context";
+import {
+  authorize,
+  clientUsesKey,
+  isPortalAccount,
+  ServerFnContext
+} from "./server-fn-context";
 
 vi.mock("@carbon/env", () => ({
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
@@ -38,6 +43,24 @@ describe("authorize", () => {
     await expect(
       authorize(ServerFnContext.user(fields), "system")
     ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("isPortalAccount", () => {
+  it("names customer and supplier logins, which hold view permissions too", () => {
+    expect(isPortalAccount({ role: "customer", sales_view: ["c1"] })).toBe(
+      true
+    );
+    expect(isPortalAccount({ role: "supplier", parts_view: ["c1"] })).toBe(
+      true
+    );
+  });
+
+  it("leaves employees and role-less claims to the permission check", () => {
+    expect(isPortalAccount({ role: "employee", sales_view: ["c1"] })).toBe(
+      false
+    );
+    expect(isPortalAccount({})).toBe(false);
   });
 });
 

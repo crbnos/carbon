@@ -163,10 +163,20 @@ export async function authorize(
   }>`SELECT get_claims(${ctx.userId}, ${ctx.companyId}) AS claims`.execute(
     ctx.db
   );
-  const permissions = permissionsFromClaims(rows[0]?.claims ?? {});
+  const claims = rows[0]?.claims ?? {};
+  // The route guard's rule, restated: a portal account is a member of the
+  // company and holds a few view permissions, so the permission list alone
+  // would admit it.
+  if (isPortalAccount(claims)) throw new ForbiddenError();
+  const permissions = permissionsFromClaims(claims);
   if (!hasPermissions(permissions, ctx.companyId, required)) {
     throw new ForbiddenError();
   }
+}
+
+/** A customer or supplier portal login, by the `role` in its `get_claims`. */
+export function isPortalAccount(claims: Record<string, unknown>): boolean {
+  return claims.role === "customer" || claims.role === "supplier";
 }
 
 /** A key of this company, unexpired, whose scopes (`<module>_<action>` →

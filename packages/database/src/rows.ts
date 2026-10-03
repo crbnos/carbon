@@ -16,25 +16,43 @@ type RowOf<T extends RelationName> = Relations[T]["Row"];
  */
 export const isNull = Symbol("IS NULL");
 
-/** A comparison other than equality: PostgREST's `.neq`, `.lt`, `.contains`, … */
-type Comparison = {
-  readonly op: "<>" | "<" | "<=" | ">" | ">=" | "@>" | "IS NOT NULL" | "NOT IN";
-  readonly value?: unknown;
-};
-export const neq = (value: unknown): Comparison => ({ op: "<>", value });
-export const lt = (value: unknown): Comparison => ({ op: "<", value });
-export const lte = (value: unknown): Comparison => ({ op: "<=", value });
-export const gt = (value: unknown): Comparison => ({ op: ">", value });
-export const gte = (value: unknown): Comparison => ({ op: ">=", value });
+type Operator =
+  | "<>"
+  | "<"
+  | "<="
+  | ">"
+  | ">="
+  | "@>"
+  | "IS NOT NULL"
+  | "NOT IN";
+
+/**
+ * A comparison other than equality: PostgREST's `.neq`, `.lt`, `.contains`, …
+ * A class, not a shape: a filter VALUE can be any jsonb a caller passes
+ * through, and an object that merely looked like `{ op, value }` must stay a
+ * value, never become SQL.
+ */
+class Comparison {
+  constructor(
+    readonly op: Operator,
+    readonly value?: unknown
+  ) {}
+}
+export const neq = (value: unknown) => new Comparison("<>", value);
+export const lt = (value: unknown) => new Comparison("<", value);
+export const lte = (value: unknown) => new Comparison("<=", value);
+export const gt = (value: unknown) => new Comparison(">", value);
+export const gte = (value: unknown) => new Comparison(">=", value);
 /** `.contains(column, value)` on a jsonb column: the form its GIN index serves. */
-export const contains = (value: unknown): Comparison => ({ op: "@>", value });
-/** `.not(column, "in", values)`: a null column matches neither way. */
-export const notIn = (values: readonly unknown[]): Comparison => ({
-  op: "NOT IN",
-  value: values
-});
+export const contains = (value: unknown) => new Comparison("@>", value);
+/**
+ * `.not(column, "in", values)`. A null column matches no non-empty list; an
+ * empty list matches every row, as PostgREST's does.
+ */
+export const notIn = (values: readonly unknown[]) =>
+  new Comparison("NOT IN", values);
 /** `.not(column, "is", null)`. */
-export const notNull: Comparison = { op: "IS NOT NULL" };
+export const notNull = new Comparison("IS NOT NULL");
 
 /**
  * Filters, all ANDed: a value is `=`, an array is `= ANY`, {@link isNull} is
@@ -175,20 +193,28 @@ function conditionsFor(alias: string, where: Record<string, unknown>) {
     // every row whose column happens to be empty.
     if (value === null || value === undefined) return sql`FALSE`;
     if (Array.isArray(value)) return sql`${ref} = ANY(${value})`;
-    if (isComparison(value)) {
-      if (value.op === "IS NOT NULL") return sql`${ref} IS NOT NULL`;
-      if (value.op === "NOT IN") return sql`NOT (${ref} = ANY(${value.value}))`;
-      if (value.op === "@>") {
-        return sql`${ref} @> ${JSON.stringify(value.value)}::jsonb`;
+    if (value instanceof Comparison) {
+      switch (value.op) {
+        case "IS NOT NULL":
+          return sql`${ref} IS NOT NULL`;
+        case "NOT IN":
+          return sql`NOT (${ref} = ANY(${value.value}))`;
+        case "@>":
+          return sql`${ref} @> ${JSON.stringify(value.value)}::jsonb`;
+        case "<>":
+          return sql`${ref} <> ${value.value}`;
+        case "<":
+          return sql`${ref} < ${value.value}`;
+        case "<=":
+          return sql`${ref} <= ${value.value}`;
+        case ">":
+          return sql`${ref} > ${value.value}`;
+        case ">=":
+          return sql`${ref} >= ${value.value}`;
       }
-      return sql`${ref} ${sql.raw(value.op)} ${value.value}`;
     }
     return sql`${ref} = ${value}`;
   });
-}
-
-function isComparison(value: unknown): value is Comparison {
-  return typeof value === "object" && value !== null && "op" in value;
 }
 
 type Functions = Database["public"]["Functions"];

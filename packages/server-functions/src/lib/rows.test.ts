@@ -164,3 +164,25 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a filter value shaped like a comparison is a value, not SQL",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    try {
+      const everyone = await selectRows(db, "company", {});
+      if (everyone.length === 0) return;
+      // If the object's `op` reached the statement this would match every row.
+      const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
+      const matched = await selectRows(db, "company", {
+        name: lookalike
+      }).catch(() => []);
+      expect(matched).toEqual([]);
+      expect(
+        (await selectRows(db, "company", { id: neq("no-such-company") })).length
+      ).toBe(everyone.length);
+    } finally {
+      await db.destroy();
+    }
+  }
+);
