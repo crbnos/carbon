@@ -3,13 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getInspection } from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
 import { action } from "./$id.reject";
 
 // The reject route hands the disposition engine's `writeOff` descriptor to the
-// post-nonconformance edge function. These tests lock that wiring (the 868f5c1bf
+// post-nonconformance operation. These tests lock that wiring (the 868f5c1bf
 // refactor moved the itemLedger write out of the engine) and the failure
 // handling (a failed write-off must NOT silently proceed to NCR creation, whose
 // Use-As-Is restore assumes the reject already wrote the value off).
@@ -31,12 +32,19 @@ vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
 vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: vi.fn(async () => ({
-    from: vi.fn(),
-    functions: { invoke: vi.fn() }
-  }))
+  getCarbonServiceRole: vi.fn(async () => ({ from: vi.fn() }))
 }));
 vi.mock("@carbon/ee/notifications", () => ({ notifyIssueCreated: vi.fn() }));
+const postNonConformance = vi.hoisted(() => vi.fn());
+vi.mock("@carbon/server-functions", () => {
+  const bind = (fields: object) => ({
+    invoke: (_name: string, input: unknown) => postNonConformance(fields, input)
+  });
+  return { serverFns: { system: bind, as: bind } };
+});
+vi.mock("~/services/database.server", () => ({
+  getDatabaseClient: vi.fn(() => ({}))
+}));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() })
 }));
@@ -82,8 +90,7 @@ async function runAction(request: Request) {
   }
 }
 
-const invoke = vi.fn();
-const client = { functions: { invoke }, from: vi.fn() };
+const client = { from: vi.fn() };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -92,7 +99,10 @@ beforeEach(() => {
     companyId: "company-1",
     userId: "user-1"
   } as any);
-  invoke.mockResolvedValue({ data: { success: true }, error: null });
+  postNonConformance.mockResolvedValue({
+    data: { journalId: null },
+    error: null
+  });
 });
 
 describe("inspection reject route — inventory write-off", () => {
@@ -108,21 +118,23 @@ describe("inspection reject route — inventory write-off", () => {
 
     const { thrown } = await runAction(rejectRequest({ createNcr: "false" }));
 
-    expect(invoke).toHaveBeenCalledWith(
-      "post-nonconformance",
+    expect(postNonConformance).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: expect.objectContaining({
-          documentType: "Inbound Inspection",
-          documentId: "insp-1",
-          movements: [
-            expect.objectContaining({
-              itemId: "part-2",
-              quantity: -5,
-              trackedEntityId: null,
-              locationId: "loc-1"
-            })
-          ]
-        })
+        client,
+        companyId: "company-1",
+        userId: "user-1"
+      }),
+      expect.objectContaining({
+        documentType: "Inbound Inspection",
+        documentId: "insp-1",
+        movements: [
+          expect.objectContaining({
+            itemId: "part-2",
+            quantity: -5,
+            trackedEntityId: null,
+            locationId: "loc-1"
+          })
+        ]
       })
     );
     // Lot rejected → redirect back to the inspection.
@@ -138,10 +150,7 @@ describe("inspection reject route — inventory write-off", () => {
 
     await runAction(rejectRequest({ createNcr: "false" }));
 
-    expect(invoke).not.toHaveBeenCalledWith(
-      "post-nonconformance",
-      expect.anything()
-    );
+    expect(postNonConformance).not.toHaveBeenCalled();
   });
 
   it("restricts the disposition to Receipt lots (Job Operation lots are verdict-only in the ERP)", async () => {
@@ -173,9 +182,12 @@ describe("inspection reject route — inventory write-off", () => {
       },
       error: null
     } as any);
-    // The edge function fails — a failed reject write-off must surface, not be
+    // The posting fails — a failed reject write-off must surface, not be
     // swallowed, because closeIssue's Use-As-Is restore assumes it succeeded.
-    invoke.mockResolvedValue({ data: null, error: { message: "boom" } });
+    postNonConformance.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("boom")
+    });
     // If the route proceeds anyway, this is where NCR creation starts.
     vi.mocked(getInspection).mockResolvedValue({
       data: null,

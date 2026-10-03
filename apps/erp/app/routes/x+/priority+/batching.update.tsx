@@ -6,6 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { mergeTrackedEntities } from "~/modules/inventory";
 import {
@@ -20,7 +21,6 @@ import {
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 // Fetcher-driven board action (mirrors operations.update.tsx): return
 // { success, message } so BatchingBoard can toast the specific failure reason.
@@ -115,16 +115,15 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: false, message: "No mergeable output lots" };
     }
     const serviceRole = await getCarbonServiceRole();
-    const merge = await mergeTrackedEntities(serviceRole, {
+    const merge = await mergeTrackedEntities(serviceRole, getDatabaseClient(), {
       trackedEntityIds: lots.map((lot) => lot.id),
       companyId,
       userId
     });
-    if (merge.error || merge.data?.error) {
+    if (merge.error) {
       return {
         success: false,
-        message:
-          (merge.data?.error as string | undefined) ?? "Failed to merge lots"
+        message: getErrorMessage(merge.error, "Failed to merge lots")
       };
     }
     return {
@@ -165,7 +164,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    const result = await createJobOperationBatch(client, {
+    const result = await createJobOperationBatch(client, getDatabaseClient(), {
       ...validation.data,
       companyId,
       userId
@@ -174,10 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (result.error) {
       return {
         success: false,
-        message: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to create batch"
-        )
+        message: getErrorMessage(result.error, "Failed to create batch")
       };
     }
 
@@ -191,7 +187,7 @@ export async function action({ request }: ActionFunctionArgs) {
         validation.data.workCenterId ?? undefined
       );
     }
-    // The edge fn returns { id, readableId }; the batch builder navigates to the
+    // The server fn returns { id, readableId }; the batch builder navigates to the
     // created batch on success. Additive — the schedule board ignores them.
     return {
       success: true,
@@ -248,30 +244,35 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: releasedJobs.error };
       }
 
-      const released = await releaseJobOperationBatch(client, {
-        batchId: rest.batchId,
-        companyId,
-        userId
-      });
+      const released = await releaseJobOperationBatch(
+        client,
+        getDatabaseClient(),
+        {
+          batchId: rest.batchId,
+          companyId,
+          userId
+        }
+      );
       if (released.error) {
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            released.error,
-            "Failed to release batch"
-          )
+          message: getErrorMessage(released.error, "Failed to release batch")
         };
       }
     } else {
-      const unreleased = await unreleaseJobOperationBatch(client, {
-        batchId: rest.batchId,
-        companyId,
-        userId
-      });
+      const unreleased = await unreleaseJobOperationBatch(
+        client,
+        getDatabaseClient(),
+        {
+          batchId: rest.batchId,
+          companyId,
+          userId
+        }
+      );
       if (unreleased.error) {
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
+          message: getErrorMessage(
             unreleased.error,
             "Failed to unrelease batch"
           )
@@ -289,7 +290,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true };
   }
 
-  const result = await updateJobOperationBatch(client, {
+  const result = await updateJobOperationBatch(client, getDatabaseClient(), {
     type,
     ...rest,
     // "update" clears the work center when no value is submitted
@@ -302,10 +303,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return {
       success: false,
-      message: await getEdgeFunctionErrorMessage(
-        result.error,
-        `Failed to ${type} batch`
-      )
+      message: getErrorMessage(result.error, `Failed to ${type} batch`)
     };
   }
   return { success: true };

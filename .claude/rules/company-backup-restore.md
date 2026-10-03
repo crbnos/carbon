@@ -29,8 +29,9 @@ is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 (kept deliberately impl-free — keep internals here, not there).
 
 User-facing rules of the feature: backups require `settings` update permission
-(no owner gate — the old `group.ownerId === userId` check was removed from both the
-route and the `export-company` edge function), exclude secrets, and a restore is
+(no owner gate — the old `group.ownerId === userId` check was removed; the route
+sends `carbon/company-export` itself via `exportCompanyBackup` in
+`backups.server.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
 **Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
@@ -96,8 +97,8 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   secret `apiKey`, so exporting it alone would dangle every row on restore — and
   it's UNLOGGED operational counters, not user data), `STRUCTURAL_TABLES` (`company` —
   excluded from catalog), `TRANSIENT_TABLES` (`demandForecastSource`,
-  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output the
-  `mrp` edge fn regenerates wholesale every run; excluded from the catalog
+  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output that
+  MRP regenerates wholesale every run; excluded from the catalog
   entirely alongside `STRUCTURAL_TABLES`, so they're never exported/wiped/loaded
   and the next MRP run rebuilds them. `demandForecastSource`'s discriminator
   CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`

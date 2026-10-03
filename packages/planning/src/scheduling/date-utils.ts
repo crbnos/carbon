@@ -34,10 +34,8 @@ export function toIsoDate(value: unknown): string | null {
 
 /**
  * The business day a UTC instant falls on in the given timezone, as
- * "YYYY-MM-DD". Same implementation as lib/datetime.ts `datetime.businessDay`
- * (parseAbsolute -> toCalendarDate) — duplicated here because the scheduling
- * modules are deliberately pure: importing lib/datetime.ts would drag the DB
- * client graph into every allocator unit test.
+ * "YYYY-MM-DD". Same implementation as `datetime.businessDay` in
+ * @carbon/utils (parseAbsolute -> toCalendarDate), returned as a string.
  *
  * The engine judges lateness, words conflict messages, and persists operation
  * dates in the FACTORY's day, not UTC's — an op ending 03:04 IST on the 21st

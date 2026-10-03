@@ -25,7 +25,7 @@ type QueueJob = {
  * Event queue drainer - woken by `carbon/event-queue.process` and routes
  * queued PGMQ events to handlers. The database pushes the wake: the
  * dispatch_event_batch() trigger (and a pg_cron sweeper while messages are
- * pending) POSTs to the event-wake edge function, which sends the wake event.
+ * pending) sends the wake event through util.send_inngest_event.
  * The drain loops until the queue is empty, so a single run absorbs a burst.
  * `concurrency: 1` serializes runs; bulk writes are coalesced upstream — the
  * trigger wakes at most once per transaction (carbon.event_wake_sent GUC).

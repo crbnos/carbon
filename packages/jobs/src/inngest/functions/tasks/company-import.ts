@@ -103,8 +103,8 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       // Reseed populates a fresh company; refuse a target that's already been
-      // set up (the edge function gates this too — this is defense in depth
-      // for retries or direct triggers). accountDefault is the seed marker.
+      // set up (defense in depth for retries or direct triggers).
+      // accountDefault is the seed marker.
       if (mode === "reseed") {
         const seeded = await client
           .from("accountDefault")

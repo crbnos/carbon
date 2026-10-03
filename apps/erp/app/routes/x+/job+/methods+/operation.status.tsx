@@ -13,6 +13,7 @@ import {
   returnPickedRemaindersForOperation,
   updateJobOperationStatus
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,6 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // undo the status change, so surface it as a flash only.
     const sweep = await returnPickedRemaindersForOperation(
       getCarbonServiceRole(),
+      getDatabaseClient(),
       { jobOperationId: id, userId, companyId }
     );
     if (sweep?.error) {

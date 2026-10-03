@@ -13,6 +13,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
+    "@carbon/server-functions": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/printing": "workspace:*",
     "@carbon/react": "workspace:*",

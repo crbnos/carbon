@@ -100,8 +100,8 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
         });
       } catch (error) {
         logger.error(
-          `Failed to propose revenue recognition run for company ${company.name}`,
-          { error }
+          "Failed to propose revenue recognition run for company {company}",
+          { company: company.name, companyId: company.id, error }
         );
         failed.push(company.id);
       }

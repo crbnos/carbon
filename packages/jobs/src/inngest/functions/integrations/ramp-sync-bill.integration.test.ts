@@ -8,6 +8,7 @@ import {
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
@@ -16,6 +17,16 @@ import {
   stageOrResumeRampBill
 } from "./ramp-sync-bill-stage";
 import type { RampSyncContext } from "./ramp-sync-shared";
+
+// Only the posting operation is substituted. All staging, status transitions,
+// queries, mappings, FKs and rollback use real Postgres.
+const { post } = vi.hoisted(() => ({ post: vi.fn() }));
+vi.mock("@carbon/server-functions", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),
@@ -141,27 +152,21 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
         .executeTakeFirstOrThrow();
       suppliers.push(supplier.id);
       const client = getCarbonServiceRole();
-      // Only the remote posting invocation is substituted. All staging, status
-      // transitions, queries, mappings, FKs and rollback use real Postgres.
-      const invoke = vi.fn(
-        async (_name: string, options?: { body?: unknown }) => {
-          const body = options?.body as { invoiceId: string };
+      post.mockReset();
+      post.mockImplementation(
+        async (_fields: unknown, input: { invoiceId: string }) => {
           await db
             .updateTable("purchaseInvoice")
             .set({ status: "Draft" })
             .where("companyId", "=", scope.companyId)
-            .where("id", "=", body.invoiceId)
+            .where("id", "=", input.invoiceId)
             .execute();
           return {
             data: null,
-            error: new Error("simulated posting failure"),
-            response: undefined
+            error: new ServerFnError("simulated posting failure")
           };
         }
       );
-      // Supabase.functions is a getter that returns a NEW FunctionsClient. Spying
-      // on one getter result does not intercept later calls; pin this instance.
-      Object.defineProperty(client, "functions", { value: { invoke } });
       const ctx: RampSyncContext = {
         client,
         db,
@@ -222,7 +227,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
           }
         ]
       };
-      return { token, supplierId: supplier.id, ctx, bill, ramp, args, invoke };
+      return { token, supplierId: supplier.id, ctx, bill, ramp, args, post };
     }
 
     async function purchaseOrderFixture() {
@@ -282,7 +287,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
     }
 
     it("keeps one mapped Draft after a posting failure and retries that same Draft", async () => {
-      const { token, ctx, ramp, invoke } = await fixture();
+      const { token, ctx, ramp, post } = await fixture();
       await syncRampBills(ctx, ramp, undefined);
       await syncRampBills(ctx, ramp, undefined);
       const invoices = await db
@@ -293,7 +298,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
         .execute();
       expect(invoices).toHaveLength(1);
       expect(invoices[0]?.status).toBe("Draft");
-      expect(invoke).toHaveBeenCalledTimes(2);
+      expect(post).toHaveBeenCalledTimes(2);
       expect(await ctx.mapping.getEntityId("ramp", token, "bill")).toBe(
         invoices[0]?.id
       );
@@ -367,9 +372,9 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
     }, 30000);
 
     it("resumes a committed Draft after a crash and confirms only after an observed post", async () => {
-      const { args, ctx, ramp, invoke, token } = await fixture();
-      const staged = await stageOrResumeRampBill(db, args); // crash before invoking edge
-      invoke.mockImplementationOnce(async () => {
+      const { args, ctx, ramp, post, token } = await fixture();
+      const staged = await stageOrResumeRampBill(db, args); // crash before posting
+      post.mockImplementationOnce(async () => {
         await db
           .updateTable("purchaseInvoice")
           .set({ status: "Open" })
@@ -378,8 +383,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
           .execute();
         return {
           data: null,
-          error: new Error("response lost after commit"),
-          response: undefined
+          error: new ServerFnError("response lost after commit")
         };
       });
       vi.mocked(confirmSyncs).mockClear();
@@ -393,14 +397,14 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       expect(await ctx.mapping.getEntityId("ramp", token, "bill")).toBe(
         staged.invoiceRowId
       );
-      expect(invoke).toHaveBeenCalledTimes(1);
+      expect(post).toHaveBeenCalledTimes(1);
     }, 30000);
 
     it.each([
       "Pending",
       "Voided"
     ] as const)("never posts or confirms a mapped %s invoice", async (status) => {
-      const { args, ctx, ramp, invoke } = await fixture();
+      const { args, ctx, ramp, post } = await fixture();
       const staged = await stageOrResumeRampBill(db, args);
       await db
         .updateTable("purchaseInvoice")
@@ -417,7 +421,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       expect(vi.mocked(confirmSyncs).mock.calls.at(-1)?.[2].successful).toEqual(
         []
       );
-      expect(invoke).not.toHaveBeenCalled();
+      expect(post).not.toHaveBeenCalled();
     }, 30000);
 
     it("adopts one exact legacy system Draft without changing its source mapping on collision", async () => {
@@ -473,8 +477,8 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       ).toBe(105);
     }, 30000);
 
-    it("posts multi-PO bills standalone with a memo and never invokes conversion", async () => {
-      const { ctx, ramp, bill, remotePoId, request, invoke } =
+    it("posts multi-PO bills standalone with a memo, posting only that bill", async () => {
+      const { ctx, ramp, bill, remotePoId, request, post } =
         await purchaseOrderFixture();
       bill.purchase_order_ids = [remotePoId, "another-po"];
       await syncRampBills(ctx, ramp, undefined);
@@ -497,9 +501,9 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
         .execute();
       expect(lines.every((line) => line.purchaseOrderId === null)).toBe(true);
       expect(request).not.toHaveBeenCalled();
-      expect(
-        invoke.mock.calls.every(([name]) => name === "post-purchase-invoice")
-      ).toBe(true);
+      expect(post.mock.calls.every(([, input]) => input.invoiceId === id)).toBe(
+        true
+      );
     }, 30000);
 
     it("does not adopt an unrelated Draft just because it references the same PO", async () => {
@@ -526,7 +530,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
     }, 30000);
 
     it("rejects an incomplete legacy Draft instead of creating or confirming another invoice", async () => {
-      const { args, ctx, ramp, invoke } = await fixture();
+      const { args, ctx, ramp, post } = await fixture();
       const staged = await stageOrResumeRampBill(db, args);
       await ctx.mapping.unlink("bill", staged.invoiceRowId, "ramp");
       await db
@@ -542,7 +546,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       expect(
         await ctx.mapping.getEntityId("ramp", args.sourceId, "bill")
       ).toBeNull();
-      expect(invoke).not.toHaveBeenCalled();
+      expect(post).not.toHaveBeenCalled();
     }, 30000);
 
     it("refuses ambiguous matching legacy Drafts", async () => {

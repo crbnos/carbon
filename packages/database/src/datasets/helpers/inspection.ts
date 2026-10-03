@@ -9,7 +9,7 @@ import {
   deriveSampleStatus as deriveVerdict,
   type InspectionVerdict,
   valuateMeasurement
-} from "../../../supabase/functions/shared/inspection-verdict.ts";
+} from "../../inspection-verdict.ts";
 import { resolveSamplingPlan, type SamplingResult } from "../../sampling.ts";
 import type { InspectionFeatureSpec, InspectionSampleSpec } from "../types.ts";
 

@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -17,7 +17,7 @@ import {
 } from "~/modules/accounting";
 import { FixedAssetCapitalizeCipForm } from "~/modules/accounting/ui/FixedAssets";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await invokeAssetTransfer(client, {
+  const result = await invokeAssetTransfer(client, getDatabaseClient(), {
     type: "capitalizeCip",
     companyId,
     userId,
@@ -117,10 +117,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to capitalize the asset"
-          )
+          getErrorMessage(result.error, "Failed to capitalize the asset")
         )
       )
     );

@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { pickPickingListLine } from "~/modules/inventory";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -36,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     pickingListId
   });
 
-  const result = await pickPickingListLine(serviceRole, {
+  const result = await pickPickingListLine(serviceRole, getDatabaseClient(), {
     pickingListLineId,
     quantity,
     markShort,

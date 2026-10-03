@@ -9,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { inspectionCompletePassedValidator } from "~/services/models";
 import { returnPickedRemainders } from "~/services/operations.service";
 import {
@@ -34,7 +35,7 @@ async function sweepIfOperationDone(
     .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.data?.status !== "Done") return;
-  await returnPickedRemainders(serviceRole, args);
+  await returnPickedRemainders(serviceRole, getDatabaseClient(), args);
 }
 
 // Progressive completion while the lot stays open: any unit that passed

@@ -149,10 +149,31 @@ describe("noUnscopedKyselyWrite", () => {
   it("ignores edge functions and packages/ee", () => {
     const ts = 'await db.deleteFrom("user").where("id", "=", id).execute();';
     for (const file of [
-      "packages/database/supabase/functions/post-receipt/index.ts",
+      "packages/database/supabase/functions/embedding/index.ts",
       "packages/ee/src/sso/provisioning.server.ts"
     ]) {
       expect(scan(ts, file)).toHaveLength(0);
     }
+  });
+  it("holds updateRows and deleteRows to the same rule", () => {
+    const fn = "packages/server-functions/src/post-receipt/index.ts";
+    expect(
+      scan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId });',
+        fn
+      )
+    ).toHaveLength(1);
+    expect(
+      scan('await deleteRows(trx, "fixedAssetDisposal", { fixedAssetId });', fn)
+    ).toHaveLength(1);
+    expect(
+      scan(
+        'await updateRows(db, "fixedAsset", { status }, { id: assetId, companyId });',
+        fn
+      )
+    ).toHaveLength(0);
+    expect(
+      scan('await updateRows(db, "item", { companyId }, { id });', fn)
+    ).toHaveLength(1);
   });
 });

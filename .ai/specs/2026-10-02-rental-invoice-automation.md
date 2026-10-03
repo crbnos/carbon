@@ -257,6 +257,7 @@ Folded in from `.ai/plans/2026-10-02-rental-invoice-automation.md` ("Plan-level 
 9. **Owners are notified with no setup** (D16): each agreement's `salesPersonId ?? createdBy` gets one digest over their invoices; "Also notify" gets the company digest; an owner listed there gets only the company one.
 10. **`automateSalesInvoice` is two functions**, `postSalesInvoiceUnattended` and `emailPostedInvoice` (`packages/jobs/src/invoicing/automate-invoice.ts`), so the cron and the `invoice-automate` function run them as separate memoized steps. A post failure resets the claim to Draft with the error as the hold reason; any email-step failure stamps `sendError`.
 11. **Source-agnostic names in the shared layer** (grill U1): `INVOICE_SEND_NO_EMAIL`, `invoiceNotificationValidator` / `updateInvoiceNotificationSetting`, digest results keyed by `sourceId`.
+12. **Posting is in-process** (2026-10-03, after main replaced the edge functions with Node server functions): the automation calls `post-sales-invoice` through `serverFns.system({ db, companyId, userId: "system" })`, so a failure's message comes back directly (no edge-function body to unwrap; `getEdgeFunctionErrorMessage` and `@carbon/lib/edge-function-error` are gone). The manual Post route keeps a Draft-only claim even though `assertPostable` admits Pending — an automation claim is a Pending row.
 
 ## Changelog
 

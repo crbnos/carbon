@@ -2537,10 +2537,6 @@ export const getParams = (request: Request) => {
 
 export { getPrivateUrl, getRawModelUrl } from "@carbon/files/media";
 
-export const getPublicModelUrl = (path: string) => {
-  return `/file/model/public/${path}`;
-};
-
 // Map an item to its type-specific detail route. Used where a CO references an
 // item by name and we want a link to the item page. Assemblies and unknown/blank
 // types default to the Part route (assemblies are Parts in practice).

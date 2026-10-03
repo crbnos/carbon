@@ -8,9 +8,9 @@ paths:
   - "packages/database/supabase/migrations/*fleet-bridge*"
   - "packages/database/supabase/migrations/*asset-transfer*"
   - "packages/database/supabase/migrations/*job-to-asset*"
-  - "packages/database/supabase/functions/post-asset-transfer/**"
-  - "packages/database/supabase/functions/shared/asset-transfer.ts"
-  - "packages/database/supabase/functions/post-rental-agreement/**"
+  - "packages/server-functions/src/post-asset-transfer/**"
+  - "packages/server-functions/src/lib/asset-transfer.ts"
+  - "packages/server-functions/src/post-rental-agreement/**"
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
@@ -185,7 +185,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   row (`sourceType 'Manual'`, `journalId`) so a later capitalization sweeps it.
 - Calc utils: `accounting.utils.ts` — `acquisitionLines()`,
   `buildDepreciationLines()`, `getNextPeriodEnd()`, MACRS data.
-- Shared line builders (Deno): `functions/shared/asset-transfer.ts` —
+- Shared line builders: `packages/server-functions/src/lib/asset-transfer.ts` —
   `buildCapitalizationLines` (Dr asset / Cr the account the value came from) and
   `buildReturnToInventoryLines` (Dr inventory NBV / Dr accumulated depreciation
   when non-zero / Cr asset at cost); every amount `round()`ed, every set
@@ -207,10 +207,9 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`;
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
   Fixed Assets → Assets / Fleet / Depreciation, `useAccountingSubmodules`).
-- Edge functions (`packages/database/supabase/functions/`): `post-receipt`,
+- Server functions (`packages/server-functions/src/`): `post-receipt`,
   `post-purchase-invoice` (acquisition, CIP-aware), `post-shipment`,
-  `post-sales-invoice` (disposal), `post-asset-transfer` (transfers; registered
-  in `config.toml`, `verify_jwt = true`).
+  `post-sales-invoice` (disposal), `post-asset-transfer` (transfers).
 - Outside the module: production `production.models.ts` (`jobValidator`
   carries `fixedAssetClassId` / `fixedAssetId`, refined to at most one:
   "A job completes to a fixed-asset class or to one asset under construction,
@@ -405,7 +404,7 @@ live rental line**: `post-asset-transfer` `returnToInventory` checks for a
 transaction and throws "Asset <id> is on rent|reserved on rental agreement
 <RA…>; return it from the agreement first". The fleet table hides the
 Return to Inventory menu item for On Rent and Reserved rows, and Take Out of
-Service for On Rent rows; the edge function and the route stay the gates.
+Service for On Rent rows; the server function and the route stay the gates.
 
 **Sales-type leases dispose the fleet asset.** A line classified **`Sale`**
 (a sales-type lease) at activation (`post-rental-agreement` `commenceSalesTypeLines`) is sold to the

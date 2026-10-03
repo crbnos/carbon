@@ -199,7 +199,7 @@ function Doors() {
     { x: 16, label: "supabase-js", sub: "user scoped", rls: "rules ON", tone: "svc" as const, why: "the default" },
     { x: 196, label: "supabase-js", sub: "service role", rls: "rules OFF", tone: "async" as const, why: "needs to see everything" },
     { x: 376, label: "Kysely", sub: "direct SQL", rls: "rules OFF", tone: "async" as const, why: "needs a real transaction" },
-    { x: 556, label: "Edge function", sub: "Deno", rls: "rules OFF", tone: "async" as const, why: "heavy set-based work" },
+    { x: 556, label: "Server function", sub: "in-process", rls: "rules OFF", tone: "async" as const, why: "heavy multi-step writes" },
   ];
   const w = 168;
   return (
@@ -284,9 +284,7 @@ function Events() {
       <Store x={80} y={232} w={180} h={68} label="PGMQ" sub="a queue, in tables" />
       <Node x={455} y={240} w={230} h={52} label="wake_event_queue" sub="an HTTP ping after commit" tone="data" />
 
-      <Edge pts={[[570, 292], [570, 340]]} label="pg_net" labelAt={[600, 320]} />
-      <Node x={475} y={340} w={190} h={48} label="event-wake" sub="edge function" tone="svc" />
-      <Edge pts={[[570, 388], [570, 424]]} />
+      <Edge pts={[[570, 292], [570, 424]]} label="pg_net" labelAt={[600, 358]} />
       <Node x={485} y={424} w={170} h={48} label="Inngest" tone="async" />
       <Edge pts={[[570, 472], [570, 500], [495, 500]]} label="POSTs /api/inngest" labelAt={[600, 494]} />
 

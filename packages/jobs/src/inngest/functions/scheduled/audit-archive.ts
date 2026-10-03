@@ -121,7 +121,8 @@ async function archiveCompanyLogs(
   );
 
   if (deleteError) {
-    log.error(`Failed to delete archived records for ${companyId}`, {
+    log.error("Failed to delete archived records for {companyId}", {
+      companyId,
       error: deleteError
     });
     // Don't throw - archive was successful, just couldn't clean up
@@ -179,7 +180,8 @@ export const auditArchiveFunction = inngest.createFunction(
           results.recordsArchived += archived.recordsArchived;
           results.recordsDeleted += archived.recordsDeleted;
         } catch (error) {
-          logger.error(`Failed to archive logs for company ${company.id}`, {
+          logger.error("Failed to archive logs for company {companyId}", {
+            companyId: company.id,
             error
           });
           results.errors++;

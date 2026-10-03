@@ -90,11 +90,6 @@ export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
       "generated: `pnpm run generate:types` (scripts/lib/generate-db-types.ts)"
   },
   {
-    match: "packages/database/supabase/functions/lib/types.ts",
-    reason:
-      "generated: `pnpm run generate:types` (scripts/lib/generate-db-types.ts)"
-  },
-  {
     match: "packages/database/src/swagger-docs-schema.ts",
     reason:
       "generated: `pnpm run generate:swagger` (scripts/generate-swagger-docs.ts)"
@@ -110,11 +105,6 @@ export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
     match: "packages/ee/src/paperless-parts/lib/client.ts",
     reason:
       "generated: swagger-typescript-api output from Paperless Parts' OpenAPI spec, regenerated per its own header"
-  },
-  {
-    match:
-      "packages/database/supabase/functions/lib/postgres/kysely-supabase.types.ts",
-    reason: "third-party: verbatim copy of the kysely-supabase package's types"
   },
   {
     match: "apps/erp/public/pdf.worker.min.mjs",

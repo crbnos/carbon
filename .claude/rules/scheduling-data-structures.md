@@ -242,8 +242,8 @@ resolves the job's `locationId` first — it dynamic-imports `@carbon/planning`
 code), `recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
 route actions, which CAN import `@carbon/planning` + `~/services/database.server`
 directly since React Router strips their server code from the client bundle). The
-expedite what-if uses `runExpediteWhatIf`. A `functions/reschedule/` dir exists but
-is legacy.
+expedite what-if uses `runExpediteWhatIf`. `reschedule` (`packages/server-functions/src/reschedule/`)
+is a separate per-job backward re-plan, not a whole-location regen.
 
 ## Engine pipeline (`scheduling-engine.ts` `run()`)
 

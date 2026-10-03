@@ -12,6 +12,7 @@ import type {
 } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -127,35 +128,35 @@ const logger = getLogger("erp", "items");
 /** @mcp action */
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "methodVersionToActive",
-      ...payload
-    }
+  const { companyId, userId, id } = payload;
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
+    type: "methodVersionToActive",
+    id
   });
 }
 
 /** @mcp create */
 export async function copyItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
       type: "itemToItem",
       sourceId: args.sourceId,
       targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
       parts: {
         billOfMaterial: args.billOfMaterial,
         billOfProcess: args.billOfProcess,
@@ -164,25 +165,24 @@ export async function copyItem(
         steps: args.steps,
         workInstructions: args.workInstructions
       }
-    }
-  });
+    });
 }
 
 /** @mcp create */
 export async function copyMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
       type: "makeMethodToMakeMethod",
       sourceId: args.sourceId,
       targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
       parts: {
         billOfMaterial: args.billOfMaterial,
         billOfProcess: args.billOfProcess,
@@ -191,8 +191,7 @@ export async function copyMakeMethod(
         steps: args.steps,
         workInstructions: args.workInstructions
       }
-    }
-  });
+    });
 }
 
 // Copy a source item's item group (itemPostingGroupId, stored on itemCost) onto a
@@ -221,8 +220,26 @@ export async function copyItemPostingGroup(
 /** @mcp create */
 export async function createRevision(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
-    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+    // The source item's fields a revision copies, not the whole row.
+    item: Pick<
+      NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>,
+      | "id"
+      | "companyId"
+      | "readableId"
+      | "name"
+      | "type"
+      | "replenishmentSystem"
+      | "defaultMethodType"
+      | "itemTrackingType"
+      | "unitOfMeasureCode"
+      | "description"
+      | "sourcingType"
+      | "thumbnailPath"
+      | "mpn"
+      | "modelUploadId"
+    >;
     revision: string;
     createdBy: string;
     // Change-order draft revisions are created inactive so they don't surface
@@ -270,15 +287,22 @@ export async function createRevision(
   });
 
   if (item.replenishmentSystem !== "Buy") {
-    await client.functions.invoke("get-method", {
-      body: {
+    const copy = await serverFns
+      .as({ client, db, companyId: item.companyId!, userId: createdBy })
+      .invoke("get-method", {
         type: "itemToItem",
         sourceId: item.id,
-        targetId: itemInsert.data.id,
+        targetId: itemInsert.data.id
+      });
+    // The revision stands either way; its make method can be copied again.
+    if (copy.error) {
+      logger.error("Failed to copy the make method onto the new revision", {
         companyId: item.companyId,
-        userId: createdBy
-      }
-    });
+        sourceItemId: item.id,
+        revisionItemId: itemInsert.data.id,
+        error: copy.error
+      });
+    }
   }
 
   return itemInsert;
@@ -5780,7 +5804,7 @@ export async function upsertMaterial(
     const source = await getItem(client, itemId);
     if (source.error) return source;
     for (const size of newSizes) {
-      const revision = await createRevision(client, {
+      const revision = await createRevision(client, db, {
         item: source.data,
         revision: size,
         createdBy: updatedBy
@@ -7255,6 +7279,7 @@ type DraftMethodResult = {
 // Create the CO-owned Draft make method for an affected item per its change type.
 export async function createChangeNoticeDraftMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     itemId: string;
@@ -7325,8 +7350,8 @@ export async function createChangeNoticeDraftMethod(
         error: { message: "Failed to create draft version" }
       };
     }
-    // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-    const copy = await copyMakeMethod(client, {
+    // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
+    const copy = await copyMakeMethod(client, db, {
       sourceId: base.id,
       targetId: draftId,
       companyId,
@@ -7372,7 +7397,7 @@ export async function createChangeNoticeDraftMethod(
       nextRevision = getNextRevision(maxRevision);
     }
 
-    const created = await createRevision(client, {
+    const created = await createRevision(client, db, {
       item: source.data,
       revision: nextRevision,
       createdBy: userId,
@@ -7505,8 +7530,8 @@ export async function createChangeNoticeDraftMethod(
   });
 
   // Copy the affected part's method into the new item's (trigger-created) draft.
-  // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-  const copy = await copyItem(client, {
+  // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
+  const copy = await copyItem(client, db, {
     sourceId: itemId,
     targetId: newItemId,
     companyId,
@@ -7567,10 +7592,11 @@ async function discardChangeNoticeDraft(
 
 // Add an affected item to a CO: insert the row, then spin its CO-owned Draft
 // make method per the change type and write the draft refs back. Rolls the row
-// back if draft creation fails (edge-fn calls can't share one txn — G2).
+// back if draft creation fails (get-method runs its own transaction — G2).
 /** @mcp create destructive */
 export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     // The existing affected item (Version / Revision / Replacement Part). Omitted
@@ -7693,7 +7719,7 @@ export async function addChangeNoticeAffectedItem(
   }
   const affectedItemId = inserted.data.id;
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId,
     itemId,
     changeType: effectiveChangeType,
@@ -7735,6 +7761,7 @@ export async function addChangeNoticeAffectedItem(
 /** @mcp update */
 export async function updateChangeNoticeAffectedItemChangeType(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     id: string;
     changeType: ChangeNoticeChangeType;
@@ -7777,7 +7804,7 @@ export async function updateChangeNoticeAffectedItemChangeType(
     newItemId: affected.data.newItemId
   };
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId: affected.data.changeOrderId,
     itemId: affected.data.itemId,
     changeType,

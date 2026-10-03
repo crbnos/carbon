@@ -72,7 +72,7 @@ export async function runTier7(ctx: Ctx): Promise<void> {
     ctx.log(`NCR ${index + 1} — ${spec.status}`);
     const nonConformanceId = await nextSequence(ctx, "nonConformance");
     // Required actions and MRB ride on the NCR as the create form writes them;
-    // the task rows below mirror the `create` edge function's derivation.
+    // the task rows below mirror the `create` server function's derivation.
     const requiredActionIds: string[] = [];
     for (const task of spec.actionTasks ?? []) {
       requiredActionIds.push(

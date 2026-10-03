@@ -163,8 +163,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
 - `core/payment-syncer.ts` — `PaymentSyncerBase` (pull, plus the Phase G push below). Providers implement
   `mapToNormalized(remote, entityId)` + `fetchRemote`. The base overrides
   `pullFromAccounting`/`pullBatchFromAccounting`: Draft write in the base tx, then
-  **after commit** invokes the native `post-payment` edge fn (`{type:'post'|'void'}`
-  via a lazily-imported `getCarbonServiceRole()`), which builds the GL journal,
+  **after commit** calls the `post-payment` server function (`{type:'post'|'void'}`), which builds the GL journal,
   sets `payment.journalId`, and derives document status. **Pulled payments DO post
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the
@@ -474,12 +473,11 @@ pushed charge still shows which merchant the spend was at.
 
 **Ramp inbound financial records are staged transactionally.** Charges and bills
 advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
-rows, and mapping before calling the posting edge function; ambiguous responses require a
+rows, and mapping before calling the posting server function; ambiguous responses require a
 tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
 and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
 Mapped card Drafts refresh their header and coding from validated Ramp input atomically;
-Posted cards cannot be rewritten. The card-post handler binds authenticated permission checks
-to the JWT subject. Payment/Cashback reject coding lines they would otherwise ignore, and
+Posted cards cannot be rewritten. Payment/Cashback reject coding lines they would otherwise ignore, and
 Charge/Credit/Repayment require finite positive line magnitudes. Post and reversal allocate
 journal-line ids before insertion, so dimension linkage never depends on RETURNING order.
 
@@ -488,7 +486,7 @@ Bill payments and reimbursements follow the same rule.
 `syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
 the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
 preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and accepts an
-ambiguous edge-function response only when a tenant-scoped reread shows the payment is
+ambiguous server-function response only when a tenant-scoped reread shows the payment is
 Posted. Card-backed bill payments are confirmed without an AP payment because the card
 transaction already represents the cash movement.
 The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank rails enter

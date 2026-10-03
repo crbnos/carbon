@@ -9,8 +9,7 @@
  * runway, outside turnaround) — these helpers turn that into a message a
  * scheduler can act on.
  *
- * Pure module (no provider/database imports) so it stays type-checkable under
- * `deno test lib/scheduling/`. Strings are stored in the DB
+ * Pure module (no provider/database imports). Strings are stored in the DB
  * (jobOperation.conflictReason) and shown verbatim on the schedule boards;
  * English by design, not i18n'd.
  */

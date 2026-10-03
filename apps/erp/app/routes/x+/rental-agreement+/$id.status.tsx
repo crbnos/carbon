@@ -5,10 +5,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getRentalAgreement } from "~/modules/sales";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -39,14 +41,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The edge function owns the guards: close needs every unit back and every
   // period invoiced; cancel needs no unit on rent and no invoiced period.
-  const result = await client.functions.invoke("post-rental-agreement", {
-    body: {
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-rental-agreement", {
       type: intent,
-      companyId,
-      userId,
       rentalAgreementId: id
-    }
-  });
+    });
 
   if (result.error) {
     throw redirect(
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
+          getErrorMessage(
             result.error,
             intent === "close"
               ? "Failed to close rental agreement"

@@ -6,13 +6,15 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   getRentalAgreementLine,
   rentalAgreementReturnValidator
 } from "~/modules/sales";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -65,11 +67,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The line comes from the URL; the edge function re-reads it under the
   // agreement and company before touching anything.
-  const result = await client.functions.invoke("post-rental-agreement", {
-    body: {
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-rental-agreement", {
       type: "return",
-      companyId,
-      userId,
       rentalAgreementId: id,
       rentalAgreementLineId: lineId,
       returnedAt: validation.data.returnedAt,
@@ -80,8 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ? (outOfServiceReason ?? null)
         : null,
       ...(isSalesType ? { residualDestination } : {})
-    }
-  });
+    });
 
   if (result.error) {
     throw redirect(
@@ -90,10 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to return the unit"
-          )
+          getErrorMessage(result.error, "Failed to return the unit")
         )
       )
     );

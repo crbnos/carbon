@@ -128,7 +128,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     readableId: string;
   } | null>(null);
 
-  // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
+  // "Delete" is the server fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (

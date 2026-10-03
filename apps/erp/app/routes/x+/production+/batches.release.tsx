@@ -4,6 +4,7 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   notifyScheduleInputsChanged,
@@ -11,10 +12,9 @@ import {
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
-// a batch the edge fn refuses (no members, already recorded production) is
+// a batch the server fn refuses (no members, already recorded production) is
 // reported in `failed` while the rest still release. Only Planned batches are
 // released — the caller filters, and any non-Planned id is refused here too so a
 // stale selection can't flip an Active/Completing batch. Fetcher-driven; the
@@ -84,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    const result = await releaseJobOperationBatch(client, {
+    const result = await releaseJobOperationBatch(client, getDatabaseClient(), {
       batchId,
       companyId,
       userId
@@ -92,10 +92,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (result.error) {
       failed.push({
         readableId: batch.readableId,
-        message: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to release"
-        )
+        message: getErrorMessage(result.error, "Failed to release")
       });
       continue;
     }

@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { copyItem, copyMakeMethod, getMethodValidator } from "~/modules/items";
 import { checkRevisionLock } from "~/modules/items/items.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -45,12 +46,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const upsert =
     isMakeMethodId(validation.data.sourceId) ||
     isMakeMethodId(validation.data.targetId)
-      ? await copyMakeMethod(serviceRole, {
+      ? await copyMakeMethod(serviceRole, getDatabaseClient(), {
           ...validation.data,
           companyId,
           userId
         })
-      : await copyItem(serviceRole, {
+      : await copyItem(serviceRole, getDatabaseClient(), {
           ...validation.data,
           companyId,
           userId

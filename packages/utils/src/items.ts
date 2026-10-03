@@ -7,6 +7,18 @@ type Item = {
   readableIdWithRevision: string;
 };
 
+/** `readableId.revision`, or the bare readableId for revision "0" / none. */
+export const getReadableIdWithRevision = (
+  readableId: string,
+  revision?: string | null
+) => {
+  if (revision && revision !== "0") {
+    return `${readableId}.${revision}`;
+  }
+
+  return readableId;
+};
+
 /**
  * Get the readable ID for an item given its ID
  * @param items - Array of items from useItems hook

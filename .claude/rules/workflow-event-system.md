@@ -21,7 +21,7 @@ the procedure, not a re-description — it does not repeat that detail.
 | Handler functions (one per type) | `packages/jobs/src/inngest/functions/events/<type>.ts` |
 | Handler barrel | `packages/jobs/src/inngest/functions/events/index.ts` |
 | Drainer (event-triggered, drains pgmq, fans out) | `packages/jobs/src/inngest/functions/events/queue.ts` |
-| Wake edge fn (DB → Inngest doorbell) | `packages/database/supabase/functions/event-wake/index.ts` |
+| Wake (DB → Inngest doorbell) | `util.wake_event_queue()` (`packages/database/src/event-system/functions/util.wake_event_queue.sql`) → `util.send_inngest_event` (`packages/database/supabase/migrations/20261002170250_send-inngest-events-from-postgres.sql`) |
 | Served `functions` array | `packages/jobs/src/inngest/index.ts` |
 | Event-name type registry (`Events`) | `packages/lib/src/events.ts` (re-exported, NOT defined, by `packages/jobs/src/events.ts`) |
 | Zod schemas + subscription helpers | `packages/database/src/event.ts` |
@@ -252,11 +252,11 @@ that path; it does not exist.
   SELECT * FROM "eventSystemSubscription" WHERE "companyId" = '…' AND "active";
   SELECT * FROM "eventSystemTrigger" WHERE "table" = 'yourTable'; -- view over pg_trigger
   ```
-- **Wake path (push):** the DB posts to the `event-wake` edge fn via pg_net; check
+- **Wake path (push):** the DB posts `carbon/event-queue.process` straight to Inngest via pg_net (`util.send_inngest_event`); check
   ```sql
   SELECT * FROM net._http_response ORDER BY created DESC LIMIT 5;  -- 200 = wake delivered
   SELECT * FROM cron.job_run_details WHERE jobid = (SELECT jobid FROM cron.job WHERE jobname = 'event-queue-sweeper') ORDER BY start_time DESC LIMIT 5;
-  SELECT * FROM "config";  -- must be seeded (apiUrl/anonKey) or wakes silently no-op
+  SELECT name FROM vault.secrets WHERE name = 'inngest_event_url';  -- must exist or wakes silently no-op
   ```
 - **Inngest:** in the dashboard (or local Dev Server), confirm the
   `carbon/event-queue.process` event arrives and `event-queue` (event-triggered,
@@ -270,7 +270,8 @@ that path; it does not exist.
 1. **Latency** — handlers fire ~3–5s after the write (sub-second wake + the drain run), worst
    case ~1 min via the pg_cron sweeper if a push is lost. Still async, not inline: for
    data-integrity / real-time needs use sync interceptors (`attach_event_trigger`'s 2nd/3rd
-   arg), not subscriptions. A missing `config` row means events never process at all.
+   arg), not subscriptions. A missing `inngest_event_url` Vault secret means events never
+   process at all.
 2. **Missing `companyId`** — events without a `companyId` are skipped; subscriptions are
    company-scoped.
 3. **Operation casing** — `["INSERT"]`, not `["insert"]`.

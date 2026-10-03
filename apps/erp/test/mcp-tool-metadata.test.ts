@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
+import { defaultsPolicy } from "../../../scripts/lib/service-metadata";
 
 // Regression guards for the MCP tool-metadata generator (scripts/generate-mcp.ts).
 // These encode the shape bugs reported against the quote-setup tools AND the
@@ -18,6 +19,7 @@ type Tool = {
     keys: string[];
     lookups?: { table: string; match: Record<string, string> }[];
   };
+  defaults?: "always" | "create";
   schema: {
     type?: string;
     properties?: Record<string, any>;
@@ -302,6 +304,48 @@ describe("mcp tool-metadata generator", () => {
   // always stamped updatedBy and every create was forced down the UPDATE branch
   // (0 rows → PGRST116, silent no-op). The rule is what lets the dispatcher stamp
   // exactly one audit field without the caller saying which.
+  // `assignee: null | undefined` published as a REQUIRED null on the status
+  // tools, so every status change had to send `assignee: null` and cleared it.
+  it("does not require a field whose type admits undefined", () => {
+    expect(get("sales_updateQuoteStatus").schema.required).toEqual([
+      "id",
+      "status"
+    ]);
+    expect(get("quality_updateIssueStatus").schema.required).toEqual([
+      "id",
+      "status"
+    ]);
+  });
+
+  // The rpc advances `sequence.next`, so calling it consumes a document number.
+  // It was published as a READ gated on `settings:view`.
+  it("publishes getNextSequence as a write gated on settings:update", () => {
+    const t = get("settings_getNextSequence") as Tool & {
+      permission: { module: string; actions: string[] };
+    };
+    expect(t.classification).toBe("WRITE");
+    expect(t.permission).toEqual({ module: "settings", actions: ["update"] });
+  });
+
+  it("never requires a property that can only be null", () => {
+    const offenders: string[] = [];
+    const walk = (name: string, schema: any, path: string) => {
+      if (!schema || typeof schema !== "object") return;
+      const properties = schema.properties ?? {};
+      for (const required of schema.required ?? []) {
+        if (properties[required]?.type === "null") {
+          offenders.push(`${name}: ${path}${required}`);
+        }
+      }
+      for (const [key, value] of Object.entries(properties)) {
+        walk(name, value, `${path}${key}.`);
+      }
+      walk(name, schema.items, `${path}[].`);
+    };
+    for (const t of tools) walk(t.name, t.schema, "");
+    expect(offenders).toEqual([]);
+  });
+
   it("gives an upsert rule to `\"updatedBy\" in` upserts, not only `\"createdBy\" in` ones", () => {
     // Inverted (`"updatedBy" in`), id decides.
     expect(get("production_upsertJob").upsert).toEqual({ keys: ["id"] });
@@ -329,5 +373,65 @@ describe("mcp tool-metadata generator", () => {
     expect(props(get("sales_upsertCustomerType")).id?.description).toContain(
       "omit to create"
     );
+  });
+});
+
+// A default in a schema is a promise: leave the field out and you get it. The
+// generator publishes one only where the dispatcher keeps the promise.
+describe("published defaults", () => {
+  const publishes = (tool: Tool) => JSON.stringify(tool.schema).includes('"default":');
+
+  it("are filled always for a whole value, on create for an upsert, never on update", () => {
+    const rule = { keys: ["id"] };
+    expect(defaultsPolicy("read", undefined)).toBe("always");
+    expect(defaultsPolicy("create", undefined)).toBe("always");
+    expect(defaultsPolicy("action", undefined)).toBe("always");
+    expect(defaultsPolicy("upsert", rule)).toBe("create");
+    // No rule: the dispatcher cannot tell whether the call updates.
+    expect(defaultsPolicy("upsert", undefined)).toBeUndefined();
+    expect(defaultsPolicy("update", undefined)).toBeUndefined();
+    expect(defaultsPolicy("delete", undefined)).toBeUndefined();
+  });
+
+  it("no tool publishes a default without saying when it is filled", () => {
+    const silent = tools.filter((tool) => publishes(tool) && !tool.defaults);
+    expect(silent.map((tool) => tool.name)).toEqual([]);
+    const empty = tools.filter((tool) => tool.defaults && !publishes(tool));
+    expect(empty.map((tool) => tool.name)).toEqual([]);
+  });
+
+  it("a create-only default needs a rule that says what a create is", () => {
+    const unruled = tools.filter(
+      (tool) => tool.defaults === "create" && !tool.upsert
+    );
+    expect(unruled.map((tool) => tool.name)).toEqual([]);
+  });
+
+  it("an update never publishes one", () => {
+    for (const name of [
+      "purchasing_updateSupplierTax",
+      "sales_updateCustomerTax",
+      "sales_updatePricingRule",
+      "invoicing_updateReimbursement"
+    ]) {
+      expect(publishes(get(name)), name).toBe(false);
+    }
+    // An upsert keeps it, for its create.
+    expect(get("purchasing_upsertPurchaseOrderLine").defaults).toBe("create");
+    expect(props(get("purchasing_upsertPurchaseOrderLine")).taxPercent).toMatchObject({
+      default: 0
+    });
+  });
+
+  it("an upsert that branches on its id has a rule, like one that branches on an audit field", () => {
+    // `"id" in line`: without a rule both audit fields were stamped on every call.
+    expect(get("purchasing_upsertPurchaseOrderLine").upsert).toEqual({ keys: ["id"] });
+    expect(get("invoicing_upsertSalesInvoiceLine").upsert).toEqual({ keys: ["id"] });
+    // Its row is made with the invoice and shares its id: `id` was required in
+    // both shapes, so the insert branch never ran. It is an update, and says so.
+    const delivery = get("invoicing_upsertPurchaseInvoiceDelivery");
+    expect(delivery.upsert).toBeUndefined();
+    expect(delivery.schema.required).toContain("id");
+    expect(publishes(delivery)).toBe(false);
   });
 });

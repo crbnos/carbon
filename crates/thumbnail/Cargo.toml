@@ -1,0 +1,18 @@
+[package]
+name = "thumbnail"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# GLB → PNG preview thumbnail, rendered on the CPU: reads a plain or
+# EXT_meshopt_compression GLB, rasterises it with a z-buffer from the viewer's
+# default isometric direction, and encodes an RGBA PNG. No GPU, no browser.
+
+[dependencies]
+meshopt.workspace = true
+serde_json.workspace = true
+flate2 = "1"
+crc32fast = "1"
+
+[dev-dependencies]
+optimize = { path = "../optimize" }

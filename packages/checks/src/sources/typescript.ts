@@ -7,8 +7,7 @@ import { join } from "node:path";
 import type { SourceFile } from "../check";
 
 // Directories the numeric-precision checks cover: everywhere app code does
-// arithmetic or builds number formatters. The two image functions are pure
-// binary plumbing and the resizers' `Math.round` is pixel geometry.
+// arithmetic or builds number formatters.
 const TYPESCRIPT_ROOTS = [
   "apps/erp/app/components",
   "apps/erp/app/hooks",
@@ -16,6 +15,8 @@ const TYPESCRIPT_ROOTS = [
   "apps/erp/app/routes",
   "apps/mes/app",
   "packages/database/supabase/functions",
+  "packages/database/src",
+  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/documents/src/pdf",
@@ -33,7 +34,10 @@ const TYPESCRIPT_ROOTS = [
 
 const EXCLUDED_DIRS = new Set(["node_modules"]);
 
+// `*-test-fixture.ts` is test support code (live-database fixtures), not
+// shipped code, so it is held to the same rules as the tests that import it.
 const isTest = (name: string) =>
+  name.endsWith("-test-fixture.ts") ||
   name.endsWith(".test.ts") ||
   name.endsWith(".test.tsx") ||
   name.endsWith(".spec.ts") ||
@@ -69,6 +73,7 @@ export const REQUEST_HANDLING_ROOTS = [
   "apps/starter/app",
   "packages/auth/src",
   "packages/database/supabase/functions",
+  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/lib/src",

@@ -4,11 +4,12 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { getDatabaseClient } from "~/services/database.server";
 
 const log = getLogger("mes");
 
@@ -64,25 +65,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = await getCarbonServiceRole();
-
   if (children && children.length > 0) {
     // Tracked entities (serial/batch)
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "maintenanceDispatchTrackedEntities",
         maintenanceDispatchId: dispatchId,
         itemId,
         unitOfMeasureCode,
-        children,
-        companyId,
-        userId
-      }
-    });
+        children
+      });
 
-    if (issue.error) {
+    if (issued.error) {
       log.error("Failed to issue for maintenance dispatch", {
-        error: issue.error
+        error: issued.error
       });
       return data(
         { success: false, message: "Failed to issue tracked items" },
@@ -91,21 +88,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } else {
     // Inventory item
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "maintenanceDispatchInventory",
         maintenanceDispatchId: dispatchId,
         itemId,
         unitOfMeasureCode,
-        quantity: totalQuantity,
-        companyId,
-        userId
-      }
-    });
+        quantity: totalQuantity
+      });
 
-    if (issue.error) {
+    if (issued.error) {
       log.error("Failed to issue for maintenance dispatch", {
-        error: issue.error
+        error: issued.error
       });
       return data(
         { success: false, message: "Failed to issue from inventory" },

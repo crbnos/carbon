@@ -83,7 +83,7 @@ Finalizing with the notification method set to `Email` but no supplier contact s
 Your company requires supplier approval, and this supplier's status isn't `Active`. Approve the supplier (set them to Active) before converting the quote, or the Convert to Order action stays blocked.
 
 ### "Failed to convert quote to order"
-The convert edge function returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
+The convert server function returned an error. Common underlying causes: the quote or its lines were not found, or required supplier payment/shipping records are missing. Confirm the quote has lines and the supplier's payment and shipping terms are set, then retry.
 
 ### Why is the quote read-only / why can't I edit lines?
 A supplier quote is editable only while its status is `Draft`. Any other status (`Active`, `Expired`, `Declined`, `Cancelled`) locks it. Record revised pricing on a fresh quote rather than editing a finalized one.

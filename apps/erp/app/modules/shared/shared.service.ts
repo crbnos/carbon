@@ -3,7 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Tables } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -208,6 +210,7 @@ export async function getTagsList(
 /** @mcp action */
 export async function importCsv(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     table: string;
     filePath: string;
@@ -217,9 +220,11 @@ export async function importCsv(
     userId: string;
   }
 ) {
-  return client.functions.invoke("import-csv", {
-    body: args
-  });
+  // The operation validates `table` and the enum mappings' real shape
+  // (field → { value → mapped }).
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
 }
 
 /** @mcp create */
@@ -475,7 +480,7 @@ export function lookupBuyPriceFromMap(
  * bought-to-order cost must go through this — reaching for
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ * Mirrored in `packages/database/src/methods.ts`.
  * @mcp action
  */
 export function resolveBuyUnitCost(

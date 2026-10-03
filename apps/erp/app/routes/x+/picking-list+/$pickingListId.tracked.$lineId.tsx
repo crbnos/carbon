@@ -13,6 +13,7 @@ import {
 } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -108,15 +109,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(serviceRole, {
-    pickingListLineId: lineId,
-    trackedEntityId,
-    fromStorageUnitId,
-    quantity,
-    unpick,
-    userId,
-    companyId
-  });
+  const result = await setPickingListLineTrackedEntity(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      pickingListLineId: lineId,
+      trackedEntityId,
+      fromStorageUnitId,
+      quantity,
+      unpick,
+      userId,
+      companyId
+    }
+  );
 
   if (result.error) {
     return {

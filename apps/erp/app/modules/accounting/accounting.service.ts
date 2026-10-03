@@ -6,6 +6,7 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   addDays,
@@ -4235,6 +4236,7 @@ export async function upsertAccount(
       })
     | (Omit<z.infer<typeof accountValidator>, "id"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -4242,9 +4244,10 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
+  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
   return client
     .from("account")
-    .update(sanitize(account))
+    .update(sanitize(accountUpdate))
     .eq("id", account.id)
     .select("id")
     .single();
@@ -4538,6 +4541,7 @@ export async function upsertDimension(
       })
     | (Omit<z.infer<typeof dimensionValidator>, "id" | "dimensionValues"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
       }),
   dimensionValues?: string[]
@@ -4551,9 +4555,10 @@ export async function upsertDimension(
       .select("id, companyGroupId")
       .single();
   } else {
+    const { companyGroupId: _companyGroupId, ...dimensionUpdate } = dimension;
     dimensionResult = await client
       .from("dimension")
-      .update(sanitize(dimension))
+      .update(sanitize(dimensionUpdate))
       .eq("id", dimension.id)
       .select("id, companyGroupId")
       .single();
@@ -8167,12 +8172,25 @@ export async function returnFixedAssetToService(
     .single();
 }
 
-/** @mcp action */
+/** Capitalize a unit, return an asset to inventory, attach a job to a CIP
+ *  asset or capitalize a CIP asset — the `post-asset-transfer` server function,
+ *  run as the caller.
+ *  @mcp action */
 export async function invokeAssetTransfer(
   client: SupabaseClient<Database>,
-  body: Record<string, unknown>
+  db: Kysely<KyselyDatabase>,
+  args: ServerFnInput<"post-asset-transfer"> & {
+    companyId: string;
+    userId: string;
+  }
 ) {
-  return client.functions.invoke("post-asset-transfer", { body });
+  const { companyId, userId, ...transfer } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke(
+      "post-asset-transfer",
+      transfer as ServerFnInput<"post-asset-transfer">
+    );
 }
 
 // /********************************************************\

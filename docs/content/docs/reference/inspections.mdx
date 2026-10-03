@@ -27,7 +27,7 @@ When a receipt posts for a `requiresInspection` item, its tracked entities are s
 
 ### What triggers a lot
 
-The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` edge function reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
+The `requiresInspection` flag lives on the item (`item.requiresInspection`, added in `20260419094132_inbound-inspections.sql:6`). The `post-receipt` server function reads it and, for each received line whose item requires inspection and has `receivedQuantity > 0`, resolves a sampling plan and inserts an `inboundInspection` row with a fresh `II`-prefixed readable id. The checkbox that sets the flag only appears on **purchased** items (Buy replenishment), so inbound inspection is a receiving-side gate, not an every-item one.
 
 ### Recording samples
 
@@ -58,12 +58,12 @@ The first three plans use a zero-defect rule. **AQL** uses standard acceptance t
 
 ### How an AQL plan resolves
 
-<Term id="sampling-plan-aql">AQL</Term> — Acceptable Quality Limit — is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan` in `samplingStandards.ts`, mirrored for the edge function in `sampling-engine.ts`) takes the plan, the lot size, and the company's standard, then walks the standard's tables in two steps:
+<Term id="sampling-plan-aql">AQL</Term> — Acceptable Quality Limit — is the defect rate you're willing to treat as "good enough". The resolver (`resolveSamplingPlan` in `samplingStandards.ts`, mirrored for `post-receipt` in `sampling-engine.ts`) takes the plan, the lot size, and the company's standard, then walks the standard's tables in two steps:
 
 1. **Lot size → code letter.** A single lot-size-range table maps the lot to a code letter (A–R) for the chosen **inspection level**. Level II is the general default; I and III trade sample size for confidence, and S1–S4 are special small-sample levels (`inspectionLevels`, `samplingStandards.ts:20`).
 2. **Code letter + AQL + severity → sample plan.** The code letter and AQL pick a cell giving the sample size `n`, the **acceptance number** (`Ac`, max defects to still accept), and the **rejection number** (`Re`). Severity switches which table is used: **Normal**, **Tightened** (stricter — used when a supplier's quality slips), or **Reduced** (`inspectionSeverities`, `samplingStandards.ts:31`).
 
-The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`, `samplingStandards.ts:34`). The whole Z1.4 / ISO 2859-1 constant tables live in `samplingStandards.ts` (and the Deno copy at `sampling-engine.ts`) — ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
+The standard AQL values Carbon exposes are the twelve canonical steps `0.065, 0.1, 0.15, 0.25, 0.4, 0.65, 1.0, 1.5, 2.5, 4.0, 6.5, 10.0` (`standardAqlValues`, `samplingStandards.ts:34`). The whole Z1.4 / ISO 2859-1 constant tables live in `samplingStandards.ts` (and the posting copy at `sampling-engine.ts`) — ISO 2859-1 cells match Z1.4 for the plans Carbon exposes, so both standards share the same tables today.
 
 <Callout type="note" title="The plan is snapshotted, not referenced">
 When the receipt posts, the resolved numbers are copied onto the `inboundInspection` row (`sampleSize`, `acceptanceNumber`, `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`). Editing the item's sampling plan afterward changes future lots, never the lot already on the dock. If no plan is configured, `post-receipt` defaults to `Inspect All`, level II, Normal.

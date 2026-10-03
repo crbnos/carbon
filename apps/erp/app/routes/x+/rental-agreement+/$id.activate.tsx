@@ -5,10 +5,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getRentalAgreement } from "~/modules/sales";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -46,15 +48,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Validates every unit, snapshots the rate ladder, classifies each line and
-  // cuts the first billing periods — one transaction in the edge function.
-  const result = await client.functions.invoke("post-rental-agreement", {
-    body: {
+  // cuts the first billing periods — one transaction in the server function.
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-rental-agreement", {
       type: "activate",
-      companyId,
-      userId,
       rentalAgreementId: id
-    }
-  });
+    });
 
   if (result.error) {
     throw redirect(
@@ -63,10 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to activate rental agreement"
-          )
+          getErrorMessage(result.error, "Failed to activate rental agreement")
         )
       )
     );

@@ -2,11 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
-import { getFunctionLogger } from "@carbon/database/logging";
 import {
   type BomChild,
   type DemandContributor,
@@ -25,6 +23,8 @@ import {
   buildSupersessionRedirectMap,
   type Redirect
 } from "@carbon/database/supersession-pick";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import {
   type CalendarDate,
   parseDate,
@@ -35,14 +35,14 @@ import type { Kysely } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 
-const logger = getFunctionLogger("mrp");
+const logger = getLogger("planning", "mrp");
 
 const WEEKS_TO_FORECAST = 18 * 4;
 
 // The period objects this module builds carry CalendarDate start/end (via
 // parseDate) and are compared with CalendarDate.compare — the previous
-// Omit<period.Row> annotation typed the dates as string and was never enforced
-// under Deno. This matches the actual runtime shape.
+// Omit<period.Row> annotation typed the dates as string and was never enforced.
+// This matches the actual runtime shape.
 type DemandPeriod = {
   id: string;
   startDate: CalendarDate;
@@ -93,12 +93,11 @@ export type MrpPayload = z.infer<typeof payloadValidator>;
 export type MrpResult = { success: true };
 
 /**
- * Material Requirements Planning, run in-process in Node. Extracted from the
- * former `mrp` Supabase edge function: the caller supplies a service-role
- * Supabase client (PostgREST reads) and a Kysely handle (the atomic Phase-7
- * write), and authenticates before calling — this function does not re-check
- * permissions. Throws on failure so the caller (ERP route / Inngest cron) can
- * report it. Behavior is identical to the edge function.
+ * Material Requirements Planning, run in-process in Node. The caller supplies
+ * a service-role Supabase client (PostgREST reads) and a Kysely handle (the
+ * atomic Phase-7 write), and authenticates before calling — this function does
+ * not re-check permissions. Throws on failure so the caller (ERP route /
+ * Inngest cron) can report it.
  */
 export async function runMrp(
   client: SupabaseClient<Database>,
@@ -257,7 +256,7 @@ export async function runMrp(
 
     // Resolve which superseded items currently redirect to a successor (effective
     // phase-out modes), collapsing multi-hop chains with the cumulative conversion
-    // factor. Shared with job creation (get-method) via lib/supersession-pick so the
+    // factor. Shared with job creation (get-method) via @carbon/database/supersession-pick so the
     // two can never diverge — MRP gates on `today`, get-method gates on the job's
     // build date. (supersessionByItem above is kept for the Consume-First on-hand
     // draw-down below.)

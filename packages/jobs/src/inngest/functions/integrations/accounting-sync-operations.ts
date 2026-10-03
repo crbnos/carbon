@@ -22,7 +22,7 @@
  * Inngest retry that re-runs an enqueue or drain step cannot duplicate work.
  *
  * Posting sync (journalEntry) rides the same machinery with two twists:
- * journal events enqueue on an INSERT born Posted (the post-* edge functions
+ * journal events enqueue on an INSERT born Posted (the post-* server functions
  * insert journals already Posted; reversal inserts skip via reversalOfId) or
  * on a status TRANSITION to Posted/Reversed (getJournalPostingDecision) with
  * trigger "posting", and companies whose posting-sync settings resolve to
@@ -153,7 +153,7 @@ export type JournalPostingDecision =
  * operation. Two paths enqueue (spec Phase B §2, amended 2026-07-09):
  *
  * - INSERT born `status='Posted'` with no `reversalOfId` — Carbon's `post-*`
- *   edge functions insert journals already Posted (they are never UPDATEd
+ *   server functions insert journals already Posted (they are never UPDATEd
  *   from Draft), so INSERT is the posting event on the main path. Reversal
  *   inserts (`reversalOfId` set, see `reverseJournalEntry`) skip: they are
  *   represented by the original journal's Reversed transition below.
@@ -1648,7 +1648,7 @@ export const MAX_REDRIVE_ATTEMPTS = 5;
 /**
  * Document statuses the outbound sweep treats as posted — the
  * per-provider SYNCABLE_STATUSES minus the transient "Pending"
- * (mid-posting: the post route flips Draft → Pending BEFORE the edge
+ * (mid-posting: the post route flips Draft → Pending BEFORE the server
  * function writes the posting journal, so diffing Pending would race the
  * same way the event path does; the document re-enters the diff as soon
  * as posting lands a terminal status).

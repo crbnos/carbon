@@ -30,7 +30,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 - **Due date** — `computeInvoiceDateDue` anchors `paymentTerm.daysDue` by `calculationMethod`
   (`Net` / `End of Month` / `Day of Month`, clamped). A missing term falls back to
   `DEFAULT_PAYMENT_TERM` (Net 30); a term *query failure* throws so the caller aborts instead
-  of persisting a stale `dateDue`. Mirrors `functions/shared/calculate-due-date.ts`.
+  of persisting a stale `dateDue`. The date math is `calculateDueDate` (`@carbon/utils`).
 - **Memo** — ONE `memo` table, and `direction` (`Credit`/`Debit`) is **orthogonal to party**:
   all four combinations are legal (`memoDirection` carries both values; the table's only party
   constraint is customer-XOR-supplier). `credit-memos.tsx` / `supplier-credits.tsx` filter on
@@ -66,8 +66,8 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   content change during the Draft→Posted flip. `ReimbursementEditForm` shows `currencyCode` and
   `exchangeRate` **read-only on purpose**: they are the source transaction's facts, a
   reimbursement has no `*.exchange-rate` route, and re-denominating an imported expense is not a
-  workflow. `linesBalanceHeader` (EPSILON — matching the edge function's `requireLineSum`, NOT
-  its 0.01 journal tolerance) is the only pre-edge-function guard against posting an unbalanced
+  workflow. `linesBalanceHeader` (EPSILON — matching the server function's `requireLineSum`, NOT
+  its 0.01 journal tolerance) is the only pre-posting guard against posting an unbalanced
   reimbursement; both `$reimbursementId.post.tsx` and `.edit.tsx` (`save-and-post`) call it.
 - **Party-contact gate** — `checkPartyContactRequirement`
   (`~/modules/settings/party-contact.server`) runs at BOTH invoice post routes. The route's own
@@ -114,7 +114,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 - Edit a posted document. `isMemoLocked` / `isPaymentLocked` / `isReimbursementLocked` are all
   "anything but Draft"; posting and voiding go through the `post-sales-invoice`,
   `post-purchase-invoice`, `post-memo`, `post-payment`, `post-charge`, `post-reimbursement`
-  edge functions — never a direct status write.
+  server functions — never a direct status write.
 - Re-export `reimbursement.server.ts` or `stripe-customer.server.ts` from `index.ts`.
 
 ## Validation Commands
@@ -169,9 +169,10 @@ guarded by `requireUnlockedBulk`, not validators.
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
 - `createSalesInvoiceFromSalesOrder` / `createSalesInvoiceFromShipment` /
-  `createPurchaseInvoiceFromPurchaseOrder` — all three invoke the `convert` edge function.
-- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` / `DEFAULT_PAYMENT_TERM` — terms
-  math; discounts batch-load their terms in one query, never per invoice.
+  `createPurchaseInvoiceFromPurchaseOrder` — all three call the `convert` server function.
+- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
+  `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
+  discounts batch-load their terms in one query, never per invoice.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos
@@ -212,4 +213,4 @@ guarded by `requireUnlockedBulk`, not validators.
   and reimbursements reach Xero / QuickBooks / Rillet
 - `.claude/rules/ramp-integration.md` — where `charge` and `reimbursement` rows come from
 - `.claude/rules/conventions-forms.md` — `ValidatedForm` + zod + route-action shape
-- `.claude/rules/workflow-edge-function.md` — the `post-*` functions these routes invoke
+- `packages/server-functions/AGENTS.md` — the `post-*` server functions these routes call

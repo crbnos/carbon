@@ -9,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { completeAllStepsForUnit } from "~/services/operations.service";
 
 const log = getLogger("mes");
@@ -32,12 +33,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const result = await completeAllStepsForUnit(serviceRole, {
-    operationId,
-    index,
-    companyId,
-    createdBy: userId
-  });
+  const result = await completeAllStepsForUnit(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      operationId,
+      index,
+      companyId,
+      createdBy: userId
+    }
+  );
 
   if (result.error) {
     return data(

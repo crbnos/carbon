@@ -30,9 +30,9 @@ Dimensions are stored in a join table, `journalLineDimension`, with one row per 
 
 When accounting is enabled, operational posting resolves dimensions automatically:
 
-1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts:171`).
+1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts`).
 2. As it builds each journal line, it already knows the source facts — the customer, the item, the item posting group, the location, the cost center behind that line.
-3. For each of those facts, **if an active dimension exists for that entity type**, it attaches a `journalLineDimension` row pointing the `valueId` at that entity's id (`post-shipment/index.ts:1222`). No dimension defined for an axis means no tag on that axis — defining the dimension is what turns tagging on.
+3. For each of those facts, **if an active dimension exists for that entity type**, it attaches a `journalLineDimension` row pointing the `valueId` at that entity's id (`post-shipment/index.ts`). No dimension defined for an axis means no tag on that axis — defining the dimension is what turns tagging on.
 
 For example, a `Location` dimension is not entered on each shipment. After the dimension is defined, shipment, receipt, invoice, and inventory postings attach the location already present on the source document. Other posting functions use the same pattern.
 

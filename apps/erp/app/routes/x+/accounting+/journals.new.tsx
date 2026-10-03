@@ -4,12 +4,12 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { FunctionRegion } from "@supabase/supabase-js";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "journals-new");
@@ -19,18 +19,9 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "accounting"
   });
 
-  const serviceRole = getCarbonServiceRole();
-
-  const journalEntry = await serviceRole.functions.invoke<{
-    id: string;
-  }>("create", {
-    body: {
-      type: "journalEntry",
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
-  });
+  const journalEntry = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", { type: "journalEntry" });
 
   if (!journalEntry.data || journalEntry.error) {
     logger.error(journalEntry.error);

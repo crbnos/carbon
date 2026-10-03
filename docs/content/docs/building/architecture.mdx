@@ -358,26 +358,36 @@ await db.transaction().execute(async (trx) => {
 
 Kysely **throws** on failure and applies no RLS. Wrap calls in `try/catch`, authorize before execution, and scope
 every statement by `companyId` and, when row IDs come from a request, the parent document ID. Update sets in one
-statement instead of querying in a loop. Connection pools can contain only one connection, especially in edge
-functions using `getConnectionPool(1)`. Inside a transaction, use only the provided `trx` handle; requesting another
-connection through `db` can deadlock until timeout.
+statement instead of querying in a loop. A Node process shares one pool of 16 connections (`getProcessPool()`).
+Inside a transaction, use only the provided `trx` handle; requesting another connection through `db` can deadlock
+until timeout.
 
-**4. Edge functions** are small programs written for Deno [[2]](#g2), deployed next to the
-database and called over HTTP [[4]](#g4). There are about forty in
-`packages/database/supabase/functions/`, and they own the genuinely heavy work:
-MRP [[11]](#g11), production scheduling, posting a shipment or an invoice to the general
-ledger, CSV import, exporting a whole company. Call one and wait for its answer:
+**4. Server functions** are the privileged, multi-step writes shared by the ERP, the
+MES, the public API and background jobs. There are about thirty in
+`packages/server-functions/src/`, one directory each, and they own the genuinely heavy
+writes: posting a shipment or an invoice to the general ledger, issuing material,
+converting a quote, CSV import. Each is built with `defineServerFn`, which validates the
+input, checks the caller's permission, runs, and returns `{ data, error }` instead of
+throwing. Call one like any other function:
 
 ```ts
-const { data, error } = await client.functions.invoke("post-shipment", {
-  body: { type: "post", shipmentId, userId, companyId },
-});
+import { serverFns } from "@carbon/server-functions";
+
+const { data, error } = await serverFns
+  .system({ db: getDatabaseClient(), companyId, userId })
+  .invoke("post-shipment", { type: "post", shipmentId });
 ```
 
-Edge functions can run large database transactions and are callable from ERP, MES, background jobs, and the public API.
+Server functions run large Kysely transactions and are callable from anywhere on the server: a route action, the
+MES, a background job, or the public API.
 
-Edge functions are appropriate for SQL-intensive work but have limited memory and CPU time. Keep function code thin
-and perform set-based work in Postgres. Use Inngest for long-running JavaScript and the Rust service for compute-intensive CAD geometry.
+Keep function code thin and perform set-based work in Postgres. Use Inngest for work that runs for minutes and the
+Rust service for compute-intensive CAD geometry. MRP [[11]](#g11) and production scheduling live in
+`@carbon/planning` and run in Node the same way.
+
+One small edge function [[4]](#g4), written for Deno [[2]](#g2), remains in
+`packages/database/supabase/functions/`: `embedding`. It is self-contained and
+called over HTTP with `client.functions.invoke("embedding", { body })`.
 
 **RPCs** are a narrower fifth path: Postgres functions called with `client.rpc("name", args)`. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one example.
 
@@ -432,7 +442,7 @@ type PurchaseOrderRow = Database["public"]["Tables"]["purchaseOrder"]["Row"];
 
 Run `pnpm run generate:types` after pulling or creating migrations and before typechecking. Do not edit generated types directly.
 
-**Database logic** enforces invariants across ERP, MES, edge functions, background jobs, the public API, and direct SQL. Examples:
+**Database logic** enforces invariants across ERP, MES, server functions, background jobs, the public API, and direct SQL. Examples:
 
 - `update_picking_list_status()` is a trigger that recomputes a picking list's header
   status whenever one of its lines changes. Written from four different places;
@@ -546,6 +556,8 @@ database credentials. Redis stores job state and result pointers and is required
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `react`         | The design system. **Check here before writing any UI.**                                                         |
 | `database`      | Generated types, migrations, edge functions, database clients.                                                   |
+| `server-functions` | Privileged, transactional writes (posting, issuing, converting) shared by the apps, the API and jobs.         |
+| `planning`      | MRP and the finite scheduler.                                                                                    |
 | `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                                             |
 | `form`          | `ValidatedForm`, field components, zod helpers.                                                                  |
 | `jobs`          | Every Inngest background function, plus the workflow runtime.                                                    |
@@ -648,7 +660,7 @@ Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deplo
 
 | Workflow       | Fires when                                                    | What it does                                                                                                                                               |
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks                                                                                           |
+| `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
 | `deploy.yml`   | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
 | `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
@@ -730,9 +742,9 @@ Numbered references used throughout this page, in alphabetical order.
 Runs on the server only, never shipped to the browser.
 
 <a id="g2"></a>
-**2. Deno:** an alternative JavaScript runtime to Node.js. Our edge functions
-are written for it, which is why they use `https://` imports instead of
-`node_modules`.
+**2. Deno:** an alternative JavaScript runtime to Node.js. Our one remaining edge
+function (`embedding`) is written for it, which is why it uses `https://` imports
+instead of `node_modules`.
 
 <a id="g3"></a>
 **3. ECS Fargate:** Amazon's service for running Docker containers without
@@ -769,7 +781,7 @@ libraries that are versioned and released together.
 
 <a id="g11"></a>
 **11. MRP:** Material Requirements Planning. Works out what to buy and make, and
-when, given demand and current stock. Runs as an edge function.
+when, given demand and current stock. Runs in Node, from `@carbon/planning`.
 
 <a id="g12"></a>
 **12. Multi-tenancy:** one database and one running application serving many
@@ -785,8 +797,8 @@ database. Used for cache refreshes and queue sweeping.
 
 <a id="g15"></a>
 **15. pg_net:** a Postgres extension that lets the database make outbound HTTP
-calls. We use it for exactly one thing: pinging the event queue awake after a
-commit.
+calls. We use it to post events straight to Inngest after a commit, above all
+the ping that wakes the event queue.
 
 <a id="g16"></a>
 **16. PGMQ:** a message queue implemented in ordinary Postgres tables. Lets a

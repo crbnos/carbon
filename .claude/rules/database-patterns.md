@@ -23,7 +23,7 @@ All client factories live in `packages/auth/src/lib/supabase/`.
 | Factory | Source | RLS? | Use |
 | --- | --- | --- | --- |
 | `getCarbon(accessToken?)` | `client.ts` (anon key + user JWT) | Yes (acts as the user) | Default request-scoped client |
-| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, edge functions |
+| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, server functions |
 | `getCarbonAPIKeyClient(apiKey)` | `client.ts` (`carbon-key` header) | Yes | Public API key auth |
 
 `createClient` is configured with `autoRefreshToken: false`, `persistSession: false` and
@@ -162,16 +162,15 @@ Two real options, in order of preference:
 1. **A Kysely transaction** — one real PG transaction over a direct `pg` connection. The default:
    logic stays in TypeScript, so it is typed, unit-testable, and reviewable in the diff.
 2. **A Postgres function called via `client.rpc(...)`** — when the same atomic write must also be
-   callable from somewhere Kysely cannot go (an edge function, the public API), or when the work is
+   callable through PostgREST, where Kysely cannot go (the public API), or when the work is
    genuinely set-based and belongs next to the data. The cost is real: SQL is harder to test and
    review, and ships through a migration. Do not push app logic into SQL just to get atomicity.
 
 For **multi-row / multi-table writes** where partial failure is a bug, use Kysely. The route passes
 `getDatabaseClient()` (`apps/erp/app/services/database.server.ts` — a cached singleton over
-`getProcessPool()` in `packages/database/supabase/functions/lib/postgres/index.ts`). A Node process
+`getProcessPool()` in `packages/database/src/client.ts`, `@carbon/database/client`, Node-only). A Node process
 has ONE pool of 16 connections, shared by the app's client, the jobs (`getJobDatabaseClient()`)
-and scripts, and nothing but an exiting script ends it; `getPostgresConnectionPool(n)` is for edge
-functions only and throws on Node. `traceConnectionWaits` (`@carbon/logger/tracing.server`)
+and scripts, and nothing but an exiting script ends it. `traceConnectionWaits` (`@carbon/logger/tracing.server`)
 records a `db pool wait` span when a caller queues for a connection and `db connect` when one is
 opened, since query spans time only the query. On Vercel both apps' `entry.server.tsx` call
 `attachDatabasePool(getProcessPool())` (`@vercel/functions`): a frozen instance cannot run pg's idle
@@ -294,8 +293,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 ## Generated types
 
-- `packages/database/src/types.ts` (and `supabase/functions/lib/postgres/index.ts` consumes it as
-  `SupabaseDatabase`) are **generated — never hand-edit**.
+- `packages/database/src/types.ts` (`src/client.ts` consumes it as `SupabaseDatabase`) is
+  **generated — never hand-edit**.
 - `Database` is re-exported from `@carbon/database`; the Kysely shape is `KyselyDatabase`
   (`KyselifyDatabase<SupabaseDatabase>`) from `@carbon/database/client`.
 - Row/Insert/Update types: `Database["public"]["Tables"]["customer"]["Row" | "Insert" | "Update"]`.

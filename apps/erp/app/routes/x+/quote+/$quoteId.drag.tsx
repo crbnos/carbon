@@ -23,6 +23,7 @@ import {
   upsertQuoteLineMethod
 } from "~/modules/sales";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const quoteDragValidator = z.object({
@@ -182,14 +183,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     targetLineId = createQuotationLine.data.id;
 
     // Create quote line method for Make items
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId: targetLineId,
-      itemId: partId ?? "",
-      configuration: undefined,
-      companyId,
-      userId
-    });
+    const upsertMethod = await upsertQuoteLineMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        quoteId,
+        quoteLineId: targetLineId,
+        itemId: partId ?? "",
+        configuration: undefined,
+        companyId,
+        userId
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

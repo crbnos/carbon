@@ -4,7 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
-import type { FunctionsResponse } from "@supabase/functions-js";
+import { serverFns } from "@carbon/server-functions";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -18,12 +18,11 @@ export const recalculateFunction = inngest.createFunction(
       logger.info(`Type: ${payload.type}, id: ${payload.id}`);
 
       const serviceRole = getCarbonServiceRole();
-      let calculateQuantities: FunctionsResponse<{ success: boolean }>;
 
       switch (payload.type) {
-        case "jobRequirements":
+        case "jobRequirements": {
           logger.info(`Recalculating job requirements for ${payload.id}`);
-          calculateQuantities = await recalculateJobRequirements(serviceRole, {
+          const calculateQuantities = await recalculateJobRequirements({
             id: payload.id,
             companyId: payload.companyId,
             userId: payload.userId
@@ -33,7 +32,7 @@ export const recalculateFunction = inngest.createFunction(
             success: !calculateQuantities.error,
             message: calculateQuantities.error?.message
           };
-
+        }
         case "jobMakeMethodRequirements": {
           logger.info(
             `Recalculating job make method requirements for ${payload.id}`
@@ -62,7 +61,9 @@ export const recalculateFunction = inngest.createFunction(
     if (result.success) {
       logger.info(`Success ${payload.id}`);
     } else {
-      logger.error(`Recalculation ${payload.type} failed for ${payload.id}`, {
+      logger.error("Recalculation {payloadType} failed for {payloadId}", {
+        payloadType: payload.type,
+        payloadId: payload.id,
         message: result.message
       });
     }
@@ -71,20 +72,18 @@ export const recalculateFunction = inngest.createFunction(
   }
 );
 
-async function recalculateJobRequirements(
-  client: ReturnType<typeof getCarbonServiceRole>,
-  params: {
-    id: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.functions.invoke("recalculate", {
-    body: {
-      type: "jobRequirements",
-      ...params
-    }
-  });
+async function recalculateJobRequirements(params: {
+  id: string;
+  companyId: string;
+  userId: string;
+}) {
+  return serverFns
+    .system({
+      db: getJobDatabaseClient(),
+      companyId: params.companyId,
+      userId: params.userId
+    })
+    .invoke("recalculate", { type: "jobRequirements", id: params.id });
 }
 
 async function recalculateJobMakeMethodRequirements(
@@ -96,7 +95,7 @@ async function recalculateJobMakeMethodRequirements(
   }
 ): Promise<{ error: Error | null }> {
   // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
-  // location and regenerate it IN-PROCESS (Node) — no edge cold-start or HTTP hop.
+  // location and regenerate it IN-PROCESS (Node).
   const { data: job, error } = await client
     .from("job")
     .select("locationId")

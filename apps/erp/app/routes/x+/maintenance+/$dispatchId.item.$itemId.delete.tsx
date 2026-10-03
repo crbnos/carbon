@@ -4,15 +4,16 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   getMaintenanceDispatch,
   isMaintenanceDispatchLocked
 } from "~/modules/resources";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -39,16 +40,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked dispatch. Reopen it first."
   });
 
-  const serviceRole = await getCarbonServiceRole();
-
-  const result = await serviceRole.functions.invoke("issue", {
-    body: {
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       type: "maintenanceDispatchUnissue",
-      maintenanceDispatchItemId: itemId,
-      companyId,
-      userId
-    }
-  });
+      maintenanceDispatchItemId: itemId
+    });
 
   if (result.error) {
     logger.error(result.error);

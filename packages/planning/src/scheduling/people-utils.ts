@@ -4,7 +4,7 @@
 
 /**
  * Pure helpers for people-assignment (manning board) scheduling inputs.
- * No DB imports — covered by deno tests (people-utils.test.ts).
+ * No DB imports — covered by people-utils.test.ts.
  *
  * Date keys are local calendar dates ("YYYY-MM-DD") in the company/location
  * timezone; availability windows are UTC instants (CalendarWindow).

@@ -9,6 +9,7 @@
 // Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
 
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { InvoiceAutomation } from "@carbon/database/rental-invoice-plan";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import {
@@ -17,7 +18,6 @@ import {
 } from "@carbon/ee/rules.server";
 import { SUPABASE_INTERNAL_URL, SUPABASE_URL } from "@carbon/env";
 import { getDocumentType, storage } from "@carbon/files";
-import { getEdgeFunctionErrorMessage } from "@carbon/lib/edge-function-error";
 import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import {
@@ -26,6 +26,7 @@ import {
 } from "@carbon/lib/sales-invoice-document.server";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -110,7 +111,7 @@ async function holdInvoice(
 
 /**
  * Posts a Draft invoice the way the ERP's post route does — the party-contact
- * requirement, then the sales rules, then the posting edge function — but with
+ * requirement, then the sales rules, then the post-sales-invoice server function — but with
  * no one to ask: anything the route would stop on becomes a hold
  * (`automationHoldReason`) and the invoice stays Draft for a person. Safe to
  * retry: an already-posted invoice is reported as posted, and only a Draft
@@ -118,10 +119,11 @@ async function holdInvoice(
  */
 export async function postSalesInvoiceUnattended(args: {
   client: Client;
+  db: Kysely<KyselyDatabase>;
   companyId: string;
   invoiceId: string;
 }): Promise<PostOutcome> {
-  const { client, companyId, invoiceId } = args;
+  const { client, db, companyId, invoiceId } = args;
 
   const invoice = await client
     .from("salesInvoice")
@@ -193,21 +195,15 @@ export async function postSalesInvoiceUnattended(args: {
     return { outcome: "skipped", reason: "Invoice is no longer Draft" };
   }
 
+  // No user is behind an automated post: the job is the system actor.
   let postError: string | undefined;
   try {
-    const posted = await client.functions.invoke("post-sales-invoice", {
-      body: { invoiceId, userId: "system", companyId }
-    });
-    // A non-2xx response's message is a fixed wrapper; the edge function's
-    // own reason is in the body.
-    if (posted.error) {
-      postError = await getEdgeFunctionErrorMessage(
-        posted.error,
-        "Posting failed"
-      );
-    }
+    const posted = await serverFns
+      .system({ db, companyId, userId: "system" })
+      .invoke("post-sales-invoice", { invoiceId });
+    if (posted.error) postError = posted.error.message || "Posting failed";
   } catch (error) {
-    postError = await getEdgeFunctionErrorMessage(error, "Posting failed");
+    postError = error instanceof Error ? error.message : String(error);
   }
 
   // The stored status is the truth: a lost response can still have posted.
@@ -226,7 +222,7 @@ export async function postSalesInvoiceUnattended(args: {
     return { outcome: "posted" };
   }
 
-  // Not posted. The edge function resets a failed post to Draft itself; put
+  // Not posted. The server function resets a failed post to Draft itself; put
   // back a claim it left Pending too, and say why on the invoice.
   const reason = postError ?? observed.error?.message ?? "Posting failed";
   logger.error("Unattended posting failed", { companyId, invoiceId, reason });

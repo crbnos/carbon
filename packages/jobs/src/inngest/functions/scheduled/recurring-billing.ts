@@ -83,7 +83,13 @@ export const recurringBillingFunction = inngest.createFunction(
 
             for (const failure of drafted.failures) {
               logger.error(
-                `Failed to bill rental agreement ${failure.rentalAgreementId} for ${company.name}: ${failure.error}`
+                "Failed to bill rental agreement {rentalAgreementId} for {company}",
+                {
+                  rentalAgreementId: failure.rentalAgreementId,
+                  company: company.name,
+                  companyId: company.id,
+                  error: failure.error
+                }
               );
             }
             logger.info(
@@ -100,7 +106,9 @@ export const recurringBillingFunction = inngest.createFunction(
           }
         ));
       } catch (error) {
-        logger.error(`Failed to bill rentals for company ${company.name}`, {
+        logger.error("Failed to bill rentals for company {company}", {
+          company: company.name,
+          companyId: company.id,
           error
         });
         failed.push(company.id);
@@ -131,6 +139,7 @@ export const recurringBillingFunction = inngest.createFunction(
           const posted = await step.run(`post-${invoice.invoiceId}`, () =>
             postSalesInvoiceUnattended({
               client: serviceRole,
+              db: getJobDatabaseClient(),
               companyId: company.id,
               invoiceId: invoice.invoiceId
             })
@@ -161,7 +170,9 @@ export const recurringBillingFunction = inngest.createFunction(
           );
         } catch (error) {
           // Its state is uncertain, so a person should look at it.
-          logger.error(`Failed to automate invoice ${invoice.invoiceId}`, {
+          logger.error("Failed to automate invoice {invoiceId}", {
+            invoiceId: invoice.invoiceId,
+            companyId: company.id,
             error
           });
           result("held");
@@ -242,8 +253,8 @@ export const recurringBillingFunction = inngest.createFunction(
         }
       } catch (error) {
         logger.error(
-          `Failed to send the recurring invoicing digest for ${company.name}`,
-          { error }
+          "Failed to send the recurring invoicing digest for {company}",
+          { company: company.name, companyId: company.id, error }
         );
       }
     }

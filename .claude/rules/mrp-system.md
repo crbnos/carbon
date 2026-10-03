@@ -3,7 +3,7 @@ description: MRP (Material Requirements Planning) — run flow, data model, plan
 paths:
   - "packages/jobs/src/inngest/functions/scheduled/mrp.ts"
   - "packages/planning/src/mrp/**"
-  - "packages/database/supabase/functions/lib/mrp-engine.ts"
+  - "packages/database/src/mrp-engine.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
 ---
 
@@ -56,7 +56,7 @@ Phase-7 write) and throws on failure.
    empty, so "no work" can never again look like "worked fine".
 
    Both reads go through `fetchAllFromTable` with a stable `.order("id")` — the
-   same reason the edge function pages (below): `max_rows = 1000` truncates a
+   same reason every engine read pages (below): `max_rows = 1000` truncates a
    bare select, and the dev stack does not enforce the cap, so a dropped tail is
    invisible locally. A failed `company` read **throws**; returning would make
    the step succeed having planned for nobody, which is this function's whole
@@ -80,10 +80,8 @@ Phase-7 write) and throws on failure.
    `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
-   `packages/database/supabase/functions/lib/mrp-engine.ts` (`explodeBom(...)`),
-   which STAYS in the edge-lib (still used by the Deno `recalculate` function +
-   job-quantities-engine) and is reached from Node via the
-   `@carbon/database/mrp-engine` barrel.
+   `packages/database/src/mrp-engine.ts` (`explodeBom(...)`, `@carbon/database/mrp-engine`),
+   also used by get-method (`@carbon/server-functions`).
 
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
      forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
@@ -106,11 +104,11 @@ Phase-7 write) and throws on failure.
      runs in ONE Kysely transaction — a failed run leaves prior planning data
      intact.
    - **Key encoding**: every composite map key goes through `makeKey` /
-     `makeLocationItemKey` / `makeActualKey` in `lib/mrp-engine.ts` (joined on
+     `makeLocationItemKey` / `makeActualKey` in `packages/database/src/mrp-engine.ts` (joined on
      `KEY_SEP = "\x1f"`). Never build `${a}-${b}` keys — ids are caller-supplied
      TEXT (imports mint hyphenated UUIDs); "-"-joined keys truncated them on
      parse and MRP 500'd for those tenants (Postgres 21000). Regression tests:
-     `lib/mrp-engine.test.ts` (deno test).
+     `packages/database/src/mrp-engine.test.ts`.
    - **BOM explosion**: for `Make` items, explodes the active make method to
      derive child demand with low-level-code ordering, per-period inventory
      netting, and lead-time offsetting.

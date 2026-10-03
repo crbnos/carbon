@@ -27,6 +27,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -59,7 +60,6 @@ import type {
 } from "~/modules/quality/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
-import { getReadableIdWithRevision } from "~/utils/string";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";

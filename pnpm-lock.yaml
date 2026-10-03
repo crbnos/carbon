@@ -723,6 +723,9 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@carbon/server-functions':
+        specifier: workspace:*
+        version: link:../../packages/server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -1192,6 +1195,9 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@carbon/server-functions':
+        specifier: workspace:*
+        version: link:../../packages/server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -2123,24 +2129,6 @@ importers:
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: 0.32.0
         version: 0.32.0
-      '@jsquash/jpeg':
-        specifier: 1.6.0
-        version: 1.6.0
-      '@jsquash/png':
-        specifier: 3.1.1
-        version: 3.1.1
-      '@jsquash/resize':
-        specifier: 2.1.1
-        version: 2.1.1
-      '@jsquash/webp':
-        specifier: 1.5.0
-        version: 1.5.0
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 2.2.3
-      '@logtape/redaction':
-        specifier: 'catalog:'
-        version: 2.2.3(@logtape/logtape@2.2.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.117.2
@@ -2156,9 +2144,6 @@ importers:
       kysely-supabase:
         specifier: 0.2.1
         version: 0.2.1(kysely@0.28.17)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
-      libheif-js:
-        specifier: 1.23.2
-        version: 1.23.2
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -2174,6 +2159,9 @@ importers:
       sst:
         specifier: 'catalog:'
         version: 4.6.9
+      sucrase:
+        specifier: 3.35.1
+        version: 3.35.1
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -2287,6 +2275,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
@@ -2420,6 +2411,9 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../react
+      '@carbon/server-functions':
+        specifier: workspace:*
+        version: link:../server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../stripe
@@ -2557,6 +2551,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@jsquash/jpeg':
         specifier: 1.6.0
         version: 1.6.0
@@ -2766,6 +2763,9 @@ importers:
       '@carbon/printing':
         specifier: workspace:*
         version: link:../printing
+      '@carbon/server-functions':
+        specifier: workspace:*
+        version: link:../server-functions
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../stripe
@@ -3168,6 +3168,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
@@ -3577,6 +3580,55 @@ importers:
         specifier: 'catalog:'
         version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
 
+  packages/server-functions:
+    dependencies:
+      '@carbon/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/env':
+        specifier: workspace:*
+        version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
+      kysely:
+        specifier: 'catalog:'
+        version: 0.28.17
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/pg':
+        specifier: 8.15.6
+        version: 8.15.6
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
+
   packages/stripe:
     dependencies:
       '@carbon/auth':
@@ -3791,6 +3843,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -3822,9 +3877,6 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@types/lodash.template':
         specifier: 4.5.3
         version: 4.5.3

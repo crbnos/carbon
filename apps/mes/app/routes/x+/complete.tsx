@@ -10,8 +10,10 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
@@ -173,16 +175,17 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "jobOperationSerialComplete",
         ...validation.data,
-        companyId,
-        userId
-      }
-    });
+        trackedEntityId: validation.data.trackedEntityId!
+      });
 
-    const newTrackedEntityId = response.data?.newTrackedEntityId;
+    const newTrackedEntityId = response.data?.newTrackedEntityId as
+      | string
+      | undefined;
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -209,11 +212,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(
@@ -250,14 +257,13 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
+    const response = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "jobOperationBatchComplete",
         ...validation.data,
-        companyId,
-        userId
-      }
-    });
+        trackedEntityId: validation.data.trackedEntityId!
+      });
 
     if (response.error) {
       return data(
@@ -281,11 +287,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(
@@ -329,32 +339,34 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         id: validation.data.jobOperationId,
         type: "jobOperation",
-        quantity: validation.data.quantity,
-        companyId,
-        userId
-      }
-    });
+        quantity: validation.data.quantity
+      });
 
-    if (issue.error) {
+    if (issued.error) {
       return data(
         {},
         await flash(request, {
-          ...error(issue.error, "Failed to issue materials"),
+          ...error(issued.error, "Failed to issue materials"),
           flash: "error"
         })
       );
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(

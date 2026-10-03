@@ -27,7 +27,8 @@ import type { ConformanceCheck, Violation } from "../check";
  * IS the tenant.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
- * routes, the MES app, and `packages/jobs`. Edge functions are out of scope
+ * routes, the MES app, `packages/jobs` and `packages/server-functions`. The
+ * remaining Deno edge functions are out of scope
  * (their document-level reads are scoped per
  * `.claude/rules/workflow-edge-function.md`, and their follow-on writes key on
  * ids from those reads), as is `packages/ee`, whose sync providers write
@@ -38,6 +39,10 @@ import type { ConformanceCheck, Violation } from "../check";
  * bracket that closes around it), comments blanked.
  * A statement built across several variables (`let q = …; q = q.where(…)`)
  * ends at the first `;` and is flagged — inline it or baseline it.
+ *
+ * `updateRows` / `deleteRows` (`@carbon/database/rows`) are the same writes in
+ * another spelling: their last argument is the WHERE, and it must name
+ * `companyId`.
  */
 
 const MESSAGE =
@@ -47,16 +52,41 @@ const SCOPED_PREFIXES = [
   "apps/erp/app/modules/",
   "apps/erp/app/routes/",
   "apps/mes/app/",
-  "packages/jobs/src/"
+  "packages/jobs/src/",
+  "packages/server-functions/src/"
 ];
 
-/** Tables whose own `id` is the tenant key. */
-const EXEMPT_TABLES = new Set(["company"]);
+/** Tables whose own `id` is the tenant key, or that are keyed by user alone. */
+const EXEMPT_TABLES = new Set(["company", "userPermission"]);
 
 const WRITE = /\.(updateTable|deleteFrom)\s*\(/g;
 const COMPANY_PREDICATE =
   /\.where(?:Ref)?\s*\(\s*["'`](?:\w+\.)?companyId["'`]/;
 const STATEMENT_END = /^\.(?:execute\w*|compile)\s*\(/;
+const ROWS_WRITE = /\b(updateRows|deleteRows)\s*\(/g;
+const ROWS_MESSAGE =
+  "Kysely bypasses RLS: this updateRows/deleteRows filter has no companyId, so ids from the request can reach another tenant's rows. Add companyId to the filter (the last argument).";
+
+function callArguments(text: string, from: number): string[] {
+  const args: string[] = [];
+  let depth = 0;
+  let start = from;
+  for (let i = from; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      if (depth === 0) {
+        args.push(text.slice(start, i));
+        break;
+      }
+      depth--;
+    } else if (ch === "," && depth === 0) {
+      args.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  return args.filter((arg) => arg.trim() !== "");
+}
 
 /**
  * Replace comment text with spaces (newlines kept, so offsets and line numbers
@@ -139,10 +169,7 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
   },
   scan(file, contents) {
     if (!SCOPED_PREFIXES.some((prefix) => file.startsWith(prefix))) return [];
-    if (
-      !contents.includes(".updateTable") &&
-      !contents.includes(".deleteFrom")
-    ) {
+    if (!/\.updateTable|\.deleteFrom|updateRows|deleteRows/.test(contents)) {
       return [];
     }
 
@@ -163,6 +190,20 @@ export const noUnscopedKyselyWrite: ConformanceCheck = {
         line: text.slice(0, start).split("\n").length,
         snippet: call.length <= 80 ? call : m[0],
         message: MESSAGE
+      });
+    }
+    for (const m of text.matchAll(ROWS_WRITE)) {
+      const start = m.index ?? 0;
+      const args = callArguments(text, start + m[0].length);
+      if (args.length < 3) continue;
+      const table = args[1]?.trim().replace(/^["'`]|["'`]$/g, "");
+      if (table && EXEMPT_TABLES.has(table)) continue;
+      if (/\bcompanyId\b/.test(args[args.length - 1] ?? "")) continue;
+      violations.push({
+        file,
+        line: text.slice(0, start).split("\n").length,
+        snippet: `${m[1]}(…, ${args[1]?.trim()}, …)`,
+        message: ROWS_MESSAGE
       });
     }
     return violations;

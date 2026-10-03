@@ -6,9 +6,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { datetime } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
@@ -93,7 +93,7 @@ export async function releaseJobs({
   const purchaseOrders = { ...purchaseOrdersBySupplierId };
 
   for (const id of jobIds) {
-    const recalc = await recalculateJobRequirements(serviceRole, {
+    const recalc = await recalculateJobRequirements(serviceRole, db, {
       id,
       companyId,
       userId
@@ -110,20 +110,16 @@ export async function releaseJobs({
     });
     if (update.error) return { error: `Failed to release job ${id}` };
 
-    const purchaseOrder = await serviceRole.functions.invoke<{
-      purchaseOrderIdsBySupplierId?: Record<string, string>;
-    }>("create", {
-      body: {
+    const purchaseOrder = await serverFns
+      .system({ db, companyId, userId })
+      .invoke("create", {
         type: "purchaseOrderFromJob",
         jobId: id,
-        purchaseOrdersBySupplierId: purchaseOrders,
-        companyId,
-        userId
-      }
-    });
+        purchaseOrdersBySupplierId: purchaseOrders
+      });
     if (purchaseOrder.error) {
       return {
-        error: await getEdgeFunctionErrorMessage(
+        error: getErrorMessage(
           purchaseOrder.error,
           `Failed to create purchase orders for job ${id}`
         )

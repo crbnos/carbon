@@ -313,7 +313,7 @@ async function processDocumentType(
         renderError instanceof Error
           ? renderError.message
           : String(renderError);
-      log.error(`Rendering failed for job ${jobId}`, { error: message });
+      log.error("Rendering failed for job {jobId}", { jobId, error: message });
       await updatePrintJobStatus(client, jobId, companyId, "failed", {
         error: `Rendering failed: ${message}`
       });

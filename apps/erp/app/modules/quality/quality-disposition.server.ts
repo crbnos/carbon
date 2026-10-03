@@ -5,11 +5,17 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { datetime, EPSILON, round } from "@carbon/utils";
-import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
+import { serverFns } from "@carbon/server-functions";
+import {
+  buildBatchSplitRecords,
+  datetime,
+  EPSILON,
+  resolveTrackedEntityBin,
+  round
+} from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
-import { buildBatchSplitRecords } from "../../../../../packages/database/supabase/functions/shared/batch-split.ts";
 import { isIssueLocked } from "./quality.models";
 import { errResult, type Result } from "./quality.server";
 
@@ -384,40 +390,9 @@ export async function linkEntitiesToIssueItemRow(
 // which leaves on-hand unchanged).
 //
 // NOTE: the split record contract (pointer attribute, edge shape, 2-row ledger
-// pair) is the shared builder at
-// packages/database/supabase/functions/shared/batch-split.ts, imported here
-// directly — the same one the issue/post-picking/post-stock-transfer/
-// post-shipment edge functions use. Don't hand-roll a divergent shape.
-
-// The storage unit a tracked entity currently holds stock in, derived from its
-// item-ledger rows by net on-hand per bin. Batch-split ledger entries MUST be
-// booked against this bin (not NULL), or per-storage-unit on-hand views (picking,
-// available-tracked-entities) won't net to zero. Mirrors the MES helper
-// packages/database/supabase/functions/issue/resolve-tracked-entity-bin.ts —
-// keep the two in sync. Returns the bin with the highest positive net; falls
-// back to any bin the entity appears in when nothing nets positive.
-function resolveHoldingStorageUnit(
-  rows: { storageUnitId: string | null; quantity: number | string | null }[]
-): string | null {
-  const netByBin = new Map<string, number>();
-  for (const row of rows) {
-    if (!row.storageUnitId) continue;
-    netByBin.set(
-      row.storageUnitId,
-      (netByBin.get(row.storageUnitId) ?? 0) + Number(row.quantity ?? 0)
-    );
-  }
-  let bestBin: string | null = null;
-  let bestQty = 0;
-  for (const [bin, qty] of netByBin) {
-    if (qty > bestQty) {
-      bestQty = qty;
-      bestBin = bin;
-    }
-  }
-  if (bestBin) return bestBin;
-  return rows.find((row) => row.storageUnitId)?.storageUnitId ?? null;
-}
+// pair) is the shared builder `buildBatchSplitRecords` (@carbon/utils) — the
+// same one the issue/post-picking/post-stock-transfer/post-shipment server
+// functions use. Don't hand-roll a divergent shape.
 
 async function subdivideBatchEntity(
   trx: KyselyTx,
@@ -462,14 +437,14 @@ async function subdivideBatchEntity(
   } = args;
 
   // The bin the source lot actually holds stock in — split ledger entries book
-  // against it so per-storage-unit on-hand stays consistent (see helper note).
+  // against it so per-storage-unit on-hand stays consistent.
   const sourceLedgerRows = await trx
     .selectFrom("itemLedger")
-    .select(["storageUnitId", "quantity"])
+    .select(["trackedEntityId", "storageUnitId", "quantity"])
     .where("trackedEntityId", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
-  const storageUnitId = resolveHoldingStorageUnit(sourceLedgerRows);
+  const storageUnitId = resolveTrackedEntityBin(sourceLedgerRows, source.id);
 
   const split = buildBatchSplitRecords({
     parent: {
@@ -840,7 +815,7 @@ export async function splitIssueItem(args: {
 // -------------------------------------------------------------
 // Validates disposition plan (qty sums, no Pending rows, no Consumed entities),
 // posts inventory value movements (Scrap/Return write-offs + non-tracked restores)
-// through the post-nonconformance edge function (itemLedger + cost relief + GL,
+// through the post-nonconformance operation (itemLedger + cost relief + GL,
 // idempotent per NCR), THEN in one transaction re-validates under a row lock,
 // writes disposition genealogy (trackedActivity + input), flips trackedEntity
 // status (Use As Is / Rework → Available; Scrap / Return to Supplier → Rejected),
@@ -1153,25 +1128,20 @@ export async function closeIssue(
   }
 
   // Post the inventory value movements (itemLedger + cost relief + GL) through
-  // the edge function BEFORE flipping statuses / closing. Idempotent per NCR, so
+  // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
   // a retry after a later failure is safe; a posting failure aborts the close.
   if (movements.length > 0) {
-    const post = await client.functions.invoke("post-nonconformance", {
-      body: {
-        companyId,
-        userId,
+    const post = await serverFns
+      .system({ db, companyId, userId })
+      .invoke("post-nonconformance", {
         documentType: "Non-Conformance",
         documentId: nonConformanceId,
         description: `NC ${readableNc} disposition`,
         movements
-      },
-      region: FunctionRegion.UsEast1
-    });
+      });
     if (post.error) {
       return errResult(
-        post.error instanceof Error
-          ? post.error.message
-          : "Failed to post disposition to the ledger"
+        post.error.message || "Failed to post disposition to the ledger"
       );
     }
   }

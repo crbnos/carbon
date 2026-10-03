@@ -132,6 +132,8 @@ docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres
 
 The `.1` avoids also matching `carbon_postgrest`. Or expose Studio behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
 
+**Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database once the `erp` service is running. If `migrate` warns that it could not wire them, run it again once the stack is up. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
+
 **Rotate a secret.** Swarm secrets are immutable while in use, so bring the stack down first:
 
 ```bash

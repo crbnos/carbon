@@ -10,6 +10,7 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -65,6 +66,7 @@ export const middleware = timedMiddleware({
   // First: the request scope (context, request id, access log).
   request: requestMiddleware,
   security: securityMiddleware,
+  formBody: formBodyMiddleware,
   flash: flashMiddleware
 });
 export const clientMiddleware = [flashClientMiddleware];

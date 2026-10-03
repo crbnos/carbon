@@ -15,6 +15,7 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
+import { serverFns } from "@carbon/server-functions";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
@@ -287,14 +288,17 @@ export async function createAndPostTransaction(
 
   let postError: unknown;
   if (staged.status === "Draft") {
-    const posted = await ctx.client.functions.invoke("post-charge", {
-      body: {
+    const posted = await serverFns
+      .as({
+        client: ctx.client,
+        db: ctx.db,
+        companyId: ctx.companyId,
+        userId: "system"
+      })
+      .invoke("post-charge", {
         type: "post",
-        chargeId: staged.chargeId,
-        userId: "system",
-        companyId: ctx.companyId
-      }
-    });
+        chargeId: staged.chargeId
+      });
     postError = posted.error;
   }
 

@@ -10,6 +10,7 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
+import { annotateRequestSpan } from "@carbon/logger/tracing.server";
 import { Edition, getClientIp, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
@@ -228,6 +229,8 @@ export async function requirePermissions(
       throw new Response("Invalid API key", { status: 401 });
     }
     if (company.data) {
+      // Lets traces tell a script from a person at the keyboard.
+      annotateRequestSpan({ "carbon.caller": "apiKey" });
       const apiKeyData = company.data as unknown as ApiKeyRecord;
       const companyId = apiKeyData.companyId;
       const companyGroupId = apiKeyData.companyGroupId;

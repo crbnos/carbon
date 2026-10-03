@@ -13,8 +13,11 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
+  async,
   datetime,
+  getErrorMessage,
   groupBy,
   nameSimilarity,
   scrapAllowance,
@@ -43,7 +46,6 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -120,6 +122,7 @@ const logger = getLogger("erp", "production");
 /** @mcp update */
 export async function convertSalesOrderLinesToJobs(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     orderId,
     companyId,
@@ -347,52 +350,46 @@ export async function convertSalesOrderLinesToJobs(
         });
 
         if (quoteId && !reconfigured) {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
               type: "quoteLineToJob",
               sourceId: `${quoteId}:${line.id}`,
-              targetId: createJob.data.id,
-              companyId,
-              userId
-            }
-          });
+              targetId: createJob.data.id
+            });
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }
         } else {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
               type: "itemToJob",
               sourceId: data.itemId,
               targetId: createJob.data.id,
-              companyId,
-              userId,
               ...(configuration ? { configuration } : {})
-            }
-          });
+            });
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }
         }
 
-        await client.functions.invoke("recalculate", {
-          body: {
+        await serverFns
+          .as({ client, db, companyId, userId })
+          .invoke("recalculate", {
             type: "jobRequirements",
-            id: createJob.data.id,
-            companyId,
-            userId
-          }
-        });
+            id: createJob.data.id
+          });
 
-        await assignJobSerialNumbers(client, {
+        await assignJobSerialNumbers(client, db, {
           jobId: createJob.data.id,
           itemId: data.itemId,
           companyId,
@@ -622,6 +619,7 @@ export async function deleteProcedureParameter(
 /** @mcp delete */
 export async function deleteProductionEvent(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   productionEventId: string,
   companyId: string,
   userId: string
@@ -637,17 +635,19 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const reversal = await client.functions.invoke<{
-      success: boolean;
-      reason?: string;
-    }>("post-production-event", {
-      body: { productionEventId, companyId, userId, reverse: true }
-    });
+    const reversal = await serverFns
+      .as({ client, db, companyId, userId })
+      .invoke("post-production-event", {
+        productionEventId,
+        reverse: true
+      });
     if (reversal.error) {
       return {
         data: null,
         error: {
-          message: `Failed to reverse the event's journal entry: ${reversal.error.message}`
+          message: `Failed to reverse the event's journal entry: ${
+            reversal.error.message || "unknown error"
+          }`
         }
       };
     }
@@ -963,7 +963,7 @@ export const getPartDocuments = async (
 export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: Job,
+  job: Pick<Job, "id" | "salesOrderLineId" | "quoteLineId">,
   itemId: string
 ): Promise<StorageItem[]> {
   const itemFiles = await getPartDocuments(client, companyId, { itemId });
@@ -2797,8 +2797,7 @@ export async function recalculateJobOperationDependencies(
   if (error || !job?.locationId) {
     return { data: null, error: error ?? new Error("Job has no location") };
   }
-  // Regenerate the whole location IN-PROCESS (Node) instead of round-tripping to
-  // the `schedule` edge function — no cold start, no HTTP hop. The caller's
+  // Regenerate the whole location IN-PROCESS (Node). The caller's
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
@@ -2821,35 +2820,37 @@ export async function recalculateJobOperationDependencies(
 /** @mcp update */
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
       type: "jobRequirements",
       ...params
-    }
-  });
+    });
 }
 
 /** @mcp update */
 export async function recalculateJobMakeMethodRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job make method id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
       type: "jobMakeMethodRequirements",
       ...params
-    }
-  });
+    });
 }
 
 /** @mcp update */
@@ -2869,8 +2870,7 @@ export async function runMRP(
     userId: string;
   }
 ) {
-  // Run MRP IN-PROCESS (Node) instead of round-tripping to the `mrp` edge
-  // function — no cold start, no HTTP hop. The caller's service-role client does
+  // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
@@ -3303,69 +3303,39 @@ export async function updateJobOperationStatus(
 }
 
 /**
- * Flush un-consumed picked material staged at lineside back to the warehouse
- * after an operation went 'Done'. If the operation was the last one, the SQL
- * interceptor has already completed the job — sweep the whole job (both
- * returnPickedMaterialTiming policies); otherwise sweep this operation's lines
- * (the post-picking edge function no-ops unless the policy is 'operation').
- * Pass a service-role client so the picking lines are readable regardless of
- * the caller's inventory permissions. Idempotent.
+ * Returns picked-but-unconsumed material an operation left at lineside once it
+ * is Done; when that completed the job, the whole job's remainder. Pass a
+ * service-role client so the picking lines are readable regardless of the
+ * caller's inventory permissions. Idempotent.
  */
 export async function returnPickedRemaindersForOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { data: null, error: op.error };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { data: null, error: job.error };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  return client.functions.invoke("post-picking", { body });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
 }
 
 /**
  * Job-scope sweep after an explicit job completion (the ERP Complete button).
- * The edge function guards on job.status = 'Completed' and is idempotent.
+ * post-picking guards on job.status = 'Completed' and is idempotent.
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; userId: string; companyId: string }
 ) {
-  return client.functions.invoke("post-picking", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
       type: "returnJobRemainders",
-      jobId: args.jobId,
-      userId: args.userId,
-      companyId: args.companyId
-    }
-  });
+      jobId: args.jobId
+    });
 }
 
 /** @mcp update */
@@ -3519,6 +3489,7 @@ export async function upsertProductionQuantity(
  */
 export async function insertJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     itemId: string;
     quantity: number;
@@ -3701,28 +3672,26 @@ export async function insertJob(
       (input.quoteId && input.quoteLineId ? "quoteLine" : "item");
 
     if (methodSource === "quoteLine" && input.quoteId && input.quoteLineId) {
-      const body: Record<string, unknown> = {
-        type: "quoteLineToJob",
-        sourceId: `${input.quoteId}:${input.quoteLineId}`,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "quoteLineToJob",
+          sourceId: `${input.quoteId}:${input.quoteLineId}`,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from quote line", { error });
       }
     } else {
-      const body: Record<string, unknown> = {
-        type: "itemToJob",
-        sourceId: input.itemId,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "itemToJob",
+          sourceId: input.itemId,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from item", { error });
       }
@@ -3730,7 +3699,7 @@ export async function insertJob(
   }
 
   // Assign configured serial numbers to the job's tracked entities (best-effort).
-  await assignJobSerialNumbers(client, {
+  await assignJobSerialNumbers(client, db, {
     jobId: createdJobId,
     itemId: input.itemId,
     companyId: input.companyId,
@@ -3738,14 +3707,12 @@ export async function insertJob(
   });
 
   if (!options?.skipRecalculate) {
-    await client.functions.invoke("recalculate", {
-      body: {
+    await serverFns
+      .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+      .invoke("recalculate", {
         type: "jobRequirements",
-        id: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      }
-    });
+        id: createdJobId
+      });
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
@@ -3753,12 +3720,13 @@ export async function insertJob(
 
 /**
  * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the edge function entirely unless the item has
+ * Best-effort and cheap: it skips the operation entirely unless the item has
  * an `itemSerialSequence` configured. Shared by every job-creation path so serial
  * numbering is applied consistently (insertJob, sales-order conversion, ...).
  */
 async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; itemId: string; companyId: string; userId: string }
 ) {
   const serialSequence = await client
@@ -3778,14 +3746,11 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
-
-  const { error } = await client.functions.invoke("assign-serial-numbers", {
-    body: {
-      jobId: args.jobId,
-      companyId: args.companyId,
-      userId: args.userId
-    }
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("assign-serial-numbers", {
+      jobId: args.jobId
+    });
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
   }
@@ -3956,6 +3921,7 @@ export async function upsertJobMaterial(
  */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobOperation:
     | (z.infer<typeof jobOperationValidator> & {
         jobId: string;
@@ -4002,15 +3968,18 @@ export async function upsertJobOperation(
   if (!operationId) return operationInsert;
 
   if (normalized.procedureId && "createdBy" in normalized) {
-    const { error } = await client.functions.invoke("get-method", {
-      body: {
-        type: "procedureToOperation",
-        sourceId: normalized.procedureId,
-        targetId: operationId,
+    const { error } = await serverFns
+      .as({
+        client,
+        db,
         companyId: normalized.companyId,
         userId: normalized.createdBy
-      }
-    });
+      })
+      .invoke("get-method", {
+        type: "procedureToOperation",
+        sourceId: normalized.procedureId,
+        targetId: operationId
+      });
     if (error) {
       return {
         data: null,
@@ -4490,6 +4459,7 @@ export async function setJobOperationToolStepLink(
 /** @mcp upsert */
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
@@ -4547,21 +4517,21 @@ export async function upsertJobMethod(
     body.parts = jobMethod.parts;
   }
 
-  const getMethodResult = await client.functions.invoke("get-method", {
-    body
-  });
+  const getMethodResult = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
   if (getMethodResult.error) {
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
+        message: getErrorMessage(
           getMethodResult.error,
           "Failed to get job method"
         )
       } as PostgrestError
     };
   }
-  return recalculateJobRequirements(client, {
+  return recalculateJobRequirements(client, db, {
     id: jobMethod.targetId,
     companyId: jobMethod.companyId,
     userId: jobMethod.userId
@@ -4571,6 +4541,7 @@ export async function upsertJobMethod(
 /** @mcp upsert */
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMaterial: {
     sourceId: string;
     targetId: string;
@@ -4627,18 +4598,15 @@ export async function upsertJobMaterialMakeMethod(
     body.parts = jobMaterial.parts;
   }
 
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 
   if (error) {
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
-          error,
-          "Failed to pull method"
-        )
+        message: getErrorMessage(error, "Failed to pull method")
       } as PostgrestError
     };
   }
@@ -4655,6 +4623,7 @@ export async function upsertJobMaterialMakeMethod(
  */
 export async function pullJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobMaterialId: string;
     itemId: string;
@@ -4681,7 +4650,7 @@ export async function pullJobMaterialMakeMethod(
     };
   }
 
-  return upsertJobMaterialMakeMethod(client, {
+  return upsertJobMaterialMakeMethod(client, db, {
     sourceId: args.itemId,
     targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
     companyId: args.companyId,
@@ -4692,6 +4661,7 @@ export async function pullJobMaterialMakeMethod(
 /** @mcp upsert */
 export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4707,21 +4677,25 @@ export async function upsertMakeMethodFromJob(
     };
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
       type: "jobToItem",
       sourceId: jobMethod.sourceId,
       targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
       parts: jobMethod.parts
-    }
-  });
+    });
 }
 
 /** @mcp upsert */
 export async function upsertMakeMethodFromJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4737,16 +4711,19 @@ export async function upsertMakeMethodFromJobMethod(
     };
   }
 ) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
+  const { error } = await serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
       type: "jobMakeMethodToItem",
       sourceId: jobMethod.sourceId,
       targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
       parts: jobMethod.parts
-    }
-  });
+    });
 
   if (error) {
     return {
@@ -6414,7 +6391,7 @@ export async function notifyScheduleInputsChanged(
 
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
 // Execution lives in MES (the operation view's batch mode); ERP composes
-// batches on the schedule board, mutates them via the batch-operations edge fn,
+// batches on the schedule board, mutates them via the batch-operations server fn,
 // and lists past/active batches at /x/production/batches.
 
 // Count of operations that COULD be batched but aren't yet — unbatched ops on a
@@ -6736,6 +6713,7 @@ export async function getBatchableProcesses(
 /** @mcp create */
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationIds: string[];
     locationId: string;
@@ -6751,14 +6729,19 @@ export async function createJobOperationBatch(
     userId: string;
   }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "create", ...args }
-  });
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "create",
+      ...input
+    });
 }
 
 /** @mcp update */
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
     batchId: string;
@@ -6768,30 +6751,41 @@ export async function updateJobOperationBatch(
     userId: string;
   }
 ) {
-  const { type, ...rest } = args;
-  return client.functions.invoke("batch-operations", {
-    body: { type, ...rest }
-  });
+  const { companyId, userId, ...input } = args;
+  // add/remove need jobOperationIds; the operation re-validates the shape.
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", input as ServerFnInput<"batch-operations">);
 }
 
 /** @mcp update */
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "release", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "release",
+      batchId
+    });
 }
 
 /** @mcp action */
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "unrelease", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "unrelease",
+      batchId
+    });
 }
 
 // --- Assembly Instructions ---------------------------------------------
@@ -10311,7 +10305,7 @@ export async function getJobMaterialSupplyJobLines(
 // ---------------------------------------------------------------------------
 // MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
 //
-// Each wraps the SAME edge function / RPC the MES/ERP UI uses, so an MCP caller drives
+// Each wraps the SAME server function / RPC the MES/ERP UI uses, so an MCP caller drives
 // production as the connected user — companyId/userId come from the OAuth token (injected by the
 // MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
@@ -10325,7 +10319,7 @@ export async function getJobMaterialSupplyJobLines(
  * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
  * drives it as the connected user:
  *   1. record the produced quantity (productionQuantity insert),
- *   2. backflush consumed material (`issue` edge fn, type "jobOperation"),
+ *   2. backflush consumed material (`issue` server fn, type "jobOperation"),
  *   3. when good + reworked quantity reaches the operation's target, mark it Done — the
  *      sync_finish_job_operation DB trigger then completes the job to inventory if this was the
  *      last operation — post any ended-but-unposted production events for GL, and return picked
@@ -10340,6 +10334,7 @@ export async function getJobMaterialSupplyJobLines(
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   args: {
@@ -10403,16 +10398,14 @@ export async function completeOperation(
   }
 
   // 2. Backflush consumed material.
-  const issue = await client.functions.invoke("issue", {
-    body: {
+  const backflush = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("issue", {
       id: args.operationId,
       type: "jobOperation",
-      quantity: args.quantity,
-      companyId,
-      userId
-    }
-  });
-  if (issue.error) return { data: null, error: issue.error };
+      quantity: args.quantity
+    });
+  if (backflush.error) return { data: null, error: backflush.error };
 
   // 3. Finish when good + reworked quantity reaches target (scrap excluded, mirroring the
   //    sync_update_job_operation_quantities DB predicate).
@@ -10439,44 +10432,29 @@ export async function completeOperation(
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
-      await Promise.all(
-        unposted.data.map((event) =>
-          client.functions.invoke("post-production-event", {
-            body: { productionEventId: event.id, userId, companyId }
-          })
-        )
+      await async.map(
+        unposted.data,
+        (event) =>
+          serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("post-production-event", {
+              productionEventId: event.id
+            }),
+        { concurrency: 4 }
       );
     }
 
-    // Return picked-but-unconsumed stock (the SQL trigger can't call edge functions).
     const jobId = operation.data.jobId;
     if (jobId) {
-      const job = await client
-        .from("job")
-        .select("status")
-        .eq("id", jobId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      const returnBody =
-        job.data?.status === "Completed"
-          ? { type: "returnJobRemainders" as const, jobId, userId, companyId }
-          : {
-              type: "returnOperationRemainders" as const,
-              jobOperationId: args.operationId,
-              userId,
-              companyId
-            };
-      const { error: returnError } = await client.functions.invoke(
-        "post-picking",
-        {
-          body: returnBody
-        }
+      const { error: returnError } = await returnPickedRemaindersForOperation(
+        client,
+        db,
+        { jobOperationId: args.operationId, userId, companyId }
       );
       if (returnError) {
         logger.error("picked-material return sweep failed", {
           error: returnError,
           jobId,
-          scope: returnBody.type,
           companyId
         });
       }
@@ -10499,7 +10477,7 @@ export async function completeOperation(
     }
   }
 
-  return issue;
+  return backflush;
 }
 
 /**

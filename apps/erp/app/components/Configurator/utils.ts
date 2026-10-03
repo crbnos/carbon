@@ -233,16 +233,9 @@ declare function configure(params: Params): ${returnTypeStr};
 `;
 }
 
-export function convertTypescriptToJavaScript(code: string): string {
-  // @ts-expect-error - TypeScript compiler is loaded globally
-  if (window?.ts) {
-    // @ts-expect-error - TypeScript compiler is loaded globally
-    return window.ts.transpileModule(code, {
-      compilerOptions: {
-        // @ts-expect-error - TypeScript compiler is loaded globally
-        target: window.ts.ScriptTarget.ES2020
-      }
-    }).outputText;
-  }
-  return "";
+export async function convertTypescriptToJavaScript(
+  code: string
+): Promise<string> {
+  const { transpileRule } = await import("@carbon/database/configuration-rule");
+  return transpileRule(code);
 }

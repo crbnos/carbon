@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // The totals guard, server-side, BEFORE the edge function is called.
+  // The totals guard, server-side, BEFORE the server function is called.
   const lines = reimbursement.data.reimbursementLine ?? [];
   if (
     !linesBalanceHeader(

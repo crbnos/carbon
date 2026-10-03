@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import { getLogger } from "@carbon/logger";
 import { describeRequest } from "@carbon/logger/middleware.server";
 import {
   annotateRequestSpan,
@@ -11,6 +13,8 @@ import {
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { callOperation } from "./v1+/lib/call.server";
+
+const logger = getLogger("erp", "inngest");
 
 const handler = serve({
   client: inngest,
@@ -48,8 +52,37 @@ export function loader(args: LoaderFunctionArgs) {
   return handler(args);
 }
 
-export function action(args: ActionFunctionArgs) {
+// Postgres sends its own events to Inngest (the event-queue wake-up,
+// embeddings, job notifications) at a URL kept in its Vault. A PUT here is the
+// app registering with Inngest, which happens on every deploy and on every
+// boot of a long-lived host, so that is when the database is told too: the
+// event key is kept current, and an address already stored is left alone (the
+// database may reach Inngest somewhere the app does not). Never fails the
+// registration.
+async function setDatabaseEventConfig() {
+  const eventKey = process.env.INNGEST_EVENT_KEY;
+  // Local dev: `crbn` points the database at its own Inngest server.
+  if (!eventKey || process.env.NODE_ENV !== "production") return;
+  const baseUrl =
+    process.env.INNGEST_EVENT_API_BASE_URL ||
+    process.env.INNGEST_BASE_URL ||
+    "https://inn.gs/";
+  // One call per registration: the REST client, not a pooled connection.
+  const { error } = await getCarbonServiceRole().rpc(
+    "set_inngest_event_config",
+    { p_key: eventKey, p_base_url: baseUrl }
+  );
+  if (error) {
+    logger.error(
+      "Could not set the database's Inngest event key: database events will not reach Inngest",
+      { error }
+    );
+  }
+}
+
+export async function action(args: ActionFunctionArgs) {
   wireWorkflowDispatch();
+  if (args.request.method === "PUT") await setDatabaseEventConfig();
   // Every function and step arrives on this one route, so without these the
   // trace cannot say which function the time went to.
   const { searchParams } = new URL(args.request.url);

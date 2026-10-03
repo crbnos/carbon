@@ -5,7 +5,6 @@
 import type { Result } from "@carbon/auth";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -14,6 +13,8 @@ import {
   type TrackedEntitySelection,
   toast
 } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -35,7 +36,7 @@ import {
 } from "~/modules/inventory";
 import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -171,7 +172,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? "batch"
     : "serial";
 
-  // The edge function re-checks this under a row lock, but refusing an already-
+  // The server function re-checks this under a row lock, but refusing an already-
   // full line here avoids a round trip and a raw failure.
   const forward = resolveStockTransferPickForward({
     transferType,
@@ -202,20 +203,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   };
 
   // Service role: `userId` is the effective (console pin-in) user, not the
-  // token's subject, which the edge function's membership check compares.
-  const { data: transferResult, error: functionError } =
-    await getCarbonServiceRole().functions.invoke("post-stock-transfer", {
-      body: JSON.stringify(functionPayload)
-    });
+  // token's subject, which the operation's membership check compares.
+  const { data: transferResult, error: functionError } = await serverFns
+    .system({
+      db: getDatabaseClient(),
+      companyId: functionPayload.companyId,
+      userId: functionPayload.userId
+    })
+    .invoke("post-stock-transfer", functionPayload);
 
   if (functionError) {
-    // The edge function returns its guard failures (over-pick, already picked)
-    // as a 400 with the real reason in the body; surface that, not the generic
-    // "non-2xx" wrapper text.
-    const message = await getEdgeFunctionErrorMessage(
-      functionError,
-      "Failed to pick line"
-    );
+    // The server function returns its guard failures (over-pick, already
+    // picked) with the real reason; surface that, not the generic fallback.
+    const message = getErrorMessage(functionError, "Failed to pick line");
     return data(
       { success: false, message },
       await flash(request, error(functionError, message))

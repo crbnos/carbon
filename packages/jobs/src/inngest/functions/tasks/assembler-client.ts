@@ -235,7 +235,7 @@ function errorMessage(error: ErrorBody, fallback: string): string {
  * honoring Retry-After; a genuine outage / permanent rejection fails fast.
  */
 export async function submitAssemblerJob(opts: {
-  action: "convert" | "optimize" | "plan" | "compact";
+  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
   jobId: string;
   body: unknown;
   logger: { warn: (msg: string, meta?: unknown) => void };
@@ -326,7 +326,7 @@ export async function pollAssemblerJobOnce(opts: {
 }): Promise<
   | { status: "pending" }
   | { status: "done"; result: Json; stats: Json }
-  | { status: "error"; error: string }
+  | { status: "error"; error: string; code?: string }
 > {
   const { jobId, mintUploadUrls } = opts;
   const base = opts.baseUrl ?? assemblerBaseUrl();
@@ -358,7 +358,7 @@ export async function pollAssemblerJobOnce(opts: {
       status?: string;
       result?: Json;
       stats?: Json;
-      error?: { message?: string };
+      error?: { code?: string; message?: string };
     };
   } | null;
   if (!response.ok || !body?.job) {
@@ -373,7 +373,11 @@ export async function pollAssemblerJobOnce(opts: {
     };
   }
   if (job.status === "failed") {
-    return { status: "error", error: job.error?.message ?? "Job failed" };
+    return {
+      status: "error",
+      error: job.error?.message ?? "Job failed",
+      code: job.error?.code
+    };
   }
   if (job.status === "canceled") {
     return { status: "error", error: "Job canceled" };
@@ -396,6 +400,15 @@ type StepTools = {
 
 type PollOutcome = Awaited<ReturnType<typeof pollAssemblerJobOnce>>;
 
+/** Failures the same input always reproduces: a retry only repeats them. */
+const DETERMINISTIC_FAILURES = new Set(["invalid_input", "thumbnail_failed"]);
+
+function jobFailure(message: string, code: string | undefined): Error {
+  return code && DETERMINISTIC_FAILURES.has(code)
+    ? new NonRetriableError(message)
+    : new Error(message);
+}
+
 type AssemblerLogger = {
   warn: (msg: string, meta?: unknown) => void;
   info: (msg: string, meta?: unknown) => void;
@@ -404,7 +417,7 @@ type AssemblerLogger = {
 type AssemblerJobSpec = {
   /** Namespaces this job's Inngest step ids (a caller may run several). */
   idPrefix: string;
-  action: "convert" | "optimize" | "plan" | "compact";
+  action: "convert" | "optimize" | "plan" | "compact" | "thumbnail";
   jobId: string;
   /** Build the request body (signs a fresh source URL) — run inside a step. */
   buildBody: () => Promise<unknown>;
@@ -482,7 +495,7 @@ export async function runAssemblerJob(
     if (early.error === "Job canceled") {
       throw new NonRetriableError(`assembler ${action} canceled`);
     }
-    throw new Error(early.error);
+    throw jobFailure(early.error, early.code);
   }
 
   const done = await step.waitForEvent(`${idPrefix}-wait`, {
@@ -498,7 +511,7 @@ export async function runAssemblerJob(
           status?: string;
           result?: Json;
           stats?: Json;
-          error?: { message?: string } | null;
+          error?: { code?: string; message?: string } | null;
         };
       }
     ).data;
@@ -509,8 +522,9 @@ export async function runAssemblerJob(
     if (data?.status === "canceled") {
       throw new NonRetriableError(`assembler ${action} canceled`);
     }
-    throw new Error(
-      data?.error?.message ?? `assembler ${action} ${data?.status ?? "failed"}`
+    throw jobFailure(
+      data?.error?.message ?? `assembler ${action} ${data?.status ?? "failed"}`,
+      data?.error?.code
     );
   }
 
@@ -530,7 +544,7 @@ export async function runAssemblerJob(
     if (poll.error === "Job canceled") {
       throw new NonRetriableError(`assembler ${action} canceled`);
     }
-    throw new Error(poll.error);
+    throw jobFailure(poll.error, poll.code);
   }
   throw new Error(`assembler ${action} did not finish within ${maxWaitMs}ms`);
 }

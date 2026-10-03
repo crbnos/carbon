@@ -15,6 +15,7 @@ import {
   jobCompleteValidator,
   returnPickedRemaindersForJob
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -89,11 +90,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Runs after the RPC (backflush inside it must consume first). A sweep
   // failure never fails the completion — the sweep is idempotent and can be
   // re-triggered — so warn instead.
-  const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), {
-    jobId,
-    userId,
-    companyId
-  });
+  const sweep = await returnPickedRemaindersForJob(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      jobId,
+      userId,
+      companyId
+    }
+  );
   if (sweep.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),

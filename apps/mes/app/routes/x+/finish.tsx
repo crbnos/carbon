@@ -9,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { finishValidator } from "~/services/models";
 import { finishJobOperation } from "~/services/operations.service";
 import { path } from "~/utils/path";
@@ -25,11 +26,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const finishOperation = await finishJobOperation(serviceRole, {
-    ...validation.data,
-    userId,
-    companyId
-  });
+  const finishOperation = await finishJobOperation(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      ...validation.data,
+      userId,
+      companyId
+    }
+  );
 
   if (finishOperation.error) {
     return data(

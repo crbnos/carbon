@@ -20,14 +20,6 @@ BEGIN
   current_actor_id := auth.uid()::TEXT;
   current_workflow_run_id :=
     (nullif(current_setting('request.jwt.claims', true), '')::jsonb)->>'workflow_run_id';
-  pk_column := public.get_primary_key_column(TG_TABLE_NAME);
-
-  -- Pair UPDATE rows on the full key: single-column pairing cross-joins rows
-  -- on tables with composite identity.
-  SELECT string_agg(format('n.%I = o.%I', col, col), ' AND ')
-    INTO pk_join
-  FROM unnest(public.get_primary_key_columns(TG_TABLE_NAME)) AS col;
-
   IF TG_OP = 'DELETE' THEN
     SELECT t."companyId" INTO rec_company_id FROM batched_old t LIMIT 1;
   ELSIF TG_OP = 'INSERT' THEN
@@ -49,6 +41,16 @@ BEGIN
   ) INTO has_subs;
 
   IF NOT has_subs THEN RETURN NULL; END IF;
+
+  -- Looked up only once a subscription exists: almost no company subscribes
+  -- to most tables, and this catalog read ran on every write statement.
+  pk_column := public.get_primary_key_column(TG_TABLE_NAME);
+
+  -- Pair UPDATE rows on the full key: single-column pairing cross-joins rows
+  -- on tables with composite identity.
+  SELECT string_agg(format('n.%I = o.%I', col, col), ' AND ')
+    INTO pk_join
+  FROM unnest(public.get_primary_key_columns(TG_TABLE_NAME)) AS col;
 
   FOR sub IN
     SELECT * FROM "eventSystemSubscription"

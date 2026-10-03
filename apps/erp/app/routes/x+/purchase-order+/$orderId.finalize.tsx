@@ -21,6 +21,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { serverFns } from "@carbon/server-functions";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -44,6 +45,7 @@ import { getCompany, getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -226,19 +228,14 @@ export async function action(args: ActionFunctionArgs) {
     companySettings.data?.purchasePriceUpdateTiming ===
     "Purchase Order Finalize"
   ) {
-    const priceUpdate = await serviceRole.functions.invoke(
-      "update-purchased-prices",
-      {
-        body: {
-          purchaseOrderId: orderId,
-          companyId,
-          userId,
-          source: "purchaseOrder",
-          updatePrices: true,
-          updateLeadTimes: false
-        }
-      }
-    );
+    const priceUpdate = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("update-purchased-prices", {
+        purchaseOrderId: orderId,
+        source: "purchaseOrder",
+        updatePrices: true,
+        updateLeadTimes: false
+      });
 
     if (priceUpdate.error) {
       logger.error("Failed to update purchased prices", {

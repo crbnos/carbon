@@ -295,7 +295,7 @@ describe("rankSuggestions", () => {
   });
 });
 
-// The client mirror of the edge fn's assertMaterialCompatible: a candidate whose
+// The client mirror of the server fn's assertMaterialCompatible: a candidate whose
 // "must" dimension can't share a value with the current selection is LOCKED
 // (visible-but-uncheckable). A test that fails if the must-gating is reverted.
 describe("computeLockedById (must-violation gating)", () => {

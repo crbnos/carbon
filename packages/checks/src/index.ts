@@ -18,6 +18,7 @@ export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
+export { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
@@ -27,6 +28,7 @@ export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+export { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {
   type Invariant,
@@ -51,13 +53,17 @@ export {
   type Finding,
   newViolations,
   SERVER_CHECKS,
+  SERVER_FN_CHECKS,
   STRUCTURE_CHECKS,
   scanAll,
   scanModules,
   TS_CHECKS
 } from "./run";
 export { loadDbTableColumns } from "./sources/db-columns";
-export { loadEdgeFunctions } from "./sources/edge-functions";
+export {
+  loadEdgeFunctions,
+  loadServerFunctions
+} from "./sources/edge-functions";
 export {
   listLicenseCandidates,
   loadLicenseFiles

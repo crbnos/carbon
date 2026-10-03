@@ -41,13 +41,17 @@ export type PickPartial<T, K extends keyof T> = Omit<T, K> &
 export interface TrackedEntityAttributes {
   "Batch Number"?: string;
   Customer?: string;
+  "Fixed Asset"?: string;
   Job?: string;
   "Job Make Method"?: string;
+  "Job Operation"?: string;
+  "Job Operation Index"?: number;
   "Purchase Order"?: string;
   "Purchase Order Line"?: string;
   "Receipt Line Index"?: number;
   "Receipt Line"?: string;
   Receipt?: string;
+  "Rental Agreement"?: string;
   "Sales Order"?: string;
   "Sales Order Line"?: string;
   Supplier?: string;
@@ -58,6 +62,7 @@ export interface TrackedEntityAttributes {
   "Split Entity ID"?: string;
   "Split From Entity ID"?: string;
   "Merged From Entity IDs"?: string[];
+  Shelf?: string;
   "Stock Transfer Line"?: string;
   "Stock Transfer"?: string;
   expirationDate?: string;

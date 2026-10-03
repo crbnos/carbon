@@ -13,9 +13,9 @@ Carbon's async event-processing infra: Postgres triggers + PGMQ + **Inngest** (n
 
 ```text
 DB write → AFTER STATEMENT trigger → dispatch_event_batch() → pgmq.send_batch('event_system')
-                                          → util.wake_event_queue()  [pg_net POST, once per txn]
+                                          → util.wake_event_queue()  [once per txn]
                                                   ↓
-            edge fn event-wake → Inngest event "carbon/event-queue.process"
+            util.send_inngest_event → pg_net POST to Inngest: "carbon/event-queue.process"
                                                   ↓
             event-queue (Inngest, event-triggered, concurrency 1)
             loops pgmq.read('event_system', 30, 100) until empty (max 10 passes, re-wakes if more)
@@ -28,12 +28,14 @@ pg_cron 'event-queue-sweeper' (* * * * *, in-DB): if visible messages exist → 
   (safety net for lost pushes; no queue → no HTTP → no Inngest run)
 ```
 
-The wake path (`20260721184852_event-queue-wake.sql`) — both helpers live in the internal `util` schema (like `util.process_embeddings`), NOT `public`:
-- `util.wake_event_queue()` — SECURITY DEFINER; reads `apiUrl`/`anonKey` from the singleton `config` table and `net.http_post`s to `/functions/v1/event-wake`. Error-swallowed and no-ops when `config` is unseeded — OLTP writes never fail on push failure. pg_net queues the request transactionally, so the wake fires only after commit.
-- `dispatch_event_batch()` calls it at most **once per transaction** via the txn-local GUC `carbon.event_wake_sent` (`set_config(..., true)`).
+The wake path (`20260721184852_event-queue-wake.sql`, rewired by `20261002170250_send-inngest-events-from-postgres.sql` and the managed files in `packages/database/src/event-system/functions/`) — the helpers live in the internal `util` schema, NOT `public`:
+- `util.send_inngest_event(name, data)` — SECURITY DEFINER; `net.http_post`s `{ name, data }` to the Vault secret `inngest_event_url` (`<base>/e/<eventKey>`). Error-swallowed and no-ops when the secret is unset — OLTP writes never fail on push failure. pg_net queues the request transactionally, so the event fires only after commit. Postgres calls no edge function.
+- `util.wake_event_queue()` — sends `carbon/event-queue.process` through it.
+- `public.set_inngest_event_url(url)` writes the secret (refuses `anon`/`authenticated`). The URL carries the event key, so it lives in Vault, not in `config` (which has a SELECT policy). A no-op when the URL is unchanged (`20261003134512`). Both setters take one advisory lock (`20261003191518`), so concurrent writers (app registration, deploy, operator) serialize instead of failing on the Vault's unique name. The ERP keeps the KEY in it current whenever it registers with Inngest: a `PUT /api/inngest` (`apps/erp/app/routes/api+/inngest.ts`) calls `public.set_inngest_event_config(key, base)` before the registration handshake, in production. That PUT happens on every deploy (Vercel's Inngest integration, `ci/src/jobs.ts`) and on every boot of a long-lived host (`inngest-self-sync.server.ts`), inside a request, once per registration rather than once per instance. Not at module load: a serverless host froze those calls mid-connect. (`20261003142107`): it creates the URL from its own `INNGEST_BASE_URL` when none is stored, and otherwise rewrites only the `<eventKey>` segment — a stored address is never changed, since the database may reach Inngest somewhere the app does not. So a deployment needs no separate step. `ci/src/migrations.ts` calls the same function on every deploy for a workspace with an `inngest_event_key` (retried while PostgREST reloads its schema), so a changed `inngest_base_url` there needs `set_inngest_event_url` by hand. Set in full by `packages/database/src/seed.ts` (`resolveInngestEventUrl`), locally by `ensureConfigRow` in `packages/dev/src/services/migrations.ts` (`http://inngest:8288/e/NO_EVENT_KEY_SET`) and by `scripts/restore-database.sh` after it clears Vault on a local restore, and on self-host by `contrib/deploying/simple-docker-caddy/deploy.sh migrate` (`set_inngest_event_url`, reading the key from the erp task). In CI a workspace missing `inngest_event_key` or the service role key logs an error and fails the run, after seeding and scripts, which do not depend on it.
+- `dispatch_event_batch()` calls `util.wake_event_queue()` at most **once per transaction** via the txn-local GUC `carbon.event_wake_sent` (`set_config(..., true)`).
 - `util.sweep_event_queue()` — pg_cron job `event-queue-sweeper` re-wakes every minute while *visible* messages (`vt <= clock_timestamp()`) sit in `pgmq.q_event_system`.
 - **Why `util`, not `public`:** a public function is auto-exposed as a PostgREST RPC, and a non-superuser reference to a function that transitively calls `net.http_post` segfaults the backend (pg_net 0.20 / PG15) — a remote-DoS surface a `REVOKE` can't close because the crash precedes the privilege check. anon/authenticated have no `USAGE` on `util`, so the API can't reach it. The trigger and pg_cron call it as the owner (superuser), where the pg_net path is safe.
-- Edge fn `packages/database/supabase/functions/event-wake/index.ts` forwards the doorbell via `sendInngestEvent("carbon/event-queue.process", {})` (`functions/lib/inngest.ts`).
+- The same helper sends `carbon/notify` (job-completed) from `sync_job_complete_or_canceled` and `carbon/embedding-queue.process` from `util.sweep_embedding_queue()` (see EMBEDDING below).
 
 ## Database (functions are files, not migrations)
 
@@ -85,9 +87,11 @@ Zod schemas + helpers. `QueueMessage` = `{ subscriptionId, triggerType: ROW|STAT
 | `SYNC` | `carbon/event-sync` | `sync.ts` | accounting sync (Xero); maps table→entity, calls `@carbon/ee/accounting` |
 | `SEARCH` | `carbon/event-search` | `search.ts` | upsert/delete `search_index` per entity config (`search-config.ts`): last event per record wins, one read per related table for the whole batch, then one delete and one upsert statement over Kysely. A failed read or write throws so the step retries; the one exception is a missing search table whose company no longer exists (deleting a company drops the table while its events may still be queued), which is skipped with a warning |
 | `AUDIT` | `carbon/event-audit` | `audit.ts` | writes per-company audit log (uses `actorId`, `audit.config`) |
-| `EMBEDDING` | `carbon/event-embedding` | `embedding.ts` | invokes `embed` edge fn for `item/customer/supplier` name/description changes |
+| `EMBEDDING` | `carbon/event-embedding` | `embedding.ts` | `embedRecords` for `item/customer/supplier` name/description changes (vectors from the `embedding` edge fn, written with one UPDATE per table) |
 
-All handlers (incl. `eventQueueFunction`) are exported from `events/index.ts` and registered in `packages/jobs/src/inngest/functions/index.ts`. Inngest client comes from `@carbon/lib/inngest`.
+All handlers (incl. `eventQueueFunction`) are exported from `events/index.ts` and registered in `packages/jobs/src/inngest/index.ts`. Inngest client comes from `@carbon/lib/inngest`.
+
+`embedding.ts` also exports `embeddingQueueFunction` (id `embedding-queue`, `carbon/embedding-queue.process`, concurrency 1, singleton skip). It drains the pgmq `embedding_jobs` queue (filled by `util.queue_embeddings`) through the same `embedRecords`. Embedded messages are deleted. Permanent failures (`embedRecords` flags an unknown table or a record with no text `permanent`) and any message read `MAX_READS` (5) times are archived with `pgmq.archive`, so a poison message cannot keep waking the drain; any other failure becomes visible again after the 300 s visibility timeout. `toEmbeddedText` sanitizes text the way the `embedding` edge function does, and `embedInBatches` (pure, tested) retries a failed batch record by record so one bad record does not fail its batch. The 10 s `process-embeddings` pg_cron calls `util.sweep_embedding_queue()` (no arguments), which sends the event only while visible messages are waiting.
 
 ### WEBHOOK — the customer-facing one
 
@@ -98,7 +102,7 @@ Since `20260807234512_webhooks-via-event-system.sql`, user-configured webhooks (
 - Delivery moved from at-most-once to **at-least-once** (Inngest `retries: 3`); `increment_webhook_error` fires only on the final attempt so counters stay one-per-event. `eventId` is the pgmq `msgId` — stable across an event's retries (it is also the Inngest idempotency key), distinct per change — and is the documented de-dup key. `type` + `record.id` is NOT usable: two genuine updates to a row share both.
 
 ## Notes
-- Latency: typically ~3–5s (sub-second wake + the multi-step drain run). Worst case ~1 min if a push is lost (dead pg_net worker, edge fn down) — the pg_cron sweeper re-wakes while messages are pending. Still async: use sync interceptors, not subscriptions, for data-integrity / real-time needs.
-- The wake path depends on a seeded `config` row (`apiUrl`, `anonKey`). Dev seeds it automatically (`ensureConfigRow` in `packages/dev/src/services/migrations.ts`, apiUrl `http://kong:8000`). **Unseeded config (e.g. self-hosted) = events never process** — both the push and the sweeper wake no-op.
+- Latency: typically ~3–5s (sub-second wake + the multi-step drain run). Worst case ~1 min if a push is lost (dead pg_net worker, Inngest unreachable) — the pg_cron sweeper re-wakes while messages are pending. Still async: use sync interceptors, not subscriptions, for data-integrity / real-time needs.
+- The wake path depends on the Vault secret `inngest_event_url` (see above). **Unset secret = events never process** — both the push and the sweeper wake no-op.
 - Webhook/workflow handlers use `idempotency: event.data.msgId` and per-record concurrency keys.
 - Don't hand-edit generated DB types; read the newest migration for schema truth, and `event-system/functions/` for the functions.

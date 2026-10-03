@@ -88738,6 +88738,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_inngest_event_config: {
+        Args: { p_base_url: string; p_key: string }
+        Returns: undefined
+      }
+      set_inngest_event_url: { Args: { p_url: string }; Returns: undefined }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]

@@ -9,9 +9,9 @@ import { RilletPaymentSyncer } from "../payment";
 // Rillet as a payment document; a provider-recorded (pulled) payment is skipped
 // by the mapping-exists guard. The pull path is covered in payment.test.ts.
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
+vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 
 // The mapping link runs inside withTriggersDisabled (a real Kysely transaction
 // with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing

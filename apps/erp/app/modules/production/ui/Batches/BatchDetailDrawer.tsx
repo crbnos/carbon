@@ -121,11 +121,11 @@ export function BatchDetailDrawer({
   );
 
   const isLive = batch.status === "Active" || batch.status === "Completing";
-  // Planned and Active batches stay composable/dissolvable; the edge fn's
+  // Planned and Active batches stay composable/dissolvable; the server fn's
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
 
-  // The edge fn refuses "remove" once production is recorded.
+  // The server fn refuses "remove" once production is recorded.
   const permissions = usePermissions();
   const canRemoveOperations =
     isPreStart &&

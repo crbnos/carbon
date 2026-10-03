@@ -520,7 +520,7 @@ async function seedDispatch(
     });
   }
 
-  // Mirrors the `issue` edge function's untracked path: a dispatch item
+  // Mirrors the `issue` server function's untracked path: a dispatch item
   // (totalCost is GENERATED) plus a negative Consumption ledger row.
   for (const part of spec.spareParts ?? []) {
     const item = need(ctx.refs.items, part.item, "item");

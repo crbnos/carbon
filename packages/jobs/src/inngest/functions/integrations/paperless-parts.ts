@@ -764,7 +764,9 @@ export const paperlessPartsFunction = inngest.createFunction(
         };
         break;
       default:
-        logger.error(`Unsupported event type: ${payload.payload}`);
+        logger.error("Unsupported event type: {payload}", {
+          payload: payload.payload
+        });
         result = {
           success: false,
           message: `Unsupported event type`
@@ -775,9 +777,10 @@ export const paperlessPartsFunction = inngest.createFunction(
     if (result.success) {
       logger.info(`Successfully processed ${payload.payload.type} event`);
     } else {
-      logger.error(
-        `Failed to process ${payload.payload.type} event: ${result.message}`
-      );
+      logger.error("Failed to process {payloadType} event: {resultMessage}", {
+        payloadType: payload.payload.type,
+        resultMessage: result.message
+      });
     }
 
     return result;

@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -17,7 +17,7 @@ import { FixedAssetCapitalizeForm } from "~/modules/accounting/ui/FixedAssets";
 import { getTrackedEntity } from "~/modules/inventory";
 import { getItem, getItemCost } from "~/modules/items";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // The name the function derives when none is given — shown so the user can
@@ -124,7 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { storageUnitId, name, ...transfer } = validation.data;
 
-  const result = await invokeAssetTransfer(client, {
+  const result = await invokeAssetTransfer(client, getDatabaseClient(), {
     type: "capitalize",
     companyId,
     userId,
@@ -140,10 +140,7 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to capitalize the unit"
-          )
+          getErrorMessage(result.error, "Failed to capitalize the unit")
         )
       )
     );

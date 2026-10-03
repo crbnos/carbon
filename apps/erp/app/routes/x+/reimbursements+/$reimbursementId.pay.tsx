@@ -4,10 +4,10 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { toBaseAmount } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage, toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -20,13 +20,12 @@ import {
 } from "~/modules/invoicing";
 import { getNextSequence } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 /**
  * The "Pay expense" action. It creates the ordinary documents rather than a
  * bespoke payout: one `payment` with an employee payee, one `invoiceSettlement`
- * with `targetReimbursementId`, then the existing `post-payment` edge function.
+ * with `targetReimbursementId`, then the existing `post-payment` server function.
  * The settlement goes through `replaceInvoiceSettlements`, whose employee arm
  * is the authority on party, currency, Posted status and the balance ceiling —
  * this route never writes a settlement row itself.
@@ -187,17 +186,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
-
-  const serviceRole = getCarbonServiceRole();
   try {
-    const result = await serviceRole.functions.invoke("post-payment", {
-      body: { type: "post", paymentId: payment.data.id, userId, companyId }
-    });
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-payment", { type: "post", paymentId: payment.data.id });
     if (result.error) {
-      // `result.data` is ALWAYS null on a non-2xx, and `FunctionsHttpError.message`
-      // is the fixed "Edge Function returned a non-2xx status code" — so reading
-      // either hides the real reason post-payment refused.
-      const message = await getEdgeFunctionErrorMessage(
+      const message = getErrorMessage(
         result.error,
         "Failed to post the payment"
       );

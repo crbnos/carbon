@@ -2,17 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-// DB comes from postgres/index.ts (a type-only alias), NOT ../database.ts —
-// database.ts pulls in the Deno-only postgres driver, which fails the Node
-// typecheck reached via src/scheduling.ts re-exporting this engine in-process.
-import type { DB } from "@carbon/database/client";
 import {
-  datetime,
+  type Database,
   getCompanyTimeZone,
   getLocationTimeZone
-} from "@carbon/database/datetime";
-import { getFunctionLogger } from "@carbon/database/logging";
+} from "@carbon/database";
+import type { DB } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import {
@@ -72,7 +69,7 @@ import {
 
 export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
-const log = getFunctionLogger("schedule");
+const log = getLogger("planning", "schedule");
 
 /**
  * True when writing `values` would change the row. Compared in Postgres so a
@@ -447,7 +444,7 @@ export class SchedulingEngine {
     //
     // Rebuild atomically with a per-job advisory lock: two schedule runs for
     // the same job can overlap (an Inngest retry racing a still-running
-    // invocation, or a direct functions.invoke alongside the queued one);
+    // invocation, or a direct in-process run alongside the queued one);
     // interleaved delete/insert then violates jobOperationDependency_pk. The
     // lock serializes the rebuild per job, and onConflict absorbs any edge that
     // survives a race with trigger-rework's inserts.

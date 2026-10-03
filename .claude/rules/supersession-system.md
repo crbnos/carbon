@@ -1,7 +1,7 @@
 paths:
-  - "packages/database/supabase/functions/lib/supersession-pick.ts"
-  - "packages/database/supabase/functions/get-method/**"
-  - "packages/database/supabase/functions/mrp/**"
+  - "packages/database/src/supersession-pick.ts"
+  - "packages/server-functions/src/get-method/**"
+  - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
 
@@ -48,7 +48,7 @@ picked differently tomorrow. That split is intentional; don't "fix" it.
 ## Mode gating — three modes redirect
 
 `REDIRECTING_MODES = { "Consume First", "Prefer New", "Stock Only" }`
-(`lib/supersession-pick.ts`). `Stock Only` is "service reserve, no production
+(`packages/database/src/supersession-pick.ts`). `Stock Only` is "service reserve, no production
 use", so production demand moves to the successor like a phase-out mode; only
 the predecessor's OWN replenishment is reserve-governed (the planning views top
 it up to `minimumReserveQuantity`). Leaving it out made a job's BOM name the
@@ -96,7 +96,7 @@ predecessor (see above), whether or not the successor has a rule of its own.
 part — two of the old or two of the new, never one of each. Every Consume
 First consumer rounds the predecessor's usable on-hand DOWN to a multiple of
 the line's per-assembly quantity with `consumableInWholeAssemblies(onHand,
-perAssembly)` (`lib/supersession-pick.ts`; `RoundingMode.Down` exists for it).
+perAssembly)` (`packages/database/src/supersession-pick.ts`; `RoundingMode.Down` exists for it).
 2 per assembly and 3 on the shelf fits ONE assembly: 2 old, the rest new, and
 the odd part stays in stock. Units of one batch may differ from each other; a
 single unit never mixes. This came from a customer who would rather leave one
@@ -117,8 +117,8 @@ two pick lines on one material, and the page then shows the pick-based note
 instead. `settleConsumeFirstLines` (get-method, after every row of a job is
 inserted, all four flows) settles every Pull from Inventory line, bought or
 made. The decision per line is the pure `settleConsumeFirstLine`
-(`lib/supersession-pick.ts`, with `buildConsumeFirstRules` and the shared
-threshold `keepsLineOnPredecessor`), pinned by `lib/supersession-pick.test.ts`;
+(`packages/database/src/supersession-pick.ts`, with `buildConsumeFirstRules` and the shared
+threshold `keepsLineOnPredecessor`), pinned by `packages/database/src/supersession-pick.test.ts`;
 get-method only loads stock and writes the row. Three cases — a row SWAPPED at creation from a Consume First predecessor that covers
 one assembly is reverted onto it with no provenance (the BOM named it; the
 provisional map swaps a made predecessor regardless of stock, for its Make to
@@ -147,9 +147,8 @@ positive on-hand.
 
 **Lineside credit.** Before anything is picked, material already at the
 operation's lineside bin is credited, and both the generator and the schedule
-use ONE definition (`linesideCredit` in `lib/picked-consumption.ts`, exported
-to Node through `@carbon/database/picked-consumption`; `get_lineside_credit`
-in SQL): the material's OWN live pick lines to that bin (picked − returned,
+use ONE definition (`linesideCredit` in `@carbon/database/picked-consumption`;
+`get_lineside_credit` in SQL): the material's OWN live pick lines to that bin (picked − returned,
 less the job's consumption of the item) plus whatever on-hand at the bin no
 LIVE job's live pick line claims — a claim is Σ(picked − returned) of a job's
 non-cancelled lines to the bin minus that job's consumption, and only jobs in
@@ -213,7 +212,7 @@ four flows) and skips any row with issued quantity. Get Method on one
 sub-method rebuilds only that sub-method's rows; the job-wide read it started
 with rewrote lines on other sub-methods — some already issued in successor
 units. The moved row's quantities come from `pullBackQuantities`
-(`lib/supersession-pick.ts`), which is direction-agnostic despite its name:
+(`packages/database/src/supersession-pick.ts`), which is direction-agnostic despite its name:
 recover the source's target (`estimatedQuantity − scrapQuantity` on a Buy/Pick
 row), convert, and re-derive scrap at the TARGET item's rate — the rate the
 row now carries.
@@ -235,7 +234,7 @@ for that. Only shown when it is a whole number.
 
 ## Consumption follows what was picked
 
-`lib/picked-consumption.ts`. A pick can bring a different part than the job
+`packages/database/src/picked-consumption.ts`. A pick can bring a different part than the job
 material names (a Consume First split, a Prefer New fallback, a Stock Only
 redirect), and the material row is never rewritten after creation — so the
 consumers read the pick lines instead of the row:
@@ -275,14 +274,14 @@ Used by `issue` (`issueJobOperationMaterials` completion backflush and
 `post-picking` (`returnUntrackedMaterialRemainder` holds `owed` back
 predecessor-first and returns the rest per item; `maybeRestoreJobMaterialSource`
 keeps the lineside pointer while any budget is still available). Pinned by
-`lib/picked-consumption.test.ts`.
+`packages/database/src/picked-consumption.test.ts`.
 
 Consumed-so-far is attributed per (job, item), not per material — two
 materials on one job sharing an item share one counter.
 
 ## `buildSupersessionRedirectMap` — the shared builder
 
-`lib/supersession-pick.ts`, used by MRP and `get-method` so both resolve a
+`packages/database/src/supersession-pick.ts`, used by MRP and `get-method` so both resolve a
 supersession by the same rules. It does NOT make their answers identical: each
 caller passes its own `asOfDate` (below), so a date-effective supersession can
 apply to one and not the other. Collapses `A→B→C` to `A→C` with the product of
@@ -295,7 +294,7 @@ the factors.
 - **MRP nets a Consume First component's on-hand, bought or made.** Top-level
   demand (Phase 4.5) draws the old item's on-hand down first; the BOM rewrite
   leaves every Consume First child on the old part and passes the rule to the
-  engine as `consumeFirstRedirect` (`lib/mrp-engine.ts`), with the engine's
+  engine as `consumeFirstRedirect` (`packages/database/src/mrp-engine.ts`), with the engine's
   starting on-hand for the old part overlaid from `remainingConsumeFirstOnHand`.
   When the engine reaches the old part it nets its running balance **per
   contributor in whole assemblies** (`redirectConsumeFirstShortfall`: each
@@ -314,13 +313,13 @@ the factors.
   another BOM would otherwise be planned before the redirect reaches it.
   Phase 4.5 (demand on the old part ITSELF — its own sales lines and existing
   job lines) nets the same way through the shared `netConsumeFirstContributors`
-  (`lib/mrp-engine.ts`): a Job Material contributor carries
+  (`packages/database/src/mrp-engine.ts`): a Job Material contributor carries
   `perAssemblyQuantity` from `openJobMaterialLines.quantityPerParent`, so an
   open job line needing two per unit draws only multiples of two, and only the
   MOVED contributors are stamped onto the successor (before this every
   contributor was copied over at full quantity). Sales lines and projections
   have no per-assembly quantity and net by the unit. Pinned by
-  `lib/mrp-engine.test.ts`.
+  `packages/database/src/mrp-engine.test.ts`.
 - **The redirect also moves the ACTUAL demand rows.** Phase 4.5 rewrites
   `jobMaterialDemandByKey` / `salesDemandByKey` in the same proportion it
   moves `grossDemand`, so `demandActual` (which `get_purchasing_planning`,
@@ -358,7 +357,7 @@ the factors.
   and the zod refine. Collapsing one produced `A → A` with the cycle's factor
   product, so an item superseded itself and its quantities were multiplied by
   garbage. The walk builds into a SECOND map; mutating in place made the result
-  depend on iteration order. Pinned by `lib/supersession-pick.test.ts`.
+  depend on iteration order. Pinned by `packages/database/src/supersession-pick.test.ts`.
 
 ## get-method: four flows, one invariant
 
@@ -381,7 +380,7 @@ correct on a wrong base.
 
 `loadSupersessionRedirect` is loaded **once per request**, before the
 transaction, in all four flows, and returns a `SupersessionContext`
-(`lib/supersession-pick.ts`: the collapsed `redirect` map, `consumeFirstHops`,
+(`packages/database/src/supersession-pick.ts`: the collapsed `redirect` map, `consumeFirstHops`,
 `consumeFirstOnHand`, `boughtSuccessors`); `resolveMadeLinePull(itemId,
 perAssembly, ctx)` is the one decision for a Make to Order line — stocked
 chain hop first, then a bought successor, else null (build). `supersessionMode`

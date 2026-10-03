@@ -12,6 +12,7 @@
  */
 
 import * as fs from "fs";
+import { getDbTablesWithColumn } from "./lib/db-types";
 import * as path from "path";
 
 import {
@@ -91,9 +92,20 @@ export async function generateToolMetadata(): Promise<void> {
 
   // No timestamp: the file must be a pure function of the sources so repeated
   // runs on an unchanged tree are byte-identical.
+  // The tables a tenant's rows live in. The dispatcher filters every update
+  // and delete on one of them by the caller's company (`scopedToCompany`), so
+  // a list that came back empty would switch that off without a sound.
+  const companyTables = getDbTablesWithColumn("companyId");
+  if (!companyTables.includes("customer") || companyTables.length < 100) {
+    throw new Error(
+      `generate:mcp found only ${companyTables.length} tables with a companyId column in the generated database types; the dispatcher's company filter depends on that list. Nothing was written.`
+    );
+  }
+
   const metadata = {
     totalTools: allTools.length,
     modules: [...new Set(allTools.map((t) => t.module))].length,
+    companyTables,
     tools: allTools,
   };
 

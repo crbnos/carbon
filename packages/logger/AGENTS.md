@@ -1,8 +1,9 @@
 # @carbon/logger
 
 Centralized, isomorphic logger built on [LogTape](https://logtape.org). Works in
-browser, Node (SSR + Inngest jobs), and — via a separate self-contained copy —
-Deno edge functions. Replaces raw `console.*`. Structured records, hierarchical
+browser and Node (SSR + Inngest jobs). Replaces raw `console.*` (the one
+self-contained Deno edge function, `embedding`, cannot import workspace packages and
+uses `console` directly). Structured records, hierarchical
 categories, env-driven levels, and cloud-agnostic request-id correlation.
 
 ## Always
@@ -12,8 +13,7 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   `["carbon","erp","sales"]`. One logger per module/area.
 - Category convention: packages → `getLogger("<pkg>")`; ERP modules →
   `getLogger("erp","<module>")`; MES → `getLogger("mes",...)`; jobs →
-  `getLogger("jobs","<fnName>")`; edge functions → `["carbon","edge",fnName]`
-  (Deno side).
+  `getLogger("jobs","<fnName>")`.
 - Message + structured data: `logger.info("Created {id}", { id })` or the object
   form `logger.info("{*}", { id, companyId })`. Prefer structured properties over
   string concatenation — they survive to JSONL in prod.
@@ -63,9 +63,6 @@ categories, env-driven levels, and cloud-agnostic request-id correlation.
   `LOG_LEVEL` / `NODE_ENV` raw via `src/env.ts` instead.
 - Log at module top level. LogTape no-ops before `configure()` runs, so
   load-time logs are dropped. Log inside functions/handlers.
-- Hand-edit the Deno copy at `packages/database/supabase/functions/lib/logging.ts`
-  to diverge from this package's config without reason — it mirrors this on
-  purpose (edge functions can't import workspace packages).
 
 ## Validation Commands
 
@@ -176,6 +173,4 @@ That host-specific line lives in each app's `entry.server.tsx`, not here.
 ## Cross-References
 
 - `packages/lib/src/inngest/client.ts` — consumes `createInngestLogger()`.
-- `packages/database/supabase/functions/lib/logging.ts` — Deno-native twin
-  (`getFunctionLogger`), configured from `jsr:@logtape/*`.
 - `packages/env/` — defines `LOG_LEVEL` (also exposed to `window.env`).

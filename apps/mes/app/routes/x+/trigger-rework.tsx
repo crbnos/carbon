@@ -4,11 +4,12 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { triggerReworkValidator } from "~/services/models";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -22,22 +23,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const serviceRole = getCarbonServiceRole();
-
   const { trackedEntityIds: trackedEntityIdsJson, ...reworkData } =
     validation.data;
   const trackedEntityIds = trackedEntityIdsJson
     ? JSON.parse(trackedEntityIdsJson)
     : undefined;
 
-  const result = await serviceRole.functions.invoke("trigger-rework", {
-    body: {
-      ...reworkData,
-      trackedEntityIds,
-      companyId,
-      userId
-    }
-  });
+  const result = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("trigger-rework", { ...reworkData, trackedEntityIds });
 
   if (result.error) {
     return data(
@@ -47,14 +41,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Trigger quantity recalculation
-  await serviceRole.functions.invoke("recalculate", {
-    body: {
+  await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("recalculate", {
       type: "jobRequirements",
-      id: validation.data.jobId,
-      companyId,
-      userId
-    }
-  });
+      id: validation.data.jobId
+    });
 
   return data(
     result.data,

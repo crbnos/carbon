@@ -32,6 +32,14 @@ async function seed() {
   ]);
   if (upsertConfig.error) throw upsertConfig.error;
 
+  const inngestEventUrl = resolveInngestEventUrl();
+  if (inngestEventUrl) {
+    const setEventUrl = await supabaseAdmin.rpc("set_inngest_event_url", {
+      p_url: inngestEventUrl
+    });
+    if (setEventUrl.error) throw setEventUrl.error;
+  }
+
   const upsertPlans = await supabaseAdmin.from("plan").upsert(
     Object.entries(devPrices).map(([id, { stripePriceId, name }]) => ({
       id,
@@ -76,9 +84,21 @@ async function seedInstanceAdmin() {
   }
 }
 
-// Postgres triggers + edge functions call back to the API from inside the
-// docker network, so the public portless hostname (https://<branch>.api.dev)
-// won't resolve. Use host.docker.internal with the worktree's PORT_API
+// Postgres posts its Inngest events (util.send_inngest_event) to this URL.
+// Same resolution as the Inngest SDK: `${base}e/${eventKey}`.
+function resolveInngestEventUrl(): string | null {
+  const eventKey = process.env.INNGEST_EVENT_KEY;
+  const baseUrl =
+    process.env.INNGEST_EVENT_API_BASE_URL || process.env.INNGEST_BASE_URL;
+  if (!eventKey && !baseUrl) return null;
+  return new URL(
+    `e/${eventKey || "NO_EVENT_KEY_SET"}`,
+    baseUrl || "https://inn.gs/"
+  ).href;
+}
+
+// Postgres calls back to the API from inside the docker network, so the public
+// portless hostname (https://<branch>.api.dev) won't resolve. Use host.docker.internal with the worktree's PORT_API
 // (written to .env.local by `crbn up`). Cloud runs (e.g. CI seeding a fresh
 // workspace) have no PORT_API and a `*.supabase.co` URL — return as-is.
 function resolveApiUrl(): string {

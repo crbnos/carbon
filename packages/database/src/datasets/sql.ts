@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { PoolClient } from "pg";
-import { sequences } from "../../supabase/functions/lib/seed.data.ts";
+import { sequences } from "../seed-data.ts";
 import type { Ctx } from "./types.ts";
 
 export type Row = Record<string, unknown>;
@@ -219,7 +219,7 @@ export async function assertSingle(
 }
 
 // get_next_sequence uses INTO STRICT and aborts the transaction if the row is
-// missing, so backfill any sequence added to seed.data.ts after this company
+// missing, so backfill any sequence added to seed-data.ts after this company
 // was created. Must run BEFORE resetSequences.
 export async function ensureSequences(
   client: PoolClient,

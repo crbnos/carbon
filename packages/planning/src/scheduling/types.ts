@@ -6,10 +6,9 @@ import type { Database } from "@carbon/database";
 
 /**
  * Job statuses whose reservations hold finite capacity. Mirrors
- * `activeJobStatuses` in packages/database/src/utils.ts (not importable
- * here — Deno can't resolve that module's npm type imports); `satisfies`
- * binds both to the same enum so drift is a compile error. Draft/Planned
- * jobs can carry reservations (method edits trigger a scheduling run) but
+ * `activeJobStatuses` in packages/database/src/utils.ts; `satisfies` binds
+ * both to the same enum so drift is a compile error. Draft/Planned jobs can
+ * carry reservations (method edits trigger a scheduling run) but
  * are invisible on the boards and skipped by replan waves — capacity
  * commitment starts at release.
  */

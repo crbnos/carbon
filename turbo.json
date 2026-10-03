@@ -85,8 +85,8 @@
         "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
         "apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts",
         "apps/erp/tsconfig.json",
-        "packages/{api,database,documents,files,locale,logger,notifications,printing,utils}/src/**",
-        "packages/database/supabase/functions/shared/**",
+        "packages/{api,database,documents,files,locale,logger,notifications,printing,server-functions,utils}/src/**",
+        "packages/database/supabase/migrations/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"
       ],

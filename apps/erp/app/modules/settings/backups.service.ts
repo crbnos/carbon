@@ -10,10 +10,11 @@ import type {
 } from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Company backup data access. The export edge function is a thin auth boundary;
-// the heavy lifting runs in the carbon/company-export inngest job. Restore is
-// enqueued server-side (see backups.server.ts) and tracked via the
-// externalIntegrationMapping marker (getCompanyRestoreRuns).
+// Company backup data access. Export is enqueued server-side
+// (exportCompanyBackup in backups.server.ts) and runs in the
+// carbon/company-export inngest job. Restore is also enqueued server-side (see
+// backups.server.ts) and tracked via the externalIntegrationMapping marker
+// (getCompanyRestoreRuns).
 
 // A backup is a folder `exports/<name>/` of small objects: `manifest.json`, one
 // `tables/<table>.ndjson.gz` per table, and `assets/<path>` files. Pre-restore
@@ -75,20 +76,6 @@ async function removeStoragePrefix(
   if (files.length > 0) {
     await client.storage.from(bucket).remove(files);
   }
-}
-
-export async function exportCompanyBackup(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    userId: string;
-    label?: string;
-    includeStorage?: "none" | "all";
-    /** Opt-in recovery: leave out rows whose links escape company scope. */
-    skipCorrupted?: boolean;
-  }
-) {
-  return client.functions.invoke("export-company", { body: args });
 }
 
 export type CompanyBackupSummary = {

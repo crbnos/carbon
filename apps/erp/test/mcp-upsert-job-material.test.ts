@@ -129,6 +129,7 @@ describe("MCP upsertJobMaterial orchestration", () => {
     });
     expect(recalculateJobMakeMethodRequirements).toHaveBeenCalledWith(
       expect.anything(),
+      expect.anything(),
       { id: "jmm1", companyId: "c1", userId: "u1" }
     );
     expect(recalculateJobOperationDependencies).toHaveBeenCalledOnce();

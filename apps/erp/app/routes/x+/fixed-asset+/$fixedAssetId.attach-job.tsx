@@ -6,6 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -14,7 +15,7 @@ import {
   invokeAssetTransfer
 } from "~/modules/accounting";
 import { FixedAssetAttachJobForm } from "~/modules/accounting/ui/FixedAssets";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -106,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await invokeAssetTransfer(client, {
+  const result = await invokeAssetTransfer(client, getDatabaseClient(), {
     type: "attachJob",
     companyId,
     userId,
@@ -121,10 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to attach the job"
-          )
+          getErrorMessage(result.error, "Failed to attach the job")
         )
       )
     );

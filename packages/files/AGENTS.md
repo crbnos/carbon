@@ -2,30 +2,28 @@
 
 File handling, one subpath per file class. The goal is that "what is this file,
 can we store it, what does it become, how do we serve it" has exactly ONE answer
-in the codebase, shared by the browser, Node, and the Supabase edge runtime.
+in the codebase, shared by the browser and Node.
 
 | Subpath | Provides |
 |---------|----------|
 | `.` (root) | Cross-type helpers: `MEDIA_CONTENT_TYPES` + `getContentType` (the one extension→MIME map every file-serving route uses), `getFileExtension` / `effectiveExtension` (`.zst` unwrap), `getDocumentType` / `documentTypes` / `isPreviewableDocumentType` (file classification for the Documents UI), `convertKbToString`, and `downloadBlob` / `downloadText` — THE browser "save this as a file" sequence (object URL → anchor click → revoke); never hand-roll it. **`storage(client)`** — the Carbon storage client, supabase-shaped: `.from(bucket)` is plain supabase for `public` / `temp-staging`; `.company(companyId)` is that company's private bucket (bucket id = companyId, THROWS on an empty id). Writes go to the company bucket only; reads (`download`, `info`, `exists`, `createSignedUrl`) fall back to the legacy shared `private` bucket, `move` retries as a move OUT of it, `list` unions both and `remove` deletes from both. The fallback stays until nothing writes to `private` any more: the one-off copy (`scripts/one-off/migrate-private-buckets.ts`) ran, but files have landed there since. `list(folder)` takes no options: it reads the cursor-paged `listV2` endpoint to the end in both buckets and returns every entry directly inside the folder, sorted by name, in the old `list` shape (`name` is the entry's own name; a sub-folder has a null `id`), the company copy winning a tie. Every key must sit under `${companyId}/` and pass `isUnsafeStoragePath`; anything else gets `{ data: null, error }` without touching storage. **`isUnsafeStoragePath(path)`** is THE storage-key traversal guard (dot segments, `\`, `?`, `#`, control characters, checked as given and after every decode so `%2e%2e` / `%252e%252e` are caught; malformed escapes refused) — every route that takes a key from a URL or form calls it rather than a local copy; **`safeStorageFileName(name)`** turns a caller-supplied file name into a safe last key segment (basename, no `%`) or null. This is the contract for document keys (`${companyId}/parts/…`, `/job/…`, `/tmp/…`, everything `getPrivateUrl` serves); the backup and audit-archive layouts (`exports/…`, `audit/…`) share the bucket under their own keys and keep using plain `client.storage.from(companyId)`. `getCompanyPrivateBucket` / `LEGACY_PRIVATE_BUCKET` / `hasCompanyPrivateObjectPathPrefix` are exported for the few places that need the bucket *name* (MediaUploader staging, route authorization, the assembler's bucket resolver) |
 | `./csv` | `encodeCsv` (object rows; `header: false` encodes a later page of a streamed file — pages join with `\r\n`, see the Sync Activity export) / `encodeCsvTable` (header + cells) — the ONE CSV encoder, injection-safe by construction (`stripCsvFormulaPrefix` on every string cell); `parseCsv` (text) / `parseCsvFile` (browser File, streamed); `downloadCsv`; `CSV_CONTENT_TYPE`. papaparse underneath, in every runtime. The Table export button, report exports, import templates, import-error re-exports and the sales CSV import all go through here — before this there were two libraries (`json-2-csv` + papaparse) and two hand-rolled encoders, and only ONE of the five export sites protected against formula injection |
 | `./media` | Images. **`MediaUploader`** — the configured client (constructor takes the storage client + HEIC staging location once, files-sdk style): `prepareForUpload(files)` (HEIC → JPEG sequentially + duplicate-name refusal, throws `DuplicateFileNameError`), `convertHeic(file)`, `prepareImage(file, shape)`. Underneath: `processImage` (the pipeline), `prepareImageUpload` (pipeline → native-decode fallback → imgproxy fallback), `convertHeicToJpeg` / `convertHeicFiles` / `findDuplicateFileName`, `transformImageViaStorage` (imgproxy round-trip), `isHeic`, `IMAGE_UPLOAD_MIME_TYPES`, plus the storage-path helpers `getPrivateUrl` / `getRawModelUrl` / `parseJobFilePath` |
-| `./media/node` | `initNodeImageCodecs()` — Node-only wasm pre-instantiation; call once before the pipeline in Node (jobs, paperless, vitest). The wasm comes from the BUNDLER (`?inline` data URIs), never off disk — so this module is consumable only from a Vite pipeline, and that pipeline needs `assetsInclude: ["**/*.wasm"]` (already set in `apps/erp/vite.config.ts` and `@carbon/config/vitest`). Never import from client code |
+| `./media/node` | `initNodeImageCodecs()` — Node-only wasm pre-instantiation; call once before the pipeline in Node (jobs, paperless, vitest). The wasm comes from the BUNDLER (`?inline` data URIs), never off disk — so this module is consumable only from a Vite pipeline, and that pipeline needs `assetsInclude: ["**/*.wasm"]` (already set in `apps/erp/vite.config.ts` and `@carbon/config/vitest`). `renderLabelLogo(bytes, ext, { widthDots, threshold?, crop? })` — a logo as a mono PNG data URL + ZPL `^GFA` field (inits the codecs itself; `@carbon/documents/labels` calls it). Never import from client code |
 | `./cad` | CAD/model formats: `supportedModelTypes`, `optimizableModelFormat`, `modelPathOptimizeFormat`, `isModelRawDownloadable` |
 | `./pdf` | PDF *reading* on [unpdf](https://github.com/unjs/unpdf): `extractPdfText` (`--- Page N ---` joined, what the AI extraction prompts consume), `extractPdfPages`, `getPdfPageCount`, `getPdfMeta`, and `openPdf`/`closePdf` for page-level work (the inspection overlay export and anchor crop drive pages themselves; `closePdf` destroys the loading task — `cleanup()` alone leaks the document transport). Generation stays in `@carbon/documents` — this is file handling, not templating |
 | `./pdf/worker` | `registerReactPdfWorker(pdfjs)` — browser-only, synchronous; both app `entry.client.tsx` files call it once. Nothing else may set `GlobalWorkerOptions.workerSrc` |
 
 ## The image pipeline
 
-The implementation lives in `packages/database/supabase/functions/shared/image-pipeline.ts`
-(the edge runtime only mounts `supabase/functions/`); `./media/image.ts` re-exports it
-by relative path — the same deliberate pattern as `@carbon/utils` `precision.ts`. Do
-not "fix" that import and do not duplicate the code.
+The implementation lives in `src/media/image-pipeline.ts` (its wasm module
+declarations in `wasm-codecs.d.ts`, triple-slash referenced); `./media/image.ts`
+re-exports it. Rounding comes from `@carbon/utils` `round`. Do not duplicate the code.
 
 Codecs are wasm, lazy-loaded per format and identical in every runtime:
 libheif-js (HEIC/HEIF decode), jSquash mozjpeg / png / webp (decode + encode),
 jSquash resize. No ImageMagick anywhere. Node cannot load wasm over `fetch(file:)`,
-hence `./media/node`. Bare specifiers resolve via `package.json` in Node/browser and
-via `functions/deno.json` `imports` in Deno — add BOTH when adding a codec.
+hence `./media/node`. Codec packages are dependencies in this package's `package.json`.
 
 **Never resolve a codec's `.wasm` from disk.** `./media/node` used
 `createRequire(import.meta.url).resolve(...)`, which works only while the file sits
@@ -48,8 +46,7 @@ document-panel upload mutation — TanStack-shaped: options at the hook or per-c
 `useImageUpload` (ERP + MES editor hooks), Suggestion, slide uploads,
 `DocumentCreateForm`, `AttachmentsList`, the three curated forms
 (`ItemThumbnailUpload`, `ProfilePhotoForm`, `CompanyLogoForm`). Non-browser callers
-(REST/MCP/integrations) use the `process-image` edge function, which runs the same
-`processImage`; the MCP signed-URL flow (`createDocumentUploadUrl` in
+(REST/MCP/integrations) go through the MCP signed-URL flow (`createDocumentUploadUrl` in
 `documents.service`, which every module's `create*DocumentUploadUrl` delegates to)
 mints a `.heic` name into `{companyId}/tmp/uploads/…` staging, and
 `insertUploadedDocument` converts it to JPEG (imgproxy round-trip — the bytes
@@ -59,9 +56,7 @@ fallback is `private/{companyId}/tmp/`.
 
 Fallback order in `prepareImageUpload`: wasm pipeline → (browser only) native
 `createImageBitmap` decode for formats the pipeline lacks (gif, avif) → imgproxy
-storage round-trip. On the edge function, `MAX_PIXELS` (25MP) guards the wasm decode
-(it materialises the full RGBA frame — ~200MB for a 48MP iPhone photo); over that
-it falls back to imgproxy, which decodes natively in bounded memory.
+storage round-trip.
 
 Adding a file class: create `src/<type>/` with an `index.ts`, add the `./<type>`
 export to `package.json`, and add a row above. Don't pre-create empty slots — `json`,
@@ -79,7 +74,6 @@ export to `package.json`, and add a row above. Don't pre-create empty slots — 
   cacheControl)`. Stored bytes are served from the app origin under a name the
   uploader chose: without it an uploaded SVG ran script as whoever opened the
   link (it adds `nosniff`, and for SVG/+xml/HTML `attachment` + a sandbox CSP).
-  The public `file/model/public` route serves `.glb` only — it has no session.
 - Read PDFs through `./pdf` only. Never import `pdfjs-dist` or `pdfjs` from
   `react-pdf` at a call site — `react-pdf`'s `<Document>`/`<Page>` are the only
   things app code takes from that package.
@@ -124,14 +118,13 @@ PDF.js bundle could not be resolved" while dev worked, because dev leaves
 ```bash
 pnpm --filter @carbon/files test        # vitest (includes a real HEIC fixture)
 pnpm --filter @carbon/files typecheck
-cd packages/database/supabase/functions && deno check --no-lock shared/image-pipeline.ts
 ```
 
 ## Cross-References
 
-- `packages/database/supabase/functions/process-image/` — the authed server entry
-- `packages/database/supabase/functions/logo-resizer/`, `thumbnail/` — consumers of
-  the pipeline primitives (`decodeImage` / `resizeImage` / `encodeImage`)
+- `src/media/label-logo.ts` — consumer of the pipeline primitives (`decodeImage` /
+  `resizeImage` / `encodeImage`). Model thumbnails do not use it: the Rust
+  assembler renders them (`crates/thumbnail`).
 - `packages/dev/docker/docker-compose.dev.yml`,
   `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml` — imgproxy service
 - `apps/{erp,mes}/app/routes/file+/preview+/$bucket.$.tsx` — read-side serving

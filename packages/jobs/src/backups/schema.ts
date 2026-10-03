@@ -288,6 +288,7 @@ export async function getCompanyTableCatalog(
            is_generated, identity_generation, column_default
     FROM information_schema.columns
     WHERE table_schema = 'public'
+    ORDER BY table_name, ordinal_position
   `.execute(db);
 
   const primaryKeys = await sql<{

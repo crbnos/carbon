@@ -141,7 +141,7 @@ See the [full roadmap](https://github.com/orgs/crbnos/projects/1/views/1) for wh
 | | |
 | --- | --- |
 | **Carbon Cloud** | Managed application, database, updates and backups. [Start a 30-day trial](https://app.carbon.ms) without a sales call. |
-| **Self-hosted** | Run Carbon in your VPC, on-prem or air-gapped. See the [self-hosting guide](https://docs.carbon.ms/docs/platform/self-hosting). |
+| **Self-hosted** | Run Carbon in your VPC, on-prem or air-gapped. See the [self-hosting guide](https://carbon.ms/self-hosted). |
 | **Develop locally** | Run the application and supporting services from source. Follow [Local Development](#local-development). |
 
 <br />
@@ -232,6 +232,7 @@ carbon
 | `@carbon/form`           | `ValidatedForm` and field components for zod + FormData                      |
 | `@carbon/jobs`           | Inngest background jobs: events, integrations, notifications, workflows      |
 | `@carbon/planning`       | MRP and scheduling engines                                                   |
+| `@carbon/server-functions` | Transactional writes shared by the apps, API and jobs (posting, issuing, converting) |
 | `@carbon/documents`      | PDFs, email templates, ZPL labels, QR and barcodes                           |
 | `@carbon/printing`       | Printer routing, label queue and ProxyBox delivery                           |
 | `@carbon/viewer`         | 3D models and animated assembly instructions (react-three-fiber)             |

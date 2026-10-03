@@ -22,7 +22,7 @@ import { highlight } from "@/lib/highlight";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.api.intro.title} — Carbon`,
+  title: `${SEO.api.intro.title} | Carbon`,
   ogTitle: SEO.api.intro.title,
   description: SEO.api.intro.description,
   path: "/api/data",

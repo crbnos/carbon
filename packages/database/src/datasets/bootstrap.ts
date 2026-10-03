@@ -28,7 +28,7 @@ import {
   scrapReasons,
   sequences,
   unitOfMeasures
-} from "../../supabase/functions/lib/seed.data.ts";
+} from "../seed-data.ts";
 import type { Database } from "../types.ts";
 import type { Resolved } from "./types.ts";
 
@@ -351,7 +351,7 @@ export async function seedCompanyReferenceData(
   }
 
   // Columns derive from the shared accountDefaults object so this insert
-  // can't drift from seed.data.ts when new defaults are added.
+  // can't drift from seed-data.ts when new defaults are added.
   const accountDefaultEntries = Object.entries(accountDefaults);
   const accountDefaultColumns = [
     ...accountDefaultEntries.map(([column]) => `"${column}"`),

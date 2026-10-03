@@ -26,28 +26,28 @@ Key service functions (verified):
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
-  edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The edge function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  server function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The server function owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
   `post-inventory-count` books its variances through the same shared core
-  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL.
+  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
   **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
   (migration `20260923223639`) stamps a layer booked for ONE serial unit — every layer
   `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
   sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
   optional `trackedEntityIds` and orders FIFO / LIFO layers through
-  `orderLayersForConsumption` (`shared/cost-layer-order.ts`): the leaving unit's own layer
+  `orderLayersForConsumption` (`packages/server-functions/src/lib/cost-layer-order.ts`): the leaving unit's own layer
   first, then unstamped layers, then another unit's stamped layer as the last resort (so
   nothing else eats a returned unit's value). Callers passing the ids: `bookAdjustment`
   decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
-  Pinned by `shared/cost-layer-order.test.ts` and the database test
-  `shared/calculate-cogs.test.ts`. The valuation
+  Pinned by `lib/cost-layer-order.test.ts` and the database test
+  `lib/calculate-cogs.test.ts`. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
@@ -65,7 +65,7 @@ Key service functions (verified):
   Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
   `scrapAccount` + dimensions replaces per-reason account mapping by design.
   The **ScrapReason** dimension is seeded active by default (a `dimension` row per
-  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  company group, from `packages/database/src/seed-data.ts`; backfilled to existing groups by
   `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
   it is entity-backed — its values resolve live from the `scrapReason` table via
   `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
@@ -73,7 +73,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
+- `correctStockMovement` — wraps the **`correct-stock-movement` server function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and (when accounting is on) posting its journal into the period containing
@@ -97,7 +97,7 @@ Key service functions (verified):
   (× `conversionFactor`); `Consume First` redirects only when the predecessor is out of warehouse
   stock; `No Stock` (and `Stock Only` without an effective successor) is dropped from the schedule
   and skipped in generation. Note picking's redirect rules differ from the MRP/job-creation map
-  (`functions/lib/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
+  (`packages/database/src/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
   for picking, `Stock Only` must not be picked for production. A substituted line's `itemId`
   differs from its `jobMaterial.itemId` (no new column); the availability RPC reports the
   line's OWN pick item's warehouse on-hand with NO successor fold-in — a substituted line
@@ -126,7 +126,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   longer an approximate matview. Excludes `Rejected` tracked stock; exact, with a
   nightly `reconcile-item-stock-quantities` cron as drift backstop. Read by
   RealtimeDataProvider (with realtime push), the workflow engine's
-  `item.quantityOnHand` operation, and the MRP edge function's on-hand input.
+  `item.quantityOnHand` operation, and MRP's on-hand input.
   The old `itemInventory` rollup table is DEAD — its maintaining trigger was dropped in
   `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via

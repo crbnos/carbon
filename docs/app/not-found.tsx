@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 
 export const metadata: Metadata = {
-  title: "Page not found — Carbon",
+  title: "Page not found | Carbon",
   description: "The page you’re looking for doesn’t exist or has moved."
 };
 

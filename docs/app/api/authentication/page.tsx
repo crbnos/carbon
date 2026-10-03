@@ -18,7 +18,7 @@ import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.carbonApi.auth.title} — Carbon`,
+  title: `${SEO.carbonApi.auth.title} | Carbon`,
   ogTitle: SEO.carbonApi.auth.title,
   description: SEO.carbonApi.auth.description,
   path: "/api/authentication",

@@ -8,7 +8,7 @@ import { completeJobOperationBatchValidator } from "./models";
 // The Complete Batch form submits variable-length per-member quantities as a
 // nested array (ValidatedForm), with quantity/scrap coerced from form strings via
 // zfd.numeric. The validator must parse that shape into a typed array the
-// batch-operations edge fn "complete" path consumes. See
+// batch-operations server fn "complete" path consumes. See
 // .ai/specs/2026-08-21-job-operation-batching.md.
 describe("completeJobOperationBatchValidator", () => {
   it("parses per-member quantities and optional scrap", () => {
@@ -95,7 +95,7 @@ describe("completeJobOperationBatchValidator", () => {
 
   // "Not in this run" travels as a string flag from a Hidden input (the same
   // idiom as productionEventValidator's `exclusive`); the route maps
-  // `excluded === "true"` to a boolean before invoking the edge fn. An empty
+  // `excluded === "true"` to a boolean before invoking the server fn. An empty
   // string (row included) must parse as absent, not as a truthy flag.
   it("parses the excluded string flag per member", () => {
     const result = completeJobOperationBatchValidator.safeParse({

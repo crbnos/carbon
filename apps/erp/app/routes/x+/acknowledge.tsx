@@ -232,10 +232,10 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (readError) {
-      logger.error(
-        `[acknowledge] Failed to read flags for user ${userId}:`,
-        readError
-      );
+      logger.error("[acknowledge] Failed to read flags for user {userId}", {
+        userId,
+        error: readError
+      });
       return { success: false, message: "Failed to read user flags" };
     }
 
@@ -249,8 +249,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (updateResult.error) {
       logger.error(
-        `[acknowledge] Failed to write flag "${flag}" for user ${userId}:`,
-        updateResult.error
+        '[acknowledge] Failed to write flag "{flag}" for user {userId}',
+        { flag, userId, error: updateResult.error }
       );
       return { success: false, message: "Failed to update flag" };
     }

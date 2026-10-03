@@ -8,12 +8,12 @@
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3
 
 import { type Selectable, sql } from "kysely";
-import { round } from "../supabase/functions/shared/precision.ts";
+import { round } from "./precision.ts";
 import {
   billingHorizon,
   generateRentalBillingPeriods,
   wholeRateUnits
-} from "../supabase/functions/shared/rental-billing.ts";
+} from "./rental-periods.ts";
 import type { Kysely, KyselyDatabase, KyselyTx } from "./client";
 import {
   effectiveInvoiceAutomation,

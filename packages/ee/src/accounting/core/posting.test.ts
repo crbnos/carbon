@@ -368,7 +368,7 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
 });
 
 // ── Natural-balance → debit-signed conversion ───────────────────────────────
-// Carbon's post-* edge functions sign journalLine.amount by the account's
+// Carbon's post-* server functions sign journalLine.amount by the account's
 // NATURAL balance (credit("liability", x) stores +x), so the engine converts
 // at fetch time; see toDebitSignedAmount.
 

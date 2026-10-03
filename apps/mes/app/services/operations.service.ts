@@ -4,13 +4,16 @@
 
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
 import {
+  async,
   datetime,
   type FlatTree,
   flattenTree,
@@ -312,6 +315,7 @@ export async function deleteAttributeRecord(
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -329,7 +333,7 @@ export async function finishJobOperation(
     })
     .eq("id", args.jobOperationId)
     .eq("companyId", args.companyId)
-    .select("id");
+    .select("id, jobId");
 
   if (!result.error && result.data.length === 0) {
     log.warn("finishJobOperation: job operation not found in company", {
@@ -340,34 +344,49 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    client
-      .from("productionEvent")
-      .select("id")
-      .eq("jobOperationId", args.jobOperationId)
-      .not("endTime", "is", null)
-      .eq("postedToGL", false)
-      .then((unpostedEvents) => {
-        if (unpostedEvents.data?.length) {
-          Promise.all(
-            unpostedEvents.data.map((event) =>
-              client.functions.invoke("post-production-event", {
-                body: {
-                  productionEventId: event.id,
-                  userId: args.userId,
-                  companyId: args.companyId
-                }
-              })
-            )
-          );
-        }
-      });
+    // System: every caller passes the service role. An operation's own
+    // failure is logged inside it; onError catches anything that escapes (the
+    // query, the import).
+    async.background(
+      async () => {
+        const unposted = await client
+          .from("productionEvent")
+          .select("id")
+          .eq("jobOperationId", args.jobOperationId)
+          .not("endTime", "is", null)
+          .eq("postedToGL", false);
+        if (unposted.error) throw unposted.error;
+        if (unposted.data.length === 0) return;
+
+        const fns = serverFns.system({
+          db,
+          companyId: args.companyId,
+          userId: args.userId
+        });
+        await async.map(
+          unposted.data,
+          (event) =>
+            fns.invoke("post-production-event", {
+              productionEventId: event.id
+            }),
+          { concurrency: 4 }
+        );
+      },
+      (error) =>
+        log.error("finishJobOperation: posting production events failed", {
+          companyId: args.companyId,
+          jobOperationId: args.jobOperationId,
+          error
+        })
+    );
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
     // last operation. Return any picked-but-unconsumed stock staged at lineside
-    // back to its warehouse source — the SQL trigger can't call edge functions,
+    // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    const { jobId } = await returnPickedRemainders(client, args);
+    await returnPickedRemainders(client, db, args);
+    const jobId = result.data[0]?.jobId;
 
     if (jobId) {
       await raiseMoment("production.jobOperationCompleted", {
@@ -420,70 +439,32 @@ export async function finishJobOperation(
 }
 
 /**
- * Flush un-consumed picked material (tracked AND untracked) from the lineside
- * shelf back to the warehouse via the post-picking sweep cases. Job just
- * completed → sweep the whole job (runs under both returnPickedMaterialTiming
- * policies). Otherwise → sweep this operation's lines; the edge function itself
- * no-ops unless the company policy is 'operation'. Both sweeps are idempotent.
- *
- * Uses the client `finishJobOperation` is given — every caller passes a
- * service-role client, so the picking lines (an inventory table the finishing
- * operator may not have RLS access to) are always readable and the returns
- * aren't silently skipped for production-only roles.
+ * Returns picked-but-unconsumed material a Done operation left at lineside —
+ * the whole job's remainder when it completed the job. Logged, never thrown:
+ * the status change has already happened.
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
     companyId: string;
   }
-): Promise<{ jobId: string | undefined }> {
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { jobId: undefined };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { jobId };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
-  // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await client.functions.invoke("post-picking", { body });
+): Promise<void> {
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
-      jobId,
-      scope: body.type,
+      jobOperationId: args.jobOperationId,
       companyId: args.companyId
     });
   }
-
-  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(
@@ -1417,6 +1398,7 @@ export async function getJobMaterialsByOperationId(
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
   const step = await client
@@ -1554,19 +1536,17 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issue = await client.functions.invoke("issue", {
-      body: {
+    const issued = await serverFns
+      .as({ client, db, companyId: args.companyId, userId: args.userId })
+      .invoke("issue", {
         id: operationId,
         type: "partToOperation",
         itemId: material.itemId,
         materialId: material.id,
         quantity: delta,
-        adjustmentType: "Negative Adjmt.",
-        companyId: args.companyId,
-        userId: args.userId
-      }
-    });
-    if (issue.error) failures.push(material.itemId);
+        adjustmentType: "Negative Adjmt."
+      });
+    if (issued.error) failures.push(material.itemId);
   }
 
   return {
@@ -1986,7 +1966,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` edge function spawns the next entity on each completion).
+ * `issue` server function spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
@@ -2333,6 +2313,7 @@ export async function insertBatchStepRecords(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     operationId: string;
     index: number;
@@ -2378,7 +2359,7 @@ export async function completeAllStepsForUnit(
   // operation-wide, so one call after the inserts tops up this unit's shortfall.
   // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
   // issuable, matching the per-step record path.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, db, {
     jobOperationStepId: missing[0].id,
     companyId: args.companyId,
     userId: args.createdBy

@@ -10,6 +10,7 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
@@ -46,6 +47,7 @@ import { getTheme } from "./services/theme.server";
 export const middleware = [
   requestIdMiddleware,
   securityMiddleware,
+  formBodyMiddleware,
   flashMiddleware
 ];
 export const clientMiddleware = [flashClientMiddleware];

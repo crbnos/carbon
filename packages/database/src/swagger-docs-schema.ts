@@ -102041,6 +102041,45 @@ export default {
         tags: ["(rpc) get_quote_methods"]
       }
     },
+    "/rpc/set_inngest_event_config": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_base_url: {
+                  format: "text",
+                  type: "string"
+                },
+                p_key: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_key", "p_base_url"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_inngest_event_config"]
+      }
+    },
     "/rpc/get_completion_jobs": {
       get: {
         parameters: [
@@ -110125,6 +110164,41 @@ export default {
           }
         },
         tags: ["(rpc) get_maintenance_dispatches_by_location"]
+      }
+    },
+    "/rpc/set_inngest_event_url": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_url: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_url"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_inngest_event_url"]
       }
     },
     "/rpc/sync_on_maintenance_dispatch_complete": {

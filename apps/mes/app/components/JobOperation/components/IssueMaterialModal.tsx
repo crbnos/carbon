@@ -130,7 +130,7 @@ export function IssueMaterialModal({
   workCenterId?: string;
   material?: JobMaterial;
   // Batch mode: the pick covers every member of this operation batch. The
-  // edge fn splits the picked lots pro-rata by remaining requirement and
+  // server fn splits the picked lots pro-rata by remaining requirement and
   // records per-member consumption, so no parent entity is sent.
   batchId?: string;
   // Batch mode: the WHOLE batch's outstanding requirement for this item. The
@@ -1262,7 +1262,7 @@ export function IssueMaterialModal({
           trackingType === "Non-Inventory" ||
           trackingType === null ? (
             // Untracked item (Inventory or Non-Inventory, e.g. consumables and
-            // services) - use ValidatedForm; the issue edge function skips the
+            // services) - use ValidatedForm; the issue server function skips the
             // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"

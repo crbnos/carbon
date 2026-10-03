@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DB } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import type { BatchType } from "@carbon/utils";
-import { batchDuration } from "@carbon/utils";
+import { batchDuration, datetime } from "@carbon/utils";
 import type { Kysely } from "kysely";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import { nextWorkingInstant } from "./calendar-utils.ts";
@@ -610,7 +609,7 @@ export async function placeReleasedBatches(args: {
   // ones appearing — the per-job runs that follow read a consistent set.
   await db.transaction().execute(async (trx) => {
     // Persist auto-selected work centers to the batch (and its members —
-    // mirroring the edge fn's "assigning a work center writes it to every
+    // mirroring the server fn's "assigning a work center writes it to every
     // member"). The IS NULL guard defers to a human pick that landed after
     // this wave's read; the next wave then places on theirs (sticky).
     for (const [batchId, workCenterId] of selectedWorkCenters) {

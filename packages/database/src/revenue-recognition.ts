@@ -9,12 +9,12 @@
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1
 
 import { sql } from "kysely";
-import { round } from "../supabase/functions/shared/precision.ts";
+import { round } from "./precision.ts";
 import {
   daysBetweenInclusive,
   formatIsoDate,
   parseIsoDate
-} from "../supabase/functions/shared/revenue-schedule.ts";
+} from "./revenue-schedule.ts";
 import type { Kysely, KyselyDatabase, KyselyTx } from "./client";
 import { getNextSequence } from "./sequence";
 

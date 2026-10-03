@@ -15,6 +15,7 @@ import {
   upsertJobMethod
 } from "~/modules/production";
 import { isSalesOrderClosed } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 const logger = getLogger("erp", "update");
@@ -123,12 +124,17 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
-          sourceId: value,
-          targetId: id as string,
-          companyId,
-          userId
-        });
+        const upsertMethod = await upsertJobMethod(
+          serviceRole,
+          getDatabaseClient(),
+          "itemToJob",
+          {
+            sourceId: value,
+            targetId: id as string,
+            companyId,
+            userId
+          }
+        );
 
         if (upsertMethod.error) {
           upsertMethod.error;
@@ -241,11 +247,15 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const recalculate = await recalculateJobRequirements(serviceRole, {
-          id: id as string,
-          companyId,
-          userId
-        });
+        const recalculate = await recalculateJobRequirements(
+          serviceRole,
+          getDatabaseClient(),
+          {
+            id: id as string,
+            companyId,
+            userId
+          }
+        );
         if (recalculate.error) {
           logger.error(recalculate.error);
           return recalculate;

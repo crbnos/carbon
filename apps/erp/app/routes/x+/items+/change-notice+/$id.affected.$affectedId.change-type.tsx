@@ -16,6 +16,7 @@ import {
   requireChangeNoticeChildRoute,
   requireEditableChangeNoticeRoute
 } from "~/modules/items/items.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -66,12 +67,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (owned) return owned;
 
-  const update = await updateChangeNoticeAffectedItemChangeType(client, {
-    id,
-    changeType,
-    companyId,
-    userId
-  });
+  const update = await updateChangeNoticeAffectedItemChangeType(
+    client,
+    getDatabaseClient(),
+    {
+      id,
+      changeType,
+      companyId,
+      userId
+    }
+  );
 
   if (update.error) {
     return data(

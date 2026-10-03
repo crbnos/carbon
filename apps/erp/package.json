@@ -22,6 +22,7 @@
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/onboarding": "workspace:*",
+    "@carbon/server-functions": "workspace:*",
     "@carbon/planning": "workspace:*",
     "@carbon/printing": "workspace:*",
     "@carbon/react": "workspace:*",

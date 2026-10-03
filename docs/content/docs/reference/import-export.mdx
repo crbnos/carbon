@@ -142,7 +142,7 @@ The import URL's `tableId` isn't a key of `importPermissions`, so the route reje
 The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. Opening stock also needs inventory create permission. Without the required permission the whole import is refused. Get the permission, then re-submit.
 
 ### A fixed-asset CSV is rejected
-`fixedAsset` has a models entry but is **not** in the import edge function's own table enum (`packages/database/supabase/functions/import-csv/index.ts:18-33`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
+`fixedAsset` has a models entry but is **not** in the import server function's own table enum (`packages/server-functions/src/import-csv/index.ts`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
 
 ### An enum column imported as the wrong value
 When a CSV value has no mapping to a Carbon enum, the row imports with that field's configured **default** rather than failing — an unmapped Replenishment System, for example, lands as `"Buy and Make"`. In the **Map columns** step, map your raw values deliberately (the wizard fuzzy-matches obvious ones) so the default doesn't silently win.

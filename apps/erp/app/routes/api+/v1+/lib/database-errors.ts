@@ -2,10 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { FunctionsError, PostgrestError } from "@supabase/supabase-js";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { SERVICE_RULE_ERROR_CODE } from "~/utils/supabase";
 
-export type SupabaseFailure = PostgrestError | FunctionsError;
+export type SupabaseFailure = PostgrestError;
 
 export type DatabaseFailureKind =
   | "conflict"
@@ -32,7 +32,6 @@ export function classifyDatabaseFailure(
   error: SupabaseFailure | null | undefined
 ): DatabaseFailureKind {
   if (!error) return "unknown";
-  if (error.name === "FunctionsHttpError") return "rule";
 
   switch ("code" in error ? error.code : undefined) {
     case "23505":

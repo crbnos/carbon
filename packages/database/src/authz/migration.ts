@@ -148,7 +148,7 @@ async function readShipped(dir: string, managed: Set<string>) {
           shipped.helpers.set(key, { file, text });
           continue;
         }
-        if (schema === "public" && RETIRED_HELPERS[name] === file) continue;
+        if (RETIRED_HELPERS[key] === file) continue;
       } else if (node.DoStmt) {
         table = /tablename = '((?:[^']|'')+)'/
           .exec(text)?.[1]

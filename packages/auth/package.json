@@ -26,6 +26,7 @@
     "./passkey.server": "./src/services/passkey.server.ts",
     "./verification.server": "./src/services/verification.server.ts",
     "./middleware/flash.server": "./src/middleware/flash.server.ts",
+    "./middleware/form-body.server": "./src/middleware/form-body.server.ts",
     "./middleware/security.server": "./src/middleware/security.server.ts",
     "./middleware/flash.client": "./src/middleware/flash.client.ts"
   },

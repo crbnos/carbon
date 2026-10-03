@@ -37,7 +37,7 @@ type Db = Kysely<KyselyDatabase> | KyselyTx;
 
 /** The Carbon-native prefix stamped on `journalLine.documentLineReference`
  * for purchase-invoice lines — `purchase-invoice:<purchaseOrderLineId>`
- * (see `functions/lib/utils.ts` journalReference.to.purchaseInvoice). Direct
+ * (see `journalReference.to.purchaseInvoice` in @carbon/database). Direct
  * no-PO invoice lines carry NULL, so they never resolve to a source item. */
 const PURCHASE_INVOICE_LINE_REFERENCE_PREFIX = "purchase-invoice:";
 

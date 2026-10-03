@@ -51,7 +51,7 @@ const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "To Storage Unit Name"
 ]);
 
-// The edge functions still write "Shelf" keys into trackedActivity/trackedEntity
+// The server functions still write "Shelf" keys into trackedActivity/trackedEntity
 // attributes. Renaming them there would mean every historical row keeps the old
 // key and every reader needs a fallback (post-picking reads "From Shelf" back to
 // decide where to return stock), so the rename is display-only: stored key on the

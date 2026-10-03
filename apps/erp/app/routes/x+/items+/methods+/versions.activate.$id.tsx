@@ -12,6 +12,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { checkRevisionLock } from "~/modules/items/items.server";
 import { activateMethodVersion } from "~/modules/items/items.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "items");
@@ -84,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // spinning fresh method versions at Done and never stages/reserves a pending
   // revision, so there is nothing for an open CO to lock against.
 
-  const update = await activateMethodVersion(serviceRole, {
+  const update = await activateMethodVersion(serviceRole, getDatabaseClient(), {
     id,
     companyId,
     userId

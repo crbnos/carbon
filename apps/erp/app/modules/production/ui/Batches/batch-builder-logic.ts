@@ -620,7 +620,7 @@ export function computeSelectionDimSets(
 }
 
 // A candidate is LOCKED when adding it to the current selection would leave a
-// "must" dimension with no shared value — the client mirror of the edge fn's
+// "must" dimension with no shared value — the client mirror of the server fn's
 // `assertMaterialCompatible`. Empty selection locks nothing; already-selected
 // candidates are never locked.
 export function computeLockedById(
@@ -650,7 +650,7 @@ export function computeLockedById(
 // row is picked; this is the after-the-fact flag: "this operation is in the
 // batch and its material shares no {dimension} with the rest". Covers every
 // non-"ignore" dimension — a "must" mismatch that slipped in (rules changed,
-// or members drifted) flags here too, and the edge fn still refuses it on
+// or members drifted) flags here too, and the server fn still refuses it on
 // submit. Members with no value for a dimension are never flagged by it.
 export function computeMemberMismatches(
   members: { id: string; sets: MemberValueSets }[],

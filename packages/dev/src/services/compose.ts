@@ -60,20 +60,18 @@ export type Container = {
 // Every profile `bootStack` can enable. Compose treats profile-gated services
 // as "not enabled" rather than orphans, so a `down` missing one silently
 // leaves those containers running. `stopStack`'s sweep backstops drift here.
-const COMPOSE_PROFILES = ["full", "chrome"] as const;
+const COMPOSE_PROFILES = ["full"] as const;
 
 // Exported for tests: the `docker compose … up -d` argv.
 export function buildUpArgs(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
+  opts?: { minimal?: boolean; services?: string[] }
 ): string[] {
   const args = devArgs(root, slug, "--env-file", ".env.local");
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
   if (!opts?.services && !opts?.minimal) args.push("--profile", "full");
-  // Opt-in local Chromium for the thumbnail edge fn (`crbn up --thumbnails`).
-  if (!opts?.services && opts?.chrome) args.push("--profile", "chrome");
   args.push("up", "-d");
   if (opts?.services) args.push(...opts.services);
   return args;
@@ -96,7 +94,7 @@ export function buildDownArgs(
 export async function bootStack(
   root: string,
   slug: string,
-  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
+  opts?: { minimal?: boolean; services?: string[] }
 ) {
   await execStrict("docker", buildUpArgs(root, slug, opts), root);
 }

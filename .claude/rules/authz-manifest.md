@@ -16,7 +16,7 @@ Every RLS policy on a `public` table, and the 16 RLS/auth helper functions, are 
 (`no-authz-ddl-in-migrations` in `@carbon/checks` fails them, from `20260927000000` on).
 `storage.objects` (bucket) policies are not in the manifest and stay in migrations.
 
-The same machinery owns the event system's 39 functions — see
+The same machinery owns the event system's 37 functions — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -76,8 +76,8 @@ or `baseline.json` by hand.
 ## Event-system functions
 
 `packages/database/src/event-system/functions/` holds one file per function for dispatch,
-subscriptions, the queue wake-up, the audit log, the search index and embeddings (39:
-31 in `public`, 8 in `util`). They are loaded, synced, shipped and guarded exactly like the
+subscriptions, the queue wake-up, the audit log, the search index and embeddings (37:
+31 in `public`, 6 in `util`). They are loaded, synced, shipped and guarded exactly like the
 RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries its `schema`.
 
 - **File name is the function**: `dispatch_event_batch.sql` defines
@@ -98,7 +98,11 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
 - **Not managed**: the per-table interceptors (`sync_*`) stay in their table's migration,
-  and `util.api_url()` is not in the set.
+  as do `util.send_inngest_event` and `public.set_inngest_event_url`
+  (`20261002170250`).
+- **Retired**: `util.anon_key`, `util.invoke_edge_function` and `util.process_embeddings`
+  (`RETIRED_HELPERS`, dropped by `20261002170619`) — Postgres no longer calls an edge
+  function; `util.sweep_embedding_queue` replaced the last.
 
 ## Commands
 

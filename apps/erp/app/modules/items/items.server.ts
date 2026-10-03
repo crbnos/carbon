@@ -496,9 +496,9 @@ export async function notifyChangeNoticeTransition(args: {
 // affected item's CO-staged end-state onto a NEW inactive revision, activates
 // it, then auto-writes the oldRev → newRev supersession (Q1/Q2/Q5).
 //
-// Atomicity (G2): createRevision + activateMethodVersion are edge-function
-// (functions.invoke → get-method / convert) calls, so this CANNOT be one Kysely
-// transaction. The apply is therefore an idempotent, CAS-guarded orchestration:
+// Atomicity (G2): createRevision + activateMethodVersion call the get-method /
+// convert operations, each of which commits its own transaction, so this CANNOT
+// be one Kysely transaction. The apply is therefore an idempotent, CAS-guarded orchestration:
 //   - PER-AFFECTED-ITEM idempotency: each changeOrderAffectedItem gets its
 //     created revision id stamped into `newItemId` at the END of its processing.
 //     A re-run skips any affected item whose `newItemId` is already set, so a
@@ -563,7 +563,7 @@ export async function applyChangeNotice(
   );
 
   for (const affected of ordered) {
-    const result = await releaseAffectedItem(client, {
+    const result = await releaseAffectedItem(client, db, {
       changeNoticeId,
       companyId,
       userId,
@@ -615,6 +615,7 @@ export async function applyChangeNotice(
 // -----------------------------------------------------------------------------
 async function releaseAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     companyId: string;
@@ -657,7 +658,7 @@ async function releaseAffectedItem(
   // Version simply appends a new Active version and archives the prior one — the
   // prior version's rows are preserved as method history, so there is nothing to
   // merge even if another CO released a newer version in the meantime.
-  const activated = await activateMethodVersion(client, {
+  const activated = await activateMethodVersion(client, db, {
     id: draftMakeMethodId,
     companyId,
     userId

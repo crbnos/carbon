@@ -91,7 +91,7 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
    - `salesOrderLine.priceTrace`, posted by `SalesOrderLineForm` (typing a
      price posts `"null"`), set by `createReplacementSalesOrder`, and copied
      by `convert` from the converted break via `quoteToOrderPriceTrace`
-     (`functions/lib/price-trace.ts`), which appends the quote line discount so
+     (`packages/database/src/price-trace.ts`), which appends the quote line discount so
      the trace ends at the order line's net price.
    - `quoteLine.priceTrace` is dead — one trace cannot describe several breaks.
      Nothing fills it; `get-method` `quoteToQuote` copies it (always null).
@@ -167,7 +167,7 @@ it.
   builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and
   per-category markup edits (`resolveRollupPrice` → `api/sales/resolve-price`).
   Computing `cost × markup` alone drops the pricing rules and the configuration
-  prices. The `get-method` edge function seeds rows at cost-plus only, so every
+  prices. The `get-method` server function seeds rows at cost-plus only, so every
   ERP route that invokes it on a quote line (`itemToQuoteLine`,
   `quoteLineToQuoteLine`) follows with `recalculateQuoteLinePrices`. A typed unit
   price or markup percent is a manual price and is never repriced.
@@ -192,4 +192,4 @@ it.
 - Sales orders/invoices: `salesOrderLine` carries `pricingRuleId` + `priceTrace`
   (the trace propagates from the quote through `convert`; nothing writes
   `pricingRuleId`), but invoice lines do not. Quote→order
-  conversion goes through the `convert` edge function (`convertQuoteToOrder`).
+  conversion goes through the `convert` server function (`convertQuoteToOrder`).

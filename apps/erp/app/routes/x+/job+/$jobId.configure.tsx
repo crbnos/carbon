@@ -10,6 +10,7 @@ import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertJobMethod } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -50,13 +51,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const serviceRole = await getCarbonServiceRole();
-    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
-      sourceId: job.data.itemId,
-      targetId: jobId,
-      companyId,
-      userId,
-      configuration
-    });
+    const upsertMethod = await upsertJobMethod(
+      serviceRole,
+      getDatabaseClient(),
+      "itemToJob",
+      {
+        sourceId: job.data.itemId,
+        targetId: jobId,
+        companyId,
+        userId,
+        configuration
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

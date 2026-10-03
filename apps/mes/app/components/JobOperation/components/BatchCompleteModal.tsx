@@ -93,7 +93,7 @@ function BatchErrorSummary() {
 
 // The batch completion form, opened from the batched operation view. Posts to
 // batch.$batchId.complete (the same action the retired batch page used), which
-// invokes the batch-operations edge fn: slice the shared timers per member,
+// invokes the batch-operations server fn: slice the shared timers per member,
 // record quantities, flip members Done + batch Completed. A phase-2 failure
 // leaves the batch Completing and re-submitting resumes without double effects.
 export function BatchCompleteModal({

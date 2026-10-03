@@ -5,7 +5,6 @@ paths:
   - "apps/erp/app/modules/agent/**"
   - "apps/erp/app/modules/quality/quality.server.ts"
   - "packages/utils/src/llm.ts"
-  - "packages/database/supabase/functions/lib/ai/**"
 ---
 
 # AI SDK Usage in Carbon
@@ -73,9 +72,3 @@ The browser side is `useChat` + `DefaultChatTransport` from `@ai-sdk/react`
 The provider registry (`agent.provider.ts`) is the only importer of `@ai-sdk/anthropic`.
 The runtime provider is `agentProvider` (`openai`) in `packages/utils/src/llm.ts`, with
 `agentChatModel` (`gpt-4.1-mini`) and `agentTitleModel` (`gpt-4o-mini`).
-
-## Edge functions
-
-`packages/database/supabase/functions/lib/ai/openai.ts` pins its own
-`npm:@ai-sdk/openai@2.0.60` (Deno, self-contained); only `transcription` imports it. It is
-not on the catalog and does not follow the app's version.

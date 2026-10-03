@@ -58,6 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const jobMethod = await upsertJobMethod(
       serviceRole,
+      getDatabaseClient(),
       type === "item"
         ? "itemToJob"
         : type === "job"
@@ -67,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     const [calculateQuantities, calculateDependencies] = await Promise.all([
-      recalculateJobRequirements(serviceRole, {
+      recalculateJobRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.targetId,
         companyId: companyId,
         userId: userId
@@ -120,6 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const makeMethod = await upsertJobMaterialMakeMethod(
       serviceRole,
+      getDatabaseClient(),
       makeMethodPayload
     );
 

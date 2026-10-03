@@ -9,8 +9,10 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -99,24 +101,22 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       id: jobOperationId,
       type: "partToOperation",
       itemId,
       materialId,
       jobOperationStepId,
       quantity,
-      adjustmentType,
-      companyId,
-      userId
-    }
-  });
+      adjustmentType
+    });
 
-  if (issue.error) {
+  if (issued.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issue.error, "Failed to issue material"))
+      await flash(request, error(issued.error, "Failed to issue material"))
     );
   }
 

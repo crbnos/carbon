@@ -12,6 +12,7 @@ import {
   upsertMakeMethodFromJob,
   upsertMakeMethodFromJobMethod
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -30,19 +31,23 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "job") {
-    const jobMethod = await upsertMakeMethodFromJob(serviceRole, {
-      ...validation.data,
-      companyId,
-      userId,
-      parts: {
-        billOfMaterial: validation.data.billOfMaterial,
-        billOfProcess: validation.data.billOfProcess,
-        parameters: validation.data.parameters,
-        tools: validation.data.tools,
-        steps: validation.data.steps,
-        workInstructions: validation.data.workInstructions
+    const jobMethod = await upsertMakeMethodFromJob(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        ...validation.data,
+        companyId,
+        userId,
+        parts: {
+          billOfMaterial: validation.data.billOfMaterial,
+          billOfProcess: validation.data.billOfProcess,
+          parameters: validation.data.parameters,
+          tools: validation.data.tools,
+          steps: validation.data.steps,
+          workInstructions: validation.data.workInstructions
+        }
       }
-    });
+    );
 
     return {
       error: jobMethod.error ? "Failed to save job method to make method" : null
@@ -50,19 +55,23 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "method") {
-    const makeMethod = await upsertMakeMethodFromJobMethod(serviceRole, {
-      ...validation.data,
-      companyId,
-      userId,
-      parts: {
-        billOfMaterial: validation.data.billOfMaterial,
-        billOfProcess: validation.data.billOfProcess,
-        parameters: validation.data.parameters,
-        tools: validation.data.tools,
-        steps: validation.data.steps,
-        workInstructions: validation.data.workInstructions
+    const makeMethod = await upsertMakeMethodFromJobMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        ...validation.data,
+        companyId,
+        userId,
+        parts: {
+          billOfMaterial: validation.data.billOfMaterial,
+          billOfProcess: validation.data.billOfProcess,
+          parameters: validation.data.parameters,
+          tools: validation.data.tools,
+          steps: validation.data.steps,
+          workInstructions: validation.data.workInstructions
+        }
       }
-    });
+    );
 
     if (makeMethod.error) {
       return {

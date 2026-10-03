@@ -28,8 +28,6 @@ const log = getLogger("lib", "telemetry");
  * POST with an api_key, and the two things the SDK adds on top — batching and
  * retry — are the wrong shape for this: a work event is low-frequency, and a
  * retry without a stable id is how you double-count a released job. This mirrors
- * the decision already made for Inngest in
- * `packages/database/supabase/functions/lib/inngest.ts`, and the shape of
  * `packages/stripe/src/gtm-events.server.ts`, which POSTs product events to the
  * GTM endpoint the same way.
  *

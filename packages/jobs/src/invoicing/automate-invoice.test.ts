@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { FunctionsHttpError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // External boundaries only: SMTP, the PDF renderer, the rule engine and the
@@ -11,6 +10,10 @@ const sendEmail = vi.fn();
 const evaluateSalesRules = vi.fn();
 const contactRequirement = vi.fn();
 const raiseMoment = vi.fn();
+// The posting server function, set per test by fakeClient.
+let postInvoice: (
+  input: unknown
+) => Promise<{ data: unknown; error: { message: string } | null }>;
 
 vi.mock("@carbon/env", () => ({
   SUPABASE_INTERNAL_URL: "http://internal:8000",
@@ -28,6 +31,13 @@ vi.mock("@carbon/ee/rules.server", () => ({
 vi.mock("@carbon/lib/party-contact.server", () => ({
   checkPartyContactRequirement: (...args: unknown[]) =>
     contactRequirement(...args)
+}));
+vi.mock("@carbon/server-functions", () => ({
+  serverFns: {
+    system: () => ({
+      invoke: (_name: string, input: unknown) => postInvoice(input)
+    })
+  }
 }));
 vi.mock("@carbon/lib/workflows", () => ({
   raiseMoment: (...args: unknown[]) => raiseMoment(...args)
@@ -67,11 +77,14 @@ type Row = Record<string, unknown>;
 /** A tiny in-memory PostgREST: filters, updates and inserts on plain rows. */
 function fakeClient(
   tables: Record<string, Row[]>,
-  onInvoke: (rows: Record<string, Row[]>) => { error: Error | null } = () => ({
+  onInvoke: (rows: Record<string, Row[]>) => {
+    error: { message: string } | null;
+  } = () => ({
     error: null
   })
 ) {
-  const invoke = vi.fn(async () => onInvoke(tables));
+  const invoke = vi.fn(async () => ({ data: null, ...onInvoke(tables) }));
+  postInvoice = invoke;
   const from = (table: string) => {
     const filters: Array<(row: Row) => boolean> = [];
     let update: Row | undefined;
@@ -120,7 +133,7 @@ function fakeClient(
     return query;
   };
   return {
-    client: { from, functions: { invoke } } as never,
+    client: { from } as never,
     tables,
     invoke
   };
@@ -142,6 +155,7 @@ const draftInvoice = (overrides: Row = {}): Row => ({
 });
 
 const args = { companyId: "co-1", invoiceId: "inv-1" };
+const db = {} as never;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -159,7 +173,7 @@ describe("postSalesInvoiceUnattended", () => {
         return { error: null };
       }
     );
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "posted"
     });
     expect(tables.salesInvoice![0]!.status).toBe("Submitted");
@@ -170,7 +184,7 @@ describe("postSalesInvoiceUnattended", () => {
     const { client, invoke } = fakeClient({
       salesInvoice: [draftInvoice({ status: "Submitted" })]
     });
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "posted"
     });
     expect(invoke).not.toHaveBeenCalled();
@@ -180,7 +194,7 @@ describe("postSalesInvoiceUnattended", () => {
     const { client, invoke, tables } = fakeClient({
       salesInvoice: [draftInvoice({ automationHoldReason: "Charges" })]
     });
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "held",
       reason: "Charges"
     });
@@ -195,7 +209,7 @@ describe("postSalesInvoiceUnattended", () => {
     const { client, invoke, tables } = fakeClient({
       salesInvoice: [draftInvoice()]
     });
-    const result = await postSalesInvoiceUnattended({ client, ...args });
+    const result = await postSalesInvoiceUnattended({ client, db, ...args });
     expect(result).toEqual({
       outcome: "held",
       reason: "Sales rule: Not sold to Canada"
@@ -210,7 +224,7 @@ describe("postSalesInvoiceUnattended", () => {
   it("holds when the customer misses its required contact", async () => {
     contactRequirement.mockResolvedValue("Acme needs a contact with an email");
     const { client, tables } = fakeClient({ salesInvoice: [draftInvoice()] });
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "held",
       reason: "Acme needs a contact with an email"
     });
@@ -223,7 +237,7 @@ describe("postSalesInvoiceUnattended", () => {
     const { client, invoke } = fakeClient({
       salesInvoice: [draftInvoice({ status: "Pending" })]
     });
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "skipped",
       reason: "Invoice is Pending"
     });
@@ -237,7 +251,7 @@ describe("postSalesInvoiceUnattended", () => {
         throw new Error("gateway timeout");
       }
     );
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "held",
       reason: "gateway timeout"
     });
@@ -252,19 +266,10 @@ describe("postSalesInvoiceUnattended", () => {
       { salesInvoice: [draftInvoice()] },
       (rows) => {
         rows.salesInvoice![0]!.status = "Draft";
-        // What supabase-js hands back for a non-2xx: a fixed message, the
-        // edge function's reason in the response body.
-        return {
-          error: new FunctionsHttpError(
-            new Response(
-              JSON.stringify({ message: "Accounting period is closed" }),
-              { status: 500 }
-            )
-          )
-        };
+        return { error: { message: "Accounting period is closed" } };
       }
     );
-    expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({
+    expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
       outcome: "held",
       reason: "Accounting period is closed"
     });

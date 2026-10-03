@@ -14,6 +14,19 @@ import raw from "../../mcp+/lib/tool-metadata.json";
 
 export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
 
+const companyTables = (raw as { companyTables?: string[] }).companyTables;
+// The dispatcher confines every write to the caller's company by this list
+// (`scopedToCompany`). An empty one would switch that off without a sound, so
+// a manifest generated before the list existed stops the module loading.
+if (!Array.isArray(companyTables) || companyTables.length === 0) {
+  throw new Error(
+    "tool-metadata.json has no companyTables. Regenerate it: pnpm run generate:mcp"
+  );
+}
+
+/** Every table with a `companyId` column, from the generated database types. */
+export const COMPANY_TABLES: ReadonlySet<string> = new Set(companyTables);
+
 /**
  * Deprecated operation names → the operation that replaced them. An operation's
  * name is derived from the module its service lives in, so moving a function
