@@ -15,13 +15,13 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-1.5 min-h-6 text-[12px] leading-4 font-[550] whitespace-nowrap truncate border border-transparent transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+  "inline-flex items-center rounded-md px-1.5 min-h-6 text-[12px] leading-4 font-medium whitespace-nowrap truncate border border-transparent transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         secondary:
-          "border-black/[0.08] bg-black/[0.04] text-foreground/70 dark:bg-secondary dark:text-secondary-foreground dark:border-border",
+          "border-black/[0.08] bg-transparent text-foreground/70 dark:text-secondary-foreground dark:border-border",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "border-border text-foreground",
