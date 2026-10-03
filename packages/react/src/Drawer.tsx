@@ -16,9 +16,10 @@ import { forwardRef } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ClientOnly } from "./ClientOnly";
+import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
 
-const Drawer = DialogPrimitive.Root;
+const Drawer = DialogRoot;
 
 const DrawerTrigger = DialogPrimitive.Trigger;
 
@@ -188,29 +189,34 @@ const DrawerContent = forwardRef<
       ...props
     },
     ref
-  ) => (
-    <ClientOnly fallback={null}>
-      {() => (
-        <DrawerPortal position={position} container={container}>
-          {overlay && <DrawerOverlay />}
-          <DialogPrimitive.Content
-            ref={ref}
-            className={cn(sheetVariants({ position, size }), className)}
-            {...props}
-          >
-            {children}
-            <DialogPrimitive.Close
-              type="button"
-              className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
+  ) => {
+    const dismissable = useDialogDismissable();
+    return (
+      <ClientOnly fallback={null}>
+        {() => (
+          <DrawerPortal position={position} container={container}>
+            {overlay && <DrawerOverlay />}
+            <DialogPrimitive.Content
+              ref={ref}
+              className={cn(sheetVariants({ position, size }), className)}
+              {...props}
             >
-              <LuX className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          </DialogPrimitive.Content>
-        </DrawerPortal>
-      )}
-    </ClientOnly>
-  )
+              {children}
+              {dismissable && (
+                <DialogPrimitive.Close
+                  type="button"
+                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
+                >
+                  <LuX className="h-5 w-5" />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+              )}
+            </DialogPrimitive.Content>
+          </DrawerPortal>
+        )}
+      </ClientOnly>
+    );
+  }
 );
 DrawerContent.displayName = DialogPrimitive.Content.displayName;
 

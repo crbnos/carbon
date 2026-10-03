@@ -101,10 +101,8 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
 
     return (
       <Modal
+        // No onOpenChange: the prompt must be answered, so it has no close button.
         open
-        onOpenChange={() => {
-          /* intentionally non-dismissable */
-        }}
       >
         <ModalContent>
           <ModalHeader>

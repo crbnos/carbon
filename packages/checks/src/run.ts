@@ -34,6 +34,7 @@ import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log"
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRedirect } from "./conformance/no-raw-redirect";
@@ -84,7 +85,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnroundedTrackedQuantity,
   noIntegrationIdBranching,
   noUnscopedKyselyWrite,
-  noUnguardedSubmit
+  noUnguardedSubmit,
+  noNoopOpenChange
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
