@@ -146,6 +146,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `bg-*`/`text-*` classes.
 - App-level shared components live in `apps/erp/app/components/` and are
   re-exported from its `index.ts`.
+- A component or hook both ERP and MES need lives in a package (`@carbon/react`,
+  `@carbon/auth`, `@carbon/utils`), not as a copy in each app. An app file of the
+  same name may only re-export it. Enforced by the `no-duplicated-app-file` check
+  (`@carbon/checks`); the copies that predate it are baselined.
 - Functional components, props typed inline or via `type`/`z.infer<typeof validator>`.
 - Styling is Tailwind. Theme colors are CSS variables — use `hsl(var(--primary))`
   for theme-aware fills (e.g. Recharts), not hard-coded colors.

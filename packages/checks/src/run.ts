@@ -23,6 +23,11 @@ import {
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import {
+  findDuplicatedAppFiles,
+  NO_DUPLICATED_APP_FILE,
+  SHARED_APP_DIRS
+} from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
@@ -167,7 +172,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
     ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS),
-    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader])
+    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
+    ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
+      (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
+    )
   ];
 }
 

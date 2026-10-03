@@ -25,10 +25,13 @@ Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurre
 - [x] 5. Redirect fixes: magic link, already-signed-in, dev bypass, verify, company switchers
 - [x] 6. Error boundaries on the `x+` layouts so a failed loader keeps the shell
 - [x] 7. Client state: client-only nanostores → zustand; jotai (tiptap) → zustand
-- [ ] 8. Shared ERP/MES code
-  - auth routes (login, callback, mfa, unlock, refresh-session) → `@carbon/auth`
-  - identical hooks and small components → `@carbon/auth` / `@carbon/react`
-  - `@carbon/checks` rule: no same-named file under both apps' components/hooks
+- [x] 8. Shared ERP/MES code — first step
+  - [x] `useIdle`, `Enumerable` → `@carbon/react`; apps keep re-exports
+  - [x] `no-duplicated-app-file` check; the 20 remaining duplicates are baselined
+  - [ ] auth routes (login, callback, mfa, unlock, refresh-session) → `@carbon/auth`
+        — needs a running stack to verify each login path; not done blind
+  - [ ] the 20 baselined files: each imports its app's `path`, `useUser` or stores,
+        so sharing means passing those in — decide the shape before moving them
 - [x] 9. Route modals close to their parent route instead of `navigate(-1)`
 - [x] 10. Small leftovers: unused Radix deps, `h-dvh` in MES, lazy images, `@ts-ignore` → `@ts-expect-error`
 

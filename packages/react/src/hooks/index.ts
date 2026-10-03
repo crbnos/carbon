@@ -8,6 +8,7 @@ import useDisclosure from "./useDisclosure";
 import { useEdition } from "./useEdition";
 import useEscape from "./useEscape";
 import useHydrated from "./useHydrated";
+import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import useIsMobile from "./useIsMobile";
@@ -43,6 +44,7 @@ export {
   useLocalStorage,
   useMode,
   useCloseRoute,
+  useIdle,
   useMount,
   useNanoStore,
   useNProgress,
