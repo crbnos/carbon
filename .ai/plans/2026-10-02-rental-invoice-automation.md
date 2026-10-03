@@ -31,7 +31,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 6: Move the party-contact check to `@carbon/lib`
 - [x] Task 7: Shared sales-invoice document loader in `@carbon/lib`; PDF route uses it
 - [x] Task 8: Event type + trigger map entry
-- [ ] Task 9: `automateSalesInvoice` + tests
+- [x] Task 9: `automateSalesInvoice` + tests
 - [ ] Task 10: Inngest wiring — automate function, cron steps, digest
 - [x] Task 11: `RecurringInvoicing` notification event
 - [ ] Task 12: Manual post route — shared PDF, storage path fix, sent stamps

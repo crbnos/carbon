@@ -14,7 +14,6 @@ export type InvoiceAutomation =
 
 export const RENTAL_HOLD_CHARGES = "Charges are reviewed before posting";
 export const RENTAL_HOLD_EARLY_RETURN = "Includes an early-return credit";
-export const RENTAL_SEND_NO_EMAIL = "The invoice contact has no email";
 /** readableIds: distinct readable ids of the voided invoices, in first-seen order. */
 export const rentalHoldRebill = (readableIds: string[]) =>
   `Re-billing ${readableIds.join(", ")}, which ${

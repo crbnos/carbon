@@ -13,3 +13,11 @@ Plan: `.ai/plans/2026-10-02-rental-invoice-automation.md`. Context: `.ai/runs/20
 - Task 11: `body` reaches the topbar only through `description` ("Recurring invoicing: 2 posted, …"); defaults copied from Workflow's [InApp, Email] (no Sales event sends email by default). notify logs a 'not digest-capable' note when documentIds has >1 entry — harmless.
 - Task 7: prop types derived via `Parameters<typeof SalesInvoicePDF>[0]` (documents exports none); renders by calling `SalesInvoicePDF(props)` (no JSX toolchain in @carbon/lib); the salesInvoices read is also scoped by companyId (service-role callers).
 - Task 14: Select uses a "default" sentinel (Radix refuses an empty item value), sent as "" → null. "Post and email" is filtered out (form Select has no disabled option) with the helper text. Route validates with safeParse (plain object). `types.ts` gains `contactEmail`. The $id.tsx / types.ts hunks for Task 16 are committed with Task 14 (shared files).
+- Task 9 (deviations, all in `packages/jobs/src/invoicing/automate-invoice.ts`):
+  - The no-email message lives in the shared layer as `INVOICE_SEND_NO_EMAIL` (grill U1: send/hold layer is source-agnostic); `RENTAL_SEND_NO_EMAIL` removed from the planner.
+  - `emailPostedInvoice` reads `company.companyGroupId` itself (no `companyGroupId` arg), as Task 10 already said.
+  - `sendEmail` returning `{ data: null, error: null }` (no SMTP transport) stamps `sendError` "Email sending is not configured" rather than `sentAt` — nothing was sent.
+  - The PDF renders with `SUPABASE_INTERNAL_URL` logos (server fetch), but the email HTML swaps them for `SUPABASE_URL` — the recipient's mail client cannot reach an internal URL.
+  - Any load/render/upload failure in the email step stamps `sendError` (the invoice shows "Not sent" in Needs Review) instead of throwing.
+  - Party-contact check uses `salesInvoice.customerId`, mirroring the manual post route exactly.
+  - Tests follow the ramp-sync-bill precedent (stateful fake rows) and assert on outcomes/stored rows, per testing-no-mock-theater; 14 (12 behavioural + 2 pure header helpers).
