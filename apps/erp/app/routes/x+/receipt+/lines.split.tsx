@@ -5,8 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { splitValidator } from "~/modules/inventory";
 import { getDatabaseClient } from "~/services/database.server";
@@ -46,16 +45,15 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const salesOrderShipment = await create(
-    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-    {
+  const salesOrderShipment = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "receiptLineSplit",
       locationId,
       receiptId: documentId,
       receiptLineId: documentLineId,
       quantity
-    }
-  );
+    });
 
   if (salesOrderShipment.error) {
     return {

@@ -22,6 +22,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -883,13 +884,12 @@ export async function seedCompany(
   userId: string,
   opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
-  const { seedCompany } = await import("@carbon/server-functions/seed-company");
-  return seedCompany.withClient(client, db, {
-    companyId,
-    userId,
-    parentCompanyId: opts?.parentCompanyId,
-    identityOnly: opts?.identityOnly ?? false
-  });
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("seed-company", {
+      parentCompanyId: opts?.parentCompanyId,
+      identityOnly: opts?.identityOnly ?? false
+    });
 }
 
 export async function updateCompanyPlan(

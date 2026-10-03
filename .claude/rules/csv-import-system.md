@@ -260,7 +260,7 @@ Action only (no loader). Steps:
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
 it lazily imports `@carbon/server-functions/import-csv` and calls
-`importCsv.withClient(client, db, args)`.
+`serverFns.as({ client, db, companyId, userId }).invoke("import-csv", args)`.
 
 ## Server function (`packages/server-functions/src/import-csv/index.ts`)
 

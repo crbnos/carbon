@@ -43,7 +43,7 @@ export const seedCompanyInput = z.object({
 });
 
 /** Seeds a new company's reference data, groups and admin link, in one transaction. */
-export const seedCompany = defineServerFn({
+const seedCompany = defineServerFn({
   name: "seed-company",
   input: seedCompanyInput,
   permissions: "system",
@@ -633,3 +633,5 @@ export const seedCompany = defineServerFn({
     return { success: true };
   }
 });
+
+export default seedCompany;

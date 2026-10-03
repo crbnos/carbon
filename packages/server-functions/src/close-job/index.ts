@@ -21,7 +21,7 @@ export const closeJobInput = z.object({
  * variance, so the job's WIP nets to zero. Nothing to do when accounting is off
  * or the residual is under a cent.
  */
-export const closeJob = defineServerFn({
+const closeJob = defineServerFn({
   name: "close-job",
   input: closeJobInput,
   permissions: { update: "production" },
@@ -232,3 +232,5 @@ export const closeJob = defineServerFn({
     return { success: true };
   }
 });
+
+export default closeJob;

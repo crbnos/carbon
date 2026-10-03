@@ -50,7 +50,7 @@ const calculateLeadTimeInDays = (
   }
 };
 
-export const updatePurchasedPrices = defineServerFn({
+const updatePurchasedPrices = defineServerFn({
   name: "update-purchased-prices",
   input: updatePurchasedPricesInput,
   permissions: { update: "purchasing" },
@@ -538,3 +538,5 @@ export const updatePurchasedPrices = defineServerFn({
     return { success: true };
   }
 });
+
+export default updatePurchasedPrices;

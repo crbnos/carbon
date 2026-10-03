@@ -4,8 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
-import { ServerFnContext } from "@carbon/server-functions";
-import { recalculate } from "@carbon/server-functions/recalculate";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -76,14 +75,13 @@ async function recalculateJobRequirements(params: {
   companyId: string;
   userId: string;
 }) {
-  return recalculate(
-    ServerFnContext.system({
+  return serverFns
+    .system({
       db: getJobDatabaseClient(),
       companyId: params.companyId,
       userId: params.userId
-    }),
-    { type: "jobRequirements", id: params.id }
-  );
+    })
+    .invoke("recalculate", { type: "jobRequirements", id: params.id });
 }
 
 async function recalculateJobMakeMethodRequirements(

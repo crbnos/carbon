@@ -7,8 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -61,19 +60,18 @@ export async function action({ request }: ActionFunctionArgs) {
   if (receiptDataHasChanged) {
     switch (d.sourceDocument) {
       case "Purchase Order":
-        const purchaseOrderReceipt = await create(
-          ServerFnContext.system({
+        const purchaseOrderReceipt = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "receiptFromPurchaseOrder",
             locationId: d.locationId,
             purchaseOrderId: d.sourceDocumentId,
             receiptId: id
-          }
-        );
+          });
         if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
           throw redirect(
             path.to.receipt(id),
@@ -86,19 +84,18 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
 
       case "Sales Return Order":
-        const salesReturnOrderReceipt = await create(
-          ServerFnContext.system({
+        const salesReturnOrderReceipt = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "receiptFromSalesReturnOrder",
             locationId: d.locationId,
             salesReturnOrderId: d.sourceDocumentId,
             receiptId: id
-          }
-        );
+          });
         if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
           throw redirect(
             path.to.receipt(id),
@@ -111,18 +108,17 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
 
       case "Inbound Transfer":
-        const warehouseTransferReceipt = await create(
-          ServerFnContext.system({
+        const warehouseTransferReceipt = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "receiptFromInboundTransfer",
             warehouseTransferId: d.sourceDocumentId,
             receiptId: id
-          }
-        );
+          });
         if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
           throw redirect(
             path.to.receipt(id),

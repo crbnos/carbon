@@ -16,9 +16,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postReceipt } from "@carbon/server-functions/post-receipt";
-import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -221,15 +219,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", companyId)
       .single();
 
-    const posted = await postReceipt.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
-    );
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-receipt", {
+        receiptId: receiptId
+      });
 
     if (posted.error) {
       await client
@@ -256,15 +250,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       receiptMetadata.data?.sourceDocumentId
     ) {
       // System: the poster needs no purchasing rights to refresh lead times.
-      const leadTimeUpdate = await updatePurchasedPrices(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const leadTimeUpdate = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("update-purchased-prices", {
           source: "purchaseOrder",
           purchaseOrderId: receiptMetadata.data.sourceDocumentId,
           updatePrices: false,
           updateLeadTimes: true
-        }
-      );
+        });
 
       if (leadTimeUpdate.error) {
         logger.error(

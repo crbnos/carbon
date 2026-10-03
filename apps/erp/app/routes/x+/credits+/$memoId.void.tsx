@@ -5,8 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postMemo } from "@carbon/server-functions/post-memo";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -22,10 +21,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing memoId" };
   }
   try {
-    const result = await postMemo(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", memoId }
-    );
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-memo", { type: "void", memoId });
     if (result.error) {
       throw redirect(
         path.to.memo(memoId),

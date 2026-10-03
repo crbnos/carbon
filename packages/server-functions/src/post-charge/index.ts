@@ -15,7 +15,7 @@ export const postChargeInput = z.object({
  * Posts or voids a charge and its journal, atomically. The transaction re-reads
  * the record under companyId, so a foreign id fails as "not found".
  */
-export const postCharge = defineServerFn({
+const postCharge = defineServerFn({
   name: "post-charge",
   input: postChargeInput,
   permissions: { update: "invoicing" },
@@ -30,3 +30,5 @@ export const postCharge = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default postCharge;

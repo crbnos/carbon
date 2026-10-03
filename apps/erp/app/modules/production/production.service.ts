@@ -13,6 +13,7 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
 import {
   async,
   datetime,
@@ -132,8 +133,6 @@ export async function convertSalesOrderLinesToJobs(
     userId: string;
   }
 ) {
-  const { recalculate } = await import("@carbon/server-functions/recalculate");
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const salesOrder = await client
     .from("salesOrder")
     .select("*")
@@ -351,13 +350,13 @@ export async function convertSalesOrderLinesToJobs(
         });
 
         if (quoteId && !reconfigured) {
-          const upsertMethod = await getMethod.withClient(client, db, {
-            type: "quoteLineToJob",
-            sourceId: `${quoteId}:${line.id}`,
-            targetId: createJob.data.id,
-            companyId,
-            userId
-          });
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
+              type: "quoteLineToJob",
+              sourceId: `${quoteId}:${line.id}`,
+              targetId: createJob.data.id
+            });
 
           if (upsertMethod.error) {
             errors.push(
@@ -366,14 +365,14 @@ export async function convertSalesOrderLinesToJobs(
             continue;
           }
         } else {
-          const upsertMethod = await getMethod.withClient(client, db, {
-            type: "itemToJob",
-            sourceId: data.itemId,
-            targetId: createJob.data.id,
-            companyId,
-            userId,
-            ...(configuration ? { configuration } : {})
-          });
+          const upsertMethod = await serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("get-method", {
+              type: "itemToJob",
+              sourceId: data.itemId,
+              targetId: createJob.data.id,
+              ...(configuration ? { configuration } : {})
+            });
 
           if (upsertMethod.error) {
             errors.push(
@@ -383,12 +382,12 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        await recalculate.withClient(client, db, {
-          type: "jobRequirements",
-          id: createJob.data.id,
-          companyId,
-          userId
-        });
+        await serverFns
+          .as({ client, db, companyId, userId })
+          .invoke("recalculate", {
+            type: "jobRequirements",
+            id: createJob.data.id
+          });
 
         await assignJobSerialNumbers(client, db, {
           jobId: createJob.data.id,
@@ -636,15 +635,12 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const { postProductionEvent } = await import(
-      "@carbon/server-functions/post-production-event"
-    );
-    const reversal = await postProductionEvent.withClient(client, db, {
-      productionEventId,
-      reverse: true,
-      companyId,
-      userId
-    });
+    const reversal = await serverFns
+      .as({ client, db, companyId, userId })
+      .invoke("post-production-event", {
+        productionEventId,
+        reverse: true
+      });
     if (reversal.error) {
       return {
         data: null,
@@ -2828,11 +2824,12 @@ export async function recalculateJobRequirements(
     userId: string;
   }
 ) {
-  const { recalculate } = await import("@carbon/server-functions/recalculate");
-  return recalculate.withClient(client, db, {
-    type: "jobRequirements",
-    ...params
-  });
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
+      type: "jobRequirements",
+      ...params
+    });
 }
 
 /** @mcp update */
@@ -2845,11 +2842,12 @@ export async function recalculateJobMakeMethodRequirements(
     userId: string;
   }
 ) {
-  const { recalculate } = await import("@carbon/server-functions/recalculate");
-  return recalculate.withClient(client, db, {
-    type: "jobMakeMethodRequirements",
-    ...params
-  });
+  return serverFns
+    .as({ client, db, companyId: params.companyId, userId: params.userId })
+    .invoke("recalculate", {
+      type: "jobMakeMethodRequirements",
+      ...params
+    });
 }
 
 /** @mcp update */
@@ -3312,11 +3310,12 @@ export async function returnPickedRemaindersForOperation(
   db: Kysely<KyselyDatabase>,
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
-  return postPicking.withClient(client, db, {
-    type: "returnOperationRemainders",
-    ...args
-  });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
 }
 
 /**
@@ -3328,13 +3327,12 @@ export async function returnPickedRemaindersForJob(
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; userId: string; companyId: string }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
-  return postPicking.withClient(client, db, {
-    type: "returnJobRemainders",
-    jobId: args.jobId,
-    userId: args.userId,
-    companyId: args.companyId
-  });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnJobRemainders",
+      jobId: args.jobId
+    });
 }
 
 /** @mcp update */
@@ -3523,8 +3521,6 @@ export async function insertJob(
   data: { id: string; jobId: string } | null;
   error: PostgrestError | null;
 }> {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  const { recalculate } = await import("@carbon/server-functions/recalculate");
   let jobId: string;
   if (input.jobId) {
     jobId = input.jobId;
@@ -3669,26 +3665,26 @@ export async function insertJob(
       (input.quoteId && input.quoteLineId ? "quoteLine" : "item");
 
     if (methodSource === "quoteLine" && input.quoteId && input.quoteLineId) {
-      const { error } = await getMethod.withClient(client, db, {
-        type: "quoteLineToJob",
-        sourceId: `${input.quoteId}:${input.quoteLineId}`,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy,
-        configuration: input.configuration || undefined
-      });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "quoteLineToJob",
+          sourceId: `${input.quoteId}:${input.quoteLineId}`,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from quote line", { error });
       }
     } else {
-      const { error } = await getMethod.withClient(client, db, {
-        type: "itemToJob",
-        sourceId: input.itemId,
-        targetId: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy,
-        configuration: input.configuration || undefined
-      });
+      const { error } = await serverFns
+        .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+        .invoke("get-method", {
+          type: "itemToJob",
+          sourceId: input.itemId,
+          targetId: createdJobId,
+          configuration: input.configuration || undefined
+        });
       if (error) {
         logger.error("Failed to copy method from item", { error });
       }
@@ -3704,12 +3700,12 @@ export async function insertJob(
   });
 
   if (!options?.skipRecalculate) {
-    await recalculate.withClient(client, db, {
-      type: "jobRequirements",
-      id: createdJobId,
-      companyId: input.companyId,
-      userId: input.createdBy
-    });
+    await serverFns
+      .as({ client, db, companyId: input.companyId, userId: input.createdBy })
+      .invoke("recalculate", {
+        type: "jobRequirements",
+        id: createdJobId
+      });
   }
 
   return { data: { id: createdJobId, jobId }, error: null };
@@ -3743,15 +3739,11 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
-
-  const { assignSerialNumbers } = await import(
-    "@carbon/server-functions/assign-serial-numbers"
-  );
-  const { error } = await assignSerialNumbers.withClient(client, db, {
-    companyId: args.companyId,
-    userId: args.userId,
-    jobId: args.jobId
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("assign-serial-numbers", {
+      jobId: args.jobId
+    });
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
   }
@@ -3935,7 +3927,6 @@ export async function upsertJobOperation(
         customFields?: Json;
       })
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const normalized = normalizeOperationSourceIds(jobOperation);
   if ("updatedBy" in normalized) {
     // An operation never moves between jobs, make methods or tenants — strip
@@ -3968,13 +3959,18 @@ export async function upsertJobOperation(
   if (!operationId) return operationInsert;
 
   if (normalized.procedureId && "createdBy" in normalized) {
-    const { error } = await getMethod.withClient(client, db, {
-      type: "procedureToOperation",
-      sourceId: normalized.procedureId,
-      targetId: operationId,
-      companyId: normalized.companyId,
-      userId: normalized.createdBy
-    });
+    const { error } = await serverFns
+      .as({
+        client,
+        db,
+        companyId: normalized.companyId,
+        userId: normalized.createdBy
+      })
+      .invoke("get-method", {
+        type: "procedureToOperation",
+        sourceId: normalized.procedureId,
+        targetId: operationId
+      });
     if (error) {
       return {
         data: null,
@@ -4473,7 +4469,6 @@ export async function upsertJobMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
@@ -4513,7 +4508,9 @@ export async function upsertJobMethod(
     body.parts = jobMethod.parts;
   }
 
-  const getMethodResult = await getMethod.withClient(client, db, body);
+  const getMethodResult = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
   if (getMethodResult.error) {
     return {
       data: null,
@@ -4553,7 +4550,6 @@ export async function upsertJobMaterialMakeMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToJobMakeMethod";
     sourceId: string;
@@ -4593,7 +4589,9 @@ export async function upsertJobMaterialMakeMethod(
     body.parts = jobMaterial.parts;
   }
 
-  const { error } = await getMethod.withClient(client, db, body);
+  const { error } = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 
   if (error) {
     return {
@@ -4670,15 +4668,19 @@ export async function upsertMakeMethodFromJob(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    type: "jobToItem",
-    sourceId: jobMethod.sourceId,
-    targetId: jobMethod.targetId,
-    companyId: jobMethod.companyId,
-    userId: jobMethod.userId,
-    parts: jobMethod.parts
-  });
+  return serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
+      type: "jobToItem",
+      sourceId: jobMethod.sourceId,
+      targetId: jobMethod.targetId,
+      parts: jobMethod.parts
+    });
 }
 
 /** @mcp upsert */
@@ -4700,15 +4702,19 @@ export async function upsertMakeMethodFromJobMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  const { error } = await getMethod.withClient(client, db, {
-    type: "jobMakeMethodToItem",
-    sourceId: jobMethod.sourceId,
-    targetId: jobMethod.targetId,
-    companyId: jobMethod.companyId,
-    userId: jobMethod.userId,
-    parts: jobMethod.parts
-  });
+  const { error } = await serverFns
+    .as({
+      client,
+      db,
+      companyId: jobMethod.companyId,
+      userId: jobMethod.userId
+    })
+    .invoke("get-method", {
+      type: "jobMakeMethodToItem",
+      sourceId: jobMethod.sourceId,
+      targetId: jobMethod.targetId,
+      parts: jobMethod.parts
+    });
 
   if (error) {
     return {
@@ -6715,15 +6721,12 @@ export async function createJobOperationBatch(
   }
 ) {
   const { companyId, userId, ...input } = args;
-  const { batchOperations } = await import(
-    "@carbon/server-functions/batch-operations"
-  );
-  return batchOperations.withClient(client, db, {
-    companyId,
-    userId,
-    type: "create",
-    ...input
-  });
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "create",
+      ...input
+    });
 }
 
 /** @mcp update */
@@ -6740,15 +6743,10 @@ export async function updateJobOperationBatch(
   }
 ) {
   const { companyId, userId, ...input } = args;
-  const { batchOperations } = await import(
-    "@carbon/server-functions/batch-operations"
-  );
   // add/remove need jobOperationIds; the operation re-validates the shape.
-  return batchOperations.withClient(client, db, {
-    ...input,
-    companyId,
-    userId
-  } as Parameters<typeof batchOperations.withClient>[2]);
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", input as ServerFnInput<"batch-operations">);
 }
 
 /** @mcp update */
@@ -6758,15 +6756,12 @@ export async function releaseJobOperationBatch(
   args: { batchId: string; companyId: string; userId: string }
 ) {
   const { companyId, userId, batchId } = args;
-  const { batchOperations } = await import(
-    "@carbon/server-functions/batch-operations"
-  );
-  return batchOperations.withClient(client, db, {
-    companyId,
-    userId,
-    type: "release",
-    batchId
-  });
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "release",
+      batchId
+    });
 }
 
 /** @mcp action */
@@ -6776,15 +6771,12 @@ export async function unreleaseJobOperationBatch(
   args: { batchId: string; companyId: string; userId: string }
 ) {
   const { companyId, userId, batchId } = args;
-  const { batchOperations } = await import(
-    "@carbon/server-functions/batch-operations"
-  );
-  return batchOperations.withClient(client, db, {
-    companyId,
-    userId,
-    type: "unrelease",
-    batchId
-  });
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("batch-operations", {
+      type: "unrelease",
+      batchId
+    });
 }
 
 // --- Assembly Instructions ---------------------------------------------
@@ -10341,7 +10333,6 @@ export async function completeOperation(
     quantity: number;
   }
 ) {
-  const { issue } = await import("@carbon/server-functions/issue");
   const operation = await client
     .from("jobOperation")
     .select(
@@ -10398,13 +10389,13 @@ export async function completeOperation(
   }
 
   // 2. Backflush consumed material.
-  const backflush = await issue.withClient(client, db, {
-    id: args.operationId,
-    type: "jobOperation",
-    quantity: args.quantity,
-    companyId,
-    userId
-  });
+  const backflush = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("issue", {
+      id: args.operationId,
+      type: "jobOperation",
+      quantity: args.quantity
+    });
   if (backflush.error) return { data: null, error: backflush.error };
 
   // 3. Finish when good + reworked quantity reaches target (scrap excluded, mirroring the
@@ -10432,17 +10423,14 @@ export async function completeOperation(
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
-      const { postProductionEvent } = await import(
-        "@carbon/server-functions/post-production-event"
-      );
       await async.map(
         unposted.data,
         (event) =>
-          postProductionEvent.withClient(client, db, {
-            productionEventId: event.id,
-            companyId,
-            userId
-          }),
+          serverFns
+            .as({ client, db, companyId, userId })
+            .invoke("post-production-event", {
+              productionEventId: event.id
+            }),
         { concurrency: 4 }
       );
     }
@@ -10480,7 +10468,7 @@ export async function completeOperation(
     }
   }
 
-  return issue;
+  return backflush;
 }
 
 /**

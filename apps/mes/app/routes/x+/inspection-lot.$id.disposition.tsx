@@ -8,9 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
-import { issue } from "@carbon/server-functions/issue";
-import { recalculate } from "@carbon/server-functions/recalculate";
-import { triggerRework } from "@carbon/server-functions/trigger-rework";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -294,23 +292,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const backflush = await issue.withClient(serviceRole, getDatabaseClient(), {
-      id: state.jobOperationId,
-      type: "jobOperation",
-      quantity: scrapTotal,
-      companyId,
-      userId
-    });
+    const backflush = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        id: state.jobOperationId,
+        type: "jobOperation",
+        quantity: scrapTotal
+      });
     if (backflush.error) {
       warnings.push("failed to issue materials for scrap");
     }
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await triggerRework.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
+    const rework = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("trigger-rework", {
         jobId: state.jobId,
         triggeredAtJobOperationId: state.jobOperationId,
         targetJobOperationId: targetOperationId,
@@ -319,11 +316,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         trackedEntityIds: state.requiresSerialTracking
           ? reworkEntityIds
           : undefined,
-        inspectionId: id,
-        companyId,
-        userId
-      }
-    );
+        inspectionId: id
+      });
     if (rework.error) {
       return fail(
         rework.error,
@@ -331,16 +325,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const recalculated = await recalculate.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
+    const recalculated = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("recalculate", {
         type: "jobRequirements",
-        id: state.jobId,
-        companyId,
-        userId
-      }
-    );
+        id: state.jobId
+      });
     if (recalculated.error) {
       warnings.push("failed to recalculate job requirements");
     }

@@ -104,7 +104,7 @@ export const postStockTransferInput = z.discriminatedUnion("type", [
 ]);
 
 /** Picks or un-picks stock-transfer lines (untracked, serial or batch), per `type`. */
-export const postStockTransfer = defineServerFn({
+const postStockTransfer = defineServerFn({
   name: "post-stock-transfer",
   input: postStockTransferInput,
   // Kysely below bypasses RLS: the caller must belong to the company it names.
@@ -1251,3 +1251,5 @@ export const postStockTransfer = defineServerFn({
     };
   }
 });
+
+export default postStockTransfer;

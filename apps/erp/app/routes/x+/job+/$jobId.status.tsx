@@ -8,9 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
-import { ServerFnContext } from "@carbon/server-functions";
-import { closeJob } from "@carbon/server-functions/close-job";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
@@ -235,13 +233,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
-        create.withClient(getCarbonServiceRole(), getDatabaseClient(), {
-          type: "purchaseOrderFromJob",
-          jobId: id,
-          purchaseOrdersBySupplierId,
-          companyId,
-          userId
-        })
+        serverFns
+          .system({ db: getDatabaseClient(), companyId, userId })
+          .invoke("create", {
+            type: "purchaseOrderFromJob",
+            jobId: id,
+            purchaseOrdersBySupplierId
+          })
       ]);
     } catch (err) {
       logger.error("Error", { error: err });
@@ -253,10 +251,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Closed") {
-    const closed = await closeJob(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { jobId: id }
-    );
+    const closed = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("close-job", { jobId: id });
     if (closed.error) {
       // The status change stands; only the WIP write-off failed, as before.
       logger.error("Failed to write off WIP for closed job", {

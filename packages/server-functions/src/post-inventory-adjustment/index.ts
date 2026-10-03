@@ -108,7 +108,7 @@ export const postInventoryAdjustmentInput = z
 // outages surface in monitoring.
 
 /** The single write path for manual inventory adjustments; see the note above. */
-export const postInventoryAdjustment = defineServerFn({
+const postInventoryAdjustment = defineServerFn({
   name: "post-inventory-adjustment",
   input: postInventoryAdjustmentInput,
   permissions: { update: "inventory" },
@@ -1157,3 +1157,5 @@ export const postInventoryAdjustment = defineServerFn({
     };
   }
 });
+
+export default postInventoryAdjustment;

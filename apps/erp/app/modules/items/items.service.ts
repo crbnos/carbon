@@ -12,6 +12,7 @@ import type {
 } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -134,10 +135,7 @@ export async function activateMethodVersion(
   }
 ) {
   const { companyId, userId, id } = payload;
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "methodVersionToActive",
     id
   });
@@ -152,22 +150,21 @@ export async function copyItem(
     userId: string;
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    type: "itemToItem",
-    sourceId: args.sourceId,
-    targetId: args.targetId,
-    companyId: args.companyId,
-    userId: args.userId,
-    parts: {
-      billOfMaterial: args.billOfMaterial,
-      billOfProcess: args.billOfProcess,
-      parameters: args.parameters,
-      tools: args.tools,
-      steps: args.steps,
-      workInstructions: args.workInstructions
-    }
-  });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
+      type: "itemToItem",
+      sourceId: args.sourceId,
+      targetId: args.targetId,
+      parts: {
+        billOfMaterial: args.billOfMaterial,
+        billOfProcess: args.billOfProcess,
+        parameters: args.parameters,
+        tools: args.tools,
+        steps: args.steps,
+        workInstructions: args.workInstructions
+      }
+    });
 }
 
 /** @mcp create */
@@ -179,22 +176,21 @@ export async function copyMakeMethod(
     userId: string;
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    type: "makeMethodToMakeMethod",
-    sourceId: args.sourceId,
-    targetId: args.targetId,
-    companyId: args.companyId,
-    userId: args.userId,
-    parts: {
-      billOfMaterial: args.billOfMaterial,
-      billOfProcess: args.billOfProcess,
-      parameters: args.parameters,
-      tools: args.tools,
-      steps: args.steps,
-      workInstructions: args.workInstructions
-    }
-  });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
+      type: "makeMethodToMakeMethod",
+      sourceId: args.sourceId,
+      targetId: args.targetId,
+      parts: {
+        billOfMaterial: args.billOfMaterial,
+        billOfProcess: args.billOfProcess,
+        parameters: args.parameters,
+        tools: args.tools,
+        steps: args.steps,
+        workInstructions: args.workInstructions
+      }
+    });
 }
 
 // Copy a source item's item group (itemPostingGroupId, stored on itemCost) onto a
@@ -290,14 +286,13 @@ export async function createRevision(
   });
 
   if (item.replenishmentSystem !== "Buy") {
-    const { getMethod } = await import("@carbon/server-functions/get-method");
-    const copy = await getMethod.withClient(client, db, {
-      type: "itemToItem",
-      sourceId: item.id,
-      targetId: itemInsert.data.id,
-      companyId: item.companyId!,
-      userId: createdBy
-    });
+    const copy = await serverFns
+      .as({ client, db, companyId: item.companyId!, userId: createdBy })
+      .invoke("get-method", {
+        type: "itemToItem",
+        sourceId: item.id,
+        targetId: itemInsert.data.id
+      });
     // The revision stands either way; its make method can be copied again.
     if (copy.error) {
       logger.error("Failed to copy the make method onto the new revision", {

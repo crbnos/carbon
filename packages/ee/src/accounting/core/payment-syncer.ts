@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { createMappingService } from "./external-mapping";
@@ -255,21 +256,9 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     type: "post" | "void",
     userId: string
   ): Promise<{ error: false } | { error: true; message: string }> {
-    // Dynamic import: keeps the operation graph out of consumers (and tests)
-    // that never post a payment (mirrors the base's dynamic import of the
-    // SyncFactory).
-    const [{ postPayment }, { ServerFnContext }] = await Promise.all([
-      import("@carbon/server-functions/post-payment"),
-      import("@carbon/server-functions")
-    ]);
-    const posted = await postPayment(
-      ServerFnContext.system({
-        db: this.database,
-        companyId: this.companyId,
-        userId
-      }),
-      { type, paymentId }
-    );
+    const posted = await serverFns
+      .system({ db: this.database, companyId: this.companyId, userId })
+      .invoke("post-payment", { type, paymentId });
 
     if (posted.error) {
       const message =

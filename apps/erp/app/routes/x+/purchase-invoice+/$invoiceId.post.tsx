@@ -7,9 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
-import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
@@ -93,16 +91,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const serviceRole = await getCarbonServiceRole();
-    const posted = await postPurchaseInvoice.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-purchase-invoice", {
         invoiceId: invoiceId,
-        userId: userId,
-        companyId: companyId,
         skipReceiptPost: skipReceiptPost
-      }
-    );
+      });
 
     if (posted.error) {
       await client
@@ -126,15 +120,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       !companySettings.data?.purchasePriceUpdateTiming ||
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
     ) {
-      const priceUpdate = await updatePurchasedPrices(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const priceUpdate = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("update-purchased-prices", {
           invoiceId,
           source: "purchaseInvoice",
           updatePrices: true,
           updateLeadTimes: false
-        }
-      );
+        });
 
       if (priceUpdate.error) {
         await client

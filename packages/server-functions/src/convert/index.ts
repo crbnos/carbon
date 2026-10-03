@@ -26,7 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { getMethod } from "../get-method";
+import getMethod from "../get-method";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");
@@ -135,7 +135,7 @@ function resolveTaxPercent(line: {
 export type ConvertResult = { id?: string; convertedId?: string };
 
 /** Converts one document into the next (quote → order, order → invoice, …). */
-export const convert = defineServerFn({
+const convert = defineServerFn({
   name: "convert",
   input: convertInput,
   permissions: {
@@ -2107,3 +2107,5 @@ export const convert = defineServerFn({
     return { convertedId };
   }
 });
+
+export default convert;

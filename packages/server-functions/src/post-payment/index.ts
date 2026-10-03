@@ -25,7 +25,7 @@ export const postPaymentInput = z.object({
 });
 
 /** Posts or voids a payment: settlements, funding and its journal, atomically. */
-export const postPayment = defineServerFn({
+const postPayment = defineServerFn({
   name: "post-payment",
   input: postPaymentInput,
   permissions: { update: "invoicing" },
@@ -46,3 +46,5 @@ export const postPayment = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default postPayment;

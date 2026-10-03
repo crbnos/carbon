@@ -7,6 +7,7 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions/invoke";
 import {
   datetime,
   EPSILON,
@@ -106,10 +107,7 @@ export async function convertSupplierQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "supplierQuoteToPurchaseOrder",
     ...input
   });

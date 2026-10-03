@@ -18,9 +18,12 @@ const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
 // Only the posting operation is substituted; everything else is real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions/post-charge", () => ({
-  postCharge: { withClient: post }
-}));
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),
@@ -417,7 +420,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     };
     post.mockReset();
     post.mockImplementation(
-      async (_client: unknown, _db: unknown, input: { chargeId: string }) => {
+      async (_fields: unknown, input: { chargeId: string }) => {
         await db
           .updateTable("charge")
           .set({

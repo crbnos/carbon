@@ -6,8 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPayment } from "@carbon/server-functions/post-payment";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getErrorMessage, toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -188,10 +187,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   try {
-    const result = await postPayment(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "post", paymentId: payment.data.id }
-    );
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-payment", { type: "post", paymentId: payment.data.id });
     if (result.error) {
       const message = getErrorMessage(
         result.error,

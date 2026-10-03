@@ -2,18 +2,17 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Stripe Connect payment recording — shared between the webhook handler in the
- * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
- * callers can import it without crossing the app→package dependency boundary.
- */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getPostgresClient, getProcessPool } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPayment } from "@carbon/server-functions/post-payment";
+/**
+ * Stripe Connect payment recording — shared between the webhook handler in the
+ * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
+ * callers can import it without crossing the app→package dependency boundary.
+ */
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,
@@ -544,10 +543,9 @@ export async function recordStripeConnectPayment({
     );
   }
 
-  const posted = await postPayment(
-    ServerFnContext.system({ db: _db, companyId, userId: SYSTEM_USER }),
-    { type: "post", paymentId, fee: journalFee }
-  );
+  const posted = await serverFns
+    .system({ db: _db, companyId, userId: SYSTEM_USER })
+    .invoke("post-payment", { type: "post", paymentId, fee: journalFee });
 
   if (posted.error) {
     // The payment and its settlement are correct — only the posting failed, so
@@ -652,10 +650,9 @@ export async function voidStripeConnectPayment({
 
   const voidedIds: string[] = [];
   for (const payment of voidable) {
-    const voided = await postPayment(
-      ServerFnContext.system({ db: _db, companyId, userId: SYSTEM_USER }),
-      { type: "void", paymentId: payment.id }
-    );
+    const voided = await serverFns
+      .system({ db: _db, companyId, userId: SYSTEM_USER })
+      .invoke("post-payment", { type: "void", paymentId: payment.id });
 
     if (voided.error) {
       logger.error("Failed to void a Stripe Connect payment", {

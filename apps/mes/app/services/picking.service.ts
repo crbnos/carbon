@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
 import { getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPickingListLocked } from "~/services/models";
@@ -175,7 +176,6 @@ export async function setPickingListLineQuantity(
     companyId: string;
   }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -257,11 +257,9 @@ export async function setPickingListLineQuantity(
             companyId: pickingList.companyId
           };
 
-    const result = await postPicking.withClient(
-      client,
-      db,
-      body as Parameters<typeof postPicking.withClient>[2]
-    );
+    const result = await serverFns
+      .as({ client, db, companyId: body.companyId, userId: body.userId })
+      .invoke("post-picking", body as ServerFnInput<"post-picking">);
 
     if (result.error) {
       return {
@@ -308,7 +306,6 @@ export async function setPickingListLineTrackedEntity(
     companyId: string;
   }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -380,11 +377,9 @@ export async function setPickingListLineTrackedEntity(
     }
   }
 
-  const result = await postPicking.withClient(
-    client,
-    db,
-    body as Parameters<typeof postPicking.withClient>[2]
-  );
+  const result = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", body as ServerFnInput<"post-picking">);
   if (result.error) {
     return {
       data: null,

@@ -5,8 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
+import { serverFns } from "@carbon/server-functions/invoke";
 import {
   buildBatchSplitRecords,
   datetime,
@@ -1132,15 +1131,14 @@ export async function closeIssue(
   // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
   // a retry after a later failure is safe; a posting failure aborts the close.
   if (movements.length > 0) {
-    const post = await postNonConformance(
-      ServerFnContext.system({ db, companyId, userId }),
-      {
+    const post = await serverFns
+      .system({ db, companyId, userId })
+      .invoke("post-nonconformance", {
         documentType: "Non-Conformance",
         documentId: nonConformanceId,
         description: `NC ${readableNc} disposition`,
         movements
-      }
-    );
+      });
     if (post.error) {
       return errResult(
         post.error.message || "Failed to post disposition to the ledger"

@@ -67,7 +67,7 @@ import {
   getStorageUnitWithHighestQuantity,
   updatePickMethodDefaultStorageUnitIfNeeded
 } from "../lib/storage-units";
-import { reschedule } from "../reschedule";
+import reschedule from "../reschedule";
 import { ServerFnContext } from "../server-fn-context";
 import {
   type ExpiredEntityPolicy,
@@ -1977,7 +1977,7 @@ async function produceBatchOutput(
  * Issues material and records production against jobs, operations, tracked
  * entities and maintenance dispatches, per `type`.
  */
-export const issue = defineServerFn({
+const issue = defineServerFn({
   name: "issue",
   input: issueInput,
   // Kysely bypasses RLS, so the caller must hold the type's permission in the
@@ -5805,3 +5805,5 @@ export const issue = defineServerFn({
     };
   }
 });
+
+export default issue;

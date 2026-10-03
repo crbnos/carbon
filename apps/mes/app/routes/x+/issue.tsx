@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -101,17 +101,17 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
-    id: jobOperationId,
-    type: "partToOperation",
-    itemId,
-    materialId,
-    jobOperationStepId,
-    quantity,
-    adjustmentType,
-    companyId,
-    userId
-  });
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
+      id: jobOperationId,
+      type: "partToOperation",
+      itemId,
+      materialId,
+      jobOperationStepId,
+      quantity,
+      adjustmentType
+    });
 
   if (issued.error) {
     throw redirect(

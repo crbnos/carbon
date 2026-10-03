@@ -17,7 +17,6 @@ import {
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime, round, settleQuantity } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -151,7 +150,7 @@ export const createInput = z.discriminatedUnion("type", [
     type: z.literal("journalEntry")
   })
 ]);
-type CreateInput = z.input<typeof createInput>;
+export type CreateInput = z.input<typeof createInput>;
 type CreateResults = {
   nonConformanceTasks: { success: true };
   purchaseOrderFromJob: {
@@ -168,15 +167,10 @@ type Create = {
     ctx: ServerFnContext,
     input: I
   ): Promise<ServerFnResult<CreateResultFor<I["type"]>>>;
-  withClient<I extends CreateInput>(
-    client: SupabaseClient<Database>,
-    db: Kysely<KyselyDatabase>,
-    input: I & { companyId: string; userId: string }
-  ): Promise<ServerFnResult<CreateResultFor<I["type"]>>>;
 } & ServerFn<typeof createInput, CreateResult>;
 
 /** Creates receipts, shipments, NCR tasks, purchase orders and journal entries, per `type`. */
-export const create = defineServerFn({
+const create = defineServerFn({
   name: "create",
   input: createInput,
   permissions: {
@@ -3422,3 +3416,5 @@ export type ShipmentLineItem = Omit<
   Database["public"]["Tables"]["shipmentLine"]["Insert"],
   "id" | "shipmentId" | "updatedBy" | "createdAt" | "updatedAt"
 >;
+
+export default create;

@@ -12,27 +12,43 @@ goes to `@carbon/utils` / `@carbon/database`.
 ## Shape
 
 ```ts
-export const postCharge = defineServerFn({
+const postCharge = defineServerFn({
   name: "post-charge",                       // the directory name
   input: postChargeInput,                    // zod; exported alongside
   permissions: { update: "invoicing" },      // or "system", or { by: "type", rules: {...} }
   async run({ db, companyId, userId }, { type, chargeId }) { ... }
 });
-
-await postCharge(ServerFnContext.system({ db, companyId, userId }), input);
-await postCharge.withClient(client, db, { companyId, userId, ...input });
+export default postCharge;                   // the function is its module's default export
 ```
 
-`defineServerFn` validates the input (a zod failure is a 400 naming the fields),
-authorizes, runs, and returns `{ data, error }` — it never throws. `withClient` builds
-its context inside a try as well, so a refused client also comes back as `{ error }`.
+Callers go through `serverFns` (`@carbon/server-functions/invoke`), by the function's name:
+
+```ts
+import { serverFns } from "@carbon/server-functions/invoke";
+
+await serverFns.system({ db, companyId, userId }).invoke("post-charge", input);
+await serverFns.as({ client, db, companyId, userId }).invoke("post-charge", input);
+await serverFns.system(fields).invokeOrThrow("post-charge", input); // throws ServerFnError
+```
+
+The name, input and result are typed from the function's own definition. `system(...)`
+is the explicit elevation (no permission check); `as(...)` takes the caller's Supabase
+client and runs as whoever is behind it (`ServerFnContext.fromClient`). `invoke` never
+throws: a zod failure is a 400 naming the fields, and a refused client, a failed module
+load or anything the function throws comes back as `{ data: null, error }`.
+`invokeOrThrow` is for a job step, where a throw is what triggers the retry.
+
+`src/invoke.ts` holds the registry: one literal `() => import("./<name>")` per function,
+so each loads on first use. `permissions-manifest.test.ts` fails when a directory is
+missing from it or a key differs from the function's `name`. Inside this package one
+function calls another directly, `fn(ctx, input)`, with the context it was given.
 
 The context's `actor` decides how `authorize` checks the caller:
 
 | Actor | Built by | Checked against |
 |---|---|---|
 | `system` | `ServerFnContext.system`, or `fromClient` on a service-role client | nothing — passes every rule, and is the only actor a `"system"` rule admits |
-| `user` | `ServerFnContext.user`, or `fromClient` on a user's client | the user's claims (`get_claims` over `ctx.db`). `fromClient` requires the client's bearer JWT `sub` to equal `userId`, else `ForbiddenError` — `withClient` binds the client's user to the input's `userId` |
+| `user` | `ServerFnContext.user`, or `fromClient` on a user's client | the user's claims (`get_claims` over `ctx.db`). `fromClient` requires the client's bearer JWT `sub` to equal `userId`, else `ForbiddenError` — `serverFns.as` binds the client's user to `userId` |
 | `apiKey` | `fromClient` on a client carrying a `carbon-key` header | the key's own `scopes`: the key must belong to `companyId` and be unexpired. Never its creator's claims. Rate limiting stays with the route that authenticated the key |
 
 The service-role client (`ctx.supabase()`) is built once per process and the cache
@@ -79,9 +95,11 @@ resets after a failed build, so one bad start does not poison later calls.
   schema cannot express, `ServerFnError(message, status, body)` otherwise. A data-layer
   failure surfaces with an empty `message`, so callers keep their fallback copy
   (`error.message || "…"`).
-- MUST be imported lazily (`await import("@carbon/server-functions/<name>")`) from a
-  `*.service.ts`: service files are bundled for the browser. Routes, `.server.ts` files
-  and jobs import statically.
+- MUST be called through `serverFns` from apps, jobs and `packages/ee`, never by
+  importing the function's module. `invoke.ts` imports only types at module scope, so a
+  browser-bundled `*.service.ts` can import it statically.
+- MUST add a new function to the registry in `src/invoke.ts` and export it as the
+  module's default.
 
 ## Never
 
@@ -107,7 +125,8 @@ pnpm --filter @carbon/checks test
 | Subpath | Provides |
 |---|---|
 | `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `PermissionRule`; `ServerFnContext`, `Actor`, `Permissions`, `authorize`, `clientUsesKey`; `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError`; `assertCompanyRecords`; `hasPermissions`, `permissionsFromClaims`, `RequiredPermissions`, `ModulePermissions` |
-| `./<name>` | one server function (`src/<name>/index.ts`) |
+| `./invoke` | `serverFns` (`system(fields)` / `as(caller)` → `invoke(name, input)`, `invokeOrThrow`), `ServerFnName`, `ServerFnInput<Name>`, `serverFnNames` |
+| `./<name>` | one server function as the default export, plus its input schema and result types (`src/<name>/index.ts`) |
 
 Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
 

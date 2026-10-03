@@ -3,8 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postMaintenanceEvent } from "@carbon/server-functions/post-maintenance-event";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "maintenance-labor");
@@ -22,10 +21,9 @@ export async function postMaintenanceLabor(args: {
   if (args.maintenanceDispatchIds.length === 0) return null;
 
   const { maintenanceDispatchIds, companyId, userId } = args;
-  const posting = await postMaintenanceEvent(
-    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-    { maintenanceDispatchIds }
-  );
+  const posting = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-maintenance-event", { maintenanceDispatchIds });
 
   if (posting.error) {
     logger.error("Failed to post maintenance labor", {

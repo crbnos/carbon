@@ -37,7 +37,7 @@ export const postProductionEventInput = z.object({
 export type PostProductionEventResult = { success: boolean; reason?: string };
 
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
-export const postProductionEvent = defineServerFn({
+const postProductionEvent = defineServerFn({
   name: "post-production-event",
   input: postProductionEventInput,
   permissions: { update: "production" },
@@ -496,3 +496,5 @@ export const postProductionEvent = defineServerFn({
     return { success: true };
   }
 });
+
+export default postProductionEvent;

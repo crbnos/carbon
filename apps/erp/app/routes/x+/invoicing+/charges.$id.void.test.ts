@@ -21,9 +21,13 @@ vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: () =>
     Promise.resolve({ companyId: "company-1", userId: "user-1" })
 }));
-vi.mock("@carbon/server-functions/post-charge", () => ({
-  postCharge: postCharge
-}));
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) =>
+      postCharge({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => ({})
 }));

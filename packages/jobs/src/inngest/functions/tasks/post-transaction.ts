@@ -3,11 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPurchaseInvoice as postPurchaseInvoiceOperation } from "@carbon/server-functions/post-purchase-invoice";
-import { postReceipt as postReceiptOperation } from "@carbon/server-functions/post-receipt";
-import { postShipment as postShipmentOperation } from "@carbon/server-functions/post-shipment";
-import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -29,14 +25,13 @@ export const postTransactionFunction = inngest.createFunction(
       switch (payload.type) {
         case "receipt":
           logger.info("Posting receipt", { payload });
-          const postReceipt = await postReceiptOperation(
-            ServerFnContext.system({
+          const postReceipt = await serverFns
+            .system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
               userId: payload.userId
-            }),
-            { receiptId: payload.documentId }
-          );
+            })
+            .invoke("post-receipt", { receiptId: payload.documentId });
 
           result = {
             success: postReceipt.error === null,
@@ -46,14 +41,13 @@ export const postTransactionFunction = inngest.createFunction(
           break;
         case "purchase-invoice":
           logger.info("Posting purchase invoice", { payload });
-          const postPurchaseInvoice = await postPurchaseInvoiceOperation(
-            ServerFnContext.system({
+          const postPurchaseInvoice = await serverFns
+            .system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
               userId: payload.userId
-            }),
-            { invoiceId: payload.documentId }
-          );
+            })
+            .invoke("post-purchase-invoice", { invoiceId: payload.documentId });
 
           result = {
             success: postPurchaseInvoice.error === null,
@@ -77,14 +71,16 @@ export const postTransactionFunction = inngest.createFunction(
                 documentId: payload.documentId
               });
 
-              const priceUpdate = await updatePurchasedPrices(
-                ServerFnContext.system({
+              const priceUpdate = await serverFns
+                .system({
                   db: getJobDatabaseClient(),
                   companyId: payload.companyId,
                   userId: payload.userId
-                }),
-                { invoiceId: payload.documentId, source: "purchaseInvoice" }
-              );
+                })
+                .invoke("update-purchased-prices", {
+                  invoiceId: payload.documentId,
+                  source: "purchaseInvoice"
+                });
 
               result = {
                 success: priceUpdate.error === null,
@@ -97,14 +93,16 @@ export const postTransactionFunction = inngest.createFunction(
         case "shipment":
           logger.info("Posting shipment", { payload });
 
-          const postShipment = await postShipmentOperation(
-            ServerFnContext.system({
+          const postShipment = await serverFns
+            .system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
               userId: payload.userId
-            }),
-            { type: "post", shipmentId: payload.documentId }
-          );
+            })
+            .invoke("post-shipment", {
+              type: "post",
+              shipmentId: payload.documentId
+            });
 
           result = {
             success: postShipment.error === null,

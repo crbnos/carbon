@@ -9,6 +9,7 @@ import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { PickPartial } from "@carbon/utils";
 import {
   datetime,
@@ -157,10 +158,7 @@ export async function convertSalesRfqToQuote(
   }
 ) {
   const { companyId, userId, id } = payload;
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "salesRfqToQuote",
     id
   });
@@ -181,13 +179,12 @@ export async function convertQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  const { convert } = await import("@carbon/server-functions/convert");
-  const result = await convert.withClient(client, db, {
-    companyId,
-    userId,
-    type: "quoteToSalesOrder",
-    ...input
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("convert", {
+      type: "quoteToSalesOrder",
+      ...input
+    });
 
   if (!result.error && result.data?.convertedId) {
     await raiseMoment("sales.quoteAccepted", {
@@ -225,19 +222,20 @@ export async function copyQuoteLine(
     userId: string;
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    ...payload,
-    type: "quoteLineToQuoteLine",
-    parts: {
-      billOfMaterial: payload.billOfMaterial,
-      billOfProcess: payload.billOfProcess,
-      parameters: payload.parameters,
-      tools: payload.tools,
-      steps: payload.steps,
-      workInstructions: payload.workInstructions
-    }
-  });
+  return serverFns
+    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
+    .invoke("get-method", {
+      ...payload,
+      type: "quoteLineToQuoteLine",
+      parts: {
+        billOfMaterial: payload.billOfMaterial,
+        billOfProcess: payload.billOfProcess,
+        parameters: payload.parameters,
+        tools: payload.tools,
+        steps: payload.steps,
+        workInstructions: payload.workInstructions
+      }
+    });
 }
 
 /** @mcp create */
@@ -253,11 +251,12 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    ...payload,
-    type: "quoteToQuote"
-  });
+  return serverFns
+    .as({ client, db, companyId: payload.companyId, userId: payload.userId })
+    .invoke("get-method", {
+      ...payload,
+      type: "quoteToQuote"
+    });
 }
 
 /** @mcp create */
@@ -3659,15 +3658,19 @@ export async function upsertMakeMethodFromQuoteLine(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  return getMethod.withClient(client, db, {
-    type: "quoteLineToItem",
-    sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-    targetId: lineMethod.itemId,
-    companyId: lineMethod.companyId,
-    userId: lineMethod.userId,
-    parts: lineMethod.parts
-  });
+  return serverFns
+    .as({
+      client,
+      db,
+      companyId: lineMethod.companyId,
+      userId: lineMethod.userId
+    })
+    .invoke("get-method", {
+      type: "quoteLineToItem",
+      sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+      targetId: lineMethod.itemId,
+      parts: lineMethod.parts
+    });
 }
 
 /** @mcp upsert */
@@ -3689,15 +3692,19 @@ export async function upsertMakeMethodFromQuoteMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
-  const { error } = await getMethod.withClient(client, db, {
-    type: "quoteMakeMethodToItem",
-    sourceId: quoteMethod.sourceId,
-    targetId: quoteMethod.targetId,
-    companyId: quoteMethod.companyId,
-    userId: quoteMethod.userId,
-    parts: quoteMethod.parts
-  });
+  const { error } = await serverFns
+    .as({
+      client,
+      db,
+      companyId: quoteMethod.companyId,
+      userId: quoteMethod.userId
+    })
+    .invoke("get-method", {
+      type: "quoteMakeMethodToItem",
+      sourceId: quoteMethod.sourceId,
+      targetId: quoteMethod.targetId,
+      parts: quoteMethod.parts
+    });
 
   if (error) {
     return {
@@ -5535,7 +5542,6 @@ export async function upsertQuoteLineMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToQuoteLine";
     sourceId: string;
@@ -5569,7 +5575,9 @@ export async function upsertQuoteLineMethod(
     body.parts = lineMethod.parts;
   }
 
-  return getMethod.withClient(client, db, body);
+  return serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 }
 
 /**
@@ -5643,7 +5651,6 @@ export async function upsertQuoteMaterialMakeMethod(
     };
   }
 ) {
-  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToQuoteMakeMethod";
     sourceId: string;
@@ -5677,7 +5684,9 @@ export async function upsertQuoteMaterialMakeMethod(
     body.parts = quoteMethod.parts;
   }
 
-  const { error } = await getMethod.withClient(client, db, body);
+  const { error } = await serverFns
+    .as({ client, db, companyId: body.companyId, userId: body.userId })
+    .invoke("get-method", body);
 
   if (error) {
     return {

@@ -10,9 +10,12 @@ vi.mock("@carbon/env", () => ({ getAppUrl: () => "http://localhost" }));
 
 // The posting operation is the boundary; each fixture installs its own behavior.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions/post-purchase-invoice", () => ({
-  postPurchaseInvoice: { withClient: post }
-}));
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 function postingFixture(
   initialStatus: string,

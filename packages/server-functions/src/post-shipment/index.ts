@@ -56,7 +56,7 @@ export const postShipmentInput = z.object({
 });
 
 /** Posts or voids a shipment: stock, tracked entities, COGS and journal rows. */
-export const postShipment = defineServerFn({
+const postShipment = defineServerFn({
   name: "post-shipment",
   input: postShipmentInput,
   permissions: { update: "inventory" },
@@ -4708,3 +4708,5 @@ export const postShipment = defineServerFn({
     }
   }
 });
+
+export default postShipment;

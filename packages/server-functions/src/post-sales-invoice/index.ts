@@ -53,7 +53,7 @@ export const postSalesInvoiceInput = z.object({
 });
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
-export const postSalesInvoice = defineServerFn({
+const postSalesInvoice = defineServerFn({
   name: "post-sales-invoice",
   input: postSalesInvoiceInput,
   permissions: { update: "invoicing" },
@@ -1710,3 +1710,5 @@ export const postSalesInvoice = defineServerFn({
     }
   }
 });
+
+export default postSalesInvoice;

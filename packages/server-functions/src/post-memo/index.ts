@@ -14,7 +14,7 @@ export const postMemoInput = z.object({
 });
 
 /** Posts or voids a credit/debit memo and its journal, atomically. */
-export const postMemo = defineServerFn({
+const postMemo = defineServerFn({
   name: "post-memo",
   input: postMemoInput,
   permissions: { update: "invoicing" },
@@ -34,3 +34,5 @@ export const postMemo = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default postMemo;

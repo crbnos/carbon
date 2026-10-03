@@ -4,7 +4,6 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ServerFnError } from "@carbon/server-functions";
-import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getInspection } from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
@@ -36,9 +35,13 @@ vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn(async () => ({ from: vi.fn() }))
 }));
 vi.mock("@carbon/ee/notifications", () => ({ notifyIssueCreated: vi.fn() }));
-vi.mock("@carbon/server-functions/post-nonconformance", () => ({
-  postNonConformance: { withClient: vi.fn() }
-}));
+const postNonConformance = vi.hoisted(() => vi.fn());
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (fields: object) => ({
+    invoke: (_name: string, input: unknown) => postNonConformance(fields, input)
+  });
+  return { serverFns: { system: bind, as: bind } };
+});
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
@@ -96,7 +99,7 @@ beforeEach(() => {
     companyId: "company-1",
     userId: "user-1"
   } as any);
-  vi.mocked(postNonConformance.withClient).mockResolvedValue({
+  postNonConformance.mockResolvedValue({
     data: { journalId: null },
     error: null
   });
@@ -115,12 +118,13 @@ describe("inspection reject route — inventory write-off", () => {
 
     const { thrown } = await runAction(rejectRequest({ createNcr: "false" }));
 
-    expect(postNonConformance.withClient).toHaveBeenCalledWith(
-      client,
-      expect.anything(),
+    expect(postNonConformance).toHaveBeenCalledWith(
       expect.objectContaining({
+        client,
         companyId: "company-1",
-        userId: "user-1",
+        userId: "user-1"
+      }),
+      expect.objectContaining({
         documentType: "Inbound Inspection",
         documentId: "insp-1",
         movements: [
@@ -146,7 +150,7 @@ describe("inspection reject route — inventory write-off", () => {
 
     await runAction(rejectRequest({ createNcr: "false" }));
 
-    expect(postNonConformance.withClient).not.toHaveBeenCalled();
+    expect(postNonConformance).not.toHaveBeenCalled();
   });
 
   it("restricts the disposition to Receipt lots (Job Operation lots are verdict-only in the ERP)", async () => {
@@ -180,7 +184,7 @@ describe("inspection reject route — inventory write-off", () => {
     } as any);
     // The posting fails — a failed reject write-off must surface, not be
     // swallowed, because closeIssue's Use-As-Is restore assumes it succeeded.
-    vi.mocked(postNonConformance.withClient).mockResolvedValue({
+    postNonConformance.mockResolvedValue({
       data: null,
       error: new ServerFnError("boom")
     });

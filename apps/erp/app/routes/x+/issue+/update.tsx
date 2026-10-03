@@ -4,8 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { async, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
@@ -75,14 +74,13 @@ export async function action({ request }: ActionFunctionArgs) {
       const reconciled = await async.map(
         issues.data ?? [],
         ({ id }) =>
-          create(
-            ServerFnContext.system({
+          serverFns
+            .system({
               db: getDatabaseClient(),
               companyId,
               userId
-            }),
-            { type: "nonConformanceTasks", id }
-          ),
+            })
+            .invoke("create", { type: "nonConformanceTasks", id }),
         { concurrency: 4 }
       );
 

@@ -81,7 +81,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 
 The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
 relevant surfaces, optimistically sets `status: "Pending"`, then
-`postShipment` / `postReceipt` `.withClient(serviceRole, getDatabaseClient(), { type: "post", id, userId, companyId })`.
+`serverFns.system({ db: getDatabaseClient(), companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing
 slip PDF; receipt may call `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
 

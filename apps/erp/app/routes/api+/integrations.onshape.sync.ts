@@ -6,8 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { sync } from "@carbon/server-functions/sync";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -51,10 +50,13 @@ export async function action({ request }: ActionFunctionArgs) {
     const parsed = onShapeDataValidator.parse(JSON.parse(rows as string));
     const serviceRole = await getCarbonServiceRole();
 
-    const synced = await sync(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "onshape", makeMethodId: makeMethodId as string, data: parsed }
-    );
+    const synced = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("sync", {
+        type: "onshape",
+        makeMethodId: makeMethodId as string,
+        data: parsed
+      });
 
     if (synced.error) {
       logger.info("Failed to sync onshape data", { error: synced.error });

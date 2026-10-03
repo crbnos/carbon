@@ -24,7 +24,7 @@ export const assignSerialNumbersInput = z.object({
  *
  * Idempotent: it no-ops when the seed is already numbered or already split.
  */
-export const assignSerialNumbers = defineServerFn({
+const assignSerialNumbers = defineServerFn({
   name: "assign-serial-numbers",
   input: assignSerialNumbersInput,
   permissions: { update: "production" },
@@ -165,3 +165,5 @@ export const assignSerialNumbers = defineServerFn({
     });
   }
 });
+
+export default assignSerialNumbers;

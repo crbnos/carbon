@@ -11,6 +11,7 @@ import {
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -1454,11 +1455,12 @@ export async function mergeTrackedEntities(
     userId: string;
   }
 ) {
-  const { issue } = await import("@carbon/server-functions/issue");
-  return issue.withClient(client, db, {
-    type: "mergeTrackedEntities",
-    ...args
-  });
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("issue", {
+      type: "mergeTrackedEntities",
+      ...args
+    });
 }
 
 /** @mcp read */
@@ -1717,16 +1719,13 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  const { postInventoryAdjustment } = await import(
-    "@carbon/server-functions/post-inventory-adjustment"
-  );
   const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  const result = await postInventoryAdjustment.withClient(client, db, {
-    ...adjustment,
-    companyId,
-    userId: createdBy
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("post-inventory-adjustment", {
+      ...adjustment
+    });
 
   if (result.error) {
     // Bare-string error, matching the old service's validation-branch
@@ -1814,15 +1813,12 @@ export async function correctStockMovement(
   }
 ) {
   const { companyId, createdBy, ...rest } = correction;
-  const { correctStockMovement } = await import(
-    "@carbon/server-functions/correct-stock-movement"
-  );
 
-  const result = await correctStockMovement.withClient(client, db, {
-    ...rest,
-    companyId,
-    userId: createdBy
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("correct-stock-movement", {
+      ...rest
+    });
 
   if (result.error) {
     return {
@@ -3126,7 +3122,6 @@ export async function setPickingListLineTrackedEntity(
     companyId: string;
   }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -3200,11 +3195,9 @@ export async function setPickingListLineTrackedEntity(
     }
   }
 
-  const result = await postPicking.withClient(
-    client,
-    db,
-    body as Parameters<typeof postPicking.withClient>[2]
-  );
+  const result = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", body as ServerFnInput<"post-picking">);
   if (result.error) {
     return {
       data: null,
@@ -4135,7 +4128,6 @@ export async function pickPickingListLine(
     companyId: string;
   }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -4216,11 +4208,9 @@ export async function pickPickingListLine(
             companyId: args.companyId
           };
 
-    const result = await postPicking.withClient(
-      client,
-      db,
-      body as Parameters<typeof postPicking.withClient>[2]
-    );
+    const result = await serverFns
+      .as({ client, db, companyId: body.companyId, userId: body.userId })
+      .invoke("post-picking", body as ServerFnInput<"post-picking">);
 
     if (result.error) {
       return {

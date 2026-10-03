@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -103,12 +103,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return data({}, await flash(request, error("Item ID is required")));
     }
 
-    const result = await issue.withClient(serviceRole, getDatabaseClient(), {
-      type: "maintenanceDispatchUnissue",
-      maintenanceDispatchItemId: itemId,
-      companyId,
-      userId
-    });
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        type: "maintenanceDispatchUnissue",
+        maintenanceDispatchItemId: itemId
+      });
 
     if (result.error) {
       return data(

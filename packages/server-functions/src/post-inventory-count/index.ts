@@ -55,7 +55,7 @@ export const postInventoryCountInput = z.object({
 });
 
 /** Posts a Pending inventory count: one adjustment per counted variance, atomically. */
-export const postInventoryCount = defineServerFn({
+const postInventoryCount = defineServerFn({
   name: "post-inventory-count",
   input: postInventoryCountInput,
   permissions: { update: "inventory" },
@@ -370,3 +370,5 @@ export const postInventoryCount = defineServerFn({
     return { success: true };
   }
 });
+
+export default postInventoryCount;

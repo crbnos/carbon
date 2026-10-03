@@ -5,8 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -104,16 +103,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (children && children.length > 0) {
     // Tracked entities (serial/batch)
-    const issued = await issue(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      {
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "maintenanceDispatchTrackedEntities",
         maintenanceDispatchId: dispatchId,
         itemId,
         unitOfMeasureCode,
         children
-      }
-    );
+      });
 
     if (issued.error) {
       logger.error("Failed to issue tracked items", { error: issued.error });
@@ -128,16 +126,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // its existing label.
   } else {
     // Inventory item
-    const issued = await issue(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      {
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "maintenanceDispatchInventory",
         maintenanceDispatchId: dispatchId,
         itemId,
         unitOfMeasureCode,
         quantity: totalQuantity
-      }
-    );
+      });
 
     if (issued.error) {
       logger.error("Failed to issue from inventory", { error: issued.error });

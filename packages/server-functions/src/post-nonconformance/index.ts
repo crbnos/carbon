@@ -48,7 +48,7 @@ export const postNonConformanceInput = z.object({
     .min(1)
 });
 
-export const postNonConformance = defineServerFn({
+const postNonConformance = defineServerFn({
   name: "post-nonconformance",
   input: postNonConformanceInput,
   permissions: { update: "quality" },
@@ -323,3 +323,5 @@ export const postNonConformance = defineServerFn({
     return { journalId: journalId as string | null };
   }
 });
+
+export default postNonConformance;

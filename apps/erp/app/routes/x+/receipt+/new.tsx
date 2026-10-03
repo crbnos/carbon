@@ -5,8 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -36,15 +35,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await create(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const purchaseOrderReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromPurchaseOrder",
           locationId: defaults.data?.locationId as string | undefined,
           purchaseOrderId: sourceDocumentId,
           receiptId: undefined
-        }
-      );
+        });
       if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
         throw redirect(
           path.to.purchaseOrder(sourceDocumentId),
@@ -87,15 +85,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // No default-location guard: the create server function falls back to
       // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await create(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const salesReturnOrderReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromSalesReturnOrder",
           locationId: defaults.data?.locationId as string | undefined,
           salesReturnOrderId: sourceDocumentId,
           receiptId: undefined
-        }
-      );
+        });
       if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
         throw redirect(
           path.to.salesReturnOrderDetails(sourceDocumentId),
@@ -114,14 +111,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await create(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const warehouseTransferReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptFromInboundTransfer",
           warehouseTransferId: sourceDocumentId,
           receiptId: undefined
-        }
-      );
+        });
       if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
         throw redirect(
           path.to.warehouseTransfer(sourceDocumentId),
@@ -134,13 +130,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
     default:
-      const defaultReceipt = await create(
-        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-        {
+      const defaultReceipt = await serverFns
+        .system({ db: getDatabaseClient(), companyId, userId })
+        .invoke("create", {
           type: "receiptDefault",
           locationId: defaults.data?.locationId as string
-        }
-      );
+        });
 
       if (!defaultReceipt.data || defaultReceipt.error) {
         throw redirect(

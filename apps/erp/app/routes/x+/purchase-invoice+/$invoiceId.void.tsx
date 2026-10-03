@@ -5,8 +5,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -82,10 +81,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidInvoice = await postPurchaseInvoice(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", invoiceId: invoiceId }
-    );
+    const voidInvoice = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-purchase-invoice", { type: "void", invoiceId: invoiceId });
 
     if (voidInvoice.error) {
       throw redirect(

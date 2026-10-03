@@ -7,8 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postProductionEvent } from "@carbon/server-functions/post-production-event";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -85,14 +84,15 @@ export async function action({ request }: ActionFunctionArgs) {
             employeeId: userId
           });
           if (ended.data && ended.data.length > 0) {
-            await postProductionEvent(
-              ServerFnContext.system({
+            await serverFns
+              .system({
                 db: getDatabaseClient(),
                 companyId,
                 userId
-              }),
-              { productionEventId: ended.data[0].id }
-            );
+              })
+              .invoke("post-production-event", {
+                productionEventId: ended.data[0].id
+              });
           }
         }
       }
@@ -141,14 +141,15 @@ export async function action({ request }: ActionFunctionArgs) {
       // sliced per member (batch-operations). Posting it here too would
       // double-book the cost, so skip post-production-event for a batch event.
       if (!endEvent.data[0].jobOperationBatchId) {
-        await postProductionEvent(
-          ServerFnContext.system({
+        await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          { productionEventId: endEvent.data[0].id }
-        );
+          })
+          .invoke("post-production-event", {
+            productionEventId: endEvent.data[0].id
+          });
       }
     }
     return data(

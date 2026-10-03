@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getSalesOrderLine } from "~/modules/sales";
@@ -64,17 +64,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const salesOrderShipment = await create.withClient(
-    serviceRole,
-    getDatabaseClient(),
-    {
+  const salesOrderShipment = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "shipmentFromSalesOrderLine",
       locationId: salesOrderLine.data.locationId,
-      salesOrderLineId: lineId,
-      companyId,
-      userId
-    }
-  );
+      salesOrderLineId: lineId
+    });
 
   if (!salesOrderShipment.data || salesOrderShipment.error) {
     logger.error(salesOrderShipment.error);

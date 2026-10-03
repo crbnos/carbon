@@ -38,7 +38,7 @@ export const correctStockMovementInput = z.object({
 
 const MAX_CORRECTION_CHAIN_DEPTH = 100;
 
-export const correctStockMovement = defineServerFn({
+const correctStockMovement = defineServerFn({
   name: "correct-stock-movement",
   input: correctStockMovementInput,
   permissions: { update: "inventory" },
@@ -385,3 +385,5 @@ export const correctStockMovement = defineServerFn({
     return { itemLedger: resultLedgerId ? { id: resultLedgerId } : null };
   }
 });
+
+export default correctStockMovement;
