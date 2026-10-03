@@ -5,6 +5,8 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { DraftedRentalInvoice } from "@carbon/database/rental-billing";
+import { batchTrigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -145,13 +147,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  let invoices: DraftedRentalInvoice[];
   try {
-    await generateRentalInvoicesNow(getDatabaseClient(), {
+    ({ invoices } = await generateRentalInvoicesNow(getDatabaseClient(), {
       companyId,
       asOf: today,
       rentalAgreementId: id,
       userId
-    });
+    }));
   } catch (err) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
@@ -164,6 +167,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
             : "The purchase option was billed but its invoice was not drafted"
         )
       )
+    );
+  }
+
+  // Under automation the purchase option lands on a held charges invoice,
+  // so this is normally empty; anything automatable posts in the background.
+  const toAutomate = invoices.filter(
+    (i) => i.mode !== "Draft Only" && !i.holdReason
+  );
+  if (toAutomate.length > 0) {
+    await batchTrigger(
+      "invoice-automate",
+      toAutomate.map((i) => ({
+        payload: { companyId, invoiceId: i.invoiceId }
+      }))
     );
   }
 

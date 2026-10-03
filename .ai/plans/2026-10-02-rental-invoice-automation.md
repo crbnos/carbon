@@ -38,7 +38,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 13: Settings models/services + Settings → Invoicing page (moving two cards)
 - [x] Task 14: Agreement override — model, service, update route, properties field
 - [x] Task 14b: Agreement shows invoicing is automatic; button becomes "Invoice Now"
-- [ ] Task 15: Generate Invoices / Sell to Customer fire automation
+- [x] Task 15: Generate Invoices / Sell to Customer fire automation
 - [x] Task 16: Agreement cards show held invoices
 - [ ] Task 17: Invoice header badges + Send route
 - [x] Task 18: Invoices list — needsReview column + Needs Review link

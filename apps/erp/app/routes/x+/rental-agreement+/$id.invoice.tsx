@@ -5,6 +5,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { DraftedRentalInvoice } from "@carbon/database/rental-billing";
+import { batchTrigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -45,14 +47,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const timeZone = await getCompanyTimeZone(client, companyId);
 
+  let invoices: DraftedRentalInvoice[];
   let invoiceIds: string[];
   try {
-    ({ invoiceIds } = await generateRentalInvoicesNow(getDatabaseClient(), {
-      companyId,
-      asOf: datetime.today(timeZone).toString(),
-      rentalAgreementId: id,
-      userId
-    }));
+    ({ invoices, invoiceIds } = await generateRentalInvoicesNow(
+      getDatabaseClient(),
+      {
+        companyId,
+        asOf: datetime.today(timeZone).toString(),
+        rentalAgreementId: id,
+        userId
+      }
+    ));
   } catch (err) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
@@ -70,6 +76,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, success("Nothing is due on this agreement yet"))
+    );
+  }
+
+  // Held invoices and Draft Only stay drafts; the rest post (and email) in
+  // the background via carbon/invoice.automate.
+  const toAutomate = invoices.filter(
+    (i) => i.mode !== "Draft Only" && !i.holdReason
+  );
+  if (toAutomate.length > 0) {
+    await batchTrigger(
+      "invoice-automate",
+      toAutomate.map((i) => ({
+        payload: { companyId, invoiceId: i.invoiceId }
+      }))
+    );
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
+      await flash(
+        request,
+        success(
+          `Generated ${invoiceIds.length} invoice(s); posting ${toAutomate.length} automatically`
+        )
+      )
     );
   }
 
