@@ -384,7 +384,8 @@ function memberName(call: CallExpression): string | undefined {
 }
 
 function stringArgument(call: CallExpression): string | undefined {
-  const arg = call.getArguments()[0];
+  // `.from("accountingSyncTieOut" as any)`: a cast does not change the name.
+  const arg = unwrap(call.getArguments()[0]);
   if (
     arg &&
     (Node.isStringLiteral(arg) || Node.isNoSubstitutionTemplateLiteral(arg))
@@ -489,6 +490,83 @@ export function rpcCalls(fn: ServiceFunctionNode): Array<string | null> {
     );
   }
   return names;
+}
+
+export interface ParamFilter {
+  /** The parameter, or a field of it: `jobId`, `args.jobId`. */
+  path: string;
+  table: string;
+  column: string;
+}
+
+/** `jobId` → "jobId", `args.jobId` → "args.jobId", when rooted in one of the function's own parameters. */
+function parameterPath(
+  node: Node | undefined,
+  own: ReadonlySet<Node>
+): string | undefined {
+  const value = unwrap(node);
+  if (!value) return undefined;
+
+  if (Node.isPropertyAccessExpression(value)) {
+    const root = parameterPath(value.getExpression(), own);
+    return root ? `${root}.${value.getName()}` : undefined;
+  }
+  if (!Node.isIdentifier(value)) return undefined;
+
+  const declaration = value.getSymbol()?.getValueDeclaration();
+  if (!declaration) return undefined;
+  if (Node.isParameterDeclaration(declaration)) {
+    return own.has(declaration) ? declaration.getName() : undefined;
+  }
+  // `const { jobId } = args`, or a destructured parameter `({ jobId }: Args)`.
+  if (Node.isBindingElement(declaration)) {
+    const pattern = declaration.getParent();
+    const holder = pattern.getParent();
+    const field = declaration.getPropertyNameNode()?.getText() ?? declaration.getName();
+    if (Node.isParameterDeclaration(holder)) {
+      return own.has(holder) ? `${serviceParamName(holder)}.${field}` : undefined;
+    }
+    if (Node.isVariableDeclaration(holder)) {
+      const root = parameterPath(holder.getInitializer(), own);
+      return root ? `${root}.${field}` : undefined;
+    }
+  }
+  return undefined;
+}
+
+function serviceParamName(param: ParameterDeclaration): string {
+  const nameNode = param.getNameNode();
+  return Node.isObjectBindingPattern(nameNode) ||
+    Node.isArrayBindingPattern(nameNode)
+    ? "destructured"
+    : nameNode.getText();
+}
+
+/**
+ * Where the function compares one of its parameters to a column: a supabase
+ * `.eq("col", param)` / `.in("col", param)`, or a range test
+ * (`.lte("startDate", date)`), on a `.from("table")` chain. It says
+ * what a parameter IS — `jobId` compared to `job.id` is a job's record id — so
+ * a caller (or a test) can supply a value that exists.
+ */
+/** Filters whose column holds values the parameter is comparable with. */
+const COMPARISONS = new Set(["eq", "in", "lte", "gte", "lt", "gt"]);
+
+export function paramFilters(fn: ServiceFunctionNode): ParamFilter[] {
+  const own = new Set<Node>(fn.getParameters());
+  const filters: ParamFilter[] = [];
+  for (const call of fn.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const name = memberName(call);
+    if (!name || !COMPARISONS.has(name)) continue;
+    const callee = unwrap(call.getExpression());
+    if (!callee || !Node.isPropertyAccessExpression(callee)) continue;
+    const column = stringArgument(call);
+    const root = queryRoot(callee.getExpression());
+    const table = root ? stringArgument(root) : undefined;
+    const path = parameterPath(call.getArguments()[1], own);
+    if (column && table && path) filters.push({ path, table, column });
+  }
+  return filters;
 }
 
 /** Columns that record who wrote a row. */
