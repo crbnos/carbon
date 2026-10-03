@@ -43,7 +43,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
     ? `${found.module.name} - ${operationLabel(found.tool.name, found.module.slug)}`
     : "Carbon API";
   return pageSeo({
-    title: found ? `${name} — Carbon API` : name,
+    title: found ? `${name} | Carbon API` : name,
     ogTitle: name,
     description: found?.tool.description,
     path: `/api/operations/${operation}`,

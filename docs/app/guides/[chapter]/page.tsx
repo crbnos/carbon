@@ -69,7 +69,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   // unfurls as "Make to order", not a stray line. Description is the guide's blurb.
   return pageSeo({
     title: page
-      ? `${page.data.label} ${page.data.flowName} — Carbon`
+      ? `${page.data.label} ${page.data.flowName} | Carbon`
       : "Carbon Docs",
     ogTitle: page?.data.flowName ?? "Carbon Docs",
     description: page

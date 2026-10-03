@@ -22,7 +22,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   const { module, resource } = await props.params;
   const found = getResource(module, resource);
   return pageSeo({
-    title: found ? `${found.resource.name} — Carbon Data API` : "Carbon Data API",
+    title: found ? `${found.resource.name} | Carbon Data API` : "Carbon Data API",
     ogTitle: found?.resource.name ?? "Carbon Data API",
     description: found?.resource.description,
     path: `/api/data/${module}/${resource}`,
