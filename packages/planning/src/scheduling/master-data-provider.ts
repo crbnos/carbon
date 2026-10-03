@@ -89,6 +89,7 @@ export type CrossJobOperation = {
   jobPriority: number | null;
   workCenterId: string | null;
   createdAt: Date | string | null;
+  projectedCompletionAt: Date | string | null;
   setupTime: number | null;
   setupUnit: Database["public"]["Enums"]["factor"] | null;
   laborTime: number | null;
@@ -677,6 +678,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "j.priority as jobPriority",
         "jo.workCenterId",
         "jo.createdAt",
+        "jo.projectedCompletionAt",
         "jo.setupTime",
         "jo.setupUnit",
         "jo.laborTime",

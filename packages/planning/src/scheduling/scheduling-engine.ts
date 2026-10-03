@@ -825,7 +825,8 @@ export class SchedulingEngine {
             jobPriority: wcOp.jobPriority ?? 99,
             workCenterId: scheduled.workCenterId ?? null,
             durationHours: scheduled.durationHours ?? null,
-            createdAt: toIsoOrNull(wcOp.createdAt)
+            createdAt: toIsoOrNull(wcOp.createdAt),
+            projectedCompletionAt: scheduled.projectedCompletionAt ?? null
           };
         }
         // Operation from another job - use DB data
@@ -848,7 +849,8 @@ export class SchedulingEngine {
             machineUnit: wcOp.machineUnit ?? undefined,
             operationQuantity: wcOp.operationQuantity
           }),
-          createdAt: toIsoOrNull(wcOp.createdAt)
+          createdAt: toIsoOrNull(wcOp.createdAt),
+          projectedCompletionAt: toIsoOrNull(wcOp.projectedCompletionAt)
         };
       });
 
@@ -866,7 +868,8 @@ export class SchedulingEngine {
           jobPriority: this.job?.priority ?? 99,
           workCenterId: op.workCenterId,
           durationHours: op.durationHours ?? null,
-          createdAt: toIsoOrNull(op.createdAt)
+          createdAt: toIsoOrNull(op.createdAt),
+          projectedCompletionAt: op.projectedCompletionAt ?? null
         });
       }
     }

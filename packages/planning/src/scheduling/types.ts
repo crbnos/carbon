@@ -268,4 +268,5 @@ export type OperationWithJobInfo = {
   workCenterId: string | null;
   durationHours?: number | null;
   createdAt?: string | null;
+  projectedCompletionAt?: string | null;
 };

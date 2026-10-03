@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { parseDate } from "@internationalized/date";
-import { toInstantIso, toIsoDate } from "./date-utils.ts";
+import { toInstantIso, toInstantMs, toIsoDate } from "./date-utils.ts";
 import type {
   DeadlineType,
   OperationWithJobInfo,
@@ -35,7 +35,9 @@ function getDeadlinePriority(
  * next — so the placed start date is the primary key:
  * 1. Placed start date (earliest first, nulls last) — Primary
  * 2. Job Priority (lower number = higher priority) - Secondary
- * 3. Deadline Type (ASAP > Hard > Soft > No Deadline) - Tie-breaker
+ * 3. Deadline Type (ASAP > Hard > Soft > No Deadline)
+ * 4. Planned finish (earliest first, nulls last)
+ * 5. Operation id — the order is total, so it is the same on every run
  */
 export function sortOperationsByPriority<T extends OperationWithJobInfo>(
   operations: T[]
@@ -65,7 +67,21 @@ export function sortOperationsByPriority<T extends OperationWithJobInfo>(
     // 3. Deadline type (ASAP > Hard > Soft > No Deadline)
     const aDeadline = getDeadlinePriority(a.deadlineType);
     const bDeadline = getDeadlinePriority(b.deadlineType);
-    return aDeadline - bDeadline;
+    if (aDeadline !== bDeadline) return aDeadline - bDeadline;
+
+    // 4. Planned finish (earliest first, nulls last). The start date is only
+    // a day, so operations placed on the same day queue in the order they are
+    // planned to finish.
+    const aFinish = a.projectedCompletionAt
+      ? toInstantMs(a.projectedCompletionAt)
+      : Number.POSITIVE_INFINITY;
+    const bFinish = b.projectedCompletionAt
+      ? toInstantMs(b.projectedCompletionAt)
+      : Number.POSITIVE_INFINITY;
+    if (aFinish !== bFinish) return aFinish < bFinish ? -1 : 1;
+
+    // 5. Id, so the order never depends on the order rows were read in.
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 }
 
@@ -165,7 +181,8 @@ export function toOperationWithJobInfo(
     jobPriority,
     workCenterId: operation.workCenterId ?? null,
     durationHours: operation.durationHours ?? null,
-    createdAt: operation.createdAt ? toInstantIso(operation.createdAt) : null
+    createdAt: operation.createdAt ? toInstantIso(operation.createdAt) : null,
+    projectedCompletionAt: operation.projectedCompletionAt ?? null
   };
 }
 
