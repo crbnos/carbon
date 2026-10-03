@@ -8,11 +8,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  HStack,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -138,9 +142,26 @@ const RentalBillingPeriods = ({
                     </Td>
                     <Td>
                       {invoice ? (
-                        <Hyperlink to={path.to.salesInvoiceDetails(invoice.id)}>
-                          {invoice.invoiceId ?? t`Invoice`}
-                        </Hyperlink>
+                        <HStack spacing={2}>
+                          <Hyperlink
+                            to={path.to.salesInvoiceDetails(invoice.id)}
+                          >
+                            {invoice.invoiceId ?? t`Invoice`}
+                          </Hyperlink>
+                          {invoice.status === "Draft" &&
+                            invoice.automationHoldReason && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="orange">
+                                    <Trans>Held</Trans>
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {invoice.automationHoldReason}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                        </HStack>
                       ) : (
                         "—"
                       )}
