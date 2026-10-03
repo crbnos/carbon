@@ -490,7 +490,24 @@ export class SchedulingEngine {
     // interleaved delete/insert then violates jobOperationDependency_pk. The
     // lock serializes the rebuild per job, and onConflict absorbs any edge that
     // survives a race with trigger-rework's inserts.
-    if (this.persist) {
+    //
+    // A regen of a job whose structure has not changed computes the edges it
+    // already has; rebuilding them would delete and re-insert every row.
+    const isRework = new Set(reworkOpIds);
+    const edge = (d: { operationId: string; dependsOnId: string }) =>
+      `${d.operationId}>${d.dependsOnId}`;
+    const existing = new Set(
+      this.dependencies
+        .filter(
+          (d) => !isRework.has(d.operationId) && !isRework.has(d.dependsOnId)
+        )
+        .map(edge)
+    );
+    const unchanged =
+      existing.size === records.length &&
+      records.every((r) => existing.has(edge(r)));
+
+    if (this.persist && !unchanged) {
       await this.db.transaction().execute(async (trx) => {
         await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:dependencies:${this.jobId}`}, 0))`.execute(
           trx
@@ -518,7 +535,9 @@ export class SchedulingEngine {
             .execute();
         }
       });
+    }
 
+    if (this.persist) {
       // Unblock dependency-free operations to Ready (outside the rebuild txn so
       // the advisory lock is held only for the delete/insert). Two guards keep
       // this from RE-OPENING work that is already finished or in flight:
@@ -539,8 +558,22 @@ export class SchedulingEngine {
           this.job.status
         );
       if (jobIsOpen) {
+        const resettable = new Set(
+          allOperations
+            .filter(
+              (op) =>
+                ![
+                  "Ready",
+                  "Done",
+                  "Canceled",
+                  "In Progress",
+                  "Paused"
+                ].includes(op.status ?? "")
+            )
+            .map((op) => op.id)
+        );
         const unblocked = [...allDependencies]
-          .filter(([, deps]) => deps.size === 0)
+          .filter(([opId, deps]) => deps.size === 0 && resettable.has(opId))
           .map(([opId]) => opId);
         if (unblocked.length > 0) {
           await this.db
@@ -883,13 +916,8 @@ export class SchedulingEngine {
       this.assemblyHandler.getAllJobMakeMethodIds(assemblyTree);
 
     // Get materials that need assignment
-    const materials = await this.db
-      .selectFrom("jobMaterial")
-      .select(["id", "jobMakeMethodId"])
-      .where("jobMakeMethodId", "in", makeMethodIds)
-      .where("methodType", "=", "Make to Order")
-      .where("jobOperationId", "is", null)
-      .execute();
+    const materials =
+      await this.provider.getUnassignedMakeToOrderMaterials(makeMethodIds);
 
     // Group non-rework operations by jobMakeMethodId
     const operationsByMethod = new Map<string, BaseOperation[]>();
@@ -912,7 +940,7 @@ export class SchedulingEngine {
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
       const firstOpId = sortedOps[0]?.id;
-      if (!firstOpId) continue;
+      if (!firstOpId || !material.id) continue;
       const ids = materialIdsByFirstOp.get(firstOpId) ?? [];
       ids.push(material.id);
       materialIdsByFirstOp.set(firstOpId, ids);

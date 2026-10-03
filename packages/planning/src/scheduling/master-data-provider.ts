@@ -259,6 +259,8 @@ type JobPreload = {
   operations: Record<string, Row<"jobOperation">[]>;
   dependencies: Record<string, Row<"jobOperationDependency">[]>;
   unlinked: Record<string, { id: string; jobMakeMethodId: string }[]>;
+  materials: Row<"jobMaterialWithMakeMethodId">[];
+  jobIdByMakeMethodId: Map<string, string>;
   rootByJobId: Map<string, { id: string; itemId: string | null }>;
   treeByRootId: Record<string, JobMethod[]>;
   leadTimeByMakeMethodId: Map<string, unknown>;
@@ -321,7 +323,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    */
   async preloadJobs(jobIds: string[]): Promise<void> {
     if (jobIds.length === 0) return;
-    const [jobs, operations, dependencies, makeMethods, unlinked] =
+    const [jobs, operations, dependencies, makeMethods, unlinked, materials] =
       await Promise.all([
         this.jobQuery().where("job.id", "in", jobIds).execute(),
         this.db
@@ -345,6 +347,11 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           .select(["id", "jobMakeMethodId", "jobId"])
           .where("jobId", "in", jobIds)
           .where("jobOperationId", "is", null)
+          .execute(),
+        this.db
+          .selectFrom("jobMaterialWithMakeMethodId")
+          .selectAll()
+          .where("jobId", "in", jobIds)
           .execute()
       ]);
 
@@ -384,6 +391,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       operations: groupBy(operations, (o) => o.jobId as string),
       dependencies: groupBy(dependencies, (d) => d.jobId),
       unlinked: groupBy(unlinked, (m) => m.jobId),
+      materials,
+      jobIdByMakeMethodId: new Map(makeMethods.map((m) => [m.id, m.jobId])),
       rootByJobId: new Map(roots.map((m) => [m.jobId, m])),
       treeByRootId: groupBy(trees.rows, (t) => t.rootMethodId),
       leadTimeByMakeMethodId: new Map(
@@ -497,6 +506,13 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    if (this.materialsAreLinked(makeMethodIds)) {
+      const ids = new Set(makeMethodIds);
+      return this.preload!.materials.filter(
+        (m) => m.jobMakeMethodId && ids.has(m.jobMakeMethodId)
+      );
+    }
+
     return await this.db
       .selectFrom("jobMaterialWithMakeMethodId")
       .selectAll()
@@ -511,6 +527,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       return [];
     }
 
+    if (this.materialsAreLinked(makeMethodIds)) return [];
+
     return await this.db
       .selectFrom("jobMaterial")
       .select(["id", "jobMakeMethodId"])
@@ -518,6 +536,20 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where("methodType", "=", "Make to Order")
       .where("jobOperationId", "is", null)
       .execute();
+  }
+
+  /**
+   * True when these make methods belong to preloaded jobs that had every
+   * material on an operation. A run only ever links unlinked materials, so
+   * for such a job the preloaded material rows are still what is stored.
+   */
+  private materialsAreLinked(makeMethodIds: string[]): boolean {
+    const preload = this.preload;
+    if (!preload) return false;
+    return makeMethodIds.every((id) => {
+      const jobId = preload.jobIdByMakeMethodId.get(id);
+      return jobId !== undefined && !preload.unlinked[jobId]?.length;
+    });
   }
 
   async getUnlinkedMaterials(jobId: string): Promise<UnlinkedMaterial[]> {
@@ -968,10 +1000,40 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     if (workCenterIds.length === 0) {
       return new Map();
     }
-    return this.cached(
-      `workCenterAvailability:${[...workCenterIds].sort().join(",")}:${rangeStart}:${rangeEnd}`,
-      () => this.loadWorkCenterAvailability(workCenterIds, rangeStart, rangeEnd)
-    );
+    const cache = this.companyCache;
+    if (!cache) {
+      return this.loadWorkCenterAvailability(
+        workCenterIds,
+        rangeStart,
+        rangeEnd
+      );
+    }
+    // Cached per work center: jobs in a batch ask for overlapping sets, and a
+    // work center's windows do not depend on which others were asked for.
+    const key = (id: string) =>
+      `workCenterAvailability:${id}:${rangeStart}:${rangeEnd}`;
+    const missing = workCenterIds.filter((id) => !cache.has(key(id)));
+    if (missing.length > 0) {
+      const loaded = this.loadWorkCenterAvailability(
+        missing,
+        rangeStart,
+        rangeEnd
+      );
+      for (const id of missing) {
+        cache.set(
+          key(id),
+          loaded.then((windows) => windows.get(id))
+        );
+      }
+    }
+    const result = new Map<string, CalendarWindow[]>();
+    for (const id of workCenterIds) {
+      const windows = (await cache.get(key(id))) as
+        | CalendarWindow[]
+        | undefined;
+      if (windows) result.set(id, windows);
+    }
+    return result;
   }
 
   private async loadWorkCenterAvailability(
