@@ -12,7 +12,7 @@ import { getLogger } from "@carbon/logger";
  * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
  * callers can import it without crossing the app→package dependency boundary.
  */
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,

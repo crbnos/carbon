@@ -5,7 +5,7 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,

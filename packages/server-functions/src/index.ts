@@ -2,8 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-export * from "./company-records";
-export * from "./define-server-fn";
-export * from "./errors";
-export * from "./permissions";
-export * from "./server-fn-context";
+// The root is what callers import, including browser-bundled `*.service.ts`
+// files: values from `./invoke` only (it loads everything else on first use),
+// the rest as types. Runtime pieces live on their own subpaths (`./errors`).
+export type * from "./define-server-fn";
+export type * from "./errors";
+export * from "./invoke";
+export type * from "./permissions";
+export type * from "./server-fn-context";

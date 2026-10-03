@@ -13,7 +13,7 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import {
   async,
   datetime,

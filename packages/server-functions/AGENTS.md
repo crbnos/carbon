@@ -21,10 +21,10 @@ const postCharge = defineServerFn({
 export default postCharge;                   // the function is its module's default export
 ```
 
-Callers go through `serverFns` (`@carbon/server-functions/invoke`), by the function's name:
+Callers go through `serverFns`, the package root's one runtime export, by the function's name:
 
 ```ts
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 
 await serverFns.system({ db, companyId, userId }).invoke("post-charge", input);
 await serverFns.as({ client, db, companyId, userId }).invoke("post-charge", input);
@@ -96,8 +96,11 @@ resets after a failed build, so one bad start does not poison later calls.
   failure surfaces with an empty `message`, so callers keep their fallback copy
   (`error.message || "…"`).
 - MUST be called through `serverFns` from apps, jobs and `packages/ee`, never by
-  importing the function's module. `invoke.ts` imports only types at module scope, so a
-  browser-bundled `*.service.ts` can import it statically.
+  importing the function's module. The package root exports only `serverFns` and types,
+  and `invoke.ts` imports only types at module scope, so a browser-bundled
+  `*.service.ts` can import the root statically. Never add a runtime export to
+  `src/index.ts`: `defineServerFn`, the context and the error classes load `@carbon/env`
+  and the logger, which must stay out of the browser graph.
 - MUST add a new function to the registry in `src/invoke.ts` and export it as the
   module's default.
 
@@ -124,8 +127,8 @@ pnpm --filter @carbon/checks test
 
 | Subpath | Provides |
 |---|---|
-| `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `PermissionRule`; `ServerFnContext`, `Actor`, `Permissions`, `authorize`, `clientUsesKey`; `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError`; `assertCompanyRecords`; `hasPermissions`, `permissionsFromClaims`, `RequiredPermissions`, `ModulePermissions` |
-| `./invoke` | `serverFns` (`system(fields)` / `as(caller)` → `invoke(name, input)`, `invokeOrThrow`), `ServerFnName`, `ServerFnInput<Name>`, `serverFnNames` |
+| `.` | `serverFns` (`system(fields)` / `as(caller)` → `invoke(name, input)`, `invokeOrThrow`), `serverFnNames`, and types only: `ServerFnName`, `ServerFnInput<Name>`, `ServerFnResult`, `ServerFn`, `PermissionRule`, `Actor`, `Permissions`, `RequiredPermissions`, `ServerFnError` (as a type). Browser-safe: nothing else is loaded until a function is invoked |
+| `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the classes, for `instanceof` and `new` |
 | `./<name>` | one server function as the default export, plus its input schema and result types (`src/<name>/index.ts`) |
 
 Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.

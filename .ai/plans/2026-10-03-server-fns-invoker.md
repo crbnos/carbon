@@ -4,7 +4,7 @@ One front door for server functions, replacing `fn.withClient(client, db, input)
 hand-written `await import("@carbon/server-functions/<name>")`.
 
 ```ts
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 
 await serverFns.system({ db, companyId, userId }).invoke("post-receipt", { receiptId });
 await serverFns.as({ client, db, companyId, userId }).invoke("post-picking", input);

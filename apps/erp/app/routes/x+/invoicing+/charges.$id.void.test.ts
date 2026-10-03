@@ -21,7 +21,7 @@ vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: () =>
     Promise.resolve({ companyId: "company-1", userId: "user-1" })
 }));
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const bind = (actor: string) => (fields: object) => ({
     invoke: (_name: string, input: unknown) =>
       postCharge({ ...fields, actor }, input)

@@ -10,7 +10,7 @@
 // values stand as golden literals: they ARE executeFunction's behavior, and a change
 // here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
-import { ServerFnError } from "@carbon/server-functions";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { ORPCError } from "@orpc/server";
 import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";

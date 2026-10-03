@@ -2,9 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-// The syncer loads this lazily when it posts a payment. Loaded here so that cost
-// lands at import time, not inside the first test's timeout.
-import "@carbon/server-functions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type NormalizedPayment,
@@ -22,7 +19,7 @@ import {
 } from "../payment";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const bind = (actor: string) => (fields: object) => ({
     invoke: (_name: string, input: unknown) =>
       invokeMock({ ...fields, actor }, input)

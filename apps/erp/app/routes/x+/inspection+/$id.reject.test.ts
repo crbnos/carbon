@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ServerFnError } from "@carbon/server-functions";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getInspection } from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
@@ -36,7 +36,7 @@ vi.mock("@carbon/auth/client.server", () => ({
 }));
 vi.mock("@carbon/ee/notifications", () => ({ notifyIssueCreated: vi.fn() }));
 const postNonConformance = vi.hoisted(() => vi.fn());
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const bind = (fields: object) => ({
     invoke: (_name: string, input: unknown) => postNonConformance(fields, input)
   });
