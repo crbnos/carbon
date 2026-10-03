@@ -1215,3 +1215,579 @@ export const inspectionCompletePassedResult = z.object({
 export type InspectionCompletePassedResult = z.infer<
   typeof inspectionCompletePassedResult
 >;
+
+// ---------------------------------------------------------------------------
+// Assembly
+// ---------------------------------------------------------------------------
+
+/**
+ * The operation an assembly screen is for: the `get_job_operation_by_id` row,
+ * plus the four durations `makeDurations` adds on the server.
+ *
+ * Everything but `id` is nullable. The generated types declare an RPC row's
+ * columns non-null, but half of them come off LEFT JOINs (the item, its model,
+ * its unit of measure), and a screen must not fail to open because an item has
+ * no model.
+ */
+export const assemblyOperation = z
+  .object({
+    id: z.string(),
+    jobId: z.string().nullable().optional(),
+    jobMakeMethodId: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    /**
+     * Always `Assembly` on this screen: any other type is refused with a 409
+     * whose `details.view` names the screen the operation does belong on.
+     */
+    operationType: z.string().nullable().optional(),
+    operationStatus: z.string().nullable().optional(),
+    /** The routing position (`jobOperation.order`), not a count. */
+    operationOrder: z.number().nullable().optional(),
+    operationOrderType: z.string().nullable().optional(),
+    processId: z.string().nullable().optional(),
+    workCenterId: z.string().nullable().optional(),
+    /** Set on the rework copy of an operation. */
+    reworkId: z.string().nullable().optional(),
+    jobReadableId: z.string().nullable().optional(),
+    jobStatus: z.string().nullable().optional(),
+    jobDeadlineType: z.string().nullable().optional(),
+    /** `YYYY-MM-DD`. */
+    jobDueDate: z.string().nullable().optional(),
+    /** `YYYY-MM-DD`. */
+    operationDueDate: z.string().nullable().optional(),
+    projectedCompletionAt: z.string().nullable().optional(),
+    itemId: z.string().nullable().optional(),
+    /** The item's readable id WITH its revision. */
+    itemReadableId: z.string().nullable().optional(),
+    itemDescription: z.string().nullable().optional(),
+    itemUnitOfMeasure: z.string().nullable().optional(),
+    /**
+     * How many units this operation builds — the length of the unit axis.
+     * A `NUMERIC`, so it can be fractional; the axis rounds it and never goes
+     * below one unit, exactly as the web does (`deriveUnits`).
+     */
+    operationQuantity: z.number().nullable().optional(),
+    targetQuantity: z.number().nullable().optional(),
+    /** Units already built — the next unit still to build is at this index. */
+    quantityComplete: z.number().nullable().optional(),
+    quantityScrapped: z.number().nullable().optional(),
+    quantityReworked: z.number().nullable().optional(),
+    /** The standard times as entered, each in its own `*Unit`. */
+    setupTime: z.number().nullable().optional(),
+    setupUnit: z.string().nullable().optional(),
+    laborTime: z.number().nullable().optional(),
+    laborUnit: z.string().nullable().optional(),
+    machineTime: z.number().nullable().optional(),
+    machineUnit: z.string().nullable().optional(),
+    /**
+     * `makeDurations` has already turned the standard times into milliseconds
+     * for the whole operation quantity. Null — not zero — when a rate unit
+     * (pieces per hour) has a time of 0: the division is infinite, and JSON has
+     * no number for that.
+     */
+    duration: z.number().nullable().optional(),
+    setupDuration: z.number().nullable().optional(),
+    laborDuration: z.number().nullable().optional(),
+    machineDuration: z.number().nullable().optional(),
+    /** Tiptap rich text, not a string. */
+    workInstruction: z.unknown().nullable().optional(),
+    /** The item's own CAD upload, as a storage path. */
+    itemModelPath: z.string().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyOperation = z.infer<typeof assemblyOperation>;
+
+/**
+ * The job, from the `jobs` view with its customer embedded. Every column of a
+ * view is nullable in the generated types, so every field here is too.
+ */
+export const assemblyJob = z
+  .object({
+    id: z.string().nullable().optional(),
+    /** The readable job number — `J000009`. `id` is the opaque key. */
+    jobId: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    itemId: z.string().nullable().optional(),
+    /** What the web header titles the screen with. */
+    itemReadableIdWithRevision: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    itemType: z.string().nullable().optional(),
+    itemTrackingType: z.string().nullable().optional(),
+    unitOfMeasureCode: z.string().nullable().optional(),
+    customerId: z.string().nullable().optional(),
+    /**
+     * The customer's NAME, embedded by the job read. `customerId` is an opaque
+     * `cust_…` key and reads as noise on a shop floor. Null on a job that is
+     * built to stock.
+     */
+    customer: z
+      .object({ name: z.string().nullable().optional() })
+      .passthrough()
+      .nullable()
+      .optional(),
+    salesOrderId: z.string().nullable().optional(),
+    salesOrderLineId: z.string().nullable().optional(),
+    salesOrderReadableId: z.string().nullable().optional(),
+    locationId: z.string().nullable().optional(),
+    deadlineType: z.string().nullable().optional(),
+    /** `YYYY-MM-DD`. */
+    dueDate: z.string().nullable().optional(),
+    /** `YYYY-MM-DD`. */
+    startDate: z.string().nullable().optional(),
+    /** The quantity ordered; `productionQuantity` adds the scrap allowance. */
+    quantity: z.number().nullable().optional(),
+    productionQuantity: z.number().nullable().optional(),
+    scrapQuantity: z.number().nullable().optional(),
+    quantityComplete: z.number().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyJob = z.infer<typeof assemblyJob>;
+
+/**
+ * One tracked entity of the operation's make method — a serial unit of a
+ * serial parent, or THE lot of a batch parent — in the stable order the unit
+ * axis indexes into (`createdAt`, `readableId`, `id`).
+ *
+ * `attributes` is how a client knows a unit is done HERE: a completed unit
+ * carries the key `Operation <operationId>`. Together with `status` (a
+ * `Consumed` or `Scrapped` unit is never a work candidate) that is the whole
+ * of the web's `isSerialEntityIncompleteForOperation`.
+ */
+export const assemblyTrackedEntity = z
+  .object({
+    id: z.string(),
+    /** The serial or lot number an operator reads off the label. */
+    readableId: z.string().nullable().optional(),
+    /** Available, Reserved, On Hold, Consumed, Rejected or Scrapped. */
+    status: z.string(),
+    /** 1 for a split serial unit; the whole run for a lot not yet split. */
+    quantity: z.number(),
+    itemId: z.string().nullable().optional(),
+    attributes: z.record(z.string(), z.unknown()),
+    /** `YYYY-MM-DD`. */
+    expirationDate: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyTrackedEntity = z.infer<typeof assemblyTrackedEntity>;
+
+/**
+ * One part on the assembly screen: an `operationMaterial` line, with what the
+ * assembly view adds to it.
+ *
+ * **`quantity` is per UNIT, `estimatedQuantity` is for the whole job.** An
+ * assembly is built one unit at a time, so the requirement a card shows is
+ * `quantity`, never the job total.
+ *
+ * **`quantityIssued` changes meaning with the parent's tracking**, because that
+ * decides what the server can attribute:
+ *
+ *  - serial parent, tracked part — what THIS unit's entity consumed;
+ *  - batch parent, tracked part — what was stamped with this unit's number at
+ *    issue time (`unitNumber` on `issueTrackedBody`);
+ *  - anything else — the job-wide total, from which a client derives this
+ *    unit's share by assuming every earlier unit took its `quantity`.
+ *
+ * `jobOperationStepIds` scopes a part to steps: empty means it belongs to no
+ * step in particular and is shown on the first one. A link may carry its own
+ * quantity in `jobOperationStepQuantities` (a line of ten screws split five
+ * and five across two steps); null there means the whole `quantity`.
+ */
+export const assemblyMaterial = operationMaterial
+  .extend({
+    /** Per-unit bill-of-material quantity. Fractional for a consumable. */
+    quantity: z.number().nullable().optional(),
+    /** Part, Material, Consumable, Fixture, Tool or Service — the card order. */
+    itemType: z.string().nullable().optional(),
+    jobId: z.string().nullable().optional(),
+    jobOperationId: z.string().nullable().optional(),
+    jobMakeMethodId: z.string().nullable().optional(),
+    /** Set on a made sub-assembly and on a kit, whose components follow it. */
+    jobMaterialMakeMethodId: z.string().nullable().optional(),
+    /** The bill-of-material line order. */
+    order: z.number().nullable().optional(),
+    scrapQuantity: z.number().nullable().optional(),
+    storageUnitId: z.string().nullable().optional(),
+    jobOperationStepIds: z.array(z.string()),
+    jobOperationStepQuantities: z.record(z.string(), z.number().nullable()),
+    /** A lot already consumed into this unit has since passed its expiry. */
+    hasExpiredConsumed: z.boolean(),
+    /**
+     * Staged at lineside by picking, net of returns, summed across every live
+     * picking list. Zero for a part nobody picked — picking is optional.
+     */
+    quantityPicked: z.number(),
+    quantityToPick: z.number(),
+    /** The same two numbers per picked item: a pick can bring a successor. */
+    pickedByItem: z.array(
+      z
+        .object({
+          itemId: z.string(),
+          itemReadableId: z.string(),
+          quantityPicked: z.number(),
+          quantityToPick: z.number()
+        })
+        .passthrough()
+    ),
+    /** A component of a kit line, which is `kitParentId`. Absent otherwise. */
+    isKitComponent: z.boolean().optional(),
+    kitParentId: z.string().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyMaterial = z.infer<typeof assemblyMaterial>;
+
+/**
+ * A lot or serial already consumed into the current unit — what an Unconsume
+ * or a Scrap is offered. A scrapped input is not listed: it no longer counts
+ * as consumed.
+ *
+ * `activityAttributes` belongs to the CONSUME, not to the lot. Its
+ * `Job Material` is the `assemblyMaterial.id` the lot was issued against and
+ * `Unit` the 1-based unit it was stamped with. `quantity` is the entity's.
+ */
+export const assemblyTrackedInput = z
+  .object({
+    id: z.string(),
+    trackedActivityId: z.string().nullable().optional(),
+    readableId: z.string().nullable().optional(),
+    quantity: z.number(),
+    status: z.string().nullable().optional(),
+    sourceDocument: z.string().nullable().optional(),
+    sourceDocumentId: z.string().nullable().optional(),
+    sourceDocumentReadableId: z.string().nullable().optional(),
+    attributes: z.record(z.string(), z.unknown()).nullable().optional(),
+    activityAttributes: z.record(z.string(), z.unknown()).nullable().optional()
+  })
+  .passthrough();
+export type AssemblyTrackedInput = z.infer<typeof assemblyTrackedInput>;
+
+/**
+ * A numbered pin on a slide image. `x` and `y` are FRACTIONS (0–1) of the
+ * image box, so a pin stays put at any rendered size, and its number is its
+ * position in the array plus one. `toolId` is the `item.id` of the tool the
+ * pin points at, when it points at one.
+ */
+export const assemblySlideAnnotation = z
+  .object({
+    id: z.string(),
+    x: z.number(),
+    y: z.number(),
+    label: z.string().nullable().optional(),
+    color: z.string().nullable().optional(),
+    toolId: z.string().nullable().optional()
+  })
+  .passthrough();
+export type AssemblySlideAnnotation = z.infer<typeof assemblySlideAnnotation>;
+
+/**
+ * A reference slide on a step: an image XOR a 3D model, never both. An image
+ * slide carries `imagePath`; a model slide carries `modelUploadId`, which keys
+ * into the screen's `slideModels`. Pins are image-only.
+ */
+export const assemblyStepSlide = z
+  .object({
+    id: z.string(),
+    stepId: z.string(),
+    /** A storage path, not a url. */
+    imagePath: z.string().nullable().optional(),
+    modelUploadId: z.string().nullable().optional(),
+    caption: z.string().nullable().optional(),
+    sortOrder: z.number(),
+    /** small, medium or large. */
+    size: z.string().nullable().optional(),
+    annotations: z.array(assemblySlideAnnotation).nullable().optional()
+  })
+  .passthrough();
+export type AssemblyStepSlide = z.infer<typeof assemblyStepSlide>;
+
+/**
+ * One step of the assembly: an `operationStep` with its records, plus its
+ * slides and where it came from.
+ *
+ * `jobOperationStepRecord` holds one record per UNIT that has done the step —
+ * a record's `index` is the 0-based unit, so "is this step done for the unit
+ * on screen" is whether a record with that index exists. A Measurement outside
+ * `minValue`…`maxValue`, or an Inspection whose `booleanValue` is false, is a
+ * recorded failure rather than a missing record.
+ */
+export const assemblyStep = operationStep
+  .extend({
+    /**
+     * The 3D instruction step this was synced from, when the operation has
+     * one — the id to find in `assemblyPlayback.steps`.
+     */
+    assemblyInstructionStepId: z.string().nullable().optional(),
+    /**
+     * Set on a containment step: an Inspection the screen adds for an open
+     * non-conformance against this item and process.
+     */
+    nonConformanceActionId: z.string().nullable().optional(),
+    /** What a File step accepts. */
+    fileTypes: z.array(z.string()).nullable().optional(),
+    jobOperationStepSlide: z.array(assemblyStepSlide).nullable().optional()
+  })
+  .passthrough();
+export type AssemblyStep = z.infer<typeof assemblyStep>;
+
+/** A process parameter the operator is told to hold: a name and its setting. */
+export const operationParameter = z
+  .object({
+    id: z.string(),
+    key: z.string(),
+    value: z.string()
+  })
+  .passthrough();
+export type OperationParameter = z.infer<typeof operationParameter>;
+
+export const assemblyProcedure = z
+  .object({
+    /** In no guaranteed order — sort by `sortOrder`, as the web does. */
+    attributes: z.array(assemblyStep),
+    parameters: z.array(operationParameter)
+  })
+  .passthrough();
+export type AssemblyProcedure = z.infer<typeof assemblyProcedure>;
+
+/**
+ * A tool the operation calls for. `jobOperationStepIds` scopes it exactly as
+ * it scopes a part, with one difference: an unscoped tool is shown on EVERY
+ * step, not only the first.
+ */
+export const assemblyTool = z
+  .object({
+    quantity: z.number(),
+    jobOperationStepIds: z.array(z.string()),
+    item: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string().nullable().optional(),
+        readableId: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+  })
+  .passthrough();
+export type AssemblyTool = z.infer<typeof assemblyTool>;
+
+/** A quality issue already raised against this operation. */
+export const assemblyNcr = z
+  .object({
+    /** The opaque key; the readable number is on `nonConformance`. */
+    nonConformanceId: z.string(),
+    nonConformance: z
+      .object({
+        id: z.string(),
+        nonConformanceId: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        priority: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+  })
+  .passthrough();
+export type AssemblyNcr = z.infer<typeof assemblyNcr>;
+
+/**
+ * An open non-conformance's containment action against this item and process.
+ * The web turns each one into an Inspection step the operator signs off; here
+ * `nonConformanceId` is the READABLE number, and `notes` is Tiptap rich text.
+ */
+export const assemblyContainmentAction = z
+  .object({
+    id: z.string(),
+    actionTypeName: z.string().nullable().optional(),
+    nonConformanceId: z.string().nullable().optional(),
+    assignee: z.string().nullable().optional(),
+    notes: z.unknown().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyContainmentAction = z.infer<
+  typeof assemblyContainmentAction
+>;
+
+/**
+ * What a model slide renders from. `glbPath` is the converted artifact and the
+ * one to load; `modelPath` is the raw CAD upload it was converted from. Both
+ * are storage paths.
+ */
+export const assemblySlideModel = z
+  .object({
+    id: z.string(),
+    name: z.string().nullable().optional(),
+    modelPath: z.string().nullable().optional(),
+    thumbnailPath: z.string().nullable().optional(),
+    glbPath: z.string().nullable().optional(),
+    optimizedModelPath: z.string().nullable().optional(),
+    /** Idle, Queued, Processing, Success or Failed. */
+    processingStatus: z.string().nullable().optional()
+  })
+  .passthrough();
+export type AssemblySlideModel = z.infer<typeof assemblySlideModel>;
+
+/**
+ * One step of the linked 3D instruction, in play order.
+ *
+ * `componentNodeIds` are the parts this step installs and
+ * `hiddenComponentNodeIds` the ones hidden while it plays; both are node ids
+ * of the model at `assemblyPlayback.glbPath`, and they are the join key
+ * between the model, its graph and these rows.
+ *
+ * A row with `isSubAssembly` is a header: the steps whose `parentStepId` is
+ * its id are built on their own, directly before it, and `usedInStepId` is the
+ * later step that fits the finished unit.
+ *
+ * `motion`, `camera`, `fastener` and `warnings` are the planner's own JSON,
+ * carried untouched. Their shapes are `Motion`, `CameraPose | PlanViewHint`,
+ * `Fastener` and `{ flagged?: boolean }` in `@carbon/viewer` (`types.ts`), and
+ * the web player treats a motion it does not recognise as no motion at all.
+ */
+export const assemblyPlaybackStep = z
+  .object({
+    id: z.string(),
+    title: z.string().nullable().optional(),
+    instructionText: z.string().nullable().optional(),
+    componentNodeIds: z.array(z.string()),
+    hiddenComponentNodeIds: z.array(z.string()),
+    parentStepId: z.string().nullable().optional(),
+    usedInStepId: z.string().nullable().optional(),
+    isSubAssembly: z.boolean(),
+    motion: z.unknown(),
+    camera: z.unknown().nullable().optional(),
+    fastener: z.unknown().nullable().optional(),
+    /** An authored override for the step's animation length. */
+    durationSeconds: z.number().nullable().optional(),
+    warnings: z.unknown().nullable().optional()
+  })
+  .passthrough();
+export type AssemblyPlaybackStep = z.infer<typeof assemblyPlaybackStep>;
+
+/**
+ * The animated 3D instruction: the converted model, its graph, and the steps.
+ * A step of the procedure maps onto one of these through its
+ * `assemblyInstructionStepId`.
+ */
+export const assemblyPlayback = z
+  .object({
+    /** Storage paths, not urls. */
+    glbPath: z.string(),
+    graphPath: z.string(),
+    steps: z.array(assemblyPlaybackStep)
+  })
+  .passthrough();
+export type AssemblyPlayback = z.infer<typeof assemblyPlayback>;
+
+/**
+ * `GET /operations/:id/assembly` — the whole assembly screen for one job
+ * operation: the unit being built, the steps and what has been recorded on
+ * them, the parts and tools each step uses, and the 3D instruction when there
+ * is one.
+ *
+ * An operation is an assembly because its `operationType` says so, and that
+ * is all it takes. With no steps `procedure.attributes` is empty, with no 3D
+ * instruction `assemblyPlayback` is null and `slideModels` is empty, and this
+ * is still the screen the operation opens on.
+ *
+ * **The unit axis.** The operation builds `operation.operationQuantity` units
+ * and the screen shows ONE of them. A serial parent binds unit i to
+ * `trackedEntities[i]`; a batch parent binds its one lot to every unit; an
+ * untracked parent has no entity and pages by index alone. `?unit=` (0-based)
+ * or `?trackedEntityId=` chooses the unit, and with neither the server opens
+ * the next one still to build. `trackedEntityId` is the entity it landed on —
+ * null for an untracked unit — and `materials` is attributed to that unit, so
+ * showing another unit means asking again. A step record's `index` is the
+ * same 0-based unit.
+ *
+ * **Paths, not urls.** `thumbnailPath`, `modelPath`, a slide's `imagePath`,
+ * everything in `slideModels` and `assemblyPlayback.glbPath` / `graphPath` are
+ * storage paths. The server neither signs nor inlines them.
+ *
+ * Nothing here is written through an assembly-specific command: the timer,
+ * the step records, the parts and the quantities go through the same
+ * `/operations/:id/...` endpoints the plain operation screen uses.
+ */
+export const assemblyScreen = z
+  .object({
+    operation: assemblyOperation,
+    job: assemblyJob,
+    jobId: z.string().nullable(),
+    /** The finished product's image, as a storage path. */
+    thumbnailPath: z.string().nullable(),
+    trackedEntities: z.array(assemblyTrackedEntity),
+    /** The entity of the unit on screen; null when that unit has none. */
+    trackedEntityId: z.string().nullable(),
+    materials: z
+      .object({
+        materials: z.array(assemblyMaterial),
+        trackedInputs: z.array(assemblyTrackedInput)
+      })
+      .passthrough(),
+    procedure: assemblyProcedure,
+    tools: z.array(assemblyTool),
+    ncrs: z.array(assemblyNcr),
+    nonConformanceActions: z.array(assemblyContainmentAction),
+    /** The PARENT's tracking — what decides how the unit axis binds. */
+    requiresSerialTracking: z.boolean(),
+    requiresBatchTracking: z.boolean(),
+    /**
+     * Nothing precedes this operation in its own make method. A serial unit
+     * only earns a printed label at its first operation, so there units flow
+     * one after another; later operations scan or select each unit.
+     */
+    isFirstOperation: z.boolean(),
+    /** The operator's own running Labor timer on this operation, if any. */
+    openEvent: z
+      .object({ id: z.string(), startTime: z.string() })
+      .passthrough()
+      .nullable(),
+    /** Every timer on the operation, of every operator and work type. */
+    events: z.array(productionEvent),
+    expiredEntityPolicy,
+    /** The company opted in to starting the Labor timer when the screen opens. */
+    autoStartOperationTimer: z.boolean(),
+    /** Named as the shared screen read names it, not as the card reads it. */
+    productionQuantities: z.object({
+      scrap: z.number(),
+      production: z.number(),
+      rework: z.number()
+    }),
+    workCenter: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        /** A maintenance dispatch has the work center down. */
+        isBlocked: z.boolean().nullable().optional(),
+        blockingDispatchId: z.string().nullable().optional(),
+        blockingDispatchReadableId: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable(),
+    /**
+     * The kanban that raised the job, if one did. Scanning its
+     * `completedBarcodeOverride` (or its own completion link) completes the
+     * operation.
+     */
+    kanban: z
+      .object({
+        id: z.string(),
+        completedBarcodeOverride: z.string().nullable().optional()
+      })
+      .passthrough()
+      .nullable(),
+    /**
+     * The operator may complete every remaining step of a unit at once. It is
+     * the Production DELETE permission, which separates a manager from an
+     * operator; the server re-checks it when the override is used.
+     */
+    canOverrideComplete: z.boolean(),
+    /** The item's CAD model (else the job's), as a storage path. */
+    modelPath: z.string().nullable(),
+    /** Keyed by `modelUploadId`; one entry per model slide on the steps. */
+    slideModels: z.record(z.string(), assemblySlideModel),
+    /** Null unless the operation has a 3D instruction with converted artifacts. */
+    assemblyPlayback: assemblyPlayback.nullable()
+  })
+  .passthrough();
+export type AssemblyScreen = z.infer<typeof assemblyScreen>;

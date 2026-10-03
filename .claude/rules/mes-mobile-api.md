@@ -226,6 +226,57 @@ the UI buttons use and it adds a `note` on clock-out.
   `warnings` in a 200 body is NOT a failure; the lot is closed and the units are
   posted, and each string names a follow-up that did not land.
 
+## The assembly screen
+
+`GET /operations/:id/assembly` is the native app's read of web MES's assembly
+view, through `getAssemblyScreen` (`services/screens.server.ts`) — the body of
+`x+/assembly.$operationId.tsx`'s loader, moved. It is the ONLY
+assembly-specific endpoint.
+
+- **An operation is an assembly because `jobOperation.operationType` says so,
+  and nothing else.** No steps, no linked instruction and no 3D model are all
+  still an assembly: the payload then carries an empty `procedure.attributes`,
+  `assemblyPlayback: null` and no `slideModels`.
+- **The two reads point at each other.** `GET /operations/:id` answers an
+  assembly with 409 and `details: { view: "assembly" }`; this endpoint answers
+  anything else with 409 and the view it does belong on. Operation cards carry
+  no `operationType`, so that 409 is how a client learns where to go.
+- **It is a pure read**, unlike the inspection screen. The Inspection steps the
+  web adds for an open non-conformance are written by the VIEW afterwards
+  (`x+/steps.inspection.tsx`), not by this read.
+- **The unit is resolved by the read, not the caller.** `?trackedEntityId=`
+  wins, then `?unit=` (0-based), else the next unit still to build. Both
+  arrive as raw strings so the two clients cannot disagree about what counts
+  as an index. `materials` is attributed to the unit it lands on, so paging to
+  another unit is another GET.
+- **Claims are an ARGUMENT.** The manager override (`canOverrideComplete`, the
+  Production DELETE permission) is decided inside the shared read from claims
+  each caller loads its own way: the web through `getUserClaims` (keyed on the
+  user alone, safe while the company lives in the session), the API through
+  `getApiClaims(userId, companyId)`. On a shared tablet they are the PINNED
+  operator's, never the terminal account's.
+- **Storage paths, never urls or bytes**: `thumbnailPath`, `modelPath`, a
+  slide's `imagePath`, everything in `slideModels`, and
+  `assemblyPlayback.glbPath` / `graphPath`.
+
+Every write goes through the endpoints the plain operation screen uses, and
+three body fields exist for this screen: `unitIndex` and `exclusive` on
+`POST /operations/:id/events` (the Labor timer that starts when the first step
+is recorded, ending an open Setup), `jobOperationStepId` and `unitNumber`
+(1-based) on `materials/issue-tracked` (what lets a batch parent's consumption
+be attributed to a unit), and `trackingType` on `quantities` — **it must be
+the PARENT's tracking**, because it selects the serial / batch completion
+branch that mints the next unit and prints its label. A client that omits it
+on a tracked parent silently takes the untracked branch.
+
+Web actions with no `/api/v1` equivalent yet: complete-all-steps
+(`x+/steps.complete-all`), the containment Inspection steps
+(`x+/steps.inspection`), `x+/trigger-rework`, the maintenance dispatch, and
+scrapping a consumed component.
+
+The loader's two `Math.round` calls are unit COUNTS, not values, and moved with
+it — their `no-raw-rounding` baseline entries were re-pathed, not added.
+
 ## Versioning
 
 `/api/v1` is **additive-only** (`BACKWARD_COMPATIBILITY.md`). The two most

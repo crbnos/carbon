@@ -45,15 +45,15 @@ export const loader = apiRoute(
 
     if (!screen.ok) {
       const { failure } = screen;
-      // Assembly and Inspection operations have their own views. Inspection
-      // now has one here too — `GET /operations/:id/inspection` — and
-      // `details.view` is what tells a client to go there, so the message says
-      // where rather than that something went wrong. Assembly needs a 3D
-      // viewer and stays on web MES.
+      // Assembly and Inspection operations have their own views, and each
+      // has its own read here — `GET /operations/:id/assembly` and
+      // `GET /operations/:id/inspection`. `details.view` is what tells a
+      // client to go there, so the message says where rather than that
+      // something went wrong.
       const view = (failure.details as { view?: string } | undefined)?.view;
       const message = view
         ? view === "assembly"
-          ? "Assembly operations open in Carbon MES on the web"
+          ? "This is an assembly operation — open it at /operations/:id/assembly"
           : "This is an inspection — open it at /operations/:id/inspection"
         : failure.message || "This operation is not available";
 
