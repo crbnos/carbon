@@ -5,6 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { serverFns } from "@carbon/server-functions/invoke";
 import {
   allocatePaymentFunding,
   applyRate,
@@ -230,10 +231,7 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "purchaseOrderToPurchaseInvoice",
     id: purchaseOrderId
   });
@@ -247,10 +245,7 @@ export async function createSalesInvoiceFromSalesOrder(
   companyId: string,
   userId: string
 ) {
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "salesOrderToSalesInvoice",
     id: salesOrderId
   });
@@ -264,10 +259,7 @@ export async function createSalesInvoiceFromShipment(
   companyId: string,
   userId: string
 ) {
-  const { convert } = await import("@carbon/server-functions/convert");
-  return convert.withClient(client, db, {
-    companyId,
-    userId,
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
     type: "shipmentToSalesInvoice",
     id: shipmentId
   });

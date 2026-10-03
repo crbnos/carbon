@@ -22,9 +22,13 @@ import {
 } from "../payment";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/server-functions/post-payment", () => ({
-  postPayment: invokeMock
-}));
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) =>
+      invokeMock({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 describe("composite payment sync entity id", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {

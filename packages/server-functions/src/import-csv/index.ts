@@ -1222,7 +1222,7 @@ async function upsertTaxIdentifiers(
 }
 
 /** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
-export const importCsv = defineServerFn({
+const importCsv = defineServerFn({
   name: "import-csv",
   input: importCsvInput,
   permissions: { by: "table", rules: IMPORT_PERMISSION_RULES },
@@ -3354,3 +3354,5 @@ export const importCsv = defineServerFn({
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export default importCsv;

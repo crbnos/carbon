@@ -10,7 +10,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -177,12 +177,12 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
-    type: "nonConformanceTasks",
-    id: ncrId,
-    companyId,
-    userId
-  });
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
+      type: "nonConformanceTasks",
+      id: ncrId
+    });
 
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);

@@ -8,9 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { batchOperations } from "@carbon/server-functions/batch-operations";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -129,9 +127,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (phase 1, one txn), then issue each member's BOM + flip members Done + post GL
   // (phase 2, idempotent). A phase-2 failure leaves the batch 'Completing'; the
   // operator re-submitting this form re-invokes and resumes without double effects.
-  const completeResult = await batchOperations(
-    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-    {
+  const completeResult = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("batch-operations", {
       type: "complete",
       batchId,
       // An excluded ("not in this run") member detaches back to the schedule;
@@ -148,8 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           excluded
         };
       })
-    }
-  );
+    });
 
   // "Already completed" is not a failure: a duplicate submit (double click,
   // a retry after a slow first attempt) means the work landed. Fall through to
@@ -187,17 +184,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   if (mergeLots && mergeLots.length >= 2) {
-    const mergeResult = await issue.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
+    const mergeResult = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
         type: "mergeTrackedEntities",
         trackedEntityIds: mergeLots,
-        readableId: plannedLotNumber,
-        companyId,
-        userId
-      }
-    );
+        readableId: plannedLotNumber
+      });
     if (mergeResult.error) {
       return data(
         { completed: true },

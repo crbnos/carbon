@@ -54,7 +54,7 @@ export const postPurchaseInvoiceInput = z.object({
 });
 
 /** Posts or voids a purchase invoice: receipts, cost, ledger and journal rows. */
-export const postPurchaseInvoice = defineServerFn({
+const postPurchaseInvoice = defineServerFn({
   name: "post-purchase-invoice",
   input: postPurchaseInvoiceInput,
   permissions: { update: "invoicing" },
@@ -2382,3 +2382,5 @@ export const postPurchaseInvoice = defineServerFn({
     }
   }
 });
+
+export default postPurchaseInvoice;

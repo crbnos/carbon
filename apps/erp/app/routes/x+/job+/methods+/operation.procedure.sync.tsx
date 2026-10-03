@@ -6,8 +6,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { ServerFnContext } from "@carbon/server-functions";
-import { getMethod } from "@carbon/server-functions/get-method";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { procedureSyncValidator } from "~/modules/production";
@@ -29,14 +28,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const sync = await getMethod(
-    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-    {
+  const sync = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("get-method", {
       type: "procedureToOperation",
       sourceId: validation.data.procedureId,
       targetId: validation.data.operationId
-    }
-  );
+    });
 
   if (sync.error) {
     return data(

@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 
@@ -179,10 +180,9 @@ export async function postMaintenanceLabor(
   db: Kysely<KyselyDatabase>,
   args: { maintenanceDispatchIds: string[]; companyId: string; userId: string }
 ) {
-  const { postMaintenanceEvent } = await import(
-    "@carbon/server-functions/post-maintenance-event"
-  );
-  return postMaintenanceEvent.withClient(client, db, args);
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-maintenance-event", args);
 }
 
 export async function updateMaintenanceDispatchStatus(

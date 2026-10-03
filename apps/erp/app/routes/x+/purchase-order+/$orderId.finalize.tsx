@@ -21,8 +21,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { ServerFnContext } from "@carbon/server-functions";
-import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -229,15 +228,14 @@ export async function action(args: ActionFunctionArgs) {
     companySettings.data?.purchasePriceUpdateTiming ===
     "Purchase Order Finalize"
   ) {
-    const priceUpdate = await updatePurchasedPrices(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      {
+    const priceUpdate = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("update-purchased-prices", {
         purchaseOrderId: orderId,
         source: "purchaseOrder",
         updatePrices: true,
         updateLeadTimes: false
-      }
-    );
+      });
 
     if (priceUpdate.error) {
       logger.error("Failed to update purchased prices", {

@@ -170,7 +170,7 @@ async function copyMakeMethodOperations(
 }
 
 /** Syncs an external CAD structure (Onshape) into a make method's BOM, per `type`. */
-export const sync = defineServerFn({
+const sync = defineServerFn({
   name: "sync",
   input: syncInput,
   permissions: { update: "resources" },
@@ -794,3 +794,5 @@ export const sync = defineServerFn({
     }
   }
 });
+
+export default sync;

@@ -6,6 +6,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./invoke": "./src/invoke.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {

@@ -59,7 +59,7 @@ export const postReceiptInput = z.object({
 });
 
 /** Posts or voids a receipt: stock, tracked entities, cost layers and journal. */
-export const postReceipt = defineServerFn({
+const postReceipt = defineServerFn({
   name: "post-receipt",
   input: postReceiptInput,
   permissions: { update: "inventory" },
@@ -3430,3 +3430,5 @@ export const postReceipt = defineServerFn({
     }
   }
 });
+
+export default postReceipt;

@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
 import type { z } from "zod";
 import { type ServerFnError, toServerFnError } from "./errors";
 import {
   authorize,
   type Permissions,
-  ServerFnContext
+  type ServerFnContext
 } from "./server-fn-context";
 
 export type ServerFnResult<R> =
@@ -20,12 +16,6 @@ export type ServerFnResult<R> =
 
 export type ServerFn<S extends z.ZodType, R> = {
   (ctx: ServerFnContext, input: z.input<S>): Promise<ServerFnResult<R>>;
-  /** The client's key decides the actor (`ServerFnContext.fromClient`). */
-  withClient(
-    client: SupabaseClient<Database>,
-    db: Kysely<KyselyDatabase>,
-    input: z.input<S> & { companyId: string; userId: string }
-  ): Promise<ServerFnResult<R>>;
   readonly serverFnName: string;
   readonly permissions: PermissionRule<z.output<S>>;
 };
@@ -80,23 +70,6 @@ export function defineServerFn<S extends z.ZodType, R>({
 
   return Object.assign(call, {
     serverFnName: name,
-    permissions,
-    withClient: async (
-      client: SupabaseClient<Database>,
-      db: Kysely<KyselyDatabase>,
-      input: z.input<S> & { companyId: string; userId: string }
-    ): Promise<ServerFnResult<R>> => {
-      let ctx: ServerFnContext;
-      try {
-        ctx = await ServerFnContext.fromClient(client, {
-          db,
-          companyId: input.companyId,
-          userId: input.userId
-        });
-      } catch (err) {
-        return { data: null, error: toServerFnError(name, err, defaultStatus) };
-      }
-      return call(ctx, input);
-    }
+    permissions
   });
 }

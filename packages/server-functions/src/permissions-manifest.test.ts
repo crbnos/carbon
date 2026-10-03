@@ -6,6 +6,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ServerFn } from "./define-server-fn";
+import { serverFnNames } from "./invoke";
 
 /**
  * Every server function's declared `permissions`, pinned. A change here is a
@@ -17,20 +18,17 @@ describe("server function permissions", () => {
     const dirs = readdirSync(__dirname).filter((entry) =>
       existsSync(join(__dirname, entry, "index.ts"))
     );
+    // Every function is reachable through `serverFns`, under its own name.
+    expect([...serverFnNames].sort()).toEqual(dirs.sort());
+
     const manifest: Record<string, unknown> = {};
-    for (const dir of dirs.sort()) {
-      const mod = (await import(`./${dir}/index.ts`)) as Record<
-        string,
-        unknown
-      >;
-      for (const value of Object.values(mod)) {
-        if (typeof value === "function" && "serverFnName" in value) {
-          const fn = value as ServerFn<never, unknown>;
-          manifest[fn.serverFnName] = fn.permissions;
-        }
-      }
+    for (const dir of dirs) {
+      const mod = (await import(`./${dir}/index.ts`)) as {
+        default: ServerFn<never, unknown>;
+      };
+      expect(mod.default.serverFnName).toBe(dir);
+      manifest[dir] = mod.default.permissions;
     }
-    expect(Object.keys(manifest)).toHaveLength(dirs.length);
     expect(manifest).toMatchSnapshot();
   }, 60_000);
 });

@@ -4,10 +4,9 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -40,10 +39,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // backflush, tracked-entity terminal status + replacement serial spawn
   // (serial parents), Done-operation reopen / capacity top-up beyond the
   // planned allowance, and the WIP→scrap journal.
-  const issued = await issue.withClient(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    {
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       type: "jobOperationScrap",
       jobOperationId,
       quantity,
@@ -52,11 +50,8 @@ export async function action({ request }: ActionFunctionArgs) {
       setupProductionEventId,
       laborProductionEventId,
       machineProductionEventId,
-      trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined,
-      companyId,
-      userId
-    }
-  );
+      trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined
+    });
 
   if (issued.error) {
     return data(

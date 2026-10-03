@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ServerFnContext } from "@carbon/server-functions";
-import { postReimbursement as postReimbursementOperation } from "@carbon/server-functions/post-reimbursement";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { EPSILON } from "@carbon/utils";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -21,14 +20,16 @@ async function runPostReimbursement(
   fallbackMessage: string
 ): Promise<{ error: string | null }> {
   // The caller's route already checked `update: invoicing`.
-  const result = await postReimbursementOperation(
-    ServerFnContext.system({
+  const result = await serverFns
+    .system({
       db: getDatabaseClient(),
       companyId: args.companyId,
       userId: args.userId
-    }),
-    { type, reimbursementId: args.reimbursementId }
-  );
+    })
+    .invoke("post-reimbursement", {
+      type,
+      reimbursementId: args.reimbursementId
+    });
   return {
     error: result.error ? result.error.message || fallbackMessage : null
   };

@@ -5,7 +5,6 @@
 import type { Result } from "@carbon/auth";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -14,7 +13,7 @@ import {
   type TrackedEntitySelection,
   toast
 } from "@carbon/react";
-import { postStockTransfer } from "@carbon/server-functions/post-stock-transfer";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
@@ -205,12 +204,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Service role: `userId` is the effective (console pin-in) user, not the
   // token's subject, which the operation's membership check compares.
-  const { data: transferResult, error: functionError } =
-    await postStockTransfer.withClient(
-      getCarbonServiceRole(),
-      getDatabaseClient(),
-      functionPayload
-    );
+  const { data: transferResult, error: functionError } = await serverFns
+    .system({
+      db: getDatabaseClient(),
+      companyId: functionPayload.companyId,
+      userId: functionPayload.userId
+    })
+    .invoke("post-stock-transfer", functionPayload);
 
   if (functionError) {
     // The server function returns its guard failures (over-pick, already

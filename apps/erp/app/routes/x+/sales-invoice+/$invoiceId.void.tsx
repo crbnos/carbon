@@ -5,8 +5,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postSalesInvoice } from "@carbon/server-functions/post-sales-invoice";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -49,10 +48,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidInvoice = await postSalesInvoice(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", invoiceId }
-    );
+    const voidInvoice = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-sales-invoice", { type: "void", invoiceId });
 
     if (voidInvoice.error) {
       throw redirect(

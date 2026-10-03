@@ -27,7 +27,7 @@ export const recalculateInput = z.object({
 });
 
 /** Re-derives a job's (or one make method's) material and operation quantities. */
-export const recalculate = defineServerFn({
+const recalculate = defineServerFn({
   name: "recalculate",
   input: recalculateInput,
   permissions: { update: "production" },
@@ -304,3 +304,5 @@ const updateJobQuantities = async (
     }
   }
 };
+
+export default recalculate;

@@ -10,7 +10,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
-import { reschedule } from "../reschedule";
+import reschedule from "../reschedule";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "trigger-rework");
@@ -416,7 +416,7 @@ export const triggerReworkInput = z.object({
  * Sends a job back to an earlier operation: clones the operations from the
  * target up to where the problem was found, then reschedules the job.
  */
-export const triggerRework = defineServerFn({
+const triggerRework = defineServerFn({
   name: "trigger-rework",
   input: triggerReworkInput,
   // Writes rework operations, dependency edges and productionQuantity rows, so
@@ -511,3 +511,5 @@ export const triggerRework = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default triggerRework;

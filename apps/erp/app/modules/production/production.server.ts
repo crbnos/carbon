@@ -6,7 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -110,13 +110,13 @@ export async function releaseJobs({
     });
     if (update.error) return { error: `Failed to release job ${id}` };
 
-    const purchaseOrder = await create.withClient(serviceRole, db, {
-      type: "purchaseOrderFromJob",
-      jobId: id,
-      purchaseOrdersBySupplierId: purchaseOrders,
-      companyId,
-      userId
-    });
+    const purchaseOrder = await serverFns
+      .system({ db, companyId, userId })
+      .invoke("create", {
+        type: "purchaseOrderFromJob",
+        jobId: id,
+        purchaseOrdersBySupplierId: purchaseOrders
+      });
     if (purchaseOrder.error) {
       return {
         error: getErrorMessage(

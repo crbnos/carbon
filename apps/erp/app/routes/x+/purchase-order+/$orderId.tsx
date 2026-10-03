@@ -22,8 +22,7 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { VStack } from "@carbon/react";
-import { ServerFnContext } from "@carbon/server-functions";
-import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
@@ -376,19 +375,18 @@ export async function action(args: ActionFunctionArgs) {
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
       ) {
-        const priceUpdate = await updatePurchasedPrices(
-          ServerFnContext.system({
+        const priceUpdate = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("update-purchased-prices", {
             purchaseOrderId: orderId,
             source: "purchaseOrder",
             updatePrices: true,
             updateLeadTimes: false
-          }
-        );
+          });
 
         if (priceUpdate.error) {
           logger.error("Failed to update purchased prices", {

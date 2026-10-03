@@ -14,7 +14,7 @@ import {
   getSlackIntegrationByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -524,12 +524,16 @@ async function handleViewSubmission(
           channelId: configuredChannelId
         }
       ),
-      create.withClient(serviceRole, getDatabaseClient(), {
-        type: "nonConformanceTasks",
-        id: ncrId,
-        companyId,
-        userId: employee.data?.id ?? "system"
-      })
+      serverFns
+        .system({
+          db: getDatabaseClient(),
+          companyId,
+          userId: employee.data?.id ?? "system"
+        })
+        .invoke("create", {
+          type: "nonConformanceTasks",
+          id: ncrId
+        })
     ]);
 
     if (tasksResult.error) {

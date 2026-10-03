@@ -111,7 +111,7 @@ export const postPickingInput = z.discriminatedUnion("type", [
 ]);
 
 /** Picks, un-picks and returns picking-list material, per `type`. */
-export const postPicking = defineServerFn({
+const postPicking = defineServerFn({
   name: "post-picking",
   input: postPickingInput,
   // Kysely below bypasses RLS: the caller must belong to the company it names.
@@ -1925,3 +1925,5 @@ async function maybeRestoreJobMaterialSource(
     companyId
   );
 }
+
+export default postPicking;

@@ -25,8 +25,8 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError, ServerFnError } from "../errors";
-import { issue } from "../issue";
-import { postProductionEvent } from "../post-production-event";
+import issue from "../issue";
+import postProductionEvent from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";
 
 const NOT_STARTED = ["Todo", "Ready", "Waiting"];
@@ -840,7 +840,7 @@ async function completeBatch(
 }
 
 /** Job-operation batches: create, change membership, release, dissolve and complete. */
-export const batchOperations = defineServerFn({
+const batchOperations = defineServerFn({
   name: "batch-operations",
   input: batchOperationsInput,
   permissions: { update: "production" },
@@ -1343,3 +1343,5 @@ export const batchOperations = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default batchOperations;

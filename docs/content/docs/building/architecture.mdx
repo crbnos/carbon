@@ -371,11 +371,11 @@ input, checks the caller's permission, runs, and returns `{ data, error }` inste
 throwing. Call one like any other function:
 
 ```ts
-import { postShipment } from "@carbon/server-functions/post-shipment";
+import { serverFns } from "@carbon/server-functions/invoke";
 
-const { data, error } = await postShipment.withClient(serviceRole, getDatabaseClient(), {
-  type: "post", shipmentId, userId, companyId,
-});
+const { data, error } = await serverFns
+  .system({ db: getDatabaseClient(), companyId, userId })
+  .invoke("post-shipment", { type: "post", shipmentId });
 ```
 
 Server functions run large Kysely transactions and are callable from anywhere on the server: a route action, the

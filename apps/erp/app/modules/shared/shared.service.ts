@@ -5,6 +5,7 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -219,14 +220,11 @@ export async function importCsv(
     userId: string;
   }
 ) {
-  const { importCsv } = await import("@carbon/server-functions/import-csv");
   // The operation validates `table` and the enum mappings' real shape
   // (field → { value → mapped }).
-  return importCsv.withClient(
-    client,
-    db,
-    args as unknown as Parameters<typeof importCsv.withClient>[2]
-  );
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
 }
 
 /** @mcp create */

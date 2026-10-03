@@ -10,7 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -175,13 +175,13 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
-      type: "jobOperationSerialComplete",
-      ...validation.data,
-      trackedEntityId: validation.data.trackedEntityId!,
-      companyId,
-      userId
-    });
+    const response = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        type: "jobOperationSerialComplete",
+        ...validation.data,
+        trackedEntityId: validation.data.trackedEntityId!
+      });
 
     const newTrackedEntityId = response.data?.newTrackedEntityId as
       | string
@@ -257,13 +257,13 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
-      type: "jobOperationBatchComplete",
-      ...validation.data,
-      trackedEntityId: validation.data.trackedEntityId!,
-      companyId,
-      userId
-    });
+    const response = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        type: "jobOperationBatchComplete",
+        ...validation.data,
+        trackedEntityId: validation.data.trackedEntityId!
+      });
 
     if (response.error) {
       return data(
@@ -339,13 +339,13 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
-      id: validation.data.jobOperationId,
-      type: "jobOperation",
-      quantity: validation.data.quantity,
-      companyId,
-      userId
-    });
+    const issued = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("issue", {
+        id: validation.data.jobOperationId,
+        type: "jobOperation",
+        quantity: validation.data.quantity
+      });
 
     if (issued.error) {
       return data(

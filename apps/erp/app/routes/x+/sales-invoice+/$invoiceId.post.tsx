@@ -19,8 +19,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postSalesInvoice } from "@carbon/server-functions/post-sales-invoice";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
 import {
   createAndSendConnectInvoice,
@@ -703,10 +702,9 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    const posted = await postSalesInvoice(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { invoiceId }
-    );
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-sales-invoice", { invoiceId });
 
     if (posted.error) {
       await client

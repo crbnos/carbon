@@ -9,8 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
-import { create } from "@carbon/server-functions/create";
-import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -79,12 +78,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // it, so proceeding would leave the received quantity double-counted on hand.
   const writeOff = dispositionResult.data?.writeOff;
   if (writeOff) {
-    const post = await postNonConformance.withClient(
-      client,
-      getDatabaseClient(),
-      {
-        companyId,
-        userId,
+    const post = await serverFns
+      .as({ client, db: getDatabaseClient(), companyId, userId })
+      .invoke("post-nonconformance", {
         documentType: "Inbound Inspection",
         documentId: id,
         description: "Inbound inspection lot rejected",
@@ -96,8 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             quantity: writeOff.quantity
           }
         ]
-      }
-    );
+      });
     if (post.error) {
       logger.error("Failed to post inspection reject write-off", {
         error: post.error,
@@ -392,12 +387,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
-    type: "nonConformanceTasks",
-    id: ncrId,
-    companyId,
-    userId
-  });
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
+      type: "nonConformanceTasks",
+      id: ncrId
+    });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);
     throw redirect(

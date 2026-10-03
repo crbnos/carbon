@@ -382,7 +382,7 @@ async function recalculatePriorities(
  * Re-plans a job's operations: backward-schedules their dates from the job's due
  * date, flags conflicts, and recalculates priorities on the affected work centers.
  */
-export const reschedule = defineServerFn({
+const reschedule = defineServerFn({
   name: "reschedule",
   input: rescheduleInput,
   permissions: { update: "production" },
@@ -471,3 +471,5 @@ export const reschedule = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default reschedule;

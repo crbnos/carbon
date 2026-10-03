@@ -15,7 +15,7 @@ export const postReimbursementInput = z.object({
  * Posts or voids a reimbursement and its journal, atomically. The transaction re-reads
  * the record under companyId, so a foreign id fails as "not found".
  */
-export const postReimbursement = defineServerFn({
+const postReimbursement = defineServerFn({
   name: "post-reimbursement",
   input: postReimbursementInput,
   permissions: { update: "invoicing" },
@@ -30,3 +30,5 @@ export const postReimbursement = defineServerFn({
     return { success: true, ...result };
   }
 });
+
+export default postReimbursement;

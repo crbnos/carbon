@@ -5,8 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postPayment } from "@carbon/server-functions/post-payment";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -22,10 +21,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing paymentId" };
   }
   try {
-    const result = await postPayment(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", paymentId }
-    );
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-payment", { type: "void", paymentId });
     if (result.error) {
       throw redirect(
         path.to.payment(paymentId),

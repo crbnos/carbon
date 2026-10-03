@@ -4,9 +4,8 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -48,39 +47,35 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = await getCarbonServiceRole();
   // Batch mode: one pick for the whole operation batch. The server fn splits the
   // picked lots pro-rata by each member's remaining requirement and records
   // per-member consumption, so costing and genealogy stay per job.
-  const issued = await issue.withClient(
-    serviceRole,
-    getDatabaseClient(),
-    batchId
-      ? {
-          type: "trackedEntitiesToBatch",
-          batchId,
-          itemId: itemId!,
-          children,
-          overrideExpired,
-          overrideReason,
-          companyId,
-          userId
-        }
-      : {
-          type: "trackedEntitiesToOperation",
-          materialId,
-          jobOperationId,
-          itemId,
-          parentTrackedEntityId: parentTrackedEntityId!,
-          children,
-          jobOperationStepId,
-          unitNumber,
-          overrideExpired,
-          overrideReason,
-          companyId,
-          userId
-        }
-  );
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke(
+      "issue",
+      batchId
+        ? {
+            type: "trackedEntitiesToBatch",
+            batchId,
+            itemId: itemId!,
+            children,
+            overrideExpired,
+            overrideReason
+          }
+        : {
+            type: "trackedEntitiesToOperation",
+            materialId,
+            jobOperationId,
+            itemId,
+            parentTrackedEntityId: parentTrackedEntityId!,
+            children,
+            jobOperationStepId,
+            unitNumber,
+            overrideExpired,
+            overrideReason
+          }
+    );
 
   if (issued.error) {
     log.error("Failed to issue material", { error: issued.error });

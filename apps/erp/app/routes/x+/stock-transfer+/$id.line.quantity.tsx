@@ -4,11 +4,10 @@
 
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { postStockTransfer } from "@carbon/server-functions/post-stock-transfer";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
@@ -103,22 +102,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Call the post-stock-transfer function for inventory items
   // Service role: `userId` is the effective (console pin-in) user, not the
   // token's subject, which the operation's membership check compares.
-  const { data: transferResult, error: functionError } =
-    await postStockTransfer.withClient(
-      getCarbonServiceRole(),
-      getDatabaseClient(),
-      {
-        type: type,
-        stockTransferId: stockTransferLine.data.stockTransferId,
-        stockTransferLineId: lineId,
-        quantity: pickedQuantity,
-        locationId: locationId,
-        trackedEntityId: trackedEntityId,
-        userId,
-        companyId
-        // One body for four `type`s; the operation validates it per type.
-      } as Parameters<typeof postStockTransfer.withClient>[2]
-    );
+  const { data: transferResult, error: functionError } = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-stock-transfer", {
+      type: type,
+      stockTransferId: stockTransferLine.data.stockTransferId,
+      stockTransferLineId: lineId,
+      quantity: pickedQuantity,
+      locationId: locationId,
+      trackedEntityId: trackedEntityId
+      // One body for four `type`s; the operation validates it per type.
+    } as ServerFnInput<"post-stock-transfer">);
 
   if (functionError) {
     return data(

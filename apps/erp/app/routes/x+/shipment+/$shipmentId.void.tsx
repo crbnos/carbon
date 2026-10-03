@@ -5,8 +5,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postShipment } from "@carbon/server-functions/post-shipment";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -52,10 +51,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidShipment = await postShipment(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", shipmentId: shipmentId }
-    );
+    const voidShipment = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-shipment", { type: "void", shipmentId: shipmentId });
 
     if (voidShipment.error) {
       throw redirect(

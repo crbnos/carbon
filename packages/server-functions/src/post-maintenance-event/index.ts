@@ -29,7 +29,7 @@ export const postMaintenanceEventInput = z.object({
  * Dr maintenanceAccount / Cr laborAbsorptionAccount, one journal per dispatch
  * that changed. Idempotent: see ./plan.ts.
  */
-export const postMaintenanceEvent = defineServerFn({
+const postMaintenanceEvent = defineServerFn({
   name: "post-maintenance-event",
   input: postMaintenanceEventInput,
   permissions: { update: "resources" },
@@ -283,3 +283,5 @@ export const postMaintenanceEvent = defineServerFn({
     return { success: true, journalIds };
   }
 });
+
+export default postMaintenanceEvent;

@@ -11,6 +11,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions/invoke";
 import {
   async,
   datetime,
@@ -356,22 +357,17 @@ export async function finishJobOperation(
         if (unposted.error) throw unposted.error;
         if (unposted.data.length === 0) return;
 
-        const [{ postProductionEvent }, { ServerFnContext }] =
-          await Promise.all([
-            import("@carbon/server-functions/post-production-event"),
-            import("@carbon/server-functions")
-          ]);
+        const fns = serverFns.system({
+          db,
+          companyId: args.companyId,
+          userId: args.userId
+        });
         await async.map(
           unposted.data,
           (event) =>
-            postProductionEvent(
-              ServerFnContext.system({
-                db,
-                companyId: args.companyId,
-                userId: args.userId
-              }),
-              { productionEventId: event.id }
-            ),
+            fns.invoke("post-production-event", {
+              productionEventId: event.id
+            }),
           { concurrency: 4 }
         );
       },
@@ -455,11 +451,12 @@ export async function returnPickedRemainders(
     companyId: string;
   }
 ): Promise<void> {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
-  const { error } = await postPicking.withClient(client, db, {
-    type: "returnOperationRemainders",
-    ...args
-  });
+  const { error } = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", {
+      type: "returnOperationRemainders",
+      ...args
+    });
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
@@ -1403,7 +1400,6 @@ export async function backflushUntrackedMaterialsOnStepRecord(
   db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
-  const { issue } = await import("@carbon/server-functions/issue");
   const step = await client
     .from("jobOperationStep")
     .select("id, operationId")
@@ -1539,16 +1535,16 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issued = await issue.withClient(client, db, {
-      id: operationId,
-      type: "partToOperation",
-      itemId: material.itemId,
-      materialId: material.id,
-      quantity: delta,
-      adjustmentType: "Negative Adjmt.",
-      companyId: args.companyId,
-      userId: args.userId
-    });
+    const issued = await serverFns
+      .as({ client, db, companyId: args.companyId, userId: args.userId })
+      .invoke("issue", {
+        id: operationId,
+        type: "partToOperation",
+        itemId: material.itemId,
+        materialId: material.id,
+        quantity: delta,
+        adjustmentType: "Negative Adjmt."
+      });
     if (issued.error) failures.push(material.itemId);
   }
 

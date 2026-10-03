@@ -19,7 +19,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { postShipment } from "@carbon/server-functions/post-shipment";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -370,16 +370,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const posted = await postShipment.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-shipment", {
         type: "post",
-        shipmentId: shipmentId,
-        userId: userId,
-        companyId: companyId
-      }
-    );
+        shipmentId: shipmentId
+      });
 
     if (posted.error) {
       await client

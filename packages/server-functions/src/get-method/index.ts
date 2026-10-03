@@ -243,7 +243,7 @@ export const getMethodInput = z.object({
 export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
 /** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
-export const getMethod = defineServerFn({
+const getMethod = defineServerFn({
   name: "get-method",
   input: getMethodInput,
   permissions: { update: "production" },
@@ -1882,7 +1882,7 @@ export const getMethod = defineServerFn({
         const methodTrees = await getMethodTree(db, makeMethod.data.id!);
         const configurationRules = isConfigured
           ? await many(db, "configurationRule", { itemId, companyId })
-          : { data: [] };
+          : { data: [] as Tables["configurationRule"]["Row"][] };
 
         if (methodTrees.error) {
           throw new Error("Failed to get method tree");
@@ -3385,7 +3385,9 @@ export const getMethod = defineServerFn({
           () =>
             isConfigured
               ? many(db, "configurationRule", { itemId, companyId })
-              : Promise.resolve({ data: [] })
+              : Promise.resolve({
+                  data: [] as Tables["configurationRule"]["Row"][]
+                })
         ]);
 
         if (methodTrees.error) {
@@ -9035,3 +9037,5 @@ async function hydrateConfiguration(
     return configuration;
   }
 }
+
+export default getMethod;

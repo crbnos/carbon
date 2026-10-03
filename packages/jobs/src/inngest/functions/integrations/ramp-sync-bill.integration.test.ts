@@ -21,9 +21,12 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 // Only the posting operation is substituted. All staging, status transitions,
 // queries, mappings, FKs and rollback use real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions/post-purchase-invoice", () => ({
-  postPurchaseInvoice: { withClient: post }
-}));
+vi.mock("@carbon/server-functions/invoke", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),
@@ -151,11 +154,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
       const client = getCarbonServiceRole();
       post.mockReset();
       post.mockImplementation(
-        async (
-          _client: unknown,
-          _db: unknown,
-          input: { invoiceId: string }
-        ) => {
+        async (_fields: unknown, input: { invoiceId: string }) => {
           await db
             .updateTable("purchaseInvoice")
             .set({ status: "Draft" })
@@ -502,9 +501,9 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
         .execute();
       expect(lines.every((line) => line.purchaseOrderId === null)).toBe(true);
       expect(request).not.toHaveBeenCalled();
-      expect(
-        post.mock.calls.every(([, , input]) => input.invoiceId === id)
-      ).toBe(true);
+      expect(post.mock.calls.every(([, input]) => input.invoiceId === id)).toBe(
+        true
+      );
     }, 30000);
 
     it("does not adopt an unrelated Draft just because it references the same PO", async () => {

@@ -8,8 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
@@ -67,19 +66,18 @@ export async function action({ request }: ActionFunctionArgs) {
   if (shipmentDataHasChanged) {
     switch (d.sourceDocument) {
       case "Sales Order":
-        const salesOrderShipment = await create(
-          ServerFnContext.system({
+        const salesOrderShipment = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "shipmentFromSalesOrder",
             locationId: d.locationId as string,
             salesOrderId: d.sourceDocumentId,
             shipmentId: id
-          }
-        );
+          });
         if (!salesOrderShipment.data || salesOrderShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: salesOrderShipment.error
@@ -100,19 +98,18 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Sales Return Order": {
-        const salesReturnShipment = await create(
-          ServerFnContext.system({
+        const salesReturnShipment = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "shipmentFromSalesReturnOrder",
             locationId: d.locationId,
             salesReturnOrderId: d.sourceDocumentId,
             shipmentId: id
-          }
-        );
+          });
         if (!salesReturnShipment.data || salesReturnShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: salesReturnShipment.error
@@ -134,19 +131,18 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Return Order": {
-        const purchaseReturnShipment = await create(
-          ServerFnContext.system({
+        const purchaseReturnShipment = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "shipmentFromPurchaseReturnOrder",
             locationId: d.locationId,
             purchaseReturnOrderId: d.sourceDocumentId,
             shipmentId: id
-          }
-        );
+          });
         if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: purchaseReturnShipment.error
@@ -168,19 +164,18 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Order":
-        const purchaseOrderShipment = await create(
-          ServerFnContext.system({
+        const purchaseOrderShipment = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "shipmentFromPurchaseOrder",
             locationId: d.locationId as string,
             purchaseOrderId: d.sourceDocumentId,
             shipmentId: id
-          }
-        );
+          });
         if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: purchaseOrderShipment.error
@@ -201,18 +196,17 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Outbound Transfer":
-        const warehouseTransferShipment = await create(
-          ServerFnContext.system({
+        const warehouseTransferShipment = await serverFns
+          .system({
             db: getDatabaseClient(),
             companyId,
             userId
-          }),
-          {
+          })
+          .invoke("create", {
             type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: d.sourceDocumentId,
             shipmentId: id
-          }
-        );
+          });
         if (
           !warehouseTransferShipment.data ||
           warehouseTransferShipment.error

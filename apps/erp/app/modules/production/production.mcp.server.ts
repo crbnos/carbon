@@ -6,7 +6,7 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { issue } from "@carbon/server-functions/issue";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
@@ -100,20 +100,20 @@ export async function issueMaterial(
     }
   }
 
-  return issue.withClient(client, getDatabaseClient(), {
-    id: args.operationId,
-    type: "partToOperation",
-    itemId: args.itemId,
-    materialId: args.materialId,
-    jobOperationStepId: args.jobOperationStepId,
-    quantity: args.quantity,
-    adjustmentType: args.adjustmentType as
-      | "Negative Adjmt."
-      | "Positive Adjmt."
-      | "Set Quantity",
-    companyId,
-    userId
-  });
+  return serverFns
+    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
+      id: args.operationId,
+      type: "partToOperation",
+      itemId: args.itemId,
+      materialId: args.materialId,
+      jobOperationStepId: args.jobOperationStepId,
+      quantity: args.quantity,
+      adjustmentType: args.adjustmentType as
+        | "Negative Adjmt."
+        | "Positive Adjmt."
+        | "Set Quantity"
+    });
 }
 
 /**

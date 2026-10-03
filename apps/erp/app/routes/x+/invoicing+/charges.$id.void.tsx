@@ -5,8 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postCharge } from "@carbon/server-functions/post-charge";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -23,10 +22,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const result = await postCharge(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { type: "void", chargeId: id }
-    );
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-charge", { type: "void", chargeId: id });
     if (result.error) {
       // The operation's own refusal ("Charge is already voided", "Cannot void
       // a Draft charge") is the only useful thing to say here; the generic

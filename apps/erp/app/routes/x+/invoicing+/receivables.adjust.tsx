@@ -5,8 +5,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ServerFnContext } from "@carbon/server-functions";
-import { create } from "@carbon/server-functions/create";
+import { serverFns } from "@carbon/server-functions/invoke";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -64,10 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "No receivables variance to adjust"))
     );
   }
-  const journalEntry = await create(
-    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-    { type: "journalEntry" }
-  );
+  const journalEntry = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", { type: "journalEntry" });
 
   if (!journalEntry.data || journalEntry.error) {
     throw redirect(

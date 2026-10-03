@@ -6,8 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ServerFnContext } from "@carbon/server-functions";
-import { postProductionEvent } from "@carbon/server-functions/post-production-event";
+import { serverFns } from "@carbon/server-functions/invoke";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -92,10 +91,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   let postingError: string | null = null;
   if (d.endTime) {
-    const posting = await postProductionEvent(
-      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
-      { productionEventId: id }
-    );
+    const posting = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-production-event", { productionEventId: id });
     if (posting.error) {
       postingError = posting.error.message || "unknown error";
     } else if (posting.data.success === false) {
