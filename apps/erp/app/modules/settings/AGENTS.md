@@ -80,6 +80,10 @@ pnpm run lint
 - `exportCompanyBackup` / `listCompanyBackupFolders` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); `getCompanyBackups` — the Backups loader's list, which computes each backup's live compatibility verdict via `@carbon/jobs/backups` — and the restore triggers live in `backups.server.ts`
 - `resolveLabelLogo` (`labelLogo.server.ts`) — binds `@carbon/documents/labels`' resolver to this app's `SUPABASE_URL`; used by every ERP `file+/**/$id.labels[.]pdf|zpl` route (MES keeps its own copy at `apps/mes/app/services/labelLogo.server.ts`)
 
+## Settings → Invoicing
+
+`x+/settings+/invoicing.tsx` (`path.to.invoicingSettings`) is the one page for recurring invoices and the invoice-email defaults. Cards, in order: **Recurring Invoices** (`companySettings.invoiceAutomation`, `updateInvoiceAutomationSetting`, intent `invoiceAutomation`; default `Post and Email`), **Receivables Email** (`accountsReceivableEmail`, `updateAccountsReceivableEmail` — the Reply-To and a CC on automated invoice emails), **Notifications** ("Also notify": `invoiceNotificationGroup`, `updateInvoiceNotificationSetting`, intent `invoiceNotifications` — the company-wide digest on top of each owner's own), **Emails** (default customer CC) and **Centralized Billing Address** — the last two moved here from `settings+/sales.tsx`, which keeps "Require a Customer Contact and Location". The check that setting drives, `checkPartyContactRequirement`, now lives in `@carbon/lib/party-contact.server`; `party-contact.ts` / `party-contact.server.ts` here re-export it.
+
 ## Document Preview
 
 `documentPreview.server.ts` lets the template editor render a draft layout against a **real record** instead of sample data. Two exports, both deep-imported (never via the barrel):

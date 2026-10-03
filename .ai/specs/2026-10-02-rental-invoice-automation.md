@@ -1,6 +1,6 @@
 # Rental Invoice Automation — post and email recurring rental invoices
 
-> Status: draft
+> Status: in-progress
 > Author: barbinbrad (with Claude)
 > Date: 2026-10-02
 > Research: `.ai/research/rental-invoice-automation.md`
@@ -242,7 +242,24 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 - [x] What happens when a rental invoice is voided? — **Answer:** The re-bill is always a held draft (D26).
 - [x] Who is notified by default? — **Answer:** Each agreement's internal owner (salesperson, else creator), with no setup; the settings group is "Also notify" (D16).
 
+## Implementation decisions
+
+Folded in from `.ai/plans/2026-10-02-rental-invoice-automation.md` ("Plan-level decisions") and its execution log (`.ai/runs/2026-10-02-rental-invoice-automation-exec.md`). Where these disagree with sections above, these win.
+
+1. **Email goes out through `sendEmail` directly**, not `trigger("send-email")`: the queued job forces From to `DEFAULT_FROM` and only queues, so a delivery error would never reach `sendError`. The manual post route keeps `trigger("send-email")`, so its `sentAt` means "queued". A send with no SMTP transport stamps `sendError` ("Email sending is not configured"), never `sentAt`.
+2. **`checkPartyContactRequirement` lives in `@carbon/lib`** (`./party-contact`, `./party-contact.server`); the ERP files re-export it.
+3. **One sales-invoice document loader in `@carbon/lib`** (`./sales-invoice-document.server`: `loadSalesInvoiceDocument`, `renderSalesInvoicePdf`), used by the PDF route, the manual post route and the job. The job renders the PDF with internal-URL logos and swaps them for the public URL in the email HTML.
+4. **"Needs review" is the `salesInvoices.needsReview` view column** plus a Receivables → Needs Review sidebar link.
+5. **Send on a posted invoice with `sendError`** is `x+/sales-invoice+/$invoiceId.send.tsx`, firing `carbon/invoice.automate` with `mode: "Post and Email"`.
+6. **The event carries an optional `mode`**; absent, the function resolves the invoice's agreement's effective mode.
+7. **The split and hold decision is pure**: `planRentalInvoices` in `packages/database/src/rental-invoice-plan.ts`, vitest-pinned.
+8. **A re-bill after a VOID is always held** (D26): VOID stamps `voidedSalesInvoiceId` on the periods and charges it releases; sticky across a deleted draft.
+9. **Owners are notified with no setup** (D16): each agreement's `salesPersonId ?? createdBy` gets one digest over their invoices; "Also notify" gets the company digest; an owner listed there gets only the company one.
+10. **`automateSalesInvoice` is two functions**, `postSalesInvoiceUnattended` and `emailPostedInvoice` (`packages/jobs/src/invoicing/automate-invoice.ts`), so the cron and the `invoice-automate` function run them as separate memoized steps. A post failure resets the claim to Draft with the error as the hold reason; any email-step failure stamps `sendError`.
+11. **Source-agnostic names in the shared layer** (grill U1): `INVOICE_SEND_NO_EMAIL`, `invoiceNotificationValidator` / `updateInvoiceNotificationSetting`, digest results keyed by `sourceId`.
+
 ## Changelog
 
+- 2026-10-03: Implemented per the plan (Tasks 1–20); status in-progress pending browser verification. Implementation decisions folded in above.
 - 2026-10-02 (later): The agreement says invoicing is automatic (summary schedule line, "Invoice Now" button). D16 notifies each agreement's owner by default (the group becomes "Also notify"); D26 holds re-bills after a VOID. Both were user decisions made while planning.
 - 2026-10-02: Created. Questions resolved with the user before writing. Reverses Decision 10 of `2026-09-22-revenue-recognition-and-rentals.md` for rentals.

@@ -43,7 +43,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 17: Invoice header badges + Send route
 - [x] Task 18: Invoices list — needsReview column + Needs Review link
 - [x] Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
-- [ ] Task 20: Docs — AGENTS.md, rules, spec changelog
+- [x] Task 20: Docs — AGENTS.md, rules, spec changelog
 - [ ] Task 21: Browser verification (`/test`)
 
 ## Dependencies

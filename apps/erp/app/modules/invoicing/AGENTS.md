@@ -129,7 +129,7 @@ pnpm --filter erp test                                    # the whole app's vite
 
 | Table / View | Purpose |
 |---|---|
-| `salesInvoice` / `salesInvoices` (view) | AR header; view derives `balance`, `invoiceTotal`, `Partially Paid`/`Overdue`, `paymentTermName` |
+| `salesInvoice` / `salesInvoices` (view) | AR header; view derives `balance`, `invoiceTotal`, `Partially Paid`/`Overdue`, `paymentTermName`. Invoice automation columns: `automationHoldReason` (a Draft a person must review before automation posts it), `sentAt` / `sentTo` / `sendError` (the manual post route stamps `sentAt` when the email is QUEUED; the automation when it is SENT). The view's `needsReview` = held Draft, or posted with `sendError` and no `sentAt` — Receivables → Needs Review lists `?filter=needsReview:eq:true`. A posted invoice that failed to send has a Send action (`$invoiceId.send.tsx`, fires `carbon/invoice.automate` with `Post and Email`). The posted PDF is stored under `{companyId}/opportunity/{opportunityId}/`, or `{companyId}/sales-invoice/{invoiceId}/` when the invoice has no opportunity; it is rendered by `@carbon/lib/sales-invoice-document.server` (shared with the PDF route and the automation job) |
 | `salesInvoiceLine` / `salesInvoiceLines` / `salesInvoiceLocations` (views) | AR lines (`salesInvoiceLineType` includes `Fixed Asset`) |
 | `salesInvoiceShipment` | Per-invoice shipping method/term/cost + incoterm |
 | `purchaseInvoice` / `purchaseInvoices` (view) | AP header; view derives `balance`, `orderTotal`, the derived statuses |

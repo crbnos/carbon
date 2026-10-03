@@ -85,7 +85,15 @@ When a period was billed in advance and the unit comes back early, Carbon adds a
 
 ## Invoicing
 
-A daily job drafts one sales invoice per agreement for every billing period due on or before today (in the company's timezone) and every charge dated on or before today. **"Generate Invoices"** on an active agreement does the same on demand. Both only **draft**: a person reviews and posts each invoice.
+A daily job invoices every billing period due on or before today (in the company's timezone) and every charge dated on or before today. **"Invoice Now"** on an active agreement does the same on demand, for example right after adding a charge.
+
+What happens next follows the invoicing setting: the company default on **Settings → Invoicing** (**"Recurring Invoices"**, **Post and email** unless changed), or the agreement's own **"Invoicing"** property.
+
+- **Draft only**: one draft invoice per agreement; a person reviews and posts it.
+- **Post**: rent is posted automatically.
+- **Post and email**: rent is posted and emailed to the agreement's contact, with the PDF attached, from the company's name, replying to the receivables email. It needs a contact with an email; without one the invoice is posted and marked **"Not sent"**.
+
+Under **Post** and **Post and email**, charges and purchase options go on a separate invoice that is always held for review, and so is a rent invoice with an early-return credit or one re-billing a voided invoice. Sales-rule violations, a missing required contact and posting errors also hold an invoice. Held and unsent invoices carry a badge and are listed under **Receivables → Needs Review**. Each agreement's salesperson (or its creator) gets a daily summary of what was posted, emailed and held; **"Also notify"** on the settings page adds more people.
 
 Each period becomes a read-only **Rental** line, such as "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate", taxed at the agreement's **"Tax Percent"**. **"Add Charge"** records a variable charge against one unit (mileage, damage, cleaning), billed with the first invoice drafted on or after its date. Deleting a draft invoice releases its periods and charges for the next pass.
 
@@ -270,7 +278,7 @@ A Daily or Weekly unit bills a different amount each calendar month, and a sale 
 The agreement has no units, or a line has no fleet unit.
 
 ### "Every unit must be returned or sold before the agreement closes" / "Every billing period must be invoiced before the agreement closes" / "Every charge must be invoiced before the agreement closes"
-Close blockers. Return units, then run Generate Invoices (and post) for the remaining periods and charges. Note a charge dated in the future is not billed until its date.
+Close blockers. Return units, then use Invoice Now (and post any held invoice) for the remaining periods and charges. Note a charge dated in the future is not billed until its date.
 
 ### "A unit is on rent; return it before cancelling the agreement" / "The agreement has been invoiced; it can be closed, not cancelled" / "Rental income has been recognized on this agreement; it can be closed, not cancelled" / "A unit on this agreement was sold"
 Cancel blockers. Once anything is billed or accrued the agreement is closed instead.
@@ -291,7 +299,7 @@ Service-level guards in `sales.service.ts` (these writers are also MCP tools), r
 Deleting an invoice line (`deleteSalesInvoiceLineReleasingRentals`) requires the line to belong to the invoice in the URL and that invoice to be Draft; releasing a posted line's rental stamps would bill its period again.
 
 ### "Nothing is due on this agreement yet"
-Generate Invoices found no Pending period with a due date on or before today and no charge dated on or before today.
+Invoice Now found no Pending period with a due date on or before today and no charge dated on or before today.
 
 ### "Asset … is on rent on rental agreement …; return it from the agreement first"
 Return to Inventory (post-asset-transfer `return`) refuses a unit on a live rental line (Pending or On Rent).
