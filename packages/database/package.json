@@ -36,6 +36,7 @@
     "./sequence": "./src/sequence.ts",
     "./revenue-recognition": "./src/revenue-recognition.ts",
     "./rental-billing": "./src/rental-billing.ts",
+    "./rental-invoice-plan": "./src/rental-invoice-plan.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",

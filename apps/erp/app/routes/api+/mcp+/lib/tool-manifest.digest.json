@@ -1,5 +1,5 @@
 {
-  "totalTools": 1527,
+  "totalTools": 1529,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -345,7 +345,7 @@
     {"name":"invoicing_getSalesInvoiceCustomerDetails","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"d592e414f201","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getSalesInvoiceLine","classification":"READ","paramCount":1,"schema":"352db7d38a15","response":"6094b408688d","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getSalesInvoiceLines","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"ca8e1d0cbef3","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
-    {"name":"invoicing_getSalesInvoices","classification":"READ","paramCount":4,"schema":"f682a832527b","response":"d0445b461305","injectAuth":"companyId","permission":"invoicing:view","paginates":true},
+    {"name":"invoicing_getSalesInvoices","classification":"READ","paramCount":4,"schema":"f682a832527b","response":"5b1a09dc9fa5","injectAuth":"companyId","permission":"invoicing:view","paginates":true},
     {"name":"invoicing_getSalesInvoiceShipment","classification":"READ","paramCount":1,"schema":"9e382a0affeb","response":"43114f5895a3","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getStagedCreditsForPayment","classification":"READ","paramCount":2,"schema":"d67008f41829","response":"5a23b05562f4","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_insertPurchaseInvoice","classification":"DESTRUCTIVE","paramCount":15,"schema":"15dc8b208ca1","response":"24b4b1602470","injectAuth":"companyId+createdBy+updatedBy","permission":"invoicing:create","paginates":false},
@@ -1443,6 +1443,7 @@
     {"name":"settings_updateIncludeMaterialsOnTravelerSetting","classification":"WRITE","paramCount":1,"schema":"c44d043f2507","response":"none","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateIncludeOperationsOnTravelerSetting","classification":"WRITE","paramCount":1,"schema":"dcfff3bec454","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateIncompletePickingListPolicySetting","classification":"WRITE","paramCount":1,"schema":"0f134dc7536d","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
+    {"name":"settings_updateInvoiceAutomationSetting","classification":"WRITE","paramCount":1,"schema":"d878534985c3","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateKanbanOutputSetting","classification":"WRITE","paramCount":1,"schema":"ca53dc098fc8","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateLeadTimesOnReceiptSetting","classification":"WRITE","paramCount":1,"schema":"95c137844a39","response":"none","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateLeasePolicySettings","classification":"WRITE","paramCount":3,"schema":"42f033ec1738","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
@@ -1457,6 +1458,7 @@
     {"name":"settings_updatePlmReleaseControlSetting","classification":"WRITE","paramCount":1,"schema":"b74d1adb972d","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updatePurchasePriceUpdateTimingSetting","classification":"WRITE","paramCount":1,"schema":"6e01697e737c","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateQuoteLineCategoryMarkups","classification":"WRITE","paramCount":1,"schema":"46b636ff84f8","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
+    {"name":"settings_updateRentalInvoiceNotificationSetting","classification":"WRITE","paramCount":1,"schema":"e1f0172b7519","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateRequireCustomerContactSetting","classification":"WRITE","paramCount":1,"schema":"4cff457269be","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateRequireSupplierContactSetting","classification":"WRITE","paramCount":1,"schema":"36a0cd98c43c","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateReturnPickedMaterialTimingSetting","classification":"WRITE","paramCount":1,"schema":"59acd7763b9c","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},

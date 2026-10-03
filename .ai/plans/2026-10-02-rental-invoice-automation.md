@@ -25,7 +25,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 1: Baseline green
 - [x] Task 2: Migration — enum, columns, views
 - [x] Task 3: Apply migration, regenerate types, run DB gates
-- [ ] Task 4: Pure invoice planner + tests
+- [x] Task 4: Pure invoice planner + tests
 - [ ] Task 5: Generator drafts rent and charges invoices per the planner
 - [ ] Task 5b: VOID stamps the voided invoice on released periods and charges
 - [ ] Task 6: Move the party-contact check to `@carbon/lib`
