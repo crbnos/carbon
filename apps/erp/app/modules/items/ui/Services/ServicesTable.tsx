@@ -59,6 +59,7 @@ import {
   SupplierAvatarGroup,
   Table
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
@@ -165,15 +166,14 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           const itemPostingGroup = itemPostingGroups.find(
             (group) => group.value === itemPostingGroupId
           );
-          const label = itemPostingGroup?.label;
-          return label ? <Badge variant="secondary">{label}</Badge> : null;
+          return <Enumerable value={itemPostingGroup?.label ?? null} />;
         },
         meta: {
           filter: {
             type: "static",
             options: itemPostingGroups.map((group) => ({
               value: group.value,
-              label: <Badge variant="secondary">{group.label}</Badge>
+              label: <Enumerable value={group.label} />
             }))
           },
           icon: <LuGroup />
@@ -454,7 +454,7 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
                         )
                       }
                     >
-                      <span>{group.label}</span>
+                      <Enumerable value={group.label} />
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>
