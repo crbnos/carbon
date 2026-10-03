@@ -57,6 +57,10 @@ msgstr "{0} Attivi"
 msgid "{0} ago"
 msgstr "{0} fa"
 
+#. placeholder {0}: allColumns.length
+msgid "{0} are hidden by the filter."
+msgstr ""
+
 #. placeholder {0}: formatQuantity(available, locale)
 msgid "{0} available"
 msgstr ""
@@ -202,6 +206,9 @@ msgstr "{completed} di {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} unità superate verranno completate."
 
+msgid "{count} work centers"
+msgstr ""
+
 msgid "{done} of {total} lines"
 msgstr ""
 
@@ -254,6 +261,9 @@ msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} altri"
+
+msgid "1 work center"
+msgstr ""
 
 msgid "48pt minimum"
 msgstr ""
@@ -550,6 +560,9 @@ msgstr ""
 msgid "Cards"
 msgstr "Schede"
 
+msgid "Change company or location"
+msgstr ""
+
 msgid "Change location"
 msgstr ""
 
@@ -569,6 +582,9 @@ msgid "Check your email"
 msgstr "Controlla la tua email"
 
 msgid "Choose"
+msgstr ""
+
+msgid "Choose a company to see its locations."
 msgstr ""
 
 msgid "Choose a gauge"
@@ -613,6 +629,9 @@ msgstr "Cancella Ricerca"
 
 msgid "Clear station default"
 msgstr "Cancella impostazione predefinita della stazione"
+
+msgid "Clear the filter"
+msgstr ""
 
 msgid "Clear the gauge"
 msgstr ""
@@ -870,6 +889,9 @@ msgid "Could not save that reading"
 msgstr ""
 
 msgid "Could not start"
+msgstr ""
+
+msgid "Could not switch company"
 msgstr ""
 
 msgid "Could not turn it on"
@@ -1807,8 +1829,14 @@ msgstr ""
 msgid "No work centers are blocked"
 msgstr "Nessun centro di lavoro bloccato"
 
+msgid "No work centers at {locationName}"
+msgstr ""
+
 msgid "No work centers exist"
 msgstr "Nessun centro di lavoro esistente"
+
+msgid "No work centers match"
+msgstr ""
 
 msgid "No work instructions"
 msgstr ""
@@ -2972,6 +3000,13 @@ msgstr ""
 msgid "This Carbon server needs an update before the app can sign in."
 msgstr ""
 
+msgid "This company has no locations yet."
+msgstr ""
+
+#. placeholder {0}: elsewhere.join(", ")
+msgid "This company's work centers are at {0}."
+msgstr ""
+
 msgid "This connection is not encrypted. Only continue on a network you trust."
 msgstr ""
 
@@ -3305,7 +3340,7 @@ msgstr "Centro di Lavoro"
 msgid "Work Center Displays"
 msgstr "Display del Centro di Lavoro"
 
-msgid "Work centers for {locationName} appear here once they exist."
+msgid "Work centers appear here once they exist."
 msgstr ""
 
 msgid "Work email"
@@ -3321,6 +3356,9 @@ msgid "Working as"
 msgstr ""
 
 msgid "Working at"
+msgstr ""
+
+msgid "Working at {label}. Change company or location"
 msgstr ""
 
 msgid "Yes"

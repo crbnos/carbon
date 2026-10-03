@@ -57,6 +57,10 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: allColumns.length
+msgid "{0} are hidden by the filter."
+msgstr ""
+
 #. placeholder {0}: formatQuantity(available, locale)
 msgid "{0} available"
 msgstr ""
@@ -202,6 +206,9 @@ msgstr "{completed} 的 {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} 个已通过的件将被完成。"
 
+msgid "{count} work centers"
+msgstr ""
+
 msgid "{done} of {total} lines"
 msgstr ""
 
@@ -254,6 +261,9 @@ msgstr ""
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
+
+msgid "1 work center"
+msgstr ""
 
 msgid "48pt minimum"
 msgstr ""
@@ -550,6 +560,9 @@ msgstr ""
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Change company or location"
+msgstr ""
+
 msgid "Change location"
 msgstr ""
 
@@ -569,6 +582,9 @@ msgid "Check your email"
 msgstr "请查收邮件"
 
 msgid "Choose"
+msgstr ""
+
+msgid "Choose a company to see its locations."
 msgstr ""
 
 msgid "Choose a gauge"
@@ -613,6 +629,9 @@ msgstr "清除搜索"
 
 msgid "Clear station default"
 msgstr "清除工作站默认值"
+
+msgid "Clear the filter"
+msgstr ""
 
 msgid "Clear the gauge"
 msgstr ""
@@ -870,6 +889,9 @@ msgid "Could not save that reading"
 msgstr ""
 
 msgid "Could not start"
+msgstr ""
+
+msgid "Could not switch company"
 msgstr ""
 
 msgid "Could not turn it on"
@@ -1807,8 +1829,14 @@ msgstr ""
 msgid "No work centers are blocked"
 msgstr "无工作中心被阻塞"
 
+msgid "No work centers at {locationName}"
+msgstr ""
+
 msgid "No work centers exist"
 msgstr "无工作中心"
+
+msgid "No work centers match"
+msgstr ""
 
 msgid "No work instructions"
 msgstr ""
@@ -2972,6 +3000,13 @@ msgstr ""
 msgid "This Carbon server needs an update before the app can sign in."
 msgstr ""
 
+msgid "This company has no locations yet."
+msgstr ""
+
+#. placeholder {0}: elsewhere.join(", ")
+msgid "This company's work centers are at {0}."
+msgstr ""
+
 msgid "This connection is not encrypted. Only continue on a network you trust."
 msgstr ""
 
@@ -3305,7 +3340,7 @@ msgstr "工作中心"
 msgid "Work Center Displays"
 msgstr "工作中心显示屏"
 
-msgid "Work centers for {locationName} appear here once they exist."
+msgid "Work centers appear here once they exist."
 msgstr ""
 
 msgid "Work email"
@@ -3321,6 +3356,9 @@ msgid "Working as"
 msgstr ""
 
 msgid "Working at"
+msgstr ""
+
+msgid "Working at {label}. Change company or location"
 msgstr ""
 
 msgid "Yes"

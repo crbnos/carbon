@@ -157,7 +157,9 @@ export default function More() {
             variant="secondary"
             onPress={() => router.push("/(app)/context")}
           >
-            {t`Change location`}
+            {(me?.companies.length ?? 0) > 1
+              ? t`Change company or location`
+              : t`Change location`}
           </Button>
         </Card>
 

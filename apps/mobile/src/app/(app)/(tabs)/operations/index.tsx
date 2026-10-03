@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import type { SheetHandle } from "~/components/BottomSheet";
 import {
+  Button,
   EmptyState,
   ErrorNote,
   Heading,
@@ -28,6 +29,7 @@ import {
 import { useLayout } from "~/components/useLayout";
 import { usePullToRefresh } from "~/components/usePullToRefresh";
 import { useThemeColors } from "~/components/useThemeColor";
+import { WorkingAt } from "~/features/context/WorkingAt";
 import { BoardFilterSheet } from "~/features/operations/BoardFilterSheet";
 import {
   activeFilterCount,
@@ -201,6 +203,20 @@ export default function Operations() {
 
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
+  // The other locations of THIS company that do have work centers, named with
+  // their counts — what an empty board points at.
+  const elsewhere = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const workCenter of me?.workCenters ?? []) {
+      counts.set(
+        workCenter.locationId,
+        (counts.get(workCenter.locationId) ?? 0) + 1
+      );
+    }
+    return (me?.locations ?? [])
+      .filter((l) => l.id !== locationId && (counts.get(l.id) ?? 0) > 0)
+      .map((l) => `${l.name} (${counts.get(l.id)})`);
+  }, [me, locationId]);
   const allColumns = query.data?.columns ?? [];
   const columns = useMemo(
     () => filterColumns(allColumns, filters),
@@ -231,11 +247,11 @@ export default function Operations() {
 
   return (
     <Screen className="gap-3 px-0 py-4">
-      <View className="gap-1 px-4">
+      <View className="px-4">
         <Heading>
           <Trans>Schedule</Trans>
         </Heading>
-        <Muted className="text-sm">{locationName}</Muted>
+        <WorkingAt />
       </View>
 
       {/*
@@ -317,10 +333,43 @@ export default function Operations() {
           <Skeleton className="h-28" />
         </View>
       ) : columns.length === 0 ? (
-        <EmptyState
-          title={t`No work centers`}
-          description={t`Work centers for ${locationName} appear here once they exist.`}
-        />
+        allColumns.length > 0 ? (
+          // The location HAS work centers; the filter is hiding all of them.
+          // Saying "no work centers" here would send an operator looking for
+          // data that is one tap away.
+          <View className="flex-1 items-center justify-center gap-4 px-6">
+            <EmptyState
+              title={t`No work centers match`}
+              description={t`${allColumns.length} are hidden by the filter.`}
+            />
+            <Button
+              variant="secondary"
+              onPress={() => setFilters(EMPTY_FILTERS)}
+            >
+              {t`Clear the filter`}
+            </Button>
+          </View>
+        ) : (
+          // A location with no work centers is real — a head office beside a
+          // plant — and without a way out it reads as "the app lost them".
+          // Name where they ARE, and put the picker one tap away.
+          <View className="flex-1 items-center justify-center gap-4 px-6">
+            <EmptyState
+              title={t`No work centers at ${locationName}`}
+              description={
+                elsewhere.length > 0
+                  ? t`This company's work centers are at ${elsewhere.join(", ")}.`
+                  : t`Work centers appear here once they exist.`
+              }
+            />
+            <Button
+              variant="secondary"
+              onPress={() => router.push("/(app)/context")}
+            >
+              {t`Change location`}
+            </Button>
+          </View>
+        )
       ) : (
         <ScrollView
           horizontal

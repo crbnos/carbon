@@ -21,6 +21,16 @@ export type ApiRequestInit<T> = {
   /** `auth/*` calls, which carry no session yet. */
   isPublic?: boolean;
   signal?: AbortSignal;
+  /**
+   * Name the company for THIS call instead of the scope's.
+   *
+   * One caller: switching company. `/me` answers for the company in the
+   * header, and the scope still names the company being left until the
+   * switch has finished — so the call that learns about the new company has
+   * to name it itself. `null` sends no company at all, which only `/me`
+   * accepts.
+   */
+  companyId?: string | null;
 };
 
 export type ApiScope = {
@@ -69,8 +79,14 @@ export function createApiClient(options: ApiClientOptions) {
       if (!token)
         throw new ApiClientError(401, "invalid_token", "Sign in to continue");
       headers.authorization = `Bearer ${token}`;
-      if (scope.companyId) headers[HEADERS.company] = scope.companyId;
-      if (scope.locationId) headers[HEADERS.location] = scope.locationId;
+      const companyId =
+        init.companyId === undefined ? scope.companyId : init.companyId;
+      if (companyId) headers[HEADERS.company] = companyId;
+      // A location belongs to the scope's company; sending it alongside an
+      // overridden company would pair one tenant's location with another's id.
+      if (scope.locationId && init.companyId === undefined) {
+        headers[HEADERS.location] = scope.locationId;
+      }
       if (scope.operatorToken) {
         headers[HEADERS.operator] = scope.operatorToken;
       }

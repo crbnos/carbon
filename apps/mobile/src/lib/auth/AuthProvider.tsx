@@ -28,6 +28,13 @@ import { ApiClientError } from "~/lib/api/errors";
 import { useInstances } from "~/lib/instances/InstanceProvider";
 import { clearSession, loadSession, saveSession } from "./session";
 import { getSupabase } from "./supabase";
+import {
+  chooseCompany,
+  chooseLocation,
+  clearWorkContext,
+  loadWorkContext,
+  saveWorkContext
+} from "./workContext";
 
 /**
  * Sign-in runs entirely through the MES server, never straight to Supabase
@@ -74,7 +81,20 @@ type AuthContextValue = {
   reloadMe: () => Promise<void>;
   signOut: () => Promise<void>;
   companyId: string | null;
-  setCompanyId: (companyId: string) => void;
+  /**
+   * Work in another of this account's companies.
+   *
+   * Not a setter, because a company is not one value: `/me` answers for the
+   * company it is asked about, so the locations, the default location, the
+   * permissions and whether shared-terminal mode exists all belong to the
+   * company that was current when it was read. Setting only the id left every
+   * one of those describing the company being left — the picker then offered
+   * the previous company's locations, found none that matched, and kept the
+   * old location id for the new company's queries. This re-reads `/me` FOR the
+   * new company and replaces all of it at once. Rejects if that read fails,
+   * leaving the previous company untouched.
+   */
+  switchCompany: (companyId: string) => Promise<void>;
   locationId: string | null;
   setLocationId: (locationId: string) => void;
   operatorToken: string | null;
@@ -113,8 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>("loading");
   const [me, setMe] = useState<MeResponse | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  const [locationId, setLocationId] = useState<string | null>(null);
+  const [companyId, setCompanyIdState] = useState<string | null>(null);
+  const [locationId, setLocationIdState] = useState<string | null>(null);
 
   // Tokens live in refs as well as storage: the API client reads them
   // synchronously on every request, and a stale closure would send the previous
@@ -165,18 +185,102 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loadMe = useCallback(async () => {
-    const result = await api.request("/me", { schema: meResponse });
+    // The company this device last worked in on this Carbon, as the web's
+    // session cookie remembers it. Asked for by name, because `/me` answers
+    // for the company in the header and otherwise falls back to the account's
+    // first company by name — which describes a company nobody chose.
+    const stored = instanceId ? await loadWorkContext(instanceId) : null;
+
+    let result: MeResponse;
+    try {
+      result = await api.request("/me", {
+        schema: meResponse,
+        companyId: stored?.companyId ?? null
+      });
+    } catch (error) {
+      // A remembered company the account has since left is refused. That is
+      // not a failed sign-in: forget it and ask again with no company at all.
+      if (!stored?.companyId) throw error;
+      result = await api.request("/me", {
+        schema: meResponse,
+        companyId: null
+      });
+    }
+
+    let company = chooseCompany(result.companies, stored);
+    // `/me` reports the locations of the company it ANSWERED for. With a
+    // remembered company that is the one asked for; with a single company it
+    // is that one. In both cases the payload describes `company`. An account
+    // in several companies with none remembered gets `null` here and is sent
+    // to the picker, which re-reads `/me` for whichever one is chosen.
+    const answeredFor = result.locations[0]?.companyId ?? null;
+    if (company && answeredFor && answeredFor !== company) {
+      result = await api.request("/me", {
+        schema: meResponse,
+        companyId: company
+      });
+      company = chooseCompany(result.companies, {
+        companyId: company,
+        locationId: stored?.locationId ?? null
+      });
+    }
+
+    const location = chooseLocation(result, company, stored);
     setMe(result);
-    setCompanyId((prev) => prev ?? result.companies[0]?.id ?? null);
-    setLocationId(
-      (prev) =>
-        prev ?? result.defaultLocationId ?? result.locations[0]?.id ?? null
-    );
+    setCompanyIdState(company);
+    setLocationIdState(location);
+    if (instanceId && company) {
+      await saveWorkContext(instanceId, {
+        companyId: company,
+        locationId: location
+      });
+    }
     if (current) {
       await update({ ...current, details: result.instance });
     }
     setState("ready");
-  }, [api, current, update]);
+  }, [api, current, update, instanceId]);
+
+  const switchCompany = useCallback(
+    async (nextCompanyId: string) => {
+      const result = await api.request("/me", {
+        schema: meResponse,
+        companyId: nextCompanyId
+      });
+      const location = chooseLocation(result, nextCompanyId, null);
+      // A terminal and its pinned operator belong to the company they were
+      // minted in. Carrying either across would attribute the next write to
+      // someone who is not an employee of the company it lands in.
+      operatorToken.current = null;
+      terminalToken.current = null;
+      setOperatorTokenState(null);
+      setTerminalTokenState(null);
+      setOperatorState(null);
+      setMe(result);
+      setCompanyIdState(nextCompanyId);
+      setLocationIdState(location);
+      if (instanceId) {
+        await saveWorkContext(instanceId, {
+          companyId: nextCompanyId,
+          locationId: location
+        });
+      }
+    },
+    [api, instanceId]
+  );
+
+  const setLocationId = useCallback(
+    (nextLocationId: string) => {
+      setLocationIdState(nextLocationId);
+      if (instanceId && companyId) {
+        void saveWorkContext(instanceId, {
+          companyId,
+          locationId: nextLocationId
+        });
+      }
+    },
+    [instanceId, companyId]
+  );
 
   // Restore a stored session when the instance changes.
   //
@@ -266,7 +370,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       serverUrl,
       insecure: current?.scheme === "http",
       companyId,
-      setCompanyId,
+      switchCompany,
       locationId,
       setLocationId,
       operatorToken: operatorTokenState,
@@ -384,8 +488,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTerminalTokenState(null);
         setOperatorState(null);
         setMe(null);
-        setCompanyId(null);
-        setLocationId(null);
+        setCompanyIdState(null);
+        setLocationIdState(null);
+        // The next person to sign in on this device starts from their own
+        // companies, not from where the last one was working.
+        if (instanceId) await clearWorkContext(instanceId);
         setState(instanceId ? "signed_out" : "no_instance");
       },
       // Not in the dependency list: it reads a ref, so its identity never has
@@ -406,6 +513,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       operator,
       applySession,
       loadMe,
+      switchCompany,
+      setLocationId,
       instanceId
     ]
   );

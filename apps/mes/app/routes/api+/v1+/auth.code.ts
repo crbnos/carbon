@@ -51,7 +51,15 @@ export const action = apiRoute(
       origin: getMESUrl(),
       lockout: signInLockout(),
       channel: "mobile",
-      ip
+      ip,
+      // The DEV_BYPASS_EMAIL shortcut is a WEB mechanism: the web login action
+      // answers `bypass` by minting a session cookie on the spot. This route
+      // has no cookie to mint, so honouring it here meant answering
+      // `{ ok: true }` and sending nothing — the developer's own account could
+      // never sign in on a device, and they waited for a code that was never
+      // going to arrive. A device always gets a real code; locally the dev
+      // mailbox catches it. (Unset in production, where this changes nothing.)
+      allowBypass: false
     });
 
     switch (result.kind) {
@@ -73,7 +81,8 @@ export const action = apiRoute(
           { retryAfterSeconds: result.retryAfterSeconds }
         );
       default:
-        // sent, unknown_user, bypass and error all answer identically.
+        // sent, unknown_user and error all answer identically. (`bypass`
+        // cannot occur: `allowBypass` is false above.)
         return { ok: true as const };
     }
   }

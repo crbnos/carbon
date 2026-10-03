@@ -57,6 +57,10 @@ msgstr "{0} Active"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: allColumns.length
+msgid "{0} are hidden by the filter."
+msgstr "{0} are hidden by the filter."
+
 #. placeholder {0}: formatQuantity(available, locale)
 msgid "{0} available"
 msgstr "{0} available"
@@ -202,6 +206,9 @@ msgstr "{completed} of {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} passed unit(s) will be completed."
 
+msgid "{count} work centers"
+msgstr "{count} work centers"
+
 msgid "{done} of {total} lines"
 msgstr "{done} of {total} lines"
 
@@ -254,6 +261,9 @@ msgstr "#{0}"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
+
+msgid "1 work center"
+msgstr "1 work center"
 
 msgid "48pt minimum"
 msgstr "48pt minimum"
@@ -550,6 +560,9 @@ msgstr "Carbon MES needs the camera to read barcodes and QR codes."
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Change company or location"
+msgstr "Change company or location"
+
 msgid "Change location"
 msgstr "Change location"
 
@@ -570,6 +583,9 @@ msgstr "Check your email"
 
 msgid "Choose"
 msgstr "Choose"
+
+msgid "Choose a company to see its locations."
+msgstr "Choose a company to see its locations."
 
 msgid "Choose a gauge"
 msgstr "Choose a gauge"
@@ -613,6 +629,9 @@ msgstr "Clear Search"
 
 msgid "Clear station default"
 msgstr "Clear station default"
+
+msgid "Clear the filter"
+msgstr "Clear the filter"
 
 msgid "Clear the gauge"
 msgstr "Clear the gauge"
@@ -871,6 +890,9 @@ msgstr "Could not save that reading"
 
 msgid "Could not start"
 msgstr "Could not start"
+
+msgid "Could not switch company"
+msgstr "Could not switch company"
 
 msgid "Could not turn it on"
 msgstr "Could not turn it on"
@@ -1807,8 +1829,14 @@ msgstr "No work centers"
 msgid "No work centers are blocked"
 msgstr "No work centers are blocked"
 
+msgid "No work centers at {locationName}"
+msgstr "No work centers at {locationName}"
+
 msgid "No work centers exist"
 msgstr "No work centers exist"
+
+msgid "No work centers match"
+msgstr "No work centers match"
 
 msgid "No work instructions"
 msgstr "No work instructions"
@@ -2972,6 +3000,13 @@ msgstr "This Carbon refused to make this device a shared terminal."
 msgid "This Carbon server needs an update before the app can sign in."
 msgstr "This Carbon server needs an update before the app can sign in."
 
+msgid "This company has no locations yet."
+msgstr "This company has no locations yet."
+
+#. placeholder {0}: elsewhere.join(", ")
+msgid "This company's work centers are at {0}."
+msgstr "This company's work centers are at {0}."
+
 msgid "This connection is not encrypted. Only continue on a network you trust."
 msgstr "This connection is not encrypted. Only continue on a network you trust."
 
@@ -3305,8 +3340,8 @@ msgstr "Work Center"
 msgid "Work Center Displays"
 msgstr "Work Center Displays"
 
-msgid "Work centers for {locationName} appear here once they exist."
-msgstr "Work centers for {locationName} appear here once they exist."
+msgid "Work centers appear here once they exist."
+msgstr "Work centers appear here once they exist."
 
 msgid "Work email"
 msgstr "Work email"
@@ -3322,6 +3357,9 @@ msgstr "Working as"
 
 msgid "Working at"
 msgstr "Working at"
+
+msgid "Working at {label}. Change company or location"
+msgstr "Working at {label}. Change company or location"
 
 msgid "Yes"
 msgstr "Yes"
