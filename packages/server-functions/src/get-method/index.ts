@@ -1690,7 +1690,8 @@ export const getMethod = defineServerFn({
                 }
 
                 const newMakeMethodIds = madeChildren.map(() => nanoid());
-                await renameJobMakeMethods(trx, {
+                await renameMakeMethods(trx, {
+                  table: "jobMakeMethod",
                   companyId,
                   rows: madeChildren.map((_, index) => ({
                     parentMaterialId: madeMaterialsWithIds[index]!.id,
@@ -2448,7 +2449,8 @@ export const getMethod = defineServerFn({
                 }
 
                 const newMakeMethodIds = madeChildren.map(() => nanoid());
-                await renameJobMakeMethods(trx, {
+                await renameMakeMethods(trx, {
+                  table: "jobMakeMethod",
                   companyId,
                   rows: madeChildren.map((_, index) => ({
                     parentMaterialId: madeMaterialsWithIds[index]!.id,
@@ -2805,34 +2807,9 @@ export const getMethod = defineServerFn({
 
               // For child nodes, always include operations regardless of parts flags
               if (!node.data.isRoot || parts.billOfProcess) {
-                const relatedOperations = await many<
-                  "methodOperation",
-                  Tables["methodOperation"]["Row"] & {
-                    methodOperationTool: Tables["methodOperationTool"]["Row"][];
-                    methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
-                    methodOperationStep: Tables["methodOperationStep"]["Row"][];
-                  }
-                >(
-                  trx,
-                  "methodOperation",
-                  { makeMethodId: node.data.materialMakeMethodId },
-                  {
-                    embed: {
-                      methodOperationTool: {
-                        table: "methodOperationTool",
-                        on: "operationId"
-                      },
-                      methodOperationParameter: {
-                        table: "methodOperationParameter",
-                        on: "operationId"
-                      },
-                      methodOperationStep: {
-                        table: "methodOperationStep",
-                        on: "operationId"
-                      }
-                    }
-                  }
-                );
+                const relatedOperations = {
+                  data: treeOperations.get(node.data.materialMakeMethodId) ?? []
+                };
 
                 let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
                   [];
@@ -3296,16 +3273,19 @@ export const getMethod = defineServerFn({
                     .values(madeMaterialsWithIds)
                     .execute();
 
+                  const newMakeMethodIds = madeChildren.map(() => nanoid());
+                  await renameMakeMethods(trx, {
+                    table: "quoteMakeMethod",
+                    companyId,
+                    rows: madeChildren.map((_, index) => ({
+                      parentMaterialId: madeMaterialsWithIds[index]!.id,
+                      id: newMakeMethodIds[index]!
+                    }))
+                  });
+
                   for (const [index, child] of madeChildren.entries()) {
                     const materialId = madeMaterialsWithIds[index]!.id;
-                    const newMakeMethodId = nanoid();
-
-                    const updateResult = await trx
-                      .updateTable("quoteMakeMethod")
-                      .set({ id: newMakeMethodId })
-                      .where("parentMaterialId", "=", materialId)
-                      .where("companyId", "=", companyId)
-                      .execute();
+                    const newMakeMethodId = newMakeMethodIds[index]!;
 
                     logger.debug("[traverseMethod] processing made child", {
                       index,
@@ -3313,8 +3293,7 @@ export const getMethod = defineServerFn({
                       newMakeMethodId,
                       childItemId: child!.data.itemId,
                       parentItemId: itemId,
-                      willRecurse: child!.data.itemId !== itemId,
-                      updateResult
+                      willRecurse: child!.data.itemId !== itemId
                     });
 
                     // prevent an infinite loop
@@ -3324,12 +3303,7 @@ export const getMethod = defineServerFn({
                   }
                 }
 
-                if (pickedOrBoughtMaterials.length > 0) {
-                  await trx
-                    .insertInto("quoteMaterial")
-                    .values(pickedOrBoughtMaterials)
-                    .execute();
-                }
+                deferredQuoteMaterials.push(...pickedOrBoughtMaterials);
               } // end if (parts.billOfMaterial)
             }
 
@@ -3344,7 +3318,16 @@ export const getMethod = defineServerFn({
             }
             logTree(methodTree);
 
+            const treeOperations = await readOperationsForTree(trx, methodTree);
+            const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
+              [];
             await traverseMethod(methodTree, quoteMakeMethod.data!.id);
+            if (deferredQuoteMaterials.length > 0) {
+              await trx
+                .insertInto("quoteMaterial")
+                .values(deferredQuoteMaterials)
+                .execute();
+            }
           });
 
         await calculateQuoteLinePrices(
@@ -3497,34 +3480,9 @@ export const getMethod = defineServerFn({
             node: MethodTreeItem,
             parentQuoteMakeMethodId: string | null
           ) {
-            const relatedOperations = await many<
-              "methodOperation",
-              Tables["methodOperation"]["Row"] & {
-                methodOperationTool: Tables["methodOperationTool"]["Row"][];
-                methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
-                methodOperationStep: Tables["methodOperationStep"]["Row"][];
-              }
-            >(
-              trx,
-              "methodOperation",
-              { makeMethodId: node.data.materialMakeMethodId },
-              {
-                embed: {
-                  methodOperationTool: {
-                    table: "methodOperationTool",
-                    on: "operationId"
-                  },
-                  methodOperationParameter: {
-                    table: "methodOperationParameter",
-                    on: "operationId"
-                  },
-                  methodOperationStep: {
-                    table: "methodOperationStep",
-                    on: "operationId"
-                  }
-                }
-              }
-            );
+            const relatedOperations = {
+              data: treeOperations.get(node.data.materialMakeMethodId) ?? []
+            };
 
             const quoteOperationInserts =
               relatedOperations?.data?.map((op) => ({
@@ -3736,16 +3694,18 @@ export const getMethod = defineServerFn({
                   .values(madeMaterialsWithIds)
                   .execute();
 
-                for (const [index, child] of madeChildren.entries()) {
-                  const materialId = madeMaterialsWithIds[index]!.id;
-                  const newMakeMethodId = nanoid();
+                const newMakeMethodIds = madeChildren.map(() => nanoid());
+                await renameMakeMethods(trx, {
+                  table: "quoteMakeMethod",
+                  companyId,
+                  rows: madeChildren.map((_, index) => ({
+                    parentMaterialId: madeMaterialsWithIds[index]!.id,
+                    id: newMakeMethodIds[index]!
+                  }))
+                });
 
-                  await trx
-                    .updateTable("quoteMakeMethod")
-                    .set({ id: newMakeMethodId })
-                    .where("parentMaterialId", "=", materialId)
-                    .where("companyId", "=", companyId)
-                    .execute();
+                for (const [index, child] of madeChildren.entries()) {
+                  const newMakeMethodId = newMakeMethodIds[index]!;
 
                   // prevent an infinite loop
                   if (child.data.itemId !== itemId) {
@@ -3754,16 +3714,20 @@ export const getMethod = defineServerFn({
                 }
               }
 
-              if (pickedOrBoughtMaterials.length > 0) {
-                await trx
-                  .insertInto("quoteMaterial")
-                  .values(pickedOrBoughtMaterials)
-                  .execute();
-              }
+              deferredQuoteMaterials.push(...pickedOrBoughtMaterials);
             } // end if (parts.billOfMaterial)
           }
 
+          const treeOperations = await readOperationsForTree(trx, methodTree);
+          const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
+            [];
           await traverseMethod(methodTree, quoteMakeMethod.data.id);
+          if (deferredQuoteMaterials.length > 0) {
+            await trx
+              .insertInto("quoteMaterial")
+              .values(deferredQuoteMaterials)
+              .execute();
+          }
         });
         break;
       }
@@ -4875,9 +4839,10 @@ export const getMethod = defineServerFn({
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
-                await renameJobMakeMethods(trx, {
+                await renameMakeMethods(trx, {
+                  table: "jobMakeMethod",
                   companyId,
-                  jobId: targetJobId,
+                  scope: { column: "jobId", value: targetJobId },
                   rows: jobMakeMethodInserts.map((insert) => ({
                     parentMaterialId: insert.parentMaterialId!,
                     id: insert.id!,
@@ -6624,9 +6589,10 @@ export const getMethod = defineServerFn({
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
-                await renameJobMakeMethods(trx, {
+                await renameMakeMethods(trx, {
+                  table: "jobMakeMethod",
                   companyId,
-                  jobId: jobId,
+                  scope: { column: "jobId", value: jobId },
                   rows: jobMakeMethodInserts.map((insert) => ({
                     parentMaterialId: insert.parentMaterialId!,
                     id: insert.id!,
@@ -7043,18 +7009,16 @@ export const getMethod = defineServerFn({
               }
 
               if (parts.billOfMaterial && quoteMakeMethodInserts.length > 0) {
-                for await (const insert of quoteMakeMethodInserts) {
-                  await trx
-                    .updateTable("quoteMakeMethod")
-                    .set({
-                      id: insert.id,
-                      quantityPerParent: insert.quantityPerParent
-                    })
-                    .where("quoteLineId", "=", targetQuoteLineId)
-                    .where("parentMaterialId", "=", insert.parentMaterialId!)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await renameMakeMethods(trx, {
+                  table: "quoteMakeMethod",
+                  companyId,
+                  scope: { column: "quoteLineId", value: targetQuoteLineId },
+                  rows: quoteMakeMethodInserts.map((insert) => ({
+                    parentMaterialId: insert.parentMaterialId!,
+                    id: insert.id!,
+                    quantityPerParent: insert.quantityPerParent
+                  }))
+                });
               }
             }
           );
@@ -7589,18 +7553,16 @@ export const getMethod = defineServerFn({
                 }
 
                 if (quoteMakeMethodInserts.length > 0) {
-                  for await (const insert of quoteMakeMethodInserts) {
-                    await trx
-                      .updateTable("quoteMakeMethod")
-                      .set({
-                        id: insert.id,
-                        quantityPerParent: insert.quantityPerParent
-                      })
-                      .where("quoteLineId", "=", newLineId)
-                      .where("parentMaterialId", "=", insert.parentMaterialId!)
-                      .where("companyId", "=", companyId)
-                      .execute();
-                  }
+                  await renameMakeMethods(trx, {
+                    table: "quoteMakeMethod",
+                    companyId,
+                    scope: { column: "quoteLineId", value: newLineId },
+                    rows: quoteMakeMethodInserts.map((insert) => ({
+                      parentMaterialId: insert.parentMaterialId!,
+                      id: insert.id!,
+                      quantityPerParent: insert.quantityPerParent
+                    }))
+                  });
                 }
               }
             );
@@ -8564,6 +8526,51 @@ async function insertProcedureDataForJobOperation(
     .execute();
 }
 
+type TreeOperation = Tables["methodOperation"]["Row"] & {
+  methodOperationTool: Tables["methodOperationTool"]["Row"][];
+  methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
+  methodOperationStep: Tables["methodOperationStep"]["Row"][];
+};
+
+/** Every node's method operations, read in one query instead of one per node. */
+async function readOperationsForTree(
+  trx: Transaction<KyselyDatabase>,
+  root: MethodTreeItem
+) {
+  const makeMethodIds = new Set<string>();
+  const walk = (node: MethodTreeItem) => {
+    if (node.data.materialMakeMethodId)
+      makeMethodIds.add(node.data.materialMakeMethodId);
+    node.children.forEach(walk);
+  };
+  walk(root);
+  const operations = await many<"methodOperation", TreeOperation>(
+    trx,
+    "methodOperation",
+    { makeMethodId: [...makeMethodIds] },
+    {
+      embed: {
+        methodOperationTool: {
+          table: "methodOperationTool",
+          on: "operationId"
+        },
+        methodOperationParameter: {
+          table: "methodOperationParameter",
+          on: "operationId"
+        },
+        methodOperationStep: { table: "methodOperationStep", on: "operationId" }
+      }
+    }
+  );
+  const byMakeMethodId = new Map<string, TreeOperation[]>();
+  for (const operation of operations.data) {
+    const list = byMakeMethodId.get(operation.makeMethodId);
+    if (list) list.push(operation);
+    else byMakeMethodId.set(operation.makeMethodId, [operation]);
+  }
+  return byMakeMethodId;
+}
+
 async function insertDeferredJobMaterials(
   trx: Transaction<KyselyDatabase>,
   materials: Database["public"]["Tables"]["jobMaterial"]["Insert"][],
@@ -8578,14 +8585,17 @@ async function insertDeferredJobMaterials(
 }
 
 /**
- * Gives the jobMakeMethod rows that the jobMaterial insert trigger created
- * their planned ids, for every made material of an insert in ONE statement.
+ * Gives the make-method rows that the jobMaterial / quoteMaterial insert
+ * trigger created their planned ids, for every made material of an insert in
+ * ONE statement.
  */
-async function renameJobMakeMethods(
+async function renameMakeMethods(
   trx: Transaction<KyselyDatabase>,
   args: {
+    table: "jobMakeMethod" | "quoteMakeMethod";
     companyId: string;
-    jobId?: string;
+    /** Narrows the match to one job or quote line, as the loops this replaced did. */
+    scope?: { column: "jobId" | "quoteLineId"; value: string };
     /** Left unchanged where undefined, as `.set()` would. */
     rows: {
       parentMaterialId: string;
@@ -8594,7 +8604,7 @@ async function renameJobMakeMethods(
     }[];
   }
 ) {
-  const { companyId, jobId, rows } = args;
+  const { table, companyId, scope, rows } = args;
   if (rows.length === 0) return;
   const values = sql.join(
     rows.map(
@@ -8603,13 +8613,13 @@ async function renameJobMakeMethods(
     )
   );
   await sql`
-    UPDATE "jobMakeMethod" AS t
+    UPDATE ${sql.table(table)} AS t
     SET "id" = v."id",
       "quantityPerParent" = CASE WHEN v."setQuantity" THEN v."quantityPerParent" ELSE t."quantityPerParent" END
     FROM (VALUES ${values}) AS v("parentMaterialId", "id", "quantityPerParent", "setQuantity")
     WHERE t."parentMaterialId" = v."parentMaterialId"
       AND t."companyId" = ${companyId}
-      ${jobId ? sql`AND t."jobId" = ${jobId}` : sql``}
+      ${scope ? sql`AND t.${sql.ref(scope.column)} = ${scope.value}` : sql``}
   `.execute(trx);
 }
 
