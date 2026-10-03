@@ -956,14 +956,18 @@ export async function upsertPurchaseInvoice(
 export async function upsertPurchaseInvoiceDelivery(
   client: SupabaseClient<Database>,
   purchaseInvoiceDelivery: z.infer<typeof purchaseInvoiceDeliveryValidator> & {
+    companyId: string;
     updatedBy: string;
     customFields?: Json;
   }
 ) {
+  // The company scopes the row; it is never written to it.
+  const { companyId, ...delivery } = purchaseInvoiceDelivery;
   return client
     .from("purchaseInvoiceDelivery")
-    .update(sanitize(purchaseInvoiceDelivery))
-    .eq("id", purchaseInvoiceDelivery.id)
+    .update(sanitize(delivery))
+    .eq("id", delivery.id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -1334,14 +1338,18 @@ export async function upsertSalesInvoice(
 export async function upsertSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceShipment: z.infer<typeof salesInvoiceShipmentValidator> & {
+    companyId: string;
     updatedBy: string;
     customFields?: Json;
   }
 ) {
+  // The company scopes the row; it is never written to it.
+  const { companyId, ...shipment } = salesInvoiceShipment;
   return client
     .from("salesInvoiceShipment")
-    .update(sanitize(salesInvoiceShipment))
-    .eq("id", salesInvoiceShipment.id)
+    .update(sanitize(shipment))
+    .eq("id", shipment.id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }

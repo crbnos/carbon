@@ -141,6 +141,28 @@ describe("what a SQL function does", () => {
   });
 });
 
+describe("functions that call each other in a circle", () => {
+  it("does not keep an answer worked out while its caller was unfinished", async () => {
+    // a calls b, b calls a, and a then writes. Asked about a first, b is seen
+    // from inside a — where a still looks like a read.
+    const effects = await effectsOf(
+      plpgsql("a", `PERFORM b(); UPDATE job SET status = 'x';`),
+      plpgsql("b", `PERFORM a();`)
+    );
+    expect(effects.effectOf("a").kind).toBe("writes");
+    expect(effects.effectOf("b").kind).toBe("writes");
+  });
+
+  it("still reads a circle that never writes as a read", async () => {
+    const effects = await effectsOf(
+      plpgsql("ping", `PERFORM pong();`),
+      plpgsql("pong", `PERFORM ping();`)
+    );
+    expect(effects.effectOf("ping")).toEqual({ kind: "reads" });
+    expect(effects.effectOf("pong")).toEqual({ kind: "reads" });
+  });
+});
+
 describe("the repo's own functions", () => {
   it("reads every migration and finds the sequence function's write", async () => {
     const effects = await loadSqlFunctionEffects();

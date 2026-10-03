@@ -312,7 +312,12 @@ describe("every read tool, against real data", () => {
     const { companyId, userId } = await target();
     const company = await sql<{ companyGroupId: string }>`
       select "companyGroupId" from "company" where "id" = ${companyId}`.execute(db);
-    const companyGroupId = company.rows[0]?.companyGroupId ?? "";
+    const companyGroupId = company.rows[0]?.companyGroupId;
+    if (!companyGroupId) {
+      // Dispatching with no group would fail the group-scoped tools for a
+      // reason that is the setup's, and a person could then baseline them.
+      throw new Error(`Company ${companyId} not found, or it has no company group.`);
+    }
 
     const reads = OPERATIONS.filter((tool) => tool.classification === "READ");
     const ast = buildServiceAst([...new Set(reads.map((tool) => tool.module))]);

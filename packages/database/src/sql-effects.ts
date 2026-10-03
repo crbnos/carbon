@@ -410,12 +410,18 @@ export async function sqlFunctionEffects(
   }
 
   const memo = new Map<string, SqlEffect>();
+  // How often a call led back to a function still being worked out.
+  let cycleHits = 0;
 
   function effectOfKey(key: string, visiting: Set<string>): SqlEffect {
     const known = memo.get(key);
     if (known) return known;
     // A function reached again while it is being worked out adds nothing new.
-    if (visiting.has(key)) return { kind: "reads" };
+    if (visiting.has(key)) {
+      cycleHits++;
+      return { kind: "reads" };
+    }
+    const hitsBefore = cycleHits;
 
     const overloads = definitions.get(key);
     if (!overloads) {
@@ -470,7 +476,12 @@ export async function sqlFunctionEffects(
     // A write is certain whatever else could not be read; otherwise one part
     // that could not be read makes the whole answer unknown.
     const effect = result.kind === "writes" ? result : (unknown ?? result);
-    memo.set(key, effect);
+    // An answer that leaned on a caller not yet worked out is provisional: A
+    // calls B, B calls A, A then writes — B looked like a read from inside A.
+    // Keeping it would let a read tool call B. A write is certain either way.
+    if (effect.kind === "writes" || cycleHits === hitsBefore) {
+      memo.set(key, effect);
+    }
     return effect;
   }
 
