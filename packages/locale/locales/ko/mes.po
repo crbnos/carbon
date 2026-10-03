@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "모든 스크랩"
 
 msgid "All steps"
-msgstr ""
+msgstr "모든 단계"
 
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
@@ -520,7 +520,7 @@ msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "복제 또는 복사"
 
 msgid "Duplicate serial number"
 msgstr "중복된 시리얼 번호"
@@ -719,7 +719,7 @@ msgid "in {0}"
 msgstr "{0} 후"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "열린 메뉴에서"
 
 msgid "In Progress"
 msgstr "진행 중"
@@ -1150,7 +1150,7 @@ msgstr "작업 지시 열기"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "부분 조립체 {0} 열기: {1}"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -1241,7 +1241,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "고정 또는 고정 해제"
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
@@ -1371,7 +1371,7 @@ msgid "Remove part"
 msgstr "품목 제거"
 
 msgid "Rename"
-msgstr ""
+msgstr "이름 바꾸기"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
@@ -1661,19 +1661,19 @@ msgid "Storage Unit"
 msgstr "보관 단위"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "부분 조립체"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "부분 조립체 {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "부분 조립체 {0} · {1} — 독립적으로 표시됨"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -1867,7 +1867,7 @@ msgstr "완료 시 자동으로 사용됨"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "{0} · {1} 사용"
 
 msgid "Value"
 msgstr "값"
@@ -1879,7 +1879,7 @@ msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
 
 msgid "View or open"
-msgstr ""
+msgstr "보기 또는 열기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."

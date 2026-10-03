@@ -42,7 +42,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [x] Task 16: Agreement cards show held invoices
 - [x] Task 17: Invoice header badges + Send route
 - [x] Task 18: Invoices list — needsReview column + Needs Review link
-- [ ] Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
+- [x] Task 19: MCP metadata, lint, i18n, scoped typechecks, tests
 - [ ] Task 20: Docs — AGENTS.md, rules, spec changelog
 - [ ] Task 21: Browser verification (`/test`)
 

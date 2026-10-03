@@ -1509,6 +1509,9 @@ msgstr "Add a column below to sort the view"
 msgid "Add a comment..."
 msgstr "Add a comment..."
 
+msgid "Add a contact with an email to send invoices"
+msgstr "Add a contact with an email to send invoices"
+
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 
@@ -1984,6 +1987,9 @@ msgstr "Alpha"
 
 msgid "also at {otherStationNames}"
 msgstr "also at {otherStationNames}"
+
+msgid "Also notify"
+msgstr "Also notify"
 
 msgid "Always"
 msgstr "Always"
@@ -4312,6 +4318,9 @@ msgstr "Companies"
 
 msgid "Company"
 msgstr "Company"
+
+msgid "Company default ({companyLabel})"
+msgstr "Company default ({companyLabel})"
 
 msgid "Company group"
 msgstr "Company group"
@@ -6907,9 +6916,6 @@ msgstr "Download template"
 msgid "Draft"
 msgstr "Draft"
 
-msgid "Draft a sales invoice for every billing period and charge due today, exactly as the daily billing job would."
-msgstr "Draft a sales invoice for every billing period and charge due today, exactly as the daily billing job would."
-
 msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 msgstr "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
 
@@ -6918,6 +6924,9 @@ msgstr "Draft is editable; Active is in use and requires a new version to change
 
 msgid "Draft Journal Entries"
 msgstr "Draft Journal Entries"
+
+msgid "Draft only"
+msgstr "Draft only"
 
 msgid "Drag & drop files, or click to browse"
 msgstr "Drag & drop files, or click to browse"
@@ -7118,6 +7127,9 @@ msgstr "e.g. the first 3 to 4 weeks"
 
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
+
+msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
+msgstr "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
@@ -7542,6 +7554,9 @@ msgstr "Email notifications are not included in your company's current plan; ema
 
 msgid "Email notifications not configured"
 msgstr "Email notifications not configured"
+
+msgid "Emailed"
+msgstr "Emailed"
 
 msgid "Emails"
 msgstr "Emails"
@@ -9017,12 +9032,6 @@ msgstr "Generate fiscal year"
 msgid "Generate Fiscal Year"
 msgstr "Generate Fiscal Year"
 
-msgid "Generate Invoices"
-msgstr "Generate Invoices"
-
-msgid "Generate invoices for {readableId}"
-msgstr "Generate invoices for {readableId}"
-
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Generate material IDs and descriptions based on the properties of the material."
 
@@ -9052,6 +9061,9 @@ msgstr "Get started"
 
 msgid "Get Started"
 msgstr "Get Started"
+
+msgid "Gets the summary for every agreement"
+msgstr "Gets the summary for every agreement"
 
 msgid "Getting around Carbon"
 msgstr "Getting around Carbon"
@@ -9323,6 +9335,9 @@ msgstr "Headers"
 
 msgid "healthy"
 msgstr "healthy"
+
+msgid "Held"
+msgstr "Held"
 
 msgid "Help"
 msgstr "Help"
@@ -10097,6 +10112,9 @@ msgstr "Invited"
 msgid "Invoice"
 msgstr "Invoice"
 
+msgid "Invoice {readableId} now"
+msgstr "Invoice {readableId} now"
+
 msgid "Invoice Address"
 msgstr "Invoice Address"
 
@@ -10135,6 +10153,9 @@ msgstr "Invoice ID"
 
 msgid "Invoice Location"
 msgstr "Invoice Location"
+
+msgid "Invoice Now"
+msgstr "Invoice Now"
 
 msgid "Invoice Number"
 msgstr "Invoice Number"
@@ -10175,11 +10196,20 @@ msgstr "Invoiced Statuses"
 msgid "Invoices"
 msgstr "Invoices"
 
+msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
+msgstr "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
+
+msgid "Invoices are created automatically once the agreement is active."
+msgstr "Invoices are created automatically once the agreement is active."
+
 msgid "Invoices could not be loaded"
 msgstr "Invoices could not be loaded"
 
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Invoices this memo has been applied to. Click a row to open the document."
+
+msgid "Invoices will be posted but not emailed — the contact has no email"
+msgstr "Invoices will be posted but not emailed — the contact has no email"
 
 msgid "Invoicing"
 msgstr "Invoicing"
@@ -11873,6 +11903,9 @@ msgstr "Needs job"
 msgid "Needs ordering"
 msgstr "Needs ordering"
 
+msgid "Needs Review"
+msgstr "Needs Review"
+
 msgid "Negative Adjustment"
 msgstr "Negative Adjustment"
 
@@ -12277,6 +12310,15 @@ msgstr "Next Due:"
 
 msgid "Next Interest"
 msgstr "Next Interest"
+
+msgid "Next invoice {date} is created automatically, and left as a draft for review."
+msgstr "Next invoice {date} is created automatically, and left as a draft for review."
+
+msgid "Next invoice {date} is created automatically, then posted and emailed."
+msgstr "Next invoice {date} is created automatically, then posted and emailed."
+
+msgid "Next invoice {date} is created automatically, then posted."
+msgstr "Next invoice {date} is created automatically, then posted."
 
 msgid "Next page"
 msgstr "Next page"
@@ -12982,6 +13024,9 @@ msgstr "Not scheduled"
 msgid "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 msgstr "Not scheduled — no feasible slot. The stored dates are backward-planning placeholders, not a real booking."
 
+msgid "Not sent"
+msgstr "Not sent"
+
 msgid "Not set"
 msgstr "Not set"
 
@@ -13027,6 +13072,9 @@ msgstr "Nothing here matches your search and filters."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
+
+msgid "Nothing is due. Invoices are created automatically when a period comes due."
+msgstr "Nothing is due. Invoices are created automatically when a period comes due."
 
 msgid "Nothing is synced until you turn sync on."
 msgstr "Nothing is synced until you turn sync on."
@@ -14346,6 +14394,9 @@ msgstr "Positive Adjustment"
 msgid "Post"
 msgstr "Post"
 
+msgid "Post and email"
+msgstr "Post and email"
+
 msgid "Post Comment"
 msgstr "Post Comment"
 
@@ -15413,6 +15464,9 @@ msgstr "Receivables (default)"
 msgid "Receivables aging"
 msgstr "Receivables aging"
 
+msgid "Receivables Email"
+msgstr "Receivables Email"
+
 msgid "Receive"
 msgstr "Receive"
 
@@ -15533,6 +15587,9 @@ msgstr "Records and posted journals are being sent to and received from this pro
 
 msgid "Recovery Period"
 msgstr "Recovery Period"
+
+msgid "Recurring Invoices"
+msgstr "Recurring Invoices"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Red is short-staffed, green is covered, amber is more people than the work needs."
@@ -15927,6 +15984,9 @@ msgstr "Replenishment system"
 
 msgid "Replenishment System"
 msgstr "Replenishment System"
+
+msgid "Replies to emailed invoices go here, and it's copied on each one."
+msgstr "Replies to emailed invoices go here, and it's copied on each one."
 
 msgid "Report"
 msgstr "Report"
@@ -20488,6 +20548,9 @@ msgstr "Title passes to the customer when the term ends."
 msgid "To"
 msgstr "To"
 
+msgid "To {sentTo} on {sentDate}"
+msgstr "To {sentTo} on {sentDate}"
+
 msgid "To Date"
 msgstr "To Date"
 
@@ -22007,6 +22070,9 @@ msgstr "What data"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "What drove inventory up or down, by any dimension"
 
+msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
+msgstr "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
+
 msgid "What happens when a journal is dated in a locked period."
 msgstr "What happens when a journal is dated in a locked period."
 
@@ -22084,6 +22150,9 @@ msgstr "When a finished product's shelf life is set to Calculated, pick which co
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
+
+msgid "When an invoice is created"
+msgstr "When an invoice is created"
 
 msgid "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."
 msgstr "When Carbon committed to having the goods arrive; combined with the shipping method's transit days, this drives Ship Date back-calc."

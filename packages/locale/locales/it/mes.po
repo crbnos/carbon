@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "Tutto scarto"
 
 msgid "All steps"
-msgstr ""
+msgstr "Tutti i passi"
 
 msgid "Allocate failed units"
 msgstr "Allocare unità non conformi"
@@ -520,7 +520,7 @@ msgid "Duplicate batch number"
 msgstr "Numero di lotto duplicato"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Duplica o copia"
 
 msgid "Duplicate serial number"
 msgstr "Numero di serie duplicato"
@@ -719,7 +719,7 @@ msgid "in {0}"
 msgstr "tra {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "In un menu aperto"
 
 msgid "In Progress"
 msgstr "In Corso"
@@ -1150,7 +1150,7 @@ msgstr "Ordini di produzione aperti"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Apri sottoassieme {0}: {1}"
 
 msgid "Operations"
 msgstr "Operazioni"
@@ -1241,7 +1241,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "Prelievo in luogo di {substitutedFrom}, l'articolo dell'ordine di produzione, per {substitutedAssemblies} assiemi"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Fissa o stacca"
 
 msgid "Pin Out"
 msgstr "Disconnetti"
@@ -1371,7 +1371,7 @@ msgid "Remove part"
 msgstr "Rimuovi componente"
 
 msgid "Rename"
-msgstr ""
+msgstr "Rinomina"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Riaprire il sottoassieme e creare un'unità di ricambio"
@@ -1661,19 +1661,19 @@ msgid "Storage Unit"
 msgstr "Unità di Stoccaggio"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Sottoassieme"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Sottoassieme {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Sottoassieme {0} · {1} — mostrato isolatamente"
 
 msgid "Submit anonymously"
 msgstr "Invia in forma anonima"
@@ -1867,7 +1867,7 @@ msgstr "Utilizzato automaticamente al completamento"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Usa {0} · {1}"
 
 msgid "Value"
 msgstr "Valore"
@@ -1879,7 +1879,7 @@ msgid "View maintenance dispatch"
 msgstr "Visualizza intervento di manutenzione"
 
 msgid "View or open"
-msgstr ""
+msgstr "Visualizza o apri"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Ti abbiamo inviato un link di accesso al tuo account."

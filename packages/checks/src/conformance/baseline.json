@@ -535,6 +535,7 @@
   "no-raw-rounding::packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts::const cents = Math.round(amount * 100);",
   "no-raw-rounding::packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts::const cents = Math.round(line.amount * 100);",
   "no-raw-rounding::packages/jobs/src/inngest/functions/scheduled/cleanup.ts::await step.sleep(\"jitter\", `${Math.floor(Math.random() * 3600)}s`);",
+  "no-raw-rounding::packages/jobs/src/invoicing/automate-invoice.ts::size: Math.round(pdf.byteLength / 1024),",
   "no-raw-rounding::packages/react/src/BarProgress.tsx::<span className=\"sr-only\">{Math.round(percentage)}%</span>",
   "no-raw-rounding::packages/react/src/BarProgress.tsx::const activeBars = Math.round((clampedProgress / max) * barCount);",
   "no-raw-rounding::packages/react/src/BarProgress.tsx::const bl = Math.round(a[2] + (b[2] - a[2]) * t);",
