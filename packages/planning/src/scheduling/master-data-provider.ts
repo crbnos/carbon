@@ -331,28 +331,33 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           .selectFrom("jobOperation")
           .selectAll()
           .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
           .orderBy("order")
           .execute(),
         this.db
           .selectFrom("jobOperationDependency")
           .selectAll()
           .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
           .execute(),
         this.db
           .selectFrom("jobMakeMethod")
           .select(["id", "itemId", "jobId", "parentMaterialId"])
           .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
           .execute(),
         this.db
           .selectFrom("jobMaterial")
           .select(["id", "jobMakeMethodId", "jobId"])
           .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
           .where("jobOperationId", "is", null)
           .execute(),
         this.db
           .selectFrom("jobMaterialWithMakeMethodId")
           .selectAll()
           .where("jobId", "in", jobIds)
+          .where("companyId", "=", this.companyId)
           .execute()
       ]);
 
@@ -380,6 +385,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
             .selectFrom("itemReplenishment")
             .select(["itemId", "leadTime"])
             .where("itemId", "in", itemIds)
+            .where("companyId", "=", this.companyId)
             .execute(),
       this.readOperationsWithEvents(operationIds)
     ]);
