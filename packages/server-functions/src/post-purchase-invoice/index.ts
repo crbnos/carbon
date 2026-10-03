@@ -29,7 +29,6 @@ import {
   round,
   type VarianceAllocation
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -1268,27 +1267,20 @@ export const postPurchaseInvoice = defineServerFn({
                     } else {
                       // Legacy self-heal: goods received before receipt-created
                       // layers shipped. Measure coverage from on-hand quantity
-                      // (itemInventory cache) and create the layer now at
-                      // receipt cost + on-hand variance share, so downstream
-                      // consumption converges instead of double-counting.
-                      // Untyped: the full Database type overflows the
-                      // compiler's instantiation depth on this query.
-                      const itemInventoryRows = await (
-                        client as unknown as SupabaseClient
-                      )
-                        .from("itemInventory")
-                        .select("quantityOnHand")
-                        .eq("itemId", invoiceLine.itemId!)
-                        .eq("companyId", companyId);
+                      // and create the layer now at receipt cost + on-hand
+                      // variance share, so downstream consumption converges
+                      // instead of double-counting.
+                      const onHand = await db
+                        .selectFrom("itemLedger")
+                        .select((eb) =>
+                          eb.fn.sum<number>("quantity").as("quantity")
+                        )
+                        .where("itemId", "=", invoiceLine.itemId!)
+                        .where("companyId", "=", companyId)
+                        .executeTakeFirst();
                       const onHandQuantity = Math.max(
                         0,
-                        (itemInventoryRows.data ?? []).reduce(
-                          (
-                            acc: number,
-                            row: { quantityOnHand: number | null }
-                          ) => acc + Number(row.quantityOnHand ?? 0),
-                          0
-                        )
+                        Number(onHand?.quantity ?? 0)
                       );
                       const coveredQuantity = Math.min(
                         onHandQuantity,
