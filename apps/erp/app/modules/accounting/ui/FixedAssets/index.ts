@@ -4,6 +4,8 @@
 
 import AssetClassesTable from "./AssetClassesTable";
 import AssetClassForm from "./AssetClassForm";
+import DepreciationRunDocuments from "./DepreciationRunDocuments";
+import DepreciationRunHeader from "./DepreciationRunHeader";
 import DepreciationRunStatus from "./DepreciationRunStatus";
 import DepreciationRunTable from "./DepreciationRunTable";
 import FixedAssetAttachJobForm from "./FixedAssetAttachJobForm";
@@ -11,7 +13,9 @@ import FixedAssetCapitalizeCipForm from "./FixedAssetCapitalizeCipForm";
 import FixedAssetCapitalizeForm from "./FixedAssetCapitalizeForm";
 import FixedAssetCipCosts from "./FixedAssetCipCosts";
 import FixedAssetDisposalForm from "./FixedAssetDisposalForm";
+import FixedAssetDocuments from "./FixedAssetDocuments";
 import FixedAssetForm from "./FixedAssetForm";
+import FixedAssetHeader from "./FixedAssetHeader";
 import FixedAssetNotes from "./FixedAssetNotes";
 import FixedAssetOutOfServiceForm from "./FixedAssetOutOfServiceForm";
 import FixedAssetRegisterForm from "./FixedAssetRegisterForm";
@@ -24,6 +28,8 @@ import FleetStatus from "./FleetStatus";
 export {
   AssetClassForm,
   AssetClassesTable,
+  DepreciationRunDocuments,
+  DepreciationRunHeader,
   DepreciationRunStatus,
   DepreciationRunTable,
   FixedAssetAttachJobForm,
@@ -31,7 +37,9 @@ export {
   FixedAssetCapitalizeForm,
   FixedAssetCipCosts,
   FixedAssetDisposalForm,
+  FixedAssetDocuments,
   FixedAssetForm,
+  FixedAssetHeader,
   FixedAssetNotes,
   FixedAssetOutOfServiceForm,
   FixedAssetRegisterForm,

@@ -4,16 +4,9 @@
 
 import {
   Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,13 +22,14 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuCircleStop,
-  LuEllipsisVertical,
   LuLoaderCircle,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
+import { DateTime, EmployeeAvatar } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
+import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -88,6 +82,8 @@ const PickingListHeader = () => {
   }, [statusFetcher.data]);
 
   const isClosed = isPickingListLocked(status);
+  const isSubmitting = statusFetcher.state !== "idle";
+  const canUpdate = permissions.can("update", "inventory");
   const hasPickedLines = (routeData.pickingListLines ?? []).some(
     (l) => Number(l.quantityPicked ?? 0) > 0
   );
@@ -109,117 +105,104 @@ const PickingListHeader = () => {
     );
   };
 
+  const isSubmittingStatus = (next: string) =>
+    isSubmitting && statusFetcher.formData?.get("status") === next;
+
+  const locationName = pickingList.location?.name;
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{pickingList.pickingListId}</span>
-            </Heading>
-            <Copy text={pickingList.pickingListId ?? ""} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  disabled={
-                    status === "Draft" ||
-                    statusFetcher.state !== "idle" ||
-                    !permissions.can("delete", "inventory")
-                  }
-                  onClick={() => submitStatus("Draft")}
-                >
-                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={
-                    status !== "Draft" ||
-                    hasPickedLines ||
-                    !permissions.can("delete", "inventory") ||
-                    !permissions.is("employee")
-                  }
-                  destructive
-                  onClick={deleteModal.onOpen}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Picking List</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <PickingListStatus status={status} />
-          </HStack>
-
-          <HStack>
+      <DocumentPageHeader
+        title={pickingList.pickingListId}
+        status={<PickingListStatus status={status} />}
+        meta={[
+          <Trans key="created">
+            Created{" "}
+            <DateTime value={pickingList.createdAt} variant="relative" /> by{" "}
+            <EmployeeAvatar employeeId={pickingList.createdBy} />
+          </Trans>,
+          pickingList.dueDate ? (
+            <Trans key="due">
+              Due <DateTime value={pickingList.dueDate} variant="date" />
+            </Trans>
+          ) : null,
+          locationName ? <Trans key="location">At {locationName}</Trans> : null
+        ]}
+        menuItems={
+          <>
+            {status !== "Draft" && (
+              <DropdownMenuItem
+                disabled={
+                  isSubmitting || !permissions.can("delete", "inventory")
+                }
+                onClick={() => submitStatus("Draft")}
+              >
+                <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                <Trans>Reopen</Trans>
+              </DropdownMenuItem>
+            )}
+            {!isClosed && (
+              <DropdownMenuItem
+                disabled={isSubmitting || !canUpdate}
+                destructive
+                onClick={() => submitStatus("Cancelled")}
+              >
+                <DropdownMenuIcon icon={<LuCircleStop />} />
+                <Trans>Cancel Picking List</Trans>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={
+                status !== "Draft" ||
+                hasPickedLines ||
+                !permissions.can("delete", "inventory") ||
+                !permissions.is("employee")
+              }
+              destructive
+              onClick={deleteModal.onOpen}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              <Trans>Delete Picking List</Trans>
+            </DropdownMenuItem>
+          </>
+        }
+        actions={
+          <>
             <Assignee
               size="md"
               id={pickingListId}
               value={assignee ?? ""}
               table="pickingList"
-              isReadOnly={!permissions.can("update", "inventory")}
+              isReadOnly={!canUpdate}
             />
-            <Button
-              type="button"
-              leftIcon={<LuCirclePlay />}
-              variant={status === "Draft" ? "primary" : "secondary"}
-              isDisabled={
-                status !== "Draft" ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "In Progress"
-              }
-              onClick={() => submitStatus("In Progress")}
-            >
-              <Trans>Start</Trans>
-            </Button>
-            <Button
-              type="button"
-              leftIcon={<LuCircleCheck />}
-              variant="secondary"
-              isDisabled={
-                status !== "In Progress" ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Completed"
-              }
-              onClick={() => submitStatus("Completed")}
-            >
-              <Trans>Finish</Trans>
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<LuCircleStop />}
-              isDisabled={
-                isClosed ||
-                statusFetcher.state !== "idle" ||
-                !permissions.can("update", "inventory")
-              }
-              isLoading={
-                statusFetcher.state !== "idle" &&
-                statusFetcher.formData?.get("status") === "Cancelled"
-              }
-              onClick={() => submitStatus("Cancelled")}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-          </HStack>
-        </HStack>
-      </div>
+            {status === "Draft" && (
+              <Button
+                type="button"
+                variant="primary"
+                leftIcon={<LuCirclePlay />}
+                isDisabled={isSubmitting || !canUpdate}
+                isLoading={isSubmittingStatus("In Progress")}
+                onClick={() => submitStatus("In Progress")}
+              >
+                <Trans>Start</Trans>
+              </Button>
+            )}
+            {status === "In Progress" && (
+              <Button
+                type="button"
+                variant="primary"
+                leftIcon={<LuCircleCheck />}
+                isDisabled={isSubmitting || !canUpdate}
+                isLoading={isSubmittingStatus("Completed")}
+                onClick={() => submitStatus("Completed")}
+              >
+                <Trans>Finish</Trans>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {acknowledgeLines && (
         <Modal
@@ -265,7 +248,7 @@ const PickingListHeader = () => {
               <Button
                 variant="secondary"
                 onClick={() => setAcknowledgeLines(null)}
-                isDisabled={statusFetcher.state !== "idle"}
+                isDisabled={isSubmitting}
               >
                 <Trans>Keep picking</Trans>
               </Button>
@@ -275,8 +258,8 @@ const PickingListHeader = () => {
                   setAcknowledgeLines(null);
                   submitStatus("Completed", true);
                 }}
-                isLoading={statusFetcher.state !== "idle"}
-                isDisabled={statusFetcher.state !== "idle"}
+                isLoading={isSubmitting}
+                isDisabled={isSubmitting}
               >
                 <Trans>Acknowledge & finish</Trans>
               </Button>

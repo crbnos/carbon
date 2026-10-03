@@ -6,8 +6,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
@@ -119,12 +127,39 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewMemoRoute() {
   const { initialValues, type } = useLoaderData<typeof loader>();
+  const isVendor = type === "supplierCredit";
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <MemoForm
-        initialValues={initialValues}
-        type={type === "supplierCredit" ? "supplierCredit" : "creditMemo"}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {isVendor ? (
+              <Trans>New Supplier Credit</Trans>
+            ) : (
+              <Trans>New Credit Memo</Trans>
+            )}
+          </CardTitle>
+          <CardDescription>
+            {isVendor ? (
+              <Trans>
+                Record a credit from a supplier — it reduces what you owe them.
+                Applications to specific invoices are added after it is created.
+              </Trans>
+            ) : (
+              <Trans>
+                Record a credit memo for a customer — it reduces what they owe.
+                Applications to specific invoices are added after it is created.
+              </Trans>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">
+          <MemoForm
+            initialValues={initialValues}
+            type={isVendor ? "supplierCredit" : "creditMemo"}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -14,7 +14,6 @@ import { DateSelect } from "./DateSelect";
 import { DateTime } from "./DateTime";
 import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
-import DocumentHeader from "./DocumentHeader";
 import DocumentPreview from "./DocumentPreview";
 import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
@@ -72,7 +71,6 @@ export {
   DateTime,
   DeferredFiles,
   DirectionAwareTabs,
-  DocumentHeader,
   DocumentPreview,
   Documents,
   EmployeeAvatar,

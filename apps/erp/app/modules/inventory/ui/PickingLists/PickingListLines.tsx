@@ -215,7 +215,9 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg">
+        {/* The rows size themselves by this list's width, not the viewport:
+            the content pane it sits in is resizable. */}
+        <div className="@container border rounded-lg">
           {kit.lines.map((line, index) => (
             <PickingListLineItem
               key={line.id}
@@ -366,14 +368,16 @@ function PickingListLineItem({
   return (
     <div
       className={cn(
-        "group flex items-center justify-between gap-6 p-4 border-b",
+        "group flex flex-col gap-4 p-4 border-b @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:gap-6",
         isLast && "border-none"
       )}
     >
+      {/* Stacked while the list is narrow; one line once it is wide enough.
+          The item takes what the pick controls leave. */}
       <HStack
         spacing={4}
         className={cn(
-          "min-w-0 flex-1 transition-opacity duration-150",
+          "w-full min-w-0 transition-opacity duration-150 @3xl:w-auto @3xl:flex-1",
           isResolved && "opacity-50 group-hover:opacity-100"
         )}
       >
@@ -382,7 +386,7 @@ function PickingListLineItem({
           thumbnailPath={null}
           type={(item?.type as "Part") ?? "Part"}
         />
-        <VStack spacing={0} className="min-w-0">
+        <VStack spacing={0} className="flex-1 min-w-0">
           <p className="truncate text-base font-medium sm:text-sm">
             {itemName}
           </p>
@@ -410,7 +414,7 @@ function PickingListLineItem({
         </VStack>
       </HStack>
 
-      <HStack spacing={6} className="shrink-0">
+      <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 @3xl:shrink-0 @3xl:flex-nowrap">
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}
@@ -566,7 +570,7 @@ function PickingListLineItem({
             </Button>
           </HStack>
         )}
-      </HStack>
+      </div>
 
       {shortOpen && (
         <ShortPickModal

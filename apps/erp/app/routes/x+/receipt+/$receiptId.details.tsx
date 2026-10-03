@@ -192,7 +192,6 @@ export default function ReceiptDetailsRoute() {
         // @ts-ignore
         initialValues={initialValues}
         status={routeData.receipt.status}
-        receiptLines={routeData.receiptLines}
       />
 
       <ReceiptLines />

@@ -145,7 +145,6 @@ vi.mock("react-router", () => ({
   generatePath: (path: string) => path,
   useFetcher: () => ({ state: "idle", data: { data: harness.currencies } })
 }));
-vi.mock("~/components", () => ({ DocumentHeader: () => null }));
 vi.mock("~/components/Enumerable", () => ({ Enumerable: () => null }));
 vi.mock("~/components/Modals", () => ({ ConfirmDelete: () => null }));
 vi.mock("~/hooks/useCompanySettings", () => ({

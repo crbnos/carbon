@@ -98,20 +98,26 @@ function StockTransferLineComponent({
   return (
     <div
       className={cn(
-        "flex flex-col border-b p-6 gap-6",
+        "@container flex flex-col border-b p-6 gap-6",
         index === totalLines - 1 && "border-none",
         isPicked && "opacity-50 hover:opacity-100"
       )}
     >
-      <div className="flex justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2 justify-between">
-          <HStack spacing={4}>
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. The item takes what the move and actions
+          leave, and they share one line once the row is wide enough. */}
+      <div className="flex flex-col @3xl:flex-row @3xl:items-center gap-4 w-full">
+        <HStack
+          spacing={4}
+          className="w-full @3xl:w-auto @3xl:flex-1 min-w-0 justify-between"
+        >
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
-            <VStack spacing={0} className="max-w-[380px] w-full">
+            <VStack spacing={0} className="flex-1 min-w-0">
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.name}
@@ -138,26 +144,26 @@ function StockTransferLineComponent({
           <Count
             count={line.quantity ?? 0}
             className={cn(
-              "text-right text-white text-base",
+              "shrink-0 text-right text-white text-base",
               isPicked ? "bg-emerald-600" : "bg-red-600"
             )}
           />
         </HStack>
-        <div className="flex flex-grow items-center justify-between gap-4 pl-4 w-1/2">
-          <HStack spacing={4} className="text-left items-center">
+        <div className="flex items-center justify-between gap-4 w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          <HStack spacing={4} className="text-left items-center min-w-0">
             {"fromStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap">
+              <span className="text-base font-medium truncate">
                 {line.fromStorageUnitName ?? ""}
               </span>
             )}
-            <LuArrowRight className="size-4" />
+            <LuArrowRight className="size-4 shrink-0" />
             {"toStorageUnitId" in line && (
-              <span className="text-base font-medium  whitespace-nowrap">
+              <span className="text-base font-medium truncate">
                 {line.toStorageUnitName ?? ""}
               </span>
             )}
           </HStack>
-          <HStack spacing={1}>
+          <HStack spacing={1} className="shrink-0">
             {line.trackedEntityId && (
               <PrintButton
                 sourceDocument="Entity"

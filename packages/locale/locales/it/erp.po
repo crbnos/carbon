@@ -155,6 +155,11 @@ msgstr "{0} ordini di produzione creati"
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
 
+#. placeholder {0}: (asset as any).taxUsefulLifeMonths
+#. placeholder {0}: asset.usefulLifeMonths
+msgid "{0} months"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -261,6 +266,10 @@ msgstr "{0} valori mancanti"
 msgid "{0} will be saved as {name}"
 msgstr "{0} verrà salvato come {name}"
 
+#. placeholder {0}: (asset as any).macrsPropertyClass
+msgid "{0}-Year"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -299,6 +308,9 @@ msgstr "{apOverduePct}% dei debiti"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% dei crediti"
+
+msgid "{assetCount} Assets"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al successore finale."
@@ -346,9 +358,6 @@ msgstr "{hiddenCount} altri: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1} saltati."
-
-msgid "{lineCount} lines"
-msgstr "{lineCount} righe"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# riga} other {# righe}}"
@@ -401,6 +410,9 @@ msgstr "{resourceCount} risorse · {reservationCount} prenotazioni · {jobCount}
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} autorizzazioni"
+
+msgid "{sectionLineCount} lines"
+msgstr ""
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selezionati"
@@ -480,6 +492,9 @@ msgstr "0 operazioni"
 
 msgid "0-4 weeks"
 msgstr "0-4 settimane"
+
+msgid "1 Asset"
+msgstr ""
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operazione raggruppabile non è in un lotto — viene eseguita singolarmente fino a quando non viene raggruppata"
@@ -1295,6 +1310,9 @@ msgstr "La contabilità è abilitata"
 msgid "Accounting period"
 msgstr "Periodo contabile"
 
+msgid "Accounting Period"
+msgstr ""
+
 msgid "Accounting Periods"
 msgstr "Periodi Contabili"
 
@@ -1334,6 +1352,15 @@ msgstr "Rateo"
 msgid "Accruals"
 msgstr "Ratei"
 
+msgid "Accum. Depr."
+msgstr ""
+
+msgid "Accum. Depreciation"
+msgstr ""
+
+msgid "Accum. Tax Depr."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 
@@ -1363,6 +1390,9 @@ msgstr "Riconosci e completa"
 
 msgid "Acknowledged itar"
 msgstr "ITAR confermato"
+
+msgid "Acquired <0/>"
+msgstr ""
 
 msgid "Acquisition Cost"
 msgstr "Costo di acquisizione"
@@ -2427,9 +2457,9 @@ msgstr "Sei sicuro di voler eliminare {0} da questa operazione? Questa azione no
 msgid "Are you sure you want to delete {0}?"
 msgstr "Sei sicuro di voler eliminare {0}?"
 
+#. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
-#. placeholder {0}: initialValues.memoId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare {0}? Questa azione non può essere annullata."
 
@@ -2767,6 +2797,9 @@ msgstr "Sei sicuro di voler rimuovere questo dipendente da {name}? La cronologia
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Sei sicuro di voler rimuovere questo articolo dall'elenco dei prezzi? Questa azione non può essere annullata."
 
+msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
+msgstr ""
+
 msgid "Are you sure you want to revoke the invitation for this user?"
 msgstr "Sei sicuro di voler revocare l'invito per questo utente?"
 
@@ -2946,6 +2979,9 @@ msgstr "Assegna questa unità a un centro di lavoro per il materiale a bordo lin
 msgid "Assumptions"
 msgstr "Presupposti"
 
+msgid "At {locationName}"
+msgstr ""
+
 msgid "At Commencement"
 msgstr "All'inizio"
 
@@ -2972,6 +3008,9 @@ msgstr "Allega Ordine di produzione"
 
 msgid "Attachment"
 msgstr "Allegato"
+
+msgid "Attachment · {itemReadableId}"
+msgstr ""
 
 msgid "Attachments"
 msgstr "Allegati"
@@ -3400,6 +3439,9 @@ msgstr "BOM sincronizzato con successo"
 msgid "BOMs"
 msgstr "BOM"
 
+msgid "Bonus Depreciation"
+msgstr ""
+
 msgid "Bonus Depreciation %"
 msgstr "Ammortamento bonus %"
 
@@ -3636,6 +3678,9 @@ msgstr "Annulla Lavoro"
 
 msgid "Cancel Order"
 msgstr "Annulla ordine"
+
+msgid "Cancel Picking List"
+msgstr ""
 
 msgid "Cancel Purchase Order"
 msgstr "Annulla ordine d'acquisto"
@@ -3940,6 +3985,9 @@ msgstr "Valori caratteristici suggeriti dal disegno"
 
 msgid "Characteristics"
 msgstr "Caratteristiche"
+
+msgid "Charge"
+msgstr ""
 
 msgid "Charge Date"
 msgstr "Data Addebito"
@@ -4285,6 +4333,9 @@ msgstr "Completa per"
 
 msgid "Completed"
 msgstr "Completato"
+
+msgid "Completed <0/>"
+msgstr ""
 
 msgid "Completed At"
 msgstr "Completato il"
@@ -4955,6 +5006,9 @@ msgstr "Correzioni"
 msgid "Corrective action"
 msgstr "Azione correttiva"
 
+msgid "Cost"
+msgstr ""
+
 msgid "cost center"
 msgstr "centro di costo"
 
@@ -5204,6 +5258,9 @@ msgstr "Crea Quantità Produzione"
 msgid "Create Quote Revision"
 msgstr "Crea Revisione Preventivo"
 
+msgid "Create Repeat Run"
+msgstr ""
+
 msgid "Create Replacement"
 msgstr "Crea Sostituzione"
 
@@ -5233,6 +5290,9 @@ msgstr "Crea Centro di Lavoro"
 
 msgid "Created"
 msgstr "Creato"
+
+msgid "Created <0/>"
+msgstr ""
 
 msgid "Created <0/> by <1/>"
 msgstr ""
@@ -5407,6 +5467,9 @@ msgstr "Conti di credito utilizzati quando i costi di produzione vengono assorbi
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "Gli importi dei crediti sono espressi nella valuta di base dell'azienda ({currency}). I crediti vengono applicati quando questo pagamento viene registrato."
+
+msgid "Credit applied"
+msgstr ""
 
 msgid "Credit Memo"
 msgstr "Nota di Credito"
@@ -6141,6 +6204,9 @@ msgstr "Elimina Modalità di Guasto"
 msgid "Delete file"
 msgstr "Elimina file"
 
+msgid "Delete Fixed Asset"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "Elimina Gruppo"
 
@@ -6473,6 +6539,9 @@ msgstr "Spese di Ammortamento (predefinito)"
 msgid "Depreciation Expense Account"
 msgstr "Conto di Spese di Ammortamento"
 
+msgid "Depreciation Lines"
+msgstr ""
+
 msgid "Depreciation Method"
 msgstr "Metodo di Ammortamento"
 
@@ -6482,8 +6551,14 @@ msgstr "Metodo di Ammortamento (predefinito)"
 msgid "Depreciation reversal when a fixed asset is disposed"
 msgstr "Storno di ammortamento quando un cespite viene dismesso"
 
+msgid "Depreciation Run"
+msgstr ""
+
 msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Le esecuzioni di ammortamento che terminano in questo periodo e sono ancora in Bozza devono essere registrate affinché il periodo rifletta la corretta spesa di ammortamento e il fondo ammortamento. Salta con una motivazione se l'ammortamento non si applica in questo periodo."
+
+msgid "Depreciation Start"
+msgstr ""
 
 msgid "Depreciation Start Date"
 msgstr "Data di Inizio Ammortamento"
@@ -6648,6 +6723,12 @@ msgstr "Dismissione"
 msgid "Disposal Date"
 msgstr "Data dismissione"
 
+msgid "Disposal Journal Entry"
+msgstr ""
+
+msgid "Disposal Method"
+msgstr ""
+
 msgid "Dispose"
 msgstr "Cedere"
 
@@ -6656,6 +6737,9 @@ msgstr "Cedi Bene"
 
 msgid "Disposed"
 msgstr "Dismesso"
+
+msgid "Disposed <0/>"
+msgstr ""
 
 msgid "Disposition"
 msgstr "Disposizione"
@@ -6860,6 +6944,9 @@ msgstr "dovuto {0}"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Scadenza {0}"
+
+msgid "Due <0/>"
+msgstr ""
 
 msgid "Due date"
 msgstr "Data di scadenza"
@@ -7601,6 +7688,9 @@ msgstr "Inserisci un articolo e una quantità tu stesso."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "Inserire e Approvare Fatture di acquisto in base a un Ordine di acquisto (Riscontro a tre vie)"
+
+msgid "Enter at least one debit and credit"
+msgstr ""
 
 msgid "Enter number…"
 msgstr "Inserisci numero…"
@@ -8792,6 +8882,9 @@ msgstr "Guadagno sulla Dismissione (predefinito)"
 msgid "Gain on Disposal Account"
 msgstr "Conto Guadagno sulla Dismissione"
 
+msgid "Gain/Loss"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
@@ -9718,6 +9811,10 @@ msgstr "L'ispezione di un articolo che hai ricevuto mostra un avviso."
 msgid "Inspection"
 msgstr "Controllo"
 
+#. placeholder {0}: inspection.itemReadableId
+msgid "Inspection · {0}"
+msgstr ""
+
 msgid "Inspection document"
 msgstr "Documento di controllo"
 
@@ -10183,6 +10280,9 @@ msgstr "Il suo design potrebbe cambiare prima che l'Avviso di modifica sia emess
 msgid "Job"
 msgstr "Lavoro"
 
+msgid "Job · {itemReadableId}"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ID Lavoro"
 
@@ -10253,6 +10353,9 @@ msgstr "Le registrazioni di prima nota datate in questo periodo che sono ancora 
 
 msgid "Journal Entry"
 msgstr "Riga di registrazione"
+
+msgid "Journal Entry · {asset}"
+msgstr ""
 
 msgid "Journal lines"
 msgstr "Righe di prima nota"
@@ -10900,6 +11003,9 @@ msgstr "Mantenere un singolo master di parte e articolo"
 msgid "Maintenance"
 msgstr "Manutenzione"
 
+msgid "Maintenance Dispatch"
+msgstr ""
+
 msgid "Maintenance Dispatch Notifications"
 msgstr "Notifiche interventi di manutenzione"
 
@@ -11516,6 +11622,12 @@ msgstr "Altro"
 msgid "More actions"
 msgstr "Altre azioni"
 
+msgid "more credits"
+msgstr ""
+
+msgid "more debits"
+msgstr ""
+
 msgid "More hours than the shift has."
 msgstr "Più ore di quelle che il turno ha."
 
@@ -11625,6 +11737,12 @@ msgstr "Naviga"
 
 msgid "Navigation"
 msgstr "Navigazione"
+
+msgid "NBV After"
+msgstr ""
+
+msgid "NBV at Disposal"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "NCR per tipo"
@@ -12136,6 +12254,9 @@ msgstr "Nessuna applicazione. Il pagamento sarà a conto."
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Nessun registro archiviato ancora. I registri più vecchi di {0} giorni verranno automaticamente archiviati e disponibili per il download qui."
+
+msgid "No assets to depreciate for this period."
+msgstr ""
 
 msgid "No attachments."
 msgstr "Nessun allegato."
@@ -13426,6 +13547,9 @@ msgstr "Motivo della messa fuori servizio"
 msgid "Out of Service Since"
 msgstr "Messa fuori servizio dal"
 
+msgid "Out of service since <0/>"
+msgstr ""
+
 msgid "Outbound"
 msgstr "In uscita"
 
@@ -14570,6 +14694,9 @@ msgstr "Preleva da magazzino"
 
 msgid "Pull, map, and load your data"
 msgstr "Estrai, mappa e carica i tuoi dati"
+
+msgid "Purchase"
+msgstr ""
 
 msgid "Purchase & manufacture from MRP"
 msgstr "Acquista e produci da MRP"
@@ -15809,6 +15936,9 @@ msgstr "Residuo e opzione"
 msgid "Residual value"
 msgstr "Valore residuo"
 
+msgid "Residual Value"
+msgstr ""
+
 msgid "Residual Value %"
 msgstr "Valore residuo %"
 
@@ -16017,6 +16147,9 @@ msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività 
 msgid "Revenue Recognition"
 msgstr "Riconoscimento dei ricavi"
 
+msgid "Revenue Recognition Run"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Ricavi riconosciuti all'inizio di una locazione di tipo vendita"
 
@@ -16025,6 +16158,10 @@ msgstr "Ricavi riconosciuti in linea retta per le locazioni operative e per i ca
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "I ricavi programmati per essere riconosciuti entro o prima della fine di questo periodo sono ancora Pianificati: ricavi fatturati differiti e noleggi che non sono stati registrati da un'esecuzione di riconoscimento dei ricavi. Proponi e registra l'esecuzione per questo periodo in modo che i ricavi raggiungano il registro. Salta con un motivo se nulla deve essere riconosciuto."
+
+#. placeholder {0}: journalEntry.journalEntryId
+msgid "Reverse {0}"
+msgstr ""
 
 msgid "Reverse all inventory adjustments"
 msgstr "Inverti tutte le rettifiche di magazzino"
@@ -16044,11 +16181,20 @@ msgstr "Imposta di vendita con inversione contabile"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "Imposta di vendita con inversione contabile (predefinito)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "Inverti le voci della prima nota correlate"
 
 msgid "Reversed"
 msgstr "Stornato"
+
+msgid "Reversed entry"
+msgstr ""
+
+msgid "Reversing entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "Ripristina"
@@ -16232,6 +16378,9 @@ msgstr "Regole che regolano i prezzi automaticamente in base alla quantità o al
 msgid "Rules that decide where each item gets stored"
 msgstr "Regole che decidono dove viene archiviato ogni articolo"
 
+msgid "Run"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "Esegui test di accettazione"
 
@@ -16331,6 +16480,9 @@ msgstr ""
 
 msgid "Sale Price"
 msgstr "Prezzo di Vendita"
+
+msgid "Sale Proceeds"
+msgstr ""
 
 msgid "sales"
 msgstr "vendite"
@@ -16494,6 +16646,9 @@ msgstr "Salva contatti"
 
 msgid "Save dimension settings"
 msgstr "Salva impostazioni dimensionali"
+
+msgid "Save Draft"
+msgstr ""
 
 msgid "Save Method"
 msgstr "Salva Metodo"
@@ -17027,6 +17182,9 @@ msgstr "Self-service"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Riferimento self-service su docs.carbon.ms"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Sell {label} to the customer"
 msgstr ""
@@ -18565,6 +18723,9 @@ msgstr "Imposta e spedizione"
 msgid "Tax Amount"
 msgstr "Importo Imposta"
 
+msgid "Tax Book Value"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "Codici imposta, aliquote"
 
@@ -18601,11 +18762,17 @@ msgstr "Percentuale imposta"
 msgid "Tax Percent"
 msgstr "Percentuale Imposta"
 
+msgid "Tax Residual Value"
+msgstr ""
+
 msgid "Tax Residual Value %"
 msgstr "Valore residuo fiscale %"
 
 msgid "Tax Status"
 msgstr "Stato dell'Imposta"
+
+msgid "Tax Useful Life"
+msgstr ""
 
 msgid "Tax Useful Life (default)"
 msgstr "Vita utile fiscale (impostazione predefinita)"
@@ -19932,6 +20099,10 @@ msgstr "Questo creerà una bozza di esecuzione del riconoscimento dei ricavi per
 msgid "This will create a draft revenue recognition run for the period ending {0}. Every schedule row due on or before that date will be included."
 msgstr "Questo creerà una bozza di esecuzione del riconoscimento dei ricavi per il periodo che termina il {0}. Ogni riga del programma prevista su o prima di tale data sarà inclusa."
 
+#. placeholder {0}: formatDate(run.periodEnd)
+msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "Questo renderà questa versione di sola lettura e sostituirà tutti i metodi di produzione dei materiali con questa versione."
 
@@ -20941,6 +21112,9 @@ msgstr "Utilizzato per categorizzare gli articoli per la reportistica e l'analis
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "Utilizzato quando una cella è vuota o non corrisponde a nessuna opzione precedente. Cancellalo per lasciare quelle righe vuote."
 
+msgid "Useful Life"
+msgstr ""
+
 msgid "Useful Life (default)"
 msgstr "Vita Utile (impostazione predefinita)"
 
@@ -21173,9 +21347,6 @@ msgstr "Visualizza Problema"
 msgid "View Item Master"
 msgstr "Visualizza Anagrafica Articolo"
 
-msgid "View journal entry"
-msgstr "Visualizza riga di registrazione"
-
 msgid "View Journal Entry"
 msgstr "Visualizza riga di registrazione"
 
@@ -21311,8 +21482,8 @@ msgstr "Visibile sul profilo pubblico di un utente"
 msgid "Void"
 msgstr "Storna"
 
-#. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
+#. placeholder {0}: memo.memoId
+#. placeholder {0}: payment.paymentId
 msgid "Void {0}"
 msgstr "Storna {0}"
 
@@ -21339,6 +21510,12 @@ msgstr "Storna spedizione"
 
 msgid "Voided"
 msgstr "Stornato"
+
+msgid "Voided <0/>"
+msgstr ""
+
+msgid "Voided <0/> by <1/>"
+msgstr ""
 
 msgid "Voiding this purchase invoice will:"
 msgstr "L'annullamento di questa fattura di acquisto comporterà:"
@@ -21928,9 +22105,6 @@ msgstr "Turni del centro di lavoro"
 
 msgid "Work Center Utilization"
 msgstr "Utilizzo Centro di Lavoro"
-
-msgid "Work Center: {workCenterName}"
-msgstr "Centro di lavoro: {workCenterName}"
 
 msgid "work centers"
 msgstr "centri di lavoro"

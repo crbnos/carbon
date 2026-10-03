@@ -457,7 +457,12 @@ function ReceiptLineItem({
   const isSurplus = remainingQuantity < 0;
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
+    <div
+      className={cn(
+        "@container flex flex-col border-b p-6 gap-6 relative",
+        className
+      )}
+    >
       <div className="absolute top-3 right-6">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -487,16 +492,22 @@ function ReceiptLineItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4} className="flex-1">
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. The item takes what the quantities leave,
+          and they stay on one line once the row is wide enough. pr-10 clears
+          the line menu. */}
+      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full pr-10">
+        <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
-            <VStack spacing={0}>
-              <span className="text-sm font-medium">{item?.name}</span>
+            <VStack spacing={0} className="flex-1 min-w-0">
+              <span className="text-sm font-medium truncate block w-full">
+                {item?.name}
+              </span>
               <span className="text-xs text-muted-foreground line-clamp-2">
                 {item?.readableIdWithRevision}
               </span>
@@ -509,6 +520,10 @@ function ReceiptLineItem({
                 />
               </div>
             </VStack>
+          </HStack>
+        </HStack>
+        <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
+          <HStack spacing={4}>
             <VStack spacing={1}>
               <label className="text-xs text-muted-foreground">Received</label>
 
@@ -547,10 +562,6 @@ function ReceiptLineItem({
                 />
               </NumberField>
             </VStack>
-          </HStack>
-        </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4">
-          <HStack spacing={4}>
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">Ordered</label>
               <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
@@ -900,7 +911,7 @@ function BatchForm({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2 w-full">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuGroup /> <Trans>Batch Number</Trans>
@@ -1144,7 +1155,7 @@ function SerialForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}

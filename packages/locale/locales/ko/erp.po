@@ -155,6 +155,11 @@ msgstr "{0}개의 작업 지시 생성됨"
 msgid "{0} lines to map"
 msgstr "매핑할 라인 {0}개"
 
+#. placeholder {0}: (asset as any).taxUsefulLifeMonths
+#. placeholder {0}: asset.usefulLifeMonths
+msgid "{0} months"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -261,6 +266,10 @@ msgstr "{0}개 값 누락"
 msgid "{0} will be saved as {name}"
 msgstr "{0}이 {name}으로 저장됩니다"
 
+#. placeholder {0}: (asset as any).macrsPropertyClass
+msgid "{0}-Year"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -299,6 +308,9 @@ msgstr "매입채무의 {apOverduePct}%"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
+
+msgid "{assetCount} Assets"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
@@ -346,9 +358,6 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
-
-msgid "{lineCount} lines"
-msgstr "{lineCount} 라인"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
@@ -401,6 +410,9 @@ msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}�
 
 msgid "{scopeCount} permissions"
 msgstr "권한 {scopeCount}개"
+
+msgid "{sectionLineCount} lines"
+msgstr ""
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
@@ -480,6 +492,9 @@ msgstr "0개 공정"
 
 msgid "0-4 weeks"
 msgstr "0-4주"
+
+msgid "1 Asset"
+msgstr ""
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
@@ -1295,6 +1310,9 @@ msgstr "회계가 활성화됨"
 msgid "Accounting period"
 msgstr "회계 기간"
 
+msgid "Accounting Period"
+msgstr ""
+
 msgid "Accounting Periods"
 msgstr "회계 기간"
 
@@ -1334,6 +1352,15 @@ msgstr "당기발생"
 msgid "Accruals"
 msgstr "당기발생"
 
+msgid "Accum. Depr."
+msgstr ""
+
+msgid "Accum. Depreciation"
+msgstr ""
+
+msgid "Accum. Tax Depr."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -1363,6 +1390,9 @@ msgstr "확인 및 완료"
 
 msgid "Acknowledged itar"
 msgstr "승인된 itar"
+
+msgid "Acquired <0/>"
+msgstr ""
 
 msgid "Acquisition Cost"
 msgstr "취득원가"
@@ -2427,9 +2457,9 @@ msgstr "이 공정작업에서 {0}을(를) 삭제하시겠습니까? 이 작업�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
 
+#. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
-#. placeholder {0}: initialValues.memoId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -2767,6 +2797,9 @@ msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 �
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "이 품목을 가격표에서 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
+msgstr ""
+
 msgid "Are you sure you want to revoke the invitation for this user?"
 msgstr "이 사용자의 초대를 철회하시겠습니까?"
 
@@ -2946,6 +2979,9 @@ msgstr "라인사이드 자재를 위해 이 보관 단위를 작업장에 할�
 msgid "Assumptions"
 msgstr "가정사항"
 
+msgid "At {locationName}"
+msgstr ""
+
 msgid "At Commencement"
 msgstr "개시 시점에"
 
@@ -2972,6 +3008,9 @@ msgstr "작업 지시 첨부"
 
 msgid "Attachment"
 msgstr "첨부 파일"
+
+msgid "Attachment · {itemReadableId}"
+msgstr ""
 
 msgid "Attachments"
 msgstr "첨부 파일"
@@ -3400,6 +3439,9 @@ msgstr "BOM이 동기화되었습니다"
 msgid "BOMs"
 msgstr "BOM"
 
+msgid "Bonus Depreciation"
+msgstr ""
+
 msgid "Bonus Depreciation %"
 msgstr "추가 감가상각률 %"
 
@@ -3636,6 +3678,9 @@ msgstr "작업 취소"
 
 msgid "Cancel Order"
 msgstr "주문 취소"
+
+msgid "Cancel Picking List"
+msgstr ""
 
 msgid "Cancel Purchase Order"
 msgstr "발주서 취소"
@@ -3940,6 +3985,9 @@ msgstr "도면에서 제안된 특성 값"
 
 msgid "Characteristics"
 msgstr "특성"
+
+msgid "Charge"
+msgstr ""
 
 msgid "Charge Date"
 msgstr "청구 날짜"
@@ -4285,6 +4333,9 @@ msgstr "완료 대상"
 
 msgid "Completed"
 msgstr "완료됨"
+
+msgid "Completed <0/>"
+msgstr ""
 
 msgid "Completed At"
 msgstr "완료 시각"
@@ -4955,6 +5006,9 @@ msgstr "수정"
 msgid "Corrective action"
 msgstr "시정 조치"
 
+msgid "Cost"
+msgstr ""
+
 msgid "cost center"
 msgstr "원가 센터"
 
@@ -5204,6 +5258,9 @@ msgstr "생산 수량 생성"
 msgid "Create Quote Revision"
 msgstr "견적 리비전 생성"
 
+msgid "Create Repeat Run"
+msgstr ""
+
 msgid "Create Replacement"
 msgstr "교체 생성"
 
@@ -5233,6 +5290,9 @@ msgstr "작업장 생성"
 
 msgid "Created"
 msgstr "생성됨"
+
+msgid "Created <0/>"
+msgstr ""
 
 msgid "Created <0/> by <1/>"
 msgstr ""
@@ -5407,6 +5467,9 @@ msgstr "제조 원가가 재공품에 편입될 때 사용되는 대변 계정"
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "크레딧 금액은 회사 기본 통화({currency})로 표시됩니다. 이 지불이 전기되면 크레딧이 적용됩니다."
+
+msgid "Credit applied"
+msgstr ""
 
 msgid "Credit Memo"
 msgstr "대변전표"
@@ -6141,6 +6204,9 @@ msgstr "고장 모드 삭제"
 msgid "Delete file"
 msgstr "파일 삭제"
 
+msgid "Delete Fixed Asset"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "그룹 삭제"
 
@@ -6473,6 +6539,9 @@ msgstr "감가상각 비용 (기본값)"
 msgid "Depreciation Expense Account"
 msgstr "감가상각 비용 계정"
 
+msgid "Depreciation Lines"
+msgstr ""
+
 msgid "Depreciation Method"
 msgstr "감가상각 방법"
 
@@ -6482,8 +6551,14 @@ msgstr "감가상각 방법(기본값)"
 msgid "Depreciation reversal when a fixed asset is disposed"
 msgstr "고정자산 처분 시 감가상각 환입"
 
+msgid "Depreciation Run"
+msgstr ""
+
 msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "이 기간에 종료되는 감가상각 실행이 아직 초안 상태인 경우 해당 기간이 올바른 감가상각 비용과 감가상각누계액을 반영하도록 전기되어야 합니다. 이 기간에 감가상각이 적용되지 않으면 사유를 기록하고 건너뜁니다."
+
+msgid "Depreciation Start"
+msgstr ""
 
 msgid "Depreciation Start Date"
 msgstr "감가상각 시작일"
@@ -6648,6 +6723,12 @@ msgstr "처분"
 msgid "Disposal Date"
 msgstr "처분일"
 
+msgid "Disposal Journal Entry"
+msgstr ""
+
+msgid "Disposal Method"
+msgstr ""
+
 msgid "Dispose"
 msgstr "처분"
 
@@ -6656,6 +6737,9 @@ msgstr "자산 처분"
 
 msgid "Disposed"
 msgstr "폐기됨"
+
+msgid "Disposed <0/>"
+msgstr ""
 
 msgid "Disposition"
 msgstr "처분 결정"
@@ -6860,6 +6944,9 @@ msgstr "{0} 예정"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "기한 {0}"
+
+msgid "Due <0/>"
+msgstr ""
 
 msgid "Due date"
 msgstr "마감일"
@@ -7601,6 +7688,9 @@ msgstr "품목과 수량을 직접 입력하세요."
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "PO에 대한 공급업체 청구서를 입력하고 승인하세요 (3자 대사)."
+
+msgid "Enter at least one debit and credit"
+msgstr ""
 
 msgid "Enter number…"
 msgstr "숫자 입력…"
@@ -8792,6 +8882,9 @@ msgstr "처분 이익 (기본값)"
 msgid "Gain on Disposal Account"
 msgstr "처분 이익 계정"
 
+msgid "Gain/Loss"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
 
@@ -9718,6 +9811,10 @@ msgstr "받은 품목을 검사하면 경고가 표시됩니다."
 msgid "Inspection"
 msgstr "검사"
 
+#. placeholder {0}: inspection.itemReadableId
+msgid "Inspection · {0}"
+msgstr ""
+
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -10183,6 +10280,9 @@ msgstr "변경 통지가 발행되기 전에 설계가 변경될 수 있습니�
 msgid "Job"
 msgstr "작업"
 
+msgid "Job · {itemReadableId}"
+msgstr ""
+
 msgid "Job ID"
 msgstr "작업 ID"
 
@@ -10253,6 +10353,9 @@ msgstr "이 기간에 날짜가 있고 아직 초안인 전표는 전기되어�
 
 msgid "Journal Entry"
 msgstr "분개"
+
+msgid "Journal Entry · {asset}"
+msgstr ""
 
 msgid "Journal lines"
 msgstr "전표 라인"
@@ -10900,6 +11003,9 @@ msgstr "단일 부품 및 품목 마스터 유지"
 msgid "Maintenance"
 msgstr "유지보수"
 
+msgid "Maintenance Dispatch"
+msgstr ""
+
 msgid "Maintenance Dispatch Notifications"
 msgstr "유지보수 지시 알림"
 
@@ -11516,6 +11622,12 @@ msgstr "더 보기"
 msgid "More actions"
 msgstr "추가 작업"
 
+msgid "more credits"
+msgstr ""
+
+msgid "more debits"
+msgstr ""
+
 msgid "More hours than the shift has."
 msgstr "교대조보다 많은 시간입니다."
 
@@ -11625,6 +11737,12 @@ msgstr "이동"
 
 msgid "Navigation"
 msgstr "탐색"
+
+msgid "NBV After"
+msgstr ""
+
+msgid "NBV at Disposal"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "유형별 NCR"
@@ -12136,6 +12254,9 @@ msgstr "적용이 없습니다. 지불은 외상 처리됩니다."
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "아직 보관된 로그가 없습니다. {0}일 이상 된 로그는 자동으로 보관되어 여기에서 다운로드 가능합니다."
+
+msgid "No assets to depreciate for this period."
+msgstr ""
 
 msgid "No attachments."
 msgstr "첨부 파일이 없습니다."
@@ -13426,6 +13547,9 @@ msgstr "사용 중단 사유"
 msgid "Out of Service Since"
 msgstr "사용 중단 이후"
 
+msgid "Out of service since <0/>"
+msgstr ""
+
 msgid "Outbound"
 msgstr "출고"
 
@@ -14570,6 +14694,9 @@ msgstr "재고 사용"
 
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
+
+msgid "Purchase"
+msgstr ""
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
@@ -15809,6 +15936,9 @@ msgstr "잔존가치 및 선택권"
 msgid "Residual value"
 msgstr "잔존가액"
 
+msgid "Residual Value"
+msgstr ""
+
 msgid "Residual Value %"
 msgstr "잔존가액 %"
 
@@ -16017,6 +16147,9 @@ msgstr "실현되기 전에 송장 발행된 매출로, 부채로 유지되며 �
 msgid "Revenue Recognition"
 msgstr "매출 인식"
 
+msgid "Revenue Recognition Run"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "판매형 리스 개시 시 인식된 매출"
 
@@ -16025,6 +16158,10 @@ msgstr "운영 렌탈 및 변동 렌탈료에 대해 직선법으로 인식된 �
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "이 기간 말일까지 인식될 예정인 수익이 아직 계획됨 상태입니다. 이는 연기된 송장 수익과 수익 인식 실행으로 전기되지 않은 임차료입니다. 이 기간에 대해 실행을 제안하고 전기하여 수익이 원장에 도달하도록 하세요. 인식할 항목이 없으면 이유를 포함하여 건너뜁니다."
+
+#. placeholder {0}: journalEntry.journalEntryId
+msgid "Reverse {0}"
+msgstr ""
 
 msgid "Reverse all inventory adjustments"
 msgstr "모든 재고 조정 취소"
@@ -16044,11 +16181,20 @@ msgstr "역청구 판매세"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "역청구 판매세 (기본값)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "관련 전표를 역분개합니다."
 
 msgid "Reversed"
 msgstr "역분개됨"
+
+msgid "Reversed entry"
+msgstr ""
+
+msgid "Reversing entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "복원"
@@ -16232,6 +16378,9 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
 
+msgid "Run"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
 
@@ -16331,6 +16480,9 @@ msgstr ""
 
 msgid "Sale Price"
 msgstr "판매가"
+
+msgid "Sale Proceeds"
+msgstr ""
 
 msgid "sales"
 msgstr "영업"
@@ -16494,6 +16646,9 @@ msgstr "담당자 저장"
 
 msgid "Save dimension settings"
 msgstr "차원 설정 저장"
+
+msgid "Save Draft"
+msgstr ""
 
 msgid "Save Method"
 msgstr "저장 방법"
@@ -17027,6 +17182,9 @@ msgstr "셀프서비스"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms에서 셀프서비스 참고자료 확인"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Sell {label} to the customer"
 msgstr ""
@@ -18565,6 +18723,9 @@ msgstr "세금 및 배송비"
 msgid "Tax Amount"
 msgstr "세금 금액"
 
+msgid "Tax Book Value"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "세금 코드, 세율"
 
@@ -18601,11 +18762,17 @@ msgstr "세금 비율"
 msgid "Tax Percent"
 msgstr "세금 비율"
 
+msgid "Tax Residual Value"
+msgstr ""
+
 msgid "Tax Residual Value %"
 msgstr "세금 잔존가액 %"
 
 msgid "Tax Status"
 msgstr "세금 상태"
+
+msgid "Tax Useful Life"
+msgstr ""
 
 msgid "Tax Useful Life (default)"
 msgstr "세금 내용연수 (기본값)"
@@ -19932,6 +20099,10 @@ msgstr "다음 기간({0} 종료)에 대한 매출 인식 실행 초안을 생�
 msgid "This will create a draft revenue recognition run for the period ending {0}. Every schedule row due on or before that date will be included."
 msgstr "{0}로 종료되는 기간에 대한 매출 인식 실행 초안을 생성합니다. 해당 날짜까지 예정된 모든 일정 행이 포함됩니다."
 
+#. placeholder {0}: formatDate(run.periodEnd)
+msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "이것은 이 버전을 읽기 전용으로 만들고 모든 자재 생산 방법을 이 버전으로 바꿉니다."
 
@@ -20941,6 +21112,9 @@ msgstr "보고 및 분석을 위해 품목을 분류하는 데 사용됩니다"
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "셀이 비어 있거나 위 옵션과 일치하지 않을 때 사용됩니다. 지우면 해당 행을 공백으로 남겨둡니다."
 
+msgid "Useful Life"
+msgstr ""
+
 msgid "Useful Life (default)"
 msgstr "내용연수(기본값)"
 
@@ -21173,9 +21347,6 @@ msgstr "이슈 보기"
 msgid "View Item Master"
 msgstr "품목 마스터 보기"
 
-msgid "View journal entry"
-msgstr "분개 보기"
-
 msgid "View Journal Entry"
 msgstr "분개 보기"
 
@@ -21311,8 +21482,8 @@ msgstr "사용자의 공개 프로필에 표시됩니다"
 msgid "Void"
 msgstr "무효 처리"
 
-#. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
+#. placeholder {0}: memo.memoId
+#. placeholder {0}: payment.paymentId
 msgid "Void {0}"
 msgstr "{0} 무효 처리"
 
@@ -21339,6 +21510,12 @@ msgstr "출하 무효 처리"
 
 msgid "Voided"
 msgstr "무효 처리됨"
+
+msgid "Voided <0/>"
+msgstr ""
+
+msgid "Voided <0/> by <1/>"
+msgstr ""
 
 msgid "Voiding this purchase invoice will:"
 msgstr "이 매입 송장을 무효 처리하면:"
@@ -21928,9 +22105,6 @@ msgstr "작업장 교대조"
 
 msgid "Work Center Utilization"
 msgstr "작업장 가동률"
-
-msgid "Work Center: {workCenterName}"
-msgstr "작업장: {workCenterName}"
 
 msgid "work centers"
 msgstr "작업장"

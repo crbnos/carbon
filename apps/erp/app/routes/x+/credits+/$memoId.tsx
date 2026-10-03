@@ -6,7 +6,6 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
@@ -15,11 +14,15 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getMemo,
   getMemoApplications,
+  getSettlementRelatedItems,
   MemoApplicationsPanel,
+  MemoDocuments,
   MemoForm,
+  MemoHeader,
   memoValidator,
   upsertMemo
 } from "~/modules/invoicing";
@@ -73,7 +76,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const applications = await getMemoApplications(client, companyId, memoId);
 
-  return { memo: memo.data, applications: applications.data ?? [] };
+  return {
+    memo: memo.data,
+    applications: applications.data ?? [],
+    relatedItems: getSettlementRelatedItems(client, companyId, {
+      journalId: memo.data.journalId,
+      targets: (applications.data ?? []).map(({ target }) => ({
+        targetSalesInvoiceId: target.type === "salesInvoice" ? target.id : null,
+        targetPurchaseInvoiceId:
+          target.type === "purchaseInvoice" ? target.id : null,
+        targetMemoId: target.type === "memo" ? target.id : null,
+        targetReimbursementId:
+          target.type === "reimbursement" ? target.id : null
+      })),
+      salesReturnOrderId: memo.data.salesReturnOrderId,
+      purchaseReturnOrderId: memo.data.purchaseReturnOrderId
+    })
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -146,12 +165,24 @@ export default function MemoDetailRoute() {
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
+    <DocumentPage
+      header={<MemoHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<MemoDocuments />}
+          activity={{
+            entityType: "memo",
+            entityId: memo.id,
+            refreshKey: `${memo.updatedAt ?? ""}:${memo.status}`
+          }}
+        />
+      }
+    >
       <MemoForm initialValues={initialValues} type={type} />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}
       />
-    </VStack>
+    </DocumentPage>
   );
 }

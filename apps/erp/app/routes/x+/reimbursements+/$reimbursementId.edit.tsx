@@ -275,8 +275,6 @@ export default function ReimbursementEditRoute() {
     <ReimbursementEditForm
       key={reimbursement.id}
       reimbursementId={reimbursement.id}
-      displayId={reimbursement.reimbursementId}
-      employeeId={reimbursement.employeeId}
       initialValues={{
         id: reimbursement.id,
         reimbursementDate: reimbursement.reimbursementDate,

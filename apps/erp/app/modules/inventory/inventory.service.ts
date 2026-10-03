@@ -704,6 +704,44 @@ export async function getReceiptLines(
   return client.from("receiptLines").select("*").eq("receiptId", receiptId);
 }
 
+/**
+ * The documents around a receipt that its own row doesn't name: the purchase
+ * invoices raised against its supplier interaction (the PO's, so every
+ * receipt of that order shares them), and — for a customer return — the
+ * customer it came back from.
+ * @mcp read
+ */
+export async function getReceiptRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierInteractionId: string | null,
+  salesReturnOrderId: string | null
+) {
+  const [invoices, salesReturnOrder] = await Promise.all([
+    supplierInteractionId
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status")
+          .eq("supplierInteractionId", supplierInteractionId)
+          .eq("companyId", companyId)
+          .order("createdAt")
+      : null,
+    salesReturnOrderId
+      ? client
+          .from("salesReturnOrder")
+          .select("customerId")
+          .eq("id", salesReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  return {
+    invoices: invoices?.data ?? [],
+    customerId: salesReturnOrder?.data?.customerId ?? null
+  };
+}
+
 /** @mcp read */
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
@@ -1644,6 +1682,40 @@ export async function getWarehouseTransfer(
     )
     .eq("id", transferId)
     .single();
+}
+
+/**
+ * The documents a warehouse transfer has raised: the shipments that send it
+ * out of the source location and the receipts that take it in at the
+ * destination.
+ * @mcp read
+ */
+export async function getWarehouseTransferRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  transferId: string
+) {
+  const [shipments, receipts] = await Promise.all([
+    client
+      .from("shipment")
+      .select("id, shipmentId, status")
+      .eq("sourceDocument", "Outbound Transfer")
+      .eq("sourceDocumentId", transferId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("receipt")
+      .select("id, receiptId, status")
+      .eq("sourceDocument", "Inbound Transfer")
+      .eq("sourceDocumentId", transferId)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+
+  return {
+    shipments: shipments.data ?? [],
+    receipts: receipts.data ?? []
+  };
 }
 
 /** @mcp read */
@@ -2949,6 +3021,33 @@ export async function getPickingListLines(
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
     .order("itemId");
+}
+
+/**
+ * The documents around a picking list that its own row doesn't name: the
+ * jobs its lines pick for, with their status.
+ * @mcp read
+ */
+export async function getPickingListRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  pickingListId: string
+) {
+  const jobs = await client
+    .from("job")
+    .select("id, jobId, status, itemId, pickingListLine!inner(pickingListId)")
+    .eq("pickingListLine.pickingListId", pickingListId)
+    .eq("companyId", companyId)
+    .order("jobId");
+
+  return {
+    jobs: (jobs.data ?? []).map(({ id, jobId, status, itemId }) => ({
+      id,
+      jobId,
+      status,
+      itemId
+    }))
+  };
 }
 
 /**

@@ -12,6 +12,7 @@ import {
   datetime,
   daysBetweenInclusive,
   earnsInterest,
+  equals,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   isBalanced,
@@ -5541,6 +5542,430 @@ export async function getJournalEntry(
     .single();
 }
 
+/** A document a journal entry was posted from or is referenced by. */
+export type JournalSourceDocument = {
+  kind:
+    | "receipt"
+    | "shipment"
+    | "salesInvoice"
+    | "purchaseInvoice"
+    | "rentalAgreement"
+    | "job"
+    | "fixedAsset"
+    | "inventoryCount"
+    | "maintenanceDispatch"
+    | "nonConformance"
+    | "inspection"
+    | "charge"
+    | "reimbursement"
+    | "payment"
+    | "memo"
+    | "depreciationRun"
+    | "revenueRecognitionRun";
+  id: string;
+  readableId: string;
+};
+
+/** More than this and the panel is a list of invoices, not context. */
+const MAX_JOURNAL_SOURCE_DOCUMENTS = 25;
+
+/**
+ * The documents around a journal entry: the entries it reverses or that
+ * reversed it, the period it posts into, and every document it was posted
+ * from.
+ *
+ * Each line names its document by `documentType` + `documentId`; the type
+ * says which table the id belongs to (with the journal's `sourceType`
+ * settling "Invoice" between sales and purchase, and the ambiguous
+ * "Scrap" / "Asset Transfer" ids — a job, or an itemLedger row / an asset
+ * transfer — tried against each candidate). Journals whose lines carry no
+ * document (disposal, depreciation, revenue recognition runs, asset costs)
+ * are found from the other side, by the row that stores this journal's id.
+ * "Inventory Adjustment" ids are itemLedger rows with no page of their own,
+ * and are not listed.
+ */
+export async function getJournalEntryRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  journal: {
+    id: string;
+    sourceType: Database["public"]["Enums"]["journalEntrySourceType"] | null;
+    accountingPeriodId: string | null;
+    reversalOfId: string | null;
+    reversedById: string | null;
+    lines: { documentType: string | null; documentId: string | null }[];
+  }
+) {
+  const journalIds = [journal.reversalOfId, journal.reversedById].filter(
+    (id): id is string => Boolean(id)
+  );
+
+  const idsByType = new Map<string, Set<string>>();
+  for (const line of journal.lines) {
+    if (!line.documentType || !line.documentId) continue;
+    const ids = idsByType.get(line.documentType) ?? new Set<string>();
+    ids.add(line.documentId);
+    idsByType.set(line.documentType, ids);
+  }
+  const idsOf = (...types: string[]) => [
+    ...new Set(types.flatMap((type) => [...(idsByType.get(type) ?? [])]))
+  ];
+
+  const invoiceIds = idsOf("Invoice");
+  const isPurchase = journal.sourceType === "Purchase Invoice";
+  const jobIds = idsOf(
+    "Job Consumption",
+    "Job Receipt",
+    "Job Close",
+    "Production Event",
+    "Scrap",
+    "Asset Transfer"
+  );
+
+  type Row = JournalSourceDocument;
+  const none: PromiseLike<Row[]> = Promise.resolve([]);
+  // PostgREST builders are thenables, not Promises.
+  const lookups: PromiseLike<Row[]>[] = [
+    idsOf("Receipt").length > 0
+      ? client
+          .from("receipt")
+          .select("id, receiptId")
+          .in("id", idsOf("Receipt"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "receipt" as const,
+              id: r.id,
+              readableId: r.receiptId
+            }))
+          )
+      : none,
+    idsOf("Sales Shipment", "Return Order").length > 0
+      ? client
+          .from("shipment")
+          .select("id, shipmentId")
+          .in("id", idsOf("Sales Shipment", "Return Order"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "shipment" as const,
+              id: r.id,
+              readableId: r.shipmentId
+            }))
+          )
+      : none,
+    invoiceIds.length > 0 && !isPurchase
+      ? client
+          .from("salesInvoice")
+          .select("id, invoiceId")
+          .in("id", invoiceIds)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "salesInvoice" as const,
+              id: r.id,
+              readableId: r.invoiceId
+            }))
+          )
+      : none,
+    invoiceIds.length > 0 && isPurchase
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId")
+          .in("id", invoiceIds)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "purchaseInvoice" as const,
+              id: r.id,
+              readableId: r.invoiceId
+            }))
+          )
+      : none,
+    idsOf("Rental Agreement").length > 0
+      ? client
+          .from("rentalAgreement")
+          .select("id, rentalAgreementId")
+          .in("id", idsOf("Rental Agreement"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "rentalAgreement" as const,
+              id: r.id,
+              readableId: r.rentalAgreementId
+            }))
+          )
+      : none,
+    jobIds.length > 0
+      ? client
+          .from("job")
+          .select("id, jobId")
+          .in("id", jobIds)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "job" as const,
+              id: r.id,
+              readableId: r.jobId
+            }))
+          )
+      : none,
+    // An "Asset Transfer" line holds a job id (completed into an asset) or a
+    // fixedAssetTransfer id (capitalize / return to stock); list the asset.
+    idsOf("Asset Transfer").length > 0
+      ? client
+          .from("fixedAssetTransfer")
+          .select("fixedAsset(id, fixedAssetId)")
+          .in("id", idsOf("Asset Transfer"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.fixedAsset
+                ? [
+                    {
+                      kind: "fixedAsset" as const,
+                      id: r.fixedAsset.id,
+                      readableId: r.fixedAsset.fixedAssetId
+                    }
+                  ]
+                : []
+            )
+          )
+      : none,
+    idsOf("Inventory Count").length > 0
+      ? client
+          .from("inventoryCount")
+          .select("id, inventoryCountId")
+          .in("id", idsOf("Inventory Count"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "inventoryCount" as const,
+              id: r.id,
+              readableId: r.inventoryCountId
+            }))
+          )
+      : none,
+    idsOf("Maintenance Consumption", "Maintenance Event").length > 0
+      ? client
+          .from("maintenanceDispatch")
+          .select("id, maintenanceDispatchId")
+          .in("id", idsOf("Maintenance Consumption", "Maintenance Event"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "maintenanceDispatch" as const,
+              id: r.id,
+              readableId: r.maintenanceDispatchId
+            }))
+          )
+      : none,
+    idsOf("Non-Conformance").length > 0
+      ? client
+          .from("nonConformance")
+          .select("id, nonConformanceId")
+          .in("id", idsOf("Non-Conformance"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "nonConformance" as const,
+              id: r.id,
+              readableId: r.nonConformanceId
+            }))
+          )
+      : none,
+    idsOf("Inbound Inspection").length > 0
+      ? client
+          .from("inspection")
+          .select("id, inspectionId")
+          .in("id", idsOf("Inbound Inspection"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "inspection" as const,
+              id: r.id,
+              readableId: r.inspectionId
+            }))
+          )
+      : none,
+    idsOf("Charge").length > 0
+      ? client
+          .from("charge")
+          .select("id, chargeId")
+          .in("id", idsOf("Charge"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "charge" as const,
+              id: r.id,
+              readableId: r.chargeId
+            }))
+          )
+      : none,
+    idsOf("Reimbursement").length > 0
+      ? client
+          .from("reimbursement")
+          .select("id, reimbursementId")
+          .in("id", idsOf("Reimbursement"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "reimbursement" as const,
+              id: r.id,
+              readableId: r.reimbursementId
+            }))
+          )
+      : none,
+    idsOf("Payment").length > 0
+      ? client
+          .from("payment")
+          .select("id, paymentId")
+          .in("id", idsOf("Payment"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "payment" as const,
+              id: r.id,
+              readableId: r.paymentId
+            }))
+          )
+      : none,
+    idsOf("Memo").length > 0
+      ? client
+          .from("memo")
+          .select("id, memoId")
+          .in("id", idsOf("Memo"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "memo" as const,
+              id: r.id,
+              readableId: r.memoId
+            }))
+          )
+      : none,
+    // Rows that store this journal's id: the lines of these journals carry
+    // no document of their own.
+    client
+      .from("fixedAssetDisposal")
+      .select("fixedAsset(id, fixedAssetId)")
+      .eq("journalId", journal.id)
+      .eq("companyId", companyId)
+      .then(({ data }) =>
+        (data ?? []).flatMap((r) =>
+          r.fixedAsset
+            ? [
+                {
+                  kind: "fixedAsset" as const,
+                  id: r.fixedAsset.id,
+                  readableId: r.fixedAsset.fixedAssetId
+                }
+              ]
+            : []
+        )
+      ),
+    client
+      .from("fixedAssetCipCost")
+      .select("fixedAsset(id, fixedAssetId)")
+      .eq("journalId", journal.id)
+      .eq("companyId", companyId)
+      .then(({ data }) =>
+        (data ?? []).flatMap((r) =>
+          r.fixedAsset
+            ? [
+                {
+                  kind: "fixedAsset" as const,
+                  id: r.fixedAsset.id,
+                  readableId: r.fixedAsset.fixedAssetId
+                }
+              ]
+            : []
+        )
+      ),
+    client
+      .from("depreciationRunLine")
+      .select(
+        "depreciationRun(id, depreciationRunId), fixedAsset(id, fixedAssetId)"
+      )
+      .eq("journalId", journal.id)
+      .eq("companyId", companyId)
+      .then(({ data }) =>
+        (data ?? []).flatMap((r) => [
+          ...(r.depreciationRun
+            ? [
+                {
+                  kind: "depreciationRun" as const,
+                  id: r.depreciationRun.id,
+                  readableId: r.depreciationRun.depreciationRunId
+                }
+              ]
+            : []),
+          ...(r.fixedAsset
+            ? [
+                {
+                  kind: "fixedAsset" as const,
+                  id: r.fixedAsset.id,
+                  readableId: r.fixedAsset.fixedAssetId
+                }
+              ]
+            : [])
+        ])
+      ),
+    client
+      .from("revenueRecognitionRun")
+      .select("id, runId")
+      .eq("journalId", journal.id)
+      .eq("companyId", companyId)
+      .then(({ data }) =>
+        (data ?? []).map((r) => ({
+          kind: "revenueRecognitionRun" as const,
+          id: r.id,
+          readableId: r.runId
+        }))
+      )
+  ];
+
+  const [documentGroups, journals, accountingPeriod] = await Promise.all([
+    Promise.all(lookups),
+    journalIds.length > 0
+      ? client
+          .from("journal")
+          .select("id, journalEntryId, status")
+          .in("id", journalIds)
+          .eq("companyId", companyId)
+      : null,
+    journal.accountingPeriodId
+      ? client
+          .from("accountingPeriod")
+          .select("id, startDate, closeStatus")
+          .eq("id", journal.accountingPeriodId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const seen = new Set<string>();
+  const documents = documentGroups.flat().filter((doc) => {
+    const key = `${doc.kind}:${doc.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const byId = new Map((journals?.data ?? []).map((j) => [j.id, j]));
+
+  return {
+    documents: documents.slice(0, MAX_JOURNAL_SOURCE_DOCUMENTS),
+    reversalOf: journal.reversalOfId
+      ? (byId.get(journal.reversalOfId) ?? null)
+      : null,
+    reversedBy: journal.reversedById
+      ? (byId.get(journal.reversedById) ?? null)
+      : null,
+    accountingPeriod: accountingPeriod?.data ?? null
+  };
+}
+
 /** @mcp create */
 export async function createJournalEntry(
   client: SupabaseClient<Database>,
@@ -5661,6 +6086,14 @@ export async function saveJournalEntryWithLines(
     description?: string;
     updatedBy: string;
     lines: Array<{
+      /**
+       * The stored line this one edits. Lines with a matching id are updated
+       * in place (only when something changed), lines without one are
+       * inserted, and stored lines no longer submitted are deleted — so the
+       * audit log records what was actually edited. A caller that sends no
+       * ids replaces every line, as before.
+       */
+      id?: string;
       accountId: string;
       description?: string;
       debit: number;
@@ -5682,77 +6115,137 @@ export async function saveJournalEntryWithLines(
       })
     )
     .eq("id", data.journalEntryId)
+    .eq("companyId", data.companyId)
     .eq("status", "Draft");
 
   if (headerUpdate.error) return headerUpdate;
 
-  // 2. Delete existing lines (cascades journalLineDimension via FK)
-  const deleteResult = await client
-    .from("journalLine")
-    .delete()
-    .eq("journalId", data.journalEntryId);
-
-  if (deleteResult.error) return deleteResult;
-
-  if (data.lines.length === 0) return { data: null, error: null };
-
-  // 3. Look up account classes for all distinct account IDs
+  // 2. Look up the stored lines and the account classes the new amounts need
   const accountIds = [...new Set(data.lines.map((l) => l.accountId))];
-  const accounts = await client
-    .from("account")
-    .select("id, class")
-    .in("id", accountIds);
+  const [existing, accounts] = await Promise.all([
+    client
+      .from("journalLine")
+      .select("*")
+      .eq("journalId", data.journalEntryId)
+      .eq("companyId", data.companyId),
+    accountIds.length > 0
+      ? client.from("account").select("id, class").in("id", accountIds)
+      : null
+  ]);
 
-  if (accounts.error) return accounts;
+  if (existing.error) return existing;
+  if (accounts?.error) return accounts;
 
-  const accountMap = new Map(accounts.data.map((a) => [a.id, a.class]));
+  const accountMap = new Map(
+    (accounts?.data ?? []).map((a) => [a.id, a.class])
+  );
+  const existingById = new Map((existing.data ?? []).map((l) => [l.id, l]));
 
-  // 4. Build insert payloads
-  const inserts = data.lines.map((line) => {
+  const amountOf = (line: (typeof data.lines)[number]) => {
     const accountClass = accountMap.get(line.accountId);
     if (!accountClass) {
       throw new Error(`Account not found: ${line.accountId}`);
     }
-    return {
-      journalId: data.journalEntryId,
-      accountId: line.accountId,
-      description: line.description,
-      amount: toStoredAmount(line.debit, line.credit, accountClass),
-      journalLineReference: crypto.randomUUID(),
-      companyId: data.companyId
-    };
-  });
+    return toStoredAmount(line.debit, line.credit, accountClass);
+  };
 
-  // 5. Insert all lines and get new IDs
-  const insertResult = await client
-    .from("journalLine")
-    .insert(inserts)
-    .select("id");
+  // 3. Sort the submitted lines into kept, changed and new
+  const kept: { id: string; line: (typeof data.lines)[number] }[] = [];
+  const updates: Database["public"]["Tables"]["journalLine"]["Insert"][] = [];
+  const inserts: Database["public"]["Tables"]["journalLine"]["Insert"][] = [];
+  const insertedLines: (typeof data.lines)[number][] = [];
 
-  if (insertResult.error) return insertResult;
-
-  // 6. Insert dimensions from client state
-  const newLineIds = (insertResult.data ?? []).map((l) => l.id);
-  const dimensionInserts: Array<{
-    journalLineId: string;
-    dimensionId: string;
-    valueId: string;
-    companyId: string;
-  }> = [];
-
-  for (let i = 0; i < newLineIds.length; i++) {
-    const lineDims = data.lines[i]?.dimensions;
-    if (lineDims) {
-      for (const d of lineDims) {
-        dimensionInserts.push({
-          journalLineId: newLineIds[i],
-          dimensionId: d.dimensionId,
-          valueId: d.valueId,
-          companyId: data.companyId
+  for (const line of data.lines) {
+    const stored = line.id ? existingById.get(line.id) : undefined;
+    const amount = amountOf(line);
+    if (stored) {
+      kept.push({ id: stored.id, line });
+      const changed =
+        stored.accountId !== line.accountId ||
+        (stored.description ?? "") !== (line.description ?? "") ||
+        !equals(Number(stored.amount), amount);
+      if (changed) {
+        updates.push({
+          ...stored,
+          accountId: line.accountId,
+          description: line.description,
+          amount,
+          updatedBy: data.updatedBy,
+          updatedAt: datetime.timestamp()
         });
       }
+    } else {
+      insertedLines.push(line);
+      inserts.push({
+        journalId: data.journalEntryId,
+        accountId: line.accountId,
+        description: line.description,
+        amount,
+        journalLineReference: crypto.randomUUID(),
+        companyId: data.companyId,
+        createdBy: data.updatedBy
+      });
     }
   }
+
+  const keptIds = new Set(kept.map((k) => k.id));
+  const removedIds = (existing.data ?? [])
+    .map((l) => l.id)
+    .filter((id) => !keptIds.has(id));
+
+  // 4. Delete removed lines (cascades journalLineDimension via FK)
+  if (removedIds.length > 0) {
+    const deleteResult = await client
+      .from("journalLine")
+      .delete()
+      .in("id", removedIds)
+      .eq("companyId", data.companyId);
+    if (deleteResult.error) return deleteResult;
+  }
+
+  // 5. Update changed lines in one statement; unchanged lines are untouched
+  if (updates.length > 0) {
+    const updateResult = await client
+      .from("journalLine")
+      .upsert(updates, { onConflict: "id" });
+    if (updateResult.error) return updateResult;
+  }
+
+  // 6. Insert new lines
+  let insertedIds: string[] = [];
+  if (inserts.length > 0) {
+    const insertResult = await client
+      .from("journalLine")
+      .insert(inserts)
+      .select("id");
+    if (insertResult.error) return insertResult;
+    insertedIds = (insertResult.data ?? []).map((l) => l.id);
+  }
+
+  // 7. Replace the dimensions of every kept line (not audited), then add the
+  //    new lines' dimensions
+  if (kept.length > 0) {
+    const dimDelete = await client
+      .from("journalLineDimension")
+      .delete()
+      .in(
+        "journalLineId",
+        kept.map((k) => k.id)
+      );
+    if (dimDelete.error) return dimDelete;
+  }
+
+  const dimensionInserts = [
+    ...kept.map((k) => ({ lineId: k.id, line: k.line })),
+    ...insertedIds.map((lineId, i) => ({ lineId, line: insertedLines[i] }))
+  ].flatMap(({ lineId, line }) =>
+    (line?.dimensions ?? []).map((d) => ({
+      journalLineId: lineId,
+      dimensionId: d.dimensionId,
+      valueId: d.valueId,
+      companyId: data.companyId
+    }))
+  );
 
   if (dimensionInserts.length > 0) {
     const dimInsertResult = await client
@@ -5761,7 +6254,13 @@ export async function saveJournalEntryWithLines(
     if (dimInsertResult.error) return dimInsertResult;
   }
 
-  return insertResult;
+  return {
+    data: [
+      ...kept.map((k) => ({ id: k.id })),
+      ...insertedIds.map((id) => ({ id }))
+    ],
+    error: null
+  };
 }
 
 /** @mcp action */
@@ -6656,6 +7155,41 @@ export async function getRevenueRecognitionRunLines(
     .eq("runId", runId);
 }
 
+/**
+ * The documents around a depreciation or revenue recognition run that its own
+ * row doesn't name: the accounting period its `periodEnd` falls in (the one
+ * posting resolves), and the journal entries it posted.
+ * @mcp read
+ */
+export async function getPeriodRunRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodEnd: string,
+  journalIds: string[]
+) {
+  const [accountingPeriod, journals] = await Promise.all([
+    client
+      .from("accountingPeriod")
+      .select("id, startDate, endDate, closeStatus")
+      .eq("companyId", companyId)
+      .lte("startDate", periodEnd)
+      .gte("endDate", periodEnd)
+      .maybeSingle(),
+    journalIds.length > 0
+      ? client
+          .from("journal")
+          .select("id, journalEntryId, status")
+          .eq("companyId", companyId)
+          .in("id", journalIds)
+      : null
+  ]);
+
+  return {
+    accountingPeriod: accountingPeriod.data ?? null,
+    journals: journals?.data ?? []
+  };
+}
+
 /** @mcp read */
 export async function getRevenueSchedules(
   client: SupabaseClient<Database>,
@@ -7418,6 +7952,173 @@ export async function getFixedAssetCipCosts(
     .eq("fixedAssetId", fixedAssetId)
     .eq("companyId", companyId)
     .order("costDate");
+}
+
+function uniqueById<T extends { id: string }>(rows: (T | null | undefined)[]) {
+  const byId = new Map<string, T>();
+  for (const row of rows) {
+    if (row && !byId.has(row.id)) byId.set(row.id, row);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * The documents around one fixed asset: the item and serial it is, the jobs
+ * that built it, the purchase and sales documents with a line on it, the
+ * rental agreements that rent it, and its disposal journal. One query per
+ * table; the receipts and shipments follow from the order lines.
+ */
+export async function getFixedAssetRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    fixedAssetId: string;
+    itemId: string | null;
+    trackedEntityId: string | null;
+    jobIds: string[];
+    disposalJournalId: string | null;
+  }
+) {
+  const { fixedAssetId, itemId, trackedEntityId, disposalJournalId } = args;
+  const jobIds = [...new Set(args.jobIds)];
+
+  // Three groups rather than one nine-query Promise.all: a single tuple of
+  // nine PostgREST builders exceeds TypeScript's instantiation depth.
+  const [
+    [purchaseOrderLines, purchaseInvoiceLines, salesOrderLines],
+    [salesInvoiceLines, rentalAgreementLines, jobs],
+    [item, trackedEntity, disposalJournal]
+  ] = await Promise.all([
+    Promise.all([
+      client
+        .from("purchaseOrderLine")
+        .select("id, purchaseOrder(id, purchaseOrderId, status, supplierId)")
+        .eq("assetId", fixedAssetId)
+        .eq("companyId", companyId),
+      client
+        .from("purchaseInvoiceLine")
+        // The invoice is read in the second round: embedding it here sends
+        // the type checker past its instantiation depth.
+        .select("invoiceId")
+        .eq("assetId", fixedAssetId)
+        .eq("companyId", companyId),
+      client
+        .from("salesOrderLine")
+        .select("id, salesOrder(id, salesOrderId, status, customerId)")
+        .eq("assetId", fixedAssetId)
+        .eq("companyId", companyId)
+    ]),
+    Promise.all([
+      client
+        .from("salesInvoiceLine")
+        .select("salesInvoice(id, invoiceId, status, customerId)")
+        .eq("assetId", fixedAssetId)
+        .eq("companyId", companyId),
+      client
+        .from("rentalAgreementLine")
+        .select("rentalAgreement(id, rentalAgreementId, status, customerId)")
+        .eq("fixedAssetId", fixedAssetId)
+        .eq("companyId", companyId),
+      client
+        .from("job")
+        .select("id, jobId, status")
+        .eq("companyId", companyId)
+        .or(
+          jobIds.length > 0
+            ? `fixedAssetId.eq.${fixedAssetId},id.in.(${jobIds.join(",")})`
+            : `fixedAssetId.eq.${fixedAssetId}`
+        )
+        .order("jobId")
+    ]),
+    Promise.all([
+      itemId
+        ? client
+            .from("item")
+            .select("id, readableIdWithRevision, name, type")
+            .eq("id", itemId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+      trackedEntityId
+        ? client
+            .from("trackedEntity")
+            .select("id, readableId, status")
+            .eq("id", trackedEntityId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null,
+      disposalJournalId
+        ? client
+            .from("journal")
+            .select("id, journalEntryId, status")
+            .eq("id", disposalJournalId)
+            .eq("companyId", companyId)
+            .maybeSingle()
+        : null
+    ])
+  ]);
+
+  const purchaseOrderLineIds = (purchaseOrderLines.data ?? []).map(
+    (line) => line.id
+  );
+  const salesOrderLineIds = (salesOrderLines.data ?? []).map((line) => line.id);
+  const purchaseInvoiceIds = [
+    ...new Set(
+      (purchaseInvoiceLines.data ?? [])
+        .map((line) => line.invoiceId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [receiptLines, shipmentLines, purchaseInvoices] = await Promise.all([
+    purchaseOrderLineIds.length > 0
+      ? client
+          .from("receiptFixedAssetLine")
+          .select("receipt(id, receiptId, status)")
+          .in("purchaseOrderLineId", purchaseOrderLineIds)
+          .eq("companyId", companyId)
+      : null,
+    salesOrderLineIds.length > 0
+      ? client
+          .from("shipmentFixedAssetLine")
+          .select("shipment(id, shipmentId, status, invoiced)")
+          .in("salesOrderLineId", salesOrderLineIds)
+          .eq("companyId", companyId)
+      : null,
+    purchaseInvoiceIds.length > 0
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status, supplierId")
+          .in("id", purchaseInvoiceIds)
+          .eq("companyId", companyId)
+      : null
+  ]);
+
+  return {
+    item: item?.data ?? null,
+    trackedEntity: trackedEntity?.data ?? null,
+    jobs: jobs.data ?? [],
+    purchaseOrders: uniqueById(
+      (purchaseOrderLines.data ?? []).map((line) => line.purchaseOrder)
+    ),
+    receipts: uniqueById(
+      (receiptLines?.data ?? []).map((line) => line.receipt)
+    ),
+    purchaseInvoices: purchaseInvoices?.data ?? [],
+    rentalAgreements: uniqueById(
+      (rentalAgreementLines.data ?? []).map((line) => line.rentalAgreement)
+    ),
+    salesOrders: uniqueById(
+      (salesOrderLines.data ?? []).map((line) => line.salesOrder)
+    ),
+    shipments: uniqueById(
+      (shipmentLines?.data ?? []).map((line) => line.shipment)
+    ),
+    salesInvoices: uniqueById(
+      (salesInvoiceLines.data ?? []).map((line) => line.salesInvoice)
+    ),
+    disposalJournal: disposalJournal?.data ?? null
+  };
 }
 
 /**

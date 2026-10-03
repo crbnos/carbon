@@ -30,20 +30,27 @@ Shipment is the reference: `routes/x+/shipment+/$shipmentId.tsx`,
 ## Pages
 
 - [x] Shipment — `routes/x+/shipment+/$shipmentId.tsx`
-- [ ] Receipt — `routes/x+/receipt+/$receiptId.tsx` (`ReceiptForm` + `DocumentHeader`)
-- [ ] Journal entry — `routes/x+/journal-entry+/$journalEntryId.tsx`
-- [ ] Warehouse transfer — `routes/x+/warehouse-transfer+/$transferId.tsx` (`WarehouseTransferForm` + `DocumentHeader`)
-- [ ] Stock transfer — `routes/x+/stock-transfer+/$id.tsx` (`StockTransferHeader`)
+- [x] Receipt — `routes/x+/receipt+/$receiptId.tsx` (`ReceiptForm` + `DocumentHeader`)
+- [x] Journal entry — `routes/x+/journal-entry+/$journalEntryId.tsx`
+- [x] Warehouse transfer — `routes/x+/warehouse-transfer+/$transferId.tsx` (`WarehouseTransferForm` + `DocumentHeader`)
+- [x] Stock transfer — `routes/x+/stock-transfer+/$id.tsx` (`StockTransferHeader`)
 
-## Same shape — confirm before moving
+## Same shape
 
-- [ ] Picking list — `routes/x+/picking-list+/$pickingListId.tsx` (`PickingListHeader`)
-- [ ] Reimbursement — `routes/x+/reimbursements+/$reimbursementId.tsx`
-- [ ] Fixed asset — `routes/x+/fixed-asset+/$fixedAssetId.tsx` (`DocumentHeader`)
-- [ ] Payment — `modules/invoicing/ui/Payment/PaymentForm.tsx` (`DocumentHeader`)
-- [ ] Memo (credit) — `routes/x+/credits+/$memoId.tsx` (`MemoForm` + `DocumentHeader`)
-- [ ] Depreciation run — `routes/x+/depreciation-run+/$depreciationRunId.tsx`
-- [ ] Revenue recognition run — `routes/x+/revenue-recognition-run+/$runId.tsx`
+- [x] Picking list — `routes/x+/picking-list+/$pickingListId.tsx` (`PickingListHeader`)
+- [x] Reimbursement — `routes/x+/reimbursements+/$reimbursementId.tsx`
+- [x] Fixed asset — `routes/x+/fixed-asset+/$fixedAssetId.tsx` (`DocumentHeader`)
+- [x] Payment — `modules/invoicing/ui/Payment/PaymentForm.tsx` (`DocumentHeader`)
+- [x] Memo (credit) — `routes/x+/credits+/$memoId.tsx` (`MemoForm` + `DocumentHeader`)
+- [x] Depreciation run — `routes/x+/depreciation-run+/$depreciationRunId.tsx`
+- [x] Revenue recognition run — `routes/x+/revenue-recognition-run+/$runId.tsx`
+
+Every page passes `activity`: its record is in `auditConfig.entities`. Journal
+entry, payment, memo, reimbursement, picking list and the two runs were added
+for this (with their line tables; `invoiceSettlement` is a child of both payment
+and memo), and migration `20261002234926_audit-posting-documents.sql` attaches
+the async event triggers their tables lacked. A record that is not audited may
+omit `activity`; the panel then shows Documents alone.
 
 When the last `DocumentHeader` caller is gone, delete
 `components/DocumentHeader.tsx` and update the posting-document archetype in

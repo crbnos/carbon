@@ -487,17 +487,19 @@ function ShipmentLineItem({
         )}
       </div>
       {/* Sized by the line's own width, not the viewport: the content pane
-          it sits in is resizable. */}
-      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:justify-between @3xl:items-center gap-4 w-full">
-        <HStack spacing={4} className="w-full @3xl:w-1/2 min-w-0 pr-10">
-          <HStack spacing={4} className="min-w-0">
+          it sits in is resizable. The item takes what the quantities leave,
+          and they stay on one line once the row is wide enough. pr-10 clears
+          the line menu. */}
+      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full pr-10">
+        <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
 
-            <VStack spacing={0} className="max-w-[380px] w-full">
+            <VStack spacing={0} className="flex-1 min-w-0">
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
                   {item?.readableIdWithRevision}
@@ -519,7 +521,7 @@ function ShipmentLineItem({
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-grow flex-wrap items-center justify-between gap-4 w-full @3xl:w-1/2 @3xl:pl-4">
+        <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
           <HStack spacing={4}>
             <VStack spacing={1}>
               <div className="flex items-center justify-between gap-1 w-full">
@@ -923,7 +925,7 @@ function BatchForm({
           />
         )}
       </div>
-      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2 w-full">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuGroup /> Batch Number
@@ -1236,7 +1238,7 @@ function SerialForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => {
           // Check if the serial number is valid and in the list
           const resolvedSerial = serialNumber.id

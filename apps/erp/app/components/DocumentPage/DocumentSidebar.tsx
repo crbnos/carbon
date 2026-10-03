@@ -13,8 +13,12 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 type DocumentSidebarProps = {
   /** Related documents — usually `RelatedDocumentGroup`s. */
   documents: ReactNode;
-  /** The audit-logged entity whose history the Activity tab shows. */
-  activity: {
+  /**
+   * The audit-logged entity whose history the Activity tab shows (a key of
+   * `auditConfig.entities`). Omit it for a record that is not audited: the
+   * panel then shows its documents alone, with no tab that could never fill.
+   */
+  activity?: {
     entityType: string;
     entityId: string;
     /** e.g. the record's `updatedAt`, so a save refreshes the history. */
@@ -30,6 +34,19 @@ export function DocumentSidebar({ documents, activity }: DocumentSidebarProps) {
   const { company } = useUser();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
   const [tab, setTab] = useState<"documents" | "activity">("documents");
+
+  if (!activity) {
+    return (
+      <div className="flex flex-col h-full min-h-0">
+        <h2 className="shrink-0 px-4 pt-5 pb-3 text-sm font-medium">
+          <Trans>Documents</Trans>
+        </h2>
+        <div className="flex flex-col gap-6 min-h-0 overflow-y-auto px-4 pb-8">
+          {documents}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Tabs

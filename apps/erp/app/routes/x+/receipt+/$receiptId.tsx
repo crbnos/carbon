@@ -12,15 +12,21 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getBatchProperties,
   getReceipt,
   getReceiptFiles,
   getReceiptLines,
+  getReceiptRelatedItems,
   getReceiptTracking,
   getShelfLifeForItems
 } from "~/modules/inventory";
+import {
+  ReceiptDocuments,
+  ReceiptHeader
+} from "~/modules/inventory/ui/Receipts";
 import { getReceiptInspections } from "~/modules/quality";
 import { getCompanySettings } from "~/modules/settings";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -40,7 +46,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
     : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -139,22 +145,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
       [],
     companySettings: getCompanySettings(serviceRole, companyId),
-    itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds)
+    itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds),
+    relatedItems: getReceiptRelatedItems(
+      client,
+      companyId,
+      receipt.data.supplierInteractionId,
+      receipt.data.sourceDocument === "Sales Return Order"
+        ? receipt.data.sourceDocumentId
+        : null
+    )
   };
 }
 
 export default function ReceiptRoute() {
-  const params = useParams();
-  const { receiptId } = params;
-  if (!receiptId) throw new Error("Could not find receiptId");
+  const { receipt } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-4 pb-16 w-full">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <DocumentPage
+      header={<ReceiptHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<ReceiptDocuments />}
+          activity={{
+            entityType: "receipt",
+            entityId: receipt.id,
+            refreshKey: `${receipt.updatedAt ?? ""}:${receipt.status}`
+          }}
+        />
+      }
+    >
+      <Outlet />
+    </DocumentPage>
   );
 }

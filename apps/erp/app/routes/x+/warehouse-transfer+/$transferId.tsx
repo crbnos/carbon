@@ -11,11 +11,17 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getWarehouseTransfer,
-  getWarehouseTransferLines
+  getWarehouseTransferLines,
+  getWarehouseTransferRelatedItems
 } from "~/modules/inventory";
+import {
+  WarehouseTransferDocuments,
+  WarehouseTransferHeader
+} from "~/modules/inventory/ui/WarehouseTransfers";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -33,7 +39,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
     : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -70,22 +76,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     warehouseTransfer: warehouseTransfer.data,
-    warehouseTransferLines: warehouseTransferLines.data ?? []
+    warehouseTransferLines: warehouseTransferLines.data ?? [],
+    relatedItems: getWarehouseTransferRelatedItems(
+      client,
+      companyId,
+      transferId
+    )
   };
 }
 
 export default function WarehouseTransferRoute() {
-  const params = useParams();
-  const { transferId } = params;
-  if (!transferId) throw new Error("Could not find transferId");
+  const { warehouseTransfer } = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-4 pb-16 w-full">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <DocumentPage
+      header={<WarehouseTransferHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<WarehouseTransferDocuments />}
+          activity={{
+            entityType: "warehouseTransfer",
+            entityId: warehouseTransfer.id,
+            refreshKey: `${warehouseTransfer.updatedAt ?? ""}:${warehouseTransfer.status}`
+          }}
+        />
+      }
+    >
+      <Outlet />
+    </DocumentPage>
   );
 }

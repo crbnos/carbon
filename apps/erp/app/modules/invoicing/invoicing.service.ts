@@ -1606,6 +1606,44 @@ export async function getReimbursements(
 }
 
 /**
+ * The payments that settle a reimbursement, for its Documents panel. One read
+ * of its settlement rows with the payment embedded — a reimbursement is only
+ * ever settled by an employee payment, never by a memo — de-duplicated, since
+ * one payment can carry several settlement rows.
+ * @mcp read
+ */
+export async function getReimbursementRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  reimbursementId: string
+) {
+  type Payment = Pick<
+    Database["public"]["Tables"]["payment"]["Row"],
+    "id" | "paymentId" | "status" | "paymentDate"
+  >;
+  const settlements = await fetchAllFromTable<{ payment: Payment | null }>(
+    client,
+    "invoiceSettlement",
+    "payment:payment!invoiceSettlement_paymentId_fkey(id, paymentId, status, paymentDate)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("targetReimbursementId", reimbursementId)
+        .not("paymentId", "is", null)
+        .order("appliedDate")
+        .order("id")
+  );
+
+  const payments = new Map<string, Payment>();
+  for (const settlement of settlements.data ?? []) {
+    const payment = settlement.payment;
+    if (payment && !payments.has(payment.id)) payments.set(payment.id, payment);
+  }
+
+  return { payments: [...payments.values()] };
+}
+
+/**
  * Header edit. `.eq("status", "Draft")` is defence in depth alongside the
  * RLS UPDATE policy and the reimbursement_draft_guard trigger — a Posted
  * document is immutable, and a caller that tries gets zero rows rather than
@@ -2061,6 +2099,129 @@ export async function getMemoApplications(
   }
 
   return { data: rows, error: null };
+}
+
+/**
+ * The documents around a payment or memo, for its Documents panel: the
+ * statuses of what it settles, the credits a payment draws (memo settlements
+ * applied through it) and what those settle, its posting journal, and a
+ * memo's return order. One query per table; ids the caller does not pass are
+ * not queried.
+ */
+export async function getSettlementRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    journalId: string | null;
+    targets: {
+      targetSalesInvoiceId: string | null;
+      targetPurchaseInvoiceId: string | null;
+      targetMemoId: string | null;
+      targetReimbursementId: string | null;
+    }[];
+    appliedViaPaymentId?: string;
+    salesReturnOrderId?: string | null;
+    purchaseReturnOrderId?: string | null;
+  }
+) {
+  const viaPayment = args.appliedViaPaymentId
+    ? await client
+        .from("invoiceSettlement")
+        .select(
+          "memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId"
+        )
+        .eq("companyId", companyId)
+        .eq("appliedViaPaymentId", args.appliedViaPaymentId)
+    : null;
+  const viaRows = viaPayment?.data ?? [];
+  const targets = [...args.targets, ...viaRows];
+
+  const unique = (ids: (string | null | undefined)[]) => [
+    ...new Set(ids.filter((id): id is string => Boolean(id)))
+  ];
+  const salesInvoiceIds = unique(targets.map((t) => t.targetSalesInvoiceId));
+  const purchaseInvoiceIds = unique(
+    targets.map((t) => t.targetPurchaseInvoiceId)
+  );
+  const creditIds = unique(viaRows.map((row) => row.memoId));
+  const memoIds = unique([...targets.map((t) => t.targetMemoId), ...creditIds]);
+  const reimbursementIds = unique(targets.map((t) => t.targetReimbursementId));
+
+  const [
+    journal,
+    salesInvoices,
+    purchaseInvoices,
+    memos,
+    reimbursements,
+    salesReturnOrder,
+    purchaseReturnOrder
+  ] = await Promise.all([
+    args.journalId
+      ? client
+          .from("journal")
+          .select("id, journalEntryId, status")
+          .eq("id", args.journalId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    salesInvoiceIds.length > 0
+      ? client
+          .from("salesInvoices")
+          .select("id, invoiceId, status")
+          .in("id", salesInvoiceIds)
+          .eq("companyId", companyId)
+      : null,
+    purchaseInvoiceIds.length > 0
+      ? client
+          .from("purchaseInvoices")
+          .select("id, invoiceId, status")
+          .in("id", purchaseInvoiceIds)
+          .eq("companyId", companyId)
+      : null,
+    memoIds.length > 0
+      ? client
+          .from("memo")
+          .select("id, memoId, status")
+          .in("id", memoIds)
+          .eq("companyId", companyId)
+      : null,
+    reimbursementIds.length > 0
+      ? client
+          .from("reimbursement")
+          .select("id, reimbursementId, status")
+          .in("id", reimbursementIds)
+          .eq("companyId", companyId)
+      : null,
+    args.salesReturnOrderId
+      ? client
+          .from("salesReturnOrder")
+          .select("id, salesReturnOrderId, status")
+          .eq("id", args.salesReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.purchaseReturnOrderId
+      ? client
+          .from("purchaseReturnOrder")
+          .select("id, purchaseReturnOrderId, status")
+          .eq("id", args.purchaseReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const credits = new Set(creditIds);
+  const allMemos = memos?.data ?? [];
+  return {
+    journal: journal?.data ?? null,
+    salesInvoices: salesInvoices?.data ?? [],
+    purchaseInvoices: purchaseInvoices?.data ?? [],
+    memos: allMemos.filter((memo) => !credits.has(memo.id)),
+    credits: allMemos.filter((memo) => credits.has(memo.id)),
+    reimbursements: reimbursements?.data ?? [],
+    salesReturnOrder: salesReturnOrder?.data ?? null,
+    purchaseReturnOrder: purchaseReturnOrder?.data ?? null
+  };
 }
 
 // Open sales invoices for a customer (active status and a positive

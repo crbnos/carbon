@@ -155,6 +155,11 @@ msgstr "{0} जॉब बनाए गए"
 msgid "{0} lines to map"
 msgstr "{0} लाइनें मैप करने के लिए"
 
+#. placeholder {0}: (asset as any).taxUsefulLifeMonths
+#. placeholder {0}: asset.usefulLifeMonths
+msgid "{0} months"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -261,6 +266,10 @@ msgstr "{0} मान गायब हैं"
 msgid "{0} will be saved as {name}"
 msgstr "{0} को {name} के रूप में सहेजा जाएगा"
 
+#. placeholder {0}: (asset as any).macrsPropertyClass
+msgid "{0}-Year"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}द"
@@ -299,6 +308,9 @@ msgstr "{apOverduePct}% देय राशि का"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "प्राप्य राशि का {arOverduePct}%"
+
+msgid "{assetCount} Assets"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
@@ -346,9 +358,6 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
-
-msgid "{lineCount} lines"
-msgstr "{lineCount} पंक्तियाँ"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
@@ -401,6 +410,9 @@ msgstr "{resourceCount} संसाधन · {reservationCount} आरक्ष
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} अनुमतियाँ"
+
+msgid "{sectionLineCount} lines"
+msgstr ""
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
@@ -480,6 +492,9 @@ msgstr "0 ऑपरेशन"
 
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
+
+msgid "1 Asset"
+msgstr ""
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 बैचेबल ऑपरेशन बैच में नहीं है — जब तक बैच न हो जाए, यह अलग-अलग चलता है"
@@ -1295,6 +1310,9 @@ msgstr "लेखांकन सक्षम है"
 msgid "Accounting period"
 msgstr "लेखांकन अवधि"
 
+msgid "Accounting Period"
+msgstr ""
+
 msgid "Accounting Periods"
 msgstr "लेखांकन अवधि"
 
@@ -1334,6 +1352,15 @@ msgstr "उपार्जन"
 msgid "Accruals"
 msgstr "उपार्जन"
 
+msgid "Accum. Depr."
+msgstr ""
+
+msgid "Accum. Depreciation"
+msgstr ""
+
+msgid "Accum. Tax Depr."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "संचित मूल्यह्रास"
 
@@ -1363,6 +1390,9 @@ msgstr "स्वीकार करें और समाप्त करे�
 
 msgid "Acknowledged itar"
 msgstr "स्वीकृत itar"
+
+msgid "Acquired <0/>"
+msgstr ""
 
 msgid "Acquisition Cost"
 msgstr "अधिग्रहण लागत"
@@ -2427,9 +2457,9 @@ msgstr "क्या आप इस ऑपरेशन से {0} को हट�
 msgid "Are you sure you want to delete {0}?"
 msgstr "क्या आप {0} को हटाना चाहते हैं?"
 
+#. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
-#. placeholder {0}: initialValues.memoId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
@@ -2767,6 +2797,9 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "क्या आप इस आइटम को मूल्य सूची से निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
+msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
+msgstr ""
+
 msgid "Are you sure you want to revoke the invitation for this user?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उपयोगकर्ता के लिए आमंत्रण को रद्द करना चाहते हैं?"
 
@@ -2946,6 +2979,9 @@ msgstr "इकाई को लाइनसाइड सामग्री क�
 msgid "Assumptions"
 msgstr "मान्यताएँ"
 
+msgid "At {locationName}"
+msgstr ""
+
 msgid "At Commencement"
 msgstr "आरंभ पर"
 
@@ -2972,6 +3008,9 @@ msgstr "जॉब संलग्न करें"
 
 msgid "Attachment"
 msgstr "अनुलग्नक"
+
+msgid "Attachment · {itemReadableId}"
+msgstr ""
 
 msgid "Attachments"
 msgstr "अनुलग्नक"
@@ -3400,6 +3439,9 @@ msgstr "BOM सफलतापूर्वक सिंक हो गया"
 msgid "BOMs"
 msgstr "BOMs"
 
+msgid "Bonus Depreciation"
+msgstr ""
+
 msgid "Bonus Depreciation %"
 msgstr "बोनस मूल्यह्रास %"
 
@@ -3636,6 +3678,9 @@ msgstr "नौकरी रद्द करें"
 
 msgid "Cancel Order"
 msgstr "ऑर्डर रद्द करें"
+
+msgid "Cancel Picking List"
+msgstr ""
 
 msgid "Cancel Purchase Order"
 msgstr "क्रय आदेश रद्द करें"
@@ -3940,6 +3985,9 @@ msgstr "ड्राइंग से सुझाई गई विशेषत�
 
 msgid "Characteristics"
 msgstr "विशेषताएं"
+
+msgid "Charge"
+msgstr ""
 
 msgid "Charge Date"
 msgstr "शुल्क की तारीख"
@@ -4285,6 +4333,9 @@ msgstr "को पूर्ण करें"
 
 msgid "Completed"
 msgstr "पूर्ण"
+
+msgid "Completed <0/>"
+msgstr ""
 
 msgid "Completed At"
 msgstr "पूर्ण किया गया"
@@ -4955,6 +5006,9 @@ msgstr "सुधार"
 msgid "Corrective action"
 msgstr "सुधारात्मक कार्रवाई"
 
+msgid "Cost"
+msgstr ""
+
 msgid "cost center"
 msgstr "लागत केंद्र"
 
@@ -5204,6 +5258,9 @@ msgstr "उत्पादन मात्रा बनाएं"
 msgid "Create Quote Revision"
 msgstr "कोटेशन रिवीजन बनाएँ"
 
+msgid "Create Repeat Run"
+msgstr ""
+
 msgid "Create Replacement"
 msgstr "प्रतिस्थापन बनाएं"
 
@@ -5233,6 +5290,9 @@ msgstr "वर्क सेंटर बनाएँ"
 
 msgid "Created"
 msgstr "बनाया गया"
+
+msgid "Created <0/>"
+msgstr ""
 
 msgid "Created <0/> by <1/>"
 msgstr ""
@@ -5407,6 +5467,9 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "क्रेडिट राशियाँ कंपनी की आधार मुद्रा ({currency}) में हैं। यह भुगतान पोस्ट होने पर क्रेडिट लागू होते हैं।"
+
+msgid "Credit applied"
+msgstr ""
 
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
@@ -6141,6 +6204,9 @@ msgstr "विफलता मोड हटाएं"
 msgid "Delete file"
 msgstr "फ़ाइल हटाएं"
 
+msgid "Delete Fixed Asset"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "समूह हटाएं"
 
@@ -6473,6 +6539,9 @@ msgstr "मूल्यह्रास व्यय (डिफ़ॉल्ट)"
 msgid "Depreciation Expense Account"
 msgstr "मूल्यह्रास व्यय खाता"
 
+msgid "Depreciation Lines"
+msgstr ""
+
 msgid "Depreciation Method"
 msgstr "मूल्यह्रास विधि"
 
@@ -6482,8 +6551,14 @@ msgstr "मूल्यह्रास विधि (डिफ़ॉल्ट)"
 msgid "Depreciation reversal when a fixed asset is disposed"
 msgstr "जब अचल संपत्ति निपटाई जाती है तो मूल्यह्रास का उलट"
 
+msgid "Depreciation Run"
+msgstr ""
+
 msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "इस अवधि में समाप्त होने वाले मूल्यह्रास चलान जो अभी भी ड्राफ्ट हैं, पोस्ट किए जाने चाहिए ताकि अवधि सही मूल्यह्रास व्यय और संचित मूल्यह्रास को दर्शाए। यदि इस अवधि में मूल्यह्रास लागू नहीं होता है तो एक कारण के साथ छोड़ दें।"
+
+msgid "Depreciation Start"
+msgstr ""
 
 msgid "Depreciation Start Date"
 msgstr "मूल्यह्रास प्रारंभ तिथि"
@@ -6648,6 +6723,12 @@ msgstr "निपटान"
 msgid "Disposal Date"
 msgstr "निपटान की तारीख"
 
+msgid "Disposal Journal Entry"
+msgstr ""
+
+msgid "Disposal Method"
+msgstr ""
+
 msgid "Dispose"
 msgstr "निपटान करना"
 
@@ -6656,6 +6737,9 @@ msgstr "संपत्ति निपटान"
 
 msgid "Disposed"
 msgstr "निपटारा किया गया"
+
+msgid "Disposed <0/>"
+msgstr ""
 
 msgid "Disposition"
 msgstr "निपटान"
@@ -6860,6 +6944,9 @@ msgstr "देय {0}"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "Due {0}"
+
+msgid "Due <0/>"
+msgstr ""
 
 msgid "Due date"
 msgstr "नियत तिथि"
@@ -7601,6 +7688,9 @@ msgstr "आइटम और मात्रा स्वयं दर्ज क�
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "PO के विरुद्ध विक्रेता बिलों को दर्ज करें और अनुमोदित करें (थ्री-वे मिलान)"
+
+msgid "Enter at least one debit and credit"
+msgstr ""
 
 msgid "Enter number…"
 msgstr "संख्या दर्ज करें…"
@@ -8792,6 +8882,9 @@ msgstr "निपटान पर लाभ (डिफ़ॉल्ट)"
 msgid "Gain on Disposal Account"
 msgstr "निपटान पर लाभ खाता"
 
+msgid "Gain/Loss"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "अचल संपत्तियों के निपटान पर स्वीकृत लाभ"
 
@@ -9718,6 +9811,10 @@ msgstr "आपके द्वारा प्राप्त आइटम क�
 msgid "Inspection"
 msgstr "निरीक्षण"
 
+#. placeholder {0}: inspection.itemReadableId
+msgid "Inspection · {0}"
+msgstr ""
+
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
@@ -10183,6 +10280,9 @@ msgstr "इसकी डिजाइन परिवर्तन सूचना
 msgid "Job"
 msgstr "Job"
 
+msgid "Job · {itemReadableId}"
+msgstr ""
+
 msgid "Job ID"
 msgstr "जॉब आईडी"
 
@@ -10253,6 +10353,9 @@ msgstr "इस अवधि में दिनांकित जर्नल �
 
 msgid "Journal Entry"
 msgstr "जर्नल प्रविष्टि"
+
+msgid "Journal Entry · {asset}"
+msgstr ""
 
 msgid "Journal lines"
 msgstr "जर्नल पंक्तियाँ"
@@ -10900,6 +11003,9 @@ msgstr "एक एकल भाग और आइटम मास्टर बन
 msgid "Maintenance"
 msgstr "रखरखाव"
 
+msgid "Maintenance Dispatch"
+msgstr ""
+
 msgid "Maintenance Dispatch Notifications"
 msgstr "रखरखाव कार्य सूचनाएँ"
 
@@ -11516,6 +11622,12 @@ msgstr "अधिक"
 msgid "More actions"
 msgstr "अधिक क्रियाएं"
 
+msgid "more credits"
+msgstr ""
+
+msgid "more debits"
+msgstr ""
+
 msgid "More hours than the shift has."
 msgstr "शिफ्ट के पास जितने घंटे हैं उससे अधिक।"
 
@@ -11625,6 +11737,12 @@ msgstr "नेविगेट करें"
 
 msgid "Navigation"
 msgstr "नेविगेशन"
+
+msgid "NBV After"
+msgstr ""
+
+msgid "NBV at Disposal"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "प्रकार के अनुसार NCR"
@@ -12136,6 +12254,9 @@ msgstr "कोई आवेदन नहीं। भुगतान खात�
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "अभी तक कोई संग्रहीत लॉग नहीं हैं। {0} दिनों से पुराने लॉग स्वचालित रूप से संग्रहीत किए जाएंगे और यहां डाउनलोड के लिए उपलब्ध होंगे।"
+
+msgid "No assets to depreciate for this period."
+msgstr ""
 
 msgid "No attachments."
 msgstr "कोई अनुलग्नक नहीं।"
@@ -13426,6 +13547,9 @@ msgstr "सेवा से बाहर कारण"
 msgid "Out of Service Since"
 msgstr "तब से सेवा से बाहर"
 
+msgid "Out of service since <0/>"
+msgstr ""
+
 msgid "Outbound"
 msgstr "निर्गामी"
 
@@ -14570,6 +14694,9 @@ msgstr "इन्वेंटरी से लें"
 
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
+
+msgid "Purchase"
+msgstr ""
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
@@ -15809,6 +15936,9 @@ msgstr "अवशिष्ट और विकल्प"
 msgid "Residual value"
 msgstr "अवशिष्ट मूल्य"
 
+msgid "Residual Value"
+msgstr ""
+
 msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
@@ -16017,6 +16147,9 @@ msgstr "राजस्व जो चालान किया गया है 
 msgid "Revenue Recognition"
 msgstr "राजस्व मान्यता"
 
+msgid "Revenue Recognition Run"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में राजस्व मान्य"
 
@@ -16025,6 +16158,10 @@ msgstr "संचालन किराये के लिए और परि�
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "इस अवधि के अंत तक या उससे पहले स्वीकृत होने के लिए अनुसूचित राजस्व अभी भी योजनाबद्ध है: स्थगित चालान राजस्व और किराया जो राजस्व मान्यता चलाने से पोस्ट नहीं किया गया है। इस अवधि के लिए चलाने का प्रस्ताव करें और पोस्ट करें ताकि राजस्व खाता बही तक पहुंचे। यदि कुछ भी स्वीकृत नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
+
+#. placeholder {0}: journalEntry.journalEntryId
+msgid "Reverse {0}"
+msgstr ""
 
 msgid "Reverse all inventory adjustments"
 msgstr "सभी इन्वेंटरी समायोजन को उलट दें"
@@ -16044,11 +16181,20 @@ msgstr "रिवर्स चार्ज बिक्रय कर"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "रिवर्स चार्ज बिक्रय कर (डिफ़ॉल्ट)"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
 
 msgid "Reversed"
 msgstr "प्रतिवर्तित"
+
+msgid "Reversed entry"
+msgstr ""
+
+msgid "Reversing entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "पूर्ववत् करें"
@@ -16232,6 +16378,9 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
 
+msgid "Run"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
 
@@ -16331,6 +16480,9 @@ msgstr ""
 
 msgid "Sale Price"
 msgstr "विक्रय मूल्य"
+
+msgid "Sale Proceeds"
+msgstr ""
 
 msgid "sales"
 msgstr "बिक्रय"
@@ -16494,6 +16646,9 @@ msgstr "संपर्क सहेजें"
 
 msgid "Save dimension settings"
 msgstr "आयाम सेटिंग्स सहेजें"
+
+msgid "Save Draft"
+msgstr ""
 
 msgid "Save Method"
 msgstr "विधि सहेजें"
@@ -17027,6 +17182,9 @@ msgstr "स्व-सेवा"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms पर स्व-सेवा संदर्भ"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Sell {label} to the customer"
 msgstr ""
@@ -18565,6 +18723,9 @@ msgstr "कर और शिपिंग"
 msgid "Tax Amount"
 msgstr "कर राशि"
 
+msgid "Tax Book Value"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "कर कोड, दरें"
 
@@ -18601,11 +18762,17 @@ msgstr "कर प्रतिशत"
 msgid "Tax Percent"
 msgstr "कर प्रतिशत"
 
+msgid "Tax Residual Value"
+msgstr ""
+
 msgid "Tax Residual Value %"
 msgstr "कर अवशिष्ट मूल्य %"
 
 msgid "Tax Status"
 msgstr "कर स्थिति"
+
+msgid "Tax Useful Life"
+msgstr ""
 
 msgid "Tax Useful Life (default)"
 msgstr "कर उपयोगी जीवन (डिफ़ॉल्ट)"
@@ -19932,6 +20099,10 @@ msgstr "यह अगली अवधि के लिए एक ड्राफ
 msgid "This will create a draft revenue recognition run for the period ending {0}. Every schedule row due on or before that date will be included."
 msgstr "यह {0} में समाप्त अवधि के लिए एक ड्राफ्ट राजस्व मान्यता चलाना बनाएगा। उस तारीख पर या उससे पहले देय प्रत्येक शेड्यूल पंक्ति शामिल की जाएगी।"
 
+#. placeholder {0}: formatDate(run.periodEnd)
+msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "यह इस संस्करण को केवल-पढ़ने योग्य बनाएगा और किसी भी सामग्री निर्माण विधि को इस संस्करण से बदल देगा।"
 
@@ -20941,6 +21112,9 @@ msgstr "रिपोर्टिंग और विश्लेषण के �
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "तब उपयोग किया जाता है जब कोई सेल खाली हो या ऊपर दिए गए किसी विकल्प से मेल न खाता हो। उन पंक्तियों को खाली छोड़ने के लिए इसे साफ़ करें।"
 
+msgid "Useful Life"
+msgstr ""
+
 msgid "Useful Life (default)"
 msgstr "उपयोगी जीवन (डिफ़ॉल्ट)"
 
@@ -21173,9 +21347,6 @@ msgstr "समस्या देखें"
 msgid "View Item Master"
 msgstr "आइटम मास्टर देखें"
 
-msgid "View journal entry"
-msgstr "जर्नल प्रविष्टि देखें"
-
 msgid "View Journal Entry"
 msgstr "जर्नल प्रविष्टि देखें"
 
@@ -21311,8 +21482,8 @@ msgstr "उपयोगकर्ता की सार्वजनिक प्
 msgid "Void"
 msgstr "अमान्य करें"
 
-#. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
+#. placeholder {0}: memo.memoId
+#. placeholder {0}: payment.paymentId
 msgid "Void {0}"
 msgstr "अमान्य करें {0}"
 
@@ -21339,6 +21510,12 @@ msgstr "शिपमेंट अमान्य करें"
 
 msgid "Voided"
 msgstr "अमान्य"
+
+msgid "Voided <0/>"
+msgstr ""
+
+msgid "Voided <0/> by <1/>"
+msgstr ""
 
 msgid "Voiding this purchase invoice will:"
 msgstr "इस क्रय चालान को रद्द करने से:"
@@ -21928,9 +22105,6 @@ msgstr "वर्क सेंटर शिफ्ट"
 
 msgid "Work Center Utilization"
 msgstr "वर्क सेंटर उपयोग"
-
-msgid "Work Center: {workCenterName}"
-msgstr "वर्क सेंटर: {workCenterName}"
 
 msgid "work centers"
 msgstr "वर्क सेंटर"

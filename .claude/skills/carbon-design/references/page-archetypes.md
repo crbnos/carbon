@@ -155,12 +155,24 @@ Exemplar: `routes/x+/customer+/$customerId.tsx`, `modules/sales/ui/Customer/Cust
 `components/Layout/Navigation/DetailSidebar.tsx`. Use for long-lived records with many
 sub-collections (contacts, locations, terms) and no line-based lifecycle.
 
-## 7. Archetype E — Posting document (Receipt, Shipment, Journal Entry, Fixed Asset)
+## 7. Archetype E — Posting document (Shipment, Receipt, Transfers, Picking List, Journal Entry, Payment, Memo, Reimbursement, Runs, Fixed Asset)
 
-Centered `max-w-5xl mx-auto p-4` stack of cards, no explorer/properties; header via
-`components/DocumentHeader.tsx` inside a Card or a `*Header` strip. Lines are a card-row list
-with inline inputs (`.claude/rules/shipments-receipts-ui-patterns.md`). Use for short-lived,
-often system-generated documents that are filled in then posted.
+`components/DocumentPage/`: `DocumentPage header sidebar` — one readable column (`max-w-5xl`,
+an `@container`) beside a resizable, collapsible side panel whose size is shared by every
+page using it (on mobile it is a drawer).
+- **Header** — `DocumentPageHeader`: flat (no Card), pinned, a bottom rule only once content
+  scrolls under it. ID (`Heading h2`) + `Copy` + ⋯ menu + status left; outputs then lifecycle
+  actions right, exactly one `primary` (the next step), hidden once it can no longer apply;
+  a muted `meta` line under the ID ("Created 3 days ago by X · Posted Sep 30 by Y").
+- **Body** — the record's own fields laid flat (`ValidatedForm` with no Card, grids on
+  container queries), then the work (lines, notes) as Cards. Line rows size by their own
+  width (`@container`), never by the viewport — the pane is resizable.
+- **Side panel** — `DocumentSidebar`: **Documents** (one untitled `RelatedDocumentGroup` of
+  `RelatedDocument` rows: counterparty, source, downstream with status, then files as
+  `external` rows) and **Activity** (the inline `AuditLogFeed`), Activity only for
+  audit-logged entities. Cross-link buttons and the ⋯ History item do not exist here.
+Exemplar: `routes/x+/shipment+/$shipmentId.tsx` + `modules/inventory/ui/Shipments/Shipment{Header,Documents,Form}.tsx`.
+Rollout notes: `.ai/plans/2026-10-02-document-page-layout.md`.
 
 ## 8. Archetype F — Settings preference page
 

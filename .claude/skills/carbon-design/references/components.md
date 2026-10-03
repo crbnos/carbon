@@ -220,8 +220,8 @@ unused.
 Carbon has no shared component yet for these; match the existing hand-rolled shape exactly
 (copy from the named exemplar) rather than inventing a variant:
 - **Record header strip** — ~38 copies of the same container (exemplar
-  `modules/sales/ui/SalesReturnOrders/SalesReturnOrderHeader.tsx`). `DocumentHeader` exists
-  but is a Card-header used by posting docs.
+  `modules/sales/ui/SalesReturnOrders/SalesReturnOrderHeader.tsx`). Posting documents use
+  the shared `DocumentPageHeader` (`components/DocumentPage/`) instead.
 - **Properties panel** — 24 copies (`modules/quality/ui/Issue/IssueProperties.tsx`).
 - **`*Status.tsx` wrappers** — one per entity (`modules/sales/ui/Quotes/QuoteStatus.tsx`).
 - **Hover-revealed row action** and **dashed "add" row** — raw buttons in trees/lists.

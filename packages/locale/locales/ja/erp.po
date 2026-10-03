@@ -155,6 +155,11 @@ msgstr "{0} 件の製造指図が作成されました"
 msgid "{0} lines to map"
 msgstr "{0}件のラインをマップします"
 
+#. placeholder {0}: (asset as any).taxUsefulLifeMonths
+#. placeholder {0}: asset.usefulLifeMonths
+msgid "{0} months"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -261,6 +266,10 @@ msgstr "{0}個の値が見つかりません"
 msgid "{0} will be saved as {name}"
 msgstr "{0} は {name} として保存されます"
 
+#. placeholder {0}: (asset as any).macrsPropertyClass
+msgid "{0}-Year"
+msgstr ""
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}日"
@@ -299,6 +308,9 @@ msgstr "{apOverduePct}%の買掛金"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
+
+msgid "{assetCount} Assets"
+msgstr ""
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
@@ -346,9 +358,6 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
-
-msgid "{lineCount} lines"
-msgstr "{lineCount}明細"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -401,6 +410,9 @@ msgstr "{resourceCount} リソース · {reservationCount} 予約 · {jobCount} 
 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 個の権限"
+
+msgid "{sectionLineCount} lines"
+msgstr ""
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
@@ -480,6 +492,9 @@ msgstr "0 件の工程"
 
 msgid "0-4 weeks"
 msgstr "0～4週間"
+
+msgid "1 Asset"
+msgstr ""
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 つのバッチ対象の工程はバッチに含まれていません — それはバッチ化されるまで個別に実行されます"
@@ -1295,6 +1310,9 @@ msgstr "会計が有効です"
 msgid "Accounting period"
 msgstr "会計期間"
 
+msgid "Accounting Period"
+msgstr ""
+
 msgid "Accounting Periods"
 msgstr "会計期間"
 
@@ -1334,6 +1352,15 @@ msgstr "未請求売上"
 msgid "Accruals"
 msgstr "未請求売上"
 
+msgid "Accum. Depr."
+msgstr ""
+
+msgid "Accum. Depreciation"
+msgstr ""
+
+msgid "Accum. Tax Depr."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "減価償却累計額"
 
@@ -1363,6 +1390,9 @@ msgstr "認めて完了"
 
 msgid "Acknowledged itar"
 msgstr "ITAR確認済み"
+
+msgid "Acquired <0/>"
+msgstr ""
 
 msgid "Acquisition Cost"
 msgstr "取得原価"
@@ -2427,9 +2457,9 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
+#. placeholder {0}: asset.fixedAssetId
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
-#. placeholder {0}: initialValues.memoId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -2767,6 +2797,9 @@ msgstr "この従業員を「{name}」から除去してもよろしいですか
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "この品目を価格リストから除去してもよろしいですか？これは取り消せません。"
 
+msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
+msgstr ""
+
 msgid "Are you sure you want to revoke the invitation for this user?"
 msgstr "このユーザーの招待を取り消してもよろしいですか？"
 
@@ -2946,6 +2979,9 @@ msgstr "この保管ユニットをラインサイド材料用の作業区に割
 msgid "Assumptions"
 msgstr "前提条件"
 
+msgid "At {locationName}"
+msgstr ""
+
 msgid "At Commencement"
 msgstr "開始時に"
 
@@ -2972,6 +3008,9 @@ msgstr "製造指図を添付"
 
 msgid "Attachment"
 msgstr "添付ファイル"
+
+msgid "Attachment · {itemReadableId}"
+msgstr ""
 
 msgid "Attachments"
 msgstr "添付ファイル"
@@ -3400,6 +3439,9 @@ msgstr "BOMが正常に同期されました"
 msgid "BOMs"
 msgstr "BOM"
 
+msgid "Bonus Depreciation"
+msgstr ""
+
 msgid "Bonus Depreciation %"
 msgstr "ボーナス減価償却 %"
 
@@ -3636,6 +3678,9 @@ msgstr "ジョブをキャンセル"
 
 msgid "Cancel Order"
 msgstr "注文をキャンセル"
+
+msgid "Cancel Picking List"
+msgstr ""
 
 msgid "Cancel Purchase Order"
 msgstr "発注書をキャンセル"
@@ -3940,6 +3985,9 @@ msgstr "図面から提案された特性値"
 
 msgid "Characteristics"
 msgstr "特性"
+
+msgid "Charge"
+msgstr ""
 
 msgid "Charge Date"
 msgstr "料金日付"
@@ -4285,6 +4333,9 @@ msgstr "完了先"
 
 msgid "Completed"
 msgstr "完了"
+
+msgid "Completed <0/>"
+msgstr ""
 
 msgid "Completed At"
 msgstr "完了日時"
@@ -4955,6 +5006,9 @@ msgstr "修正"
 msgid "Corrective action"
 msgstr "是正処置"
 
+msgid "Cost"
+msgstr ""
+
 msgid "cost center"
 msgstr "原価センター"
 
@@ -5204,6 +5258,9 @@ msgstr "生産数量を作成"
 msgid "Create Quote Revision"
 msgstr "見積書リビジョンを作成"
 
+msgid "Create Repeat Run"
+msgstr ""
+
 msgid "Create Replacement"
 msgstr "交換を作成"
 
@@ -5233,6 +5290,9 @@ msgstr "作業区を作成"
 
 msgid "Created"
 msgstr "作成日時"
+
+msgid "Created <0/>"
+msgstr ""
 
 msgid "Created <0/> by <1/>"
 msgstr ""
@@ -5407,6 +5467,9 @@ msgstr "製造原価が仕掛品に吸収されたときに使用される貸方
 
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "クレジット金額は会社の基本通貨（{currency}）で表示されます。この支払を転記すると、クレジットの適用が反映されます。"
+
+msgid "Credit applied"
+msgstr ""
 
 msgid "Credit Memo"
 msgstr "クレジットメモ"
@@ -6141,6 +6204,9 @@ msgstr "失敗モードを削除"
 msgid "Delete file"
 msgstr "ファイルを削除"
 
+msgid "Delete Fixed Asset"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "グループを削除"
 
@@ -6473,6 +6539,9 @@ msgstr "減価償却費（デフォルト）"
 msgid "Depreciation Expense Account"
 msgstr "減価償却費勘定科目"
 
+msgid "Depreciation Lines"
+msgstr ""
+
 msgid "Depreciation Method"
 msgstr "減価償却方法"
 
@@ -6482,8 +6551,14 @@ msgstr "減価償却方法（デフォルト）"
 msgid "Depreciation reversal when a fixed asset is disposed"
 msgstr "固定資産を処分する場合の減価償却の逆転"
 
+msgid "Depreciation Run"
+msgstr ""
+
 msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "この期間に終了する減価償却が下書きのままの場合は、転記して、この期間が正しい減価償却費と減価償却累計額を反映するようにしてください。この期間に減価償却が適用されない場合は、理由を付けてスキップしてください。"
+
+msgid "Depreciation Start"
+msgstr ""
 
 msgid "Depreciation Start Date"
 msgstr "減価償却開始日"
@@ -6648,6 +6723,12 @@ msgstr "除却"
 msgid "Disposal Date"
 msgstr "除却日"
 
+msgid "Disposal Journal Entry"
+msgstr ""
+
+msgid "Disposal Method"
+msgstr ""
+
 msgid "Dispose"
 msgstr "処分する"
 
@@ -6656,6 +6737,9 @@ msgstr "資産を処分"
 
 msgid "Disposed"
 msgstr "廃棄済み"
+
+msgid "Disposed <0/>"
+msgstr ""
 
 msgid "Disposition"
 msgstr "処置"
@@ -6860,6 +6944,9 @@ msgstr "納期 {0}"
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
 msgid "Due {0}"
 msgstr "期限 {0}"
+
+msgid "Due <0/>"
+msgstr ""
 
 msgid "Due date"
 msgstr "期日"
@@ -7601,6 +7688,9 @@ msgstr "品目と数量を手動で入力してください。"
 
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "発注書に対する仕入先請求書を入力して承認します（三点照合）"
+
+msgid "Enter at least one debit and credit"
+msgstr ""
 
 msgid "Enter number…"
 msgstr "数字を入力..."
@@ -8792,6 +8882,9 @@ msgstr "除却益（デフォルト）"
 msgid "Gain on Disposal Account"
 msgstr "除却益勘定科目"
 
+msgid "Gain/Loss"
+msgstr ""
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の除却により認識された利益"
 
@@ -9718,6 +9811,10 @@ msgstr "受け取った品目の検査時に警告が表示されます。"
 msgid "Inspection"
 msgstr "検査"
 
+#. placeholder {0}: inspection.itemReadableId
+msgid "Inspection · {0}"
+msgstr ""
+
 msgid "Inspection document"
 msgstr "検査文書"
 
@@ -10183,6 +10280,9 @@ msgstr "変更通知のリリース前に、そのデザインが変わる可能
 msgid "Job"
 msgstr "ジョブ"
 
+msgid "Job · {itemReadableId}"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ジョブID"
 
@@ -10253,6 +10353,9 @@ msgstr "当期に日付が付けられた仕訳がまだ下書きの場合は、
 
 msgid "Journal Entry"
 msgstr "仕訳行"
+
+msgid "Journal Entry · {asset}"
+msgstr ""
 
 msgid "Journal lines"
 msgstr "仕訳明細"
@@ -10900,6 +11003,9 @@ msgstr "単一の部品とアイテムマスターを維持する"
 msgid "Maintenance"
 msgstr "保全"
 
+msgid "Maintenance Dispatch"
+msgstr ""
+
 msgid "Maintenance Dispatch Notifications"
 msgstr "保全指示通知"
 
@@ -11516,6 +11622,12 @@ msgstr "もっと"
 msgid "More actions"
 msgstr "その他のアクション"
 
+msgid "more credits"
+msgstr ""
+
+msgid "more debits"
+msgstr ""
+
 msgid "More hours than the shift has."
 msgstr "シフトが持つ時間以上。"
 
@@ -11625,6 +11737,12 @@ msgstr "ナビゲート"
 
 msgid "Navigation"
 msgstr "ナビゲーション"
+
+msgid "NBV After"
+msgstr ""
+
+msgid "NBV at Disposal"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "タイプ別NCR"
@@ -12136,6 +12254,9 @@ msgstr "申請がありません。支払いはオンアカウントになりま
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "アーカイブ済のログはまだありません。{0}日以上前のログは自動的にアーカイブ済になり、ここからダウンロード可能になります。"
+
+msgid "No assets to depreciate for this period."
+msgstr ""
 
 msgid "No attachments."
 msgstr "添付ファイルがありません。"
@@ -13426,6 +13547,9 @@ msgstr "使用停止理由"
 msgid "Out of Service Since"
 msgstr "使用停止日"
 
+msgid "Out of service since <0/>"
+msgstr ""
+
 msgid "Outbound"
 msgstr "出荷"
 
@@ -14570,6 +14694,9 @@ msgstr "在庫から引当"
 
 msgid "Pull, map, and load your data"
 msgstr "データをプル、マップ、ロードする"
+
+msgid "Purchase"
+msgstr ""
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRPから購入・製造"
@@ -15809,6 +15936,9 @@ msgstr "残存価値とオプション"
 msgid "Residual value"
 msgstr "残存価額"
 
+msgid "Residual Value"
+msgstr ""
+
 msgid "Residual Value %"
 msgstr "残存価額 %"
 
@@ -16017,6 +16147,9 @@ msgstr "獲得する前に請求された売上高で、負債として保持さ
 msgid "Revenue Recognition"
 msgstr "売上高認識"
 
+msgid "Revenue Recognition Run"
+msgstr ""
+
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "セールスタイプリースの開始時に認識された売上高"
 
@@ -16025,6 +16158,10 @@ msgstr "営業賃貸および変動賃貸料に対して直線法で認識され
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "この会計期間末までに認識予定の売上高がまだ計画済のままです。転記されていない繰延請求売上高と賃料があります。この期間の収益認識実行を提案して転記し、売上高を帳簿に反映させてください。認識対象がない場合は理由を付けてスキップしてください。"
+
+#. placeholder {0}: journalEntry.journalEntryId
+msgid "Reverse {0}"
+msgstr ""
 
 msgid "Reverse all inventory adjustments"
 msgstr "すべての在庫調整を取り消す"
@@ -16044,11 +16181,20 @@ msgstr "リバースチャージ売上税"
 msgid "Reverse Charge Sales Tax (default)"
 msgstr "リバースチャージ売上税（デフォルト）"
 
+msgid "Reverse Entry"
+msgstr ""
+
 msgid "Reverse the related journal entries"
 msgstr "関連する仕訳エントリを取り消す"
 
 msgid "Reversed"
 msgstr "反対仕訳済"
+
+msgid "Reversed entry"
+msgstr ""
+
+msgid "Reversing entry"
+msgstr ""
 
 msgid "Revert"
 msgstr "リバート"
@@ -16232,6 +16378,9 @@ msgstr "数量または得意先によって価格を自動調整するルール
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
 
+msgid "Run"
+msgstr ""
+
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
 
@@ -16331,6 +16480,9 @@ msgstr ""
 
 msgid "Sale Price"
 msgstr "販売価格"
+
+msgid "Sale Proceeds"
+msgstr ""
 
 msgid "sales"
 msgstr "販売"
@@ -16494,6 +16646,9 @@ msgstr "担当者を保存"
 
 msgid "Save dimension settings"
 msgstr "ディメンション設定を保存"
+
+msgid "Save Draft"
+msgstr ""
 
 msgid "Save Method"
 msgstr "メソッドを保存"
@@ -17027,6 +17182,9 @@ msgstr "セルフサービス"
 
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "セルフサービスリファレンス（docs.carbon.ms）"
+
+msgid "Sell"
+msgstr ""
 
 msgid "Sell {label} to the customer"
 msgstr ""
@@ -18565,6 +18723,9 @@ msgstr "税金と配送"
 msgid "Tax Amount"
 msgstr "税額"
 
+msgid "Tax Book Value"
+msgstr ""
+
 msgid "Tax codes, rates"
 msgstr "税コード、レート"
 
@@ -18601,11 +18762,17 @@ msgstr "税率"
 msgid "Tax Percent"
 msgstr "税率"
 
+msgid "Tax Residual Value"
+msgstr ""
+
 msgid "Tax Residual Value %"
 msgstr "税務残存価額 %"
 
 msgid "Tax Status"
 msgstr "税務ステータス"
+
+msgid "Tax Useful Life"
+msgstr ""
 
 msgid "Tax Useful Life (default)"
 msgstr "税務耐用年数（デフォルト）"
@@ -19932,6 +20099,10 @@ msgstr "これは{0}で終了する次の期間の売上高認識下書き実行
 msgid "This will create a draft revenue recognition run for the period ending {0}. Every schedule row due on or before that date will be included."
 msgstr "これは{0}で終了する期間の売上高認識下書き実行を作成します。その日付以前に到来するすべてのスケジュール行が含まれます。"
 
+#. placeholder {0}: formatDate(run.periodEnd)
+msgid "This will create a new draft depreciation run for the same period ({0}), including only active assets not already covered by an existing run."
+msgstr ""
+
 msgid "This will make this version read-only and replace any material make methods with this version."
 msgstr "このバージョンは読み取り専用になり、すべての材料製造方法がこのバージョンに置き換わります。"
 
@@ -20941,6 +21112,9 @@ msgstr "レポートと分析のためにアイテムを分類するために使
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "セルが空いているか、上記のどのオプションにも一致しない場合に使用します。クリアして、これらの行を空白のままにします。"
 
+msgid "Useful Life"
+msgstr ""
+
 msgid "Useful Life (default)"
 msgstr "耐用年数(デフォルト)"
 
@@ -21173,9 +21347,6 @@ msgstr "問題を表示"
 msgid "View Item Master"
 msgstr "アイテムマスターを表示"
 
-msgid "View journal entry"
-msgstr "仕訳行を表示"
-
 msgid "View Journal Entry"
 msgstr "仕訳行を表示"
 
@@ -21311,8 +21482,8 @@ msgstr "ユーザーの公開プロフィールに表示されます"
 msgid "Void"
 msgstr "取消"
 
-#. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
+#. placeholder {0}: memo.memoId
+#. placeholder {0}: payment.paymentId
 msgid "Void {0}"
 msgstr "取消 {0}"
 
@@ -21339,6 +21510,12 @@ msgstr "出荷を取消"
 
 msgid "Voided"
 msgstr "取消済"
+
+msgid "Voided <0/>"
+msgstr ""
+
+msgid "Voided <0/> by <1/>"
+msgstr ""
 
 msgid "Voiding this purchase invoice will:"
 msgstr "この仕入先請求書を取消すると："
@@ -21928,9 +22105,6 @@ msgstr "作業区シフト"
 
 msgid "Work Center Utilization"
 msgstr "作業区利用率"
-
-msgid "Work Center: {workCenterName}"
-msgstr "作業区: {workCenterName}"
 
 msgid "work centers"
 msgstr "作業区"

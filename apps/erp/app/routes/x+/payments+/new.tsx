@@ -7,7 +7,15 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
 import { datetime, round, toBaseAmount, toDocumentAmount } from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
@@ -353,11 +361,27 @@ export default function NewPaymentRoute() {
     useLoaderData<typeof loader>();
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <PaymentForm
-        initialValues={initialValues}
-        seedInvoiceIds={seedInvoiceIds}
-        depositDocuments={depositDocuments}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>New Payment</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>
+              Record a customer payment, supplier payment, refund, or employee
+              reimbursement. Applications to invoices, memos or reimbursements
+              are added after the payment is created.
+            </Trans>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">
+          <PaymentForm
+            initialValues={initialValues}
+            seedInvoiceIds={seedInvoiceIds}
+            depositDocuments={depositDocuments}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

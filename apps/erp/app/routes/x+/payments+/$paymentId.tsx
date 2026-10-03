@@ -6,7 +6,6 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
 import type { FundingSource } from "@carbon/utils";
 import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,6 +15,7 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   AvailableCreditsTable,
   getAvailableCreditsForParty,
@@ -26,11 +26,14 @@ import {
   getOpenSalesInvoicesForCustomer,
   getPayment,
   getPaymentCurrencyConfiguration,
+  getSettlementRelatedItems,
   getStagedCreditsForPayment,
   isPaymentLocked,
   PaymentApplications,
   PaymentApplyTable,
+  PaymentDocuments,
   PaymentForm,
+  PaymentHeader,
   paymentValidator,
   upsertPayment
 } from "~/modules/invoicing";
@@ -209,7 +212,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       availableCredits,
       stagedCredits,
       depositDocuments,
-      ...configuration
+      ...configuration,
+      relatedItems: getSettlementRelatedItems(client, companyId, {
+        journalId: payment.data.journalId,
+        targets: applications.data ?? [],
+        appliedViaPaymentId: payment.data.id
+      })
     };
   } catch (e) {
     throw redirect(
@@ -334,7 +342,19 @@ export default function PaymentDetailRoute() {
   };
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
+    <DocumentPage
+      header={<PaymentHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<PaymentDocuments />}
+          activity={{
+            entityType: "payment",
+            entityId: payment.id,
+            refreshKey: `${payment.updatedAt ?? ""}:${payment.status}`
+          }}
+        />
+      }
+    >
       <PaymentForm
         key={payment.id}
         initialValues={initialValues}
@@ -417,6 +437,6 @@ export default function PaymentDetailRoute() {
           staged={stagedCredits}
         />
       )}
-    </VStack>
+    </DocumentPage>
   );
 }

@@ -619,6 +619,65 @@ export const auditConfig = {
           createFields: ["startDate", "endDate", "status"]
         }
       }
+    },
+
+    journalEntry: {
+      label: "Journal Entry",
+      tables: {
+        journal: { role: "root" },
+        journalLine: { entityIdColumn: "journalId" }
+      }
+    },
+
+    // A settlement row names the payment or the memo it applies (one of the
+    // two is usually null, and a null parent is skipped), so invoiceSettlement
+    // is a child of both.
+    payment: {
+      label: "Payment",
+      tables: {
+        payment: { role: "root" },
+        invoiceSettlement: { entityIdColumn: "paymentId" }
+      }
+    },
+
+    memo: {
+      label: "Memo",
+      tables: {
+        memo: { role: "root" },
+        invoiceSettlement: { entityIdColumn: "memoId" }
+      }
+    },
+
+    reimbursement: {
+      label: "Reimbursement",
+      tables: {
+        reimbursement: { role: "root" },
+        reimbursementLine: { entityIdColumn: "reimbursementId" }
+      }
+    },
+
+    pickingList: {
+      label: "Picking List",
+      tables: {
+        pickingList: { role: "root" },
+        pickingListLine: { entityIdColumn: "pickingListId" }
+      }
+    },
+
+    depreciationRun: {
+      label: "Depreciation Run",
+      tables: {
+        depreciationRun: { role: "root" },
+        depreciationRunLine: { entityIdColumn: "depreciationRunId" }
+      }
+    },
+
+    revenueRecognitionRun: {
+      label: "Revenue Recognition Run",
+      tables: {
+        revenueRecognitionRun: { role: "root" },
+        revenueRecognitionRunLine: { entityIdColumn: "runId" }
+      }
     }
   } satisfies Record<string, EntityConfig>,
 

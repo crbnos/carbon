@@ -46,9 +46,16 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 
 ## Components
 
-- **Form** (`ShipmentForm.tsx`, `ReceiptForm/ReceiptForm.tsx`): Card + `ValidatedForm`, a
-  `DocumentHeader`, source-document `Select` + dependent `Combobox` (ID), `Location`, custom fields,
-  and a dropdown action menu (Void if posted, Delete). The `use{Shipment,Receipt}Form` hook fetches
+- **Page** (`$id.tsx`): `DocumentPage` (`components/DocumentPage/`) with
+  `{Shipment,Receipt}Header` (ID, status, created/posted line, ⋯ Void/Delete, labels
+  `PrintButton`, Invoice, Post) and a `DocumentSidebar` whose Documents tab is
+  `{Shipment,Receipt}Documents` — the customer/supplier, the source document, invoices
+  (shipment: `getShipmentRelatedItems`; receipt: `getReceiptRelatedItems`, which also resolves a
+  sales return's customer), receipt inspections and line attachments, the shipment's packing slip
+  (only with a source document) — and whose Activity tab is the audit log.
+- **Form** (`ShipmentForm.tsx`, `ReceiptForm/ReceiptForm.tsx`): flat `ValidatedForm` (no Card),
+  source-document `Select` + dependent `Combobox` (ID), `Location`, custom fields. The
+  `use{Shipment,Receipt}Form` hook fetches
   selectable source documents (filtered by status) when not posted. **Posted locks `location`,
   `sourceDocument`, `sourceDocumentId`.** Shipment extra field `trackingNumber` + `ShippingMethod`;
   receipt extra `externalDocumentId`.

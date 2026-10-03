@@ -15,6 +15,17 @@ import type {
   JournalLineDimensionValue
 } from "./types";
 
+/**
+ * The column template shared by the line rows, the column headers and the
+ * totals. The amount columns come first: each is up to 176px, room for
+ * "$12,345,678.00" in the mono input font (~118px) plus its padding, and
+ * grid fills a fixed maximum before a 1fr track gets the rest — so the
+ * account and description give way, and only a narrow pane (the content
+ * pane is resizable) eats into the amounts, never the account below 10rem.
+ */
+export const journalLineGridClassName =
+  "grid grid-cols-[auto_minmax(10rem,1fr)_minmax(0,176px)_minmax(0,176px)_32px] gap-3";
+
 type JournalLineRowProps = {
   line: ClientJournalLine;
   index: number;
@@ -70,14 +81,16 @@ const JournalLineRow = ({
 
   return (
     <div className="group">
-      <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-start gap-3 py-4 px-4 transition-colors hover:bg-muted/30">
+      <div
+        className={`${journalLineGridClassName} items-start py-4 px-4 transition-colors hover:bg-muted/30`}
+      >
         {/* Row number */}
         <div className="flex h-9 w-6 items-center justify-center text-xs font-medium text-muted-foreground tabular-nums">
           {index + 1}
         </div>
 
         {/* Account and Description */}
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <AccountControlled
             value={line.accountId}
             onChange={handleAccountChange}
