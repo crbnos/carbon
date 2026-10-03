@@ -1,6 +1,6 @@
 # Frontend hardening — 2026-10-04
 
-Branch `refactor/frontend-hardening`, one commit per piece, nothing pushed without approval.
+Branch `refactor/architecture-hardening` (created as `refactor/frontend-hardening`), one commit per piece.
 Out of scope (separate session): the TanStack Query caching layer (`cachedClientLoader`,
 root invalidation middleware, `useLoaderQuery`/`useAction`) and the realtime list provider
 rebuild that depends on it.
@@ -41,10 +41,16 @@ Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurre
 - [x] PDF engine out of the client entry; PostHog web vitals
 - [x] `downloadUrl` checks the response at the 12 file-download sites
 
-## Blocked on a running stack for this branch (`crbn up`)
+## Verified in the browser (local, dev bypass login)
 
-- Browser verification of everything above
-- Auth routes → `@carbon/auth`
+Redirect destinations, route modal close, in-shell error boundary, dialog and
+drawer behaviour, overscroll and zoom, the hub nav item and home card.
+
+## Still to check on staging
+
+- Magic-link, OAuth, passkey, SSO and Stripe redirects
+- The company switcher with a multi-company user
+- Auth routes → `@carbon/auth` (not started)
 
 ## Needs its own plan (not in this branch)
 

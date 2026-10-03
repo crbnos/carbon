@@ -61,7 +61,7 @@ pnpm --filter @carbon/utils typecheck
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `items` | Item lookups and `getReadableIdWithRevision` (`readableId.revision`) |
 | `revalidate` | `shouldRevalidate` predicates: `isSearchParamOnlyNavigation` (root loaders), `isUnaffectedByNavigation` (detail layouts — names the route/search params the loader reads) |
-| `redirect` | `redirectBeforeLoaders(loader)` — route middleware for an index route that only redirects, so the redirect runs before its parents' loaders |
+| `redirect` | `redirect(to, init?)` — the only redirect a loader or action uses: a path on this origin, anything else lands on the home page (`no-raw-redirect` check); `redirectExternal(url, init?)` to leave the origin on purpose with a URL the server built; `safePath(to, fallback)` for a destination that is stored or forwarded rather than redirected to. `redirectBeforeLoaders(loader)` — route middleware for an index route that only redirects, so the redirect runs before its parents' loaders |
 | `status` | Status resolution, status color mapping |
 | `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and sales rules |
 | `rule-filters` | Item scoping for broadcast rules (`ItemFilter`, `ruleAppliesToItem`, `toItemFilter`) — family-neutral, split out of `rules.ts` |
