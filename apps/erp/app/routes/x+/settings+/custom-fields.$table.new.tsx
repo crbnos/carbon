@@ -65,7 +65,7 @@ export default function NewCustomFieldRoute() {
     <CustomFieldForm
       initialValues={{
         name: "",
-        // @ts-ignore
+        // @ts-expect-error
         dataTypeId: DataType.Text.toString(),
         table: table,
         tags: []

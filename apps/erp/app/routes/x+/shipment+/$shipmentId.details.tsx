@@ -290,7 +290,7 @@ export default function ShipmentDetailsRoute() {
     <>
       <ShipmentForm
         key={initialValues.sourceDocumentId}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
         status={routeData.shipment.status}
         shipmentLines={routeData.shipmentLines}

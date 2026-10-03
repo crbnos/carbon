@@ -445,7 +445,7 @@ export default function ProcedureExplorer() {
       </VStack>
       {procedureStepDisclosure.isOpen && (
         <ProcedureStepForm
-          // @ts-ignore
+          // @ts-expect-error
           initialValues={procedureAttribtueInitialValues}
           isDisabled={isDisabled}
           onClose={procedureStepDisclosure.onClose}

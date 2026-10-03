@@ -278,7 +278,7 @@ const SupplierInteractionLineDocuments = ({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={getPath(file)}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}

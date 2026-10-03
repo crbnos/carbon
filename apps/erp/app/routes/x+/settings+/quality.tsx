@@ -111,7 +111,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const update = await client
       .from("companySettings")
-      // @ts-ignore - samplingStandard column added in migration 20260419100000
       .update({ samplingStandard: validation.data.samplingStandard })
       .eq("id", companyId);
     if (update.error) return { success: false, message: update.error.message };

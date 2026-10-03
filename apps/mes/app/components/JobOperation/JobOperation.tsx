@@ -2326,7 +2326,7 @@ export const JobOperation = ({
                                                     pathToFile={getFilePath(
                                                       file
                                                     )}
-                                                    // @ts-ignore
+                                                    // @ts-expect-error
                                                     type={getFileType(
                                                       file.name
                                                     )}
@@ -3294,7 +3294,6 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
-      {/* @ts-ignore */}
       {finishModal.isOpen && (
         <Suspense key={`finish-modal-${operationId}`}>
           <Await resolve={procedure}>

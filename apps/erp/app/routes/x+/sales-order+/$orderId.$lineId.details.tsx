@@ -288,7 +288,7 @@ export default function EditSalesOrderLineRoute() {
     <Fragment key={lineId}>
       <SalesOrderLineForm
         key={initialValues.id}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
       />
 

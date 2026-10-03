@@ -901,7 +901,6 @@ const BillOfProcess = ({
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
-          // @ts-ignore
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
         />

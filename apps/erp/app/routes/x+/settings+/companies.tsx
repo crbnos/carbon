@@ -109,7 +109,7 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="tree">
         <CompaniesTreeView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}
@@ -118,7 +118,7 @@ export default function SubsidiariesRoute() {
 
       <TabsContent value="list">
         <CompaniesListView
-          // @ts-ignore
+          // @ts-expect-error
           companies={companies}
           onDelete={handleDelete}
           onAddChild={handleAddChild}

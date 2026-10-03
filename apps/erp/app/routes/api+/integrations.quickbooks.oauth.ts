@@ -117,7 +117,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       {
         id: QuickBooks.id,
         active: true,
-        // @ts-ignore
+        // @ts-expect-error
         metadata: {
           syncConfig: DEFAULT_SYNC_CONFIG,
           settings: { syncEnabled },

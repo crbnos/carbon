@@ -285,7 +285,6 @@ export default function TrainingExplorer() {
       </VStack>
       {questionDisclosure.isOpen && (
         <TrainingQuestionForm
-          // @ts-ignore
           initialValues={trainingQuestionInitialValues}
           isDisabled={isDisabled}
           onClose={questionDisclosure.onClose}

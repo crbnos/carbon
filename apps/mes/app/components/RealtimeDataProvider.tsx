@@ -58,7 +58,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
         if (data && fresh()) setItems(data as Item[], true);
       });
       idb.getItem(`people:${requestedCompanyId}`).then((data) => {
-        // @ts-ignore
+        // @ts-expect-error
         if (data && fresh()) setPeople(data, true);
       });
     }
@@ -114,7 +114,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       }))
     );
     setPeople(
-      // @ts-ignore
+      // @ts-expect-error
       people.data ?? []
     );
   };

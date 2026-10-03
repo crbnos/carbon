@@ -28,7 +28,6 @@ export const useDocument = () => {
     (doc: DocumentType) => {
       return (
         !permissions.can("delete", "documents") ||
-        // @ts-ignore
         !doc.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },
@@ -39,7 +38,6 @@ export const useDocument = () => {
     (document: DocumentType) => {
       return (
         !permissions.can("update", "documents") ||
-        // @ts-ignore
         !document.writeGroups?.some((group) => user?.groups.includes(group))
       );
     },

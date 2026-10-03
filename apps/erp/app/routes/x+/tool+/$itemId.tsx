@@ -252,7 +252,6 @@ export default function ToolRoute() {
                                   <BoMExplorer
                                     itemType="Tool"
                                     makeMethod={resolved.makeMethod}
-                                    // @ts-ignore
                                     methods={resolved.methods}
                                     methodId={resolved.makeMethod.id}
                                     filterText={filterText}

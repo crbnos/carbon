@@ -56,7 +56,6 @@ const RichText = ({ name, output = "html", ...props }: RichTextProps) => {
       <RichTextBase {...props} editor={richText} />
       <input
         {...getInputProps({
-          // @ts-ignore
           id: name
         })}
         value={value}

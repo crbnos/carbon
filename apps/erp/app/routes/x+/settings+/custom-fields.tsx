@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const result = await client
-    // @ts-ignore
+    // @ts-expect-error
     .from(table)
     .update(
       unchecked({

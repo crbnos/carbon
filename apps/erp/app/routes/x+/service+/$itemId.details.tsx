@@ -184,18 +184,17 @@ export default function ServiceDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 tags={tags}
               />
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 replenishmentSystem={
                   serviceData.serviceSummary?.replenishmentSystem

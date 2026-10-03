@@ -84,7 +84,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     let revision = "0";
     try {
       const { output: parsedFilename } = await generateText({
-        // @ts-ignore
         model: openai("gpt-4o-mini"),
         output: Output.object({
           schema: z.object({
@@ -265,7 +264,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (partId && modelId) {
       updates.push(
-        // @ts-ignore
+        // @ts-expect-error
         client
           .from("item")
           .update({ modelUploadId: modelId })

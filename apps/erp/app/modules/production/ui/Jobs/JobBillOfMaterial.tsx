@@ -256,7 +256,7 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  // @ts-ignore
+  // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   description: "",

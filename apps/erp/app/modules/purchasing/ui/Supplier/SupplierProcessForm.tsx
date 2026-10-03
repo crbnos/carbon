@@ -64,7 +64,6 @@ const SupplierProcessForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      // @ts-ignore
       toast.success(`Created supplier process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(`Failed to create supplier process`);

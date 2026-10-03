@@ -611,7 +611,7 @@ export function InspectionView({
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
   return (
-    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
         <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />

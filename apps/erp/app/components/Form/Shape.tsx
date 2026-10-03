@@ -23,7 +23,7 @@ const ShapePreview = (
   options: { value: string; label: string | React.ReactNode }[]
 ) => {
   const shape = options.find((o) => o.value === value);
-  // @ts-ignore
+  // @ts-expect-error
   return <Enumerable value={shape?.label ?? null} />;
 };
 

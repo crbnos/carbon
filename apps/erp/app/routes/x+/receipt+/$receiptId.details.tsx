@@ -190,7 +190,7 @@ export default function ReceiptDetailsRoute() {
     <>
       <ReceiptForm
         key={initialValues.sourceDocumentId}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
         status={routeData.receipt.status}
         receiptLines={routeData.receiptLines}

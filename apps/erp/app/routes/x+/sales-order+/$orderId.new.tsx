@@ -210,7 +210,7 @@ export default function NewSalesOrderLineRoute() {
 
   return (
     <SalesOrderLineForm
-      // @ts-ignore
+      // @ts-expect-error
       initialValues={initialValues}
     />
   );

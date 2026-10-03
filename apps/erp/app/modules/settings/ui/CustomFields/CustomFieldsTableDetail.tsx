@@ -75,7 +75,7 @@ const CustomFieldCategoryDetail = ({
       Array.isArray(customFieldTable.fields)
         ? customFieldTable.fields.reduce<
             Record<string, CustomFieldAndDataType>
-            // @ts-ignore
+            // @ts-expect-error
           >((acc, field) => {
             if (!field) return acc;
             const customField = field as CustomFieldAndDataType;

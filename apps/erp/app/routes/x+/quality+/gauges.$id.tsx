@@ -156,7 +156,7 @@ export default function GaugeRoute() {
   return (
     <GaugeForm
       key={id}
-      // @ts-ignore
+      // @ts-expect-error
       initialValues={initialValues}
       records={records}
       gaugeTypes={routeData?.gaugeTypes ?? []}

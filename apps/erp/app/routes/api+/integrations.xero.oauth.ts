@@ -204,7 +204,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const createdXeroIntegration = await upsertCompanyIntegration(client, {
       id: Xero.id,
       active: true,
-      // @ts-ignore
+      // @ts-expect-error
       metadata: {
         syncConfig: DEFAULT_SYNC_CONFIG,
         settings: { syncEnabled },

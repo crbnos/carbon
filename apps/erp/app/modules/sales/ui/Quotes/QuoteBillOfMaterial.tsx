@@ -242,7 +242,7 @@ const initialMethodMaterial: Omit<Material, "quoteMakeMethodId" | "order"> & {
 } = {
   itemId: "",
   itemReadableId: "",
-  // @ts-ignore
+  // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   description: "",

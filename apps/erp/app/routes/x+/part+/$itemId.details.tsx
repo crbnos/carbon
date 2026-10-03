@@ -324,7 +324,6 @@ export default function PartDetailsRoute() {
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}
-                  // @ts-ignore
                   initialValues={manufacturingInitialValues}
                 />
               )}
@@ -352,12 +351,11 @@ export default function PartDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
                 configurable={
                   methodData.partManufacturing?.requiresConfiguration
                 }
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 configurationRules={methodData.configurationRules}
                 parameters={
@@ -372,9 +370,9 @@ export default function PartDetailsRoute() {
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 configurable={
                   methodData.partManufacturing?.requiresConfiguration

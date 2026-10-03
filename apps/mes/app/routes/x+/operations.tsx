@@ -427,7 +427,7 @@ export default function ScheduleRoute() {
   return (
     <ClientOnly
       fallback={
-        <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
+        <div className="flex h-dvh w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
           <CarbonPulse />
         </div>
       }

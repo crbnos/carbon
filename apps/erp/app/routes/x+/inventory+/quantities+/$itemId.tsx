@@ -105,7 +105,7 @@ export default function ItemInventoryRoute() {
         <ScrollArea className="h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
           <InventoryItemHeader
             itemReadableId={item.readableIdWithRevision ?? item.readableId}
-            // @ts-ignore
+            // @ts-expect-error
             itemType={item.type}
           />
           <VStack className="p-2">

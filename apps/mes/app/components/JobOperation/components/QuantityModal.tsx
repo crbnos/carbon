@@ -170,11 +170,10 @@ export function QuantityModal({
           method="post"
           validator={validatorMap[type]}
           defaultValues={{
-            // @ts-ignore
+            // @ts-expect-error
             trackedEntityId:
               parentIsSerial || parentIsBatch ? trackedEntityId : undefined,
             jobOperationId: operation.id,
-            // @ts-ignore
             quantity: type === "finish" ? undefined : 0,
             setupProductionEventId: setupProductionEvent?.id,
             laborProductionEventId: laborProductionEvent?.id,

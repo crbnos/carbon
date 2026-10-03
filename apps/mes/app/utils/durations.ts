@@ -204,7 +204,6 @@ export function makeDurations<
 
   const totalDuration = setupDuration + laborDuration + machineDuration;
 
-  // @ts-ignore
   return {
     ...operation,
     duration: totalDuration,

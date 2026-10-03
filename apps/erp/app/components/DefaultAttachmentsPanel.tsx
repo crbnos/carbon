@@ -199,7 +199,7 @@ export default function DefaultAttachmentsPanel({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={filePath}
-                              // @ts-ignore — type is a string union the preview accepts
+                              // @ts-expect-error — type is a string union the preview accepts
                               type={type}
                             >
                               {f.name}

@@ -4,5 +4,5 @@
 
 export * from "./production.models";
 export * from "./production.service";
-// @ts-ignore
+// @ts-expect-error
 export * from "./types";

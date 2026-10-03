@@ -490,7 +490,7 @@ const JobDocuments = ({
                                   ? "parts"
                                   : "job"
                               )}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}

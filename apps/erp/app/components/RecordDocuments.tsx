@@ -153,7 +153,7 @@ const RecordDocuments = ({
                         <DocumentPreview
                           bucket="private"
                           pathToFile={getPath(file)}
-                          // @ts-ignore
+                          // @ts-expect-error
                           type={getDocumentType(file.name)}
                         >
                           {file.name}

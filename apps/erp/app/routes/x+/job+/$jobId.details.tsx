@@ -272,9 +272,8 @@ export default function JobDetailsRoute() {
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
               locationId={jobData?.job?.locationId ?? ""}
               tags={tags}
@@ -285,9 +284,9 @@ export default function JobDetailsRoute() {
             <JobBillOfMaterial
               key={`bom:${methodId}`}
               jobMakeMethodId={methodId}
-              // @ts-ignore
+              // @ts-expect-error
               materials={materials}
-              // @ts-ignore
+              // @ts-expect-error
               operations={operations}
             />
           </>
@@ -312,9 +311,8 @@ export default function JobDetailsRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
-                // @ts-ignore
                 materials={materials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}

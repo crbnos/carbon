@@ -201,7 +201,7 @@ const LineItems = ({
                           >
                             {line.purchaseQuantity}
                             <MethodIcon
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={line.methodType ?? "Pull from Inventory"}
                             />
                           </Badge>

@@ -568,7 +568,7 @@ const OpportunityLineDocuments = ({
                                   ? "parts"
                                   : "opportunity-line"
                               )}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={type}
                             >
                               {file.name}

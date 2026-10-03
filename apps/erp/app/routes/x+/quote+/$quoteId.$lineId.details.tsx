@@ -464,7 +464,7 @@ export default function QuoteLine() {
           <QuoteBillOfMaterial
             key={`bom:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
-            // @ts-ignore
+            // @ts-expect-error
             materials={methodData.methodMaterials}
             // @ts-expect-error
             operations={methodData.methodOperations}

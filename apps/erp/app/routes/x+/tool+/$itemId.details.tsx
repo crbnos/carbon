@@ -292,7 +292,6 @@ export default function ToolDetailsRoute() {
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}
-                  // @ts-ignore
                   initialValues={manufacturingInitialValues}
                   withConfiguration={false}
                 />
@@ -312,9 +311,8 @@ export default function ToolDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 tags={tags}
                 revisionStatus={revisionStatus}
@@ -325,9 +323,9 @@ export default function ToolDetailsRoute() {
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}

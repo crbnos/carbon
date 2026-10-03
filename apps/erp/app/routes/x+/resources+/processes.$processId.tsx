@@ -169,7 +169,7 @@ export default function ProcessRoute() {
     processType: process.processType ?? "Process",
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
     workCenters: process.workCenters ?? [],
-    // @ts-ignore
+    // @ts-expect-error
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
     completeAllOnScan: process.completeAllOnScan ?? false,

@@ -47,7 +47,7 @@ export async function assign(
 
   return (
     client
-      // @ts-ignore
+      // @ts-expect-error
       .from(table)
       .update(unchecked({ assignee: assignee ? assignee : null }))
       .eq(unchecked("id"), id)

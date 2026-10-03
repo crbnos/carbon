@@ -122,7 +122,7 @@ const SupplierInteractionDocuments = ({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={getPath(attachment)}
-                              // @ts-ignore
+                              // @ts-expect-error
                               type={getDocumentType(attachment.name)}
                             >
                               {attachment.name}

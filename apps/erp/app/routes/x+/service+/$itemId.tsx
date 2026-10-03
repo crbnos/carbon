@@ -289,7 +289,6 @@ export default function ServiceRoute() {
                                   <BoMExplorer
                                     itemType="Service"
                                     makeMethod={resolved.makeMethod}
-                                    // @ts-ignore
                                     methods={resolved.methods}
                                     methodId={resolved.makeMethod.id}
                                     filterText={filterText}
