@@ -9,10 +9,10 @@ Carbon synchronizes accounting data with **Xero**, **QuickBooks Online**, or **R
 
 <PlanBadge plan="Business" className="my-[8px]" />
 
-After connection, Carbon sends **customers**, **vendors**, **items**, **sales invoices**, **bills**, and automated **GL journals** to the provider. **Carbon is the source of truth**: Carbon changes take precedence, and stable record mappings prevent duplicates. Provider payments synchronize back to Carbon and settle the matching invoice or bill.
+Once **Sync** is on, Carbon sends **customers**, **vendors**, **items**, **sales invoices**, **bills**, and automated **GL journals** to the provider. **Carbon is the source of truth**: Carbon changes take precedence, and stable record mappings prevent duplicates. Provider payments synchronize back to Carbon and settle the matching invoice or bill.
 
-<Callout type="note" title="Journal mirroring is automatic, and always on">
-Carbon mirrors every automated GL posting to the connected provider. This behavior cannot be disabled. Journals with a `Manual` source do not synchronize.
+<Callout type="note" title="Journal mirroring is automatic while sync is on">
+While **Sync** is on, Carbon mirrors every automated GL posting to the connected provider. Journals with a `Manual` source do not synchronize.
 </Callout>
 
 A provider payment creates a Carbon payment and <Term id="invoice-settlement">invoice settlement</Term>, then posts to Carbon's <Term id="general-ledger">general ledger</Term>. Rillet also accepts outbound Carbon payments. Xero and QuickBooks support inbound payment synchronization only.
@@ -30,7 +30,17 @@ Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**.
   <Step>
   ### Configure the sync
 
-  Set the account mapping, dimensions, and posting-sync options (below) before the first push.
+  A new connection starts with **Sync** off, so nothing reaches the ledger while you set it up. Set the
+  account mapping, dimensions, and posting-sync options (below). If the ledger already has customers and
+  vendors, run **Import customers & vendors** now — it works while sync is off, and links them so the first
+  sync updates them instead of creating duplicates.
+  </Step>
+  <Step>
+  ### Turn on sync
+
+  Turn on the **Sync** switch at the top of the integration. It stays locked until every account marked
+  **Required** on the Account Mapping tab is mapped. Turning it off later pauses the sync again; a reconnect
+  to the same organization keeps it where it was.
   </Step>
   <Step>
   ### Run the initial sync
@@ -73,7 +83,7 @@ The **Posting Sync** tab controls three things:
 
 ## Watch it run
 
-The **Sync Activity** tab lists each operation's **Status**, **Entity**, **Direction**, **Trigger**, **Attempts**, **Last Attempt**, and **Error**. Filter by status, **Retry** or **Skip** a failed operation, **Re-send** a completed operation, or **Retry all**. Carbon creates an in-app notification when failures remain after an outbound run.
+The **Sync Activity** tab lists each operation's **Status**, **Entity**, **Direction**, **Trigger**, **Attempts**, **Last Attempt**, and **Error**. Filter by status, **Retry** or **Skip** a failed operation, **Re-send** a completed operation, or **Retry all**. **Export CSV** downloads every operation under the current status filter, with the document number, provider ID, and full error. Carbon creates an in-app notification when failures remain after an outbound run.
 
 Weekly reconciliation writes the **Sync Tie-Out** report under **Accounting → Reports → Sync Tie-Out**. Each row compares **Posted**, **Synced**, and **Provider** balances for one accounting period, account, and integration. The report flags **Internal** and **External Delta** values.
 

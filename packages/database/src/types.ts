@@ -83604,6 +83604,15 @@ export type Database = {
           unitOfMeasureCode: string
         }[]
       }
+      get_item_ledger_balance: {
+        Args: {
+          company_id: string
+          entry_number?: number
+          item_id: string
+          location_id: string
+        }
+        Returns: number
+      }
       get_item_quantities_by_tracking_id: {
         Args: { company_id: string; item_id: string; location_id: string }
         Returns: {

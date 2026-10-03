@@ -8,6 +8,7 @@ import {
   ensureProviderSubscriptions,
   getAccountingIntegration,
   getProviderIntegration,
+  isAccountingSyncEnabled,
   PAYMENT_PUSH_PROVIDERS,
   ProviderID,
   resolvePostingSyncSettings,
@@ -663,7 +664,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId, updatedBy")
+        .select("id, companyId, metadata, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -673,11 +674,14 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
         );
       }
 
-      return (integrations.data ?? []).map((row) => ({
-        companyId: row.companyId,
-        providerId: row.id as ProviderID,
-        updatedBy: row.updatedBy
-      }));
+      // An integration with sync turned off is still being set up.
+      return (integrations.data ?? [])
+        .filter((row) => isAccountingSyncEnabled(row.metadata))
+        .map((row) => ({
+          companyId: row.companyId,
+          providerId: row.id as ProviderID,
+          updatedBy: row.updatedBy
+        }));
     });
 
     if (targets.length === 0) {

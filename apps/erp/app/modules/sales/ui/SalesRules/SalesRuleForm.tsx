@@ -171,7 +171,12 @@ export default function SalesRuleForm({
                   <Input name="name" label={t`Name`} />
 
                   <div className="shrink-0 pb-2">
-                    <Boolean variant="large" name="active" label={t`Active`} />
+                    <Boolean
+                      variant="large"
+                      name="active"
+                      label={t`Active`}
+                      isOptional={false}
+                    />
                   </div>
                 </HStack>
                 <TextArea

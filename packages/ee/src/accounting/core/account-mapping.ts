@@ -498,6 +498,80 @@ export async function getFullChartMappableAccounts(
 }
 
 /**
+ * The accounts a company must map before an accounting integration may sync:
+ * every accountDefault posting account plus every Expense account (any
+ * Expense account can be charged directly on a PO G/L-account line). The
+ * Account Mapping tab badges exactly this set as Required.
+ */
+export function selectRequiredMappingAccountIds(
+  accountDefaultIds: string[],
+  chart: Pick<MappableChartAccount, "id" | "class">[]
+): string[] {
+  return [
+    ...new Set([
+      ...accountDefaultIds,
+      ...chart
+        .filter((account) => account.class === "Expense")
+        .map((account) => account.id)
+    ])
+  ];
+}
+
+/**
+ * Required accounts (selectRequiredMappingAccountIds) in the active chart that
+ * have no provider account yet. Turning sync on is refused while any remain.
+ */
+export function selectUnmappedRequiredAccounts(args: {
+  accountDefaultIds: string[];
+  chart: MappableChartAccount[];
+  mappedAccountIds: Set<string>;
+}): UnmappedPostingAccount[] {
+  const required = new Set(
+    selectRequiredMappingAccountIds(args.accountDefaultIds, args.chart)
+  );
+  return args.chart
+    .filter(
+      (account) =>
+        required.has(account.id) && !args.mappedAccountIds.has(account.id)
+    )
+    .map(({ id, number, name }) => ({ id, number, name }));
+}
+
+export async function getUnmappedRequiredAccounts(
+  db: Db,
+  args: { companyId: string; integration: string }
+): Promise<{ data: UnmappedPostingAccount[] | null; error: string | null }> {
+  try {
+    const [accountDefaultIds, chart, mappedRows] = await Promise.all([
+      loadAccountDefaultAccountIds(db, args.companyId),
+      getFullChartMappableAccounts(db, { companyId: args.companyId }),
+      db
+        .selectFrom("externalIntegrationMapping")
+        .select("entityId")
+        .where("entityType", "=", ACCOUNT_MAPPING_ENTITY_TYPE)
+        .where("integration", "=", args.integration)
+        .where("companyId", "=", args.companyId)
+        .where("externalId", "is not", null)
+        .execute()
+    ]);
+    if (chart.error || !chart.data) {
+      return { data: null, error: chart.error ?? "Failed to load accounts" };
+    }
+
+    return {
+      data: selectUnmappedRequiredAccounts({
+        accountDefaultIds,
+        chart: chart.data,
+        mappedAccountIds: new Set(mappedRows.map((row) => row.entityId))
+      }),
+      error: null
+    };
+  } catch (err) {
+    return { data: null, error: toErrorMessage(err) };
+  }
+}
+
+/**
  * Propose (not write) exact matches between Carbon account numbers and the
  * provider's chart-of-accounts codes across the FULL chart of accounts — every
  * active, non-group, numbered account without an existing mapping (widened from

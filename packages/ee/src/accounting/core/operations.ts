@@ -405,6 +405,9 @@ export async function clearResolvedSyncOperations(
  * `entityTypes` is the include-only counterpart (the consolidation cron
  * claims ONLY journalEntry operations). Mutually exclusive with
  * `excludeEntityTypes` — see getClaimEntityTypeFilterError.
+ *
+ * `direction` claims only operations going that way (a master-data import
+ * claims only its own pulls).
  */
 export async function claimPendingOperations(
   client: SupabaseClient<Database>,
@@ -423,6 +426,7 @@ export async function claimPendingOperations(
      * transitional consolidation flag.
      */
     holdDailySummaryJournalEntries?: boolean;
+    direction?: SyncOperationDirection;
   }
 ): Promise<{ data: SyncOperation[]; error: string | null }> {
   const filterError = getClaimEntityTypeFilterError(args);
@@ -454,6 +458,9 @@ export async function claimPendingOperations(
   if (args.holdDailySummaryJournalEntries) {
     pendingQuery = pendingQuery.or(dailySummaryHold);
   }
+  if (args.direction) {
+    pendingQuery = pendingQuery.eq("direction", args.direction);
+  }
 
   const pending = await pendingQuery
     .order("createdAt", { ascending: true })
@@ -475,6 +482,9 @@ export async function claimPendingOperations(
   }
   if (args.holdDailySummaryJournalEntries) {
     staleQuery = staleQuery.or(dailySummaryHold);
+  }
+  if (args.direction) {
+    staleQuery = staleQuery.eq("direction", args.direction);
   }
 
   const stale = await staleQuery
@@ -832,4 +842,77 @@ export async function getSyncOperations(
     count: result.count ?? null,
     error: null
   };
+}
+
+/** The columns the Sync Activity CSV export reads, and nothing heavier. */
+const SYNC_OPERATION_EXPORT_COLUMNS =
+  "id, integration, entityType, entityId, direction, trigger, status, attemptCount, lastAttemptAt, completedAt, errorCode, errorMessage, externalId, createdAt";
+
+export type SyncOperationExportRow = Pick<
+  SyncOperation,
+  | "id"
+  | "integration"
+  | "entityType"
+  | "entityId"
+  | "direction"
+  | "trigger"
+  | "status"
+  | "attemptCount"
+  | "lastAttemptAt"
+  | "completedAt"
+  | "errorCode"
+  | "errorMessage"
+  | "externalId"
+  | "createdAt"
+>;
+
+/** Where the previous page ended: its last row's sort key. */
+export type SyncOperationCursor = Pick<SyncOperation, "createdAt" | "id">;
+
+/**
+ * One page of sync operations for the Sync Activity CSV export, newest first,
+ * under the same filters as `getSyncOperations`. Keyset-paged on
+ * (createdAt DESC, id) — served by `accountingSyncOperation_createdAt_idx` —
+ * so the caller can stream an unbounded history one page at a time instead
+ * of holding it in memory, and page N costs the same as page 1. Pass the
+ * previous page's last row as `after`; a page shorter than `limit` is the
+ * last one.
+ */
+export async function getSyncOperationsExportPage(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    status?: SyncOperationStatus | SyncOperationStatus[];
+    after?: SyncOperationCursor;
+    limit: number;
+  }
+): Promise<{ data: SyncOperationExportRow[]; error: string | null }> {
+  let query = syncOperationTable(client)
+    .select(SYNC_OPERATION_EXPORT_COLUMNS)
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration);
+
+  if (args.status) {
+    query = Array.isArray(args.status)
+      ? query.in("status", args.status)
+      : query.eq("status", args.status);
+  }
+
+  if (args.after) {
+    // Quoted: a timestamp carries `.`, `:` and `+`, all reserved in an
+    // or-filter. `id` ascending breaks createdAt ties, matching the index.
+    const { createdAt, id } = args.after;
+    query = query.or(
+      `createdAt.lt."${createdAt}",and(createdAt.eq."${createdAt}",id.gt."${id}")`
+    );
+  }
+
+  const result = await query
+    .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
+    .limit(args.limit);
+
+  if (result.error) return { data: [], error: result.error.message };
+  return { data: (result.data ?? []) as SyncOperationExportRow[], error: null };
 }

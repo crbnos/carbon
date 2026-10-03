@@ -3031,14 +3031,25 @@ export async function getPeriodExternalGlSyncReadiness(
 ): Promise<{ failing: boolean; count: number; postingSyncEnabled: boolean }> {
   const integrations = await client
     .from("companyIntegration")
-    .select("id")
+    .select("id, metadata")
     .eq("companyId", companyId)
     .eq("active", true)
     .in("id", ACCOUNTING_SYNC_INTEGRATION_IDS);
 
-  const enabledIntegrationIds = (integrations.data ?? []).map(
-    (integration) => integration.id
-  );
+  // An integration with sync turned off (still being set up) delivers nothing,
+  // so it is treated like a disconnected one. Mirrors `isAccountingSyncEnabled`
+  // in @carbon/ee/accounting, which this module cannot import (see above):
+  // absent means on, only an explicit false is off.
+  const enabledIntegrationIds = (integrations.data ?? [])
+    .filter(
+      (integration) =>
+        (
+          integration.metadata as {
+            settings?: { syncEnabled?: unknown };
+          } | null
+        )?.settings?.syncEnabled !== false
+    )
+    .map((integration) => integration.id);
 
   if (enabledIntegrationIds.length === 0) {
     return { failing: false, count: 0, postingSyncEnabled: false };
