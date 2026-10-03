@@ -2971,3 +2971,13 @@ third-party one, `apps/mobile/AGENTS.md`.
 **Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
 
 **Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.
+
+## A native addon reachable from a route file takes the dev server down on a cold start
+
+**Context:** The MES inspection drawing endpoint rasterises a PDF page through `@carbon/files/pdf/node`, whose canvas backend is `@napi-rs/canvas` — a native addon whose entry `require`s a `.node` binary. It was built and verified against a dev server that was already running.
+
+**Problem:** Vite's dev dependency scan follows every route file, server-only ones included, and through a linked workspace package. It reached the `import("@napi-rs/canvas")` in `pdf/node.ts`, tried to pre-bundle the addon, could not read the binary as source (`UNLOADABLE_DEPENDENCY … stream did not contain valid UTF-8`), and the unhandled rejection killed the whole dev server seconds after it printed its URLs. A warm optimizer cache hides it completely: the scan only runs when the lockfile or config hash changes, so the server that was running when the endpoint was written kept working, and typecheck, vitest and `react-router build` never run the optimizer at all. Starting a second dev server for the same app also DELETES the shared `node_modules/.vite/deps` of the one already running.
+
+**Rule:** A native addon (anything that loads a `.node` file) imported anywhere a route file can reach goes in that app's `optimizeDeps.exclude`. After adding a server-side dependency, verify with a COLD start — stop the dev server, delete `apps/<app>/node_modules/.vite`, start it — not against the server that was already up. Never start a second dev server for an app someone else is running.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `packages/files/src/pdf/node.ts`, any new native dependency.
