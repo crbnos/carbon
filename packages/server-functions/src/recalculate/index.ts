@@ -12,6 +12,7 @@ import {
   getJobMethodTree,
   type JobMethodTreeItem
 } from "@carbon/database/methods";
+import { inOrder } from "@carbon/database/rows";
 import { getLogger } from "@carbon/logger";
 import { sql, type Transaction } from "kysely";
 import { z } from "zod";
@@ -105,20 +106,22 @@ export const recalculate = defineServerFn({
       }
       case "jobRequirements": {
         const jobId = id;
-        const [job, jobMakeMethods] = await Promise.all([
-          db
-            .selectFrom("job")
-            .select(["quantity"])
-            .where("id", "=", jobId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst(),
-          db
-            .selectFrom("jobMakeMethod")
-            .select(["id"])
-            .where("jobId", "=", jobId)
-            .where("companyId", "=", companyId)
-            .where("parentMaterialId", "is", null)
-            .execute()
+        const [job, jobMakeMethods] = await inOrder([
+          () =>
+            db
+              .selectFrom("job")
+              .select(["quantity"])
+              .where("id", "=", jobId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst(),
+          () =>
+            db
+              .selectFrom("jobMakeMethod")
+              .select(["id"])
+              .where("jobId", "=", jobId)
+              .where("companyId", "=", companyId)
+              .where("parentMaterialId", "is", null)
+              .execute()
         ]);
 
         // A job outside companyId is a 404.

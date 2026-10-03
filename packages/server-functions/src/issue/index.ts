@@ -3425,22 +3425,22 @@ export const issue = defineServerFn({
           throw new Error("Tracked entity has already been scrapped");
         }
 
-        const [accountingSettingsScrap, companyRecordScrap] = await Promise.all(
-          [
+        const [accountingSettingsScrap, companyRecordScrap] = await inOrder([
+          () =>
             single(
               db,
               "companySettings",
               { id: companyId },
               { columns: ["accountingEnabled"] }
             ),
+          () =>
             single(
               db,
               "company",
               { id: companyId },
               { columns: ["companyGroupId"] }
             )
-          ]
-        );
+        ]);
         if (companyRecordScrap.error)
           throw new Error("Failed to fetch company");
         const accountingEnabledScrap =

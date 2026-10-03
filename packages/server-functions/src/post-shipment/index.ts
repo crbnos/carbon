@@ -69,11 +69,11 @@ export const postShipment = defineServerFn({
         .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
-      const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all(
-        [
-          // The client is service-role: authorization proved the caller may
-          // act in companyId, not that shipmentId belongs to it.
-          maybeSingle(db, "shipment", { id: shipmentId, companyId }),
+      const [shipment, shipmentLines, shipmentLineTracking] = await inOrder([
+        // The client is service-role: authorization proved the caller may
+        // act in companyId, not that shipmentId belongs to it.
+        () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
+        () =>
           many<
             "shipmentLine",
             Tables["shipmentLine"]["Row"] & {
@@ -89,12 +89,12 @@ export const postShipment = defineServerFn({
               }
             }
           ),
+        () =>
           many(db, "trackedEntity", {
             attributes: contains({ Shipment: shipmentId }),
             companyId
           })
-        ]
-      );
+      ]);
 
       if (shipment.error) throw new Error("Failed to fetch shipment");
       if (!shipment.data) throw new NotFoundError("Shipment not found");

@@ -25,6 +25,7 @@ import {
 } from "@carbon/database/methods";
 import { effectiveReplenishment } from "@carbon/database/mrp-engine";
 import {
+  inOrder,
   isNull,
   many,
   maybeSingle,
@@ -57,6 +58,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { chunked } from "../import-csv/chunks";
 import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
@@ -272,10 +274,13 @@ export const getMethod = defineServerFn({
     switch (type) {
       case "itemToItem": {
         const [sourceMakeMethod, targetMakeMethod, targetItemReplenishment] =
-          await Promise.all([
-            single(db, "activeMakeMethods", { itemId: sourceId, companyId }),
-            single(db, "activeMakeMethods", { itemId: targetId, companyId }),
-            single(db, "itemReplenishment", { itemId: targetId, companyId })
+          await inOrder([
+            () =>
+              single(db, "activeMakeMethods", { itemId: sourceId, companyId }),
+            () =>
+              single(db, "activeMakeMethods", { itemId: targetId, companyId }),
+            () =>
+              single(db, "itemReplenishment", { itemId: targetId, companyId })
           ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
           throw new Error("Failed to get make methods");
@@ -296,43 +301,45 @@ export const getMethod = defineServerFn({
           throw new Error("Failed to get make methods");
         }
 
-        const [sourceMaterials, sourceOperations] = await Promise.all([
-          parts.billOfMaterial
-            ? many(db, "methodMaterial", {
-                makeMethodId: sourceMakeMethod.data.id,
-                companyId
-              })
-            : Promise.resolve({ data: [], error: null }),
-          parts.billOfProcess
-            ? many<
-                "methodOperation",
-                Tables["methodOperation"]["Row"] & {
-                  methodOperationTool: Tables["methodOperationTool"]["Row"][];
-                  methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
-                  methodOperationStep: Tables["methodOperationStep"]["Row"][];
-                }
-              >(
-                db,
-                "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
-                {
-                  embed: {
-                    methodOperationTool: {
-                      table: "methodOperationTool",
-                      on: "operationId"
-                    },
-                    methodOperationParameter: {
-                      table: "methodOperationParameter",
-                      on: "operationId"
-                    },
-                    methodOperationStep: {
-                      table: "methodOperationStep",
-                      on: "operationId"
+        const [sourceMaterials, sourceOperations] = await inOrder([
+          () =>
+            parts.billOfMaterial
+              ? many(db, "methodMaterial", {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId
+                })
+              : Promise.resolve({ data: [], error: null }),
+          () =>
+            parts.billOfProcess
+              ? many<
+                  "methodOperation",
+                  Tables["methodOperation"]["Row"] & {
+                    methodOperationTool: Tables["methodOperationTool"]["Row"][];
+                    methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
+                    methodOperationStep: Tables["methodOperationStep"]["Row"][];
+                  }
+                >(
+                  db,
+                  "methodOperation",
+                  { makeMethodId: sourceMakeMethod.data.id, companyId },
+                  {
+                    embed: {
+                      methodOperationTool: {
+                        table: "methodOperationTool",
+                        on: "operationId"
+                      },
+                      methodOperationParameter: {
+                        table: "methodOperationParameter",
+                        on: "operationId"
+                      },
+                      methodOperationStep: {
+                        table: "methodOperationStep",
+                        on: "operationId"
+                      }
                     }
                   }
-                }
-              )
-            : Promise.resolve({ data: [], error: null })
+                )
+              : Promise.resolve({ data: [], error: null })
         ]);
 
         if (sourceMaterials.error || sourceOperations.error) {
@@ -2586,20 +2593,27 @@ export const getMethod = defineServerFn({
           configurationRules,
           quote,
           ownedQuoteLine
-        ] = await Promise.all([
-          single(db, "activeMakeMethods", { itemId, companyId }),
-          maybeSingle(db, "quoteMakeMethod", {
-            quoteLineId,
-            parentMaterialId: isNull,
-            companyId
-          }),
-          many(db, "workCenters", { companyId }),
-          many(db, "supplierProcess", { companyId }),
-          isConfigured
-            ? many(db, "configurationRule", { itemId, companyId })
-            : Promise.resolve({ data: null, error: null }),
-          single(db, "quote", { id: quoteId, companyId }),
-          maybeSingle(db, "quoteLine", { id: quoteLineId, quoteId, companyId })
+        ] = await inOrder([
+          () => single(db, "activeMakeMethods", { itemId, companyId }),
+          () =>
+            maybeSingle(db, "quoteMakeMethod", {
+              quoteLineId,
+              parentMaterialId: isNull,
+              companyId
+            }),
+          () => many(db, "workCenters", { companyId }),
+          () => many(db, "supplierProcess", { companyId }),
+          () =>
+            isConfigured
+              ? many(db, "configurationRule", { itemId, companyId })
+              : Promise.resolve({ data: null, error: null }),
+          () => single(db, "quote", { id: quoteId, companyId }),
+          () =>
+            maybeSingle(db, "quoteLine", {
+              id: quoteLineId,
+              quoteId,
+              companyId
+            })
         ]);
 
         // The permission check proved the CALLER may act in companyId; it proves
@@ -2665,8 +2679,8 @@ export const getMethod = defineServerFn({
           companyId
         );
 
-        const [methodTrees] = await Promise.all([
-          getMethodTree(db, makeMethod.data.id!)
+        const [methodTrees] = await inOrder([
+          () => getMethodTree(db, makeMethod.data.id!)
         ]);
 
         if (methodTrees.error) {
@@ -3322,11 +3336,8 @@ export const getMethod = defineServerFn({
             const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
               [];
             await traverseMethod(methodTree, quoteMakeMethod.data!.id);
-            if (deferredQuoteMaterials.length > 0) {
-              await trx
-                .insertInto("quoteMaterial")
-                .values(deferredQuoteMaterials)
-                .execute();
+            for (const chunk of chunked(deferredQuoteMaterials)) {
+              await trx.insertInto("quoteMaterial").values(chunk).execute();
             }
           });
 
@@ -3350,11 +3361,15 @@ export const getMethod = defineServerFn({
         const isConfigured = !!configuration;
 
         const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
-          await Promise.all([
-            single(db, "activeMakeMethods", { itemId, companyId }),
-            single(db, "quoteMakeMethod", { id: quoteMakeMethodId, companyId }),
-            many(db, "workCenters", { companyId }),
-            many(db, "supplierProcess", { companyId })
+          await inOrder([
+            () => single(db, "activeMakeMethods", { itemId, companyId }),
+            () =>
+              single(db, "quoteMakeMethod", {
+                id: quoteMakeMethodId,
+                companyId
+              }),
+            () => many(db, "workCenters", { companyId }),
+            () => many(db, "supplierProcess", { companyId })
           ]);
 
         if (makeMethod.error) {
@@ -3372,11 +3387,12 @@ export const getMethod = defineServerFn({
           companyId
         );
 
-        const [methodTrees, configurationRules] = await Promise.all([
-          getMethodTree(db, makeMethod.data.id!),
-          isConfigured
-            ? many(db, "configurationRule", { itemId, companyId })
-            : Promise.resolve({ data: [] })
+        const [methodTrees, configurationRules] = await inOrder([
+          () => getMethodTree(db, makeMethod.data.id!),
+          () =>
+            isConfigured
+              ? many(db, "configurationRule", { itemId, companyId })
+              : Promise.resolve({ data: [] })
         ]);
 
         if (methodTrees.error) {
@@ -3722,11 +3738,8 @@ export const getMethod = defineServerFn({
           const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
             [];
           await traverseMethod(methodTree, quoteMakeMethod.data.id);
-          if (deferredQuoteMaterials.length > 0) {
-            await trx
-              .insertInto("quoteMaterial")
-              .values(deferredQuoteMaterials)
-              .execute();
+          for (const chunk of chunked(deferredQuoteMaterials)) {
+            await trx.insertInto("quoteMaterial").values(chunk).execute();
           }
         });
         break;
@@ -3735,9 +3748,9 @@ export const getMethod = defineServerFn({
         const jobMakeMethodId = sourceId;
         const makeMethodId = targetId;
 
-        const [makeMethod, jobMakeMethod] = await Promise.all([
-          single(db, "makeMethod", { id: makeMethodId, companyId }),
-          single(db, "jobMakeMethod", { id: jobMakeMethodId, companyId })
+        const [makeMethod, jobMakeMethod] = await inOrder([
+          () => single(db, "makeMethod", { id: makeMethodId, companyId }),
+          () => single(db, "jobMakeMethod", { id: jobMakeMethodId, companyId })
         ]);
 
         if (makeMethod.error) {
@@ -3750,37 +3763,38 @@ export const getMethod = defineServerFn({
 
         const itemId = makeMethod.data?.itemId;
 
-        const [job, jobOperations, itemReplenishment] = await Promise.all([
-          single(db, "job", { id: jobMakeMethod.data.jobId, companyId }),
-          many<
-            "jobOperationsWithMakeMethods",
-            Views["jobOperationsWithMakeMethods"]["Row"] & {
-              jobOperationTool: Tables["jobOperationTool"]["Row"][];
-              jobOperationParameter: Tables["jobOperationParameter"]["Row"][];
-              jobOperationStep: Tables["jobOperationStep"]["Row"][];
-            }
-          >(
-            db,
-            "jobOperationsWithMakeMethods",
-            { jobId: jobMakeMethod.data.jobId, companyId },
-            {
-              embed: {
-                jobOperationTool: {
-                  table: "jobOperationTool",
-                  on: "operationId"
-                },
-                jobOperationParameter: {
-                  table: "jobOperationParameter",
-                  on: "operationId"
-                },
-                jobOperationStep: {
-                  table: "jobOperationStep",
-                  on: "operationId"
+        const [job, jobOperations, itemReplenishment] = await inOrder([
+          () => single(db, "job", { id: jobMakeMethod.data.jobId, companyId }),
+          () =>
+            many<
+              "jobOperationsWithMakeMethods",
+              Views["jobOperationsWithMakeMethods"]["Row"] & {
+                jobOperationTool: Tables["jobOperationTool"]["Row"][];
+                jobOperationParameter: Tables["jobOperationParameter"]["Row"][];
+                jobOperationStep: Tables["jobOperationStep"]["Row"][];
+              }
+            >(
+              db,
+              "jobOperationsWithMakeMethods",
+              { jobId: jobMakeMethod.data.jobId, companyId },
+              {
+                embed: {
+                  jobOperationTool: {
+                    table: "jobOperationTool",
+                    on: "operationId"
+                  },
+                  jobOperationParameter: {
+                    table: "jobOperationParameter",
+                    on: "operationId"
+                  },
+                  jobOperationStep: {
+                    table: "jobOperationStep",
+                    on: "operationId"
+                  }
                 }
               }
-            }
-          ),
-          single(db, "itemReplenishment", { itemId, companyId })
+            ),
+          () => single(db, "itemReplenishment", { itemId, companyId })
         ]);
 
         if (jobOperations.error) {
@@ -3795,12 +3809,13 @@ export const getMethod = defineServerFn({
           throw new Error("Cannot override method of configured item");
         }
 
-        const [jobMethodTrees] = await Promise.all([
-          getJobMethodTree(
-            db,
-            jobMakeMethodId,
-            jobMakeMethod.data.parentMaterialId
-          )
+        const [jobMethodTrees] = await inOrder([
+          () =>
+            getJobMethodTree(
+              db,
+              jobMakeMethodId,
+              jobMakeMethod.data.parentMaterialId
+            )
         ]);
 
         if (jobMethodTrees.error) {
@@ -4066,14 +4081,15 @@ export const getMethod = defineServerFn({
         }
         const makeMethodId = targetId;
 
-        const [makeMethod, jobMakeMethod, jobOperations, job] =
-          await Promise.all([
-            single(db, "makeMethod", { id: makeMethodId, companyId }),
+        const [makeMethod, jobMakeMethod, jobOperations, job] = await inOrder([
+          () => single(db, "makeMethod", { id: makeMethodId, companyId }),
+          () =>
             single(db, "jobMakeMethod", {
               jobId,
               parentMaterialId: isNull,
               companyId
             }),
+          () =>
             many<
               "jobOperationsWithMakeMethods",
               Views["jobOperationsWithMakeMethods"]["Row"] & {
@@ -4102,8 +4118,8 @@ export const getMethod = defineServerFn({
                 }
               }
             ),
-            single(db, "job", { id: jobId, companyId })
-          ]);
+          () => single(db, "job", { id: jobId, companyId })
+        ]);
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -4119,9 +4135,9 @@ export const getMethod = defineServerFn({
 
         const itemId = makeMethod.data?.itemId;
 
-        const [jobMethodTrees, itemReplenishment] = await Promise.all([
-          getJobMethodTree(db, jobMakeMethod.data.id),
-          single(db, "itemReplenishment", { itemId, companyId })
+        const [jobMethodTrees, itemReplenishment] = await inOrder([
+          () => getJobMethodTree(db, jobMakeMethod.data.id),
+          () => single(db, "itemReplenishment", { itemId, companyId })
         ]);
 
         if (itemReplenishment.error) {
@@ -5112,11 +5128,11 @@ export const getMethod = defineServerFn({
                     sql`(${materialId}::text, ${operationId}::text)`
                 )
             );
-            if (operationByMaterial.length > 0) {
+            for (const chunk of chunked(operationByMaterial)) {
               await sql`
                 UPDATE "jobMaterial" AS t
                 SET "jobOperationId" = v."operationId"
-                FROM (VALUES ${sql.join(operationByMaterial)}) AS v("materialId", "operationId")
+                FROM (VALUES ${sql.join(chunk)}) AS v("materialId", "operationId")
                 WHERE t."id" = v."materialId" AND t."companyId" = ${companyId}
               `.execute(trx);
             }
@@ -5177,51 +5193,53 @@ export const getMethod = defineServerFn({
         break;
       }
       case "makeMethodToMakeMethod": {
-        const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
-          single(db, "makeMethod", { id: sourceId, companyId }),
-          single(db, "makeMethod", { id: targetId, companyId })
+        const [sourceMakeMethod, targetMakeMethod] = await inOrder([
+          () => single(db, "makeMethod", { id: sourceId, companyId }),
+          () => single(db, "makeMethod", { id: targetId, companyId })
         ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
           throw new Error("Failed to get make methods");
         }
 
-        const [sourceMaterials, sourceOperations] = await Promise.all([
-          parts.billOfMaterial
-            ? many(db, "methodMaterial", {
-                makeMethodId: sourceMakeMethod.data.id,
-                companyId
-              })
-            : Promise.resolve({ data: [], error: null }),
-          parts.billOfProcess
-            ? many<
-                "methodOperation",
-                Tables["methodOperation"]["Row"] & {
-                  methodOperationTool: Tables["methodOperationTool"]["Row"][];
-                  methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
-                  methodOperationStep: Tables["methodOperationStep"]["Row"][];
-                }
-              >(
-                db,
-                "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
-                {
-                  embed: {
-                    methodOperationTool: {
-                      table: "methodOperationTool",
-                      on: "operationId"
-                    },
-                    methodOperationParameter: {
-                      table: "methodOperationParameter",
-                      on: "operationId"
-                    },
-                    methodOperationStep: {
-                      table: "methodOperationStep",
-                      on: "operationId"
+        const [sourceMaterials, sourceOperations] = await inOrder([
+          () =>
+            parts.billOfMaterial
+              ? many(db, "methodMaterial", {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId
+                })
+              : Promise.resolve({ data: [], error: null }),
+          () =>
+            parts.billOfProcess
+              ? many<
+                  "methodOperation",
+                  Tables["methodOperation"]["Row"] & {
+                    methodOperationTool: Tables["methodOperationTool"]["Row"][];
+                    methodOperationParameter: Tables["methodOperationParameter"]["Row"][];
+                    methodOperationStep: Tables["methodOperationStep"]["Row"][];
+                  }
+                >(
+                  db,
+                  "methodOperation",
+                  { makeMethodId: sourceMakeMethod.data.id, companyId },
+                  {
+                    embed: {
+                      methodOperationTool: {
+                        table: "methodOperationTool",
+                        on: "operationId"
+                      },
+                      methodOperationParameter: {
+                        table: "methodOperationParameter",
+                        on: "operationId"
+                      },
+                      methodOperationStep: {
+                        table: "methodOperationStep",
+                        on: "operationId"
+                      }
                     }
                   }
-                }
-              )
-            : Promise.resolve({ data: [], error: null })
+                )
+              : Promise.resolve({ data: [], error: null })
         ]);
 
         if (sourceMaterials.error || sourceOperations.error) {
@@ -5401,45 +5419,47 @@ export const getMethod = defineServerFn({
           throw new Error("Invalid targetId");
         }
 
-        const [procedure, operation] = await Promise.all([
-          single<
-            "procedure",
-            Tables["procedure"]["Row"] & {
-              procedureStep: Tables["procedureStep"]["Row"][];
-              procedureParameter: Tables["procedureParameter"]["Row"][];
-            }
-          >(
-            db,
-            "procedure",
-            { id: procedureId, companyId },
-            {
-              embed: {
-                procedureStep: { table: "procedureStep", on: "procedureId" },
-                procedureParameter: {
-                  table: "procedureParameter",
-                  on: "procedureId"
+        const [procedure, operation] = await inOrder([
+          () =>
+            single<
+              "procedure",
+              Tables["procedure"]["Row"] & {
+                procedureStep: Tables["procedureStep"]["Row"][];
+                procedureParameter: Tables["procedureParameter"]["Row"][];
+              }
+            >(
+              db,
+              "procedure",
+              { id: procedureId, companyId },
+              {
+                embed: {
+                  procedureStep: { table: "procedureStep", on: "procedureId" },
+                  procedureParameter: {
+                    table: "procedureParameter",
+                    on: "procedureId"
+                  }
                 }
               }
-            }
-          ),
-          single<
-            "jobOperation",
-            Tables["jobOperation"]["Row"] & {
-              jobOperationStep: Tables["jobOperationStep"]["Row"][];
-            }
-          >(
-            db,
-            "jobOperation",
-            { id: operationId, companyId },
-            {
-              embed: {
-                jobOperationStep: {
-                  table: "jobOperationStep",
-                  on: "operationId"
+            ),
+          () =>
+            single<
+              "jobOperation",
+              Tables["jobOperation"]["Row"] & {
+                jobOperationStep: Tables["jobOperationStep"]["Row"][];
+              }
+            >(
+              db,
+              "jobOperation",
+              { id: operationId, companyId },
+              {
+                embed: {
+                  jobOperationStep: {
+                    table: "jobOperationStep",
+                    on: "operationId"
+                  }
                 }
               }
-            }
-          )
+            )
         ]);
 
         if (procedure.error) {
@@ -5555,14 +5575,15 @@ export const getMethod = defineServerFn({
         }
         const makeMethodId = targetId;
 
-        const [makeMethod, quoteMakeMethod, quoteOperations] =
-          await Promise.all([
-            single(db, "makeMethod", { id: makeMethodId, companyId }),
+        const [makeMethod, quoteMakeMethod, quoteOperations] = await inOrder([
+          () => single(db, "makeMethod", { id: makeMethodId, companyId }),
+          () =>
             single(db, "quoteMakeMethod", {
               quoteLineId,
               parentMaterialId: isNull,
               companyId
             }),
+          () =>
             many<
               "quoteOperationsWithMakeMethods",
               Views["quoteOperationsWithMakeMethods"]["Row"] & {
@@ -5591,7 +5612,7 @@ export const getMethod = defineServerFn({
                 }
               }
             )
-          ]);
+        ]);
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -5607,10 +5628,10 @@ export const getMethod = defineServerFn({
 
         const itemId = makeMethod.data?.itemId;
 
-        const [quote, quoteMethodTrees, itemReplenishment] = await Promise.all([
-          single(db, "quote", { id: quoteId, companyId }),
-          getQuoteMethodTree(db, quoteMakeMethod.data.id),
-          single(db, "itemReplenishment", { itemId, companyId })
+        const [quote, quoteMethodTrees, itemReplenishment] = await inOrder([
+          () => single(db, "quote", { id: quoteId, companyId }),
+          () => getQuoteMethodTree(db, quoteMakeMethod.data.id),
+          () => single(db, "itemReplenishment", { itemId, companyId })
         ]);
 
         if (quoteMethodTrees.error) {
@@ -5892,9 +5913,10 @@ export const getMethod = defineServerFn({
         const quoteMakeMethodId = sourceId;
         const makeMethodId = targetId;
 
-        const [makeMethod, quoteMakeMethod] = await Promise.all([
-          single(db, "makeMethod", { id: makeMethodId, companyId }),
-          single(db, "quoteMakeMethod", { id: quoteMakeMethodId, companyId })
+        const [makeMethod, quoteMakeMethod] = await inOrder([
+          () => single(db, "makeMethod", { id: makeMethodId, companyId }),
+          () =>
+            single(db, "quoteMakeMethod", { id: quoteMakeMethodId, companyId })
         ]);
 
         if (makeMethod.error) {
@@ -5907,36 +5929,37 @@ export const getMethod = defineServerFn({
 
         const itemId = makeMethod.data?.itemId;
 
-        const [quoteOperations, itemReplenishment] = await Promise.all([
-          many<
-            "quoteOperationsWithMakeMethods",
-            Views["quoteOperationsWithMakeMethods"]["Row"] & {
-              quoteOperationTool: Tables["quoteOperationTool"]["Row"][];
-              quoteOperationParameter: Tables["quoteOperationParameter"]["Row"][];
-              quoteOperationStep: Tables["quoteOperationStep"]["Row"][];
-            }
-          >(
-            db,
-            "quoteOperationsWithMakeMethods",
-            { quoteLineId: quoteMakeMethod.data.quoteLineId, companyId },
-            {
-              embed: {
-                quoteOperationTool: {
-                  table: "quoteOperationTool",
-                  on: "operationId"
-                },
-                quoteOperationParameter: {
-                  table: "quoteOperationParameter",
-                  on: "operationId"
-                },
-                quoteOperationStep: {
-                  table: "quoteOperationStep",
-                  on: "operationId"
+        const [quoteOperations, itemReplenishment] = await inOrder([
+          () =>
+            many<
+              "quoteOperationsWithMakeMethods",
+              Views["quoteOperationsWithMakeMethods"]["Row"] & {
+                quoteOperationTool: Tables["quoteOperationTool"]["Row"][];
+                quoteOperationParameter: Tables["quoteOperationParameter"]["Row"][];
+                quoteOperationStep: Tables["quoteOperationStep"]["Row"][];
+              }
+            >(
+              db,
+              "quoteOperationsWithMakeMethods",
+              { quoteLineId: quoteMakeMethod.data.quoteLineId, companyId },
+              {
+                embed: {
+                  quoteOperationTool: {
+                    table: "quoteOperationTool",
+                    on: "operationId"
+                  },
+                  quoteOperationParameter: {
+                    table: "quoteOperationParameter",
+                    on: "operationId"
+                  },
+                  quoteOperationStep: {
+                    table: "quoteOperationStep",
+                    on: "operationId"
+                  }
                 }
               }
-            }
-          ),
-          single(db, "itemReplenishment", { itemId, companyId })
+            ),
+          () => single(db, "itemReplenishment", { itemId, companyId })
         ]);
 
         if (quoteOperations.error) {
@@ -5951,12 +5974,13 @@ export const getMethod = defineServerFn({
           throw new Error("Cannot override method of configured item");
         }
 
-        const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(
-            db,
-            quoteMakeMethodId,
-            quoteMakeMethod.data.parentMaterialId
-          )
+        const [quoteMethodTrees] = await inOrder([
+          () =>
+            getQuoteMethodTree(
+              db,
+              quoteMakeMethodId,
+              quoteMakeMethod.data.parentMaterialId
+            )
         ]);
 
         if (quoteMethodTrees.error) {
@@ -6813,49 +6837,53 @@ export const getMethod = defineServerFn({
           sourceQuoteMakeMethod,
           sourceQuoteMaterials,
           sourceQuoteOperations
-        ] = await Promise.all([
-          single(db, "quoteMakeMethod", {
-            quoteLineId: targetQuoteLineId,
-            parentMaterialId: isNull,
-            companyId
-          }),
-          single(db, "quoteMakeMethod", {
-            parentMaterialId: isNull,
-            quoteLineId: sourceQuoteLineId,
-            companyId
-          }),
-          many(db, "quoteMaterial", {
-            quoteLineId: sourceQuoteLineId,
-            companyId
-          }),
-          many<
-            "quoteOperation",
-            Tables["quoteOperation"]["Row"] & {
-              quoteOperationTool: Tables["quoteOperationTool"]["Row"][];
-              quoteOperationParameter: Tables["quoteOperationParameter"]["Row"][];
-              quoteOperationStep: Tables["quoteOperationStep"]["Row"][];
-            }
-          >(
-            db,
-            "quoteOperation",
-            { quoteLineId: sourceQuoteLineId, companyId },
-            {
-              embed: {
-                quoteOperationTool: {
-                  table: "quoteOperationTool",
-                  on: "operationId"
-                },
-                quoteOperationParameter: {
-                  table: "quoteOperationParameter",
-                  on: "operationId"
-                },
-                quoteOperationStep: {
-                  table: "quoteOperationStep",
-                  on: "operationId"
+        ] = await inOrder([
+          () =>
+            single(db, "quoteMakeMethod", {
+              quoteLineId: targetQuoteLineId,
+              parentMaterialId: isNull,
+              companyId
+            }),
+          () =>
+            single(db, "quoteMakeMethod", {
+              parentMaterialId: isNull,
+              quoteLineId: sourceQuoteLineId,
+              companyId
+            }),
+          () =>
+            many(db, "quoteMaterial", {
+              quoteLineId: sourceQuoteLineId,
+              companyId
+            }),
+          () =>
+            many<
+              "quoteOperation",
+              Tables["quoteOperation"]["Row"] & {
+                quoteOperationTool: Tables["quoteOperationTool"]["Row"][];
+                quoteOperationParameter: Tables["quoteOperationParameter"]["Row"][];
+                quoteOperationStep: Tables["quoteOperationStep"]["Row"][];
+              }
+            >(
+              db,
+              "quoteOperation",
+              { quoteLineId: sourceQuoteLineId, companyId },
+              {
+                embed: {
+                  quoteOperationTool: {
+                    table: "quoteOperationTool",
+                    on: "operationId"
+                  },
+                  quoteOperationParameter: {
+                    table: "quoteOperationParameter",
+                    on: "operationId"
+                  },
+                  quoteOperationStep: {
+                    table: "quoteOperationStep",
+                    on: "operationId"
+                  }
                 }
               }
-            }
-          )
+            )
         ]);
 
         if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
@@ -6878,8 +6906,8 @@ export const getMethod = defineServerFn({
           throw new Error("Failed to source quote data");
         }
 
-        const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(db, sourceQuoteMakeMethod.data.id)
+        const [quoteMethodTrees] = await inOrder([
+          () => getQuoteMethodTree(db, sourceQuoteMakeMethod.data.id)
         ]);
 
         if (quoteMethodTrees.error) {
@@ -7179,11 +7207,11 @@ export const getMethod = defineServerFn({
           sourceQuotePayment,
           sourceQuoteShipment,
           sourceQuoteLines
-        ] = await Promise.all([
-          single(db, "quote", { id: sourceQuoteId, companyId }),
-          single(db, "quotePayment", { id: sourceQuoteId, companyId }),
-          single(db, "quoteShipment", { id: sourceQuoteId, companyId }),
-          many(db, "quoteLine", { quoteId: sourceQuoteId, companyId })
+        ] = await inOrder([
+          () => single(db, "quote", { id: sourceQuoteId, companyId }),
+          () => single(db, "quotePayment", { id: sourceQuoteId, companyId }),
+          () => single(db, "quoteShipment", { id: sourceQuoteId, companyId }),
+          () => many(db, "quoteLine", { quoteId: sourceQuoteId, companyId })
         ]);
 
         if (sourceQuote.error) {
@@ -8576,11 +8604,13 @@ async function insertDeferredJobMaterials(
   materials: Database["public"]["Tables"]["jobMaterial"]["Insert"][],
   steps: Database["public"]["Tables"]["jobMaterialStep"]["Insert"][]
 ) {
-  if (materials.length > 0) {
-    await trx.insertInto("jobMaterial").values(materials).execute();
+  // Chunked: a whole tree in one statement can pass Postgres' 65535 bind
+  // parameters.
+  for (const chunk of chunked(materials)) {
+    await trx.insertInto("jobMaterial").values(chunk).execute();
   }
-  if (steps.length > 0) {
-    await trx.insertInto("jobMaterialStep").values(steps).execute();
+  for (const chunk of chunked(steps)) {
+    await trx.insertInto("jobMaterialStep").values(chunk).execute();
   }
 }
 
@@ -8604,8 +8634,17 @@ async function renameMakeMethods(
     }[];
   }
 ) {
+  const { table, companyId, scope } = args;
+  for (const rows of chunked(args.rows)) {
+    await renameMakeMethodChunk(trx, { table, companyId, scope, rows });
+  }
+}
+
+async function renameMakeMethodChunk(
+  trx: Transaction<KyselyDatabase>,
+  args: Parameters<typeof renameMakeMethods>[1]
+) {
   const { table, companyId, scope, rows } = args;
-  if (rows.length === 0) return;
   const values = sql.join(
     rows.map(
       (row) =>

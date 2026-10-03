@@ -3056,16 +3056,16 @@ export const postReceipt = defineServerFn({
           if (!receiptHeader.sourceDocumentId)
             throw new Error("Receipt has no sourceDocumentId");
 
-          const [warehouseTransfer, warehouseTransferLines] = await Promise.all(
-            [
+          const [warehouseTransfer, warehouseTransferLines] = await inOrder([
+            () =>
               single(db, "warehouseTransfer", {
                 id: receiptHeader.sourceDocumentId
               }),
+            () =>
               many(db, "warehouseTransferLine", {
                 transferId: receiptHeader.sourceDocumentId
               })
-            ]
-          );
+          ]);
 
           if (warehouseTransfer.error)
             throw new Error("Failed to fetch warehouse transfer");
