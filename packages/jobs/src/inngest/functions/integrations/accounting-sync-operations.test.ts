@@ -98,7 +98,7 @@ describe("getJournalPostingDecision", () => {
     });
   });
 
-  it("enqueues an INSERT born Posted — the post-* edge functions insert journals already Posted", () => {
+  it("enqueues an INSERT born Posted — the post-* server functions insert journals already Posted", () => {
     const decision = getJournalPostingDecision(
       journalEvent({
         operation: "INSERT",

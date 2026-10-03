@@ -306,9 +306,8 @@ export const postInventoryAdjustment = defineServerFn({
         if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }
     }
-    // Resolve the accounting period BEFORE opening the Kysely transaction —
-    // getCurrentAccountingPeriod uses the REST client and calling it
-    // mid-transaction parks the (size 1) pool in idle-in-transaction.
+    // Resolved before the posting transaction opens: given `db`, it runs and
+    // commits its own short transaction.
     const accountingPeriodId = accountingEnabled
       ? await getCurrentAccountingPeriod(client, companyId, db, today)
       : null;

@@ -71,13 +71,6 @@ function getJobMethodTreeArrayToTree(
   items: JobMethod[],
   parentMaterialId: string | null = null
 ): JobMethodTreeItem[] {
-  // function traverseAndRenameIds(node: JobMethodTreeItem) {
-  //   const clone = structuredClone(node);
-  //   clone.id = `node-${Math.random().toString(16).slice(2)}`;
-  //   clone.children = clone.children.map((n) => traverseAndRenameIds(n));
-  //   return clone;
-  // }
-
   const rootItems: JobMethodTreeItem[] = [];
   const lookup: { [id: string]: JobMethodTreeItem } = {};
 

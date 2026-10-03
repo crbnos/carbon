@@ -1,9 +1,9 @@
 # @carbon/logger
 
 Centralized, isomorphic logger built on [LogTape](https://logtape.org). Works in
-browser and Node (SSR + Inngest jobs). Replaces raw `console.*` (the two
-self-contained Deno edge functions cannot import workspace packages and use
-`console` directly). Structured records, hierarchical
+browser and Node (SSR + Inngest jobs). Replaces raw `console.*` (the one
+self-contained Deno edge function, `embedding`, cannot import workspace packages and
+uses `console` directly). Structured records, hierarchical
 categories, env-driven levels, and cloud-agnostic request-id correlation.
 
 ## Always

@@ -305,7 +305,7 @@ Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — t
 the company's day, the database session's is UTC, and the two disagree for a slice of every
 day. The pure validator checks offset VALUES (planning horizon, period floors, document
 chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
-`apps/mes/app/services`, `packages/jobs/src`, `packages/database/supabase/functions` and
+`apps/mes/app/services`, `packages/jobs/src`, `packages/server-functions/src` and
 the ERP module/route files, none of which is `packages/database/src/**`. That part is
 convention only.
 
