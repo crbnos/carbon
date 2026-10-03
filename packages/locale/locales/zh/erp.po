@@ -2865,6 +2865,9 @@ msgstr "将此库位分配给工作中心以进行线边物料管理，使操作
 msgid "Assumptions"
 msgstr "假设"
 
+msgid "At"
+msgstr "在"
+
 msgid "At each gate"
 msgstr "在每个关卡"
 
@@ -3869,6 +3872,9 @@ msgstr "选择如何向此退货添加行。"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "选择MRP何时自动重新计算。您可以随时在计划页面上使用「重新计算」功能手动运行。"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "选择物料清单浏览器是否在物料、报价单和工单上用描述或物料 ID 标记每行。"
@@ -7541,6 +7547,9 @@ msgstr "事件类型"
 msgid "Events"
 msgstr "事件"
 
+msgid "Every 3 hours"
+msgstr "每3小时"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
 
@@ -9305,6 +9314,9 @@ msgstr "在此步骤中"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "在您公司的时区({companyTimeZone})。"
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "在您的企业设置的开发者下，编辑私有 OAuth 应用程序的权限以包括\"应用程序可以写入您的文档\"，然后再次保存集成设置。"
@@ -11305,6 +11317,9 @@ msgstr "MRP (计划)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
+msgid "MRP runs automatically every day at {time}, but you can run it manually here."
+msgstr "MRP每天在{time}自动运行，但您也可以在此手动运行。"
+
 msgid "MRP Suggestions"
 msgstr "MRP 建议"
 
@@ -12628,6 +12643,9 @@ msgstr "准时交付"
 
 msgid "Onboard your agent to Carbon"
 msgstr "将您的代理接入Carbon"
+
+msgid "Once a day"
+msgstr "每天一次"
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -15778,6 +15796,9 @@ msgstr "运行ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "运行月末结账和标准对账"
+
+msgid "Run MRP"
+msgstr "运行MRP"
 
 msgid "Run payment batches and track aging"
 msgstr "运行付款批次并跟踪账龄"

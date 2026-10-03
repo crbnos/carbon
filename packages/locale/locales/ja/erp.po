@@ -2865,6 +2865,9 @@ msgstr "この保管ユニットをラインサイド材料用の作業区に割
 msgid "Assumptions"
 msgstr "前提条件"
 
+msgid "At"
+msgstr "時刻"
+
 msgid "At each gate"
 msgstr "各ゲートで"
 
@@ -3869,6 +3872,9 @@ msgstr "この返品に明細を追加する方法を選択してください。
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "MRPの自動再計算のタイミングを選択してください。計画ページの「再計算」でいつでも手動で実行できます。"
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
@@ -7541,6 +7547,9 @@ msgstr "イベントタイプ"
 msgid "Events"
 msgstr "イベント"
 
+msgid "Every 3 hours"
+msgstr "3時間ごと"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "会社に属するすべてのレコード。認証情報、連携トークン、Webhookは含まれません。"
 
@@ -9305,6 +9314,9 @@ msgstr "このステップで"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "お客様の会社のタイムゾーン({companyTimeZone})です。"
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "Enterprise設定の開発者セクションで、プライベートOAuthアプリケーションの権限を編集して「アプリケーションはドキュメントに書き込むことができます」を含め、連携設定を再度保存してください。"
@@ -11305,6 +11317,9 @@ msgstr "MRP (計画)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
+msgid "MRP runs automatically every day at {time}, but you can run it manually here."
+msgstr "MRPは毎日{time}に自動実行されますが、ここで手動実行することもできます。"
+
 msgid "MRP Suggestions"
 msgstr "MRP 提案"
 
@@ -12628,6 +12643,9 @@ msgstr "オンタイム配送"
 
 msgid "Onboard your agent to Carbon"
 msgstr "エージェントを Carbon にオンボード"
+
+msgid "Once a day"
+msgstr "1日1回"
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -15778,6 +15796,9 @@ msgstr "実行ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "月末クローズと標準的な照合を実行"
+
+msgid "Run MRP"
+msgstr "MRPを実行"
 
 msgid "Run payment batches and track aging"
 msgstr "支払いバッチを実行し、経過期間を追跡する"

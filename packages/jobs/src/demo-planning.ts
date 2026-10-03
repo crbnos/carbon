@@ -22,7 +22,7 @@ function message(err: unknown): string {
 
 /**
  * Same calls as the MRP cron and `api+/schedule.ts`. Must run after the seed commits
- * (both engines read over PostgREST). Never throws: the 3-hourly MRP cron is the backstop.
+ * (both engines read over PostgREST). Never throws: the scheduled MRP run is the backstop.
  */
 export async function planDemoCompany({
   companyId,

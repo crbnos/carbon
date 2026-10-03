@@ -240,6 +240,26 @@ export const jobCompletedValidator = z.object({
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
 });
 
+export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
+
+// "Every 3 Hours" is the default cadence and ignores the hour; "Daily" runs
+// once a day at `mrpRunHour` on the company's own clock. The hour is a select
+// value, so it stays the string "0"…"23" here.
+export const mrpScheduleValidator = z
+  .object({
+    mrpSchedule: z.enum(mrpScheduleTypes),
+    mrpRunHour: zfd.text(
+      z
+        .string()
+        .regex(/^(1?\d|2[0-3])$/, { message: "Choose an hour" })
+        .optional()
+    )
+  })
+  .refine(
+    (data) => data.mrpSchedule !== "Daily" || data.mrpRunHour !== undefined,
+    { message: "Hour is required", path: ["mrpRunHour"] }
+  );
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });

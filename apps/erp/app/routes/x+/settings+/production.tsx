@@ -6,7 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { Submit, ValidatedForm, validator } from "@carbon/form";
+import { Select, Submit, ValidatedForm, validator } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -23,19 +23,26 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { formatTimeOfDay } from "@carbon/utils";
+import { parseTime, Time } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useLocale } from "@react-aria/i18n";
+import { useCallback, useEffect, useState } from "react";
 import { LuMapPin } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
+import { useCompanyTimeZone } from "~/hooks";
 import {
   getCompanySettings,
   jobCompletedValidator,
+  mrpScheduleTypes,
+  mrpScheduleValidator,
   updateAutoSelectMaterialWithoutPickingListSetting,
   updateIncludeMaterialsOnTravelerSetting,
-  updateIncludeOperationsOnTravelerSetting
+  updateIncludeOperationsOnTravelerSetting,
+  updateMrpRunTimeSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -103,6 +110,29 @@ export async function action({ request }: ActionFunctionArgs) {
     if (update.error) return { success: false, message: update.error.message };
 
     return { success: true, message: "Job notification settings updated" };
+  }
+
+  if (intent === "mrpSchedule") {
+    const validation = await validator(mrpScheduleValidator).validate(formData);
+
+    if (validation.error) {
+      return {
+        success: false,
+        message: "Choose an hour for the daily MRP run"
+      };
+    }
+
+    const { mrpSchedule, mrpRunHour } = validation.data;
+    const mrpRunTime =
+      mrpSchedule === "Daily" && mrpRunHour !== undefined
+        ? new Time(Number(mrpRunHour)).toString()
+        : null;
+
+    const update = await updateMrpRunTimeSetting(client, companyId, mrpRunTime);
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return { success: true, message: "MRP schedule updated" };
   }
 
   if (intent === "operationTimer") {
@@ -216,6 +246,16 @@ export default function ProductionSettingsRoute() {
   const fetcher = useFetcher<typeof action>();
   const notificationsFetcher = useFetcher<typeof action>();
   const staffingFetcher = useFetcher<typeof action>();
+  const mrpScheduleFetcher = useFetcher<typeof action>();
+  const companyTimeZone = useCompanyTimeZone();
+  const { locale } = useLocale();
+  const [mrpSchedule, setMrpSchedule] = useState<
+    (typeof mrpScheduleTypes)[number]
+  >(companySettings.mrpRunTime ? "Daily" : "Every 3 Hours");
+  const mrpScheduleLabels: Record<(typeof mrpScheduleTypes)[number], string> = {
+    "Every 3 Hours": t`Every 3 hours`,
+    Daily: t`Once a day`
+  };
 
   const isToggling = fetcher.state !== "idle";
 
@@ -311,6 +351,21 @@ export default function ProductionSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
+
+  useEffect(() => {
+    if (
+      mrpScheduleFetcher.data?.success === true &&
+      mrpScheduleFetcher.data.message
+    ) {
+      toast.success(mrpScheduleFetcher.data.message);
+    }
+    if (
+      mrpScheduleFetcher.data?.success === false &&
+      mrpScheduleFetcher.data.message
+    ) {
+      toast.error(mrpScheduleFetcher.data.message);
+    }
+  }, [mrpScheduleFetcher.data?.message, mrpScheduleFetcher.data?.success]);
 
   useEffect(() => {
     if (
@@ -548,6 +603,73 @@ export default function ProductionSettingsRoute() {
               </p>
             )}
           </CardContent>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={mrpScheduleValidator}
+            defaultValues={{
+              mrpSchedule: companySettings.mrpRunTime
+                ? "Daily"
+                : "Every 3 Hours",
+              mrpRunHour: companySettings.mrpRunTime
+                ? String(parseTime(companySettings.mrpRunTime).hour)
+                : undefined
+            }}
+            fetcher={mrpScheduleFetcher}
+          >
+            <input type="hidden" name="intent" value="mrpSchedule" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Planning</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Choose when MRP recalculates on its own. You can still run it
+                  yourself at any time with Recalculate on the planning pages.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Select
+                  name="mrpSchedule"
+                  label={t`Run MRP`}
+                  options={mrpScheduleTypes.map((type) => ({
+                    value: type,
+                    label: mrpScheduleLabels[type]
+                  }))}
+                  onChange={(option) => {
+                    if (option) {
+                      setMrpSchedule(
+                        option.value as (typeof mrpScheduleTypes)[number]
+                      );
+                    }
+                  }}
+                />
+                {mrpSchedule === "Daily" && (
+                  <Select
+                    name="mrpRunHour"
+                    label={t`At`}
+                    helperText={t`In your company's time zone (${companyTimeZone}).`}
+                    options={Array.from({ length: 24 }, (_, hour) => ({
+                      value: String(hour),
+                      label: formatTimeOfDay(new Time(hour).toString(), locale)
+                    }))}
+                  />
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={mrpScheduleFetcher.state !== "idle"}
+                isLoading={mrpScheduleFetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
 
         <Card>

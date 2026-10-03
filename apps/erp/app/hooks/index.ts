@@ -33,6 +33,7 @@ import { useImageUpload } from "./useImageUpload";
 import { useModelUpload } from "./useModelUpload";
 import { useAllModules, useModules, useSettingsModule } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
+import { useMrpScheduleDescription } from "./useMrpScheduleDescription";
 import { useNextItemId } from "./useNextItemId";
 import { useNotifications } from "./useNotifications";
 import { useOnboarding } from "./useOnboarding";
@@ -72,6 +73,7 @@ export {
   useSettingsModule,
   useModelUpload,
   useMovingCellRef,
+  useMrpScheduleDescription,
   useNanoStore,
   useNextItemId,
   useNotifications,

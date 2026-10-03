@@ -58,7 +58,12 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useDrawerItem, usePermissions, useUser } from "~/hooks";
+import {
+  useDrawerItem,
+  useMrpScheduleDescription,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import {
@@ -147,6 +152,7 @@ const ProductionPlanningTable = ({
   const itemPostingGroups = useItemPostingGroups();
 
   const mrpFetcher = useFetcher<typeof mrpAction>();
+  const mrpScheduleDescription = useMrpScheduleDescription();
   const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
   // ── Planning actions (the MRP worklist) ──────────────────────────────────
@@ -1008,12 +1014,7 @@ const ProductionPlanningTable = ({
                     <Trans>Recalculate</Trans>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <Trans>
-                    MRP runs automatically every 3 hours, but you can run it
-                    manually here.
-                  </Trans>
-                </TooltipContent>
+                <TooltipContent>{mrpScheduleDescription}</TooltipContent>
               </Tooltip>
             </mrpFetcher.Form>
           </div>

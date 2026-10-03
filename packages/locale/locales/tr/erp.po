@@ -2865,6 +2865,9 @@ msgstr "Bu birimi hat yanı malzemesi için bir iş merkezine atar; böylece ope
 msgid "Assumptions"
 msgstr "Varsayımlar"
 
+msgid "At"
+msgstr "Saatte"
+
 msgid "At each gate"
 msgstr "Her kapıda"
 
@@ -3869,6 +3872,9 @@ msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "MRP'nin otomatik olarak ne zaman yeniden hesaplandığını seçin. Planlama sayfalarındaki Yeniden Hesapla seçeneğiyle istediğiniz zaman elle çalıştırabilirsiniz."
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezgininin her satırı açıklama veya stok kartı kimliğiyle etiketleyip etiketlemeyeceğini seçin."
@@ -7541,6 +7547,9 @@ msgstr "Olay Türü"
 msgid "Events"
 msgstr "Etkinlikler"
 
+msgid "Every 3 hours"
+msgstr "Her 3 saatte bir"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
 
@@ -9305,6 +9314,9 @@ msgstr "Bu adımda"
 
 msgid "In use"
 msgstr "Kullanımda"
+
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "Şirketinizin saat diliminde ({companyTimeZone})."
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "Enterprise ayarlarınızın Geliştirici bölümünde, özel OAuth uygulamasının izinlerini «Uygulama belgelerinize yazabilir» izni dahil etmek için düzenleyin ve ardından entegrasyon ayarlarını yeniden kaydedin."
@@ -11305,6 +11317,9 @@ msgstr "MRP (planlama)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
 
+msgid "MRP runs automatically every day at {time}, but you can run it manually here."
+msgstr "MRP her gün otomatik olarak {time} saatinde çalışır, ancak burada elle çalıştırabilirsiniz."
+
 msgid "MRP Suggestions"
 msgstr "MRP Önerileri"
 
@@ -12628,6 +12643,9 @@ msgstr "Zamanında teslimat"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Aracınızı Carbon'a dahil edin"
+
+msgid "Once a day"
+msgstr "Günde bir kez"
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -15778,6 +15796,9 @@ msgstr "Çalıştırma ID'si"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Ay sonu kapanışını ve standart mutabakatları çalıştırın"
+
+msgid "Run MRP"
+msgstr "MRP Çalıştır"
 
 msgid "Run payment batches and track aging"
 msgstr "Ödeme partilerini çalıştırın ve yaşlandırmayı izleyin"

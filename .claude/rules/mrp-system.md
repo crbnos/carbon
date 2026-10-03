@@ -23,14 +23,35 @@ Phase-7 write) and throws on failure.
 ## Run flow (inputs → compute → outputs)
 
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
-   `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
-   — every 3 hours. A `find-companies` step selects all rows from `company`,
-   narrowed by `companiesWithPlanningWork` (`scheduled/mrp-companies.ts`): one
-   UNION over the open demand/supply views, `demandProjection`, and the rows an
-   earlier run wrote (`demandForecast` with `forecastMethod = 'mrp'`,
-   `demandForecastSource`, `supplyForecast`, non-zero actuals). A company in
-   none of them would read nothing and write nothing, so it is skipped; a
-   failed lookup plans for every company. Then **one `step.run` per company**
+   `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "*/15 * * * *" }, …)`
+   — a tick every 15 minutes, on which a company is **due** either every 3
+   hours (the default) or once a day at `companySettings.mrpRunTime` (a `TIME`
+   on the company's own clock, `company.timezone`; set in Settings → Production
+   → Planning, where the form offers whole hours — a schedule select plus an
+   hour select, `mrpScheduleValidator` — and the action writes `HH:00:00`). Setting a time REPLACES the 3-hourly runs for that company. The
+   rule is the pure `isMrpDue(tick, { timezone, mrpRunTime })`
+   (`scheduled/mrp-companies.ts`, unit-tested): the default is "UTC hour
+   divisible by 3, minute 0"; a daily time is due on the FIRST tick at or after
+   the run time's instant, tested against the instant (not the local hour) so a
+   spring-forward day still runs once and a fall-back day does not run twice,
+   and checked for yesterday's date too (23:50 is first reached at 00:00). The
+   tick is `mrpTick(event.ts)` — the cron's own timestamp plus one minute,
+   floored to the 15-minute slot (the minute absorbs a cron that fires just
+   before the boundary), so a retried step answers for its own slot; with no
+   `event.ts` it falls back to `now("UTC")`. A tick with nobody due returns
+   early, before the plan lookup — and a tick between the
+   3-hourly runs with no company on a daily time returns before `company` is
+   read at all (the `mrpRunTime` read comes first for that reason). A failed `mrpRunTime` read
+   **throws** (defaulting would plan a daily company at the wrong hours and skip
+   its own); an unparseable timezone/time falls back to the default cadence for
+   that one company. A `find-companies` step selects all rows from `company`,
+   narrowed to the due ones and then by `companiesWithPlanningWork`
+   (`scheduled/mrp-companies.ts`): one UNION over the open demand/supply views,
+   `demandProjection`, and the rows an earlier run wrote (`demandForecast` with
+   `forecastMethod = 'mrp'`, `demandForecastSource`, `supplyForecast`, non-zero
+   actuals). A company in none of them would read nothing and write nothing, so
+   it is skipped; a failed lookup plans for every due company. Then **one
+   `step.run` per company**
    (`mrp-<companyId>`) calls `runMrp(serviceRole, getJobDatabaseClient(),
    { type: "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
    the loop try/catches per step and returns `{ companies, failed }`). Every
@@ -53,17 +74,21 @@ Phase-7 write) and throws on failure.
    On **Cloud only**, companies whose `stripeSubscriptionStatus` is `'Canceled'`
    are skipped: the company is on its way out (Stripe removes the plan row when
    the subscription ends, and `weekly.ts` then deletes the planless company).
-   The selection rule is the pure
-   `selectCompaniesForMrp` (`scheduled/mrp-companies.ts`), unit-tested in its
-   sibling `.test.ts`; the scheduler logs a `warn` when the list comes back
-   empty, so "no work" can never again look like "worked fine".
+   The selection rule is the pure `selectCompaniesForMrp`
+   (`scheduled/mrp-companies.ts`), unit-tested in its sibling `.test.ts`. Every
+   tick with someone due logs `Companies scheduled for MRP` (company / due /
+   scheduled counts), and a `warn` fires when companies were due but the plan
+   and planning-work filters left none. A tick with NOBODY due returns `[]` without a log — most
+   ticks are like that — so an empty `company` table no longer warns; read the
+   info log's `companies` count on a 3-hourly tick instead.
 
-   Both reads go through `fetchAllFromTable` with a stable `.order("id")` — the
+   All three reads (`companySettings.mrpRunTime`, `company`, `companyPlan`) go
+   through `fetchAllFromTable` with a stable `.order("id")` — the
    same reason every engine read pages (below): `max_rows = 1000` truncates a
    bare select, and the dev stack does not enforce the cap, so a dropped tail is
-   invisible locally. A failed `company` read **throws**; returning would make
-   the step succeed having planned for nobody, which is this function's whole
-   bug class. A failed `companyPlan` read does not — it leaves `plans` null and
+   invisible locally. A failed `mrpRunTime` or `company` read **throws**;
+   returning would make the step succeed having planned for nobody (or for the
+   wrong companies), which is this function's whole bug class. A failed `companyPlan` read does not — it leaves `plans` null and
    plans for everyone, which is the fail-safe direction.
 
 2. **Manual trigger** — POST `apps/erp/app/routes/api+/mrp.ts` (permission
@@ -84,7 +109,8 @@ Phase-7 write) and throws on failure.
    (`x+/purchase-order+/$orderId.status.tsx`), sales order confirm
    (`x+/sales-order+/$orderId.confirm.tsx`) and kanban
    (`api+/kanban.$id.tsx`). The demo template's `planDemoCompany`
-   (`packages/jobs/src/demo-planning.ts`) calls `runMrp` directly.
+   (`packages/jobs/src/demo-planning.ts`) calls `runMrp` directly. None of these
+   is affected by `mrpRunTime`, which only governs the cron.
 
 3. **In-process engine** — `packages/planning/src/mrp/mrp.ts`
    (`runMrp(client, db, payload)`, Node, ~1390 lines). Reads go through the
@@ -306,8 +332,10 @@ anywhere else.
   nothing needs ordering. The tooltip shows the required date and lead time;
   the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
 - Both have a "Recalculate" button (`mrpFetcher.Form` POST to
-  `path.to.api.mrp(locationId)`) tooltip: *"MRP runs automatically every 3 hours,
-  but you can run it manually here."*
+  `path.to.api.mrp(locationId)`) whose tooltip comes from
+  `useMrpScheduleDescription` (`~/hooks`): *"MRP runs automatically every 3
+  hours…"* or *"…every day at 2:00 PM…"* when the company set
+  `companySettings.mrpRunTime`. The Inventory table's button uses the same hook.
 - **Planning actions (the MRP worklist, spec §P1.7) live INSIDE each grid**, not
   in a separate list. Both routes load the location's persisted `planningAction`
   rows (`getPlanningActions`, Buy/Make by kind) and pass them to the grid, which

@@ -2865,6 +2865,9 @@ msgstr "Assigns this unit to a work center for lineside material, so operators s
 msgid "Assumptions"
 msgstr "Assumptions"
 
+msgid "At"
+msgstr "At"
+
 msgid "At each gate"
 msgstr "At each gate"
 
@@ -3869,6 +3872,9 @@ msgstr "Choose how to add lines to this return."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
@@ -7541,6 +7547,9 @@ msgstr "Event Type"
 msgid "Events"
 msgstr "Events"
 
+msgid "Every 3 hours"
+msgstr "Every 3 hours"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 
@@ -9305,6 +9314,9 @@ msgstr "In this step"
 
 msgid "In use"
 msgstr "In use"
+
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "In your company's time zone ({companyTimeZone})."
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
@@ -11305,6 +11317,9 @@ msgstr "MRP (planning)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
+msgid "MRP runs automatically every day at {time}, but you can run it manually here."
+msgstr "MRP runs automatically every day at {time}, but you can run it manually here."
+
 msgid "MRP Suggestions"
 msgstr "MRP Suggestions"
 
@@ -12628,6 +12643,9 @@ msgstr "On-time delivery"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Onboard your agent to Carbon"
+
+msgid "Once a day"
+msgstr "Once a day"
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -15778,6 +15796,9 @@ msgstr "Run ID"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Run month-end close and standard reconciliations"
+
+msgid "Run MRP"
+msgstr "Run MRP"
 
 msgid "Run payment batches and track aging"
 msgstr "Run payment batches and track aging"

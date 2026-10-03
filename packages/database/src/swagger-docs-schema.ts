@@ -93400,6 +93400,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93633,6 +93636,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93818,6 +93824,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.defaultPlanningHorizonDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.mrpRunTime"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -100233,9 +100242,12 @@ export default {
             required: true,
             schema: {
               properties: {
-                action_assignee: {
-                  format: "text",
-                  type: "string"
+                action_assignees: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
                 },
                 action_types: {
                   format: "text[]",
@@ -102909,9 +102921,12 @@ export default {
             required: true,
             schema: {
               properties: {
-                action_assignee: {
-                  format: "text",
-                  type: "string"
+                action_assignees: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
                 },
                 action_types: {
                   format: "text[]",
@@ -152512,6 +152527,10 @@ export default {
         defaultPlanningHorizonDays: {
           format: "integer",
           type: "integer"
+        },
+        mrpRunTime: {
+          format: "time without time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -202778,6 +202797,12 @@ export default {
     },
     "rowFilter.companySettings.defaultPlanningHorizonDays": {
       name: "defaultPlanningHorizonDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.mrpRunTime": {
+      name: "mrpRunTime",
       required: false,
       in: "query",
       type: "string"

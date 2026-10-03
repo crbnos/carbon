@@ -2865,6 +2865,9 @@ msgstr "Atribui esta unidade a um centro de trabalho para material de borda de l
 msgid "Assumptions"
 msgstr "Premissas"
 
+msgid "At"
+msgstr "Às"
+
 msgid "At each gate"
 msgstr "Em cada etapa"
 
@@ -3869,6 +3872,9 @@ msgstr "Escolha como adicionar linhas a esta devolução."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Escolha o que aparece na ficha de acompanhamento impressa."
+
+msgid "Choose when MRP recalculates on its own. You can still run it yourself at any time with Recalculate on the planning pages."
+msgstr "Escolha quando o MRP recalcula automaticamente. Você ainda pode executá-lo manualmente a qualquer momento com Recalcular nas páginas de Planejamento."
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "Escolha se o explorador da lista de materiais em itens, orçamentos e ordens de produção rotula cada linha com sua descrição ou sua ID do item."
@@ -7541,6 +7547,9 @@ msgstr "Tipo de Evento"
 msgid "Events"
 msgstr "Eventos"
 
+msgid "Every 3 hours"
+msgstr "A cada 3 horas"
+
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos os registros da empresa. Credenciais, tokens de integração e webhooks nunca são incluídos."
 
@@ -9305,6 +9314,9 @@ msgstr "Nesta etapa"
 
 msgid "In use"
 msgstr "Em uso"
+
+msgid "In your company's time zone ({companyTimeZone})."
+msgstr "No fuso horário da sua Empresa ({companyTimeZone})."
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
 msgstr "Nas configurações da Empresa em Desenvolvedor, edite as permissões do aplicativo OAuth privado para incluir «O aplicativo pode escrever em seus documentos», então salve as configurações de integração novamente."
@@ -11305,6 +11317,9 @@ msgstr "MRP (planejamento)"
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP é executado automaticamente a cada 3 horas, mas você pode executá-lo manualmente aqui."
 
+msgid "MRP runs automatically every day at {time}, but you can run it manually here."
+msgstr "O MRP é executado automaticamente todos os dias às {time}, mas você pode executá-lo manualmente aqui."
+
 msgid "MRP Suggestions"
 msgstr "Sugestões MRP"
 
@@ -12628,6 +12643,9 @@ msgstr "Entrega no prazo"
 
 msgid "Onboard your agent to Carbon"
 msgstr "Integre seu agente ao Carbon"
+
+msgid "Once a day"
+msgstr "Uma vez por dia"
 
 #. placeholder {0}: company?.baseCurrencyCode
 #. placeholder {1}: initialValues.code
@@ -15778,6 +15796,9 @@ msgstr "ID de Execução"
 
 msgid "Run month-end close and standard reconciliations"
 msgstr "Executar encerramento de mês e reconciliações padrão"
+
+msgid "Run MRP"
+msgstr "Executar MRP"
 
 msgid "Run payment batches and track aging"
 msgstr "Executar lotes de pagamento e rastrear vencimento"

@@ -7982,6 +7982,7 @@ export type Database = {
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceDispatchNotificationGroup: string[] | null
           materialGeneratedIds: boolean
+          mrpRunTime: string | null
           operationsDispatchNotificationGroup: string[] | null
           otherDispatchNotificationGroup: string[] | null
           plmReleaseControl: string
@@ -8042,6 +8043,7 @@ export type Database = {
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
+          mrpRunTime?: string | null
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string
@@ -8102,6 +8104,7 @@ export type Database = {
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
+          mrpRunTime?: string | null
           operationsDispatchNotificationGroup?: string[] | null
           otherDispatchNotificationGroup?: string[] | null
           plmReleaseControl?: string

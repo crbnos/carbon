@@ -1494,6 +1494,22 @@ export async function updateAutoSelectMaterialWithoutPickingListSetting(
     .eq("id", companyId);
 }
 
+/**
+ * The time of day scheduled MRP runs, on the company's own clock ("HH:MM:SS").
+ * `null` restores the default cadence, every 3 hours.
+ * @mcp update
+ */
+export async function updateMrpRunTimeSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  mrpRunTime: string | null
+) {
+  return client
+    .from("companySettings")
+    .update({ mrpRunTime })
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateIncompletePickingListPolicySetting(
   client: SupabaseClient<Database>,

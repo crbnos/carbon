@@ -187,7 +187,7 @@ error message per step.
   written as `metadata.planningError` (a new apply resets it to `null`); marker status is
   never changed. On the `snapshot: false` path the marker is already cleared, so the
   failure is only logged (re-writing it would resurrect the marker as `running`). The
-  3-hourly MRP cron is the backstop — for MRP only.
+  scheduled MRP run (every 3 hours, or the company's daily time) is the backstop — for MRP only.
 - **Dev CLI** — the spawned `plan:company` script (above). `plan-company.ts` loads
   `demo-planning.ts` through `createRequire` so tsx compiles the graph as CJS; as ESM,
   `@carbon/planning`'s named imports from `@carbon/database` fail to link. It exits 0 even
