@@ -56,7 +56,6 @@
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",
-    "framer-motion": "catalog:",
     "react": "catalog:",
     "react-icons": "catalog:"
   },

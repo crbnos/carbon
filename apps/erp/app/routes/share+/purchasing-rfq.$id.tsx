@@ -24,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";

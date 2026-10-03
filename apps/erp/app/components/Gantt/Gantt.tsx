@@ -1130,7 +1130,7 @@ function SpanWithDuration({
       ? segments
       : [{ startMs: props.startMs, durationMs: props.durationMs }];
 
-  // Plain divs, not framer-motion `layoutId`s: every scroll frame re-renders
+  // Plain divs, not motion `layoutId`s: every scroll frame re-renders
   // the visible rows, and a layout node measures itself before and after each
   // render — hundreds of forced reflows per frame on a large board.
 

@@ -4,7 +4,7 @@
 
 import { Button, IconButton } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { LuExternalLink, LuX } from "react-icons/lu";
 import type { TrainingVideo } from "~/utils/training";
 import { getVideoEmbedUrl } from "~/utils/training";

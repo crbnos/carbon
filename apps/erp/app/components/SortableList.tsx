@@ -12,7 +12,7 @@ import {
   motion,
   Reorder,
   useDragControls
-} from "framer-motion";
+} from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";

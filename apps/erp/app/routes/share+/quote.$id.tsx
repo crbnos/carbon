@@ -45,7 +45,7 @@ import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";

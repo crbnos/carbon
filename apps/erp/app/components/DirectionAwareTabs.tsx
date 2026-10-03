@@ -5,7 +5,7 @@
 "use client";
 
 import { cn } from "@carbon/react";
-import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import useMeasure from "react-use-measure";

@@ -15,7 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";

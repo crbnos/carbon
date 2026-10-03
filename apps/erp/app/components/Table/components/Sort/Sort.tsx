@@ -23,7 +23,7 @@ import {
   TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { BsChevronDown, BsSortUp } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
 import { LuArrowUpDown, LuGripVertical } from "react-icons/lu";

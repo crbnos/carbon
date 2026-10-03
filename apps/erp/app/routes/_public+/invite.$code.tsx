@@ -27,7 +27,7 @@ import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.serv
 import { datetime, Edition, getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { render } from "@react-email/components";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type {
   ActionFunctionArgs,

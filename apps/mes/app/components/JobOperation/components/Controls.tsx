@@ -15,7 +15,7 @@ import {
   useShortcutKeys
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { forwardRef, useCallback, useMemo, useRef, useState } from "react";
 import { FaPause, FaPlay } from "react-icons/fa6";

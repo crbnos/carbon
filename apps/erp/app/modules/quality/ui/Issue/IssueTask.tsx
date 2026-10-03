@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendar, LuContainer, LuRedoDot } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";

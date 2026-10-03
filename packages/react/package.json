@@ -123,7 +123,7 @@
     "@internationalized/date": "catalog:",
     "@lingui/react": "catalog:",
     "@marsidev/react-turnstile": "catalog:",
-    "framer-motion": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-icons": "catalog:",
