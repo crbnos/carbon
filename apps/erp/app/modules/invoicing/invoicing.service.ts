@@ -2905,9 +2905,14 @@ export async function upsertPayment(
 /** @mcp delete */
 export async function deletePayment(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("payment").delete().eq("id", id);
+  return client
+    .from("payment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function upsertInvoiceSettlement(
