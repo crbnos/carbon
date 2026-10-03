@@ -1,0 +1,116 @@
+-- Fix: the salesOrders view computed "orderTotal" with SUM(DISTINCT ...) inside
+-- a sub-select that LEFT JOINs "job" (one row per job per line). The DISTINCT
+-- was added to cancel the job fan-out, but it also collapses equal-valued
+-- lines: two identical $500 lines total $500 instead of $1000. (Same root
+-- cause fixed for invoices in 20260604120000_invoice-totals-computed-in-views:
+-- plain SUM, not SUM(DISTINCT) -- DISTINCT dropped identical line amounts.)
+--
+-- The money total now comes from a separate job-free aggregate over
+-- "salesOrderLine" (plain SUM, no fan-out to de-duplicate), while the job join
+-- remains only for the thumbnail/itemType/jobs/lines aggregations. The view's
+-- output columns (names, order, types) are unchanged.
+
+DROP VIEW IF EXISTS "salesOrders";
+CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    s.*,
+    CASE
+      WHEN s."status" NOT IN ('Closed', 'Cancelled')
+       AND EXISTS (
+         SELECT 1
+         FROM "salesOrderLine" sol
+         WHERE sol."salesOrderId" = s."id"
+           AND sol."methodType" = 'Make to Order'
+           AND COALESCE((
+             SELECT SUM(j."quantityComplete")
+             FROM "job" j
+             WHERE j."salesOrderLineId" = sol."id"
+               AND j."salesOrderId"     = sol."salesOrderId"
+           ), 0) < sol."saleQuantity"
+       )
+      THEN 'In Progress'::"salesOrderStatus"
+      ELSE s."status"
+    END AS "displayStatus",
+    sl."thumbnailPath",
+    sl."itemType",
+    sot."orderTotal" + COALESCE(ss."shippingCost", 0) AS "orderTotal",
+    sl."jobs",
+    sl."lines",
+    st."name" AS "shippingTermName",
+    sp."paymentTermId",
+    ss."shippingMethodId",
+    ss."receiptRequestedDate",
+    ss."receiptPromisedDate",
+    ss."dropShipment",
+    ss."shippingCost",
+    ss."incoterm",
+    ss."incotermLocation",
+    (
+      SELECT COALESCE(
+        jsonb_object_agg(
+          eim."integration",
+          CASE
+            WHEN eim."metadata" IS NOT NULL THEN eim."metadata"
+            ELSE to_jsonb(eim."externalId")
+          END
+        ) FILTER (WHERE eim."externalId" IS NOT NULL OR eim."metadata" IS NOT NULL),
+        '{}'::jsonb
+      )
+      FROM "externalIntegrationMapping" eim
+      WHERE eim."entityType" = 'salesOrder' AND eim."entityId" = s."id"
+    ) AS "externalId"
+  FROM "salesOrder" s
+  LEFT JOIN (
+    SELECT
+      sol."salesOrderId",
+      MIN(CASE
+        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+        ELSE i."thumbnailPath"
+      END) AS "thumbnailPath",
+      MIN(i."type") AS "itemType",
+      ARRAY_AGG(
+        CASE
+          WHEN j.id IS NOT NULL THEN json_build_object(
+            'id', j.id,
+            'jobId', j."jobId",
+            'status', j."status",
+            'dueDate', j."dueDate",
+            'productionQuantity', j."productionQuantity",
+            'quantityComplete', j."quantityComplete",
+            'quantityShipped', j."quantityShipped",
+            'quantity', j."quantity",
+            'scrapQuantity', j."scrapQuantity",
+            'salesOrderLineId', sol.id,
+            'assignee', j."assignee"
+          )
+          ELSE NULL
+        END
+      ) FILTER (WHERE j.id IS NOT NULL) AS "jobs",
+      ARRAY_AGG(
+        json_build_object(
+          'id', sol.id,
+          'methodType', sol."methodType",
+          'saleQuantity', sol."saleQuantity"
+        )
+      ) AS "lines"
+    FROM "salesOrderLine" sol
+    LEFT JOIN "item" i
+      ON i."id" = sol."itemId"
+    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    LEFT JOIN "job" j ON j."salesOrderId" = sol."salesOrderId" AND j."salesOrderLineId" = sol."id"
+    GROUP BY sol."salesOrderId"
+  ) sl ON sl."salesOrderId" = s."id"
+  LEFT JOIN (
+    -- Job-free money aggregate: plain SUM over one row per line, so equal-valued
+    -- lines are counted individually and multi-job lines are not over-counted.
+    SELECT
+      sol."salesOrderId",
+      SUM(
+        (1+COALESCE(sol."taxPercent", 0))*(COALESCE(sol."saleQuantity", 0)*(COALESCE(sol."unitPrice", 0)) + COALESCE(sol."shippingCost", 0) + COALESCE(sol."addOnCost", 0)) + COALESCE(sol."nonTaxableAddOnCost", 0)
+      ) AS "orderTotal"
+    FROM "salesOrderLine" sol
+    GROUP BY sol."salesOrderId"
+  ) sot ON sot."salesOrderId" = s."id"
+  LEFT JOIN "salesOrderShipment" ss ON ss."id" = s."id"
+  LEFT JOIN "shippingTerm" st ON st."id" = ss."shippingTermId"
+  LEFT JOIN "salesOrderPayment" sp ON sp."id" = s."id";
