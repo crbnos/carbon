@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -28,7 +27,7 @@ import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -37,7 +36,7 @@ import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
-import { ModelUploadProgress } from "./ModelUploadProgress";
+import { UploadProgress } from "./UploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
@@ -73,6 +72,7 @@ const CadModel = ({
   uploadClassName,
   viewerClassName
 }: CadModelProps) => {
+  const { t } = useLingui();
   const { modelPath = null, modelId: modelUploadId = null } = modelUpload ?? {};
   const {
     company: { id: companyId }
@@ -282,7 +282,9 @@ const CadModel = ({
               />
               {upload !== null && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-background/95 p-6">
-                  <ModelUploadProgress
+                  <UploadProgress
+                    label={t`Uploading model`}
+                    description={t`Uploading the CAD file`}
                     percent={upload.percent}
                     uploaded={upload.uploaded}
                     total={upload.total}

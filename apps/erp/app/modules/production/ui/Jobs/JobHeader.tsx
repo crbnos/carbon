@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -22,6 +21,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -298,6 +298,7 @@ const JobHeader = () => {
                 Reopen
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 disabled={
                   !permissions.can("delete", "production") ||
                   !permissions.is("employee") ||
@@ -1518,7 +1519,10 @@ function JobCompleteModal({
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
         .eq("companyId", company.id)
-        .order("createdAt", { ascending: true });
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {

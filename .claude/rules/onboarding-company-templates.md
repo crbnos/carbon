@@ -305,7 +305,7 @@ Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — t
 the company's day, the database session's is UTC, and the two disagree for a slice of every
 day. The pure validator checks offset VALUES (planning horizon, period floors, document
 chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
-`apps/mes/app/services`, `packages/jobs/src`, `packages/database/supabase/functions` and
+`apps/mes/app/services`, `packages/jobs/src`, `packages/server-functions/src` and
 the ERP module/route files, none of which is `packages/database/src/**`. That part is
 convention only.
 
@@ -347,7 +347,7 @@ make parts. Keep it that way when authoring a new notice or a new dataset.
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
 Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
-posting edge functions cannot run inside the one seed transaction (and a post-commit call
+posting server functions cannot run inside the one seed transaction (and a post-commit call
 would break all-or-nothing apply and the drift check's rollback), so each posted state is
 **hand-authored together with the rows its posting path would have written** —
 `itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
@@ -370,7 +370,7 @@ in the same tier. Conventions, each mirroring the real code path:
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
   shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the edge functions'
+  through the server functions'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,
@@ -433,13 +433,31 @@ hand-editing, and never re-bake a model without re-deriving them — `nodeId` is
 tessellation, so ANY change to the mesh (including a different `linearDeflection`) invalidates
 every id in the dataset.
 
-The `.glb` files are baked ONCE by running the upstream STEP through a locally-built
-`apps/assembler` (`POST /v1/convert` at `linearDeflection: 2.0`, `angularDeflection: 1.0` — the
-default 0.1 produces a 30 MB GLB where the coarse setting produces 2.7 MB, with no visible
-difference at demo scale). The STEP sources are deliberately NOT committed. Both the recipe and
-the upstream licenses live in `assets/ATTRIBUTION.md` and
-`.ai/plans/2026-08-20-demo-cad-models.md` — three of the four models are CC BY or CC0 and legally
-REQUIRE that attribution to survive redistribution, so that file is not optional documentation.
+The `.glb` files are original models generated in CadQuery (one per dataset, product tree
+mirroring its top-level BOM) and baked ONCE through a locally-built `apps/assembler`
+(`POST /v1/convert` at `linearDeflection: 0.5`, `angularDeflection: 0.3`, 0.8–2.3 MB each).
+The STEP sources and generator scripts are deliberately NOT committed; `assets/ATTRIBUTION.md`
+lists the models, and no third-party CAD remains, so no attribution is owed.
+
+Every dataset assembly seeds **sub-assemblies**, each shaped to its product (satellite: three
+benches → two parents → integration; robotics: wide, the link assembly uses both joint drives and the
+controller joins the main build unused; precision: three levels deep, one step fits two
+sub-assemblies; motor: a chain).
+`AssemblyStepSpec` takes `key`, `isSubAssembly` (a header row), `parent` (the header a member
+belongs to) and `usedIn` (headers only: the later step that fits the finished unit).
+Steps also carry planner-baked motion — `motion`, `view` (the camera's plan hint) and
+`blockedBy` (written as `warnings.flagged`, so the player fades the step in) — produced by the
+geometry service in fixed-sequence mode, the app's re-motion request, run once per build (the
+main build and each sub-assembly on its own, meshed at the bake's 0.5/0.3 so node ids match)
+and mapped back to steps with `buildAssemblyStepGroups`. One motion moves all of a step's parts,
+so a step fitting parts from opposite sides cannot move; those were split per side. A step with
+no `motion` and no `blockedBy` is a build's first step: the player synthesizes its path. Like
+the STEP sources, the scripts that bake these are not committed — re-derive them whenever a
+step's parts or order change.
+`seedAssembly` inserts the rows in play order and sets `parentStepId` / `usedInStepId` in a
+second pass; the validator restates the viewer's `validateSubAssemblies` rules (members directly
+before their header, no nesting, `usedIn` points forward at a non-header step that is not one of
+its own members) because `@carbon/database` cannot depend on `@carbon/viewer`.
 
 Two things needed no change and should stay that way: `wipe.ts` discovers tables by their
 `companyId` column rather than a hard-coded list, so `modelUpload` and every `assembly*` table are
@@ -589,7 +607,6 @@ customer companies is a separate feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally calls the `seed-company` **edge function** (for the
-chart of accounts and other reference data) before the template step ever runs — so if the
-local edge runtime is unhealthy, onboarding fails before reaching any of this, and the CLI
-remains the way to exercise a dataset.
+browser onboarding flow additionally runs the `seed-company` server function
+(`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
+before the template step ever runs, in-process in the ERP.

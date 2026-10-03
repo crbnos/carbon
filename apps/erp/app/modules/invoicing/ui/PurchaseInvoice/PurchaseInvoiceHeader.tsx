@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -16,6 +15,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
 } from "@carbon/react";
@@ -187,7 +187,7 @@ const PurchaseInvoiceHeader = () => {
       .select("itemId, description, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)
       // Services are never received, so they never generate a receipt — mirror
-      // the post-purchase-invoice edge function and exclude them here.
+      // the post-purchase-invoice server function and exclude them here.
       .in("invoiceLineType", [
         "Part",
         "Material",
@@ -312,6 +312,7 @@ const PurchaseInvoiceHeader = () => {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     isPurchaseInvoiceLocked(
                       routeData?.purchaseInvoice?.status

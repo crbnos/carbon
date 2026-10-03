@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -21,6 +20,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -153,6 +153,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({

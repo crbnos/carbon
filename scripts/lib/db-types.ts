@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -116,4 +115,26 @@ export function getDbTableTypeFields(
     }
   }
   return fields.length > 0 ? fields : null;
+}
+
+/**
+ * The tables of the generated types that have `column`. Tables only: a view is
+ * not written through. Empty when the generated file is missing.
+ */
+export function getDbTablesWithColumn(column: string): string[] {
+  const content = typesContent();
+  if (!content) return [];
+  // The `public` schema's own tables: `graphql_public` comes first in the file
+  // and has none.
+  const schema = content.indexOf("\n  public: {");
+  const start = schema < 0 ? -1 : content.indexOf("    Tables: {", schema);
+  if (start < 0) return [];
+  const end = content.indexOf("\n    Views: {", start);
+  const section = content.slice(start, end < 0 ? undefined : end);
+  return [...section.matchAll(/\n      (\w+): \{/g)]
+    .map((match) => match[1])
+    .filter((table) =>
+      getDbTableTypeFields(table, "Row")?.some((field) => field.name === column)
+    )
+    .sort();
 }

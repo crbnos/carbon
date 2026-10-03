@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import {
   HStack,
   IconButton
 } from "@carbon/react";
+import { unchecked } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -213,10 +213,12 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
       if (!carbon) throw new Error("Carbon client not found");
       return await carbon
         .from("jobOperation")
-        .update({
-          [id]: value,
-          updatedBy: userId
-        })
+        .update(
+          unchecked({
+            [id]: value,
+            updatedBy: userId
+          })
+        )
         .eq("id", row.id!);
     },
     [carbon, userId]

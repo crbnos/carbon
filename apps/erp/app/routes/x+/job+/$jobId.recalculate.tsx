@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -10,6 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { recalculateJobRequirements } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -20,11 +20,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id: jobId,
-    companyId,
-    userId
-  });
+  const recalculate = await recalculateJobRequirements(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      id: jobId,
+      companyId,
+      userId
+    }
+  );
   if (recalculate.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),

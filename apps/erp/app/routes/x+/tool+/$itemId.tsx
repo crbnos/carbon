@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -18,11 +17,15 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Await,
   Outlet,
@@ -34,12 +37,7 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ToolSummary } from "~/modules/items";
 import {
-  findChangeNoticesForItem,
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodTree,
   getPartUsedIn,
   getPickMethods,
@@ -47,7 +45,13 @@ import {
   getTool,
   isChangeNoticeOpen
 } from "~/modules/items";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
+import {
+  findChangeNoticesForItemOnce,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
+  getUnreleasedChangeOrderForItem,
+  streamItemSupersession
+} from "~/modules/items/items.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import {
@@ -68,6 +72,11 @@ export const handle: Handle = {
   module: "items"
 };
 
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["itemId"], search: ["methodId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -77,13 +86,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
   const [
     toolSummary,
     supplierParts,
     pickMethods,
     tags,
-    supersession,
-    supersededBy,
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
@@ -91,11 +104,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
     getTagsList(client, companyId, "tool"),
-    getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
-    findChangeNoticesForItem(client, { itemId, companyId }),
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
     // Locks the Active toggle while the change notice that minted this item is
     // still open — release is what activates it.
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
@@ -119,7 +130,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
+  const methodTree = getMakeMethodsOnce(client, itemId, companyId).then(
     async (makeMethods) => {
       const makeMethod = requestedMethodId
         ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
@@ -129,7 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           makeMethods.data?.[0]);
       if (!makeMethod) return null;
 
-      const fullMethod = await getMakeMethodById(
+      const fullMethod = await getMakeMethodByIdOnce(
         client,
         makeMethod.id,
         companyId
@@ -150,12 +161,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     toolSummary: toolSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethodsOnce(client, itemId, companyId),
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
@@ -187,7 +198,7 @@ export default function ToolRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ToolHeader />
+      <ToolHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
@@ -574,7 +585,7 @@ export default function ToolRoute() {
               </div>
             }
             content={
-              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+              <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                 <Outlet />
               </div>
             }

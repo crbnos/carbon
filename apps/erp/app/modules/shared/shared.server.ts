@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,6 +8,7 @@ import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -49,8 +49,8 @@ export async function assign(
     client
       // @ts-ignore
       .from(table)
-      .update({ assignee: assignee ? assignee : null })
-      .eq("id", id)
+      .update(unchecked({ assignee: assignee ? assignee : null }))
+      .eq(unchecked("id"), id)
   );
 }
 
@@ -639,7 +639,8 @@ export async function requireCompanyRecord(
     .maybeSingle();
 
   if (error) {
-    logger.error(`Failed to verify ${table} for company`, {
+    logger.error("Failed to verify {table} for company", {
+      table,
       companyId,
       match,
       error
@@ -647,7 +648,7 @@ export async function requireCompanyRecord(
     throw new Response("Not found", { status: 404 });
   }
   if (!data) {
-    logger.error(`${table} not found for company`, { companyId, match });
+    logger.error("{table} not found for company", { table, companyId, match });
     throw new Response("Not found", { status: 404 });
   }
 }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
   Badge,
   Button,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -196,11 +196,15 @@ const WorkflowsTable = memo(
     const renderContextMenu = useCallback(
       (row: Workflow) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.workflow(row.id))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.open}
+            onClick={() => navigate(path.to.workflow(row.id))}
+          >
             <MenuIcon icon={<LuWorkflow />} />
             {t`Open Workflow`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.rename}
             disabled={!permissions.can("update", "workflows")}
             onClick={() => {
               flushSync(() => setSelectedWorkflow(row));
@@ -223,6 +227,7 @@ const WorkflowsTable = memo(
             {t`Unpublish`}
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "workflows")}
             onClick={() => {

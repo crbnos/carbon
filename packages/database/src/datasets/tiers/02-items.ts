@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,6 +8,7 @@ import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
 import { insertId, insertRow, need, one, rows } from "../sql.ts";
 import type {
   AssemblySpec,
+  AssemblyStepSpec,
   Ctx,
   EnforcementRuleSpec,
   InspectionPlanSpec,
@@ -77,14 +77,31 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
   });
 
   let sortOrder = 1;
+  const stepIds: string[] = [];
+  const stepIdByKey = new Map<string, string>();
   for (const step of spec.steps) {
     const stepId = await insertId(ctx, "assemblyInstructionStep", {
       assemblyInstructionId: instructionId,
       title: step.title,
       instructionText: step.instruction ?? step.title,
       componentNodeIds: step.componentNodeIds,
-      sortOrder: sortOrder++
+      isSubAssembly: step.isSubAssembly ?? false,
+      sortOrder: sortOrder++,
+      ...(step.motion ? { motion: JSON.stringify(step.motion) } : {}),
+      ...(step.view
+        ? { camera: JSON.stringify({ source: "plan", direction: step.view }) }
+        : {}),
+      ...(step.blockedBy?.length
+        ? {
+            warnings: JSON.stringify({
+              flagged: true,
+              blockedBy: step.blockedBy
+            })
+          }
+        : {})
     });
+    stepIds.push(stepId);
+    if (step.key) stepIdByKey.set(step.key, stepId);
     for (const [index, material] of (step.materials ?? []).entries()) {
       await insertRow(ctx, "assemblyInstructionStepMaterial", {
         stepId,
@@ -101,6 +118,32 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
         sortOrder: index + 1
       });
     }
+  }
+
+  // Sub-assembly links point both ways in sortOrder (members precede their
+  // header, a header's using step follows it), so they are set once every row exists.
+  const stepIdFor = (step: AssemblyStepSpec, key: string) => {
+    const id = stepIdByKey.get(key);
+    if (!id) {
+      throw new Error(
+        `Seed: assembly step "${step.title}" names unknown step key "${key}"`
+      );
+    }
+    return id;
+  };
+  for (const [index, step] of spec.steps.entries()) {
+    if (!step.parent && !step.usedIn) continue;
+    await ctx.client.query(
+      `UPDATE "assemblyInstructionStep"
+       SET "parentStepId" = $1, "usedInStepId" = $2
+       WHERE id = $3 AND "companyId" = $4`,
+      [
+        step.parent ? stepIdFor(step, step.parent) : null,
+        step.usedIn ? stepIdFor(step, step.usedIn) : null,
+        stepIds[index],
+        ctx.companyId
+      ]
+    );
   }
 
   for (const mapping of spec.componentMappings) {
@@ -396,7 +439,11 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       name: spec.name,
       ruleType: spec.ruleType,
       amountType: spec.amountType,
-      amount: spec.amount,
+      // The dataset states a percentage in points (5 = 5%); the pricing
+      // engine multiplies by a fraction (price × amount), as the rule form
+      // stores it.
+      amount:
+        spec.amountType === "Percentage" ? spec.amount / 100 : spec.amount,
       priority: spec.priority,
       customerIds: spec.customer
         ? [need(ctx.refs.customers, spec.customer, "customer")]
@@ -461,6 +508,28 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       field: `${rule.field}:${row.id}`,
       code: rule.code,
       updatedBy: ctx.userId
+    });
+  }
+  // The shape normalizePricingRule (sales.service.ts) gives a Configuration
+  // rule: one item, Fixed 0, the prices carrying the parameter's label so the
+  // price trace can name it.
+  if (cfg.prices?.length) {
+    const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
+    await insertRow(ctx, "pricingRule", {
+      name: `${cfg.item} Configuration`,
+      ruleType: "Configuration",
+      amountType: "Fixed",
+      amount: 0,
+      priority: 0,
+      itemIds: [cfgItem.id],
+      configurationPrices: JSON.stringify(
+        cfg.prices.map((price) => ({
+          key: price.key,
+          value: price.value ?? null,
+          amount: price.amount,
+          label: labelByKey.get(price.key)
+        }))
+      )
     });
   }
 

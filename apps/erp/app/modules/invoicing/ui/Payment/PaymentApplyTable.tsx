@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -308,7 +307,7 @@ const PaymentApplyTable = ({
   const overApplied = totalCash > maxApplicable + EPSILON;
   // A row can't settle more than the invoice's open balance
   // (applied + discount + write-off). Mirrors the authoritative cap in the
-  // post-payment edge function, so a manual discount that over-settles is caught
+  // post-payment server function, so a manual discount that over-settles is caught
   // here — before Post — instead of failing server-side.
   const overSettled = useMemo(
     () =>

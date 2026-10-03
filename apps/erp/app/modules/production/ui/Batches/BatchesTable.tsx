@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Status,
@@ -128,12 +128,15 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     readableId: string;
   } | null>(null);
 
-  // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
+  // "Delete" is the server fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
   const renderContextMenu = useCallback(
     (row: JobOperationBatch) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => navigate(path.to.operationBatch(row.id))}
+        >
           <MenuIcon icon={<LuEye />} />
           {t`View Batch`}
         </MenuItem>

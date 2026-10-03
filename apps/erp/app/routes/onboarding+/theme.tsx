@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -13,6 +12,7 @@ import {
   CardTitle,
   cn,
   HStack,
+  PrefetchLink,
   RadioGroup,
   RadioGroupButton,
   useMode,
@@ -27,7 +27,6 @@ import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  Link,
   redirect,
   useFetcher,
   useLoaderData,
@@ -225,9 +224,9 @@ export default function OnboardingTheme() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
           )}
 

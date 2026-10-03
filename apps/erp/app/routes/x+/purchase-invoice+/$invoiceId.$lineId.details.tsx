@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -41,14 +40,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const [purchaseInvoiceLine, files] = await Promise.all([
-    getPurchaseInvoiceLine(client, lineId),
-    getSupplierInteractionLineDocuments(client, companyId, lineId)
-  ]);
+  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
-    files
+    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
 

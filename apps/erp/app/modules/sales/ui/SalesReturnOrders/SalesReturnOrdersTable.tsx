@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -189,6 +193,7 @@ const SalesReturnOrdersTable = memo(
       return (row: SalesReturnOrderListItem) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("view", "sales")}
             onClick={() => {
               navigate(path.to.salesReturnOrderDetails(row.id!));
@@ -198,6 +203,7 @@ const SalesReturnOrdersTable = memo(
             <Trans>Edit</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "sales")}
             destructive
             onClick={() => {

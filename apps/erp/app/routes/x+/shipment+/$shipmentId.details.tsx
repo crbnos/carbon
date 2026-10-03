@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -25,7 +25,7 @@ import {
   ShipmentNotes
 } from "~/modules/inventory/ui/Shipments";
 import type { Note } from "~/modules/shared";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -64,21 +64,20 @@ export async function action({ request }: ActionFunctionArgs) {
     currentShipment.data.locationId !== d.locationId;
 
   if (shipmentDataHasChanged) {
-    const serviceRole = getCarbonServiceRole();
     switch (d.sourceDocument) {
       case "Sales Order":
-        const salesOrderShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromSalesOrder",
+        const salesOrderShipment = await serverFns
+          .system({
+            db: getDatabaseClient(),
             companyId,
-            locationId: d.locationId,
+            userId
+          })
+          .invoke("create", {
+            type: "shipmentFromSalesOrder",
+            locationId: d.locationId as string,
             salesOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
+            shipmentId: id
+          });
         if (!salesOrderShipment.data || salesOrderShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: salesOrderShipment.error
@@ -89,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 salesOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   salesOrderShipment.error,
                   "Failed to create shipment"
                 )
@@ -99,18 +98,18 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Sales Return Order": {
-        const salesReturnShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromSalesReturnOrder",
+        const salesReturnShipment = await serverFns
+          .system({
+            db: getDatabaseClient(),
             companyId,
+            userId
+          })
+          .invoke("create", {
+            type: "shipmentFromSalesReturnOrder",
             locationId: d.locationId,
             salesReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
+            shipmentId: id
+          });
         if (!salesReturnShipment.data || salesReturnShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: salesReturnShipment.error
@@ -121,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 salesReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   salesReturnShipment.error,
                   "Failed to create shipment"
                 )
@@ -132,18 +131,18 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Return Order": {
-        const purchaseReturnShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromPurchaseReturnOrder",
+        const purchaseReturnShipment = await serverFns
+          .system({
+            db: getDatabaseClient(),
             companyId,
+            userId
+          })
+          .invoke("create", {
+            type: "shipmentFromPurchaseReturnOrder",
             locationId: d.locationId,
             purchaseReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
+            shipmentId: id
+          });
         if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: purchaseReturnShipment.error
@@ -154,7 +153,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 purchaseReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   purchaseReturnShipment.error,
                   "Failed to create shipment"
                 )
@@ -165,18 +164,18 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Order":
-        const purchaseOrderShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromPurchaseOrder",
+        const purchaseOrderShipment = await serverFns
+          .system({
+            db: getDatabaseClient(),
             companyId,
-            locationId: d.locationId,
+            userId
+          })
+          .invoke("create", {
+            type: "shipmentFromPurchaseOrder",
+            locationId: d.locationId as string,
             purchaseOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
+            shipmentId: id
+          });
         if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
           logger.error("Failed to create shipment from source document", {
             error: purchaseOrderShipment.error
@@ -187,7 +186,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 purchaseOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   purchaseOrderShipment.error,
                   "Failed to create shipment"
                 )
@@ -197,17 +196,17 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Outbound Transfer":
-        const warehouseTransferShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromWarehouseTransfer",
+        const warehouseTransferShipment = await serverFns
+          .system({
+            db: getDatabaseClient(),
             companyId,
+            userId
+          })
+          .invoke("create", {
+            type: "shipmentFromWarehouseTransfer",
             warehouseTransferId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
+            shipmentId: id
+          });
         if (
           !warehouseTransferShipment.data ||
           warehouseTransferShipment.error
@@ -221,7 +220,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 warehouseTransferShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   warehouseTransferShipment.error,
                   "Failed to create shipment"
                 )

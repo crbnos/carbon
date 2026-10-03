@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -29,6 +28,17 @@ vi.mock("@carbon/planning", () => ({
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn() })
 }));
+// The operations are the edge functions' successors: stub them, as the
+// invoke they replaced was, so the route's own ordering is what is tested.
+vi.mock("@carbon/server-functions", () => {
+  const invoker = {
+    invoke: async (name: string) => {
+      events.push(name === "close-job" ? "closeJob" : name);
+      return { data: null, error: null };
+    }
+  };
+  return { serverFns: { system: () => invoker, as: () => invoker } };
+});
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
@@ -135,13 +145,7 @@ function setup() {
   const serviceRole = {
     from: vi.fn(() =>
       makeChain({ data: { locationId: "location-1" }, error: null })
-    ),
-    functions: {
-      invoke: vi.fn(async (name: string) => {
-        events.push(`invoke:${name}`);
-        return { data: {}, error: null };
-      })
-    }
+    )
   };
 
   vi.mocked(requirePermissions).mockResolvedValue({

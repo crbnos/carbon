@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -227,6 +227,7 @@ export async function action({ request }: ActionFunctionArgs) {
               // Create new job
               const createJob = await insertJob(
                 client,
+                getDatabaseClient(),
                 {
                   itemId: item.id,
                   quantity: order.quantity,
@@ -258,12 +259,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
-                sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
-              });
+              const upsertMethod = await upsertJobMethod(
+                client,
+                getDatabaseClient(),
+                "itemToJob",
+                {
+                  sourceId: item.id,
+                  targetId: id,
+                  companyId,
+                  userId
+                }
+              );
 
               if (upsertMethod.error) {
                 const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
@@ -379,7 +385,7 @@ export async function action({ request }: ActionFunctionArgs) {
         // Trigger recalculation for all jobs
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
+            await recalculateJobRequirements(client, getDatabaseClient(), {
               id: jobId,
               companyId,
               userId

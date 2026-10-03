@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,16 +8,14 @@
  * Polluting the global namespace like this is usually discouraged, but it's okay as we're just caching connections during development.
  * In production, this code path is not hit multiple times as ESM modules are only singletons by default.
  */
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
+import { getPostgresClient, getProcessPool } from "@carbon/database/client";
+import { queryLog, traceConnectionWaits } from "@carbon/logger/tracing.server";
 import { PostgresDriver } from "kysely";
 
 const init = () => {
-  const pool = getPostgresConnectionPool(10);
+  const pool = traceConnectionWaits(getProcessPool());
   // We use the PostgresDriver from Kysely here as this code only runs in Node environment
-  return getPostgresClient(pool, PostgresDriver);
+  return getPostgresClient(pool, PostgresDriver, queryLog);
 };
 
 type ClientSingleton = ReturnType<typeof init>;

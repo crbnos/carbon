@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,8 +8,7 @@ import type { ScheduledOperation, WorkCenterSelection } from "./types.ts";
 /**
  * Apply work center selections to scheduled operations.
  *
- * Pure module (no provider/database imports) so it stays type-checkable
- * under `deno test lib/scheduling/` alongside the other pure units.
+ * Pure module (no provider/database imports).
  *
  * `timeZone` is the job location's IANA zone: the placed start is recorded
  * onto the date-only `startDate` column as the FACTORY's calendar day (an op

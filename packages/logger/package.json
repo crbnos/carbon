@@ -3,6 +3,13 @@
   "dependencies": {
     "@logtape/logtape": "catalog:",
     "@logtape/redaction": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/exporter-trace-otlp-proto": "catalog:",
+    "@opentelemetry/instrumentation": "catalog:",
+    "@opentelemetry/instrumentation-undici": "catalog:",
+    "@opentelemetry/resources": "catalog:",
+    "@opentelemetry/sdk-trace-node": "catalog:",
+    "@opentelemetry/semantic-conventions": "catalog:",
     "@paralleldrive/cuid2": "catalog:"
   },
   "peerDependencies": {
@@ -27,6 +34,8 @@
     "./config.server": "./src/config.server.ts",
     "./config.client": "./src/config.client.ts",
     "./middleware.server": "./src/middleware.server.ts",
+    "./tracing.server": "./src/tracing.server.ts",
+    "./span": "./src/span.ts",
     "./inngest": "./src/inngest.ts"
   },
   "private": true,

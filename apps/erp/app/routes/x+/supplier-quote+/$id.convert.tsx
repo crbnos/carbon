@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -17,12 +17,10 @@ import {
   getSupplierQuote,
   selectedLinesValidator
 } from "~/modules/purchasing";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
-
-// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -91,12 +89,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const convert = await convertSupplierQuoteToOrder(serviceRole, {
-    id: id,
-    companyId,
-    userId,
-    selectedLines
-  });
+  const convert = await convertSupplierQuoteToOrder(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      id: id,
+      companyId,
+      userId,
+      selectedLines
+    }
+  );
 
   if (convert.error) {
     throw redirect(
@@ -105,10 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           convert.error,
-          await getEdgeFunctionErrorMessage(
-            convert.error,
-            "Failed to convert quote to order"
-          )
+          getErrorMessage(convert.error, "Failed to convert quote to order")
         )
       )
     );

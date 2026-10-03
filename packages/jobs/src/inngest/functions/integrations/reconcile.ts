@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -281,7 +280,7 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
 
 /**
  * Documents (bills, invoices). Posted-set statuses only — the transient
- * mid-posting "Pending" is deliberately not reconciled (the posting edge
+ * mid-posting "Pending" is deliberately not reconciled (the posting server
  * function's own status flip re-raises the hint seconds later, after the
  * posting journal exists; this removes the F5 race at the source instead of
  * parking a premature Warning).

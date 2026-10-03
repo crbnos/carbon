@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely } from "kysely";
 
 export async function getActiveMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
@@ -171,16 +173,16 @@ export async function endMaintenanceEvent(
 }
 
 // Reconcile the dispatches' labor postings with their time entries (the
-// post-maintenance-event edge function — idempotent, so call it after any
+// post-maintenance-event server function — idempotent, so call it after any
 // entry ends or the dispatch completes).
 export async function postMaintenanceLabor(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { maintenanceDispatchIds: string[]; companyId: string; userId: string }
 ) {
-  return client.functions.invoke<{ success: boolean; error?: string }>(
-    "post-maintenance-event",
-    { body: args }
-  );
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-maintenance-event", args);
 }
 
 export async function updateMaintenanceDispatchStatus(

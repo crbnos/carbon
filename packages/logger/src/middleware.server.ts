@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -10,8 +9,13 @@ import {
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
-import { getRequestContext } from "./context.server";
-import { isSensitiveKey, REDACTED } from "./redaction";
+import {
+  getRequestContext,
+  requestContextMiddleware,
+  requestDetailContext
+} from "./context.server";
+import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
+import { annotateRequestSpan } from "./tracing.server";
 
 // Re-exported from the existing entry point rather than adding a new package
 // export subpath: Vite resolves a package's `exports` map once at dev-server
@@ -20,8 +24,11 @@ import { isSensitiveKey, REDACTED } from "./redaction";
 // package's `exports` and repoint the four importers (both apps' root.tsx,
 // auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
 export {
+  currentRequest,
+  describeRequest,
   getRequestContext,
   getRouterContext,
+  isReadRequest,
   oncePerRead,
   oncePerRequest,
   requestContextMiddleware
@@ -49,23 +56,6 @@ const BODY_LOG_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * pulled into the log path.
  */
 const BODY_LOG_MAX_BYTES = 8 * 1024;
-
-/**
- * Mask sensitive query-param values (`?code=…`, `?token=…`, …) while keeping the
- * rest of the query string readable. Returns "" for a bodyless query.
- */
-function redactSearch(search: string): string {
-  if (!search || search === "?") return "";
-  const params = new URLSearchParams(search);
-  let changed = false;
-  for (const key of params.keys()) {
-    if (isSensitiveKey(key)) {
-      params.set(key, REDACTED);
-      changed = true;
-    }
-  }
-  return changed ? `?${params.toString()}` : search;
-}
 
 /**
  * Recursively mask values whose key matches a sensitive-field pattern (the same
@@ -176,22 +166,47 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
 
   const response = await withContext({ requestId }, async () => {
     const res = await next();
+    annotateRequestSpan({
+      "http.response.status_code": res.status,
+      "carbon.request_id": requestId,
+      // The client left before the response was ready, so a read's queries
+      // were cancelled and its status says nothing about the server.
+      ...(request.signal.aborted && { "carbon.request.abandoned": true })
+    });
     // Debug-level so it is visible in dev but filtered by the prod `info`
     // default — the pipeline is observable with zero migrated call sites.
     // Rendered as a Morgan "dev"-style colored line in dev (see
     // http-formatter.ts) and as a structured JSONL record in prod. When a
     // request body was captured, it rides on the same record (`body`).
-    log.debug("{method} {pathname} → {status} in {responseTime}ms", {
-      method,
-      pathname,
-      search: redactSearch(search),
-      status: res.status,
-      responseTime: performance.now() - start,
-      ...(body === undefined ? {} : { body })
-    });
+    const detail = context.get(requestDetailContext);
+    log.debug(
+      detail
+        ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
+        : "{method} {pathname} → {status} in {responseTime}ms",
+      {
+        method,
+        pathname,
+        ...(detail ? { detail } : {}),
+        search: redactSearch(search),
+        status: res.status,
+        responseTime: performance.now() - start,
+        ...(body === undefined ? {} : { body })
+      }
+    );
     return res;
   });
 
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
 };
+
+/**
+ * The request scope in one middleware: publishes the request context
+ * (`requestContextMiddleware`) and, inside it, assigns the request id and
+ * writes the access log (`requestIdMiddleware`). Register FIRST in an app's
+ * root `middleware`, so everything downstream runs inside both.
+ */
+export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
+  requestContextMiddleware(args, () =>
+    Promise.resolve(requestIdMiddleware(args, next) as Response)
+  );

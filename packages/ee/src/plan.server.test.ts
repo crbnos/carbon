@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { Plan } from "@carbon/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const serviceRoleMaybeSingle = vi.hoisted(() => vi.fn());
-const serviceRoleFrom = vi.hoisted(() =>
-  vi.fn(() => ({
-    select: () => ({ eq: () => ({ maybeSingle: serviceRoleMaybeSingle }) })
-  }))
-);
+const getCompanyPlanId = vi.hoisted(() => vi.fn());
 const isCarbonOwnedCompany = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth", () => ({
@@ -19,19 +13,11 @@ vi.mock("@carbon/auth", () => ({
   error: vi.fn(),
   STRIPE_BYPASS_COMPANY_IDS: ""
 }));
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ from: serviceRoleFrom })
+vi.mock("@carbon/auth/company.server", () => ({
+  getCompanyPlanId,
+  isCarbonOwnedCompany
 }));
-vi.mock("@carbon/auth/company.server", () => ({ isCarbonOwnedCompany }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn()
-  })
-}));
 
 import { companyHasFeature } from "./plan.server";
 
@@ -50,7 +36,7 @@ function rlsBlockedClient() {
   return { from };
 }
 
-describe("plan gate reads companyPlan via service role", () => {
+describe("plan gate reads companyPlan through the shared service-role reader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isCarbonOwnedCompany.mockResolvedValue(false);
@@ -60,10 +46,7 @@ describe("plan gate reads companyPlan via service role", () => {
     // Regression: a paying Partner (planId "PARTNER-33") was 402'd from MCP
     // because companyHasFeature read companyPlan through the RLS-scoped api-key
     // client, which returns no row -> Plan.Unknown -> blocked.
-    serviceRoleMaybeSingle.mockResolvedValue({
-      data: { planId: "PARTNER-33" },
-      error: null
-    });
+    getCompanyPlanId.mockResolvedValue("PARTNER-33");
     const client = rlsBlockedClient();
 
     const allowed = await companyHasFeature(client as never, "company-1", {
@@ -71,15 +54,11 @@ describe("plan gate reads companyPlan via service role", () => {
     });
 
     expect(allowed).toBe(true);
-    expect(serviceRoleFrom).toHaveBeenCalledWith("companyPlan");
     expect(client.from).not.toHaveBeenCalled();
   });
 
   it("still blocks a Starter company", async () => {
-    serviceRoleMaybeSingle.mockResolvedValue({
-      data: { planId: Plan.Starter },
-      error: null
-    });
+    getCompanyPlanId.mockResolvedValue(Plan.Starter);
 
     const allowed = await companyHasFeature(
       rlsBlockedClient() as never,

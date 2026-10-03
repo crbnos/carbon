@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Button,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -123,6 +128,7 @@ const AbilityEmployeesTable = memo(
       (row) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "resources")}
             onClick={() => {
               navigate(path.to.employeeAbility(ability.id, row.id));

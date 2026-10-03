@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -241,7 +240,7 @@ export const markScheduleStaleFunction = inngest.createFunction(
  * idempotent and whole-location — there is no frozen-set to get wrong.
  *
  * The wave groups the stale jobs by LOCATION and regenerates each affected
- * location in full (the edge function is a whole-location forward simulation).
+ * location in full (the scheduler is a whole-location forward simulation).
  * No pre-clear and no wave-side flag-clearing: the engine's reservation-
  * exclusion list replaces the clear, and each engine run clears its own job's
  * stale stamp on completion (fixing the stuck-stamp + lost-update defects by
@@ -326,8 +325,8 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     const results: LocationRegenResult[] = [];
     for (const locationId of locationIds) {
       const result = await step.run(`regen-${locationId}`, async () => {
-        // Regenerate the location IN-PROCESS (Node) — no edge cold-start or HTTP
-        // hop. Idempotent, so an Inngest retry just re-runs it.
+        // Regenerate the location IN-PROCESS (Node). Idempotent, so an Inngest
+        // retry just re-runs it.
         try {
           return await runLocationSchedule({
             db: getJobDatabaseClient(),

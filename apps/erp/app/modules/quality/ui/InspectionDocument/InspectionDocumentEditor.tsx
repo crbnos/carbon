@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -433,6 +433,7 @@ type FeatureMutationFn = (
   count: null;
   status: number;
   statusText: string;
+  success: true;
 }>;
 
 const ConditionalMeasurementText =
@@ -2778,7 +2779,8 @@ export default function InspectionDocumentEditor({
         error: null,
         count: null,
         status: 200,
-        statusText: "OK"
+        statusText: "OK",
+        success: true
       } as const;
     },
     [updateFeatureField]
@@ -3216,6 +3218,7 @@ export default function InspectionDocumentEditor({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-56">
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.view}
                 disabled={!itemMasterLink}
                 onClick={() => {
                   if (itemMasterLink) navigate(itemMasterLink);
@@ -3235,6 +3238,7 @@ export default function InspectionDocumentEditor({
                     {uploading ? t`Uploading…` : t`Replace PDF`}
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.download}
                     disabled={pdfExporting}
                     onClick={handleDownloadPdfWithBalloons}
                   >
@@ -3245,6 +3249,7 @@ export default function InspectionDocumentEditor({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("delete", "quality")}
                 onClick={() => deleteDisclosure.onOpen()}

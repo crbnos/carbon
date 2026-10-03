@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -33,7 +32,10 @@ export const workflowRunFunction = inngest.createFunction(
     idempotency: "event.data.runId",
     onFailure: async ({ event, logger }) => {
       const { runId, companyId } = event.data.event.data;
-      logger.error(`Workflow run ${runId} failed`, event.data.error);
+      logger.error("Workflow run {runId} failed", {
+        runId,
+        error: event.data.error
+      });
 
       await failCrashedRun(
         getJobDatabaseClient(),

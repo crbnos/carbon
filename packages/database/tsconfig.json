@@ -1,5 +1,5 @@
 {
   "exclude": ["node_modules"],
   "extends": "@carbon/config/tsconfig/base.json",
-  "include": ["src", "supabase/functions/lib/postgres/**/*.ts"]
+  "include": ["src"]
 }

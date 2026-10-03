@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
+import { getDatabaseClient } from "~/services/database.server";
 import { setPickingListLineQuantity } from "~/services/picking.service";
 
 export async function action({ context, request }: ActionFunctionArgs) {
@@ -25,13 +25,17 @@ export async function action({ context, request }: ActionFunctionArgs) {
     return { success: false, message: "Missing pickingListLineId" };
   }
 
-  const result = await setPickingListLineQuantity(serviceRole, {
-    pickingListLineId,
-    quantity,
-    markShort,
-    userId: effectiveUserId,
-    companyId
-  });
+  const result = await setPickingListLineQuantity(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      pickingListLineId,
+      quantity,
+      markShort,
+      userId: effectiveUserId,
+      companyId
+    }
+  );
 
   if (result.error) {
     return {

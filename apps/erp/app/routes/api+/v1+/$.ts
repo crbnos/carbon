@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -10,6 +9,7 @@
 // Every operation is a POST. The splat forwards the request to the oRPC OpenAPIHandler
 // after resolving the API key into context. No CORS: keys must not live in browsers.
 
+import { nameRequestSpan } from "@carbon/logger/tracing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { resolveApiKeyContext } from "./lib/authenticate.server";
 import { openApiHandler } from "./lib/handler.server";
@@ -29,7 +29,11 @@ export async function action({ request }: ActionFunctionArgs) {
     context
   });
 
-  if (matched && response) return response;
+  if (matched && response) {
+    // The route pattern is `/api/v1/*`; a matched path names a real operation.
+    nameRequestSpan(`POST ${new URL(request.url).pathname}`);
+    return response;
+  }
   return Response.json({ error: "Operation not found" }, { status: 404 });
 }
 

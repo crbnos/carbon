@@ -3,13 +3,13 @@ paths:
   - "apps/erp/app/components/ImportCSVModal/**"
   - "apps/erp/app/modules/shared/imports.models.ts"
   - "apps/erp/app/routes/x+/shared+/import.$tableId.tsx"
-  - "packages/database/supabase/functions/import-csv/**"
+  - "packages/server-functions/src/import-csv/**"
 ---
 
 # CSV Import System
 
 Bulk-import ERP entities from a user-uploaded CSV. Two-stage UI wizard (upload → map),
-a thin route action, and a Deno edge function that does the actual inserts/updates inside
+a thin route action, and the `import-csv` server function that does the actual inserts/updates inside
 a transaction. Imports are idempotent via the `externalIntegrationMapping` table.
 
 ## Flow
@@ -20,7 +20,7 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
    **enum mappings** (e.g. CSV `"B"` → `"Buy"`) and creatable lookups/forms.
 3. **Submit** — form POSTs to `/x/shared/import/$tableId`.
 4. **Route action** validates, then calls the `importCsv` service.
-5. **Edge function** downloads the CSV, maps, classifies each row, and writes in a transaction.
+5. **Server function** downloads the CSV, maps, classifies each row, and writes in a transaction.
 
 ## Frontend (`apps/erp/app/components/ImportCSVModal/`)
 
@@ -62,7 +62,7 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 > **Every field in `fieldMappings[table]` must also be declared in `importSchemas[table]`.**
 > The route builds `columnMappings` from the zod parse result, and a zod object strips
 > keys it does not declare — so a field the wizard offers but the schema omits is mapped
-> by the user, submitted, and silently dropped before the edge function sees it. That is
+> by the user, submitted, and silently dropped before the server function sees it. That is
 > what made every CSV-imported item land at revision `"0"` while the wizard marked the
 > Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
 > the invariant per table; add the field to BOTH maps when adding one.
@@ -79,13 +79,13 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
-the one that opens its list page. The edge function writes through a service-role
+the one that opens its list page. The server function writes through a service-role
 Kysely connection that bypasses RLS, so `importPermissions` is the only
 authorization on a bulk import — taking it from the page gate would let a user
 create rows the database itself would refuse. `itemPostingGroup` is where the two
 disagree: its page is parts-gated, its policies are `accounting_*`.
 
-The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
+The server function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
 `partWithMethod`, `part`, `service`, `supplier`, `supplierContact`, `tool`,
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
@@ -162,14 +162,14 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   some row carries value (post-inventory-count pattern). Accounting context is
   resolved before the transaction; the whole file writes in one transaction.
 - **Bulk writes, not `bookAdjustment` per row.** `bookAdjustment` costs ~7 round
-  trips per movement, which is ~7 rows/second — a 2,000-row file exceeded the edge
+  trips per movement, which is ~7 rows/second — a 2,000-row file exceeded the
   runtime's wall clock and rolled back. The importer instead plans every row in
   memory and writes one statement per table per 500-row chunk (`INSERT_CHUNK_SIZE`).
   The rows are byte-for-byte what `bookAdjustment` writes because **both call the
-  same pure builders** in `shared/plan-adjustment.ts` — `buildItemLedgerRow`,
+  same pure builders** in `packages/server-functions/src/lib/plan-adjustment.ts` — `buildItemLedgerRow`,
   `buildCostLedgerRow`, `buildAdjustmentJournalLines`, `buildJournalLineDimensions`,
   `toJournalLineDocumentType` — and the same open-layer query (`loadOpenCostLayers`
-  in `shared/post-adjustment.ts`, which takes a list of item ids and chunks its
+  in `packages/server-functions/src/lib/post-adjustment.ts`, which takes a list of item ids and chunks its
   applied-child lookup over the layer ids, since open layers per item are
   unbounded). Do not fork a row shape or an arithmetic step into the importer:
   a column added to a builder must reach both paths at once, which is the whole
@@ -181,11 +181,11 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   returns `["id", "journalLineReference"]` and the pair is grouped by the
   reference the importer generated per movement.
 - **The plan itself is pure and tested.** `planStockRows` in
-  `shared/plan-adjustment.ts` takes the file's rows plus the item costs and open
+  `packages/server-functions/src/lib/plan-adjustment.ts` takes the file's rows plus the item costs and open
   layers and returns, per row, `{ carriesValue, cost, postsJournal }` — the
   per-item grouping, the cost replay, the scatter back onto source rows and the
   journal filter. The transaction body only inserts what it returns.
-  `shared/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
+  `packages/server-functions/src/lib/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
   a zero-cost item, accounting disabled and a Non-Inventory / zero-quantity row.
 - **Cost layers are replayed, not hoisted.** `bookAdjustment` re-reads the item's
   open layers before every increase, so row n+1 sees the layer row n wrote.
@@ -196,7 +196,7 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   by the rounding and the drift is scaled by the next row's quantity (a 1-unit row at
   ⅓ stores 0.33333, and a following 1000-unit row books 333.33, not 333.33333).
   Hoisting one unit cost per item would therefore change what is written. Pinned by
-  `shared/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
+  `packages/server-functions/src/lib/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
   one at a time for all four costing methods.
 - No Unique ID column and no `externalIntegrationMapping` writes. Business rules
   (`evaluateLinesForSurface`) that the single-record adjustment route runs are NOT
@@ -255,25 +255,25 @@ Action only (no loader). Steps:
    `enumMappings` arrives as a JSON **string** and is `JSON.parse`d before the service call.
 4. `columnMappings` = the remaining validated form fields after destructuring `filePath`
    and `enumMappings` (`const { filePath, enumMappings, ...columnMappings } = validation.data`).
-5. Call `importCsv(getCarbonServiceRole(), { table, filePath, columnMappings, enumMappings, companyId, userId })`.
+5. Call `importCsv(serviceRole, getDatabaseClient(), { table, filePath, columnMappings, enumMappings, companyId, userId })` (quote tables go through `importQuotes` instead).
 6. Return `{ success, inserted, updated, skipped, errors }`.
 
 `importCsv` lives in `apps/erp/app/modules/shared/shared.service.ts` and is a thin wrapper:
-`client.functions.invoke("import-csv", { body: args })`. The route does **not** invoke the
-edge function directly.
+it lazily imports `@carbon/server-functions/import-csv` and calls
+`serverFns.as({ client, db, companyId, userId }).invoke("import-csv", args)`.
 
-## Edge function (`packages/database/supabase/functions/import-csv/index.ts`)
+## Server function (`packages/server-functions/src/import-csv/index.ts`)
 
-Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `filePath`,
-`columnMappings`, optional `enumMappings`, `companyId`, `userId`).
+Built with `defineServerFn`; input validated by `importCsvInput` (table enum, `filePath`,
+`columnMappings`, optional `enumMappings`).
 
-- Re-checks the caller: `update` on `IMPORT_PERMISSIONS[table]`, plus `create` for tables in
-  `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
+- Checks the caller via `permissions: { by: "table", rules }`: `update` on
+  `IMPORT_PERMISSIONS[table]`, plus `create` for tables in `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
   models, so a new import type adds its table to both sides.
-- Downloads CSV: `client.storage.from("private").download(filePath)`.
-- Parses with Deno std `import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts"`
-  (`skipFirstRow: true, lazyQuotes: true`), falling back to a custom `parsePermissiveCsv()`
-  when the strict parser rejects uneven row widths.
+- Refuses a `filePath` outside the `${companyId}/` prefix, then downloads it from the
+  company bucket, falling back to the legacy `private` bucket.
+- Parses with `parseCsv` (`@carbon/files/csv`, PapaParse), falling back to a custom
+  `parsePermissiveCsv()` when a row's field count disagrees with the header.
 - Applies `columnMappings`, then `enumMappings` (unknown CSV value → the enum's `"Default"`);
   `"N/A"` / unmapped columns are skipped.
 - **Material Finish / Grade / Dimensions arrive as raw text** (`finish`, `grade`,
@@ -287,9 +287,9 @@ Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `fi
 - Classifies each row with `classifyImportRow()` (see `classify-import-row.ts`):
   returns `{ action: "insert" }`, `{ action: "update"; entityId }`, or
   `{ action: "skip"; reason }`. Skips on missing Name or duplicate id/name within the file.
-- Wraps writes per-entity in `db.transaction().execute(...)` (Kysely; bypasses RLS — auth is
-  enforced at the route). Persists ID mappings via `upsertCsvMappings`.
-- Returns `{ success: true, inserted, updated, skipped, errors }`; on throw, 500 with the error.
+- Wraps writes per-entity in `db.transaction().execute(...)` (Kysely; bypasses RLS). Persists ID mappings via `upsertCsvMappings`.
+- Returns `{ data: { success: true, inserted, updated, skipped, errors } }`; a throw becomes
+  `{ error }` (500).
 
 ### Idempotency (`externalIntegrationMapping`)
 
@@ -306,20 +306,20 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
 
 ## Gotchas
 
-- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the edge
+- **`fixture` is orphaned** — registered in `fieldMappings`, `importPermissions` and the server
   function's enum, but `Fixture` was dropped from the app's item-type enum
   (`items.models.ts`) and there is no Fixtures list page, so nothing surfaces it.
 - **`fixedAsset`** has models/permissions (`fieldMappings`, `importPermissions`) but is
-  **confirmed absent** from the edge function's `table` enum, so the edge function
+  **confirmed absent** from the server function's `table` enum, so the server function
   **rejects it** — the zod `table` enum fails to parse and it errors out (effectively
   "Table not found in the list of supported tables"). fixedAsset CSV import is not wired.
 - **Item custom fields are not populated on import** — the item insert paths write
   `customFields: {}` (empty object) rather than mapping any CSV columns into custom fields.
-- Client parses CSV with **PapaParse**; the edge function parses independently with Deno std.
-  They are separate parsers — don't assume identical behavior.
-- `enumMappings` crosses the route boundary as a JSON string; the service/edge function expect
+- Client parses CSV with **PapaParse** for the mapping preview; the server function re-parses
+  the stored file independently (with a permissive fallback) — don't assume identical behavior.
+- `enumMappings` crosses the route boundary as a JSON string; the service/server function expect
   the parsed object.
-- The edge function transaction uses Kysely and bypasses RLS; authorization is the route's
-  `requirePermissions` plus the edge function's own check on the same permissions.
+- The server function transaction uses Kysely and bypasses RLS; authorization is the route's
+  `requirePermissions` plus the server function's `permissions` check on the same permissions.
 - Row-level failures are returned in `errors[]` with `{ row, reason }`; only a thrown
   exception produces a 500.

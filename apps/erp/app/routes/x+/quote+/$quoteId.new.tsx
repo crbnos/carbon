@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -29,6 +28,7 @@ import {
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -207,14 +207,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (d.methodType === "Make to Order") {
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId,
-      itemId: d.itemId,
-      configuration,
-      companyId,
-      userId
-    });
+    const upsertMethod = await upsertQuoteLineMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        quoteId,
+        quoteLineId,
+        itemId: d.itemId,
+        configuration,
+        companyId,
+        userId
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

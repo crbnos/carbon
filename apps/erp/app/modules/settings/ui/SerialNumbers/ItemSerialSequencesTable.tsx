@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -115,6 +114,7 @@ const ItemSerialSequencesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={!permissions.can("update", "settings")}
               onClick={() => {
                 navigate(
@@ -126,6 +126,7 @@ const ItemSerialSequencesTable = memo(
               <Trans>Edit</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!permissions.can("delete", "settings")}
               onClick={() => {
                 navigate(

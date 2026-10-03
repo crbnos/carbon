@@ -1,6 +1,7 @@
 {
   "name": "@carbon/utils",
   "dependencies": {
+    "@carbon/database": "workspace:*",
     "@internationalized/date": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "@tiptap/react": "catalog:",
@@ -13,7 +14,6 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@carbon/database": "workspace:*",
     "@types/lodash.template": "4.5.3",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

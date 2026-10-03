@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -209,6 +208,44 @@ describe("planOrphanStepAdoption", () => {
       new Set()
     );
     expect(adoption.get("orphan2")).toBe("src2");
+  });
+
+  it("adopts orphans that follow the operation's own steps", () => {
+    const adoption = planOrphanStepAdoption(
+      [
+        { id: "src1", title: "Fit cover", sortOrder: 1 },
+        { id: "src2", title: "Torque bolts", sortOrder: 2 }
+      ],
+      [
+        { id: "own1", name: "Clean bench", sortOrder: 1 },
+        { id: "own2", name: "Check kit", sortOrder: 2 },
+        { id: "orphan1", name: "Fit cover", sortOrder: 3 },
+        { id: "orphan2", name: "Torque bolts", sortOrder: 4 }
+      ],
+      new Set()
+    );
+    expect([...adoption]).toEqual([
+      ["orphan1", "src1"],
+      ["orphan2", "src2"]
+    ]);
+  });
+
+  it("adopts by position when sub-assembly rows leave gaps in the source order", () => {
+    const adoption = planOrphanStepAdoption(
+      [
+        { id: "src1", title: "Press bearing", sortOrder: 1 },
+        { id: "src2", title: "Fit hub", sortOrder: 3 }
+      ],
+      [
+        { id: "orphan1", name: "Press bearing", sortOrder: 1 },
+        { id: "orphan2", name: "Fit hub", sortOrder: 2 }
+      ],
+      new Set()
+    );
+    expect([...adoption]).toEqual([
+      ["orphan1", "src1"],
+      ["orphan2", "src2"]
+    ]);
   });
 
   it("adopts each orphan at most once", () => {

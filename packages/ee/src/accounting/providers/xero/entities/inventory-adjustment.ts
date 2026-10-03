@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -133,7 +132,7 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
 
     for (const row of rows) {
       // Buy → Raw Materials; Make / Buy and Make → Finished Goods (mirrors
-      // resolveInventoryAccount in the posting edge functions)
+      // resolveInventoryAccount in the posting server functions)
       const inventoryAccount =
         row.replenishmentSystem === "Make" ||
         row.replenishmentSystem === "Buy and Make"

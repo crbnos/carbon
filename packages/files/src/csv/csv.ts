@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -36,6 +35,11 @@ export type EncodeCsvOptions = {
   fields?: string[];
   /** Value emitted for null/undefined cells. Default "". */
   emptyFieldValue?: string;
+  /**
+   * Emit the header row. Default true. Pass false for every page after the
+   * first when streaming one file in pages; the pages join with "\r\n".
+   */
+  header?: boolean;
 };
 
 /**
@@ -58,7 +62,10 @@ export function encodeCsv(
     })
   );
   // Headers are cells too — import-error re-exports echo uploaded headers.
-  return Papa.unparse({ fields: fields.map(stripCsvFormulaPrefix), data });
+  return Papa.unparse(
+    { fields: fields.map(stripCsvFormulaPrefix), data },
+    { header: options.header ?? true }
+  );
 }
 
 /** Header row + tabular cells → CSV text (for templates and error re-exports). */

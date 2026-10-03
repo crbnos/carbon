@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -25,6 +24,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   Tabs,
   TabsContent,
   TabsList,
@@ -46,7 +46,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Link, useFetcher, useLocation, useParams } from "react-router";
+import { useFetcher, useLocation, useParams } from "react-router";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
@@ -283,9 +283,7 @@ const QuoteMakeMethodTools = () => {
                 )}
                 {itemLink && (
                   <MenubarItem leftIcon={<LuGitFork />} asChild>
-                    <Link prefetch="intent" to={itemLink}>
-                      Item Master
-                    </Link>
+                    <PrefetchLink to={itemLink}>Item Master</PrefetchLink>
                   </MenubarItem>
                 )}
               </HStack>

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -19,6 +18,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   SplitButton,
   Status,
   Tooltip,
@@ -61,6 +61,7 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
@@ -118,8 +119,13 @@ const PurchaseOrderHeader = () => {
     canDelete: boolean;
     defaultCc: string[];
     supplier: { status: string | null } | null;
-    resolvedAttachments: ResolvedAttachmentItem[];
+    resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
   }>(path.to.purchaseOrder(orderId));
+  const resolvedAttachments = useResolved(
+    routeData?.resolvedAttachments,
+    [],
+    orderId
+  );
 
   const [suppliers] = useSuppliers();
   const isSupplierApproved = useMemo(
@@ -279,6 +285,7 @@ const PurchaseOrderHeader = () => {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     isLocked ||
                     !permissions.can("delete", "purchasing") ||
@@ -692,7 +699,7 @@ const PurchaseOrderHeader = () => {
           purchaseOrder={routeData?.purchaseOrder}
           onClose={finalizeDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}
-          resolvedAttachments={routeData?.resolvedAttachments ?? []}
+          resolvedAttachments={resolvedAttachments}
         />
       )}
       {deleteModal.isOpen && (

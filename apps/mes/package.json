@@ -13,6 +13,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
+    "@carbon/server-functions": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/printing": "workspace:*",
     "@carbon/react": "workspace:*",
@@ -56,6 +57,7 @@
     "@tiptap/react": "catalog:",
     "@tiptap/starter-kit": "catalog:",
     "@vercel/analytics": "catalog:",
+    "@vercel/functions": "catalog:",
     "@vercel/react-router": "catalog:",
     "@xyflow/react": "12.10.2",
     "class-variance-authority": "catalog:",
@@ -116,7 +118,7 @@
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production react-router-serve ./build/server/index.js",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
   "sideEffects": false

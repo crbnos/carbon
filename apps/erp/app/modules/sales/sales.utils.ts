@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { equals, round } from "@carbon/utils";
 import { z } from "zod";
 import type {
   MatchedRule,
@@ -20,14 +20,52 @@ export type QuoteLinePriceSource = "system" | "manual";
  * off, so it is treated as "no defaults" everywhere it is consumed.
  * (Markups are whole-percent, non-negative — e.g. `{ laborCost: 25 }`.)
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`), which cannot
- * import app code — keep both in sync.
+ * Mirrored in `packages/database/src/methods.ts`, which cannot import app code — keep
+ * both in sync.
  */
 export function getEffectiveDefaultMarkups(
   defaultMarkups: CategoryMarkups
 ): CategoryMarkups {
   const enabled = Object.values(defaultMarkups).some((v) => v > 0);
   return enabled ? defaultMarkups : {};
+}
+
+// What a quote line price starts from when it is not the item's sale price.
+export const QUOTE_BASE_PRICE_SOURCES = {
+  costPlus: "Cost + Markup",
+  supplier: "Supplier Price"
+} as const;
+
+/**
+ * resolvePrice names every base price "Item Unit Sale Price". A quote row that
+ * starts from somewhere else — the cost-plus rollup, a supplier price break —
+ * names its real base so the stored trace reads true. A null source keeps the
+ * trace as resolved.
+ */
+export function withBasePriceSource(
+  trace: PriceTraceStep[],
+  source: string | null
+): PriceTraceStep[] {
+  if (!source) return trace;
+  return trace.map((step) =>
+    step.step === "Base Price" ? { ...step, source } : step
+  );
+}
+
+/**
+ * The unit price today's calculation gives, at the line's precision — null
+ * when there is no calculation (a manual price) or it gives the stored price.
+ * What the pricing trace's "repricing gives X" note and Reprice act on.
+ */
+export function repricedUnitPrice(
+  currentTrace: PriceTraceStep[] | null,
+  unitPrice: number,
+  precision: number
+): number | null {
+  const finalPrice = currentTrace?.at(-1)?.amount;
+  if (finalPrice === undefined) return null;
+  const rounded = round(finalPrice, precision);
+  return equals(rounded, unitPrice) ? null : rounded;
 }
 
 /**
@@ -108,8 +146,7 @@ export type RecalcPricingDecision =
  *   - `'system'` without markups → reprice from the effective defaults (which
  *     is `{}` — i.e. price at cost — when defaults are disabled)
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`) — keep both
- * in sync.
+ * Mirrored in `packages/database/src/methods.ts` — keep both in sync.
  */
 export function decideRecalcPricing(
   row: {

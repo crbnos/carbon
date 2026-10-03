@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -12,6 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -451,6 +451,7 @@ const PurchaseOrdersTable = memo(
       (row: PurchaseOrderListItem) => (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("view", "purchasing")}
             onClick={() => edit(row)}
           >
@@ -459,6 +460,7 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
 
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.duplicate}
             disabled={!permissions.can("create", "purchasing") || !row.id}
             onClick={() => {
               if (!row.id) return;
@@ -486,6 +488,7 @@ const PurchaseOrdersTable = memo(
             <Trans>Receive</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={
               !permissions.can("delete", "purchasing") ||
               !["Draft", "Planned"].includes(row.status ?? "")

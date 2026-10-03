@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -12,6 +11,7 @@
  * here and the result is handed in as data.
  */
 
+import type { ContextSource } from "@carbon/api";
 import type { z } from "zod";
 import { createValidatorLoader, isZodSchema } from "./validator-loader";
 import {
@@ -25,22 +25,33 @@ import {
  * because forms submit them, but publishing them in the manifest would invite a
  * caller to set `companyId`.
  *
- * Shared with the textual parser in `service-metadata.ts`: a validator resolved
- * natively and the same one resolved textually must strip the same set, so this is
- * the single copy.
+ * `POSITIONAL_CONTEXT` is the positional contract: a service parameter with one
+ * of these names is that context value, and `service-metadata.ts` records it in
+ * the manifest for the dispatcher to follow.
+ *
+ * Shared with `service-metadata.ts`, which strips the same set from a service's
+ * own parameter list, so this is the single copy.
  *
  * `eliminationClient` is a second Supabase client for consolidation reads. Left out
  * of this set it becomes a required field no caller can express.
  */
-export const CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "companyId",
-  "userId",
-  "createdBy",
-  "updatedBy",
-  "companyGroupId",
-  "eliminationClient",
+export const POSITIONAL_CONTEXT = {
+  client: "client",
+  eliminationClient: "client",
+  db: "db",
+  companyId: "companyId",
+  userId: "userId",
+  companyGroupId: "companyGroupId",
+} as const satisfies Record<string, ContextSource>;
+
+/** The audit columns. As a payload FIELD either is stamped by the dispatcher;
+ *  as a positional PARAM it is the acting user only when the body is seen
+ *  writing it to that column (`contextParamsOf`). */
+export const AUDIT_FIELDS = ["createdBy", "updatedBy"] as const;
+
+export const CONTEXT_PARAMS = new Set<string>([
+  ...Object.keys(POSITIONAL_CONTEXT),
+  ...AUDIT_FIELDS,
 ]);
 
 /** A module whose validators are reused across modules when a local lookup misses. */
@@ -56,7 +67,7 @@ export interface ValidatorRegistry {
   /**
    * The converted schema for `validatorName`, looked up in `mod` and then in
    * `shared` (cross-module validators). Null when unknown or unconvertible — the
-   * caller must fall back to textual parsing.
+   * caller reports it `unresolved` and the generator refuses to write.
    */
   getSchema(mod: string, validatorName: string): JsonSchema | null;
   /** Values of an exported `as const` string array, for `(typeof X)[number]` params. */
@@ -114,8 +125,8 @@ function isConstStringArray(value: unknown): value is string[] {
 /**
  * Load every module's models file and convert its validators. Never throws: a module
  * that fails to load, or a validator that fails to convert, is recorded in `stats`
- * and simply absent from the lookup, so the generator falls back to textual parsing
- * for exactly those and nothing else.
+ * and simply absent from the lookup; the generator reports each one and refuses to
+ * write a manifest until it loads.
  */
 export async function buildValidatorRegistry(
   modules: readonly string[]
@@ -172,9 +183,9 @@ export async function buildValidatorRegistry(
         null;
       // Hand out a COPY. One validator backs many operations (supplierValidator
       // backs both insertSupplier and upsertSupplier), and downstream steps mutate
-      // the schema in place — `addOperationArg` writes `_operation` onto it. Sharing
-      // the object leaked that required argument onto sibling operations that never
-      // take it.
+      // the schema in place — `describeUpsertKeys` annotates the key fields. Sharing
+      // the object leaked one operation's edits onto sibling operations that never
+      // made them.
       return found ? (structuredClone(found) as JsonSchema) : null;
     },
     getConstArray(mod, exportName) {

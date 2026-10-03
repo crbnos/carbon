@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,7 +14,9 @@ import type { SourceFile } from "../check";
 const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
-  "packages/database/supabase/functions"
+  "packages/database/supabase/functions",
+  "packages/database/src",
+  "packages/server-functions/src"
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */

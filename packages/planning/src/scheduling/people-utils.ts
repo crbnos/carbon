@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
  * Pure helpers for people-assignment (manning board) scheduling inputs.
- * No DB imports — covered by deno tests (people-utils.test.ts).
+ * No DB imports — covered by people-utils.test.ts.
  *
  * Date keys are local calendar dates ("YYYY-MM-DD") in the company/location
  * timezone; availability windows are UTC instants (CalendarWindow).

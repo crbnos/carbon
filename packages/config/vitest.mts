@@ -1,6 +1,10 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // The jSquash wasm codecs are loaded as `?inline` data URIs (see
+  // packages/files/src/media/node.ts) — Vite only honours that query for a file
+  // it treats as an asset, and `.wasm` is not one by default.
+  assetsInclude: ["**/*.wasm"],
   test: {
     globals: false,
     environment: "node",

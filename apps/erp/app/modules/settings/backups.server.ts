@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -183,4 +182,35 @@ export async function purgeCorruptedRows(
     deleted: result.deleted
   });
   return result;
+}
+
+/**
+ * Starts a company backup export (`carbon/company-export`). The caller has
+ * already checked `update: settings` and `canManageBackups`; the job itself
+ * enforces the BACKUPS entitlement.
+ */
+export async function exportCompanyBackup(args: {
+  companyId: string;
+  userId: string;
+  label?: string;
+  includeStorage?: "none" | "all";
+  /** Opt-in recovery: leave out rows whose links escape company scope. */
+  skipCorrupted?: boolean;
+}): Promise<{ error: Error | null }> {
+  try {
+    await trigger("company-export", {
+      companyId: args.companyId,
+      userId: args.userId,
+      label: args.label?.slice(0, 80),
+      includeStorage: args.includeStorage ?? "none",
+      skipCorrupted: args.skipCorrupted === true
+    });
+    return { error: null };
+  } catch (error) {
+    log.error("Failed to start backup export", {
+      companyId: args.companyId,
+      error
+    });
+    return { error: error as Error };
+  }
 }

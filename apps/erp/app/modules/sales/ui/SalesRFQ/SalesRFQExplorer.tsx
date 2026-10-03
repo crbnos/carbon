@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -16,6 +15,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Spinner,
   Tooltip,
@@ -34,7 +35,7 @@ import {
   LuSettings2,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
 import type { DragHandleBindings } from "~/components/LineReorder";
@@ -412,9 +413,8 @@ function SalesRFQLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         className="w-full"
-        prefetch="intent"
         to={path.to.salesRfqLine(rfqId, line.id!)}
       >
         <HStack
@@ -452,6 +452,7 @@ function SalesRFQLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -466,7 +467,7 @@ function SalesRFQLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

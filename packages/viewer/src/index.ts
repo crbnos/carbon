@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -37,7 +36,7 @@ export {
   naturalizeMotion,
   type Pose,
   type StepClipOptions,
-  stepTimelineSeconds
+  stepClipTiming
 } from "./motion";
 export {
   type AssemblyPlan,
@@ -51,16 +50,18 @@ export {
   type StepPhase
 } from "./plan";
 export {
-  buildStaging,
-  EMPTY_STAGING,
-  type JoinTargets,
-  joinTargets,
-  parkedOffsetsAt,
-  STAGING_GLIDE_SECONDS,
-  type Staging,
-  type StagingJoin,
-  stagedGroupNodeIds
-} from "./staging";
+  arrivalIndexByNode,
+  buildSubAssemblyPlan,
+  displayOrder,
+  isSubAssemblyHeader,
+  type SubAssemblyInfo,
+  type SubAssemblyRule,
+  type SubAssemblyViolation,
+  subAssemblyPartIds,
+  type UnusableReason,
+  usableSubAssemblies,
+  validateSubAssemblies
+} from "./subassembly";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,

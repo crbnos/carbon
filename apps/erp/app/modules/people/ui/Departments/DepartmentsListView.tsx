@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,7 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  IconButton
+  IconButton,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import {
   LuBuilding,
@@ -78,8 +78,11 @@ function DepartmentsRow({
                 icon={<LuEllipsisVertical />}
               />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => onEdit(department.id!)}>
+            <DropdownMenuContent align="end" className="min-w-44">
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
+                onClick={() => onEdit(department.id!)}
+              >
                 <LuPencil className="mr-2 size-4" />
                 Edit
               </DropdownMenuItem>
@@ -88,6 +91,7 @@ function DepartmentsRow({
                 Add department
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete(department.id!)}
               >

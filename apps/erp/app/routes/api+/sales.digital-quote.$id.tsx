@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -24,6 +23,7 @@ import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "sales", "digital-quote");
 
@@ -92,6 +92,15 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       const selectedLines = parseResult.data;
+
+      if (
+        !Object.values(selectedLines).some((line) => (line.quantity ?? 0) > 0)
+      ) {
+        return {
+          success: false,
+          message: "Select at least one item to accept the quote."
+        };
+      }
 
       // Unauthenticated endpoint: the name becomes a storage key segment.
       const uploadFileName =
@@ -173,7 +182,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       const [convert] = await Promise.all([
-        convertQuoteToOrder(serviceRole, {
+        convertQuoteToOrder(serviceRole, getDatabaseClient(), {
           id: quote.data.id,
           companyId: quote.data.companyId,
           userId: quote.data.createdBy,

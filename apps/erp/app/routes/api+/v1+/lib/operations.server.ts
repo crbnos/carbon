@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -14,6 +13,19 @@ import type { ManifestEntry } from "@carbon/api";
 import raw from "../../mcp+/lib/tool-metadata.json";
 
 export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
+
+const companyTables = (raw as { companyTables?: string[] }).companyTables;
+// The dispatcher confines every write to the caller's company by this list
+// (`scopedToCompany`). An empty one would switch that off without a sound, so
+// a manifest generated before the list existed stops the module loading.
+if (!Array.isArray(companyTables) || companyTables.length === 0) {
+  throw new Error(
+    "tool-metadata.json has no companyTables. Regenerate it: pnpm run generate:mcp"
+  );
+}
+
+/** Every table with a `companyId` column, from the generated database types. */
+export const COMPANY_TABLES: ReadonlySet<string> = new Set(companyTables);
 
 /**
  * Deprecated operation names → the operation that replaced them. An operation's

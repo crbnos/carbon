@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -18,6 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   toast,
@@ -555,11 +555,15 @@ const ConsumablesTable = memo(
     const renderContextMenu = useMemo(() => {
       return (row: ConsumableListItem) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
+            onClick={() => navigate(path.to.consumable(row.id!))}
+          >
             <MenuIcon icon={<LuPencil />} />
             Edit ConsumableListItem
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             disabled={!permissions.can("delete", "parts")}
             destructive
             onClick={() => {

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -296,7 +295,7 @@ describe("rankSuggestions", () => {
   });
 });
 
-// The client mirror of the edge fn's assertMaterialCompatible: a candidate whose
+// The client mirror of the server fn's assertMaterialCompatible: a candidate whose
 // "must" dimension can't share a value with the current selection is LOCKED
 // (visible-but-uncheckable). A test that fails if the must-gating is reverted.
 describe("computeLockedById (must-violation gating)", () => {

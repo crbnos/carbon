@@ -34680,6 +34680,72 @@ export default {
         tags: ["intercompanyTransaction"]
       }
     },
+    "/itemLedgerSnapshot": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed30"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed90"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.storageUnitIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.snapshotCutoff"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemLedgerSnapshot"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemLedgerSnapshot"]
+      }
+    },
     "/job": {
       get: {
         parameters: [
@@ -47481,6 +47547,141 @@ export default {
         tags: ["storageUnit"]
       }
     },
+    "/employeePin": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.employeePin.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.pinHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/employeePin"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["employeePin"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.employeePin"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["employeePin"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.employeePin.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.pinHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["employeePin"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.employeePin.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.pinHash"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.employeePin"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["employeePin"]
+      }
+    },
     "/implementationCheckState": {
       get: {
         parameters: [
@@ -53497,6 +53698,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53652,6 +53859,12 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53759,6 +53972,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.usedInStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -67504,6 +67723,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -67626,6 +67848,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -67700,6 +67925,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
           },
           {
             $ref: "#/parameters/body.quoteLinePrice"
@@ -96023,6 +96251,63 @@ export default {
         tags: ["(rpc) workflow_merge_custom_fields"]
       }
     },
+    "/rpc/get_document_extensions": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_document_extensions"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_document_extensions"]
+      }
+    },
     "/rpc/get_jobs_by_date_range": {
       post: {
         parameters: [
@@ -98131,6 +98416,45 @@ export default {
           }
         },
         tags: ["(rpc) get_quote_methods"]
+      }
+    },
+    "/rpc/set_inngest_event_config": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_base_url: {
+                  format: "text",
+                  type: "string"
+                },
+                p_key: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_key", "p_base_url"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_inngest_event_config"]
       }
     },
     "/rpc/get_completion_jobs": {
@@ -103588,6 +103912,96 @@ export default {
         tags: ["(rpc) sync_insert_company_related_records"]
       }
     },
+    "/rpc/get_item_ledger_balance": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "entry_number",
+            required: false,
+            type: "integer"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                entry_number: {
+                  format: "integer",
+                  type: "integer"
+                },
+                item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "item_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_item_ledger_balance"]
+      }
+    },
     "/rpc/sync_add_employee_to_type_group": {
       post: {
         parameters: [
@@ -106127,6 +106541,41 @@ export default {
           }
         },
         tags: ["(rpc) get_maintenance_dispatches_by_location"]
+      }
+    },
+    "/rpc/set_inngest_event_url": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_url: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_url"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_inngest_event_url"]
       }
     },
     "/rpc/sync_on_maintenance_dispatch_complete": {
@@ -123293,6 +123742,50 @@ export default {
       },
       type: "object"
     },
+    itemLedgerSnapshot: {
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        consumed30: {
+          format: "numeric",
+          type: "number"
+        },
+        consumed90: {
+          format: "numeric",
+          type: "number"
+        },
+        storageUnitIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        snapshotCutoff: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     job: {
       required: [
         "id",
@@ -129293,6 +129786,38 @@ export default {
       },
       type: "object"
     },
+    employeePin: {
+      required: ["employeeId", "companyId", "pinHash", "updatedAt"],
+      properties: {
+        employeeId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        pinHash: {
+          format: "text",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     implementationCheckState: {
       required: [
         "id",
@@ -132031,7 +132556,8 @@ export default {
         "createdBy",
         "createdAt",
         "status",
-        "hiddenComponentNodeIds"
+        "hiddenComponentNodeIds",
+        "isSubAssembly"
       ],
       properties: {
         id: {
@@ -132198,6 +132724,17 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        usedInStepId: {
+          description:
+            "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        isSubAssembly: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -138865,6 +139402,9 @@ export default {
         convertedShippingCost: {
           format: "numeric",
           type: "number"
+        },
+        priceTrace: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -144760,7 +145300,7 @@ export default {
           format: "jsonb"
         },
         rateLimit: {
-          default: 60,
+          default: 20,
           format: "integer",
           type: "integer"
         },
@@ -170140,6 +170680,63 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.itemLedgerSnapshot": {
+      name: "itemLedgerSnapshot",
+      description: "itemLedgerSnapshot",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemLedgerSnapshot"
+      }
+    },
+    "rowFilter.itemLedgerSnapshot.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.consumed30": {
+      name: "consumed30",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.consumed90": {
+      name: "consumed90",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.storageUnitIds": {
+      name: "storageUnitIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemLedgerSnapshot.snapshotCutoff": {
+      name: "snapshotCutoff",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.job": {
       name: "job",
       description: "job",
@@ -176652,6 +177249,45 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.employeePin": {
+      name: "employeePin",
+      description: "employeePin",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/employeePin"
+      }
+    },
+    "rowFilter.employeePin.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeePin.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeePin.pinHash": {
+      name: "pinHash",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeePin.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.employeePin.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.implementationCheckState": {
       name: "implementationCheckState",
       description: "implementationCheckState",
@@ -180021,6 +180657,18 @@ export default {
     },
     "rowFilter.assemblyInstructionStep.hiddenComponentNodeIds": {
       name: "hiddenComponentNodeIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.usedInStepId": {
+      name: "usedInStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.isSubAssembly": {
+      name: "isSubAssembly",
       required: false,
       in: "query",
       type: "string"
@@ -187475,6 +188123,12 @@ export default {
     },
     "rowFilter.quoteLinePrice.convertedShippingCost": {
       name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.priceTrace": {
+      name: "priceTrace",
       required: false,
       in: "query",
       type: "string"

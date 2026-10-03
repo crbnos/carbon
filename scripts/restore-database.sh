@@ -302,12 +302,12 @@ BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/nu
 echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
 # ── 3b. Localize environment-sensitive rows (RESTORE_MODE=local only) ───────
 if [[ "$RESTORE_MODE" == "local" ]]; then
-# The dump carries prod's singleton "config" row (the pg_net push target that
-# SECURITY DEFINER functions like util.wake_event_queue and the webhook
-# triggers POST through), plus live webhook URLs, integration OAuth tokens,
-# and printer-route ProxyBox URLs. Left as-is, the local event queue never
-# drains (audit logs stay empty — the doorbell rings PROD's edge function),
-# and local edits can deliver real webhooks / Slack / Xero posts / print jobs.
+# The dump carries prod's singleton "config" row and Vault secrets (among them
+# `inngest_event_url`, where util.send_inngest_event posts the event-queue
+# doorbell), plus live webhook URLs, integration OAuth tokens, and
+# printer-route ProxyBox URLs. Left as-is, the local event queue never drains
+# (audit logs stay empty — the doorbell rings PROD's Inngest), and local edits
+# can deliver real webhooks / Slack / Xero posts / print jobs.
 echo "▶ Localizing config row + deactivating webhooks, integrations, printer routes"
 ANON_KEY=$(grep '^SUPABASE_ANON_KEY=' "$REPO_ROOT/.env.local" 2>/dev/null | cut -d= -f2- || true)
 if [[ -n "$ANON_KEY" ]]; then
@@ -350,9 +350,14 @@ BEGIN
   IF to_regclass('vault.secrets') IS NOT NULL THEN
     EXECUTE 'DELETE FROM vault.secrets';
   END IF;
+  -- Point the event-queue doorbell at the local Inngest dev server (as
+  -- ensureConfigRow does on `crbn up` / `crbn migrate`).
+  IF to_regprocedure('public.set_inngest_event_url(text)') IS NOT NULL THEN
+    PERFORM public.set_inngest_event_url('http://inngest:8288/e/NO_EVENT_KEY_SET');
+  END IF;
 END $$;
 SQL
-echo "  ✓ webhooks, integrations, printer routes/jobs deactivated; vault secrets cleared"
+echo "  ✓ webhooks, integrations, printer routes/jobs deactivated; vault secrets cleared; events → local Inngest"
 # Flush cached permission claims: requirePermissions serves claims from Redis
 # (permissions:<userId>), so anyone logged in before the restore would keep
 # their PRE-restore permissions silently. Same failure shape as the stale

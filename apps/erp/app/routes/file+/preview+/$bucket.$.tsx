@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -116,8 +115,6 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     return source.download(path);
   }
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const result = await downloadFile();
   if (result.error) {
     logger.error("Failed to download file", {

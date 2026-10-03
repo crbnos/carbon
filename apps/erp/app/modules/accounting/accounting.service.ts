@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -17,7 +16,8 @@ import {
   round,
   toDisplayCredit,
   toDisplayDebit,
-  toStoredAmount
+  toStoredAmount,
+  unchecked
 } from "@carbon/utils";
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -25,7 +25,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -146,6 +146,7 @@ function applyRootSignCorrection<
   });
 }
 
+/** @mcp read */
 export async function getTrialBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -164,6 +165,7 @@ export async function getTrialBalance(
   });
 }
 
+/** @mcp read */
 export async function getAccountLedger(
   client: SupabaseClient<Database>,
   args: {
@@ -213,6 +215,7 @@ export async function getAccountLedger(
   };
 }
 
+/** @mcp read */
 export async function getAccountLedgerSummary(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -250,6 +253,7 @@ export async function getAccountLedgerSummary(
   };
 }
 
+/** @mcp read */
 export async function getFinancialStatementBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -368,6 +372,7 @@ export async function getFinancialStatementBalances(
   };
 }
 
+/** @mcp read */
 export async function getAccountPeriodSeries(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -780,6 +785,7 @@ export async function translateCompanyPeriodSeries(
  * the accountTreeBalancePeriodSeries RPC (snapshot-based, single journal scan).
  * The multi-period sibling of getFinancialStatementBalances — same accounts
  * view, same Net Income injection (per bucket), same root sign correction.
+ * @mcp read
  */
 export async function getFinancialStatementPeriodSeries(
   client: SupabaseClient<Database>,
@@ -968,6 +974,7 @@ export async function getFinancialStatementPeriodSeries(
  * getConsolidatedBalances: per-company series (including auto-resolved
  * elimination entities) summed per account and bucket, with per-bucket
  * currency translation and CTA.
+ * @mcp read
  */
 export async function getConsolidatedPeriodSeries(
   client: SupabaseClient<Database>,
@@ -1233,6 +1240,7 @@ export async function getConsolidatedPeriodSeries(
 
 // Per-user pin overrides for the reports hub. Absent row = the report's
 // default pin state (the core financial statements default to pinned).
+/** @mcp read */
 export async function getReportPins(
   client: SupabaseClient<Database>,
   userId: string,
@@ -1245,6 +1253,7 @@ export async function getReportPins(
     .eq("companyId", companyId);
 }
 
+/** @mcp upsert */
 export async function upsertReportPin(
   client: SupabaseClient<Database>,
   args: {
@@ -1318,6 +1327,7 @@ function pivotAccountScopeParams(
  * the matching active, non-group accounts; the scrap scope resolves to the
  * scrapAccount ids the loader already fetched. Returns the raw supabase
  * response so callers keep the `{ data, error }` convention.
+ * @mcp read
  */
 export async function getAccountsInScope(
   client: SupabaseClient<Database>,
@@ -1343,6 +1353,7 @@ export async function getAccountsInScope(
   return query.order("number", { ascending: true });
 }
 
+/** @mcp read */
 export async function getDimensionPivot(
   client: SupabaseClient<Database>,
   args: {
@@ -1510,6 +1521,7 @@ type DimensionPivotLineRow =
  * tag for that dimension) — so `rowValue1IsNull` maps to "send
  * p_row_dimension_1, omit p_row_value_1". A period column narrows postingDate
  * via p_column_period_start/end instead of a dimension match.
+ * @mcp read
  */
 export async function getDimensionPivotLines(
   client: SupabaseClient<Database>,
@@ -1600,6 +1612,7 @@ const PURCHASE_FIELD_ENTITY_TYPE: Record<string, string> = {
   costCenter: "CostCenter"
 };
 
+/** @mcp read */
 export async function getPurchaseLinePivot(
   client: SupabaseClient<Database>,
   args: {
@@ -1718,6 +1731,7 @@ export async function getPurchaseLinePivot(
 type PurchaseLinePivotRow =
   Database["public"]["Functions"]["purchaseLinePivotLines"]["Returns"][number];
 
+/** @mcp read */
 export async function getPurchaseLinePivotLines(
   client: SupabaseClient<Database>,
   args: {
@@ -1810,6 +1824,7 @@ async function resolveDimensionValueNames(
 // Named, shareable saved pivot views for the analytics reports. RLS handles
 // visibility (Company rows are readable by every employee; Private rows only
 // by their creator; writes stay owner-only).
+/** @mcp read */
 export async function getReportViews(
   client: SupabaseClient<Database>,
   args: { companyId: string; reportKey?: string }
@@ -1826,6 +1841,7 @@ export async function getReportViews(
   return query.order("name", { ascending: true });
 }
 
+/** @mcp upsert */
 export async function upsertReportView(
   client: SupabaseClient<Database>,
   view:
@@ -1860,6 +1876,7 @@ export async function upsertReportView(
   return client.from("reportView").insert([view]).select("*").single();
 }
 
+/** @mcp delete */
 export async function deleteReportView(
   client: SupabaseClient<Database>,
   id: string,
@@ -1872,6 +1889,7 @@ export async function deleteReportView(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getCompaniesInGroup(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -1887,6 +1905,7 @@ export async function getCompaniesInGroup(
     .order("name", { ascending: true });
 }
 
+/** @mcp delete */
 export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
@@ -1894,6 +1913,7 @@ export async function deleteAccount(
   return client.from("account").delete().eq("id", accountId);
 }
 
+/** @mcp delete */
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -1904,6 +1924,7 @@ export async function deletePaymentTerm(
     .eq("id", paymentTermId);
 }
 
+/** @mcp read */
 export async function getAccount(
   client: SupabaseClient<Database>,
   accountId: string
@@ -1911,6 +1932,7 @@ export async function getAccount(
   return client.from("account").select("*").eq("id", accountId).single();
 }
 
+/** @mcp read */
 export async function getAccounts(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -1921,7 +1943,7 @@ export async function getAccounts(
   let query = client
     .from("account")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -1936,6 +1958,7 @@ export async function getAccounts(
   return query;
 }
 
+/** @mcp read */
 export async function getAccountsList(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -1967,6 +1990,7 @@ export async function getAccountsList(
   return query;
 }
 
+/** @mcp read */
 export async function getGroupAccounts(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -1980,6 +2004,7 @@ export async function getGroupAccounts(
     .order("name", { ascending: true });
 }
 
+/** @mcp read */
 export async function getBaseCurrency(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2006,6 +2031,7 @@ export async function getBaseCurrency(
     .single();
 }
 
+/** @mcp read */
 export async function getChartOfAccounts(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -2068,6 +2094,7 @@ export async function getChartOfAccounts(
   };
 }
 
+/** @mcp read */
 export async function getCurrency(
   client: SupabaseClient<Database>,
   currencyId: string
@@ -2083,6 +2110,7 @@ export async function getCurrency(
  * Settlement decimals for the company's base currency. Fixed-asset and GL
  * amounts are booked in base currency, so this is the scale their rounding must
  * use. Falls back to 2 only when the currency row is unreachable.
+ * @mcp read
  */
 export async function getBaseCurrencyDecimalPlaces(
   client: SupabaseClient<Database>,
@@ -2107,6 +2135,7 @@ export async function getBaseCurrencyDecimalPlaces(
   return currency.data?.decimalPlaces ?? 2;
 }
 
+/** @mcp read */
 export async function getCurrencyByCode(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -2125,6 +2154,7 @@ export async function getCurrencyByCode(
  * THIS company's base currency, right now". Base currency resolves to 1 by
  * definition; a user override wins next; otherwise the ratio of the two
  * USD-anchored market rates. A missing rate is an ERROR — never 1.
+ * @mcp read
  */
 export async function getExchangeRate(
   client: SupabaseClient<Database>,
@@ -2141,6 +2171,7 @@ export async function getExchangeRate(
  * Every active currency of the company's group, resolved for THIS company,
  * with provenance: 'base' | 'override' | 'market' | 'missing'. Backs the
  * exchange-rates settings page.
+ * @mcp read
  */
 export async function getExchangeRates(
   client: SupabaseClient<Database>,
@@ -2151,6 +2182,7 @@ export async function getExchangeRates(
   });
 }
 
+/** @mcp upsert */
 export async function upsertExchangeRateOverride(
   client: SupabaseClient<Database>,
   override: {
@@ -2210,6 +2242,7 @@ export async function upsertExchangeRateOverride(
   return insert;
 }
 
+/** @mcp delete */
 export async function deleteExchangeRateOverride(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2222,6 +2255,7 @@ export async function deleteExchangeRateOverride(
     .eq("currencyCode", currencyCode);
 }
 
+/** @mcp read */
 export async function getCurrencies(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -2250,6 +2284,7 @@ export async function getCurrencies(
  * format or round money need the settlement scale alongside the code — the DB
  * column is authoritative over Intl/CLDR, so it has to travel with the option.
  * `decimalPlaces` is null for an ISO currency the group has not configured.
+ * @mcp read
  */
 export async function getCurrenciesList(
   client: SupabaseClient<Database>,
@@ -2280,6 +2315,7 @@ export async function getCurrenciesList(
   };
 }
 
+/** @mcp read */
 export async function getCurrentAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2303,6 +2339,7 @@ type AccountingPeriodCloseColumns = {
   periodNumber?: number | null;
 };
 
+/** @mcp action */
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2411,6 +2448,7 @@ type AccountingPeriodRow = {
   closedBy: string | null;
 };
 
+/** @mcp read */
 export async function getAccountingPeriods(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2456,6 +2494,7 @@ async function getAccountingPeriodById(
 // referencing the period (journal.accountingPeriodId, FK ON DELETE RESTRICT)
 // means it has postings; Locked/Closed periods are structurally frozen.
 // periodCloseTask rows cascade on delete, so they never block.
+/** @mcp read */
 export async function getAccountingPeriodDeletability(
   client: SupabaseClient<Database>,
   periodId: string,
@@ -2498,6 +2537,7 @@ export async function getAccountingPeriodDeletability(
   };
 }
 
+/** @mcp delete */
 export async function deleteAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string }
@@ -2532,6 +2572,7 @@ export async function deleteAccountingPeriod(
 // retroactively rewrite already-reported fiscal years (and needs a short-year
 // bridge, not an edit), so the setting locks. Open, empty periods stay freely
 // changeable via delete + regenerate.
+/** @mcp read */
 export async function getFiscalCalendarCommitted(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2556,6 +2597,7 @@ export async function getFiscalCalendarCommitted(
   };
 }
 
+/** @mcp action */
 export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2591,6 +2633,7 @@ export async function lockAccountingPeriod(
     .single();
 }
 
+/** @mcp action */
 export async function unlockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2776,6 +2819,7 @@ export async function closeAccountingPeriod(
 // checklist-aware close is exactly that call with the argument shape the route
 // action passes. Kept as a distinct named export so the route imports intent,
 // not the lower-level lifecycle primitive.
+/** @mcp update */
 export async function closePeriodWithChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2855,6 +2899,7 @@ export async function reopenAccountingPeriod(
     .single();
 }
 
+/** @mcp create */
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
   args: { companyId: string; fiscalYear: number; userId: string }
@@ -2976,6 +3021,7 @@ const TERMINAL_SYNC_OPERATION_STATUSES = new Set([
  * journal (reversalOfId set) is delivered through the ORIGINAL journal's
  * "<id>:reversal" operation — the reversal row never gets its own ledger
  * entry (see getJournalSyncCompleteness).
+ * @mcp read
  */
 export async function getPeriodExternalGlSyncReadiness(
   client: SupabaseClient<Database>,
@@ -2985,14 +3031,25 @@ export async function getPeriodExternalGlSyncReadiness(
 ): Promise<{ failing: boolean; count: number; postingSyncEnabled: boolean }> {
   const integrations = await client
     .from("companyIntegration")
-    .select("id")
+    .select("id, metadata")
     .eq("companyId", companyId)
     .eq("active", true)
     .in("id", ACCOUNTING_SYNC_INTEGRATION_IDS);
 
-  const enabledIntegrationIds = (integrations.data ?? []).map(
-    (integration) => integration.id
-  );
+  // An integration with sync turned off (still being set up) delivers nothing,
+  // so it is treated like a disconnected one. Mirrors `isAccountingSyncEnabled`
+  // in @carbon/ee/accounting, which this module cannot import (see above):
+  // absent means on, only an explicit false is off.
+  const enabledIntegrationIds = (integrations.data ?? [])
+    .filter(
+      (integration) =>
+        (
+          integration.metadata as {
+            settings?: { syncEnabled?: unknown };
+          } | null
+        )?.settings?.syncEnabled !== false
+    )
+    .map((integration) => integration.id);
 
   if (enabledIntegrationIds.length === 0) {
     return { failing: false, count: 0, postingSyncEnabled: false };
@@ -3325,6 +3382,7 @@ async function computePeriodReadiness(
   return { checks, blockers, warnings };
 }
 
+/** @mcp read */
 export async function getPeriodCloseReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3495,8 +3553,12 @@ export function evaluateCloseChecklist(
   return { tasks: views, canClose, blockingReason, autoTaskStates };
 }
 
-// Idempotently instantiate the checklist for a period from active definitions,
-// then overlay live readiness. Returns the evaluated tasks plus the close gate.
+/**
+ * Idempotently instantiate the checklist for a period from active definitions,
+ * then overlay live readiness. Returns the evaluated tasks plus the close gate.
+ *
+ * @mcp action
+ */
 export async function getPeriodCloseChecklist(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3607,6 +3669,7 @@ async function getPeriodCloseTaskById(
   }>;
 }
 
+/** @mcp action */
 export async function completeCloseTask(
   client: SupabaseClient<Database>,
   args: { taskId: string; companyId: string; userId: string; notes?: string }
@@ -3647,6 +3710,7 @@ export async function completeCloseTask(
     .single();
 }
 
+/** @mcp action */
 export async function skipCloseTask(
   client: SupabaseClient<Database>,
   args: {
@@ -3740,6 +3804,7 @@ export async function addCloseTask(
     .single();
 }
 
+/** @mcp read */
 export async function getPeriodCloseTaskDefinitions(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3823,6 +3888,7 @@ export async function deletePeriodCloseTaskDefinition(
     .eq("companyId", args.companyId);
 }
 
+/** @mcp read */
 export async function getDefaultAccounts(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3839,6 +3905,7 @@ export async function getDefaultAccounts(
  * report's account scope (accountScope.source === "scrapAccounts"). Empty
  * when no scrap account is configured — getDimensionPivot short-circuits to
  * an empty pivot in that case.
+ * @mcp read
  */
 export async function getScrapAccountIds(
   client: SupabaseClient<Database>,
@@ -3858,6 +3925,7 @@ export async function getScrapAccountIds(
   };
 }
 
+/** @mcp read */
 export async function getFiscalYearSettings(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3869,6 +3937,7 @@ export async function getFiscalYearSettings(
     .single();
 }
 
+/** @mcp read */
 export async function getPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -3880,6 +3949,7 @@ export async function getPaymentTerm(
     .single();
 }
 
+/** @mcp read */
 export async function getPaymentTerms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3890,7 +3960,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -3905,6 +3975,7 @@ export async function getPaymentTerms(
   return query;
 }
 
+/** @mcp read */
 export async function getPaymentTermsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -3917,7 +3988,10 @@ export async function getPaymentTermsList(
     .order("name", { ascending: true });
 }
 
-/** Save both defaults sections atomically after validating the effective mapping. */
+/**
+ * Save both defaults sections atomically after validating the effective mapping.
+ * @mcp update
+ */
 export async function updateDefaultAccounts(
   client: SupabaseClient<Database>,
   defaultAccounts: z.infer<typeof defaultAccountValidator> & {
@@ -3992,6 +4066,7 @@ export async function validateDefaultIncomeAccounts(
   return { error: null };
 }
 
+/** @mcp update */
 export async function updateFiscalYearSettings(
   client: SupabaseClient<Database>,
   fiscalYearSettings: z.infer<typeof fiscalYearSettingsValidator> & {
@@ -4005,6 +4080,7 @@ export async function updateFiscalYearSettings(
     .eq("companyId", fiscalYearSettings.companyId);
 }
 
+/** @mcp upsert */
 export async function upsertAccount(
   client: SupabaseClient<Database>,
   account:
@@ -4015,6 +4091,7 @@ export async function upsertAccount(
       })
     | (Omit<z.infer<typeof accountValidator>, "id"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -4022,14 +4099,16 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
+  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
   return client
     .from("account")
-    .update(sanitize(account))
+    .update(sanitize(accountUpdate))
     .eq("id", account.id)
     .select("id")
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertCurrency(
   client: SupabaseClient<Database>,
   currency:
@@ -4056,6 +4135,7 @@ export async function upsertCurrency(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTerm:
@@ -4085,6 +4165,7 @@ export async function upsertPaymentTerm(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
@@ -4092,6 +4173,7 @@ export async function deleteCostCenter(
   return client.from("costCenter").delete().eq("id", costCenterId);
 }
 
+/** @mcp read */
 export async function getCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
@@ -4099,6 +4181,7 @@ export async function getCostCenter(
   return client.from("costCenter").select("*").eq("id", costCenterId).single();
 }
 
+/** @mcp read */
 export async function getCostCenters(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4106,7 +4189,7 @@ export async function getCostCenters(
 ) {
   let query = client
     .from("costCenter")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -4122,6 +4205,7 @@ export async function getCostCenters(
   return query;
 }
 
+/** @mcp read */
 export async function getCostCentersList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -4133,6 +4217,7 @@ export async function getCostCentersList(
     .order("name");
 }
 
+/** @mcp read */
 export async function getCostCentersTree(
   client: SupabaseClient<Database>,
   companyId: string
@@ -4146,6 +4231,7 @@ export async function getCostCentersTree(
     .order("name");
 }
 
+/** @mcp upsert */
 export async function upsertCostCenter(
   client: SupabaseClient<Database>,
   costCenter:
@@ -4171,6 +4257,7 @@ export async function upsertCostCenter(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteProject(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4190,6 +4277,7 @@ export async function deleteProject(
     .single();
 }
 
+/** @mcp read */
 export async function getProject(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4203,6 +4291,7 @@ export async function getProject(
     .single();
 }
 
+/** @mcp read */
 export async function getProjects(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4210,7 +4299,7 @@ export async function getProjects(
 ) {
   let query = client
     .from("project")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -4227,6 +4316,7 @@ export async function getProjects(
   return query;
 }
 
+/** @mcp upsert */
 export async function upsertProject(
   client: SupabaseClient<Database>,
   project:
@@ -4258,6 +4348,7 @@ export async function upsertProject(
     .single();
 }
 
+/** @mcp read */
 export async function getDimensions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4268,7 +4359,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -4283,6 +4374,7 @@ export async function getDimensions(
   return query;
 }
 
+/** @mcp read */
 export async function getDimension(
   client: SupabaseClient<Database>,
   dimensionId: string
@@ -4294,6 +4386,7 @@ export async function getDimension(
     .single();
 }
 
+/** @mcp upsert destructive */
 export async function upsertDimension(
   client: SupabaseClient<Database>,
   dimension:
@@ -4303,6 +4396,7 @@ export async function upsertDimension(
       })
     | (Omit<z.infer<typeof dimensionValidator>, "id" | "dimensionValues"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
       }),
   dimensionValues?: string[]
@@ -4316,9 +4410,10 @@ export async function upsertDimension(
       .select("id, companyGroupId")
       .single();
   } else {
+    const { companyGroupId: _companyGroupId, ...dimensionUpdate } = dimension;
     dimensionResult = await client
       .from("dimension")
-      .update(sanitize(dimension))
+      .update(sanitize(dimensionUpdate))
       .eq("id", dimension.id)
       .select("id, companyGroupId")
       .single();
@@ -4371,6 +4466,7 @@ export async function upsertDimension(
   return dimensionResult;
 }
 
+/** @mcp delete */
 export async function deleteDimension(
   client: SupabaseClient<Database>,
   dimensionId: string
@@ -4381,6 +4477,7 @@ export async function deleteDimension(
     .eq("id", dimensionId);
 }
 
+/** @mcp read */
 export async function getActiveDimensionsWithValues(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4541,6 +4638,7 @@ function getEntityDimensionValues(
   }
 }
 
+/** @mcp read */
 export async function getJournalLineDimensions(
   client: SupabaseClient<Database>,
   journalLineIds: string[]
@@ -4675,6 +4773,7 @@ function getEntityValuesByIds(
   }
 }
 
+/** @mcp action destructive */
 export async function saveJournalLineDimensions(
   client: SupabaseClient<Database>,
   journalLineId: string,
@@ -4700,6 +4799,7 @@ export async function saveJournalLineDimensions(
   );
 }
 
+/** @mcp action */
 export async function translateCompanyBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4906,6 +5006,7 @@ async function resolveConsolidationCompanyIds(
   return [...companyIds, ...eliminationIds];
 }
 
+/** @mcp read */
 export async function getConsolidatedBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5075,6 +5176,7 @@ export async function getConsolidatedBalances(
 
 // -- Intercompany --
 
+/** @mcp read */
 export async function getIntercompanyTransactions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5084,7 +5186,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5098,6 +5200,7 @@ export async function getIntercompanyTransactions(
   return query;
 }
 
+/** @mcp create */
 export async function createIntercompanyTransaction(
   client: SupabaseClient<Database>,
   input: z.infer<typeof intercompanyTransactionValidator> & {
@@ -5195,6 +5298,7 @@ export async function createIntercompanyTransaction(
   return intercompanyTransaction;
 }
 
+/** @mcp read */
 export async function getIntercompanyEliminationLines(
   client: SupabaseClient<Database>,
   transactionIds: string[]
@@ -5208,6 +5312,7 @@ export async function getIntercompanyEliminationLines(
     .in("intercompanyTransactionId", transactionIds);
 }
 
+/** @mcp update */
 export async function runIntercompanyMatching(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -5217,6 +5322,7 @@ export async function runIntercompanyMatching(
   });
 }
 
+/** @mcp create */
 export async function generateEliminations(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5230,6 +5336,7 @@ export async function generateEliminations(
   });
 }
 
+/** @mcp read */
 export async function getIntercompanyBalance(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -5243,6 +5350,7 @@ export async function getIntercompanyBalance(
  * Market-rate history for the chart on the exchange-rates page. Reads the
  * platform-global "exchangeRate" store (USD-anchored), newest ~6 months of
  * daily rows, ascending for the chart.
+ * @mcp read
  */
 export async function getExchangeRateHistory(
   client: SupabaseClient<Database>,
@@ -5266,6 +5374,7 @@ export async function getExchangeRateHistory(
 // Manual JEs start as Draft and are posted by flipping status to Posted.
 // amount > 0 = debit, amount < 0 = credit.
 
+/** @mcp read */
 export async function getJournalEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5273,7 +5382,7 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5293,6 +5402,7 @@ export async function getJournalEntries(
   return query;
 }
 
+/** @mcp read */
 export async function getJournalEntry(
   client: SupabaseClient<Database>,
   id: string
@@ -5304,6 +5414,7 @@ export async function getJournalEntry(
     .single();
 }
 
+/** @mcp create */
 export async function createJournalEntry(
   client: SupabaseClient<Database>,
   data: z.infer<typeof journalEntryValidator> & {
@@ -5339,6 +5450,7 @@ export async function updateJournalEntry(
     .eq("status", "Draft");
 }
 
+/** @mcp delete */
 export async function deleteJournalEntry(
   client: SupabaseClient<Database>,
   id: string
@@ -5413,6 +5525,7 @@ export async function deleteJournalEntryLine(
   return client.from("journalLine").delete().eq("id", id);
 }
 
+/** @mcp action destructive */
 export async function saveJournalEntryWithLines(
   client: SupabaseClient<Database>,
   data: {
@@ -5524,6 +5637,7 @@ export async function saveJournalEntryWithLines(
   return insertResult;
 }
 
+/** @mcp action */
 export async function postJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
@@ -5615,6 +5729,7 @@ export async function postJournalEntry(
 // entry, or null. Callers only need existence — this is the re-entry gate. Only
 // status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
 // one.
+/** @mcp read */
 export async function getExistingOpeningBalanceEntry(
   client: SupabaseClient<Database>,
   companyId: string
@@ -5639,6 +5754,7 @@ export async function getExistingOpeningBalanceEntry(
 // the Retained Earnings default account so debits equal credits. Reuses the
 // manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
 // postJournalEntry (which validates the balance and resolves the period).
+/** @mcp create destructive */
 export async function createOpeningBalanceJournal(
   client: SupabaseClient<Database>,
   args: {
@@ -5804,6 +5920,7 @@ export async function createOpeningBalanceJournal(
   return { data: { id }, error: null };
 }
 
+/** @mcp action */
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
@@ -5912,6 +6029,7 @@ export async function reverseJournalEntry(
 
 // -- Asset Classes --
 
+/** @mcp read */
 export async function getFixedAssetClasses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5921,7 +6039,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -5935,6 +6053,7 @@ export async function getFixedAssetClasses(
   return query;
 }
 
+/** @mcp read */
 export async function getFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
@@ -5942,6 +6061,7 @@ export async function getFixedAssetClass(
   return client.from("fixedAssetClass").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getFixedAssetClassesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -5955,6 +6075,7 @@ export async function getFixedAssetClassesList(
     .order("name");
 }
 
+/** @mcp upsert */
 export async function upsertFixedAssetClass(
   client: SupabaseClient<Database>,
   data:
@@ -5971,12 +6092,13 @@ export async function upsertFixedAssetClass(
   const { id, ...rest } = data;
   return client
     .from("fixedAssetClass")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();
 }
 
+/** @mcp delete */
 export async function deleteFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
@@ -5986,6 +6108,7 @@ export async function deleteFixedAssetClass(
 
 // -- Fixed Assets --
 
+/** @mcp read */
 export async function getFixedAssets(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5998,7 +6121,7 @@ export async function getFixedAssets(
     .from("fixedAsset")
     .select(
       "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -6018,6 +6141,7 @@ export async function getFixedAssets(
   return query;
 }
 
+/** @mcp read */
 export async function getFixedAsset(
   client: SupabaseClient<Database>,
   id: string
@@ -6031,6 +6155,7 @@ export async function getFixedAsset(
     .single();
 }
 
+/** @mcp read */
 export async function getFixedAssetsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -6043,6 +6168,7 @@ export async function getFixedAssetsList(
     .order("fixedAssetId");
 }
 
+/** @mcp read */
 export async function getFixedAssetsListForSale(
   client: SupabaseClient<Database>,
   companyId: string
@@ -6055,6 +6181,7 @@ export async function getFixedAssetsListForSale(
     .order("fixedAssetId");
 }
 
+/** @mcp create */
 export async function insertFixedAsset(
   client: SupabaseClient<Database>,
   input: {
@@ -6138,6 +6265,7 @@ export async function insertFixedAsset(
   };
 }
 
+/** @mcp update */
 export async function updateFixedAsset(
   client: SupabaseClient<Database>,
   input: {
@@ -6196,12 +6324,13 @@ export async function upsertFixedAsset(
   const { id, ...rest } = data;
   return client
     .from("fixedAsset")
-    .update(sanitize(rest))
+    .update(unchecked(sanitize(rest)))
     .eq("id", id)
     .select("id")
     .single();
 }
 
+/** @mcp delete */
 export async function deleteFixedAsset(
   client: SupabaseClient<Database>,
   id: string
@@ -6209,6 +6338,7 @@ export async function deleteFixedAsset(
   return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
 }
 
+/** @mcp create destructive */
 export async function insertDepreciationRun(
   client: SupabaseClient<Database>,
   input: {
@@ -6289,6 +6419,7 @@ export async function insertDepreciationRun(
   };
 }
 
+/** @mcp delete */
 export async function deleteDepreciationRun(
   client: SupabaseClient<Database>,
   id: string
@@ -6302,6 +6433,7 @@ export async function deleteDepreciationRun(
 
 // -- Depreciation --
 
+/** @mcp read */
 export async function getDepreciationRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6310,7 +6442,7 @@ export async function getDepreciationRuns(
   let query = client
     .from("depreciationRun")
     .select("id, depreciationRunId, periodEnd, status, postedAt", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -6324,6 +6456,7 @@ export async function getDepreciationRuns(
   return query;
 }
 
+/** @mcp read */
 export async function getDepreciationRun(
   client: SupabaseClient<Database>,
   id: string
@@ -6331,6 +6464,7 @@ export async function getDepreciationRun(
   return client.from("depreciationRun").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getDepreciationRunLines(
   client: SupabaseClient<Database>,
   depreciationRunId: string
@@ -6345,6 +6479,7 @@ export async function getDepreciationRunLines(
 
 // -- Depreciation History for a single asset --
 
+/** @mcp read */
 export async function getAssetDepreciationHistory(
   client: SupabaseClient<Database>,
   fixedAssetId: string
@@ -6360,6 +6495,7 @@ export async function getAssetDepreciationHistory(
 
 // -- Disposals --
 
+/** @mcp read */
 export async function getFixedAssetDisposal(
   client: SupabaseClient<Database>,
   fixedAssetId: string
@@ -6373,6 +6509,7 @@ export async function getFixedAssetDisposal(
 
 // -- Usage Logs --
 
+/** @mcp read */
 export async function getFixedAssetUsageLogs(
   client: SupabaseClient<Database>,
   fixedAssetId: string
@@ -6384,6 +6521,11 @@ export async function getFixedAssetUsageLogs(
     .order("periodEnd", { ascending: false });
 }
 
+/**
+ * A usage log is a ledger: an "edit" is a new offsetting row, never an in-place
+ * change, so `updatedBy` must stay NULL even though the column exists. If this
+ * is ever exposed, declare `@mcp audit createdBy` alongside its verb.
+ */
 export async function upsertFixedAssetUsageLog(
   client: SupabaseClient<Database>,
   data: Record<string, any> & { companyId: string; createdBy: string }
@@ -6433,6 +6575,7 @@ export type JournalSyncCompleteness = {
  * (this module deliberately does not import @carbon/ee/accounting — see the
  * TS2589 notes in the settings Integrations components) and passes
  * syncFromDate explicitly.
+ * @mcp read
  */
 export async function getJournalSyncCompleteness(
   client: SupabaseClient<Database>,
@@ -6726,6 +6869,7 @@ async function joinTieOutCells(
  * The tie-out grid: every persisted cell for the company, joined with
  * account and period identity, newest period first. Optional filters narrow
  * to one integration and/or one accounting period.
+ * @mcp read
  */
 export async function getAccountingSyncTieOut(
   client: SupabaseClient<Database>,
@@ -6812,6 +6956,7 @@ const TIE_OUT_CELL_JOURNAL_LIMIT = 200;
  * integration. A reversal journal's disposition lives under the original
  * journal's "<id>:reversal" entity id (see getJournalSyncCompleteness).
  * Bounded to the newest TIE_OUT_CELL_JOURNAL_LIMIT journals.
+ * @mcp read
  */
 export async function getAccountingSyncTieOutCell(
   client: SupabaseClient<Database>,

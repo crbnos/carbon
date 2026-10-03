@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,6 +7,7 @@ import {
   Button,
   Count,
   HStack,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -17,7 +17,7 @@ import {
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useOptimisticLocation } from "~/hooks";
 
 type DetailSidebarProps = {
@@ -62,9 +62,8 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                 variant={isActive ? "active" : "ghost"}
                 className="w-full justify-start"
               >
-                <Link
+                <PrefetchLink
                   to={route.to}
-                  prefetch="intent"
                   className="flex items-center justify-start gap-2"
                 >
                   {route.icon}
@@ -72,7 +71,7 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
                   {route.count !== undefined && (
                     <Count count={route.count} className="ml-auto" />
                   )}
-                </Link>
+                </PrefetchLink>
               </Button>
             </TooltipTrigger>
             {route.shortcut && (

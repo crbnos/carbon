@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -16,6 +15,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  PrefetchLink,
   ShortcutKey,
   Tooltip,
   TooltipContent,
@@ -332,9 +333,8 @@ function PurchaseInvoiceLineItem({
 
   return (
     <VStack spacing={0} className="border-b">
-      <Link
+      <PrefetchLink
         to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
-        prefetch="intent"
         className="w-full"
       >
         <HStack
@@ -375,6 +375,7 @@ function PurchaseInvoiceLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
@@ -388,6 +389,7 @@ function PurchaseInvoiceLineItem({
                 {/* @ts-expect-error */}
                 {itemType.includes(line.invoiceLineType ?? "") && (
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.view}
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -408,7 +410,7 @@ function PurchaseInvoiceLineItem({
             </DropdownMenu>
           </div>
         </HStack>
-      </Link>
+      </PrefetchLink>
     </VStack>
   );
 }

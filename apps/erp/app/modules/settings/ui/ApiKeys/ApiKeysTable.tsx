@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -186,6 +192,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.apiKey(row.id!)}?${params?.toString()}`);
             }}
@@ -194,6 +201,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
             <Trans>Edit API Key</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             onClick={() => {
               navigate(

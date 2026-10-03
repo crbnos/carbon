@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -31,11 +30,10 @@ export async function action({ request }: ActionFunctionArgs) {
     id: locationId
   });
 
-  // Regenerate the whole location's forecast IN-PROCESS (Node) rather than
-  // round-tripping to the `schedule` edge function — no cold start, no HTTP hop.
-  // Awaited before we return, so the fetcher's revalidation reads fully-
-  // committed reservations. Service-role client matches the privileged execution
-  // the edge function did internally; the route's requirePermissions is the gate.
+  // Regenerate the whole location's forecast IN-PROCESS (Node). Awaited before
+  // we return, so the fetcher's revalidation reads fully-committed
+  // reservations. Service-role client for the privileged execution; the route's
+  // requirePermissions is the gate.
   try {
     const result = await runLocationSchedule({
       db: getDatabaseClient(),

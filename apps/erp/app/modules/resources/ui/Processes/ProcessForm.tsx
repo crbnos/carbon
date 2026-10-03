@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -14,6 +13,7 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -363,6 +363,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
                       onClick={() =>
                         navigate(
                           path.to.supplierProcess(sp.supplierId!, sp.id!)
@@ -374,6 +375,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                       <Trans>Edit Process</Trans>
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onClick={() =>
                         navigate(
                           path.to.deleteSupplierProcess(sp.supplierId!, sp.id!)

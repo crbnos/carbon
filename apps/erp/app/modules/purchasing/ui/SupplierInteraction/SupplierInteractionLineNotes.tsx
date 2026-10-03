@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -64,7 +63,7 @@ const SupplierInteractionLineNotes = ({
   const onUpdateExternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrderLine")
         .update({
           externalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),
@@ -79,7 +78,7 @@ const SupplierInteractionLineNotes = ({
   const onUpdateInternalNotes = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from(table)
+        ?.from(table as "purchaseOrderLine")
         .update({
           internalNotes: content,
           updatedAt: today(getLocalTimeZone()).toString(),

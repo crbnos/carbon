@@ -3,7 +3,7 @@ title: Company settings
 description: The company record, its feature toggles, base currency, logos, and tags — the company-wide configuration every module reads from.
 ---
 
-Everything in Carbon is scoped to a **company**, and two records hold its configuration: the `company` row (identity, address, currency, logos) and a paired `companySettings` row holding the company-wide feature flags and defaults. Settings live under **Settings** in the app, grouped into **Company**, **Modules**, and **System**. Every route is employee-only; **Billing** additionally needs company ownership on a Cloud environment, and **Companies** and **Backups** are internal-only.
+Carbon scopes data and configuration to a **company**. The `company` record stores identity, address, currency, and logos. Its paired `companySettings` record stores feature flags and defaults. The app groups settings under **Company**, **Modules**, and **System**. Settings routes require employee access. **Billing** also requires company ownership in Carbon Cloud; **Companies** and **Backups** are internal-only.
 
 ## The company record
 
@@ -26,7 +26,7 @@ Edited under **Settings → Company**:
   <Field name="auditLogEnabled" type="boolean">Whether change history is recorded. See [audit log](/docs/reference/audit-log).</Field>
 </FieldTable>
 
-Company membership is per-user: one login can hold several companies and switch through the company picker, and each company carries its own settings, currency, and numbering. Nothing crosses the boundary. A company with a `parentCompanyId` is a subsidiary; consolidation and elimination are covered in [intercompany accounting](/docs/reference/intercompany).
+A user can belong to multiple companies and switch between them with the company picker. Each company has independent settings, currency, and numbering. A company with a `parentCompanyId` is a subsidiary; see [intercompany accounting](/docs/reference/intercompany) for consolidation and elimination.
 
 ## Feature toggles and defaults
 
@@ -55,7 +55,7 @@ Company membership is per-user: one login can hold several companies and switch 
   <Field name="quoteLineCategoryMarkups" type="jsonb">Per-category default markups applied to quote lines.</Field>
 </FieldTable>
 
-The same row also carries the **notification groups** (who to notify for digital quotes, RFQ-ready, supplier quotes, job completions, dispatches, gauge-calibration expiry), the AP/AR email addresses, and default CC lists — see [notifications](/docs/reference/notifications) for how they fan out.
+The row also stores **notification groups**, AP and AR email addresses, and default CC lists. See [notifications](/docs/reference/notifications) for delivery behavior.
 
 <Callout type="warn" title="Accounting is a company-wide toggle, not per-document">
 `accountingEnabled` gates the *entire* ledger: off means jobs, shipments, and invoices complete but nothing posts, with no per-transaction exceptions. Turning it on mid-stream doesn't backfill past activity.
@@ -63,11 +63,11 @@ The same row also carries the **notification groups** (who to notify for digital
 
 ## Base currency
 
-Every company has one `baseCurrencyCode`: the currency all *posted* amounts are stored and reported in, with foreign-currency transactions converted at their exchange rate before posting. It's chosen at onboarding and is the denomination of your whole history, so it isn't something you flip casually. A subsidiary can carry a different base currency from its parent; consolidation is where they meet.
+Each company has one `baseCurrencyCode`. Carbon converts foreign-currency transactions at their exchange rate and stores posted amounts in the base currency. The value is chosen during onboarding and denominates the company's posting history. A subsidiary can use a different base currency from its parent; consolidation handles the conversion.
 
 ## Theme and tags
 
-Carbon ships eight color themes (Modern, Brutal, Cherry, Apricot, Lemon, Mint, Blueberry, Lavender). Theme is **per-person**, stored in a browser cookie rather than on the company record, so two people in one company can run different themes; document templates have their own separate theme setting. **Tags** are free-form labels scoped to a company *and* a table, so the same label can mean different things on items versus jobs, and vocabularies never leak across companies.
+Carbon includes eight color themes: Modern, Brutal, Cherry, Apricot, Lemon, Mint, Blueberry, and Lavender. Theme selection is **per user** and stored in a browser cookie. Document templates have a separate theme setting. **Tags** are free-form labels scoped by company and table, so item and job tags have independent vocabularies.
 
 ## Related system configuration
 

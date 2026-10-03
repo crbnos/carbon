@@ -1,24 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  accountTypeFromClass,
-  credit,
-  debit,
-  journalReference
-} from "../../../supabase/functions/lib/utils.ts";
-import { buildMemoJournal } from "../../../supabase/functions/post-memo/build-memo-journal.ts";
-import { buildPaymentJournal } from "../../../supabase/functions/post-payment/build-payment-journal.ts";
-import {
-  EPSILON,
-  round
-} from "../../../supabase/functions/shared/precision.ts";
+import { buildMemoJournal } from "../../build-memo-journal.ts";
+import { buildPaymentJournal } from "../../build-payment-journal.ts";
+import { accountTypeFromClass, credit, debit } from "../../ledger.ts";
+import { EPSILON, round } from "../../precision.ts";
 import {
   buildSalesPostingLines,
   type SalesPostingAccount
-} from "../../../supabase/functions/shared/sales-posting-amounts.ts";
+} from "../../sales-posting-amounts.ts";
+import { journalReference } from "../../utils.ts";
 import type { AccountClass } from "../types.ts";
 
 /**

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -44,7 +43,7 @@ export async function getCompanies(
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .order("name");
 
@@ -53,9 +52,8 @@ export async function getCompanies(
   }
 
   return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
+    data: companies.data.map((company) => ({
       ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
       logoLightIcon: company.logoLightIcon
         ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
         : null,

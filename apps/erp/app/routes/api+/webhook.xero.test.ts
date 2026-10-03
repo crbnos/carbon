@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -29,6 +28,9 @@ vi.mock("@carbon/ee/accounting", () => ({
   getProviderIntegration: (...args: unknown[]) =>
     getProviderIntegration(...args),
   ProviderID: { XERO: "xero" },
+  isAccountingSyncEnabled: (metadata: unknown) =>
+    (metadata as { settings?: { syncEnabled?: unknown } } | null)?.settings
+      ?.syncEnabled !== false,
   parseStoredCredentials: (raw: unknown) => raw,
   // Real composite-id shape (the syncer's contract): ACCREC prefix-less AR,
   // ACCPAY `bill:`-prefixed AP.

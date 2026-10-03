@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  cn,
   NavRail,
   NavRailItem,
   NavRailLink,
@@ -27,14 +27,17 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { memo, useMemo } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
-import { useMatches, useNavigate } from "react-router";
+import { useLocation, useMatches, useNavigate } from "react-router";
 import {
   useModules,
   useOptimisticLocation,
   usePermissions,
   useSettingsModule
 } from "~/hooks";
-import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
+import {
+  getImplementationNavItem,
+  ImplementationData
+} from "~/hooks/useImplementationNavItem";
 import {
   MODULE_GO_TO,
   MODULE_GO_TO_PREFIX,
@@ -53,15 +56,32 @@ import { useNavigationEditMode } from "./useNavigationEditMode";
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
 
+// Only modules have a g-then-letter key; pass it for those.
+const renderLink = (
+  link: Authenticated<NavItem>,
+  isActive: boolean,
+  goToKey?: string
+) => (
+  <NavRailLink
+    key={link.name}
+    to={link.to}
+    icon={<link.icon />}
+    label={link.name}
+    tag={link.tag}
+    external={link.external}
+    isActive={isActive}
+    trailing={goToKey ? <GoToHint goToKey={goToKey} /> : undefined}
+  />
+);
+
 const PrimaryNavigation = () => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { isMobile } = useSidebar();
   const permissions = usePermissions();
-  const location = useOptimisticLocation();
-  const currentModule = getModule(location.pathname);
+  const committedModule = getModule(useLocation().pathname);
+  const pendingModule = getModule(useOptimisticLocation().pathname);
   const links = useModules();
   const settingsModule = useSettingsModule();
-  const implementationNav = useImplementationNavItem();
   const matchedModules = useMatches().reduce((acc, match) => {
     const handle = match.handle as { module?: string } | undefined;
 
@@ -72,9 +92,21 @@ const PrimaryNavigation = () => {
     return acc;
   }, new Set<string>());
 
+  // While a navigation is pending the highlight moves to the destination at
+  // once, and off the module being left: `matchedModules` still describes the
+  // page on screen, so honouring both lit two modules for the length of the
+  // loader. A destination that is no module's own path (a detail page, whose
+  // module is only known from its route handle) keeps the current highlight.
+  const pendingIsModule =
+    pendingModule !== committedModule &&
+    (pendingModule === "get-started" ||
+      [...links, settingsModule].some(
+        (link) => link && getModule(link.to) === pendingModule
+      ));
+  const currentModule = pendingIsModule ? pendingModule : committedModule;
   const isModuleActive = (to: string) => {
     const m = getModule(to);
-    return currentModule === m || matchedModules.has(m);
+    return currentModule === m || (!pendingIsModule && matchedModules.has(m));
   };
 
   const editMode = useNavigationEditMode();
@@ -114,22 +146,14 @@ const PrimaryNavigation = () => {
     useSensor(KeyboardSensor)
   );
 
-  const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
-    <NavRailLink
-      key={link.name}
-      to={link.to}
-      icon={<link.icon />}
-      label={link.name}
-      tag={link.tag}
-      external={link.external}
-      isActive={isActive}
-    />
-  );
-
   const footer = (
     <>
       {settingsModule && !editMode.isEditing
-        ? renderLink(settingsModule, isModuleActive(settingsModule.to))
+        ? renderLink(
+            settingsModule,
+            isModuleActive(settingsModule.to),
+            MODULE_GO_TO[settingsModule.key]
+          )
         : null}
 
       {editMode.isEditing ? (
@@ -145,6 +169,7 @@ const PrimaryNavigation = () => {
           label={t`Customize`}
           onClick={editMode.enterEditMode}
           className={ACTION_HOVER}
+          data-hover-tone="accent"
         />
       )}
     </>
@@ -160,9 +185,16 @@ const PrimaryNavigation = () => {
         footer={footer}
       >
         {canSearch && <NavigationSearchButton />}
-        {!editMode.isEditing && implementationNav
-          ? renderLink(implementationNav, currentModule === "get-started")
-          : null}
+        {editMode.isEditing ? null : (
+          <ImplementationData>
+            {(data) => {
+              const item = getImplementationNavItem(data, i18n);
+              return item
+                ? renderLink(item, currentModule === "get-started")
+                : null;
+            }}
+          </ImplementationData>
+        )}
         {editMode.isEditing ? (
           <DndContext
             sensors={sensors}
@@ -183,7 +215,9 @@ const PrimaryNavigation = () => {
             </SortableContext>
           </DndContext>
         ) : (
-          links.map((link) => renderLink(link, isModuleActive(link.to)))
+          links.map((link) =>
+            renderLink(link, isModuleActive(link.to), MODULE_GO_TO[link.key])
+          )
         )}
 
         {editMode.isEditing && (
@@ -200,6 +234,25 @@ const PrimaryNavigation = () => {
   );
 };
 
+// Hovering is what expands the rail, so the g-then-letter hint shows on the
+// hovered/focused row only.
+const GoToHint = ({ goToKey }: { goToKey: string }) => (
+  <span
+    aria-hidden
+    className={cn(
+      "flex items-center gap-0.5 opacity-0 transition-opacity duration-100",
+      "group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
+    )}
+  >
+    <ShortcutKey
+      shortcut={MODULE_GO_TO_PREFIX}
+      variant="small"
+      className="mx-0"
+    />
+    <ShortcutKey shortcut={goToKey} variant="small" className="mx-0" />
+  </span>
+);
+
 const NavigationSearchButton = () => {
   const { t } = useLingui();
   const openSearchModal = useUIStore((s) => s.openSearchModal);
@@ -214,6 +267,7 @@ const NavigationSearchButton = () => {
         openSearchModal();
       }}
       className={ACTION_HOVER}
+      data-hover-tone="accent"
       trailing={
         <ShortcutKey
           shortcut={searchShortcut}

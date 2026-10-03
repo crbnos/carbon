@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -29,7 +28,7 @@ import {
  * RilletPaymentSyncer — the AR payment syncer for Rillet, on the shared
  * `PaymentSyncerBase`. Rillet invoice payments (recorded against pushed native
  * invoices) settle Carbon sales invoices; the base writes a Draft `payment` +
- * `invoiceSettlement` and then invokes the native `post-payment` edge function
+ * `invoiceSettlement` and then invokes the native `post-payment` server function
  * (GL journal + Posted/Voided status). Carbon-originated payments push and void through native payment endpoints.
  *
  * Entity-id contract: the sync operation's entityId is a COMPOSITE. AR keeps

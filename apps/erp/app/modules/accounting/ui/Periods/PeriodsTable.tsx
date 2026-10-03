@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, Status } from "@carbon/react";
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem, Status } from "@carbon/react";
 import {
   formatPeriodLabel,
   PERIOD_CLOSE_STATUS_COLOR_MAP
@@ -148,6 +147,11 @@ const PeriodsTable = memo(
       (row: AccountingPeriodListItem) => (
         <>
           <MenuItem
+            shortcut={
+              row.closeStatus === "Closed"
+                ? MENU_ITEM_SHORTCUTS.view
+                : undefined
+            }
             disabled={!permissions.can("view", "accounting")}
             onClick={() => navigate(path.to.accountingPeriodClose(row.id))}
           >
@@ -157,6 +161,7 @@ const PeriodsTable = memo(
           {row.closeStatus === "Open" &&
             permissions.can("delete", "accounting") && (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 onClick={() => navigate(path.to.accountingPeriodDelete(row.id))}
               >

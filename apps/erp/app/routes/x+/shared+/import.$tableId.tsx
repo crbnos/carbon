@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -74,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   // Quotes are created through the sales services (Option B) so quote side
   // effects — opportunity, payment, shipment, external link — are preserved;
-  // all other tables run through the generic import-csv edge function.
+  // all other tables run through the generic import-csv server function.
   const importResult = isQuoteImportTable(table)
     ? await importQuotes(serviceRole, {
         db: getDatabaseClient(),
@@ -86,12 +85,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         companyGroupId,
         userId
       })
-    : await importCsv(serviceRole, {
+    : await importCsv(serviceRole, getDatabaseClient(), {
         table,
         filePath: filePath as string,
         columnMappings: columnMappings as Record<string, string>,
-        // The edge-fn wrapper types enumMappings loosely (Record<string,
-        // string[]>); the real payload is field → { value → mapped }.
+        // The service types enumMappings loosely (Record<string, string[]>);
+        // the real payload is field → { value → mapped }.
         enumMappings: parsedEnumMappings as unknown as Record<string, string[]>,
         companyId,
         userId

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -18,11 +17,9 @@ import {
   XeroPaymentSyncer
 } from "../payment";
 
-// The base dynamically imports @carbon/auth/client.server only when posting;
-// mock it so nothing touches server env during these pure-mapper tests.
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
+vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 
 describe("composite payment sync entity id (Xero)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {

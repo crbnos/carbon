@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import { redirect } from "react-router";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory";
 import { bulkJobValidator, insertJob } from "~/modules/production";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -127,6 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const createJob = await insertJob(
       serviceRole,
+      getDatabaseClient(),
       {
         ...jobData,
         quantity: i === jobs - 1 ? quantityOfLastJob : quantityPerJob,

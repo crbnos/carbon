@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -376,7 +375,7 @@ export const companyExportFunction = inngest.createFunction(
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.

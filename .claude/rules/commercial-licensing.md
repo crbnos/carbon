@@ -19,8 +19,7 @@ else is community-licensed. This is the same model as Twenty CRM (their marker i
 
 Each source file also states its license in a leading SPDX header, so the boundary is
 readable per file: commercial files open with
-`// SPDX-License-Identifier: LicenseRef-Carbon-Commercial` /
-`// Copyright (C) Carbon Manufacturing Systems Corporation.`, everything else with
+`// SPDX-License-Identifier: LicenseRef-Carbon-Commercial`, everything else with
 `// SPDX-License-Identifier: AGPL-3.0-only`. The `spdx-license-header` check
 (`@carbon/checks`) enforces it, and the fixer (`pnpm --filter @carbon/checks
 license-headers`) writes it — the fixer is the source of truth for the full text, so do

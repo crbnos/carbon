@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -25,10 +24,7 @@ import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
   getConfigurationParameters,
   getConfigurationRules,
-  getItemChangeNoticeData,
   getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   itemManufacturingValidator,
@@ -36,7 +32,12 @@ import {
   upsertItemManufacturing,
   upsertPart
 } from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+import {
+  getItemChangeNoticeDataOnce,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
+  getRevisionLock
+} from "~/modules/items/items.server";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -75,10 +76,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const requestedMethodId = url.searchParams.get("methodId");
 
   const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
-    getMakeMethods(client, itemId, companyId),
+    getMakeMethodsOnce(client, itemId, companyId),
     getRevisionLock(client, { itemId, companyId }),
     // Part → CO traceability (4b): CO history for this part + type labels.
-    getItemChangeNoticeData(client, itemId, companyId)
+    getItemChangeNoticeDataOnce(client, itemId, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
@@ -104,7 +105,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodByIdOnce(
+    client,
+    makeMethod.id,
+    companyId
+  );
   if (fullMethod.error || !fullMethod.data) {
     return {
       methodData: null,
@@ -124,18 +129,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ]);
 
   const configData = partManufacturing.data?.requiresConfiguration
-    ? {
-        configurationParametersAndGroups: await getConfigurationParameters(
-          client,
-          itemId,
-          companyId
-        ),
-        configurationRules: await getConfigurationRules(
-          client,
-          itemId,
-          companyId
-        )
-      }
+    ? await Promise.all([
+        getConfigurationParameters(client, itemId, companyId),
+        getConfigurationRules(client, itemId, companyId)
+      ]).then(([configurationParametersAndGroups, configurationRules]) => ({
+        configurationParametersAndGroups,
+        configurationRules
+      }))
     : {
         configurationParametersAndGroups: { groups: [], parameters: [] },
         configurationRules: []

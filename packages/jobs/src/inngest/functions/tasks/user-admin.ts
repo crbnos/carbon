@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -136,7 +135,9 @@ export const userAdminFunction = inngest.createFunction(
       if (result.success) {
         logger.info(`Success ${payload.id}`);
       } else {
-        logger.error(`Admin action ${payload.type} failed for ${payload.id}`, {
+        logger.error("Admin action {payloadType} failed for {payloadId}", {
+          payloadType: payload.type,
+          payloadId: payload.id,
           message: result.message
         });
       }

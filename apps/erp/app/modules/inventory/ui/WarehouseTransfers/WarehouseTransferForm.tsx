@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -20,6 +19,7 @@ import {
   DropdownMenuTrigger,
   Heading,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   toast,
   useDisclosure,
   VStack
@@ -144,6 +144,7 @@ const WarehouseTransferForm = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     disabled={
                       isLocked ||
                       !permissions.can("delete", "inventory") ||
@@ -360,7 +361,11 @@ const WarehouseTransferForm = ({
                     table="warehouseTransfer"
                   />
                 )}
-                <Input name="reference" label={t`Reference`} />
+                <Input
+                  name="reference"
+                  label={t`Reference`}
+                  autoFocus={!isEditing}
+                />
                 <Location name="fromLocationId" label={t`From Location`} />
                 <Location name="toLocationId" label={t`To Location`} />
                 {isEditing && (

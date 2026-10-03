@@ -1,17 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "react-router";
+import { isUnaffectedByNavigation } from "@carbon/utils";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getWorkflowRuns } from "~/modules/workflows";
+import {
+  getWorkflowRunRecordNames,
+  getWorkflowRuns
+} from "~/modules/workflows";
 import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -38,8 +49,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters
   });
 
+  const data = runs.data ?? [];
+  const recordNames = await getWorkflowRunRecordNames(
+    client,
+    companyId,
+    data.flatMap((run) =>
+      run.triggerTable && run.triggerRecordId
+        ? [{ table: run.triggerTable, id: run.triggerRecordId }]
+        : []
+    )
+  );
+
   return {
-    data: runs.data ?? [],
+    data: data.map((run) => ({
+      ...run,
+      recordName: recordNames[`${run.triggerTable}:${run.triggerRecordId}`]
+    })),
     count: runs.count ?? 0
   };
 }

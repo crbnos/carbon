@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -22,6 +21,7 @@ import {
   HStack,
   IconButton,
   Input,
+  MENU_ITEM_SHORTCUTS,
   Select,
   SelectContent,
   SelectItem,
@@ -733,11 +733,15 @@ export default function PersonTimecardRoute() {
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => startEdit(entry)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.edit}
+                            onClick={() => startEdit(entry)}
+                          >
                             <DropdownMenuIcon icon={<LuPencil />} />
                             <Trans>Edit</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
                             onClick={() =>
                               setDeletingEntry({
                                 id: entry.id,

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -20,7 +19,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  toast
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -118,6 +118,10 @@ export default function MapExtractedLinesModal({
   useEffect(() => {
     if (fetcher.data?.success) {
       onClose();
+    } else if (fetcher.data?.success === false && fetcher.data.error) {
+      // The endpoints answer `{ success: false, error }`; without this the
+      // modal just sat there and the failure was invisible.
+      toast.error(fetcher.data.error);
     }
   }, [fetcher.data, onClose]);
 

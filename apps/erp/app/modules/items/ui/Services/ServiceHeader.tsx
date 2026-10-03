@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -14,6 +13,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure,
   VStack
@@ -25,6 +25,7 @@ import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
 import type { Service } from "../../types";
 import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
@@ -48,17 +49,18 @@ const ServiceHeader = () => {
 
   const routeData = useRouteData<{
     serviceSummary: Service;
-    supersession: {
+    supersession: Promise<{
       supersessionMode:
         | "Consume First"
         | "Prefer New"
         | "Stock Only"
         | "No Stock";
-    } | null;
+    } | null>;
   }>(path.to.service(itemId));
 
+  const supersession = useResolved(routeData?.supersession, null, itemId);
   const lifecycleStatus = getItemLifecycleStatus(
-    routeData?.supersession?.supersessionMode
+    supersession?.supersessionMode
   );
 
   return (
@@ -92,6 +94,7 @@ const ServiceHeader = () => {
                 {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   disabled={
                     !permissions.can("delete", "parts") ||
                     !permissions.is("employee")

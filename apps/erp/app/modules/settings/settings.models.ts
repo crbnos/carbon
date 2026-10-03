@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -618,6 +617,16 @@ export const postingSyncSettingsValidator = z.object({
   familySupplierCredit: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
+});
+
+/**
+ * Turns an accounting integration's sync on or off (the switch in the
+ * integration drawer header). The action refuses "on" while any required
+ * account is unmapped.
+ */
+export const syncEnabledValidator = z.object({
+  intent: z.literal("update-sync-enabled"),
+  syncEnabled: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
 /**

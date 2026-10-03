@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -11,7 +10,7 @@ import { describe, expect, it } from "vitest";
  * module-load side effect. The import is the subject of these tests, not a
  * dependency of them — hence the bare side-effect import.
  */
-import "../supabase/functions/lib/postgres/index";
+import "./client.ts";
 
 const NUMERIC_OID = 1700;
 const DATE_OID = 1082;

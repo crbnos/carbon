@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Tables } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { PriceBreak, SupplierPriceMap } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
@@ -22,6 +23,7 @@ export async function deleteNote(
   return client.from("note").update({ active: false }).eq("id", noteId);
 }
 
+/** @mcp delete */
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
@@ -52,6 +54,7 @@ export async function generateEmbedding(
   return response.data.embedding as number[];
 }
 
+/** @mcp read */
 export async function getBase64ImageFromSupabase(
   client: SupabaseClient<Database>,
   path: string
@@ -85,6 +88,7 @@ export async function getBase64ImageFromSupabase(
   return `data:${mimeType};base64,${base64String}`;
 }
 
+/** @mcp read */
 export async function getCountries(client: SupabaseClient<Database>) {
   return client.from("country").select("*").order("name");
 }
@@ -93,6 +97,7 @@ export async function getCountries(client: SupabaseClient<Database>) {
  * Timezone names from the database's own tzdata (pg_timezone_names via the
  * get_timezone_names RPC) — the authoritative list for what AT TIME ZONE
  * resolves.
+ * @mcp read
  */
 export async function getTimezoneNames(client: SupabaseClient<Database>) {
   return client.rpc("get_timezone_names");
@@ -104,6 +109,7 @@ export { getDocumentType } from "@carbon/files";
  * The item's CAD model in the same shape the line views expose it, so it drops
  * straight into `<CadModel modelUpload={...} />`. Always the full shape — an item
  * with no model is every field null, never a narrower branch.
+ * @mcp read
  */
 export async function getModelByItemId(
   client: SupabaseClient<Database>,
@@ -144,6 +150,7 @@ export async function getModelByItemId(
   };
 }
 
+/** @mcp read */
 export async function getNotes(
   client: SupabaseClient<Database>,
   documentId: string
@@ -158,6 +165,7 @@ export async function getNotes(
     .order("createdAt");
 }
 
+/** @mcp read */
 export async function getPeriods(
   client: SupabaseClient<Database>,
   { startDate, endDate }: { startDate: string; endDate: string }
@@ -170,6 +178,7 @@ export async function getPeriods(
     .lte("endDate", endWithTime);
 }
 
+/** @mcp read */
 export async function getSavedViews(
   client: SupabaseClient<Database>,
   userId: string,
@@ -183,6 +192,7 @@ export async function getSavedViews(
     .order("name");
 }
 
+/** @mcp read */
 export async function getTagsList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -197,8 +207,10 @@ export async function getTagsList(
   return query.order("name");
 }
 
+/** @mcp action */
 export async function importCsv(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     table: string;
     filePath: string;
@@ -208,11 +220,14 @@ export async function importCsv(
     userId: string;
   }
 ) {
-  return client.functions.invoke("import-csv", {
-    body: args
-  });
+  // The operation validates `table` and the enum mappings' real shape
+  // (field → { value → mapped }).
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("import-csv", args as unknown as ServerFnInput<"import-csv">);
 }
 
+/** @mcp create */
 export async function insertNote(
   client: SupabaseClient<Database>,
   note: {
@@ -225,6 +240,7 @@ export async function insertNote(
   return client.from("note").insert([note]).select("*").single();
 }
 
+/** @mcp create */
 export async function insertTag(
   client: SupabaseClient<Database>,
   tag: Database["public"]["Tables"]["tag"]["Insert"]
@@ -232,6 +248,7 @@ export async function insertTag(
   return client.from("tag").insert(tag).select("*").single();
 }
 
+/** @mcp read */
 export async function getExternalLink(
   client: SupabaseClient<Database>,
   id: string
@@ -241,6 +258,7 @@ export async function getExternalLink(
   return query;
 }
 
+/** @mcp upsert */
 export async function upsertExternalLink(
   client: SupabaseClient<Database>,
   externalLink:
@@ -264,6 +282,7 @@ export async function upsertExternalLink(
     .single();
 }
 
+/** @mcp read */
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -271,7 +290,7 @@ export async function getCustomerPortals(
 ) {
   let query = client
     .from("externalLink")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -288,6 +307,7 @@ export async function getCustomerPortals(
   return query;
 }
 
+/** @mcp read */
 export async function getCustomerPortal(
   client: SupabaseClient<Database>,
   id: string
@@ -344,6 +364,7 @@ export async function updateNote(
   return client.from("note").update({ note }).eq("id", id);
 }
 
+/** @mcp upsert */
 export async function upsertSavedView(
   client: SupabaseClient<Database>,
   view: {
@@ -398,6 +419,7 @@ export async function upsertSavedView(
     .single();
 }
 
+/** @mcp update */
 export async function updateSavedViewOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -416,6 +438,7 @@ export async function updateSavedViewOrder(
  * Core sync lookup: given price break tiers and a requested quantity,
  * return the unit price from the highest qualifying tier
  * (where tier.quantity <= requestedQty). Falls back to fallbackPrice.
+ * @mcp read
  */
 export function lookupPriceFromBreaks(
   priceBreaks: PriceBreak[],
@@ -434,6 +457,7 @@ export function lookupPriceFromBreaks(
 /**
  * Map-aware wrapper: look up itemId in a SupplierPriceMap, then resolve
  * via lookupPriceFromBreaks. Used by useLineCosts for BOM tree costing.
+ * @mcp read
  */
 export function lookupBuyPriceFromMap(
   itemId: string,
@@ -456,7 +480,8 @@ export function lookupBuyPriceFromMap(
  * bought-to-order cost must go through this — reaching for
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ * Mirrored in `packages/database/src/methods.ts`.
+ * @mcp action
  */
 export function resolveBuyUnitCost(
   material: {
@@ -487,6 +512,7 @@ export function resolveBuyUnitCost(
  *
  * @param fallbackUnitPrice base currency, used when no break matches
  * @returns the price in the supplier's currency
+ * @mcp read
  */
 export function resolveSupplierPrice(
   priceBreaks: PriceBreak[],
@@ -525,6 +551,7 @@ export type EnforcementRuleRow =
 // they embed the commercial `requireEntitlement` gate. The read helpers below
 // stay here (ERP admin surface, client-safe).
 
+/** @mcp read */
 export async function getEnforcementRules(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
@@ -538,7 +565,7 @@ export async function getEnforcementRules(
 ): Promise<PostgrestResponse<EnforcementRuleRow>> {
   let query = client
     .from("enforcementRule")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("family", family);
 
@@ -557,6 +584,7 @@ export async function getEnforcementRules(
   ]) as unknown as Promise<PostgrestResponse<EnforcementRuleRow>>;
 }
 
+/** @mcp read */
 export async function getEnforcementRule(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
@@ -585,6 +613,7 @@ export async function getEnforcementRule(
  * no family predicate even though the item table is shared between families.
  * Work-center pins only exist for the storage family; passing sales ids simply
  * matches nothing there.
+ * @mcp read
  */
 export async function getEnforcementRuleAssignmentCounts(
   client: SupabaseClient<Database>,

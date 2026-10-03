@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -503,7 +502,7 @@ function EnumMappingStep({
 
   // Inline create-and-link for name-only lookups (e.g. supplier type). Created
   // ids flow through onEnumMappingChange into enumMappings, so the import
-  // payload is unchanged — the edge function only ever sees real ids. The same
+  // payload is unchanged — the server function only ever sees real ids. The same
   // batch path serves both the per-value combobox create and the "create all
   // missing" banner; the route is idempotent, so values that already exist are
   // linked instead of duplicated.

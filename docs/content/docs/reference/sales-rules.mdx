@@ -4,21 +4,12 @@ plan: Business
 description: "Predicate guards on sales documents: block a restricted item with an error, or warn and let the user acknowledge and continue."
 ---
 
-A **sales rule** is a guard that runs when an item is put on a sales document. It checks the line against a
-condition you define and, if the condition fails, either **blocks** the write or **warns** and lets the user
-acknowledge and continue. Rules fire on **quote lines**, **<Term>sales order</Term> lines**, and **sales
-invoice lines**.
+A **sales rule** validates an item on a sales document. If its condition fails, the rule either **blocks** the write or **warns** and allows the user to acknowledge the warning. Rules apply to **quote lines**, **<Term>sales order</Term> lines**, and **sales invoice lines**.
 
-For example, to keep an export-controlled part away from a restricted destination: scope the rule to the
-item's group, fire on all three surfaces, and require `customer.location.countryCode` `notIn` your restricted
-list. Severity **error**, message `` `{item.id}` cannot ship to this destination``. Add that item to a quote
-for a customer in a listed country and the line is stopped with exactly that message.
+For example, to restrict an export-controlled part, scope the rule to its item group, enable all three document types, and require `customer.location.countryCode` `notIn` the restricted-country list. Set severity to **error** and the message to `` `{item.id}` cannot ship to this destination``. A matching line is then rejected with that message.
 
 <Callout type="note">
-Sales rules are a **compliance** layer, not a hint. They re-run at every commitment point — finalizing a
-quote, converting it to an order, confirming the order, posting the shipment, posting the invoice — so a line
-that slipped in through a conversion, an import, or the API is still caught before it matters. A blocked
-document writes nothing.
+Sales rules run when Carbon finalizes a quote, converts it to an order, confirms an order, posts a shipment, or posts an invoice. This catches lines created through conversions, imports, and the API. A blocked document writes nothing.
 </Callout>
 
 ## What a rule checks

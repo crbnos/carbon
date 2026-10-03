@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -7,6 +6,7 @@ import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -417,11 +417,15 @@ const SuppliersTable = memo(function SuppliersTable({
   const renderContextMenu = useMemo(
     () => (row: Supplier) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.supplier(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.supplier(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit Supplier</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           disabled={!permissions.can("delete", "purchasing")}
           onClick={() => {

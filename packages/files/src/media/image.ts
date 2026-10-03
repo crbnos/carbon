@@ -1,25 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import type {
-  ImageShapeOptions,
-  ProcessedImage
-} from "../../../database/supabase/functions/shared/image-pipeline.ts";
+import { isUnsafeStoragePath } from "../storage";
+import type { ImageShapeOptions, ProcessedImage } from "./image-pipeline";
 import {
   ImageTooLargeError,
   outputFormatFor,
   processImage,
   processRawImage,
   UnsupportedImageFormatError
-} from "../../../database/supabase/functions/shared/image-pipeline.ts";
-import { isUnsafeStoragePath } from "../storage";
+} from "./image-pipeline";
 import { getFileExtension, isHeic } from "./media";
 
-export * from "../../../database/supabase/functions/shared/image-pipeline.ts";
+export * from "./image-pipeline";
 
 export type StorageClient = Pick<SupabaseClient, "storage">;
 

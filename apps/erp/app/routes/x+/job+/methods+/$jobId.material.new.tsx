@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -101,12 +100,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
 
   if (validation.data.methodType === "Make to Order") {
-    const makeMethod = await pullJobMaterialMakeMethod(serviceRole, {
-      jobMaterialId,
-      itemId: validation.data.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: validation.data.itemId,
+        companyId,
+        userId
+      }
+    );
 
     if (makeMethod.error) {
       return data(
@@ -123,8 +126,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Recalculate for ALL material types if job is released
   if (isReleased) {
-    const promises = [
-      recalculateJobMakeMethodRequirements(serviceRole, {
+    const promises: Promise<{ error: Error | null }>[] = [
+      recalculateJobMakeMethodRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.jobMakeMethodId,
         companyId,
         userId

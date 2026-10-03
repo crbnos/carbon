@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -16,6 +15,7 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDebounce,
@@ -125,13 +125,14 @@ const AttributeCategoryDetail = ({
   const renderContextMenu = (attributeId: string) => {
     return (
       <>
-        <MenuItem asChild>
+        <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
           <Link to={attributeId}>
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Attribute</Trans>
           </Link>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
           onClick={() => onDelete(attributeMap[attributeId])}
         >

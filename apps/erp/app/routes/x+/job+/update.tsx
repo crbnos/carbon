@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -7,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { scrapAllowance } from "@carbon/utils";
+import { scrapAllowance, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   calculateJobPriority,
@@ -16,6 +15,7 @@ import {
   upsertJobMethod
 } from "~/modules/production";
 import { isSalesOrderClosed } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 const logger = getLogger("erp", "update");
@@ -124,12 +124,17 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
-          sourceId: value,
-          targetId: id as string,
-          companyId,
-          userId
-        });
+        const upsertMethod = await upsertJobMethod(
+          serviceRole,
+          getDatabaseClient(),
+          "itemToJob",
+          {
+            sourceId: value,
+            targetId: id as string,
+            companyId,
+            userId
+          }
+        );
 
         if (upsertMethod.error) {
           upsertMethod.error;
@@ -189,12 +194,14 @@ export async function action({ request }: ActionFunctionArgs) {
         // Update the job with new field value and priority
         const updateResult = await client
           .from("job")
-          .update({
-            [field]: value ? value : null,
-            priority,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
+          .update(
+            unchecked({
+              [field]: value ? value : null,
+              priority,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString()
+            })
+          )
           .eq("id", id as string)
           .eq("companyId", companyId);
 
@@ -212,22 +219,26 @@ export async function action({ request }: ActionFunctionArgs) {
     case "unitOfMeasureCode":
       return await client
         .from("job")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
     case "quantity":
     case "scrapQuantity":
       const quantityUpdate = await client
         .from("job")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[])
         .eq("companyId", companyId);
 
@@ -236,11 +247,15 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const recalculate = await recalculateJobRequirements(serviceRole, {
-          id: id as string,
-          companyId,
-          userId
-        });
+        const recalculate = await recalculateJobRequirements(
+          serviceRole,
+          getDatabaseClient(),
+          {
+            id: id as string,
+            companyId,
+            userId
+          }
+        );
         if (recalculate.error) {
           logger.error(recalculate.error);
           return recalculate;

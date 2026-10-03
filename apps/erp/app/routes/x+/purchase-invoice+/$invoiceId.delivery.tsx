@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -48,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -61,12 +60,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // Note: Need to add upsertPurchaseInvoiceDelivery to invoicing.service.ts
   const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery(
     client,
     {
       ...validation.data,
       id: invoiceId,
+      companyId,
       updatedBy: userId,
       customFields: setCustomFields(formData)
     }

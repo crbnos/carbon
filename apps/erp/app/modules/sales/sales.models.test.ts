@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -19,7 +18,8 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { quoteValidator } = await import("./sales.models");
+const { quoteLineValidator, quoteValidator, salesOrderLineValidator } =
+  await import("./sales.models");
 
 // `quote.internalNotes` is a `json` column that the sales-order conversion
 // copies through Kysely. A bare string stored there (which `notes: z.any()`
@@ -53,5 +53,59 @@ describe("quoteValidator.notes", () => {
     expect(quoteValidator.safeParse({ ...base, notes: 42 }).success).toBe(
       false
     );
+  });
+});
+
+describe("salesOrderLineValidator priceTrace", () => {
+  const line = {
+    salesOrderId: "so1",
+    salesOrderLineType: "Part",
+    itemId: "item1",
+    methodType: "Pull from Inventory",
+    locationId: "loc1",
+    taxPercent: "0"
+  };
+  const trace = [
+    { step: "Base Price", source: "Item Unit Sale Price", amount: 100 },
+    { step: "Final Price", source: "Resolved", amount: 100 }
+  ];
+
+  const parse = (priceTrace?: string) =>
+    salesOrderLineValidator.parse(
+      priceTrace === undefined ? line : { ...line, priceTrace }
+    ).priceTrace;
+
+  it("keeps a posted trace", () => {
+    expect(parse(JSON.stringify(trace))).toEqual(trace);
+  });
+
+  it('clears the trace when "null" is posted for a typed price', () => {
+    expect(parse("null")).toBeNull();
+  });
+
+  it("leaves the stored trace alone when the field is not posted", () => {
+    expect(parse()).toBeUndefined();
+  });
+
+  it("rejects a trace that is not a list of steps", () => {
+    expect(() => parse(JSON.stringify({ step: "Base Price" }))).toThrow();
+  });
+});
+
+// quoteLinePrice is keyed by (quoteLineId, quantity), so two equal breaks on a
+// line would share one price row and edit together.
+describe("quoteLineValidator.quantity", () => {
+  it("rejects repeated quantity breaks", () => {
+    const result = quoteLineValidator.shape.quantity.safeParse([10, 10, 25]);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe(
+      "Each quantity must be different"
+    );
+  });
+
+  it("accepts distinct quantity breaks", () => {
+    expect(
+      quoteLineValidator.shape.quantity.safeParse([10, 20, 25]).success
+    ).toBe(true);
   });
 });

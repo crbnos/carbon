@@ -2,7 +2,7 @@
 paths:
   - apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/**
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
-  - packages/database/supabase/functions/{post-shipment,post-receipt,create}/**
+  - packages/server-functions/src/{post-shipment,post-receipt,create}/**
 ---
 
 # Shipments & Receipts UI + Posting Flow
@@ -15,10 +15,10 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 ## Routes (per document, e.g. `shipment+/`)
 
-- `new.tsx` — **action only**. Creates the doc by invoking the **`create` edge function**
-  (`serviceRole.functions.invoke("create", { body: { type, companyId, locationId, ...sourceIds, userId } })`),
+- `new.tsx` — **action only**. Creates the doc by calling the **`create` server function**
+  (`create(ServerFnContext.system({ db, companyId, userId }), { type, locationId, ...sourceIds })`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
-  edge fn allocates the human ID and copies source-document lines.
+  server function allocates the human ID and copies source-document lines.
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
@@ -77,17 +77,17 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   expect `On Hold` rather than `Available` when the shipment's source is a
   `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
-## Posting flow (`$id.post.tsx` → edge fn)
+## Posting flow (`$id.post.tsx` → server function)
 
 The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
 relevant surfaces, optimistically sets `status: "Pending"`, then
-`serviceRole.functions.invoke("post-shipment" | "post-receipt", { body: { type: "post", id, userId, companyId } })`.
+`serverFns.system({ db: getDatabaseClient(), companyId, userId }).invoke("post-shipment" / "post-receipt", { type: "post", id })`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing
-slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
+slip PDF; receipt may call `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
 
-`post-receipt` and `post-shipment` (`packages/database/supabase/functions/`) take
-`{ type: "post" | "void", {receipt,shipment}Id, userId, companyId }`, run under
-`getCarbonServiceRole` + Kysely `db.transaction()`, and branch on `sourceDocument`:
+`post-receipt` and `post-shipment` (`packages/server-functions/src/`) take
+`{ type: "post" | "void", {receipt,shipment}Id }` (the context carries `companyId` / `userId`), run
+the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, and `Sales Return Order`
   (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
@@ -98,7 +98,7 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
 - **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
-  Cr Inventory / Dr GR/IR; the `create` edge fn seeds the shipment's tracked entities from
+  Cr Inventory / Dr GR/IR; the `create` server function seeds the shipment's tracked entities from
   `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
   quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
@@ -109,7 +109,7 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
 attaches automatic `journalLineDimension` rows — item, item posting group
 (`itemCost.itemPostingGroupId`), party (supplier/customer + type), and location —
 built index-parallel to the journal lines and emitted through the shared pure
-`buildJournalLineDimensionInserts` (`functions/shared/journal-dimensions.ts`), gated
+`buildJournalLineDimensionInserts` (`@carbon/utils` `journal-dimensions.ts`), gated
 by the company group's configured `dimension` rows. The journalLine insert must
 `.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
 original lines' dimensions onto the reversing lines (read `journalLineDimension` by
@@ -124,12 +124,12 @@ applies.
 ## Gotchas
 
 - **`Pending` is a transient posting state**, not a workflow stage. The action sets it before the
-  edge call and the catch/edge-fn reverts to `Draft` on failure.
+  server-function call and the action reverts it to `Draft` on failure.
 - Status enums are only `Draft / Pending / Posted` in the base migrations; `Voided` was added later
   (`20250828142122_void-shipment.sql`, `20260422100000_receipt-status-voided.sql`). Read newest first.
 - The `sourceDocument` enums list many values (Sales/Purchase Invoice, Return Orders, Manufacturing
   Consumption/Output for receipts), but the post fns only implement the handful above — other source
   documents fall through with no posting effect.
 - Lines persist directly through `lines.update` on edit; the form's submit only saves the header.
-- `create`, post-shipment, and post-receipt run service-role (RLS bypassed) — the **route**
+- `create`, post-shipment, and post-receipt run service-role + Kysely (RLS bypassed) — the **route**
   `requirePermissions({ update: "inventory" })` is the auth gate.

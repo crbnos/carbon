@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -42,8 +41,8 @@ const FALLBACK_SHIFT_HOURS = 8;
 
 /**
  * DAY-granularity mirror of the engine's machine-availability ladder, for the
- * Capacity view's Available series. The engine (Deno,
- * `packages/database/supabase/functions/lib/scheduling/machine-availability.ts`)
+ * Capacity view's Available series. The engine
+ * (`packages/planning/src/scheduling/machine-availability.ts`)
  * owns the AUTHORITATIVE wall-clock ladder; this is DISPLAY math and resolves the
  * same rungs at day granularity.
  *

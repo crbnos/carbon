@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -32,7 +31,6 @@ import {
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Virtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
@@ -904,12 +902,11 @@ const GanttTimeline = ({
                     ) : (
                       <Timeline.Point ms={node.data.offset}>
                         {(ms) => (
-                          <motion.div
+                          <div
                             className={cn(
                               "-ml-1 size-3 rounded-full",
                               eventBackgroundClassName(node.data)
                             )}
-                            layoutId={node.id}
                           />
                         )}
                       </Timeline.Point>
@@ -1133,6 +1130,10 @@ function SpanWithDuration({
       ? segments
       : [{ startMs: props.startMs, durationMs: props.durationMs }];
 
+  // Plain divs, not framer-motion `layoutId`s: every scroll frame re-renders
+  // the visible rows, and a layout node measures itself before and after each
+  // render — hundreds of forced reflows per frame on a large board.
+
   // The duration label (TOTAL work, from props.durationMs) rides the widest
   // piece so it stays readable when the bar is split into thin segments.
   let labelIndex = 0;
@@ -1150,7 +1151,7 @@ function SpanWithDuration({
           startMs={piece.startMs}
           durationMs={piece.durationMs}
         >
-          <motion.div
+          <div
             className={cn(
               "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
               // Aggregate/rollup rows draw a neutral base; their conflict windows
@@ -1160,7 +1161,6 @@ function SpanWithDuration({
                 ? "bg-gray-500"
                 : eventBackgroundClassName(node.data)
             )}
-            layoutId={pieces.length === 1 ? node.id : `${node.id}:${i}`}
           >
             {(node.data.isPartial || node.data.isEstimated) && (
               <div
@@ -1190,7 +1190,7 @@ function SpanWithDuration({
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </Timeline.Span>
       ))}
     </>

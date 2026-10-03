@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -521,7 +520,7 @@ async function seedDispatch(
     });
   }
 
-  // Mirrors the `issue` edge function's untracked path: a dispatch item
+  // Mirrors the `issue` server function's untracked path: a dispatch item
   // (totalCost is GENERATED) plus a negative Consumption ledger row.
   for (const part of spec.spareParts ?? []) {
     const item = need(ctx.refs.items, part.item, "item");

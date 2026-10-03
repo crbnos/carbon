@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -36,6 +35,17 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** How the result reports failure, when it is not PostgREST's `{ data, error }`
+   *  (`envelope`) or a plain value. */
+  result?: string;
+  /** Positional params filled from a context value of a different name
+   *  (`updatedBy=userId`). Absent when every context param is its own source. */
+  context?: string;
+  /** How create is told from update: the key fields, or `table(columns)` for
+   *  each row the dispatcher looks up. Absent when the service does not branch. */
+  upsert?: string;
+  /** When published defaults are filled: `always`, or `create` for an upsert. */
+  defaults?: string;
 }
 
 export interface ManifestDigest {
@@ -86,6 +96,30 @@ export function serializeManifestDigest(digest: ManifestDigest): string {
   ].join("\n");
 }
 
+function describeUpsert(upsert: NonNullable<ManifestEntry["upsert"]>): string {
+  if (!upsert.lookups) return upsert.keys.join(",");
+  return upsert.lookups
+    .map(
+      (lookup) =>
+        `${lookup.table}(${Object.entries(lookup.match)
+          .map(([column, field]) =>
+            column === field ? column : `${column}=${field}`
+          )
+          .join(",")})`
+    )
+    .join("|");
+}
+
+function describeContext(tool: ManifestEntry): string {
+  return tool.serviceParams
+    .filter((name) => {
+      const source = tool.contextParams[name];
+      return source !== undefined && source !== name;
+    })
+    .map((name) => `${name}=${tool.contextParams[name]}`)
+    .join(",");
+}
+
 export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
   return {
     totalTools: tools.length,
@@ -104,7 +138,13 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
-        paginates: t.paginates
+        paginates: t.paginates,
+        ...(t.resultShape === "envelopes" || t.resultShape === "flag"
+          ? { result: t.resultShape }
+          : {}),
+        ...(describeContext(t) ? { context: describeContext(t) } : {}),
+        ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {}),
+        ...(t.defaults ? { defaults: t.defaults } : {})
       }))
   };
 }
@@ -159,6 +199,14 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.paginates !== after.paginates) {
       parts.push(`paginates ${before.paginates} → ${after.paginates}`);
+    }
+    if (before.upsert !== after.upsert) {
+      parts.push(`upsert ${before.upsert ?? "none"} → ${after.upsert ?? "none"}`);
+    }
+    if (before.defaults !== after.defaults) {
+      parts.push(
+        `defaults ${before.defaults ?? "none"} → ${after.defaults ?? "none"}`
+      );
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {

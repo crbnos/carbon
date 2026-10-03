@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,15 +14,6 @@
  */
 import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
-
-import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
-import {
-  computeLotStatus,
-  deriveSampleStatus,
-  type InspectionVerdict,
-  valuateGeometricMeasurement,
-  valuateMeasurement
-} from "../supabase/functions/shared/inspection-verdict.ts";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
   type FirstArticleNeed,
@@ -32,12 +22,20 @@ import {
   formatFirstArticlePartDescription,
   resolveFirstArticleNeeds
 } from "./first-article.ts";
+import {
+  computeLotStatus,
+  deriveSampleStatus,
+  type InspectionVerdict,
+  valuateGeometricMeasurement,
+  valuateMeasurement
+} from "./inspection-verdict.ts";
 import type {
   FeatureSamplingRule,
   SamplingPlanInput,
   SamplingStandard
 } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import { getNextSequence } from "./sequence.ts";
 import type { Database } from "./types.ts";
 
 type Ok<T> = { data: T; error: null };
@@ -642,8 +640,8 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance edge function, which the route invokes AFTER this
-      // transaction commits (cost/GL logic is Deno-only). The `inspection.status
+      // post-nonconformance operation, which the route runs AFTER this
+      // transaction commits. The `inspection.status
       // !== "Failed"` guard is intentionally dropped: post-nonconformance is
       // idempotent per (documentType, documentId), so a re-reject / retry is
       // safe. Tracked items are handled by the status flip above; Non-Inventory

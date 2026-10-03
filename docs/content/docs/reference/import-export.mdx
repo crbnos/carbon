@@ -3,11 +3,11 @@ title: Import and export
 description: Bring records into Carbon from a CSV, and download any table's current view as a CSV.
 ---
 
-Carbon moves data both ways through CSV. Every data table can **export** its current view to a file with one click, and a set of core entities can be bulk **imported** from a CSV you upload, map, and submit. The two paths are unrelated in the code: export is a browser-side download of the rows already on screen, while import runs a guided wizard that hands the file to a privileged background function to insert or update records inside a transaction.
+Carbon supports CSV export for every shared data table and CSV import for selected entities. Export runs in the browser against the current table result set. Import uses a guided mapping workflow and a privileged background function that inserts or updates records in a transaction.
 
 ## Exporting a table to CSV
 
-Open any data table (a parts list, a sales order dashboard, an inventory grid) and look for the small download icon in the table header — hover it and its **Download CSV** tooltip appears. There is no setting to turn it on: every table built on Carbon's shared data grid gets the button automatically.
+Use **Download CSV** in a data table's header. Every table built on Carbon's shared data grid includes this action.
 
 The download reflects **what you are currently looking at**, not a full server dump:
 
@@ -25,7 +25,7 @@ Export builds the file entirely in your browser and downloads it as `data.csv` w
 
 ## What you can import
 
-Bulk import is deliberately scoped. A **Bulk Import** menu appears in the table header only on the tables that opt into it, so you import an entity from its own list screen:
+Bulk import is available only for supported entities. Import each entity from the **Bulk Import** menu on its list screen:
 
 <FieldTable>
   <Field name="Customers">From the customers list. Optionally rides address, payment term, and contact-style fields on the same row.</Field>
@@ -44,7 +44,7 @@ The models list a `fixedAsset` import shape, but the import function's own table
 
 ## The import flow
 
-Importing is a four-step wizard, then a background write.
+Import uses a four-step wizard followed by a background write.
 
 <Steps>
 <Step>
@@ -67,7 +67,7 @@ When a CSV value has no mapping to a Carbon enum, the row imports with that fiel
 
 ## Insert, update, or skip
 
-The importer is **idempotent**: re-importing the same file updates records rather than duplicating them. It decides each row's fate before writing:
+For standard entity imports, re-importing the same identifiers updates existing records instead of duplicating them. The importer classifies each row before writing:
 
 <StatusFlow>
   <Status name="Insert">The row is new. No existing record matches its Unique ID or its Name, so Carbon creates it and records a CSV id mapping for next time.</Status>
@@ -108,7 +108,7 @@ Inventory-tracked rows have no natural key, so every valid row posts, every time
 
 ## Errors and partial failures
 
-Import is **row-level tolerant**. A bad row doesn't abort the whole file: it's collected and reported while the good rows still import. The results come back as four numbers plus two lists:
+Import handles validation failures per row. Invalid rows are reported while valid rows continue. Results include:
 
 - **inserted** and **updated** — counts of records written.
 - **errors** — rows you should fix and re-import (missing required data), each with its row number, a reason, and the original cell values.
@@ -142,7 +142,7 @@ The import URL's `tableId` isn't a key of `importPermissions`, so the route reje
 The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. Opening stock also needs inventory create permission. Without the required permission the whole import is refused. Get the permission, then re-submit.
 
 ### A fixed-asset CSV is rejected
-`fixedAsset` has a models entry but is **not** in the import edge function's own table enum (`packages/database/supabase/functions/import-csv/index.ts:18-33`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
+`fixedAsset` has a models entry but is **not** in the import server function's own table enum (`packages/server-functions/src/import-csv/index.ts`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
 
 ### An enum column imported as the wrong value
 When a CSV value has no mapping to a Carbon enum, the row imports with that field's configured **default** rather than failing — an unmapped Replenishment System, for example, lands as `"Buy and Make"`. In the **Map columns** step, map your raw values deliberately (the wizard fuzzy-matches obvious ones) so the default doesn't silently win.

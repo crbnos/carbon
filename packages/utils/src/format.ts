@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { SCALE } from "./precision";
+import { SCALE } from "@carbon/database/precision";
 
 export type MoneyFormatOptions = {
   /** The ISO code. Present -> the symbol renders ("$300.00"); absent -> a bare

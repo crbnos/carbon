@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -19,7 +18,8 @@ import {
   ChoiceCardGroup,
   type ChoiceCardOption,
   cn,
-  HStack
+  HStack,
+  PrefetchLink
 } from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { type ReactNode, useState } from "react";
@@ -36,7 +36,6 @@ import {
 import {
   type ActionFunctionArgs,
   Form,
-  Link,
   redirect,
   useLoaderData,
   useNavigation
@@ -420,9 +419,7 @@ export default function OnboardingIndustry() {
                   asChild
                   tabIndex={-1}
                 >
-                  <Link to={previous} prefetch="intent">
-                    Previous
-                  </Link>
+                  <PrefetchLink to={previous}>Previous</PrefetchLink>
                 </Button>
                 {dataChoice === "none" ? (
                   <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>

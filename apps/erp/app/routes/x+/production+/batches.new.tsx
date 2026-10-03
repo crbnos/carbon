@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -20,7 +19,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // The wizard's mutations submit to batching.update (update: "production") and
-  // the batch-operations edge fn also requires update: "production"; gate the
+  // the batch-operations server fn also requires update: "production"; gate the
   // wizard on the same permission so opening it never dead-ends at submit.
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"

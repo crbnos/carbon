@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -38,12 +37,14 @@ export function generateStaticParams() {
 export async function generateMetadata(props: Params): Promise<Metadata> {
   const { operation } = await props.params;
   const found = getTool(operation);
-  // The full, callable name stays in the page title — that is the string a reader
-  // pastes into a search box — while the heading drops the module prefix the
-  // breadcrumb already carries.
+  // "Purchasing - finalizePurchaseOrder": the underscored name is one unbreakable
+  // word, which a link preview clips at both ends.
+  const name = found
+    ? `${found.module.name} - ${operationLabel(found.tool.name, found.module.slug)}`
+    : "Carbon API";
   return pageSeo({
-    title: found ? `${found.tool.name} — Carbon API` : "Carbon API",
-    ogTitle: found?.tool.name ?? "Carbon API",
+    title: found ? `${name} | Carbon API` : name,
+    ogTitle: name,
     description: found?.tool.description,
     path: `/api/operations/${operation}`,
     eyebrow: found ? `Carbon API · ${found.module.name}` : "Carbon API"

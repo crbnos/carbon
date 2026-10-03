@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -87,7 +86,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   if (!page) notFound();
 
   return pageSeo({
-    title: `${page.data.title} — Carbon`,
+    title: `${page.data.title} | Carbon`,
     ogTitle: page.data.title,
     description: page.data.description,
     path: page.url,

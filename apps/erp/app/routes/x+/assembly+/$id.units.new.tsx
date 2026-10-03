@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -27,7 +26,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return data(
       { success: false },
-      await flash(request, error(validation.error, "Failed to create unit"))
+      await flash(
+        request,
+        error(validation.error, "Failed to create component group")
+      )
     );
   }
 
@@ -42,7 +44,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (create.error) {
     return data(
       { success: false },
-      await flash(request, error(create.error, "Failed to create unit"))
+      await flash(
+        request,
+        error(create.error, "Failed to create component group")
+      )
     );
   }
 

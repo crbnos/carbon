@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
   Badge,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -204,6 +204,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "resources")}
             onClick={() => {
               navigate(`${path.to.training(row.id!)}`);
@@ -213,6 +214,7 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
             <Trans>Edit Training</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {

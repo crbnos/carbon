@@ -3,9 +3,9 @@ title: Printing & labels
 description: "Printer routing, ZPL and PDF labels, and the print-job queue that turns a receipt or a finished job into a label on a shelf."
 ---
 
-When you post a receipt, split a batch, or finish the first operation on a job, Carbon can put a physical label on the part without you asking. That path is the printing system: a queue of print jobs, a set of **printer routes** that map a location and a context to a physical printer, and two renderers, ZPL for thermal label printers and PDF for documents.
+Carbon can print a physical label automatically when you post a receipt, split a batch, or complete a job's first operation. The printing system consists of a print-job queue, **printer routes** that map location and context to a device, and renderers for thermal-label ZPL and document PDF.
 
-This is a separate machine from the PDF documents Carbon emails and archives (invoices, purchase orders, quotes, job travelers). Those are generated on demand and delivered as files. Printing is about getting bytes to a **physical printer** on the shop floor, and its default output is a thermal ZPL label, not a page.
+This system is separate from generated PDFs such as invoices, purchase orders, quotes, and job travelers. Those documents are delivered as files; printing sends output to a **physical printer**. Its default output is a thermal ZPL label.
 
 ## Two renderers, one queue
 
@@ -62,7 +62,7 @@ Each context row also carries an **Auto-print** switch. When it's on, the matchi
 The auto-print switch defaults **on** for a context that has no explicit entry, even when the location default has auto-print off. If you want a location's shipping station silent, set its shipping row explicitly, don't rely on the default row.
 </Callout>
 
-Because routing is resolved from a Redis cache (key `printing:{companyId}:{locationId}:{context}`, 1-hour TTL), any change to a route or an assignment invalidates the cache for the company. If you edit a printer and the old one keeps printing, the cache is the thing that just got cleared for you on save.
+Printer routing uses a one-hour Redis cache at `printing:{companyId}:{locationId}:{context}`. Saving a route or assignment invalidates the company's cached routing data.
 
 ## The print-job queue
 
@@ -86,7 +86,7 @@ Print jobs are pruned on a schedule: completed jobs after 30 days, failed jobs a
 
 ## Auto-print behavior
 
-Auto-print is the point of the whole system: labels appear when the physical world moves, no button. After a business event Carbon resolves the printer config for the relevant location and context, checks its `autoPrint` flag (treated as **on** when nothing is configured), and enqueues a job. The whole block is wrapped in try/catch so a printer problem never blocks the receipt, shipment, or job it's attached to.
+After a supported business event, Carbon resolves the printer configuration for the location and context, checks `autoPrint` (defaults to **on** when unset), and enqueues a job. Printing failures do not block the receipt, shipment, or job that triggered them.
 
 The wired-in events:
 
@@ -100,12 +100,12 @@ The wired-in events:
 To stop a station auto-printing, turn off Auto-print on that location's context row. To trigger a print by hand instead, use the **Print** button on the relevant screen, or send a source document to the manual print route (`/x/print`), which validates the request and enqueues the same kind of job.
 
 <Callout type="warn">
-Automatic prints for the same source document are **de-duplicated within 30 seconds**. If two events fire for one entity in quick succession, the second is dropped rather than printing a duplicate label. Manual prints and reprints are never de-duplicated.
+Automatic prints for the same source document are **deduplicated within 30 seconds**. Carbon drops the second event. Manual prints and reprints are not deduplicated.
 </Callout>
 
 ## Print vs download
 
-Not every screen has a configured printer. The **Print** button adapts: if the location has any printer routes, it opens a printer picker (pre-selecting the resolved default) and enqueues a job on confirm. If there are no routes at all, it opens a **download** modal instead, offering the same label as a ZPL or PDF file to save and print yourself. So a shop with no ProxyBox printers still gets labels, just as downloads rather than pushes.
+When a location has printer routes, **Print** opens a printer picker with the resolved default selected and enqueues a job after confirmation. With no routes, it opens a **download** modal for saving the label as ZPL or PDF.
 
 ## Label sizes
 
@@ -140,7 +140,7 @@ Most silent failures are configuration, not crashes. Check, in order: (1) the lo
 The location/context resolved to no printer *and* auto-print was off, or the source document isn't one Carbon auto-prints from. Auto-print only fires on receipt post, shipment post, stock-transfer split, and MES first-operation completion. For anything else, use the **Print** button or the manual route.
 
 ### "Print jobs already exist for … …"
-The 30-second auto-dedupe fired: an automatic print job for the same source document id was created less than 30 seconds ago, so this one was dropped (non-retriable) to avoid a duplicate label. Expected when two events fire for one entity in quick succession. To force a second copy, reprint from the print jobs list — reprints aren't de-duplicated.
+An automatic print job for the same source document ID was created within 30 seconds, so Carbon dropped this non-retriable duplicate. To print another copy, use **Reprint** from the print-jobs list; reprints are not deduplicated.
 
 ### "Document type "…" requires a BinderyPress template."
 The job's document type has no built-in renderer and the route has no `templateId` (or no BinderyPress key is configured). Either assign a route whose format Carbon can render built-in, or set a BinderyPress `templateId` on the printer route.

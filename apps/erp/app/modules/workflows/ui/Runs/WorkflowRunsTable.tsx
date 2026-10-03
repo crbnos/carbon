@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getTableLabel } from "@carbon/database/audit.config";
 import { HStack } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -25,8 +25,10 @@ import { EntityRecordLink } from "./EntityRecordLink";
 import { RunsLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus, TestRunBadge } from "./RunStatus";
 
+export type WorkflowRunListItem = WorkflowRun & { recordName?: string };
+
 type WorkflowRunsTableProps = {
-  data: WorkflowRun[];
+  data: WorkflowRunListItem[];
   count: number;
 };
 
@@ -43,7 +45,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
     (row) => row.status === "Queued" || row.status === "Running"
   );
 
-  const columns = useMemo<ColumnDef<WorkflowRun>[]>(
+  const columns = useMemo<ColumnDef<WorkflowRunListItem>[]>(
     () => [
       {
         accessorKey: "status",
@@ -70,7 +72,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
         meta: {
           icon: <LuLink />,
           filterHeader: t`Workflow`,
-          exportValue: (row: WorkflowRun) =>
+          exportValue: (row: WorkflowRunListItem) =>
             (row.workflow as { name?: string } | null)?.name ?? row.workflowId
         }
       },
@@ -88,16 +90,22 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
         accessorKey: "triggerRecordId",
         header: t`Record`,
         cell: ({ row }) => {
-          const { triggerTable, triggerRecordId } = row.original;
+          const { triggerTable, triggerRecordId, recordName } = row.original;
           if (!triggerTable || !triggerRecordId) return "—";
-          return <EntityRecordLink table={triggerTable} id={triggerRecordId} />;
+          return (
+            <EntityRecordLink
+              table={triggerTable}
+              id={triggerRecordId}
+              name={recordName}
+            />
+          );
         },
         meta: {
           icon: <LuLink />,
           filterHeader: t`Record`,
-          exportValue: (row: WorkflowRun) =>
-            row.triggerRecordId
-              ? `${row.triggerTable} ${row.triggerRecordId}`
+          exportValue: (row: WorkflowRunListItem) =>
+            row.triggerTable && row.triggerRecordId
+              ? `${getTableLabel(row.triggerTable)} ${row.recordName ?? row.triggerRecordId}`
               : ""
         }
       },
@@ -126,7 +134,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
         meta: {
           icon: <LuUser />,
           filterHeader: t`Owner`,
-          exportValue: (row: WorkflowRun) => row.ownerId ?? ""
+          exportValue: (row: WorkflowRunListItem) => row.ownerId ?? ""
         }
       },
       {
@@ -154,7 +162,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
   return (
     <>
       {hasInFlight && <RunsLiveUpdates companyId={company.id} />}
-      <Table<WorkflowRun>
+      <Table<WorkflowRunListItem>
         data={data}
         columns={columns}
         count={count}

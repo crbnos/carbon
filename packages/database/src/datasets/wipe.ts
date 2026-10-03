@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { PoolClient } from "pg";
-import { getGroupId, groups } from "../../supabase/functions/lib/seed.data.ts";
+import { getGroupId, groups } from "../seed-data.ts";
 import { resolveDate } from "./dates.ts";
 import { insertId, nextJournalEntryId, quote, resetSequences } from "./sql.ts";
 import type { Ctx } from "./types.ts";

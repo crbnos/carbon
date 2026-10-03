@@ -58,8 +58,8 @@ the type-scoped `revisions` array.
   to the new revision's detail page by type. URL: `path.to.newRevision`.
 - Service: `createRevision` (`items.service.ts`) inserts a new `item` row copying
   the source's core fields (same `readableId`, new `revision`, `active: true`).
-  If `replenishmentSystem !== "Buy"`, it invokes the `get-method` edge function
-  (`type: "itemToItem"`) to copy the method/BOM from source to the new revision.
+  If `replenishmentSystem !== "Buy"`, it calls the `get-method` server function
+  (`@carbon/server-functions/get-method`, `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
 - UI form: `RevisionForm.tsx`; version switcher menus ("Versions" submenu) live in
   the type tables (`PartsTable.tsx`, etc.), shown only when `revisions.length > 1`,
   linking each sibling by its item id. Badge component: `ItemWithRevision.tsx`.
@@ -75,7 +75,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   = `Draft | Active | Archived`. Unique `(itemId, version)`.
 - View `activeMakeMethods` ranks per `itemId`, preferring `status='Active'` then
   `version DESC` (excludes `Archived`) — picks the one current method per item.
-- `activateMethodVersion` (`items.service.ts`) invokes the `convert` edge function
+- `activateMethodVersion` (`items.service.ts`) calls the `convert` server function
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item

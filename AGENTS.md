@@ -30,7 +30,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
 - Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
-- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction, or an RPC when it must also be callable from an edge function.
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (inside a server function when apps, the API or jobs share the write), or an RPC when it must also be callable through PostgREST.
 - Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
@@ -52,6 +52,14 @@ pnpm run generate:types      # Regenerate DB types (after migrations)
 pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+`typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
+only when its own files, a workspace dependency's files, or the lockfile changed
+(`--force` re-runs regardless). That is only correct while a task reads nothing
+outside that set. A package whose task reads other paths declares them in its own
+`turbo.json` — as `inputs`, or `"cache": false` when it scans the repo
+(`packages/checks`, `docs/content`) — and a package that needs a generated root
+artifact depends on the task that makes it (`apps/erp/turbo.json`).
 
 Both `db:check:*` commands read your live local schema. They run from
 `.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
@@ -76,7 +84,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Writing service functions | `.claude/rules/conventions-services.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
-| Adding an edge function | `.claude/rules/workflow-edge-function.md` |
+| Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
+| Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
 | Adding event handlers | `.claude/rules/workflow-event-system.md` |
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
@@ -194,11 +203,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Packages**: 28 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
-- **Precision**: `packages/utils/src/math.ts` re-exports `functions/shared/precision.ts` by design (the edge runtime only mounts `supabase/functions/`) — not an import to "fix"
+- **Precision**: `@carbon/utils` re-exports `@carbon/database/precision` (and the accounting-currency, posting and ledger helpers) by design — `@carbon/utils` depends on `@carbon/database`, never the reverse
 - **Licensing**: open-core (root `LICENSE`). Everything under `packages/ee/` and every file whose name contains `.ee.` is under the Carbon Commercial License (`packages/ee/LICENSE`); all other first-party code is AGPL-3.0-only. Each source file states its license in a leading SPDX header (`LicenseRef-Carbon-Commercial` or `AGPL-3.0-only`), enforced by the `spdx-license-header` check (`@carbon/checks`); generated and third-party files carry none. See `.claude/rules/commercial-licensing.md`.
 
 ## ERP Module Layout

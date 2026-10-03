@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -11,7 +10,9 @@
 // values stand as golden literals: they ARE executeFunction's behavior, and a change
 // here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { ORPCError } from "@orpc/server";
+import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const spies = vi.hoisted(() => ({
@@ -22,9 +23,19 @@ const spies = vi.hoisted(() => ({
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
+  recalculateQuoteLinePrices: vi.fn(),
+  updateQuoteMaterialOrder: vi.fn(),
+  cancelSalesOrder: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
+  updateJobOperationStatus: vi.fn(),
+  getActiveJobOperationsByLocation: vi.fn(),
+  getPurchaseLinePivot: vi.fn(),
+  deleteCustomer: vi.fn(),
+  upsertPurchaseOrderLine: vi.fn(),
+  updateSupplierTax: vi.fn(),
+  upsertPurchasingRFQSuppliers: vi.fn(),
   insertIssue: vi.fn(),
   getInspectionDocument: vi.fn(),
   insertPurchaseOrder: vi.fn(),
@@ -44,6 +55,7 @@ vi.mock("~/modules/account/account.service", () => ({
 vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
+  getPurchaseLinePivot: spies.getPurchaseLinePivot,
   upsertAccount: spies.upsertAccount
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
@@ -61,10 +73,15 @@ vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
+  updateJobOperationStatus: spies.updateJobOperationStatus,
+  getActiveJobOperationsByLocation: spies.getActiveJobOperationsByLocation,
   upsertJobMaterial: spies.upsertJobMaterial
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
-  insertPurchaseOrder: spies.insertPurchaseOrder
+  insertPurchaseOrder: spies.insertPurchaseOrder,
+  upsertPurchaseOrderLine: spies.upsertPurchaseOrderLine,
+  updateSupplierTax: spies.updateSupplierTax,
+  upsertPurchasingRFQSuppliers: spies.upsertPurchasingRFQSuppliers
 }));
 vi.mock("~/modules/quality/quality.service", () => ({
   insertIssue: spies.insertIssue,
@@ -74,6 +91,10 @@ vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
+  recalculateQuoteLinePrices: spies.recalculateQuoteLinePrices,
+  updateQuoteMaterialOrder: spies.updateQuoteMaterialOrder,
+  cancelSalesOrder: spies.cancelSalesOrder,
+  deleteCustomer: spies.deleteCustomer,
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
@@ -100,6 +121,7 @@ vi.mock("@carbon/logger", () => ({
 
 import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
+import { publishDefaults } from "../../../../../../../scripts/lib/service-metadata";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
 import { callOperation } from "./call.server";
@@ -107,13 +129,16 @@ import { DATABASE_ERROR_MESSAGES } from "./database-errors";
 import {
   type DispatchResult,
   dispatchOperation,
-  enrichWithAuthContext
+  enrichWithAuthContext,
+  resolveUpsertOperation,
+  withSchemaDefaults
 } from "./dispatch.server";
 import { openApiHandler } from "./handler.server";
 import {
   liveOperationAliases,
   OPERATION_ALIASES,
   OPERATIONS,
+  operationId,
   operationsByName
 } from "./operations.server";
 import { router } from "./router.server";
@@ -165,15 +190,24 @@ const allSpies = [
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
+  spies.recalculateQuoteLinePrices,
+  spies.updateQuoteMaterialOrder,
+  spies.cancelSalesOrder,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
+  spies.updateJobOperationStatus,
+  spies.getActiveJobOperationsByLocation,
+  spies.upsertPurchasingRFQSuppliers,
   spies.insertIssue,
   spies.getInspectionDocument,
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
-  spies.applyCreditsToInvoices
+  spies.applyCreditsToInvoices,
+  spies.upsertPurchaseOrderLine,
+  spies.updateSupplierTax,
+  spies.deleteCustomer
 ];
 
 beforeEach(() => {
@@ -337,6 +371,383 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     ]);
   });
 
+  // A service that takes the acting user as its own positional argument. The
+  // generator sees the body write it to an audit column and records the slot
+  // (`contextParams`); before that the whole body was passed in its place and
+  // the write failed on the `updatedBy` foreign key.
+  it("a3. fills a positional updatedBy / createdBy from context, never from the body", async () => {
+    const status = await runDispatch(
+      "production_updateJobOperationStatus",
+      spies.updateJobOperationStatus,
+      { id: "op1", status: "Done", updatedBy: "forged" }
+    );
+    expect(status.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+
+    const omitted = await runDispatch(
+      "production_updateJobOperationStatus",
+      spies.updateJobOperationStatus,
+      { id: "op1", status: "Done" }
+    );
+    expect(omitted.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+
+    const suppliers = await runDispatch(
+      "purchasing_upsertPurchasingRFQSuppliers",
+      spies.upsertPurchasingRFQSuppliers,
+      { purchasingRfqId: "rfq1", supplierIds: ["s1"] }
+    );
+    expect(suppliers.calls).toEqual([
+      [spies.FAKE_CLIENT, "rfq1", ["s1"], "c1", "u1"]
+    ]);
+  });
+
+  // Found by the read-tool sweep: the omitted optional list was handed the
+  // whole body, and Postgres answered "expected JSON array".
+  it("a5. leaves an omitted optional list or object undefined, never the body", async () => {
+    const omitted = await runDispatch(
+      "production_getActiveJobOperationsByLocation",
+      spies.getActiveJobOperationsByLocation,
+      { locationId: "loc1" }
+    );
+    expect(omitted.calls).toEqual([[spies.FAKE_CLIENT, "loc1", undefined]]);
+
+    const sent = await runDispatch(
+      "production_getActiveJobOperationsByLocation",
+      spies.getActiveJobOperationsByLocation,
+      { locationId: "loc1", workCenterIds: ["wc1"] }
+    );
+    expect(sent.calls).toEqual([[spies.FAKE_CLIENT, "loc1", ["wc1"]]]);
+  });
+
+  // Found by the read-tool sweep: `state: {}` is valid by the published schema,
+  // and the service crashed reading `state.columnAxis.type`.
+  it("a6. a read gets the defaults its schema publishes, and keeps what was sent", async () => {
+    const r = await runDispatch(
+      "accounting_getPurchaseLinePivot",
+      spies.getPurchaseLinePivot,
+      {
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        state: { rows: ["d1"] }
+      }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          companyId: "c1",
+          startDate: "2026-01-01",
+          endDate: "2026-01-31",
+          state: {
+            rows: ["d1"],
+            columnAxis: { type: "period", bucket: "month" },
+            measure: "amount",
+            percentOfTotal: false,
+            sort: null,
+            filters: [],
+            accountIds: []
+          }
+        }
+      ]
+    ]);
+  });
+
+  // A default says "leave this out and you get X". That holds for a new row
+  // and never for an update, where a field left out keeps what is stored.
+  describe("published defaults", () => {
+    const line = { purchaseOrderId: "po1", purchaseOrderLineType: "Part" };
+
+    it("a7. an upsert that creates is filled, and stamped as a create", async () => {
+      const r = await runDispatch(
+        "purchasing_upsertPurchaseOrderLine",
+        spies.upsertPurchaseOrderLine,
+        line
+      );
+      expect(r.calls).toEqual([
+        [
+          spies.FAKE_CLIENT,
+          { ...line, taxPercent: 0, companyId: "c1", createdBy: "u1" }
+        ]
+      ]);
+    });
+
+    it("a8. the same upsert updating is not filled, and keeps the row's createdBy", async () => {
+      const r = await runDispatch(
+        "purchasing_upsertPurchaseOrderLine",
+        spies.upsertPurchaseOrderLine,
+        { id: "l1", ...line, purchaseQuantity: 3 }
+      );
+      // No taxPercent: 0 to overwrite the stored rate. No createdBy either —
+      // the service spreads the payload into its UPDATE, so before this the
+      // row's creator was rewritten to whoever edited it.
+      expect(r.calls).toEqual([
+        [
+          spies.FAKE_CLIENT,
+          {
+            id: "l1",
+            ...line,
+            purchaseQuantity: 3,
+            companyId: "c1",
+            updatedBy: "u1"
+          }
+        ]
+      ]);
+    });
+
+    it("a9. what the caller sent wins, null included", async () => {
+      const r = await runDispatch(
+        "purchasing_upsertPurchaseOrderLine",
+        spies.upsertPurchaseOrderLine,
+        { ...line, taxPercent: 0.2 }
+      );
+      expect((r.calls[0]?.[1] as { taxPercent: number }).taxPercent).toBe(0.2);
+    });
+
+    it("a10. a wrapped payload is filled inside the wrapper, not beside it", async () => {
+      const r = await runDispatch(
+        "purchasing_upsertPurchaseOrderLine",
+        spies.upsertPurchaseOrderLine,
+        { purchaseOrderLine: line }
+      );
+      expect(r.calls).toEqual([
+        [
+          spies.FAKE_CLIENT,
+          { ...line, taxPercent: 0, companyId: "c1", createdBy: "u1" }
+        ]
+      ]);
+    });
+
+    it("a11. every element of a list is filled", async () => {
+      const application = {
+        targetSalesInvoiceId: "si1",
+        targetExchangeRate: 1,
+        sourceExchangeRate: 1,
+        appliedDate: "2026-09-09"
+      };
+      const r = await runDispatch(
+        "invoicing_replaceInvoiceSettlements",
+        spies.replaceInvoiceSettlements,
+        {
+          paymentId: "p1",
+          applications: [application, { ...application, appliedAmount: 40 }]
+        }
+      );
+      const zeros = { discountAmount: 0, writeOffAmount: 0 };
+      expect(
+        (r.calls[0]?.[1] as { applications: unknown[] }).applications
+      ).toEqual([
+        { ...application, appliedAmount: 0, ...zeros },
+        { ...application, appliedAmount: 40, ...zeros }
+      ]);
+    });
+
+    // One schema, asked of both sides: what the generator keeps is exactly what
+    // the dispatcher fills.
+    const fixture = () => ({
+      type: "object",
+      properties: {
+        plain: { type: "number", default: 1 },
+        nested: {
+          type: "object",
+          properties: { inner: { type: "string", default: "x" } }
+        },
+        rows: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { amount: { type: "number", default: 0 } }
+          }
+        },
+        // One object alternative: an object value can only be that one.
+        paged: {
+          anyOf: [
+            { type: "string" },
+            {
+              type: "object",
+              properties: { limit: { type: "integer", default: 25 } }
+            }
+          ]
+        },
+        // Two: which one the caller meant cannot be told.
+        party: {
+          anyOf: [
+            {
+              type: "object",
+              properties: { a: { type: "number", default: 1 } }
+            },
+            {
+              type: "object",
+              properties: { b: { type: "number", default: 2 } }
+            }
+          ]
+        },
+        // A record's values are not reached.
+        charges: {
+          type: "object",
+          additionalProperties: {
+            type: "object",
+            properties: { taxable: { type: "boolean", default: true } }
+          }
+        },
+        // A field that happens to be called `default` is not a keyword.
+        flags: {
+          type: "object",
+          properties: { default: { type: "boolean" } }
+        }
+      }
+    });
+    const sent = {
+      nested: {},
+      rows: [{}, { amount: 5 }],
+      paged: {},
+      party: {},
+      charges: { freight: {} },
+      flags: {}
+    };
+
+    it("are kept only where the dispatcher reaches them", () => {
+      const schema = fixture();
+      expect(publishDefaults(schema, "always")).toBe(true);
+      expect(schema.properties.plain.default).toBe(1);
+      expect(schema.properties.nested.properties.inner.default).toBe("x");
+      expect(schema.properties.rows.items.properties.amount.default).toBe(0);
+      expect(schema.properties.paged.anyOf[1]?.properties?.limit.default).toBe(
+        25
+      );
+      expect(JSON.stringify(schema.properties.party)).not.toContain("default");
+      expect(JSON.stringify(schema.properties.charges)).not.toContain(
+        "default"
+      );
+      expect(schema.properties.flags.properties.default).toEqual({
+        type: "boolean"
+      });
+
+      expect(withSchemaDefaults(schema, sent)).toEqual({
+        plain: 1,
+        nested: { inner: "x" },
+        rows: [{ amount: 0 }, { amount: 5 }],
+        paged: { limit: 25 },
+        party: {},
+        charges: { freight: {} },
+        flags: {}
+      });
+    });
+
+    it("are all removed when nothing fills them, and marked when only a create does", () => {
+      const none = fixture();
+      expect(publishDefaults(none, undefined)).toBe(false);
+      expect(JSON.stringify(none)).not.toContain('"default":1');
+      expect(none.properties.flags.properties.default).toEqual({
+        type: "boolean"
+      });
+
+      const onCreate = fixture();
+      publishDefaults(onCreate, "create");
+      expect(
+        (onCreate.properties.plain as { description?: string }).description
+      ).toContain("Applied when creating");
+    });
+
+    // The service pages only when it is handed a limit. A page size filled
+    // in for the caller would cut every unpaged list read to that many rows.
+    it("a13. a list read is not given a page size, only the offset a limit needs", () => {
+      const customers = operationsByName.get("sales_getCustomers");
+      const args = (
+        customers?.schema as { properties?: Record<string, unknown> }
+      ).properties?.args;
+      expect(withSchemaDefaults(args, {})).toEqual({ offset: 0 });
+      expect(withSchemaDefaults(args, { limit: 10 })).toEqual({
+        limit: 10,
+        offset: 0
+      });
+    });
+
+    it("a12. an update tool publishes none and is handed none", async () => {
+      const meta = operationsByName.get("purchasing_updateSupplierTax");
+      expect(meta?.defaults).toBeUndefined();
+      expect(JSON.stringify(meta?.schema)).not.toContain('"default"');
+    });
+  });
+
+  // A service reports failure in what it returns. Each of these used to reach
+  // the caller as a success, because only `{ data, error }` was read.
+  describe("a failure in the service's result is an error, whatever its shape", () => {
+    const pgError = { code: "23503", message: "violates foreign key" };
+
+    it("a bare { error } with no data", async () => {
+      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: pgError });
+      const r = await runDispatch(
+        "sales_recalculateQuoteLinePrices",
+        spies.recalculateQuoteLinePrices,
+        { quoteId: "q1", quoteLineId: "ql1" }
+      );
+      expect(r.dispatch).toBeUndefined();
+      expect(r.dispatchError).toMatchObject({
+        message: "violates foreign key",
+        data: { supabase: pgError }
+      });
+    });
+
+    it("a bare { error: null } is still the result", async () => {
+      spies.recalculateQuoteLinePrices.mockResolvedValue({ error: null });
+      const r = await runDispatch(
+        "sales_recalculateQuoteLinePrices",
+        spies.recalculateQuoteLinePrices,
+        { quoteId: "q1", quoteLineId: "ql1" }
+      );
+      expect(r.dispatchError).toBeUndefined();
+      expect(r.dispatch).toEqual({ data: { error: null } });
+    });
+
+    it("one failed write in a Promise.all of writes", async () => {
+      const ok = { data: null, error: null, status: 204 };
+      spies.updateQuoteMaterialOrder.mockResolvedValue([
+        ok,
+        { data: null, error: pgError, status: 409 }
+      ]);
+      const failed = await runDispatch(
+        "sales_updateQuoteMaterialOrder",
+        spies.updateQuoteMaterialOrder,
+        { updates: [{ id: "a", order: 1 }] }
+      );
+      expect(failed.dispatchError).toMatchObject({
+        data: { supabase: pgError }
+      });
+
+      spies.updateQuoteMaterialOrder.mockResolvedValue([ok, ok]);
+      const passed = await runDispatch(
+        "sales_updateQuoteMaterialOrder",
+        spies.updateQuoteMaterialOrder,
+        { updates: [{ id: "a", order: 1 }] }
+      );
+      expect(passed.dispatch).toEqual({ data: [ok, ok] });
+    });
+
+    it("a { success: false } flag", async () => {
+      spies.cancelSalesOrder.mockResolvedValue({
+        success: false,
+        message: "Order has posted shipments",
+        cancelledJobIds: []
+      });
+      const refused = await runDispatch(
+        "sales_cancelSalesOrder",
+        spies.cancelSalesOrder,
+        { salesOrderId: "so1" }
+      );
+      expect(refused.dispatchError).toMatchObject({
+        message: "Order has posted shipments"
+      });
+
+      const done = { success: true, message: "Cancelled", cancelledJobIds: [] };
+      spies.cancelSalesOrder.mockResolvedValue(done);
+      const cancelled = await runDispatch(
+        "sales_cancelSalesOrder",
+        spies.cancelSalesOrder,
+        { salesOrderId: "so1" }
+      );
+      expect(cancelled.dispatch).toEqual({ data: done });
+    });
+  });
+
   it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
@@ -353,7 +764,8 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1"
+          companyId: "c1",
+          companyGroupId: "g1"
         }
       ]
     ]);
@@ -374,7 +786,8 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       id: "a1",
       name: "Cash",
       updatedBy: "u1",
-      companyId: "c1"
+      companyId: "c1",
+      companyGroupId: "g1"
     });
     expect("createdBy" in payload).toBe(false);
   });
@@ -407,18 +820,44 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     );
   });
 
-  it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
+  // No caller has to say whether an upsert creates or updates. accounting_upsertAccount
+  // takes an optional id, so sending one IS the answer.
+  it("f. no _operation, no id: a create — createdBy stamped, updatedBy not", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
-      {
-        account: { name: "x" }
-      }
+      { account: { name: "x" } }
+    );
+    const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload).toMatchObject({ name: "x", createdBy: "u1" });
+    expect("updatedBy" in payload).toBe(false);
+  });
+
+  it("f2. no _operation, id sent (flat or wrapped): an update — updatedBy stamped, createdBy not", async () => {
+    for (const args of [
+      { account: { id: "a1", name: "x" } },
+      { id: "a1", name: "x" }
+    ]) {
+      const r = await runDispatch(
+        "accounting_upsertAccount",
+        spies.upsertAccount,
+        args
+      );
+      const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+      expect(payload).toMatchObject({ id: "a1", updatedBy: "u1" });
+      expect("createdBy" in payload).toBe(false);
+    }
+  });
+
+  it("f3. an _operation that is neither create nor update is refused", async () => {
+    const r = await runDispatch(
+      "accounting_upsertAccount",
+      spies.upsertAccount,
+      { _operation: "replace", account: { name: "x" } }
     );
     expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'accounting_upsertAccount requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+      'accounting_upsertAccount: _operation must be "create" or "update" when it is sent. It can be left out.'
     );
   });
 
@@ -648,6 +1087,55 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     ).toEqual(supabaseError);
   });
 
+  it("k2. an operation's error keeps its status and sanitized message", async () => {
+    spies.getAccountLedger.mockReset();
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("Receipt not found", 404)
+    });
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {}
+    );
+    const orpcError = r.dispatchError as ORPCError<string, unknown>;
+    expect(orpcError.code).toBe("NOT_FOUND");
+    expect(orpcError.message).toBe("Receipt not found");
+    expect(orpcError.data).toBeUndefined();
+  });
+
+  it("k3. a data-layer operation error (empty message) gets a fixed message", async () => {
+    spies.getAccountLedger.mockReset();
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("")
+    });
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {}
+    );
+    const orpcError = r.dispatchError as ORPCError<string, unknown>;
+    expect(orpcError.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(orpcError.message).toBe("The operation could not be completed.");
+  });
+
+  it("k4. an authored refusal from a 500-default operation is the caller's (BAD_REQUEST)", async () => {
+    spies.getAccountLedger.mockReset();
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("Receipt is already posted")
+    });
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {}
+    );
+    const orpcError = r.dispatchError as ORPCError<string, unknown>;
+    expect(orpcError.code).toBe("BAD_REQUEST");
+    expect(orpcError.message).toBe("Receipt is already posted");
+  });
+
   it("l. a single-key payload whose key matches no param is unwrapped positionally", async () => {
     const r = await runDispatch(
       "account_upsertNotificationPreference",
@@ -679,7 +1167,8 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1"
+          companyId: "c1",
+          companyGroupId: "g1"
         }
       ]
     ]);
@@ -745,18 +1234,136 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       id: "jm1"
     });
   });
+});
 
-  it("q. an inverted-discriminator tool requires _operation, same as the createdBy convention", async () => {
-    const r = await runDispatch(
-      "production_upsertJobMaterial",
-      spies.upsertJobMaterial,
-      { jobId: "j1", itemId: "i1" }
+// Where the payload cannot say (the id is required either way, or there is none),
+// the manifest names the row to look for and the answer is whether it exists. The
+// rules are the REAL ones from the generated manifest; only the database is stood in.
+describe("upserts decided by whether the record exists", () => {
+  const rule = (name: string) => {
+    const upsert = operationsByName.get(name)?.upsert;
+    if (!upsert) throw new Error(`${name} has no upsert rule`);
+    return upsert;
+  };
+  // The service's payload parameter — the only object a key may be wrapped in.
+  const PARAMS = ["record"];
+  const database = (rows: Record<string, Record<string, unknown>[]>) => {
+    const asked: [string, Record<string, unknown>][] = [];
+    const rowExists = async (
+      table: string,
+      filter: Record<string, unknown>
+    ) => {
+      asked.push([table, filter]);
+      return (rows[table] ?? []).some((row) =>
+        Object.entries(filter).every(([column, value]) => row[column] === value)
+      );
+    };
+    return { asked, rowExists };
+  };
+
+  it("q. a job material with a client-chosen id: created when new, updated once it exists", async () => {
+    const upsert = rule("production_upsertJobMaterial");
+    const args = { id: "jm1", jobId: "j1", quantity: 2 };
+
+    const empty = database({});
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, empty.rowExists)
+    ).toBe("create");
+    expect(empty.asked).toEqual([["jobMaterial", { id: "jm1" }]]);
+
+    const stored = database({ jobMaterial: [{ id: "jm1" }] });
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, stored.rowExists)
+    ).toBe("update");
+  });
+
+  it("r. a part is found by its item id OR its part number", async () => {
+    const upsert = rule("items_upsertPart");
+    const items = { item: [{ id: "item_1", readableId: "PN-100" }] };
+
+    for (const id of ["item_1", "PN-100"]) {
+      const db = database(items);
+      expect(
+        await resolveUpsertOperation(upsert, { id }, PARAMS, db.rowExists)
+      ).toBe("update");
+    }
+    const db = database(items);
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { id: "PN-200" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+    expect(db.asked).toEqual([
+      ["item", { id: "PN-200" }],
+      ["item", { readableId: "PN-200" }]
+    ]);
+  });
+
+  it("s. a composite key: every column is matched, and a missing one means create without asking", async () => {
+    const upsert = rule("items_upsertPickMethod");
+    const db = database({
+      pickMethod: [{ itemId: "i1", locationId: "l1" }]
+    });
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l1" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("update");
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1", locationId: "l2" },
+        PARAMS,
+        db.rowExists
+      )
+    ).toBe("create");
+
+    const untouched = database({});
+    expect(
+      await resolveUpsertOperation(
+        upsert,
+        { itemId: "i1" },
+        PARAMS,
+        untouched.rowExists
+      )
+    ).toBe("create");
+    expect(untouched.asked).toEqual([]);
+  });
+
+  it("u. the key is the RECORD's: an id inside some other nested object is not it", async () => {
+    const byId = { keys: ["id"] };
+    const never = database({}).rowExists;
+    const resolve = (args: Record<string, unknown>) =>
+      resolveUpsertOperation(byId, args, PARAMS, never);
+
+    // A create whose custom fields happen to hold an `id` used to be sent down
+    // the update branch.
+    expect(await resolve({ name: "x", customFields: { id: "z" } })).toBe(
+      "create"
     );
-    expect(r.calls).toEqual([]);
-    expect(r.dispatchError).toBeInstanceOf(ORPCError);
-    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
-      'production_upsertJobMaterial requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
+    // The record's own id, flat or inside its wrapper, still means update.
+    expect(await resolve({ id: "a1", name: "x" })).toBe("update");
+    expect(await resolve({ record: { id: "a1", name: "x" } })).toBe("update");
+    // A lone unnamed wrapper is unwrapped, as the dispatcher does.
+    expect(await resolve({ guessed: { id: "a1" } })).toBe("update");
+    expect(await resolve({ record: { name: "x" }, other: { id: "z" } })).toBe(
+      "create"
     );
+  });
+
+  it("t. no operation publishes _operation, and every branching upsert has a rule", () => {
+    for (const meta of operationsByName.values()) {
+      expect(JSON.stringify(meta.schema)).not.toContain("_operation");
+    }
+    expect(
+      [...operationsByName.values()].filter((meta) => meta.upsert).length
+    ).toBeGreaterThan(80);
   });
 });
 
@@ -866,6 +1473,23 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
       success: false,
       errorKind: "database",
       error: DATABASE_ERROR_MESSAGES.conflict
+    });
+  });
+
+  it("passes an operation's own message through as an execution error", async () => {
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("Insufficient quantity", 400)
+    });
+    const result = await callOperation(
+      "accounting_getAccountLedger",
+      ctx,
+      LEDGER_ARGS
+    );
+    expect(result).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "Insufficient quantity"
     });
   });
 
@@ -1002,5 +1626,93 @@ describe("renamed operations (deprecated aliases)", () => {
     expect(post("/production/getInspectionDocument")?.deprecated).toBe(true);
     // Undefined, so the serialized spec of every real operation is unchanged.
     expect(post("/quality/getInspectionDocument")?.deprecated).toBeUndefined();
+  });
+});
+
+// One manifest feeds everything a caller can see or reach: the OpenAPI spec,
+// MCP's describe_tool, and the procedure both HTTP and MCP calls run. These
+// pin that, so the spec and the tools cannot describe different contracts.
+describe("the HTTP spec and the MCP tools are one contract", () => {
+  it("the spec publishes every operation, with the manifest's own input schema", async () => {
+    const spec = await new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    }).generate(router, specOptions());
+    type Post = {
+      requestBody?: { content?: Record<string, { schema?: unknown }> };
+    };
+    const paths = (spec.paths ?? {}) as Record<string, { post?: Post }>;
+
+    const differing: string[] = [];
+    let withBody = 0;
+    for (const op of OPERATIONS) {
+      const post = paths[`/${op.module}/${operationId(op)}`]?.post;
+      const published =
+        post?.requestBody?.content?.["application/json"]?.schema;
+      if (published !== undefined) withBody++;
+      // An operation with no arguments publishes no request body.
+      const expected =
+        Object.keys((op.schema as { properties?: object }).properties ?? {})
+          .length === 0 && published === undefined
+          ? undefined
+          : op.schema;
+      if (JSON.stringify(published) !== JSON.stringify(expected)) {
+        differing.push(op.name);
+      }
+    }
+    expect(differing).toEqual([]);
+    // Not vacuous: nearly every operation takes arguments.
+    expect(withBody).toBeGreaterThan(OPERATIONS.length * 0.9);
+
+    // And nothing else: every path is an operation or a deprecated alias.
+    expect(Object.keys(paths).length).toBe(
+      OPERATIONS.length + liveOperationAliases.length
+    );
+  });
+
+  it("an MCP call runs the HTTP procedure, input validation included", async () => {
+    // documentType is an enum in the manifest; the same refusal either way.
+    const result = await callOperation("settings_getDocumentTemplate", ctx, {
+      documentType: "not-a-document"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// Services match the row they write by its id, and a signed-in user's client
+// reaches every company they belong to. The client the dispatcher hands over
+// adds the caller's company to the write.
+describe("a write is confined to the caller's company", () => {
+  it("a service that deletes by id alone cannot reach another company's row", async () => {
+    const queries: URLSearchParams[] = [];
+    const client = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        fetch: async (input) => {
+          queries.push(new URL(String(input)).searchParams);
+          return new Response("[]", {
+            status: 200,
+            headers: { "content-type": "application/json" }
+          });
+        }
+      }
+    });
+    // The real service, in miniature: `.delete().eq("id", customerId)`.
+    spies.deleteCustomer.mockImplementation(
+      (handed: typeof client, customerId: string) =>
+        handed.from("customer").delete().eq("id", customerId)
+    );
+
+    const meta = operationsByName.get("sales_deleteCustomer");
+    if (!meta)
+      throw new Error("sales_deleteCustomer missing from the manifest");
+    await dispatchOperation(
+      meta,
+      { ...ctx, client: client as unknown as AuthedContext["client"] },
+      { customerId: "customer-of-company-b" }
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.get("id")).toBe("eq.customer-of-company-b");
+    expect(queries[0]?.get("companyId")).toBe("eq.c1");
   });
 });

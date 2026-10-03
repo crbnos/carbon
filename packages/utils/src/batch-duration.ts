@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Planned-duration model for a job operation batch. Dependency-free pure TS.
-//
-// Unlike batch-time-split.ts (a re-export of the Deno edge-runtime module),
-// this lives directly in @carbon/utils: no edge function consumes it, so there
-// is no Deno mirror to keep in sync. See
+// Planned-duration model for a job operation batch. See
 // .ai/specs/2026-09-04-batch-release-and-scheduling.md.
 
 import { clamp } from "./math";

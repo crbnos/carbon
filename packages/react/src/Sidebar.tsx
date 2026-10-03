@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -64,6 +63,8 @@ const SidebarProvider = React.forwardRef<
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     touch?: boolean;
+    /** Bind ⌘B to toggle the sidebar. */
+    keyboardShortcut?: boolean;
   }
 >(
   (
@@ -72,6 +73,7 @@ const SidebarProvider = React.forwardRef<
       open: openProp,
       onOpenChange: setOpenProp,
       touch = false,
+      keyboardShortcut = true,
       className,
       style,
       children,
@@ -115,7 +117,8 @@ const SidebarProvider = React.forwardRef<
       action: (event) => {
         event.preventDefault();
         toggleSidebar();
-      }
+      },
+      disabled: !keyboardShortcut
     });
 
     // We add a state so that we can do data-state="expanded" or "collapsed".

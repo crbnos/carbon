@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -36,6 +35,7 @@ import {
   getProviderIntegration,
   getXeroBillPaymentSyncEntityId,
   getXeroPaymentSyncEntityId,
+  isAccountingSyncEnabled,
   ProviderID,
   parseStoredCredentials
 } from "@carbon/ee/accounting";
@@ -223,6 +223,15 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const companyId = integration.companyId;
+
+      // Sync is turned off while the integration is being set up: skip this
+      // tenant before any provider call.
+      if (!isAccountingSyncEnabled(integration.metadata)) {
+        logger.info("Xero sync is turned off; ignoring webhook events", {
+          companyId
+        });
+        continue;
+      }
 
       const provider = getProviderIntegration(
         serviceRole,

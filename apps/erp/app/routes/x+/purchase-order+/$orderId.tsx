@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -23,10 +22,17 @@ import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { VStack } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
+import type { FileObject } from "@supabase/storage-js";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
@@ -369,19 +375,18 @@ export async function action(args: ActionFunctionArgs) {
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
       ) {
-        const priceUpdate = await serviceRole.functions.invoke(
-          "update-purchased-prices",
-          {
-            body: {
-              purchaseOrderId: orderId,
-              companyId,
-              userId,
-              source: "purchaseOrder",
-              updatePrices: true,
-              updateLeadTimes: false
-            }
-          }
-        );
+        const priceUpdate = await serverFns
+          .system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          })
+          .invoke("update-purchased-prices", {
+            purchaseOrderId: orderId,
+            source: "purchaseOrder",
+            updatePrices: true,
+            updateLeadTimes: false
+          });
 
         if (priceUpdate.error) {
           logger.error("Failed to update purchased prices", {
@@ -400,6 +405,22 @@ export async function action(args: ActionFunctionArgs) {
     )
   );
 }
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["orderId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
+const toAttachments = (docs: FileObject[], folder: string) =>
+  docs.map((d) => ({
+    source: "po" as const,
+    name: d.name,
+    size:
+      (d.metadata as { size?: number } | null | undefined)?.size != null
+        ? Math.round(((d.metadata as { size?: number }).size as number) / 1024)
+        : null,
+    path: `${folder}/${d.name}`
+  }));
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
@@ -509,48 +530,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
-  const [defaultAttachments, adHocDocs, currency] = await Promise.all([
+  // One listing feeds both the documents panel and the attachment list, and
+  // neither holds up the page.
+  const files = supplierInteractionId
+    ? getSupplierInteractionDocuments(
+        serviceRole,
+        companyId,
+        supplierInteractionId
+      )
+    : Promise.resolve([]);
+  const resolvedAttachments = Promise.all([
     getDefaultAttachmentsForPO(serviceRole, {
       companyId,
       supplierId: purchaseOrder.data?.supplierId ?? null,
       itemIds
     }),
-    supplierInteractionId
-      ? getSupplierInteractionDocuments(
-          serviceRole,
-          companyId,
-          supplierInteractionId
-        )
-      : Promise.resolve([]),
-    purchaseOrder.data?.currencyCode
-      ? getCurrencyByCode(
-          serviceRole,
-          companyGroupId,
-          purchaseOrder.data.currencyCode
-        )
-      : null
-  ]);
-  const adHocAttachments = adHocDocs.map((d) => ({
-    source: "po" as const,
-    name: d.name,
-    size:
-      (d.metadata as { size?: number } | null | undefined)?.size != null
-        ? Math.round(((d.metadata as { size?: number }).size as number) / 1024)
-        : null,
-    path: `${companyId}/supplier-interaction/${supplierInteractionId}/${d.name}`
-  }));
-  const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
+    files
+  ])
+    .then(([defaults, adHocDocs]) => [
+      ...defaults,
+      ...toAttachments(
+        adHocDocs,
+        `${companyId}/supplier-interaction/${supplierInteractionId}`
+      )
+    ])
+    .catch((error) => {
+      logger.error("Failed to resolve purchase order attachments", {
+        companyId,
+        orderId,
+        error
+      });
+      return [];
+    });
+  const currency = purchaseOrder.data?.currencyCode
+    ? await getCurrencyByCode(
+        serviceRole,
+        companyGroupId,
+        purchaseOrder.data.currencyCode
+      )
+    : null;
 
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
     currency: currency?.data ?? null,
     lines: lines.data ?? [],
-    files: getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseOrder.data.supplierInteractionId!
-    ),
+    files,
     interaction: interaction?.data,
     supplier: supplier?.data ?? null,
     approvalRequest: approvalRequest.data,
@@ -576,7 +601,7 @@ export default function PurchaseOrderRoute() {
             <ResizablePanels
               explorer={<PurchaseOrderExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

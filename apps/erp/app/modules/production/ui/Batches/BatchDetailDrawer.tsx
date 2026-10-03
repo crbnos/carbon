@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -23,6 +22,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -121,11 +121,11 @@ export function BatchDetailDrawer({
   );
 
   const isLive = batch.status === "Active" || batch.status === "Completing";
-  // Planned and Active batches stay composable/dissolvable; the edge fn's
+  // Planned and Active batches stay composable/dissolvable; the server fn's
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
 
-  // The edge fn refuses "remove" once production is recorded.
+  // The server fn refuses "remove" once production is recorded.
   const permissions = usePermissions();
   const canRemoveOperations =
     isPreStart &&
@@ -334,7 +334,7 @@ export function BatchDetailDrawer({
                   </a>
                 </DropdownMenuItem>
                 {isLive && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link to={path.to.priorityOperation}>
                       <DropdownMenuIcon icon={<LuLayers />} />
                       {t`View on schedule board`}

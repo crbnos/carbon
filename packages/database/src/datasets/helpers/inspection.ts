@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -10,7 +9,7 @@ import {
   deriveSampleStatus as deriveVerdict,
   type InspectionVerdict,
   valuateMeasurement
-} from "../../../supabase/functions/shared/inspection-verdict.ts";
+} from "../../inspection-verdict.ts";
 import { resolveSamplingPlan, type SamplingResult } from "../../sampling.ts";
 import type { InspectionFeatureSpec, InspectionSampleSpec } from "../types.ts";
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -19,7 +18,7 @@ import { ContentFooter } from "@/components/api/page-footer";
 import { pageSeo, SEO } from "@/lib/seo";
 
 export const metadata = pageSeo({
-  title: `${SEO.carbonApi.auth.title} — Carbon`,
+  title: `${SEO.carbonApi.auth.title} | Carbon`,
   ogTitle: SEO.carbonApi.auth.title,
   description: SEO.carbonApi.auth.description,
   path: "/api/authentication",

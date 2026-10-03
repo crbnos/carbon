@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -7,6 +6,7 @@ import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
   BarProgress,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDisclosure
@@ -289,11 +289,15 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
   const renderContextMenu = useMemo(() => {
     return (row: QuotationListItem) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
+          onClick={() => navigate(path.to.quoteDetails(row.id!))}
+        >
           <MenuIcon icon={<LuPencil />} />
           <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

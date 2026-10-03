@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -36,6 +35,7 @@ export async function getChangelogPanelEntry(
   };
 }
 
+/** @mcp read */
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
   userId: string,
@@ -48,6 +48,7 @@ export async function getNotificationPreferences(
     .eq("companyId", companyId);
 }
 
+/** @mcp upsert */
 export async function upsertNotificationPreference(
   client: SupabaseClient<Database>,
   preference: {
@@ -67,6 +68,7 @@ export async function upsertNotificationPreference(
   );
 }
 
+/** @mcp delete */
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {
@@ -83,6 +85,7 @@ export async function deleteUserAttributeValue(
     .eq("userId", args.userId);
 }
 
+/** @mcp read */
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
   return client.from("user").select("*").eq("id", id).single();
 }
@@ -92,6 +95,7 @@ export async function getAccount(client: SupabaseClient<Database>, id: string) {
  * executor from the OAuth token, so this always resolves to the caller — it is the identity source
  * an OS deployment can use for sign-in (a user who completed Carbon's OAuth has proven control of
  * this account, so its email is a verified sign-in identity).
+ * @mcp read
  */
 export async function getCurrentUser(
   client: SupabaseClient<Database>,
@@ -104,6 +108,7 @@ export async function getCurrentUser(
     .single();
 }
 
+/** @mcp read */
 export async function getAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -129,6 +134,7 @@ export async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+/** @mcp read */
 export async function getPrivateAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -137,6 +143,7 @@ export async function getPrivateAttributes(
   return getAttributes(client, userId, companyId, false);
 }
 
+/** @mcp read */
 export async function getPublicAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -145,6 +152,7 @@ export async function getPublicAttributes(
   return getAttributes(client, userId, companyId, true);
 }
 
+/** @mcp read */
 export async function getAllAttributeCategories(
   client: SupabaseClient<Database>,
   userId: string,
@@ -168,6 +176,7 @@ export async function getAllAttributeCategories(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+/** @mcp read */
 export async function getAttributeCategoryWithValues(
   client: SupabaseClient<Database>,
   categoryId: string,
@@ -194,6 +203,7 @@ export async function getAttributeCategoryWithValues(
     .single();
 }
 
+/** @mcp update */
 export async function updateAvatar(
   client: SupabaseClient<Database>,
   userId: string,
@@ -209,6 +219,7 @@ export async function updateAvatar(
     .eq("id", userId);
 }
 
+/** @mcp update */
 export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {
@@ -222,6 +233,7 @@ export async function updatePublicAccount(
   return client.from("user").update(sanitize(account)).eq("id", account.id);
 }
 
+/** @mcp upsert */
 export async function upsertUserAttributeValue(
   client: SupabaseClient<Database>,
   update: {

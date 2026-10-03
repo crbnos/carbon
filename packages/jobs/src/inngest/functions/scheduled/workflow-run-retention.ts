@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -170,7 +169,7 @@ export const workflowRunRetentionFunction = inngest.createFunction(
   { id: "workflow-run-retention", retries: 2 },
   { cron: "0 4 * * *" },
   async ({ step, logger }) => {
-    const db = getJobDatabaseClient(5);
+    const db = getJobDatabaseClient();
 
     // 1. A run whose function died without reaching "finish" sits in Running
     // forever: permanently in flight in the UI, and invisible to every pass

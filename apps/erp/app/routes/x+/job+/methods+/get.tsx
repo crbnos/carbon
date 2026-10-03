@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -59,6 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const jobMethod = await upsertJobMethod(
       serviceRole,
+      getDatabaseClient(),
       type === "item"
         ? "itemToJob"
         : type === "job"
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     const [calculateQuantities, calculateDependencies] = await Promise.all([
-      recalculateJobRequirements(serviceRole, {
+      recalculateJobRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.targetId,
         companyId: companyId,
         userId: userId
@@ -121,6 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const makeMethod = await upsertJobMaterialMakeMethod(
       serviceRole,
+      getDatabaseClient(),
       makeMethodPayload
     );
 

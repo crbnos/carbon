@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -469,7 +468,8 @@ async function applyFkSnapshots(
         // A rejected query (e.g. a tenancy filter on a table without
         // companyId) silently degrades the affected diffs to raw ids —
         // make that visible.
-        log.error(`FK snapshot lookup failed for table "${table}"`, {
+        log.error('FK snapshot lookup failed for table "{table}"', {
+          table,
           error,
           tenantScoped
         });
@@ -477,7 +477,8 @@ async function applyFkSnapshots(
       }
       return data as Array<Record<string, unknown>>;
     } catch (err) {
-      log.error(`FK snapshot lookup failed for table "${table}"`, {
+      log.error('FK snapshot lookup failed for table "{table}"', {
+        table,
         error: err
       });
       return null;

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -12,15 +11,11 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  PrefetchLink,
   VStack
 } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
-import {
-  type ActionFunctionArgs,
-  Link,
-  redirect,
-  useLoaderData
-} from "react-router";
+import { type ActionFunctionArgs, redirect, useLoaderData } from "react-router";
 import {
   OnboardingCard,
   OnboardingCardContent,
@@ -136,9 +131,7 @@ export default function OnboardingCompany() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
-                Previous
-              </Link>
+              <PrefetchLink to={previous}>Previous</PrefetchLink>
             </Button>
             <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>
           </HStack>

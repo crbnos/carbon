@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -494,9 +493,9 @@ function decideDocumentFamily(args: {
  * Convert a Carbon journalLine amount to the engine's debit-signed
  * convention (positive = debit, negative = credit).
  *
- * Carbon's post-* edge functions sign amounts by the account's NATURAL
+ * Carbon's post-* server functions sign amounts by the account's NATURAL
  * balance (`credit("liability", x)` stores +x; `debit("liability", x)`
- * stores -x — see functions/lib/utils.ts), so a Carbon journal balances
+ * stores -x — see `credit`/`debit` in @carbon/utils), so a Carbon journal balances
  * as debits == credits, not as a signed sum of zero. The engine's
  * preflight, netting, consolidation and provider mappers all assume
  * debit-signed amounts, so every journal fetch converts at the edge using

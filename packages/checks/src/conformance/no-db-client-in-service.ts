@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -31,7 +30,10 @@ const MESSAGE =
   "A *.service.ts must not construct a DB pool/Kysely client — this file is bundled for the browser via the module barrel. Build it in a .server file (getDatabaseClient in ~/services/database.server) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action.";
 
 const BANNED = [
-  { pattern: /getPostgresConnectionPool\s*\(/g, message: MESSAGE },
+  {
+    pattern: /\b(?:getProcessPool|getPostgresConnectionPool)\s*\(/g,
+    message: MESSAGE
+  },
   { pattern: /getPostgresClient\s*\(/g, message: MESSAGE },
   { pattern: /new Pool\s*\(/g, message: MESSAGE },
   { pattern: /\bPostgresDriver\b/g, message: MESSAGE }

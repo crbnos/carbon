@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -18,10 +17,15 @@ import {
 import { requireFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
@@ -34,6 +38,9 @@ export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
   to: path.to.auditLog
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

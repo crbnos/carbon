@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -11,6 +10,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -177,14 +177,12 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    }
-  });
+      id: ncrId
+    });
 
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);

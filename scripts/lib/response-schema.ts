@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -17,15 +16,13 @@
  * schema, ~10s to walk. The manifest grows 1.3 -> 1.6 MB, and it is gitignored.
  */
 
-import * as fs from "fs";
-import * as path from "path";
-import { Node, Project, type Type } from "ts-morph";
+import type { ResultShape } from "@carbon/api";
+import { Node, type Type } from "ts-morph";
+import { MCP_EXPOSURE_TAG } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
+import { resultShapeOf } from "./result-shape";
+import type { ServiceAst } from "./service-ast";
 
 export type JsonSchema = Record<string, unknown>;
-
-const ROOT = path.resolve(__dirname, "../..");
-const ERP_ROOT = path.join(ROOT, "apps/erp");
-const MODULES_DIR = path.join(ERP_ROOT, "app/modules");
 
 /**
  * Rows are wide (40+ columns) and embeds nest, so an uncapped walk can emit a
@@ -132,6 +129,16 @@ export function typeToJsonSchema(
       items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
     };
   }
+  // A tuple or a readonly array is a list on the wire too. Neither is
+  // `isArray()`, so both fell through to the object walk and came out as a map
+  // (`typeof riskStatus`, an `as const` list, read as `Record<string, status>`).
+  if (type.isTuple() || type.isReadonlyArray()) {
+    const element = type.getNumberIndexType();
+    return {
+      type: "array",
+      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+    };
+  }
 
   if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
 
@@ -141,7 +148,17 @@ export function typeToJsonSchema(
       return { type: "object" };
     }
 
-    const key = type.getText();
+    // The checker's own type id, NOT `type.getText()`. getText() serializes the
+    // whole structural type to a string, and a supabase row with embeds
+    // serializes to a very large one — paying that at every object node was
+    // measured at 5.2s of a 5.2s walk, i.e. effectively the entire cost of
+    // walking 1574 return types. The id is O(1), it is only ever a Map key here
+    // (never emitted — that is the `__@toStringTag@75448` trap noted above), and
+    // it is per-program so it stays valid for the one walk that uses it.
+    // Verified byte-identical over all 1574 functions.
+    const key = String(
+      (type.compilerType as unknown as { id?: number }).id ?? type.getText()
+    );
     // Cycle: the type is already being expanded further up this branch.
     if (seen.has(key)) return { type: "object" };
 
@@ -254,6 +271,8 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
 export interface ResponseSchemaIndex {
   /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
   get(module: string, functionName: string): JsonSchema | null;
+  /** How the function reports failure in its result (`resultShapeOf`). */
+  shape(module: string, functionName: string): ResultShape;
   readonly stats: { functions: number; derived: number; empty: number };
 }
 
@@ -266,36 +285,33 @@ function isUseful(schema: JsonSchema): boolean {
 }
 
 /**
- * Reflect every module's service functions once. Loading the TS project is the
- * expensive part (~4s), so it happens here and the result is a plain lookup the
- * synchronous manifest builder can consult.
+ * Reflect the return type of every published service function. Takes the AST
+ * `buildServiceAst` already parsed, so the manifest builder and this index share
+ * ONE ts-morph project — the type checker is the expensive part of generation,
+ * and two projects paid for it twice.
  */
-export function buildResponseSchemaIndex(
-  modules: readonly string[]
-): ResponseSchemaIndex {
-  const project = new Project({
-    tsConfigFilePath: path.join(ERP_ROOT, "tsconfig.json"),
-    skipAddingFilesFromTsConfig: true
-  });
-
-  const sources = modules.flatMap((mod) =>
-    [`${mod}.service.ts`, `${mod}.ee.service.ts`, `${mod}.mcp.server.ts`]
-      .map((name) => ({ mod, file: path.join(MODULES_DIR, mod, name) }))
-      .filter((entry) => fs.existsSync(entry.file))
-      .map((entry) => ({ mod: entry.mod, source: project.addSourceFileAtPath(entry.file) }))
-  );
-  project.resolveSourceFileDependencies();
+export function buildResponseSchemaIndex(ast: ServiceAst): ResponseSchemaIndex {
+  ast.project.resolveSourceFileDependencies();
 
   const schemas = new Map<string, JsonSchema>();
+  const shapes = new Map<string, ResultShape>();
   const stats = { functions: 0, derived: 0, empty: 0 };
+  const checker = ast.project.getTypeChecker().compilerObject;
 
-  for (const { mod, source } of sources) {
-    for (const fn of source.getFunctions()) {
-      if (!fn.isExported()) continue;
+  for (const mod of ast.modules.values()) {
+    for (const fn of mod.functions) {
       stats.functions++;
+      // Only a tool's result is read by dispatch; an unpublished helper may
+      // return whatever it likes.
+      if (fn.tags.some((tag) => `@${tag.name}` === MCP_EXPOSURE_TAG)) {
+        shapes.set(fn.toolName, resultShapeOf(checker, fn));
+      }
       let schema: JsonSchema;
       try {
-        schema = typeToJsonSchema(unwrapResponseType(fn.getReturnType(), fn), fn);
+        schema = typeToJsonSchema(
+          unwrapResponseType(fn.node.getReturnType(), fn.node),
+          fn.node
+        );
       } catch {
         stats.empty++;
         continue;
@@ -304,7 +320,7 @@ export function buildResponseSchemaIndex(
         stats.empty++;
         continue;
       }
-      schemas.set(`${mod}_${fn.getName()}`, schema);
+      schemas.set(fn.toolName, schema);
       stats.derived++;
     }
   }
@@ -312,6 +328,9 @@ export function buildResponseSchemaIndex(
   return {
     get(module, functionName) {
       return schemas.get(`${module}_${functionName}`) ?? null;
+    },
+    shape(module, functionName) {
+      return shapes.get(`${module}_${functionName}`) ?? "plain";
     },
     stats
   };

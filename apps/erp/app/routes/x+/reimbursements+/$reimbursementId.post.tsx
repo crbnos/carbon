@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -52,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // The totals guard, server-side, BEFORE the edge function is called.
+  // The totals guard, server-side, BEFORE the server function is called.
   const lines = reimbursement.data.reimbursementLine ?? [];
   if (
     !linesBalanceHeader(

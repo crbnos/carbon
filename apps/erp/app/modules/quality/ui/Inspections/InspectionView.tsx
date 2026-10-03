@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -28,6 +27,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -60,7 +60,6 @@ import type {
 } from "~/modules/quality/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
-import { getReadableIdWithRevision } from "~/utils/string";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";

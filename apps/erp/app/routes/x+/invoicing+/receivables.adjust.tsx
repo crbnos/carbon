@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -18,6 +16,7 @@ import {
 import { getArTieOut } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Turns a non-zero AR tie-out variance into a balanced Draft journal entry — the
@@ -64,15 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, "No receivables variance to adjust"))
     );
   }
-
-  const serviceRole = getCarbonServiceRole();
-  const journalEntry = await serviceRole.functions.invoke<{ id: string }>(
-    "create",
-    {
-      body: { type: "journalEntry", companyId, userId },
-      region: FunctionRegion.UsEast1
-    }
-  );
+  const journalEntry = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", { type: "journalEntry" });
 
   if (!journalEntry.data || journalEntry.error) {
     throw redirect(

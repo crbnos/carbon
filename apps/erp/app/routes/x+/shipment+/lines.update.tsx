@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -31,11 +31,13 @@ export async function action({ request }: ActionFunctionArgs) {
   // Per-line saves go straight through.
   const update = await client
     .from("shipmentLine")
-    .update({
-      [field]: value ? value : null,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        [field]: value ? value : null,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .in("id", ids)
     .eq("companyId", companyId);
 

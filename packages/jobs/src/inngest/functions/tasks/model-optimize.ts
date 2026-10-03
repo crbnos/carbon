@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -211,9 +210,7 @@ export const modelOptimizeFunction = inngest.createFunction(
       // it via the late-mint URL, so the job never holds the bytes) to surface
       // the reduction against the untouched source `size`.
       const dir = `${companyId}/models/${modelUploadId}`;
-      const listed = await storage(client)
-        .company(companyId)
-        .list(dir, { search: "optimized.glb" });
+      const listed = await storage(client).company(companyId).list(dir);
       const optimized = listed.data?.find((o) => o.name === "optimized.glb");
       const optimizedSize = optimized?.metadata?.size ?? null;
 
@@ -239,10 +236,9 @@ export const modelOptimizeFunction = inngest.createFunction(
     });
 
     // Generate the preview thumbnail now that the optimised GLB exists — the
-    // thumbnail renderer (/file/model/:id) draws only the assembler GLB, so
-    // firing this at upload time (before the GLB) always failed. Chaining it to
-    // optimise success means it has something to render, and a re-optimise
-    // (viewer Retry / regenerate) refreshes the thumbnail for free.
+    // assembler renders it from that GLB, so an event sent at upload time
+    // (before the GLB) has nothing to draw. A re-optimise (viewer Retry /
+    // regenerate) refreshes the thumbnail for free.
     await step.sendEvent("thumbnail", {
       name: "carbon/model-thumbnail",
       data: { modelId: modelUploadId, companyId }

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -144,6 +143,10 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      integrationSyncActivityCsv: (id: string, status?: string | null) =>
+        `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
+          status ? `?${new URLSearchParams({ status })}` : ""
+        }`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -381,8 +384,6 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/components/reassign`),
     assemblyInstructionStepHiddenComponents: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/hidden/${stepId}`),
-    assemblyInstructionStepJoin: (id: string, stepId: string) =>
-      generatePath(`${x}/assembly/${id}/steps/join/${stepId}`),
     assemblyInstructionStepMotion: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>
@@ -404,6 +405,14 @@ export const path = {
       generatePath(`${x}/assembly/${id}/materials/${materialId}`),
     assemblyStepMaterialOrder: (id: string) =>
       generatePath(`${x}/assembly/${id}/materials/order`),
+    assemblySubAssembly: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}`),
+    assemblySubAssemblyDelete: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/delete`),
+    assemblySubAssemblyNew: (id: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/new`),
+    assemblySubAssemblyUngroup: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/sub-assemblies/${stepId}/ungroup`),
     assemblySyncBop: (id: string) =>
       generatePath(`${x}/assembly/${id}/sync-bop`),
     assetClass: (id: string) =>
@@ -2028,6 +2037,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteLineOrder: (quoteId: string) =>
       generatePath(`${x}/quote/${quoteId}/line-order`),
+    quoteLinePriceTrace: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/price-trace`),
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
     quoteLineUpdatePrecision: (quoteId: string, lineId: string) =>
@@ -2498,10 +2509,6 @@ export const getParams = (request: Request) => {
 };
 
 export { getPrivateUrl, getRawModelUrl } from "@carbon/files/media";
-
-export const getPublicModelUrl = (path: string) => {
-  return `/file/model/public/${path}`;
-};
 
 // Map an item to its type-specific detail route. Used where a CO references an
 // item by name and we want a link to the item page. Assemblies and unknown/blank

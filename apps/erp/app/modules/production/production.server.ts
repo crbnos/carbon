@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -7,10 +6,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { datetime } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
@@ -96,7 +95,7 @@ export async function releaseJobs({
   const purchaseOrders = { ...purchaseOrdersBySupplierId };
 
   for (const id of jobIds) {
-    const recalc = await recalculateJobRequirements(serviceRole, {
+    const recalc = await recalculateJobRequirements(serviceRole, db, {
       id,
       companyId,
       userId
@@ -117,20 +116,16 @@ export async function releaseJobs({
     // even if a later step (purchase orders) fails. Best-effort, never throws.
     await afterJobsReleased(db, client, { jobIds: [id], companyId, userId });
 
-    const purchaseOrder = await serviceRole.functions.invoke<{
-      purchaseOrderIdsBySupplierId?: Record<string, string>;
-    }>("create", {
-      body: {
+    const purchaseOrder = await serverFns
+      .system({ db, companyId, userId })
+      .invoke("create", {
         type: "purchaseOrderFromJob",
         jobId: id,
-        purchaseOrdersBySupplierId: purchaseOrders,
-        companyId,
-        userId
-      }
-    });
+        purchaseOrdersBySupplierId: purchaseOrders
+      });
     if (purchaseOrder.error) {
       return {
-        error: await getEdgeFunctionErrorMessage(
+        error: getErrorMessage(
           purchaseOrder.error,
           `Failed to create purchase orders for job ${id}`
         )

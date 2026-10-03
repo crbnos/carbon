@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -18,6 +17,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -287,7 +287,7 @@ export function JobCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {item.link && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                     <Link to={item.link}>
                       <DropdownMenuIcon icon={<LuPencil />} />
                       Edit Job

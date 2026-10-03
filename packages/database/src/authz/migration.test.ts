@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -57,6 +56,17 @@ describe("unshipped: production gets every rule and helper through a migration",
       expect.arrayContaining(["note", "brandNewTable"])
     );
     expect(result.helpers).toContain("get_companies_with_employee_role");
+  });
+
+  test("an edited function outside public is unshipped under its schema", async () => {
+    const helpers = (await loadHelpers()).map((h) =>
+      h.schema === "util" && h.name === "wake_event_queue"
+        ? { ...h, sql: h.sql.replace("SECURITY DEFINER", "SECURITY INVOKER") }
+        : h
+    );
+    expect((await unshipped(manifest, helpers)).helpers).toEqual([
+      "util.wake_event_queue"
+    ]);
   });
 
   test("a generated migration ships its tables and helpers", async () => {

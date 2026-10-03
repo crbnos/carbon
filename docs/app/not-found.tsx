@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,7 +7,7 @@ import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 
 export const metadata: Metadata = {
-  title: "Page not found — Carbon",
+  title: "Page not found | Carbon",
   description: "The page you’re looking for doesn’t exist or has moved."
 };
 

@@ -3634,6 +3634,7 @@ export type Database = {
           hiddenComponentNodeIds: string[]
           id: string
           instructionText: string | null
+          isSubAssembly: boolean
           listValues: string[] | null
           maxValue: number | null
           minValue: number | null
@@ -3650,6 +3651,7 @@ export type Database = {
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
+          usedInStepId: string | null
           warnings: Json | null
         }
         Insert: {
@@ -3668,6 +3670,7 @@ export type Database = {
           hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
+          isSubAssembly?: boolean
           listValues?: string[] | null
           maxValue?: number | null
           minValue?: number | null
@@ -3684,6 +3687,7 @@ export type Database = {
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          usedInStepId?: string | null
           warnings?: Json | null
         }
         Update: {
@@ -3702,6 +3706,7 @@ export type Database = {
           hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
+          isSubAssembly?: boolean
           listValues?: string[] | null
           maxValue?: number | null
           minValue?: number | null
@@ -3718,6 +3723,7 @@ export type Database = {
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          usedInStepId?: string | null
           warnings?: Json | null
         }
         Relationships: [
@@ -3853,6 +3859,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "assemblyInstructionStep_usedInStepId_fkey"
+            columns: ["usedInStepId"]
+            isOneToOne: false
+            referencedRelation: "assemblyInstructionStep"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -48174,6 +48187,7 @@ export type Database = {
           netExtendedPrice: number | null
           netUnitPrice: number | null
           priceSource: string
+          priceTrace: Json | null
           quantity: number
           quoteId: string
           quoteLineId: string
@@ -48197,6 +48211,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId: string
           quoteLineId: string
@@ -48220,6 +48235,7 @@ export type Database = {
           netExtendedPrice?: number | null
           netUnitPrice?: number | null
           priceSource?: string
+          priceTrace?: Json | null
           quantity?: number
           quoteId?: string
           quoteLineId?: string
@@ -84892,6 +84908,12 @@ export type Database = {
           trackedActivityId: string
         }[]
       }
+      get_document_extensions: {
+        Args: { company_id: string }
+        Returns: {
+          extension: string
+        }[]
+      }
       get_effective_work_center_id: {
         Args: { p_storage_unit_id: string }
         Returns: string
@@ -85043,6 +85065,15 @@ export type Database = {
           unitCost: number
           unitOfMeasureCode: string
         }[]
+      }
+      get_item_ledger_balance: {
+        Args: {
+          company_id: string
+          entry_number?: number
+          item_id: string
+          location_id: string
+        }
+        Returns: number
       }
       get_item_quantities_by_tracking_id: {
         Args: { company_id: string; item_id: string; location_id: string }
@@ -86609,6 +86640,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_inngest_event_config: {
+        Args: { p_base_url: string; p_key: string }
+        Returns: undefined
+      }
+      set_inngest_event_url: { Args: { p_url: string }; Returns: undefined }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]

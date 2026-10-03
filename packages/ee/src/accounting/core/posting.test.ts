@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -369,7 +368,7 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
 });
 
 // ── Natural-balance → debit-signed conversion ───────────────────────────────
-// Carbon's post-* edge functions sign journalLine.amount by the account's
+// Carbon's post-* server functions sign journalLine.amount by the account's
 // NATURAL balance (credit("liability", x) stores +x), so the engine converts
 // at fetch time; see toDebitSignedAmount.
 

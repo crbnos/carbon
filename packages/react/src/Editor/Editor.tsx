@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -56,6 +55,8 @@ interface MentionConfig {
 
 interface EditorProp {
   className?: string;
+  /** Focus the editor when it mounts. */
+  autoFocus?: boolean;
   initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
   onUpload?: (file: File) => Promise<string>;
@@ -107,6 +108,7 @@ const defaultOnUpload = async (file: File) => {
 
 const Editor = ({
   className,
+  autoFocus,
   initialValue,
   onChange,
   onUpload,
@@ -271,6 +273,7 @@ const Editor = ({
           initialContent: initialContentRef.current
         })}
         extensions={extensions}
+        autofocus={autoFocus}
         editorProps={{
           handleDOMEvents: {
             keydown: (_view, event) => handleCommandNavigation(event)

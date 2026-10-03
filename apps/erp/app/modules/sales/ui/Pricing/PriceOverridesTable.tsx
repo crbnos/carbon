@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,6 +7,7 @@ import {
   Button,
   HStack,
   Label,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   NumberDecrementStepper,
@@ -51,7 +51,7 @@ import type { PriceListRow } from "~/modules/sales";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
 import { PriceListScopeEmpty } from "./PriceListScopeEmpty";
-import { PriceTracePopover } from "./PriceTracePopover";
+import { PriceTraceModal } from "./PriceTraceModal";
 import { type ScopeOption, ScopePicker } from "./ScopePicker";
 
 type PriceListTableProps = {
@@ -211,7 +211,7 @@ const PriceListTable = memo(
                     <TooltipContent>This price is overridden.</TooltipContent>
                   </Tooltip>
                 )}
-                <PriceTracePopover
+                <PriceTraceModal
                   trace={row.original.trace}
                   currencyCode={baseCurrency}
                 />
@@ -294,6 +294,7 @@ const PriceListTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={row.overrideId ? MENU_ITEM_SHORTCUTS.edit : undefined}
               disabled={!(row.overrideId ? canUpdate : canCreate) || !hasScope}
               onClick={() => {
                 navigate(buildOverrideHref(row));
@@ -304,6 +305,7 @@ const PriceListTable = memo(
             </MenuItem>
             {row.overrideId && (
               <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                 disabled={!canCreate}
                 onClick={() => {
                   setDuplicateState({ overrideIds: [row.overrideId!] });

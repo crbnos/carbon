@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -58,7 +57,7 @@ async function danglingForeignKeys(
 
 describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
   it("deletes a company, posted journals included, leaving no dangling rows", async () => {
-    const db = getJobDatabaseClient(1);
+    const db = getJobDatabaseClient();
     const replica = await canSetReplicationRole(db);
     expect(replica).toBe(true);
     const catalog = await getCompanyTableCatalog(db);

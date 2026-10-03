@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { MessageDescriptor } from "@lingui/core";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 export type Handle = {
   breadcrumb?: any;
   to?: string;
   module?: string;
-  // When true, a module _layout hides its GroupedContentSidebar for this route —
-  // used by full-screen detail views that provide their own left panel (e.g. the
+  // A module layout's sub-navigation. The shell renders it in the one module
+  // sidebar (`ModuleSidebarLayout`), so it stays in place across modules.
+  sidebar?: ComponentType;
+  // When true, the module sidebar is hidden for this route — used by
+  // full-screen detail views that provide their own left panel (e.g. the
   // change-order workspace) so the app doesn't stack two left sidebars.
   hideModuleSidebar?: boolean;
 };

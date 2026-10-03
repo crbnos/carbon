@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -23,6 +22,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
 } from "@carbon/react";
@@ -109,6 +109,7 @@ const ApprovalRuleCard = memo(
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.edit}
                         disabled={!canEdit}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -120,6 +121,7 @@ const ApprovalRuleCard = memo(
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         disabled={!canDelete}
                         onClick={(e) => {

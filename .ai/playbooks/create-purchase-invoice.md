@@ -1,6 +1,6 @@
 # Create Purchase Invoice
 
-Last tested: 2026-06-07
+Last tested: 2026-09-30
 Route: /x/purchasing/invoices (via "Add Purchase Invoice" button)
 
 ## Prerequisites
@@ -39,6 +39,14 @@ Route: /x/purchasing/invoices (via "Add Purchase Invoice" button)
 - Success indicator: Page shows heading with invoice ID (e.g., "AP000001"), status badge "DRAFT", supplier name, subtotal/tax/total summary
 - Right sidebar shows PROPERTIES with ID, Assignee, Supplier, Invoice Supplier, dates
 - Left panel shows "Add Line Item" button and empty line items area
+
+## Post an existing Draft invoice (post-purchase-invoice)
+- Pick a Draft invoice with lines (`purchaseInvoice.status='Draft'` join `purchaseInvoiceLine`).
+- Detail page → "Post" button → dialog "Post Invoice" → "Post and Receive Invoice".
+- Verify: status `Open`; a Part line with no PO line books `itemLedger`
+  `Positive Adjmt.` / `Purchase Receipt` against the INVOICE id (no `receipt` row is created),
+  a `costLedger` layer (`Purchase`), and a Posted `Purchase Invoice` journal: Dr Raw
+  Materials / Cr Accounts Payable, both stored positive (natural-balance signs).
 
 ## Selector Notes
 - Supplier is the first combobox after the Invoice ID field

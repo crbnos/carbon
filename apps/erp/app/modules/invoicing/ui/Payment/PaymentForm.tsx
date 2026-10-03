@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -14,6 +13,7 @@ import {
   CardTitle,
   DropdownMenuIcon,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -160,7 +160,11 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
               }
               menuItems={
                 status === "Draft" && canDelete ? (
-                  <DropdownMenuItem destructive onClick={deleteModal.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
+                    destructive
+                    onClick={deleteModal.onOpen}
+                  >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     <Trans>Delete</Trans>
                   </DropdownMenuItem>
@@ -243,6 +247,7 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                   />
                 )}
                 <SelectControlled
+                  autoFocus={!isEditing}
                   name="paymentKind"
                   label={t`Type`}
                   options={typeOptions}

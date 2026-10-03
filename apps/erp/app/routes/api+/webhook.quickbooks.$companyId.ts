@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,6 +8,7 @@ import {
   buildQboPaymentSyncChange,
   getAccountingIntegration,
   getProviderIntegration,
+  isAccountingSyncEnabled,
   ProviderID,
   parseStoredCredentials
 } from "@carbon/ee/accounting";
@@ -191,6 +191,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       reason: "signature_mismatch"
     });
     return data({ success: false }, { status: 401 });
+  }
+
+  // Sync is turned off while the integration is being set up: acknowledge so
+  // Intuit does not retry, and do nothing.
+  if (!isAccountingSyncEnabled(integration.metadata)) {
+    return { success: true, ignored: true };
   }
 
   let parsed: z.infer<typeof webhookValidator>;

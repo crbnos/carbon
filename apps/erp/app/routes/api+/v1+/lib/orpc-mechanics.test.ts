@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -29,7 +28,9 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     description: "demo ping",
     paramCount: 1,
     serviceParams: ["client", "args"],
+    contextParams: { client: "client" },
     injectAuth: [],
+    resultShape: "plain",
     permission: { module: null, actions: [] },
     paginates: false,
     schema: { type: "object", properties: { name: { type: "string" } } },

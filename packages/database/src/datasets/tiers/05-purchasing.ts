@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -456,7 +455,7 @@ export async function runTier5(ctx: Ctx): Promise<void> {
   }
 
   // ── Purchase orders converted from the winning quote ──────────────────────
-  // The convert edge function reuses the quote's supplier interaction, and a PO
+  // The convert server function reuses the quote's supplier interaction, and a PO
   // with nothing received and nothing invoiced is exactly the state post-receipt
   // and post-purchase-invoice call "To Receive and Invoice".
   const winner = data.rfqQuotes.find((q) => q.key === data.rfqWinningQuote);

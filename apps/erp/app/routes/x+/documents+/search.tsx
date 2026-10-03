@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,8 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateDownloadToken } from "@carbon/auth/download-token.server";
 import { flash } from "@carbon/auth/session.server";
 import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
-import type { LoaderFunctionArgs } from "react-router";
+import { isUnaffectedByNavigation } from "@carbon/utils";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { useResolved } from "~/hooks/useResolved";
 import type { Document } from "~/modules/documents";
 import {
   DocumentsTable,
@@ -19,6 +23,11 @@ import {
 } from "~/modules/documents";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -38,7 +47,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [documents, labels, extensions] = await Promise.all([
+  // Only the file-type filter needs this, so it streams rather than holding
+  // the page.
+  const extensions = getDocumentExtensions(client, companyId).then(
+    (result) => result.data?.map(({ extension }) => extension) ?? []
+  );
+
+  const [documents, labels] = await Promise.all([
     getDocuments(client, companyId, {
       search,
       favorite,
@@ -50,8 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getDocumentLabels(client, userId),
-    getDocumentExtensions(client)
+    getDocumentLabels(client, userId)
   ]);
 
   if (documents.error) {
@@ -81,13 +95,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: documents.count ?? 0,
     documents: documentsWithDownloadTokens,
     labels: labels.data ?? [],
-    extensions: extensions.data?.map(({ extension }) => extension) ?? []
+    extensions
   };
 }
 
 export default function DocumentsAllRoute() {
-  const { count, documents, labels, extensions } =
-    useLoaderData<typeof loader>();
+  const { count, documents, labels, ...data } = useLoaderData<typeof loader>();
+  const extensions = useResolved(data.extensions, []);
 
   return (
     <VStack spacing={0} className="h-full ">

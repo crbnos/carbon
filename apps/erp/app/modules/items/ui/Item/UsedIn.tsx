@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -18,6 +17,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  MENU_ITEM_SHORTCUTS,
   Skeleton,
   Tooltip,
   TooltipContent,
@@ -25,6 +25,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -50,7 +51,6 @@ import { usePermissions } from "~/hooks";
 import { getNextRevision } from "~/modules/items";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { getReadableIdWithRevision } from "~/utils/string";
 import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
 import ChangeNoticeStatus from "../ChangeNotice/ChangeNoticeStatus";
 import {
@@ -408,6 +408,7 @@ export function RevisionsItem({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.edit}
                           onSelect={() => {
                             flushSync(() => {
                               setSelectedRevision({

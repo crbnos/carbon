@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -9,7 +8,7 @@ import { fieldMappings, importSchemas } from "./imports.models";
 // The import route builds `columnMappings` from `validator(importSchemas[table]
 // .extend({...})).validate(formData)`, and a zod object strips keys it does not
 // declare. So a field the wizard offers but the schema omits is mapped by the
-// user, submitted, and silently dropped before the edge function ever sees it —
+// user, submitted, and silently dropped before the server function ever sees it —
 // which is how every CSV-imported item landed at revision "0" while the wizard
 // marked the Revision column required.
 //

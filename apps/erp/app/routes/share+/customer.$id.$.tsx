@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -120,8 +119,6 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = getContentType(fileType);
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const { data: fileData, error } = await storage(serviceRole)
     .company(shareCompanyId)
     .download(path);

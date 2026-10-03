@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -238,7 +237,14 @@ export async function saveQuoteLineWithPrices(args: {
     if (priceRows.length > 0) {
       await trx
         .insertInto("quoteLinePrice")
-        .values(priceRows as never)
+        .values(
+          // Kysely sends a JS array as a Postgres array literal; jsonb needs
+          // JSON text.
+          priceRows.map((row) => ({
+            ...row,
+            priceTrace: row.priceTrace ? JSON.stringify(row.priceTrace) : null
+          })) as never
+        )
         .execute();
     }
   });

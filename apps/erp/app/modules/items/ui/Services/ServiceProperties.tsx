@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -30,6 +29,7 @@ import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -64,7 +64,7 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
     supplierParts: SupplierPart[];
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
-    supersession?: {
+    supersession?: Promise<{
       successorItemId: string | null;
       successorEffectivityDate: string | null;
       successor: {
@@ -72,15 +72,27 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
         readableIdWithRevision: string;
         name: string;
       } | null;
-    } | null;
-    supersededBy?: Array<{
-      predecessor: {
-        id: string;
-        readableIdWithRevision: string;
-        name: string;
-      } | null;
-    }>;
+    } | null>;
+    supersededBy?: Promise<
+      Array<{
+        predecessor: {
+          id: string;
+          readableIdWithRevision: string;
+          name: string;
+        } | null;
+      }>
+    >;
   }>(path.to.service(itemId));
+  const supersession = useResolved(
+    routeDataFromRoute?.supersession,
+    null,
+    itemId
+  );
+  const supersededBy = useResolved(
+    routeDataFromRoute?.supersededBy,
+    null,
+    itemId
+  );
   const routeData = data ?? routeDataFromRoute;
 
   const supplierParts = routeData?.supplierParts ?? [];
@@ -456,32 +468,30 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
           }}
         />
       </ValidatedForm>
-      {routeDataFromRoute?.supersession?.successor && (
+      {supersession?.successor && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">
             <Trans>Superseded By</Trans>
           </h3>
           <Link
-            to={path.to.service(routeDataFromRoute.supersession.successor.id)}
+            to={path.to.service(supersession.successor.id)}
             className="text-sm text-primary hover:underline"
           >
-            {routeDataFromRoute.supersession.successor.readableIdWithRevision}
+            {supersession.successor.readableIdWithRevision}
           </Link>
-          {routeDataFromRoute.supersession.successorEffectivityDate && (
+          {supersession.successorEffectivityDate && (
             <p className="text-xs text-muted-foreground">
-              <Trans>
-                From {routeDataFromRoute.supersession.successorEffectivityDate}
-              </Trans>
+              <Trans>From {supersession.successorEffectivityDate}</Trans>
             </p>
           )}
         </div>
       )}
-      {(routeDataFromRoute?.supersededBy?.length ?? 0) > 0 && (
+      {(supersededBy?.length ?? 0) > 0 && (
         <div className="w-full">
           <h3 className="text-xs text-muted-foreground mb-1">
             <Trans>Supersedes</Trans>
           </h3>
-          {routeDataFromRoute?.supersededBy?.map(
+          {supersededBy?.map(
             (ref) =>
               ref.predecessor && (
                 <Link

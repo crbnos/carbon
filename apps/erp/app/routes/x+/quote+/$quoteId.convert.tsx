@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -15,6 +14,7 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { Violation } from "@carbon/utils";
+import { getErrorMessage } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -31,12 +31,10 @@ import {
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "quoteid-convert");
-
-// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -89,11 +87,10 @@ export async function action(args: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   await requireCompanyRecord(serviceRole, "quote", companyId, { id: quoteId });
 
-  // Terminal gate, in the route rather than inside the `convert` edge function:
-  // the edge function writes salesOrderLine rows directly and cannot run the
-  // evaluator (it is Deno, and the evaluator's plan gate pulls in the ERP
-  // server runtime). Gating here covers this path without duplicating the
-  // evaluator into a tree CI never typechecks or tests.
+  // Terminal gate, in the route rather than inside the `convert` server function:
+  // the server function writes salesOrderLine rows directly and cannot run the
+  // evaluator (the evaluator's plan gate pulls in the ERP server runtime).
+  // Gating here covers this path without duplicating the evaluator.
   const acknowledged = formData.get("acknowledged") === "true";
   let violations: Violation[];
   let ruleNames: Record<string, string>;
@@ -149,7 +146,7 @@ export async function action(args: ActionFunctionArgs) {
     return { violations: deduped, ruleNames };
   }
 
-  const convert = await convertQuoteToOrder(serviceRole, {
+  const convert = await convertQuoteToOrder(serviceRole, getDatabaseClient(), {
     id: quoteId,
     purchaseOrderNumber: poNumber ?? "",
     companyId,
@@ -164,10 +161,7 @@ export async function action(args: ActionFunctionArgs) {
         request,
         error(
           convert.error,
-          await getEdgeFunctionErrorMessage(
-            convert.error,
-            "Failed to convert quote to order"
-          )
+          getErrorMessage(convert.error, "Failed to convert quote to order")
         )
       )
     );

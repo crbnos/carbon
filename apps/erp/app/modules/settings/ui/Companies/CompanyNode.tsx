@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,7 +7,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -96,6 +96,7 @@ function CompanyNodeComponent({ data }: NodeProps & { data: CompanyNodeData }) {
 
             {company.parentCompanyId && (
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 className="text-destructive focus:text-destructive"
                 onClick={() => onDelete(company.id!)}
               >

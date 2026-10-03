@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -8,6 +7,7 @@ import {
   Badge,
   Button,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Modal,
@@ -385,6 +385,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
     (job: PrintJob) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
           disabled={job.status === "generating"}
           onClick={() => {
             fetcher.submit(

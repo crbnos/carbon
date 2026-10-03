@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -35,6 +34,7 @@ import {
   seedCompany,
   subsidiaryValidator
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "settings-companies-new");
@@ -110,9 +110,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const seed = await seedCompany(client, companyId, userId, {
-    parentCompanyId
-  });
+  const seed = await seedCompany(
+    client,
+    getDatabaseClient(),
+    companyId,
+    userId,
+    {
+      parentCompanyId
+    }
+  );
   if (seed.error) {
     throw redirect(
       path.to.companies,

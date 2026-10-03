@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
-// DB comes from postgres/index.ts (a type-only alias), NOT ../database.ts —
-// database.ts pulls in the Deno-only postgres driver, which fails the Node
-// typecheck reached via src/scheduling.ts re-exporting this engine in-process.
-import type { DB } from "@carbon/database/client";
 import {
-  datetime,
+  type Database,
   getCompanyTimeZone,
   getLocationTimeZone
-} from "@carbon/database/datetime";
-import { getFunctionLogger } from "@carbon/database/logging";
+} from "@carbon/database";
+import type { DB } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import {
@@ -73,7 +69,22 @@ import {
 
 export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
-const log = getFunctionLogger("schedule");
+const log = getLogger("planning", "schedule");
+
+/**
+ * True when writing `values` would change the row. Compared in Postgres so a
+ * stored DATE or timestamptz is matched in its own type, not as a JS string.
+ * With nothing to compare it is true, so the write goes ahead.
+ */
+export function isDistinctFromAny(values: Record<string, unknown>) {
+  const comparisons = Object.entries(values)
+    .filter(([, value]) => value !== undefined)
+    .map(
+      ([column, value]) => sql`${sql.ref(column)} is distinct from ${value}`
+    );
+  if (comparisons.length === 0) return sql<boolean>`true`;
+  return sql<boolean>`(${sql.join(comparisons, sql` or `)})`;
+}
 
 /**
  * Unified Scheduling Engine
@@ -433,7 +444,7 @@ export class SchedulingEngine {
     //
     // Rebuild atomically with a per-job advisory lock: two schedule runs for
     // the same job can overlap (an Inngest retry racing a still-running
-    // invocation, or a direct functions.invoke alongside the queued one);
+    // invocation, or a direct in-process run alongside the queued one);
     // interleaved delete/insert then violates jobOperationDependency_pk. The
     // lock serializes the rebuild per job, and onConflict absorbs any edge that
     // survives a race with trigger-rework's inserts.
@@ -493,6 +504,7 @@ export class SchedulingEngine {
               .set({ status: "Ready" })
               .where("id", "=", opId)
               .where("status", "not in", [
+                "Ready",
                 "Done",
                 "Canceled",
                 "In Progress",
@@ -919,27 +931,32 @@ export class SchedulingEngine {
         // dueDate is the backward need-by target and is DIFF-written: only
         // when the computed value differs from the stored one (a quiet regen
         // touches zero dueDate values), and never for a pinned op —
-        // manuallyScheduled means a human owns that target. The forward
-        // results (startDate day + projectedCompletionAt instant) are written
-        // for every op.
+        // manuallyScheduled means a human owns that target.
         const needBy = this.needByByOperation.get(op.id) ?? null;
         const storedDueDate = toIsoDate(originalOp?.dueDate ?? null);
         const writeDueDate = !isManuallyScheduled && needBy !== storedDueDate;
 
+        const placement = {
+          startDate: op.startDate,
+          projectedCompletionAt: op.projectedCompletionAt ?? null,
+          ...(writeDueDate ? { dueDate: needBy } : {}),
+          ...(op.priority != null ? { priority: op.priority } : {}),
+          workCenterId,
+          hasConflict: op.hasConflict,
+          conflictReason: op.conflictReason
+        };
+
+        // Every UPDATE is queued for the audit/search handlers, so an op whose
+        // placement is unchanged must not be written at all.
         await trx
           .updateTable("jobOperation")
           .set({
-            startDate: op.startDate,
-            projectedCompletionAt: op.projectedCompletionAt ?? null,
-            ...(writeDueDate ? { dueDate: needBy } : {}),
-            priority: op.priority ?? undefined,
-            workCenterId,
-            hasConflict: op.hasConflict,
-            conflictReason: op.conflictReason,
+            ...placement,
             updatedAt: datetime.timestamp(),
             updatedBy: this.userId
           })
           .where("id", "=", op.id)
+          .where(isDistinctFromAny(placement))
           .execute();
       }
 
@@ -996,6 +1013,13 @@ export class SchedulingEngine {
         })
         .where("id", "=", this.jobId)
         .where("companyId", "=", this.companyId)
+        .where(
+          isDistinctFromAny({
+            projectedCompletionAt: this.projectedCompletionAt,
+            scheduleOutdatedReason: null,
+            scheduleOutdatedAt: null
+          })
+        )
         .execute();
     });
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -110,6 +109,7 @@ async function handleKanban({
 
     const createdJob = await insertJob(
       serviceRole,
+      getDatabaseClient(),
       {
         itemId: kanban.data.itemId!,
         quantity: kanban.data.quantity!,
@@ -135,7 +135,7 @@ async function handleKanban({
     }
 
     const [upsertMethod, associateKanban] = await Promise.all([
-      upsertJobMethod(serviceRole, "itemToJob", {
+      upsertJobMethod(serviceRole, getDatabaseClient(), "itemToJob", {
         sourceId: kanban.data.itemId!,
         targetId: id,
         companyId,

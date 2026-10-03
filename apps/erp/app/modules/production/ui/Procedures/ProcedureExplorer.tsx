@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -31,6 +30,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   ShortcutKey,
   Tabs,
   TabsContent,
@@ -580,6 +580,7 @@ function ProcedureStepItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(attribute);
@@ -589,6 +590,7 @@ function ProcedureStepItem({
                 Edit Step
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {
@@ -670,6 +672,7 @@ function ProcedureParameterItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(parameter);
@@ -679,6 +682,7 @@ function ProcedureParameterItem({
                 Edit Parameter
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={!permissions.can("update", "production")}
                 onClick={(e) => {

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-Carbon-Commercial
-// Copyright (C) Carbon Manufacturing Systems Corporation.
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
@@ -20,7 +19,7 @@ import { createMappingService } from "./external-mapping";
  * the Carbon `payment` + `invoiceSettlement` rows as a **Draft** (idempotent by
  * the `payment` external mapping under the composite id). The GL journal and the
  * document-status transitions are NOT written here — the caller (PaymentSyncerBase)
- * invokes the native `post-payment` edge function after commit, which owns the
+ * invokes the native `post-payment` server function after commit, which owns the
  * journal + status. This is the shared write path AR (invoice → Receipt) and AP
  * (bill → Disbursement) both funnel through: Carbon's `payment`/`invoiceSettlement`
  * tables are already family-symmetric (discriminated by paymentType + party +

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
@@ -33,7 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return data(
       { success: false },
-      await flash(request, error(validation.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(validation.error, "Failed to update component group")
+      )
     );
   }
 
@@ -50,7 +52,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (update.error) {
     return data(
       { success: false },
-      await flash(request, error(update.error, "Failed to update unit"))
+      await flash(
+        request,
+        error(update.error, "Failed to update component group")
+      )
     );
   }
 
