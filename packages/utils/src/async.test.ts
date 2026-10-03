@@ -35,20 +35,25 @@ describe("async.map", () => {
 
   it("rejects with the first failure and starts nothing after it", async () => {
     const started: number[] = [];
+    // Item 1 is held open until item 2 has failed: no timers to race.
+    let finishFirst!: () => void;
+    const firstHeld = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
     await expect(
       async.map(
         [1, 2, 3, 4, 5],
         async (n) => {
           started.push(n);
-          // Item 1 is still running when item 2 fails.
-          await tick(n === 1 ? 20 : 5);
+          if (n === 1) await firstHeld;
           if (n === 2) throw new Error("two failed");
           return n;
         },
         { concurrency: 2 }
       )
     ).rejects.toThrow("two failed");
-    await tick(30);
+    finishFirst();
+    await tick(5);
     expect(started).toEqual([1, 2]);
   });
 
