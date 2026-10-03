@@ -479,7 +479,8 @@ export const weeklyFunction = inngest.createFunction(
                 );
                 if (failures.length > 0) {
                   for (const failure of failures) {
-                    logger.error(`Failed to remove company ${failure.part}`, {
+                    logger.error("Failed to remove company {failurePart}", {
+                      failurePart: failure.part,
                       ...company,
                       error: failure.error
                     });

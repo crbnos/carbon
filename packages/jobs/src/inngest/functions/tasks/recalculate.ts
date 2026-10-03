@@ -61,7 +61,9 @@ export const recalculateFunction = inngest.createFunction(
     if (result.success) {
       logger.info(`Success ${payload.id}`);
     } else {
-      logger.error(`Recalculation ${payload.type} failed for ${payload.id}`, {
+      logger.error("Recalculation {payloadType} failed for {payloadId}", {
+        payloadType: payload.type,
+        payloadId: payload.id,
         message: result.message
       });
     }

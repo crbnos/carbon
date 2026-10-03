@@ -114,7 +114,8 @@ export const mrpFunction = inngest.createFunction(
           logger.info(`Successfully ran MRP for company ${company.name}`);
         });
       } catch (error) {
-        logger.error(`Failed to run MRP for company ${company.name}`, {
+        logger.error("Failed to run MRP for company {companyName}", {
+          companyName: company.name,
           error
         });
         failed.push(company.id);

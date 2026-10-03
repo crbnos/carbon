@@ -135,7 +135,9 @@ export const userAdminFunction = inngest.createFunction(
       if (result.success) {
         logger.info(`Success ${payload.id}`);
       } else {
-        logger.error(`Admin action ${payload.type} failed for ${payload.id}`, {
+        logger.error("Admin action {payloadType} failed for {payloadId}", {
+          payloadType: payload.type,
+          payloadId: payload.id,
           message: result.message
         });
       }

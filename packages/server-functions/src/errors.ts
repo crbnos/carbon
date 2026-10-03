@@ -88,7 +88,7 @@ export function toServerFnError(
   const error = toError(err, defaultStatus);
   // A refusal the caller caused (bad input, missing record, no permission) is
   // expected traffic; only a server failure is an error.
-  if (error.status >= 500) logger.error(`${name} failed`, { error: err });
+  if (error.status >= 500) logger.error("{name} failed", { name, error: err });
   else logger.warn(`${name} refused`, { status: error.status, error: err });
   return error;
 }

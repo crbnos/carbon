@@ -293,6 +293,7 @@
   "no-numeric-precision::20260604120000_invoice-totals-computed-in-views.sql::NUMERIC(10,2)",
   "no-numeric-precision::20260604120000_invoice-totals-computed-in-views.sql::numeric(10,2)",
   "no-numeric-precision::20260618171234_material-supersession.sql::NUMERIC(10,2)",
+  "no-interpolated-error-log::packages/auth/src/utils/result.ts::log.error(`${",
   "no-raw-rounding::apps/erp/app/components/CadModel.tsx::Math.round(artifacts.optimizedSize / 1024)",
   "no-raw-rounding::apps/erp/app/components/CadModel.tsx::{convertKbToString(Math.ceil(file.size / 1024))}",
   "no-raw-rounding::apps/erp/app/components/CadModel.tsx::{convertKbToString(Math.round(artifacts.size / 1024))}",

@@ -18,6 +18,7 @@ export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
+export { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noMissingAuditColumn } from "./conformance/no-missing-audit-column";

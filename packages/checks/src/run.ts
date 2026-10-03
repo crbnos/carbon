@@ -25,6 +25,7 @@ import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
+import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
@@ -156,7 +157,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noMissingAuditColumn(loadDbTableColumns(root))
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
-      noRawForwardedHeaders
+      noRawForwardedHeaders,
+      noInterpolatedErrorLog
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders

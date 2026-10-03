@@ -639,7 +639,8 @@ export async function requireCompanyRecord(
     .maybeSingle();
 
   if (error) {
-    logger.error(`Failed to verify ${table} for company`, {
+    logger.error("Failed to verify {table} for company", {
+      table,
       companyId,
       match,
       error
@@ -647,7 +648,7 @@ export async function requireCompanyRecord(
     throw new Response("Not found", { status: 404 });
   }
   if (!data) {
-    logger.error(`${table} not found for company`, { companyId, match });
+    logger.error("{table} not found for company", { table, companyId, match });
     throw new Response("Not found", { status: 404 });
   }
 }

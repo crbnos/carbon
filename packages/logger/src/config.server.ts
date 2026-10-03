@@ -63,8 +63,9 @@ export type ConfigureLoggingOptions = {
  * on the host; without this an error the app handled (a refusal it turned into
  * a flash message, a failed background step) was visible nowhere searchable.
  * Only the message template is recorded (`"Failed to post {document}"`), never
- * the values in it or the record's properties: nothing personal leaves the
- * host, and one message groups as one error whatever it was about.
+ * the values in it or the record's properties, so one message groups as one
+ * error whatever it was about. That holds only while messages name their
+ * values as placeholders: the `no-interpolated-error-log` check enforces it.
  */
 const errorSpans: Sink = (record) => {
   if (record.level !== "error" && record.level !== "fatal") return;

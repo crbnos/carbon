@@ -102,9 +102,10 @@ async function downloadFileFromUrl(
     const response = await fetch(url);
 
     if (!response.ok) {
-      logger.error(
-        `Failed to download file from ${url}: ${response.statusText}`
-      );
+      logger.error("Failed to download file from {url}: {responseStatusText}", {
+        url,
+        responseStatusText: response.statusText
+      });
       return null;
     }
 
@@ -326,7 +327,7 @@ async function getCachedMaterialProperties(
   }
 
   if (!substance.data) {
-    logger.error(`Substance not found for ID: ${substanceId}`);
+    logger.error("Substance not found for ID: {substanceId}", { substanceId });
     return null;
   }
 
@@ -811,10 +812,10 @@ async function uploadModelFile(
       .single();
 
     if (existingItem.error) {
-      logger.error(
-        `Failed to read item ${itemId} before model upload:`,
-        existingItem.error
-      );
+      logger.error("Failed to read item {itemId} before model upload", {
+        itemId,
+        error: existingItem.error
+      });
       return false;
     }
 
@@ -852,12 +853,17 @@ async function uploadModelFile(
       });
 
     if (modelUpload.error) {
-      logger.error(`Failed to upload model ${file.name}:`, modelUpload.error);
+      logger.error("Failed to upload model {fileName}", {
+        fileName: file.name,
+        error: modelUpload.error
+      });
       return false;
     }
 
     if (!modelUpload.data?.path) {
-      logger.error(`No path returned for uploaded model ${file.name}`);
+      logger.error("No path returned for uploaded model {fileName}", {
+        fileName: file.name
+      });
       return false;
     }
 
@@ -872,10 +878,10 @@ async function uploadModelFile(
     });
 
     if (modelRecord.error) {
-      logger.error(
-        `Failed to create model record for ${file.name}:`,
-        modelRecord.error
-      );
+      logger.error("Failed to create model record for {fileName}", {
+        fileName: file.name,
+        error: modelRecord.error
+      });
       return false;
     }
 
@@ -950,7 +956,9 @@ async function uploadFileToItem(
     }
 
     if (!fileUpload.data?.path) {
-      logger.error(`No path returned for uploaded file ${file.name}`);
+      logger.error("No path returned for uploaded file {fileName}", {
+        fileName: file.name
+      });
       return false;
     }
 
@@ -1006,7 +1014,8 @@ async function processSupportingFiles(
 
       if (!file) {
         logger.error(
-          `Failed to download supporting file: ${supportingFile.filename}`
+          "Failed to download supporting file: {supportingFileFilename}",
+          { supportingFileFilename: supportingFile.filename }
         );
         continue;
       }
@@ -1025,9 +1034,9 @@ async function processSupportingFiles(
         if (uploadSuccess) {
           hasModel = true;
         } else {
-          logger.error(
-            `Failed to upload CAD model: ${supportingFile.filename}`
-          );
+          logger.error("Failed to upload CAD model: {supportingFileFilename}", {
+            supportingFileFilename: supportingFile.filename
+          });
         }
       } else {
         logger.info(`Processing ${file.name} as document`);
@@ -1041,7 +1050,8 @@ async function processSupportingFiles(
 
         if (!uploadSuccess) {
           logger.error(
-            `Failed to upload supporting file: ${supportingFile.filename}`
+            "Failed to upload supporting file: {supportingFileFilename}",
+            { supportingFileFilename: supportingFile.filename }
           );
         }
       }
@@ -1268,8 +1278,8 @@ export async function getCustomerIdAndContactId(
         // If we still haven't found an account, log the error but continue without throwing
         if (!existingPaperlessAccount) {
           logger.error(
-            `Could not create or find account in Paperless Parts for: ${customerName}. Error:`,
-            newPaperlessPartsAccount.error
+            "Could not create or find account in Paperless Parts for: {customerName}",
+            { customerName, error: newPaperlessPartsAccount.error }
           );
           // Use a fallback approach - we'll create the customer in Carbon without a Paperless Parts account ID
           paperlessPartsAccountId = 0; // Use 0 as a fallback to indicate no Paperless Parts account
@@ -1957,7 +1967,9 @@ async function downloadAndUploadThumbnail(
     // Download the thumbnail from the URL
     const response = await fetch(thumbnailUrl);
     if (!response.ok) {
-      logger.error(`Failed to download thumbnail: ${response.statusText}`);
+      logger.error("Failed to download thumbnail: {responseStatusText}", {
+        responseStatusText: response.statusText
+      });
       return null;
     }
 
@@ -2243,10 +2255,10 @@ export async function createPartFromComponent(
           .single();
 
         if (itemCostUpdate.error) {
-          logger.error(
-            `Failed to update itemCost for existing ${partId}:`,
-            itemCostUpdate.error
-          );
+          logger.error("Failed to update itemCost for existing {partId}", {
+            partId,
+            error: itemCostUpdate.error
+          });
           // Don't throw here, just log the error and continue
         } else {
           logger.info(`Successfully updated itemCost for existing ${partId}`);
@@ -2319,10 +2331,10 @@ export async function createPartFromComponent(
         .single();
 
       if (itemCostUpdate.error) {
-        logger.error(
-          `Failed to update itemCost for ${partId}:`,
-          itemCostUpdate.error
-        );
+        logger.error("Failed to update itemCost for {partId}", {
+          partId,
+          error: itemCostUpdate.error
+        });
         // Don't throw here, just log the error and continue
       } else {
         logger.info(`Successfully updated itemCost for ${partId}`);
@@ -2525,8 +2537,11 @@ export async function getOrCreatePart(
 
         if (itemCostUpdate.error) {
           logger.error(
-            `Failed to update itemCost for existing (external ID) ${existingPart.partId}:`,
-            itemCostUpdate.error
+            "Failed to update itemCost for existing (external ID) {existingPartPartId}",
+            {
+              existingPartPartId: existingPart.partId,
+              error: itemCostUpdate.error
+            }
           );
           // Don't throw here, just log the error and continue
         } else {
@@ -2758,8 +2773,8 @@ export async function insertOrderLines(
 
         if (lineResult.error) {
           logger.error(
-            `Failed to insert sales order line for component ${component.part_uuid}:`,
-            lineResult.error
+            "Failed to insert sales order line for component {componentPart_uuid}",
+            { componentPart_uuid: component.part_uuid, error: lineResult.error }
           );
           continue;
         }
@@ -3010,8 +3025,8 @@ export async function insertQuoteLines(
 
         if (lineResult.error) {
           logger.error(
-            `Failed to insert quote line for component ${component.part_uuid}:`,
-            lineResult.error
+            "Failed to insert quote line for component {componentPart_uuid}",
+            { componentPart_uuid: component.part_uuid, error: lineResult.error }
           );
           continue;
         }
@@ -3042,8 +3057,11 @@ export async function insertQuoteLines(
 
           if (priceResult.error) {
             logger.error(
-              `Failed to insert quote line prices for component ${component.part_uuid}:`,
-              priceResult.error
+              "Failed to insert quote line prices for component {componentPart_uuid}",
+              {
+                componentPart_uuid: component.part_uuid,
+                error: priceResult.error
+              }
             );
           }
         }
@@ -3132,8 +3150,8 @@ export async function insertQuoteLines(
 
                   if (opResult.error) {
                     logger.error(
-                      `Failed to insert quote operation ${operationName}:`,
-                      opResult.error
+                      "Failed to insert quote operation {operationName}",
+                      { operationName, error: opResult.error }
                     );
                   }
                 }

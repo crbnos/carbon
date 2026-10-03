@@ -218,7 +218,8 @@ export const syncFunction = inngest.createFunction(
               refs
             });
           } catch (error) {
-            logger.error(`Failed to reconcile sync events for ${key}`, {
+            logger.error("Failed to reconcile sync events for {key}", {
+              key,
               error
             });
             stepSummary.aborted = true;

@@ -353,7 +353,11 @@ export const embeddingFunction = inngest.createFunction(
       results.processed = embedded.length;
       results.failed = failed.length;
       for (const { record, error } of failed) {
-        logger.error(`Embedding ${record.table} ${record.id} failed: ${error}`);
+        logger.error("Embedding {recordTable} {recordId} failed: {error}", {
+          recordTable: record.table,
+          recordId: record.id,
+          error
+        });
       }
 
       logger.info(

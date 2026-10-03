@@ -32,7 +32,10 @@ export const workflowRunFunction = inngest.createFunction(
     idempotency: "event.data.runId",
     onFailure: async ({ event, logger }) => {
       const { runId, companyId } = event.data.event.data;
-      logger.error(`Workflow run ${runId} failed`, event.data.error);
+      logger.error("Workflow run {runId} failed", {
+        runId,
+        error: event.data.error
+      });
 
       await failCrashedRun(
         getJobDatabaseClient(),
