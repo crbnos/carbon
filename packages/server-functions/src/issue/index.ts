@@ -122,7 +122,6 @@ async function issueJobOperationMaterials(
     accountingEnabled,
     accountDefaults,
     dimensionMap,
-    client,
     db
   }: {
     jobOperationId: string;
@@ -132,8 +131,7 @@ async function issueJobOperationMaterials(
     accountingEnabled: boolean;
     accountDefaults: any;
     dimensionMap: Map<string, string>;
-    client: any;
-    db: any;
+    db: Kysely<KyselyDatabase>;
   }
 ) {
   const materialsToIssue = await trx
@@ -513,7 +511,6 @@ async function issueJobOperationMaterials(
       // Resolve the period from the SAME hoisted `today` the ledger rows used —
       // a midnight rollover mid-transaction must not split journal and ledger.
       const accountingPeriodId = await getCurrentAccountingPeriod(
-        client,
         companyId,
         trx,
         today
@@ -615,8 +612,7 @@ async function createMaterialWipEntries(
     finishedGoodsAccount: string;
     dimensionMap: Map<string, string>;
     jobLocationId: string | null;
-    client: any;
-    db: any;
+    db: Kysely<KyselyDatabase>;
     companyId: string;
     userId: string;
   }
@@ -631,7 +627,6 @@ async function createMaterialWipEntries(
     finishedGoodsAccount,
     dimensionMap,
     jobLocationId,
-    client,
     companyId,
     userId
   } = args;
@@ -800,7 +795,6 @@ async function createMaterialWipEntries(
 
   // Same hoisted `today` as this function's ledger rows (see above).
   const accountingPeriodId = await getCurrentAccountingPeriod(
-    client,
     companyId,
     trx,
     today
@@ -1372,7 +1366,6 @@ async function consumeTrackedEntitiesIntoOperation(
     companyId,
     userId,
     companyToday,
-    client,
     db,
     accountingEnabled: accountingEnabledTracked,
     accountDefaults: accountDefaultsTracked,
@@ -1391,7 +1384,6 @@ async function consumeTrackedEntitiesIntoOperation(
     userId: string;
     companyToday: CalendarDate;
     db: Kysely<KyselyDatabase>;
-    client: any;
     accountingEnabled: boolean;
     accountDefaults: any;
     dimensionMap: Map<string, string>;
@@ -1870,7 +1862,6 @@ async function consumeTrackedEntitiesIntoOperation(
         dimensionMap: dimensionMapTracked,
 
         jobLocationId: job?.locationId ?? null,
-        client,
         db,
         companyId,
         userId
@@ -2032,8 +2023,6 @@ export const issue = defineServerFn({
       case "jobOperation": {
         const { id, companyId, quantity, userId } = validatedPayload;
 
-        const client = await ctx.supabase();
-
         const [accountingSettings, companyRecord] = await inOrder([
           () =>
             single(
@@ -2093,7 +2082,6 @@ export const issue = defineServerFn({
             accountingEnabled,
             accountDefaults: accountDefaults?.data ? accountDefaults : null,
             dimensionMap,
-            client,
             db
           });
         });
@@ -2102,7 +2090,6 @@ export const issue = defineServerFn({
       }
       case "jobOperationBatchComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
-        const client = await ctx.supabase();
         await assertProductionQuantityLinks(db, companyId, row);
 
         const [jobOperation, productionQuantities] = await inOrder([
@@ -2161,7 +2148,6 @@ export const issue = defineServerFn({
               ? accountingBatch.accountDefaults
               : null,
             dimensionMap: accountingBatch.dimensionMap,
-            client,
             db
           });
         });
@@ -2249,7 +2235,6 @@ export const issue = defineServerFn({
       }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
-        const client = await ctx.supabase();
         await assertProductionQuantityLinks(db, companyId, row);
 
         const jobOperation = await single(db, "jobOperation", {
@@ -2499,7 +2484,6 @@ export const issue = defineServerFn({
               ? accountDefaultsSerial
               : null,
             dimensionMap: dimensionMapSerial,
-            client,
             db
           });
         });
@@ -2522,7 +2506,6 @@ export const issue = defineServerFn({
           companyId,
           userId
         } = validatedPayload;
-        const client = await ctx.supabase();
         // Lands on productionQuantity, the Scrap activity and the journal's
         // ScrapReason dimension — all this company's rows.
         await assertCompanyRecords(
@@ -2700,7 +2683,6 @@ export const issue = defineServerFn({
               ? accountDefaultsScrapOp
               : null,
             dimensionMap: dimensionMapScrapOp,
-            client,
             db
           });
 
@@ -2890,7 +2872,6 @@ export const issue = defineServerFn({
               backflush.totalMaterialCost + priorUnitMaterialCost * quantity;
             if (scrapCost > 0) {
               const accountingPeriodId = await getCurrentAccountingPeriod(
-                client,
                 companyId,
                 trx,
                 todayScrapOp
@@ -3022,7 +3003,6 @@ export const issue = defineServerFn({
           adjustmentType
         } = validatedPayload;
 
-        const client = await ctx.supabase();
         // Written into jobMaterialStep for an unplanned part (no companyId there).
         await assertCompanyRecords(
           db,
@@ -3372,7 +3352,6 @@ export const issue = defineServerFn({
               dimensionMap,
 
               jobLocationId: jobRecord?.locationId ?? null,
-              client,
               db,
               companyId,
               userId
@@ -3391,7 +3370,6 @@ export const issue = defineServerFn({
           companyId,
           userId
         } = validatedPayload;
-        const client = await ctx.supabase();
         // The parent lands in trackedActivityOutput and the reason on the ledger,
         // the activity and the journal dimension — both must be this company's.
         await assertCompanyRecords(
@@ -3425,22 +3403,22 @@ export const issue = defineServerFn({
           throw new Error("Tracked entity has already been scrapped");
         }
 
-        const [accountingSettingsScrap, companyRecordScrap] = await Promise.all(
-          [
+        const [accountingSettingsScrap, companyRecordScrap] = await inOrder([
+          () =>
             single(
               db,
               "companySettings",
               { id: companyId },
               { columns: ["accountingEnabled"] }
             ),
+          () =>
             single(
               db,
               "company",
               { id: companyId },
               { columns: ["companyGroupId"] }
             )
-          ]
-        );
+        ]);
         if (companyRecordScrap.error)
           throw new Error("Failed to fetch company");
         const accountingEnabledScrap =
@@ -3488,7 +3466,7 @@ export const issue = defineServerFn({
           .toString();
         // Resolve the period BEFORE the transaction parks the (size 1) pool.
         const accountingPeriodIdScrap = accountingEnabledScrap
-          ? await getCurrentAccountingPeriod(client, companyId, db, todayScrap)
+          ? await getCurrentAccountingPeriod(companyId, db, todayScrap)
           : null;
 
         let didReplace = false;
@@ -3934,7 +3912,6 @@ export const issue = defineServerFn({
           );
         }
 
-        const client = await ctx.supabase();
         // Stamped on the Consume activity and written into jobMaterialStep.
         await assertCompanyRecords(
           db,
@@ -3963,7 +3940,6 @@ export const issue = defineServerFn({
             companyId,
             userId,
             companyToday,
-            client,
             ...accounting
           })
         );
@@ -3989,7 +3965,6 @@ export const issue = defineServerFn({
           throw new Error("Children are required");
         }
 
-        const client = await ctx.supabase();
         const companyToday = datetime.today(
           await getCompanyTimeZone(db, companyId)
         );
@@ -4003,7 +3978,6 @@ export const issue = defineServerFn({
         // back. Committed here, every member's read finds it.
         if (accounting.accountingEnabled) {
           await getCurrentAccountingPeriod(
-            client,
             companyId,
             db,
             companyToday.toString()
@@ -4181,7 +4155,6 @@ export const issue = defineServerFn({
                 companyId,
                 userId,
                 companyToday,
-                client,
                 ...accounting
               }
             );
@@ -4368,8 +4341,6 @@ export const issue = defineServerFn({
         if (children.length === 0) {
           throw new Error("Children are required");
         }
-
-        const clientUnconsume = await ctx.supabase();
 
         const [accountingSettingsUnconsume, companyRecordUnconsume] =
           await inOrder([
@@ -4623,7 +4594,6 @@ export const issue = defineServerFn({
                 dimensionMap: dimensionMapUnconsume,
 
                 jobLocationId: job?.locationId ?? null,
-                client: clientUnconsume,
                 db,
                 companyId,
                 userId

@@ -60,25 +60,6 @@ describe("defineServerFn", () => {
     expect(error?.status).toBe(403);
   });
 
-  it("chooses permissions by the parsed input's type", async () => {
-    const fn = defineServerFn({
-      name: "typed",
-      input: z.discriminatedUnion("type", [
-        z.object({ type: z.literal("internal") }),
-        z.object({ type: z.literal("public") })
-      ]),
-      permissions: {
-        by: "type",
-        rules: { internal: "system", public: "system" }
-      },
-      async run(_ctx, { type }) {
-        return type;
-      }
-    });
-    expect((await fn(user, { type: "internal" })).error?.status).toBe(403);
-    expect((await fn(system, { type: "public" })).data).toBe("public");
-  });
-
   it("passes a ServerFnError through with its status and body", async () => {
     const fn = defineServerFn({
       name: "missing",

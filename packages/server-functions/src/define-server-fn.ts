@@ -20,33 +20,23 @@ export type ServerFnResult<R> =
 
 export type ServerFn<S extends z.ZodType, R> = {
   (ctx: ServerFnContext, input: z.input<S>): Promise<ServerFnResult<R>>;
-  /**
-   * For app code that holds a Supabase client instead of a context: the
-   * client's key decides the actor (`ServerFnContext.fromClient`), and the
-   * input's `companyId` / `userId` fill in the rest.
-   */
+  /** The client's key decides the actor (`ServerFnContext.fromClient`). */
   withClient(
     client: SupabaseClient<Database>,
     db: Kysely<KyselyDatabase>,
     input: z.input<S> & { companyId: string; userId: string }
   ): Promise<ServerFnResult<R>>;
   readonly serverFnName: string;
-  /** What the caller needs, as declared (see `PermissionRule`). */
   readonly permissions: PermissionRule<z.output<S>>;
 };
 
-/**
- * One permission per value of a string field of the input (its `type`, the
- * `table` an import targets, …). Data, not a function, so the API manifest can
- * read it.
- */
+/** One permission per value of a string field. Data, so the API manifest can read it. */
 type KeyedRule<I> = {
   [K in keyof I & string]: I[K] extends string
     ? { by: K; rules: Record<I[K], Permissions> }
     : never;
 }[keyof I & string];
 
-/** What the caller must hold: one rule for every input, or one per field value. */
 export type PermissionRule<I> = Permissions | KeyedRule<I>;
 
 function resolvePermissions<I>(rule: PermissionRule<I>, input: I): Permissions {
@@ -60,20 +50,14 @@ function resolvePermissions<I>(rule: PermissionRule<I>, input: I): Permissions {
 }
 
 type ServerFnDefinition<S extends z.ZodType, R> = {
-  /** Kebab-case, matching the directory; names the function in logs. */
   name: string;
   input: S;
   permissions: PermissionRule<z.output<S>>;
-  /** Status for a thrown error that carries none of its own. */
   defaultStatus?: number;
   run: (ctx: ServerFnContext, input: z.output<S>) => Promise<R>;
 };
 
-/**
- * A server function: validates its input, authorizes the caller, runs, and
- * returns `{ data, error }` — never throws. Everything a caller must know is
- * in the definition, so every function has the same shape.
- */
+/** Validates, authorizes, runs, and returns `{ data, error }` — never throws. */
 export function defineServerFn<S extends z.ZodType, R>({
   name,
   input: schema,

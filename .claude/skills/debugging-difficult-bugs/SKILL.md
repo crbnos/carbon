@@ -51,7 +51,7 @@ handlers run as separate processes with different working directories; server
 functions (`packages/server-functions`) run inside whichever of them called
 them. Log `process.cwd()` + a process role once at startup, or use distinct
 filenames (`debug-erp.jsonl`, `debug-jobs.jsonl`). The Docker `edge-runtime`
-container only hosts the `embedding` and `thumbnail` edge functions; there,
+container only hosts the `embedding` edge function; there,
 `console.error` JSON lines (visible in container logs) stand in for a file.
 
 ## Step 3: Reproduce the real issue once

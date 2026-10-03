@@ -40,11 +40,13 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { assertPostable } from "../lib/postable";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -62,18 +64,19 @@ export const postShipment = defineServerFn({
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, shipmentId, userId, companyId });
-
-    const client = await ctx.supabase();
+    const fixedAssetWrites = new FixedAssetWrites();
+    if (type === "post")
+      await assertPostable(db, "shipment", shipmentId, companyId);
     try {
       const today = datetime
         .today(await getCompanyTimeZone(db, companyId))
         .toString();
 
-      const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all(
-        [
-          // The client is service-role: authorization proved the caller may
-          // act in companyId, not that shipmentId belongs to it.
-          maybeSingle(db, "shipment", { id: shipmentId, companyId }),
+      const [shipment, shipmentLines, shipmentLineTracking] = await inOrder([
+        // The client is service-role: authorization proved the caller may
+        // act in companyId, not that shipmentId belongs to it.
+        () => maybeSingle(db, "shipment", { id: shipmentId, companyId }),
+        () =>
           many<
             "shipmentLine",
             Tables["shipmentLine"]["Row"] & {
@@ -89,12 +92,12 @@ export const postShipment = defineServerFn({
               }
             }
           ),
+        () =>
           many(db, "trackedEntity", {
             attributes: contains({ Shipment: shipmentId }),
             companyId
           })
-        ]
-      );
+      ]);
 
       if (shipment.error) throw new Error("Failed to fetch shipment");
       if (!shipment.data) throw new NotFoundError("Shipment not found");
@@ -692,6 +695,7 @@ export const postShipment = defineServerFn({
 
                   if (assetRecord.error)
                     throw new Error("Failed to fetch fixed asset for disposal");
+                  fixedAssetWrites.overlay(faSoLine.assetId!, assetRecord.data);
 
                   const assetClass = assetRecord.data.fixedAssetClass as any;
                   const acquisitionCost =
@@ -793,31 +797,30 @@ export const postShipment = defineServerFn({
                       assetRecord.data.fixedAssetClassId ?? null
                   });
 
-                  await updateRows(
-                    db,
-                    "fixedAsset",
-                    {
-                      status: "Disposed",
-                      disposalDate: today,
-                      disposalMethod: "Sale",
-                      updatedBy: userId
-                    },
-                    { id: faSoLine.assetId! }
-                  );
-
-                  await insertRows(db, "fixedAssetDisposal", {
-                    fixedAssetId: faSoLine.assetId!,
-                    disposalMethod: "Sale",
+                  fixedAssetWrites.patch(faSoLine.assetId!, {
+                    status: "Disposed",
                     disposalDate: today,
-                    saleProceeds: 0,
-                    netBookValueAtDisposal: nbv,
-                    // Gain/loss is unknown until proceeds are invoiced; the NBV is
-                    // held in the disposal clearing account, not expensed, so we
-                    // record 0 here (the invoice sets the real gain/loss).
-                    gainLoss: 0,
-                    companyId,
-                    createdBy: userId
+                    disposalMethod: "Sale",
+                    updatedBy: userId
                   });
+
+                  const disposal: Database["public"]["Tables"]["fixedAssetDisposal"]["Insert"] =
+                    {
+                      fixedAssetId: faSoLine.assetId!,
+                      disposalMethod: "Sale",
+                      disposalDate: today,
+                      saleProceeds: 0,
+                      netBookValueAtDisposal: nbv,
+                      // Gain/loss is unknown until proceeds are invoiced; the NBV is
+                      // held in the disposal clearing account, not expensed, so we
+                      // record 0 here (the invoice sets the real gain/loss).
+                      gainLoss: 0,
+                      companyId,
+                      createdBy: userId
+                    };
+                  fixedAssetWrites.defer((trx) =>
+                    insertRows(trx, "fixedAssetDisposal", disposal)
+                  );
                 }
 
                 salesOrderLineUpdates[faSoLine.id] = {
@@ -922,13 +925,13 @@ export const postShipment = defineServerFn({
               // an orphan that exhausts the pool (size 1) for every subsequent
               // post-shipment invocation.
               const accountingPeriodId = await getCurrentAccountingPeriod(
-                client,
                 companyId,
                 db,
                 today
               );
 
               await db.transaction().execute(async (trx) => {
+                await fixedAssetWrites.apply(trx, companyId);
                 for await (const [salesOrderLineId, update] of Object.entries(
                   salesOrderLineUpdates
                 )) {
@@ -2155,7 +2158,7 @@ export const postShipment = defineServerFn({
               }
 
               const accountingPeriodId = accountingEnabled
-                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
               await db.transaction().execute(async (trx) => {
@@ -2625,7 +2628,7 @@ export const postShipment = defineServerFn({
               }
 
               const accountingPeriodId = accountingEnabled
-                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
               await db.transaction().execute(async (trx) => {
@@ -3360,22 +3363,20 @@ export const postShipment = defineServerFn({
                     sentDate: null
                   };
 
-                  await updateRows(
-                    db,
-                    "fixedAsset",
-                    {
-                      status: "Active",
-                      disposalDate: null,
-                      disposalMethod: null,
-                      updatedBy: userId
-                    },
-                    { id: faSoLine.assetId! }
-                  );
-
-                  await deleteRows(db, "fixedAssetDisposal", {
-                    fixedAssetId: faSoLine.assetId!,
-                    companyId
+                  fixedAssetWrites.patch(faSoLine.assetId!, {
+                    status: "Active",
+                    disposalDate: null,
+                    disposalMethod: null,
+                    updatedBy: userId
                   });
+
+                  const assetId = faSoLine.assetId!;
+                  fixedAssetWrites.defer((trx) =>
+                    deleteRows(trx, "fixedAssetDisposal", {
+                      fixedAssetId: assetId,
+                      companyId
+                    })
+                  );
                 }
               }
 
@@ -3398,15 +3399,11 @@ export const postShipment = defineServerFn({
 
               const accountingPeriodId =
                 accountingEnabled && reversingJournalLines.length > 0
-                  ? await getCurrentAccountingPeriod(
-                      client,
-                      companyId,
-                      db,
-                      today
-                    )
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
+                await fixedAssetWrites.apply(trx, companyId);
                 // Update sales order lines to reverse shipped quantities
                 for await (const [salesOrderLineId, update] of Object.entries(
                   salesOrderLineUpdates
@@ -4123,12 +4120,7 @@ export const postShipment = defineServerFn({
               const accountingPeriodId =
                 accountingEnabled &&
                 (originalJournalLines.data ?? []).length > 0
-                  ? await getCurrentAccountingPeriod(
-                      client,
-                      companyId,
-                      db,
-                      today
-                    )
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {
@@ -4431,12 +4423,7 @@ export const postShipment = defineServerFn({
               const accountingPeriodId =
                 accountingEnabled &&
                 (originalJournalLines.data ?? []).length > 0
-                  ? await getCurrentAccountingPeriod(
-                      client,
-                      companyId,
-                      db,
-                      today
-                    )
+                  ? await getCurrentAccountingPeriod(companyId, db, today)
                   : null;
 
               await db.transaction().execute(async (trx) => {

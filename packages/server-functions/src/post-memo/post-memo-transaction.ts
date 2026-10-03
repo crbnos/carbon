@@ -2,12 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { buildMemoJournal } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, toBaseAmount, toDocumentAmount } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
@@ -19,7 +17,6 @@ export type PostMemoArgs = {
   companyId: string;
   userId: string;
   today: string;
-  client: SupabaseClient<Database>;
 };
 
 /** The endpoint's commit boundary. Headers, defaults and account classes come from this transaction. */
@@ -27,7 +24,7 @@ export function postMemoTransaction(
   db: Kysely<KyselyDatabase>,
   args: PostMemoArgs
 ): Promise<{ journalId: string | null }> {
-  const { type, memoId, companyId, userId, today, client } = args;
+  const { type, memoId, companyId, userId, today } = args;
   return db.transaction().execute(async (trx) => {
     const memo = await trx
       .selectFrom("memo")
@@ -56,7 +53,6 @@ export function postMemoTransaction(
     let accountingPeriodId: string | null = null;
     if (accountingEnabled) {
       accountingPeriodId = await getCurrentAccountingPeriod(
-        client,
         companyId,
         trx,
         today

@@ -116,7 +116,11 @@ databaseTest(
             trx,
             "trackedEntity",
             { quantity: 4, readableId: null, expirationDate: undefined },
-            { id: row.id, status: neq("Consumed") }
+            {
+              id: row.id,
+              companyId: owner.companyId,
+              status: neq("Consumed")
+            }
           );
           const updated = await selectRow(trx, "trackedEntity", { id: row.id });
           expect(updated?.quantity).toBe(4);
@@ -159,6 +163,28 @@ databaseTest(
         .catch((error) => {
           if (error !== rollback) throw error;
         });
+    } finally {
+      await db.destroy();
+    }
+  }
+);
+
+databaseTest(
+  "a filter value shaped like a comparison is a value, not SQL",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    try {
+      const everyone = await selectRows(db, "company", {});
+      if (everyone.length === 0) return;
+      // If the object's `op` reached the statement this would match every row.
+      const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
+      const matched = await selectRows(db, "company", {
+        name: lookalike
+      }).catch(() => []);
+      expect(matched).toEqual([]);
+      expect(
+        (await selectRows(db, "company", { id: neq("no-such-company") })).length
+      ).toBe(everyone.length);
     } finally {
       await db.destroy();
     }

@@ -27,8 +27,6 @@ export const closeJob = defineServerFn({
   permissions: { update: "production" },
   async run(ctx, { jobId }) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
-
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
@@ -145,7 +143,6 @@ export const closeJob = defineServerFn({
       ];
 
       const accountingPeriodId = await getCurrentAccountingPeriod(
-        client,
         companyId,
         trx,
         today

@@ -15,12 +15,8 @@ import {
 
 let serviceRole: Promise<SupabaseClient<Database>> | undefined;
 
-/**
- * The service-role client, built once per process. Built here rather than
- * passed in: callers include browser-bundled `*.service.ts` files, which cannot
- * import `@carbon/auth`'s `.server` factory. Lazy because `@carbon/env` throws
- * at import when a required variable is unset.
- */
+/** Built here, lazily: browser-bundled `*.service.ts` callers cannot import
+ *  `@carbon/auth`'s `.server` factory, and `@carbon/env` throws at import. */
 function serviceRoleClient(): Promise<SupabaseClient<Database>> {
   serviceRole ??= Promise.all([import("@carbon/auth"), import("@carbon/env")])
     .then(([{ getCarbonClient }, { SUPABASE_SERVICE_ROLE_KEY }]) =>
@@ -34,7 +30,6 @@ function serviceRoleClient(): Promise<SupabaseClient<Database>> {
   return serviceRole;
 }
 
-/** Whether `client` was built with `key` (supabase-js keeps it on the instance). */
 export function clientUsesKey(
   client: SupabaseClient<Database>,
   key: string | undefined
@@ -63,13 +58,8 @@ function bearerSubject(authorization: string | undefined): string | undefined {
   }
 }
 
-/**
- * Who a server function runs for. `system` is a server-side caller with no
- * signed-in user behind it (an Inngest job, an accounting syncer, a route that
- * holds the service role) and skips permission checks; `user` is checked
- * against the user's claims, `apiKey` against the key's own scopes (never its
- * creator's permissions). Never derive it from request input.
- */
+/** `system` skips permission checks; `user` is checked against the user's
+ *  claims, `apiKey` against the key's own scopes. Never derive it from input. */
 export type Actor = "system" | "user" | "apiKey";
 
 type ContextFields = {
@@ -79,16 +69,11 @@ type ContextFields = {
   userId: string;
 };
 
-/**
- * Everything a server function runs with. Built only through the named
- * constructors, so where the system acts is greppable: `ServerFnContext.system`.
- */
 export class ServerFnContext {
   readonly db: Kysely<KyselyDatabase>;
   readonly companyId: string;
   readonly userId: string;
   readonly actor: Actor;
-  /** The raw `carbon-key`, when `actor` is `apiKey`. */
   readonly apiKey: string | undefined;
 
   private constructor(fields: ContextFields, actor: Actor, apiKey?: string) {
@@ -108,11 +93,9 @@ export class ServerFnContext {
   }
 
   /**
-   * For code that received its caller's Supabase client: a `carbon-key` header
-   * makes the caller that API key, the service-role key the system, and a
-   * user's token that user — who must be `fields.userId`, since permissions
-   * are read for it. Never replace this with a flag the caller passes: /api/v1
-   * fills unknown parameters from the body.
+   * The client's key decides the actor. A user's token must be `fields.userId`,
+   * since permissions are read for it. Never replace this with a flag the
+   * caller passes: /api/v1 fills unknown parameters from the body.
    */
   static async fromClient(
     client: SupabaseClient<Database>,
@@ -135,20 +118,13 @@ export class ServerFnContext {
     return this.actor === "system";
   }
 
-  /** The service-role client every server function reads and writes with. */
   supabase(): Promise<SupabaseClient<Database>> {
     return serviceRoleClient();
   }
 }
 
-/** What a server function requires of its caller. */
 export type Permissions = RequiredPermissions | "system";
 
-/**
- * Throws `ForbiddenError` unless the context may run a function requiring
- * `required`. The system passes everything; a user needs the claims, read with
- * `get_claims` over the context's own database; an API key needs its scopes.
- */
 export async function authorize(
   ctx: ServerFnContext,
   required: Permissions
@@ -163,10 +139,17 @@ export async function authorize(
   }>`SELECT get_claims(${ctx.userId}, ${ctx.companyId}) AS claims`.execute(
     ctx.db
   );
-  const permissions = permissionsFromClaims(rows[0]?.claims ?? {});
+  const claims = rows[0]?.claims ?? {};
+  // A portal account holds a few view permissions, so the list alone would admit it.
+  if (isPortalAccount(claims)) throw new ForbiddenError();
+  const permissions = permissionsFromClaims(claims);
   if (!hasPermissions(permissions, ctx.companyId, required)) {
     throw new ForbiddenError();
   }
+}
+
+export function isPortalAccount(claims: Record<string, unknown>): boolean {
+  return claims.role === "customer" || claims.role === "supplier";
 }
 
 /** A key of this company, unexpired, whose scopes (`<module>_<action>` →

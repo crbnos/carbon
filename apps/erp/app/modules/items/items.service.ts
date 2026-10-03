@@ -225,7 +225,24 @@ export async function createRevision(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
-    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+    // The source item's fields a revision copies, not the whole row.
+    item: Pick<
+      NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>,
+      | "id"
+      | "companyId"
+      | "readableId"
+      | "name"
+      | "type"
+      | "replenishmentSystem"
+      | "defaultMethodType"
+      | "itemTrackingType"
+      | "unitOfMeasureCode"
+      | "description"
+      | "sourcingType"
+      | "thumbnailPath"
+      | "mpn"
+      | "modelUploadId"
+    >;
     revision: string;
     createdBy: string;
     // Change-order draft revisions are created inactive so they don't surface

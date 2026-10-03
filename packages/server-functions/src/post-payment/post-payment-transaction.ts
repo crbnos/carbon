@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
   buildPaymentJournal,
@@ -26,7 +25,6 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
@@ -38,7 +36,6 @@ export type PostPaymentArgs = {
   companyId: string;
   userId: string;
   today: string;
-  client: SupabaseClient<Database>;
   fee?: PaymentJournalFeeInput;
 };
 
@@ -81,7 +78,7 @@ export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
   args: PostPaymentArgs
 ): Promise<{ journalId: string | null }> {
-  const { companyId, paymentId, userId, today, client, fee, type } = args;
+  const { companyId, paymentId, userId, today, fee, type } = args;
   return db.transaction().execute(async (trx) => {
     const payment = await trx
       .selectFrom("payment")
@@ -111,7 +108,6 @@ export function postPaymentTransaction(
     let accountingPeriodId: string | null = null;
     if (accountingEnabled) {
       accountingPeriodId = await getCurrentAccountingPeriod(
-        client,
         companyId,
         trx,
         today

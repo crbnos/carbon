@@ -16,30 +16,40 @@ type RowOf<T extends RelationName> = Relations[T]["Row"];
  */
 export const isNull = Symbol("IS NULL");
 
-/** A comparison other than equality: PostgREST's `.neq`, `.lt`, `.contains`, … */
-type Comparison = {
-  readonly op: "<>" | "<" | "<=" | ">" | ">=" | "@>" | "IS NOT NULL" | "NOT IN";
-  readonly value?: unknown;
-};
-export const neq = (value: unknown): Comparison => ({ op: "<>", value });
-export const lt = (value: unknown): Comparison => ({ op: "<", value });
-export const lte = (value: unknown): Comparison => ({ op: "<=", value });
-export const gt = (value: unknown): Comparison => ({ op: ">", value });
-export const gte = (value: unknown): Comparison => ({ op: ">=", value });
-/** `.contains(column, value)` on a jsonb column: the form its GIN index serves. */
-export const contains = (value: unknown): Comparison => ({ op: "@>", value });
-/** `.not(column, "in", values)`: a null column matches neither way. */
-export const notIn = (values: readonly unknown[]): Comparison => ({
-  op: "NOT IN",
-  value: values
-});
-/** `.not(column, "is", null)`. */
-export const notNull: Comparison = { op: "IS NOT NULL" };
+type Operator =
+  | "<>"
+  | "<"
+  | "<="
+  | ">"
+  | ">="
+  | "@>"
+  | "IS NOT NULL"
+  | "NOT IN";
 
+/** A comparison other than equality. A class, so a jsonb VALUE shaped like
+ *  `{ op, value }` stays a value and never becomes SQL. */
+class Comparison {
+  constructor(
+    readonly op: Operator,
+    readonly value?: unknown
+  ) {}
+}
+export const neq = (value: unknown) => new Comparison("<>", value);
+export const lt = (value: unknown) => new Comparison("<", value);
+export const lte = (value: unknown) => new Comparison("<=", value);
+export const gt = (value: unknown) => new Comparison(">", value);
+export const gte = (value: unknown) => new Comparison(">=", value);
+/** `.contains(column, value)` on a jsonb column: the form its GIN index serves. */
+export const contains = (value: unknown) => new Comparison("@>", value);
 /**
- * Filters, all ANDed: a value is `=`, an array is `= ANY`, {@link isNull} is
- * `IS NULL`, and {@link neq} and friends are the other comparisons.
+ * `.not(column, "in", values)`. A null column matches no non-empty list; an
+ * empty list matches every row, as PostgREST's does.
  */
+export const notIn = (values: readonly unknown[]) =>
+  new Comparison("NOT IN", values);
+/** `.not(column, "is", null)`. */
+export const notNull = new Comparison("IS NOT NULL");
+
 type Where<T extends RelationName> = {
   [K in keyof RowOf<T> & string]?:
     | RowOf<T>[K]
@@ -49,23 +59,17 @@ type Where<T extends RelationName> = {
     | null;
 };
 
-/**
- * A related row nested under each row, as a PostgREST embed would be. `on`
- * names the RELATED table's column holding this row's `id` and yields an array
- * (one-to-many); `via` names THIS row's column holding the related row's `id`
- * and yields that row or null (many-to-one).
- */
+/** A PostgREST-style embed: `on` is the related table's column holding this
+ *  row's id (array), `via` is this row's column holding the related id (row). */
 export type Embed = {
   [property: string]: {
     table: RelationName;
-    /** Only these columns, as `select("a, b")` would return. Default: all. */
     columns?: readonly string[];
     embed?: Embed;
   } & ({ on: string; via?: never } | { via: string; on?: never });
 };
 
 type ReadOptions<T extends RelationName> = {
-  /** Only these columns, as `select("a, b")` would return. Default: all. */
   columns?: readonly (keyof RowOf<T> & string)[];
   embed?: Embed;
 };
@@ -78,16 +82,9 @@ type OrderBy<T extends RelationName> = {
 };
 
 /**
- * Rows of a table or view, read over the direct connection but shaped exactly
- * as PostgREST returns them: every row goes through `to_jsonb`, so timestamps
- * are strings at full precision and an embed is an array of such rows.
- *
- * It exists so a server function can stop paying for PostgREST (about 52 ms a
- * call in production against 4.5 ms for a statement) without the values it
- * copies into other rows changing shape — a Kysely row would hand back `Date`s
- * cut to the millisecond. There is no 1000-row cap to page around.
- *
- * Pass `trx` inside a transaction. Throws on failure, as Kysely does.
+ * Rows read over the direct connection, shaped as PostgREST returns them
+ * (`to_jsonb`: timestamps are full-precision strings, embeds are arrays), so
+ * values copied into other rows keep their shape. Throws on failure.
  */
 export function selectRows<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
@@ -124,14 +121,16 @@ export async function selectRows<T extends RelationName>(
   return rows.map((r) => r.row);
 }
 
-/** The first row, or undefined. For a lookup by key. */
 export async function selectRow<T extends RelationName, R = RowOf<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
   where: Where<T>,
   options: ReadOptions<T> = {}
 ): Promise<R | undefined> {
-  const rows = await selectRows<T, R>(db, table, where, options);
+  const rows = await selectRows<T, R>(db, table, where, {
+    limit: 1,
+    ...options
+  });
   return rows[0];
 }
 
@@ -175,28 +174,32 @@ function conditionsFor(alias: string, where: Record<string, unknown>) {
     // every row whose column happens to be empty.
     if (value === null || value === undefined) return sql`FALSE`;
     if (Array.isArray(value)) return sql`${ref} = ANY(${value})`;
-    if (isComparison(value)) {
-      if (value.op === "IS NOT NULL") return sql`${ref} IS NOT NULL`;
-      if (value.op === "NOT IN") return sql`NOT (${ref} = ANY(${value.value}))`;
-      if (value.op === "@>") {
-        return sql`${ref} @> ${JSON.stringify(value.value)}::jsonb`;
+    if (value instanceof Comparison) {
+      switch (value.op) {
+        case "IS NOT NULL":
+          return sql`${ref} IS NOT NULL`;
+        case "NOT IN":
+          return sql`NOT (${ref} = ANY(${value.value}))`;
+        case "@>":
+          return sql`${ref} @> ${JSON.stringify(value.value)}::jsonb`;
+        case "<>":
+          return sql`${ref} <> ${value.value}`;
+        case "<":
+          return sql`${ref} < ${value.value}`;
+        case "<=":
+          return sql`${ref} <= ${value.value}`;
+        case ">":
+          return sql`${ref} > ${value.value}`;
+        case ">=":
+          return sql`${ref} >= ${value.value}`;
       }
-      return sql`${ref} ${sql.raw(value.op)} ${value.value}`;
     }
     return sql`${ref} = ${value}`;
   });
 }
 
-function isComparison(value: unknown): value is Comparison {
-  return typeof value === "object" && value !== null && "op" in value;
-}
-
 type Functions = Database["public"]["Functions"];
 
-/**
- * A database function's rows, as `.rpc()` returns them for one that returns a
- * table. Arguments are passed by name.
- */
 export async function rpcRows<F extends keyof Functions & string>(
   db: Kysely<KyselyDatabase>,
   fn: F,
@@ -217,7 +220,6 @@ export async function rpcRows<F extends keyof Functions & string>(
   };
 }
 
-/** The same for a function that returns one value. */
 export async function rpcValue<F extends keyof Functions & string>(
   db: Kysely<KyselyDatabase>,
   fn: F,
@@ -240,13 +242,8 @@ function definedKeys(row: Record<string, unknown>): string[] {
   return Object.keys(row).filter((key) => row[key] !== undefined);
 }
 
-/**
- * `.insert()` over the direct connection. The rows go in as one JSON document
- * and Postgres casts them (`jsonb_populate_recordset`), which is what PostgREST
- * does: a jsonb array stays an array, and with several rows a key one of them
- * lacks is NULL for it. Pass `trx` to make the write part of a transaction —
- * a PostgREST write never is.
- */
+/** Rows go in as one JSON document cast by Postgres, as PostgREST does: a
+ *  jsonb array stays an array, and a key one row lacks is NULL for it. */
 export async function insertRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -272,7 +269,6 @@ export async function insertRows<T extends TableName>(
   return { data: result.rows.map((r) => r.row), error: null };
 }
 
-/** `.update(set)` with the filters of {@link selectRows}. */
 export async function updateRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -294,7 +290,6 @@ export async function updateRows<T extends TableName>(
   return { error: null };
 }
 
-/** `.delete()` with the filters of {@link selectRows}. */
 export async function deleteRows<T extends TableName>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -313,10 +308,7 @@ export async function deleteRows<T extends TableName>(
 
 type Result<R> = { data: R; error: null } | { data: null; error: Error };
 
-/**
- * The same read with PostgREST's `.single()` contract, for code written
- * against `{ data, error }`: exactly one row, otherwise an error and no data.
- */
+/** PostgREST's `.single()`: exactly one row, otherwise an error and no data. */
 export function single<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -374,10 +366,7 @@ export async function maybeSingle<T extends RelationName>(
     : { data: rows[0] ?? null, error: null };
 }
 
-/**
- * A list read in the `{ data, error }` shape. A failure throws instead, so
- * `error` is always null; it is typed as PostgREST's so existing checks compile.
- */
+/** `error` is always null (a failure throws); typed so existing checks compile. */
 export function many<T extends RelationName, const C extends Column<T>>(
   db: Kysely<KyselyDatabase>,
   table: T,
@@ -405,13 +394,8 @@ export async function many<T extends RelationName>(
 export type Tables = Database["public"]["Tables"];
 export type Views = Database["public"]["Views"];
 
-/**
- * `Promise.all` for reads, run one after another. A statement takes a few
- * milliseconds, so running a handful at once saves almost nothing, while each
- * one started at once takes its own connection from the process's pool of
- * sixteen — and opens one when the pool has none idle, which costs more than
- * the reads do.
- */
+/** `Promise.all` for reads, one after another: each concurrent read would
+ *  take its own connection from the pool and save almost nothing. */
 export async function inOrder<const T extends readonly (() => unknown)[]>(
   reads: T
 ): Promise<{ -readonly [K in keyof T]: Awaited<ReturnType<T[K]>> }> {

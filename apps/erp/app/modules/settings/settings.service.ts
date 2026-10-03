@@ -51,7 +51,7 @@ export async function getAccountsPayableBillingAddress(
     .from("companyAccountsPayableBillingAddress")
     .select("*")
     .eq("id", companyId)
-    .single();
+    .maybeSingle();
 }
 
 /** @mcp read */
@@ -63,7 +63,7 @@ export async function getAccountsReceivableBillingAddress(
     .from("companyAccountsReceivableBillingAddress")
     .select("*")
     .eq("id", companyId)
-    .single();
+    .maybeSingle();
 }
 
 /** @mcp update */
@@ -256,7 +256,11 @@ export async function getCompanyPlan(
   client: SupabaseClient,
   companyId: string
 ) {
-  return client.from("companyPlan").select("*").eq("id", companyId).single();
+  return client
+    .from("companyPlan")
+    .select("*")
+    .eq("id", companyId)
+    .maybeSingle();
 }
 
 /** @mcp read */
@@ -383,7 +387,10 @@ export async function getKanbanOutputSetting(
     .single();
 }
 
-/** @mcp read */
+/**
+ * Takes the next number of a sequence, which advances it.
+ * @mcp action
+ */
 export async function getNextSequence(
   client: SupabaseClient<Database>,
   table: string,

@@ -61,9 +61,6 @@ export const postInventoryCount = defineServerFn({
   permissions: { update: "inventory" },
   async run(ctx, { inventoryCountId }) {
     const { db, companyId, userId } = ctx;
-
-    const client = await ctx.supabase();
-
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
@@ -190,7 +187,7 @@ export const postInventoryCount = defineServerFn({
       throw new Error("Error getting account defaults");
     }
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db, today)
+      ? await getCurrentAccountingPeriod(companyId, db, today)
       : null;
 
     // Active dimensions for the company group (post-shipment precedent) —

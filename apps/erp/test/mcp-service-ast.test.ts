@@ -3,17 +3,25 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { sqlFunctionEffects } from "../../../packages/database/src/sql-effects";
+import { resultShapeOf } from "../../../scripts/lib/result-shape";
 import {
+  auditParams,
   branchesOnKeyPresence,
   dbWrites,
   namedTables,
   paginates,
-  parseServiceSource
+  parseServiceSource,
+  rpcCalls
 } from "../../../scripts/lib/service-ast";
 import {
+  assertReadCallsOnlyReads,
+  contextParamsOf,
   declarationOf,
+  describeUntypedArguments,
   upsertRule,
-  withoutAbsentAuditColumns
+  withoutAbsentAuditColumns,
+  withPayloadCompanyGroup
 } from "../../../scripts/lib/service-metadata";
 
 // The generator's questions about a service function, asked of real source
@@ -397,3 +405,343 @@ describe("audit fields the table does not have", () => {
   });
 });
 
+describe("positional params the dispatcher fills", () => {
+  const fns = parse(`
+    export async function updateStatus(
+      client: Client, id: string, status: string, updatedBy: string
+    ) {
+      return client.from("job").update({ status, updatedBy }).eq("id", id);
+    }
+    export async function approve(client: Client, id: string, approver: string) {
+      return client
+        .from("job")
+        .update({ status: "Approved", "updatedBy": approver as string })
+        .eq("id", id);
+    }
+    export async function addSuppliers(
+      client: Client, rfqId: string, supplierIds: string[],
+      companyId: string, createdBy: string
+    ) {
+      return client.from("rfqSupplier").insert(
+        supplierIds.map((supplierId) => ({ rfqId, supplierId, companyId, createdBy }))
+      );
+    }
+    export async function reorder(
+      db: Db, companyId: string, userId: string, updates: { id: string }[]
+    ) {
+      return db.updateTable("line").set({ updatedBy: userId }).execute();
+    }
+    export async function upsertRow(
+      client: Client, row: { id: string; updatedBy: string }
+    ) {
+      return client.from("job").update({ ...row }).eq("id", row.id);
+    }
+    export async function shadowed(client: Client, updatedBy: string) {
+      return [1].map((updatedBy) => ({ updatedBy }));
+    }
+    export async function viaRpc(client: Client, id: string, updatedBy: string) {
+      return client.rpc("touch", { p_id: id, p_user: updatedBy });
+    }
+  `);
+
+  it("reads the acting user off the audit column a param is written to", () => {
+    expect(auditParams(fns.updateStatus.node)).toEqual(["updatedBy"]);
+    expect(auditParams(fns.addSuppliers.node)).toEqual(["createdBy"]);
+    // Whatever the param is called, and through a cast and a quoted key.
+    expect(auditParams(fns.approve.node)).toEqual(["approver"]);
+    // A field of a payload object is not a positional param.
+    expect(auditParams(fns.upsertRow.node)).toEqual([]);
+  });
+
+  it("maps each filled param to its context value and leaves the payload out", () => {
+    expect(contextParamsOf(fns.updateStatus)).toEqual({
+      client: "client",
+      updatedBy: "userId"
+    });
+    expect(contextParamsOf(fns.approve)).toEqual({
+      client: "client",
+      approver: "userId"
+    });
+    expect(contextParamsOf(fns.addSuppliers)).toEqual({
+      client: "client",
+      companyId: "companyId",
+      createdBy: "userId"
+    });
+    expect(contextParamsOf(fns.reorder)).toEqual({
+      db: "db",
+      companyId: "companyId",
+      userId: "userId"
+    });
+    expect(contextParamsOf(fns.upsertRow)).toEqual({ client: "client" });
+  });
+
+  it("refuses a positional audit param it cannot see written to the column", () => {
+    // Passed on to something else: the body never names the column.
+    expect(() => contextParamsOf(fns.viaRpc)).toThrow(/positional `updatedBy`/);
+    // An inner binding of the same name is not the function's own parameter.
+    expect(() => contextParamsOf(fns.shadowed)).toThrow(/positional `updatedBy`/);
+  });
+});
+
+describe("how a service reports failure in its result", () => {
+  const fns = parse(`
+    type Failure = { message: string };
+    type Row = { id: string };
+    export async function read(): Promise<{ data: Row | null; error: Failure | null }> {
+      return { data: null, error: null };
+    }
+    export async function bareError(): Promise<{ error: Failure | null }> {
+      return { error: null };
+    }
+    export async function errorOnOnePath(): Promise<Row | { error: string }> {
+      return { id: "a" };
+    }
+    export async function manyWrites() {
+      const one: { data: null; error: Failure | null } = { data: null, error: null };
+      return Promise.all([one, one]);
+    }
+    export async function flagged(): Promise<
+      { ok: true; created: number } | { ok: false; reason: string }
+    > {
+      return { ok: true, created: 1 };
+    }
+    export async function rows(): Promise<Row[]> {
+      return [];
+    }
+    export async function nothing(): Promise<void> {}
+    export async function mixedList(): Promise<Array<Row | { error: Failure }>> {
+      return [];
+    }
+    export async function twoSignals(): Promise<
+      { error: Failure | null } | { success: boolean }
+    > {
+      return { success: true };
+    }
+  `);
+  const shape = (name: string) =>
+    resultShapeOf(
+      fns[name].node.getProject().getTypeChecker().compilerObject,
+      fns[name]
+    );
+
+  it("reads the shape off the awaited return type", () => {
+    expect(shape("read")).toBe("envelope");
+    // No \`data\`: the result dispatch used to hand back as a success.
+    expect(shape("bareError")).toBe("envelope");
+    expect(shape("errorOnOnePath")).toBe("envelope");
+    expect(shape("manyWrites")).toBe("envelopes");
+    expect(shape("flagged")).toBe("flag");
+    expect(shape("rows")).toBe("plain");
+    expect(shape("nothing")).toBe("plain");
+  });
+
+  it("refuses a result dispatch could not read one way", () => {
+    expect(() => shape("mixedList")).toThrow(/list whose items/);
+    expect(() => shape("twoSignals")).toThrow(/cannot tell which reports failure/);
+  });
+});
+
+describe("a read tool and the SQL functions it calls", () => {
+  const fns = parse(`
+    export async function getDetails(client: Client, id: string) {
+      return client.rpc("get_details", { item_id: id });
+    }
+    export async function getCast(client: Client, id: string) {
+      return client.rpc("get_details" as unknown as "other", { item_id: id });
+    }
+    export async function getNextNumber(client: Client, table: string) {
+      return client.rpc("take_number", { sequence_name: table });
+    }
+    export async function getUsage(client: Client) {
+      return client.rpc("usage_by_table");
+    }
+    export async function getAnything(client: Client, name: string) {
+      return client.rpc(name);
+    }
+    export async function getRows(client: Client) {
+      return client.from("job").select("*");
+    }
+  `);
+
+  const effects = sqlFunctionEffects([
+    {
+      name: "functions.sql",
+      sql: `
+        CREATE FUNCTION get_details(item_id text) RETURNS text LANGUAGE sql AS $$
+          SELECT name FROM item WHERE id = item_id;
+        $$;
+        CREATE FUNCTION take_number(sequence_name text) RETURNS int LANGUAGE sql AS $$
+          UPDATE sequence SET next = next + 1 WHERE "table" = sequence_name RETURNING next;
+        $$;
+        CREATE FUNCTION usage_by_table() RETURNS void LANGUAGE plpgsql AS $$
+        BEGIN
+          EXECUTE format('SELECT count(*) FROM %I', 'job');
+        END $$;`
+    }
+  ]);
+
+  it("reads the function name, through a cast, and reports one it cannot read", () => {
+    expect(rpcCalls(fns.getDetails.node)).toEqual(["get_details"]);
+    expect(rpcCalls(fns.getCast.node)).toEqual(["get_details"]);
+    expect(rpcCalls(fns.getAnything.node)).toEqual([null]);
+    expect(rpcCalls(fns.getRows.node)).toEqual([]);
+  });
+
+  it("lets a read call functions that only read", async () => {
+    const sql = await effects;
+    expect(() => assertReadCallsOnlyReads(fns.getDetails, sql)).not.toThrow();
+    expect(() => assertReadCallsOnlyReads(fns.getRows, sql)).not.toThrow();
+  });
+
+  it("refuses a read that writes through a function, or that cannot be told", async () => {
+    const sql = await effects;
+    // settings_getNextSequence, in miniature.
+    expect(() => assertReadCallsOnlyReads(fns.getNextNumber, sql)).toThrow(
+      /calls the SQL function take_number, which writes \(public\.take_number: UPDATE sequence\)/
+    );
+    expect(() => assertReadCallsOnlyReads(fns.getUsage, sql)).toThrow(
+      /cannot be told: public\.usage_by_table has dynamic SQL/
+    );
+    expect(() => assertReadCallsOnlyReads(fns.getAnything, sql)).toThrow(
+      /not a string literal/
+    );
+  });
+});
+
+describe("a payload that declares companyGroupId", () => {
+  const fns = parse(`
+    type Report = { companyId: string; companyGroupId: string; key: string };
+    export async function getPivot(client: Client, args: Report) {}
+    export async function getRows(client: Client, args: { companyId: string }) {}
+    export async function getBalances(client: Client, companyGroupId: string) {}
+    export async function upsertOrder(
+      client: Client,
+      order:
+        | { companyGroupId: string; createdBy: string }
+        | { id: string; companyGroupId?: string; updatedBy: string }
+    ) {}
+    export async function upsertAccount(
+      client: Client,
+      account:
+        | { companyGroupId: string; createdBy: string }
+        | { id: string; updatedBy: string }
+    ) {}
+  `);
+
+  it("is filled from the session, whether the type is inline or named", () => {
+    // accounting_getDimensionPivot: the SQL function was called with no group.
+    expect(withPayloadCompanyGroup(["companyId"], fns.getPivot)).toEqual([
+      "companyId",
+      "companyGroupId"
+    ]);
+    expect(withPayloadCompanyGroup(["companyId"], fns.upsertOrder)).toEqual([
+      "companyId",
+      "companyGroupId"
+    ]);
+  });
+
+  it("is left alone when no payload declares it", () => {
+    expect(withPayloadCompanyGroup(["companyId"], fns.getRows)).toEqual([
+      "companyId"
+    ]);
+    // A positional companyGroupId is a context param, not a payload field.
+    expect(withPayloadCompanyGroup(["companyId"], fns.getBalances)).toEqual([
+      "companyId"
+    ]);
+  });
+
+  it("refuses a union where only some shapes declare it", () => {
+    // upsertPurchaseOrder: the update spread it into a table with no such column.
+    expect(() => withPayloadCompanyGroup(["companyId"], fns.upsertAccount)).toThrow(
+      /upsertAccount: only some shapes of `account` declare companyGroupId/
+    );
+  });
+});
+
+describe("an argument the schema left blank", () => {
+  const fns = parse(`
+    const statuses = ["Open", "Closed"] as const;
+    type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+    type Row = { id: string; quoteLineId: string | null; notes: Json };
+    export async function getTemplate(client: Client, kind: "quote" | "invoice", companyId: string) {}
+    export async function getRisks(
+      client: Client,
+      args: { status?: typeof statuses; bucketDays?: [number, number]; search: string }
+    ) {}
+    export async function getDocuments(client: Client, job: Pick<Row, "id" | "quoteLineId">, itemId: string) {}
+    export async function upsertThing(
+      client: Client,
+      thing: { name: string; customFields?: Json; payload: unknown; extra: any }
+    ) {}
+  `);
+  const context = { client: "client", companyId: "companyId" };
+
+  it("is described from the parameter's type", () => {
+    // settings_getDocumentTemplate: the caller could only guess at documentType.
+    const template = { type: "object", properties: { kind: {} } };
+    describeUntypedArguments(template, fns.getTemplate, context);
+    expect(template.properties.kind).toEqual({
+      type: "string",
+      enum: ["quote", "invoice"]
+    });
+
+    // A named row narrowed to what the function reads, among other params.
+    const documents = {
+      type: "object",
+      properties: { job: {}, itemId: { type: "string" } }
+    };
+    describeUntypedArguments(documents, fns.getDocuments, context);
+    expect(documents.properties).toEqual({
+      job: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          quoteLineId: { type: ["string", "null"] }
+        },
+        required: ["id", "quoteLineId"]
+      },
+      itemId: { type: "string" }
+    });
+  });
+
+  it("reaches a blank field of a flat payload, and reads a tuple as a list", () => {
+    const risks = {
+      type: "object",
+      properties: {
+        status: { description: "Filter." },
+        bucketDays: {},
+        search: { type: "string" }
+      }
+    };
+    describeUntypedArguments(risks, fns.getRisks, context);
+    expect(risks.properties).toEqual({
+      // quality_getRisks: an \`as const\` list came out as a map of statuses.
+      status: {
+        type: ["array", "null"],
+        items: { type: "string", enum: ["Open", "Closed"] },
+        description: "Filter."
+      },
+      bucketDays: { type: ["array", "null"], items: { type: "number" } },
+      search: { type: "string" }
+    });
+  });
+
+  it("stays blank where the type really is anything", () => {
+    const thing = {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        customFields: {},
+        payload: {},
+        extra: {}
+      }
+    };
+    describeUntypedArguments(thing, fns.upsertThing, context);
+    expect(thing.properties).toEqual({
+      name: { type: "string" },
+      customFields: {},
+      payload: {},
+      extra: {}
+    });
+  });
+});

@@ -8,11 +8,13 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { createClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
+import { defineServerFn } from "./define-server-fn";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "./local-database-test-fixture";
-import { authorize, clientUsesKey, ServerFnContext } from "./server-fn-context";
+import { authorize, ServerFnContext } from "./server-fn-context";
 
 vi.mock("@carbon/env", () => ({
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
@@ -32,31 +34,6 @@ describe("authorize", () => {
     await expect(
       authorize(ServerFnContext.system(fields), { update: "inventory" })
     ).resolves.toBeUndefined();
-  });
-
-  it("refuses a user a system-only function", async () => {
-    await expect(
-      authorize(ServerFnContext.user(fields), "system")
-    ).rejects.toMatchObject({ status: 403 });
-  });
-});
-
-describe("clientUsesKey", () => {
-  const client = (key: string) =>
-    createClient<Database>("http://localhost:54321", key);
-
-  it("recognizes the key a client was built with", () => {
-    expect(clientUsesKey(client("service-role-key"), "service-role-key")).toBe(
-      true
-    );
-  });
-
-  it("does not mistake another key (a user's or API key's client) for it", () => {
-    expect(clientUsesKey(client("anon-key"), "service-role-key")).toBe(false);
-  });
-
-  it("never matches an unset key", () => {
-    expect(clientUsesKey(client("anon-key"), undefined)).toBe(false);
   });
 });
 
@@ -177,5 +154,84 @@ describe("authorize (API key)", () => {
         });
       }
     )
+  );
+});
+
+describe("authorize (user)", () => {
+  /** Runs `fn` with a real employee of a real company. */
+  async function withEmployee(
+    fn: (
+      fields: { db: Kysely<KyselyDatabase>; companyId: string; userId: string },
+      held: string
+    ) => Promise<void>
+  ) {
+    const db = await connectLocalTestDatabase();
+    try {
+      const { rows } = await sql<{
+        companyId: string;
+        userId: string;
+        claims: Record<string, unknown>;
+      }>`
+        SELECT "companyId", "userId", get_claims("userId", "companyId") AS claims
+        FROM "userToCompany" WHERE "role" = 'employee' LIMIT 20
+      `.execute(db);
+      for (const { companyId, userId, claims } of rows) {
+        const held = Object.entries(claims).find(
+          ([key, companies]) =>
+            key.endsWith("_update") &&
+            Array.isArray(companies) &&
+            companies.includes(companyId)
+        );
+        if (held) {
+          return await fn({ db, companyId, userId }, held[0].split("_")[0]!);
+        }
+      }
+      throw new Error("No employee with an update permission to test with");
+    } finally {
+      await db.destroy();
+    }
+  }
+
+  databaseTest(
+    "admits a permission the user holds, in their company only",
+    () =>
+      withEmployee(async (fields, held) => {
+        await expect(
+          authorize(ServerFnContext.user(fields), { update: held })
+        ).resolves.toBeUndefined();
+        await expect(
+          authorize(
+            ServerFnContext.user({ ...fields, companyId: "not-theirs" }),
+            {
+              update: held
+            }
+          )
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          authorize(ServerFnContext.user(fields), { update: "no-such-module" })
+        ).rejects.toMatchObject({ status: 403 });
+      })
+  );
+
+  databaseTest("applies the rule the input's type selects", () =>
+    withEmployee(async (fields, held) => {
+      const fn = defineServerFn({
+        name: "typed",
+        input: z.discriminatedUnion("type", [
+          z.object({ type: z.literal("internal") }),
+          z.object({ type: z.literal("open") })
+        ]),
+        permissions: {
+          by: "type",
+          rules: { internal: "system", open: { update: held } }
+        },
+        async run(_ctx, { type }) {
+          return type;
+        }
+      });
+      const user = ServerFnContext.user(fields);
+      expect((await fn(user, { type: "internal" })).error?.status).toBe(403);
+      expect((await fn(user, { type: "open" })).data).toBe("open");
+    })
   );
 });

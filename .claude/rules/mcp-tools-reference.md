@@ -266,9 +266,15 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   unknown keys (no generated schema sets `additionalProperties: false`) and
   accepts a lone wrapper's contents sent flat, since the dispatcher does too.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
-  `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
-  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
-  service whose param is `db` is handed `getDatabaseClient()`; payload params are
+  `["client", "args"]`), `contextParams` and `injectAuth`. The dispatch builds
+  the positional arg array from them: a param listed in `contextParams` is filled
+  with the context value the manifest names (`client`, `db` →
+  `getDatabaseClient()`, `userId`, `companyId`, `companyGroupId`), and the
+  dispatcher recognises NO parameter name itself. It used to keep its own list,
+  which lacked `createdBy`/`updatedBy` while the generator hid them from the
+  schema, so `updateJobOperationStatus(client, id, status, updatedBy)` was handed
+  the caller's value or the whole body and failed `jobOperation_updatedBy_fkey`.
+  Pinned by `dispatch-parity.test.ts` a3. Payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
   `dispatch.server.ts`) — including `userId` when the payload itself declares one
   (the server-function wrappers), which the manifest marks via `injectAuth` and the
@@ -350,9 +356,26 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   mapper must never attach `data.supabase` — `callOperation` keys its
   `Database error:` envelope off that field.
 - `eliminationClient` is a **context param**, filled from `context.client` (which
-  is what the service itself defaults it to). Left out of the generator's
-  `CONTEXT_PARAMS` it became a required field a caller cannot express — a
+  is what the service itself defaults it to): `POSITIONAL_CONTEXT` maps it to
+  `client`. Left out of the generator's list it became a required field a caller
+  cannot express — a
   Supabase client — so the two consolidated-balance ops failed every call.
+- **A failure in the service's result is an error, whatever its shape.** A
+  service does not throw; `readServiceResult` (`dispatch.server.ts`) reads the
+  failure where the manifest's `resultShape` says it is. The generator takes that
+  off the declared return type with the checker (`scripts/lib/result-shape.ts`,
+  awaited, so a Promise and a builder returned without `await` read alike):
+  `envelope` — an object with an `error` member, PostgREST's response or a
+  hand-built `{ error }` with or without `data` (1,311 tools); `envelopes` — a
+  list of those, a `Promise.all` of writes (15); `flag` — `{ ok | success }`
+  with no `error` (2); `plain` (154). Only `{ data, error }` WITH a `data` key
+  used to be read, so a bare `{ error }`, one failed write in a `Promise.all`
+  and `{ ok: false }` all went back as a success. A truthy top-level `error` is
+  a failure under every shape, so a service must not return a bare row that has
+  an `error` column — wrap it in `{ data }`. A return type that mixes the two
+  signals, or a list whose items disagree, fails generation. The digest shows
+  `result` for `envelopes` and `flag`. Pinned by `dispatch-parity.test.ts` and
+  `apps/erp/test/mcp-service-ast.test.ts`.
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or
@@ -403,7 +426,7 @@ functions that must import `*.server` modules — see the gotcha below — e.g.
 `production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
 exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
-`{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
+`{ name, module, classification, description, paramCount, serviceParams, contextParams, injectAuth, resultShape, schema }`.
 
 - **How the service files are read** (`scripts/lib/service-ast.ts`): ONE ts-morph
   project, shared with the response-schema reflection. Which functions exist
@@ -479,6 +502,77 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
+- **The read-tool sweep** (`pnpm sweep:tools`, `apps/erp/test/sweep/`) is the
+  only place a tool is run for real: this branch's dispatcher and services, a
+  signed-in user's client, a seeded company on a running local stack. Arguments
+  are not guessed: `paramFilters` (`service-ast.ts`) reads which column each
+  parameter is compared to (`.eq("id", jobId)` on `job`), and a value that
+  exists is sampled as the user; a name the tool's own body does not tie to a
+  column falls back to what that name is compared to across every service, then
+  to the database's own tables and columns of that name. When the company has
+  no row to take a value from, the tool is still called, with a value of the
+  column's type that matches nothing (the report lists these under
+  `placeholder`). The few arguments nothing can answer (`targetCurrency`,
+  `timeZone`) are written down per tool in `read-tools.inputs.ts`. It records
+  `ok` / `failed` / `not-found` / `not-called`, refuses a stack that has not
+  applied this branch's migrations, and gates on `read-tools.baseline.json`,
+  which is empty and stays that way unless a failure is knowingly accepted.
+  Seed a demo dataset and run the planner first (`pnpm db:seed:dev`): on the
+  satellite dataset all 810 read tools are called. It has found three bugs no
+  unit test had:
+  - An omitted optional list or object argument was handed the whole request
+    body (`getActiveJobOperationsByLocation({ locationId })` sent it as
+    `workCenterIds`). `omittedNamedParam` now leaves such an argument
+    `undefined` when the service takes more than one payload param
+    (`dispatch-parity.test.ts` a5).
+  - A read did not get the defaults its schema publishes. A service typed from
+    a validator's output requires those fields, so `getPurchaseLinePivot` sent
+    `state: {}` crashed on `state.columnAxis.type`. `withSchemaDefaults` fills
+    them (a6); see "A published default is a promise" below for when.
+  - `companyGroupId` inside a payload object was hidden from the schema and
+    never filled, so every pivot report, and creating an account, order, quote
+    or invoice, ran with no group (see injectAuth below).
+
+  Not part of `pnpm test`: it needs the stack.
+- **A `read` tool may only call SQL functions that read**
+  (`assertReadCallsOnlyReads`). The generator sees every `.rpc("name")`
+  (`rpcCalls`, through casts) but not the SQL behind it, so the function's own
+  definition answers: `packages/database/src/sql-effects.ts` parses every
+  migration in timestamp order, then the managed function files, with Postgres's
+  parser (`libpg-query`), keeps each function's CURRENT definition (a later
+  `CREATE OR REPLACE` replaces, another signature is an overload, `DROP` removes)
+  and walks its body, following calls into other functions. It answers `reads`,
+  `writes` (with the statement) or `unknown` (with why): dynamic `EXECUTE`, a
+  language it does not read, an extension function absent from
+  `EXTERNAL_READS` / `EXTERNAL_WRITES`, or no definition at all. `writes` and
+  `unknown` both fail generation for a `read` tool. Dynamic SQL a person has
+  read goes in `REVIEWED_DYNAMIC_READS`, pinned to the migration that holds the
+  definition, so a later redefinition is `unknown` again. This is how
+  `settings_getNextSequence` (its rpc runs `UPDATE sequence`) was a READ gated
+  on `settings:view`; it is now `@mcp action`. Migrations are an input of
+  `//#generate:mcp` and of the pre-commit manifest check, so a function that
+  starts writing re-runs the check. Pinned by `sql-effects.test.ts` and
+  `apps/erp/test/mcp-service-ast.test.ts`.
+- **contextParams** (`contextParamsOf`) says which positional params the
+  dispatcher fills and with what, and is the only place that is decided. Two
+  sources: the positional contract `POSITIONAL_CONTEXT`
+  (`scripts/lib/validator-registry.ts`: `client`, `eliminationClient`, `db`,
+  `userId`, `companyId`, `companyGroupId` — a plain `string` carries nothing more
+  for the compiler to read), and the body. `auditParams` (`service-ast.ts`) finds
+  every parameter the function writes as the value of a `createdBy` / `updatedBy`
+  property, by shorthand or by name, through the compiler's own symbol
+  resolution; such a param is the acting user whatever it is called, and maps to
+  `userId`. A positional param NAMED `createdBy`/`updatedBy` that the body is not
+  seen writing to the column fails generation — published it would let a caller
+  name the author, hidden without a slot nobody would fill it. Context params are
+  left out of the published schema. The digest shows a mapping only where the
+  source differs from the name (`"context":"updatedBy=userId"`). Pinned by
+  `apps/erp/test/mcp-service-ast.test.ts`.
+- **A field whose type admits `undefined` is optional**, with or without `?`
+  (inline object types). `assignee: null | undefined` used to publish as a
+  required `null` on eight status tools, so every status change had to send
+  `assignee: null` and cleared it. `mcp-tool-metadata.test.ts` also refuses any
+  required property that can only be null, across the whole manifest.
 - **injectAuth** starts from the verb's audit fields (table above) plus
   `companyId`, then is checked against the schema (`withoutAbsentAuditColumns`):
   when the function names exactly ONE relation and that relation has no
@@ -487,8 +581,75 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   would otherwise send a column that does not exist (PGRST204, how
   `items_upsertItemCustomerPart` failed). Zero or several relations leaves the
   set alone. `userId` is added when the payload's own type declares one
-  (`withPayloadUserId`). `@mcp audit` replaces all of that for intent the schema
-  cannot express.
+  (`withPayloadUserId`), and `companyGroupId` when any payload parameter's TYPE
+  has that property (`withPayloadCompanyGroup`, asked of the type checker, so a
+  named or inferred type counts). The dispatcher cannot tell the shapes of a
+  union apart and stamps all of them, so the generator refuses a union where
+  only some shapes declare it: declare it on each (optional where unused) and
+  destructure it out before the row is written, as `upsertPurchaseOrder` does.
+  `@mcp audit` replaces all of that for intent the schema cannot express.
+
+- **A write is confined to the caller's company, whatever the service filters
+  on.** The `client` a service is handed is `scopedToCompany(context.client, …)`
+  (`api+/v1+/lib/company-scope.server.ts`): every `.update()` and `.delete()` on
+  a table with a `companyId` column also gets `.eq("companyId", <caller's>)`.
+  Services match the row they write by its id, and a signed-in user's client
+  reaches every company they belong to, so an id from the user's other company
+  used to match — and because the dispatcher stamps the active `companyId` into
+  the payload, an update that spread it moved the row. With the filter a write
+  can only match a row already in the caller's company. The table list is
+  `companyTables` in `tool-metadata.json`, read from the generated database
+  types (`getDbTablesWithColumn`); generation fails if it comes back short.
+  Reads, inserts, RPCs and storage pass through; a Kysely `db` is not wrapped
+  (it is covered by the `no-unscoped-kysely-write` check). Pinned against real
+  request URLs in `company-scope.test.ts` and end to end in
+  `dispatch-parity.test.ts`.
+
+- **An argument is never published blank unless it is.** The input schema is
+  built from the signature's text and the validators. What neither resolves — a
+  named row type, a `ReturnType<…>`, an enum from another module — used to come
+  out as `{}`: an argument with no shape (`getDocumentTemplate`'s
+  `documentType`, one of eleven strings; 21 tools in all).
+  `describeUntypedArguments` now fills every blank node from the parameter's
+  own TYPE, with the reflection the response schemas use (`typeToJsonSchema` in
+  `response-schema.ts`, which reads a tuple or readonly array as a list). Only
+  `any`, `unknown` and `Json` stay blank — `Json` recognised by its members,
+  since `customFields?: Json` reaches the checker with the alias gone. The API
+  validates input against the schema, so a service that takes a whole row but
+  reads three fields now DEMANDS the whole row: type the parameter as what it
+  reads (`Pick<Job, "id" | "salesOrderLineId" | "quoteLineId">`).
+
+- **A published default is a promise, kept or not made.** `default` in JSON
+  Schema enforces nothing; a caller reading `taxPercent: default 0` leaves the
+  field out and expects 0. The defaults come from the form validators
+  (`.default(0)`), written for a form that submits every field, so the same
+  default sits on create and update alike — and over the API an update is
+  partial. The manifest entry's `defaults` (`defaultsPolicy`, in the digest)
+  says when the dispatcher fills them:
+  - `always` — `read`, `create`, `action`: the call supplies a whole value.
+  - `create` — an `upsert` with a rule, only when it resolves to a create. On
+    update a field left out keeps what is stored; the property's description
+    says so.
+  - absent — `update`, `delete`, and an upsert with no rule (nothing says
+    whether the call updates). `publishDefaults` REMOVES every default from
+    such a schema, and from any place the dispatcher's walk does not reach
+    (several object alternatives of a union, a record's values), so no schema
+    publishes one that is not applied.
+  A default is published only when leaving the field out really has that
+  effect. A list read's `limit` has none: `setGenericQueryFilters` pages only
+  when it is handed a limit, so the schema's old `default: 100` described a
+  page size no caller ever got, and filling it would have cut every unpaged
+  list read to 100 rows (`dispatch-parity.test.ts` a13). `offset` keeps its
+  `0`, which is what lets a `limit` sent alone page at all.
+  The dispatcher fills each ARGUMENT against its own schema after the body's
+  shape is known (`filled` in `dispatchOperation`), never the raw body: adding
+  keys beside a `{ args: {…} }` wrapper would change which shape it is read as.
+  `withSchemaDefaults` and `publishDefaults` are the same walk (`properties`,
+  `items`, a union's one object or array alternative), pinned against one
+  fixture in `dispatch-parity.test.ts`; `mcp-tool-metadata.test.ts` fails a
+  tool that publishes a default with no policy. When this landed every default
+  filled on a create equalled the column's own database default, except
+  `salesInvoiceLine.unitOfMeasureCode` ("EA", as the form sends).
 
 - **Create vs update on an upsert is never the caller's question.** A service
   that picks insert-vs-update by testing for an audit field on the payload
@@ -498,7 +659,12 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   the two stamped — stamp both and an `"updatedBy" in` service takes its UPDATE
   branch on every create, matches zero rows and returns PGRST116. The generator
   records how to decide in the manifest entry's `upsert` (also in the digest), and
-  fails generation for a branching upsert it cannot give a rule to:
+  fails generation for a branching upsert it cannot give a rule to. An `upsert`
+  that branches some other way (`"id" in line`, twenty of them: invoice, order
+  and quote lines) gets the by-`id` rule too whenever its type makes `id`
+  decisive. Without one both audit fields were stamped on every call, and since
+  those services spread the payload into their UPDATE, editing a row through
+  the API rewrote its `createdBy` (`dispatch-parity.test.ts` a8):
   - **By `id`** (`{ keys: ["id"] }`, most upserts) — read off the parameter's TYPE
     (`idDistinguishesUpdate`, `service-ast.ts`): every union member that requires
     `updatedBy` has an `id`, and no other member requires one. Sending `id` means

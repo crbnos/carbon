@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
-import { unchecked } from "@carbon/utils";
+import { async, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { getDatabaseClient } from "~/services/database.server";
@@ -70,8 +70,11 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       // A silent reconcile failure leaves the column and the task list disagreeing.
       // Only the issues the scoped read above found are this company's.
-      const reconciled = await Promise.all(
-        (issues.data ?? []).map(({ id }) =>
+      // Bounded: each call takes a pooled connection, and a bulk edit can name
+      // hundreds of issues.
+      const reconciled = await async.map(
+        issues.data ?? [],
+        ({ id }) =>
           create(
             ServerFnContext.system({
               db: getDatabaseClient(),
@@ -79,8 +82,8 @@ export async function action({ request }: ActionFunctionArgs) {
               userId
             }),
             { type: "nonConformanceTasks", id }
-          )
-        )
+          ),
+        { concurrency: 4 }
       );
 
       const reconcileError = reconciled.find((r) => r.error)?.error;

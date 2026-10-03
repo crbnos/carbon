@@ -284,9 +284,7 @@ function Events() {
       <Store x={80} y={232} w={180} h={68} label="PGMQ" sub="a queue, in tables" />
       <Node x={455} y={240} w={230} h={52} label="wake_event_queue" sub="an HTTP ping after commit" tone="data" />
 
-      <Edge pts={[[570, 292], [570, 340]]} label="pg_net" labelAt={[600, 320]} />
-      <Node x={475} y={340} w={190} h={48} label="event-wake" sub="edge function" tone="svc" />
-      <Edge pts={[[570, 388], [570, 424]]} />
+      <Edge pts={[[570, 292], [570, 424]]} label="pg_net" labelAt={[600, 358]} />
       <Node x={485} y={424} w={170} h={48} label="Inngest" tone="async" />
       <Edge pts={[[570, 472], [570, 500], [495, 500]]} label="POSTs /api/inngest" labelAt={[600, 494]} />
 

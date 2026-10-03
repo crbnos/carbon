@@ -134,9 +134,6 @@ export const postInventoryAdjustment = defineServerFn({
     // Unscrap sends no location (resolved from the scrap movement); every
     // other type carries one (app-layer validator enforces it).
     const locationId: string | null = payloadLocationId ?? null;
-
-    const client = await ctx.supabase();
-
     // The service-role client proves the caller may act in companyId, not that
     // the ids below belong to it — each lands on this company's ledger rows or
     // journal dimensions, and their single-column FKs accept any company's row.
@@ -306,11 +303,10 @@ export const postInventoryAdjustment = defineServerFn({
         if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
       }
     }
-    // Resolve the accounting period BEFORE opening the Kysely transaction —
-    // getCurrentAccountingPeriod uses the REST client and calling it
-    // mid-transaction parks the (size 1) pool in idle-in-transaction.
+    // Resolved before the posting transaction opens: given `db`, it runs and
+    // commits its own short transaction.
     const accountingPeriodId = accountingEnabled
-      ? await getCurrentAccountingPeriod(client, companyId, db, today)
+      ? await getCurrentAccountingPeriod(companyId, db, today)
       : null;
     const accounting =
       accountingEnabled && accountDefaults?.data && accountingPeriodId

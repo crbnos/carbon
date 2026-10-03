@@ -3193,7 +3193,7 @@ export async function setPickingListLineTrackedEntity(
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;
     // A batch pick may be fractional (0.5 kg): send the requested quantity as
     // is and fall back to 1 only when none was given. Flooring at 1 turned
-    // every sub-1 remainder into an over-pick the edge function refused.
+    // every sub-1 remainder into an over-pick post-picking refused.
     if (isBatch) {
       body.quantity =
         args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;

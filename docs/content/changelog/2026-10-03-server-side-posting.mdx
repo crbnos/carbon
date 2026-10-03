@@ -1,0 +1,33 @@
+---
+title: "Posting and job creation run in the app, not edge functions"
+description: "Receipts, shipments, invoices and method copies now run in the Carbon app with fewer database round trips."
+date: "2026-10-03"
+tags: ["api", "self-hosting", "accounting"]
+image: "/changelog/2026-10-03-server-side-posting.svg"
+---
+
+Posting a document or building a job from a method used to leave the app for a Supabase edge function, which then made its database calls one HTTP request at a time. That work now runs inside the Carbon app, on a direct database connection.
+
+## One place for business logic
+
+Posting [receipts](/docs/reference/receipts), [shipments](/docs/reference/shipments) and invoices, copying a method onto a [job](/docs/reference/jobs) or quote line, issuing material and recalculating job requirements all run in the app server.
+
+The same operations stay available to integrations through the Carbon API with an [API key](/docs/building/api-keys). If you called a Supabase function URL directly, call the Carbon API instead.
+
+## Less to run when self-hosting
+
+A [self-hosted](/docs/platform/self-hosting) install no longer deploys a function per operation. One edge function remains, for search embeddings. The [architecture](/docs/building/architecture) page shows the new layout.
+
+<Accordion title="Improvements">
+
+- Copying a method onto a job or quote line makes about a third fewer database calls.
+- Model thumbnails are rendered by the assembler service instead of a headless browser.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- A post refused because the document was already posted no longer sets it back to Draft.
+- A failed receipt, shipment or purchase invoice post no longer leaves a fixed asset's cost or status changed.
+
+</Accordion>

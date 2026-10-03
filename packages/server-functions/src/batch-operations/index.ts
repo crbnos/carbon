@@ -20,12 +20,11 @@ import {
   resolveBatchRules,
   round
 } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql, type Transaction } from "kysely";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { NotFoundError, ServerFnError } from "../errors";
 import { issue } from "../issue";
 import { postProductionEvent } from "../post-production-event";
 import { ServerFnContext } from "../server-fn-context";
@@ -407,7 +406,6 @@ async function assertMaterialCompatible(
 // error left the batch Completed with unissued materials or unposted GL and no
 // recovery path.
 async function completeBatch(
-  client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
@@ -461,8 +459,13 @@ async function completeBatch(
       .executeTakeFirst();
     if (!batch) throw new NotFoundError(`Batch ${batchId} was not found`);
 
+    if (batch.status === "Completed") {
+      throw new ServerFnError("This batch has already been completed", 409, {
+        alreadyCompleted: true
+      });
+    }
     // "resume" if the batch is already Completing (a prior phase-2 step failed);
-    // "slice" if Active; throws for Completed/terminal.
+    // "slice" if Active; throws for a terminal status.
     const phase = planBatchCompletion(batch.status);
 
     if (phase === "resume") {
@@ -843,7 +846,6 @@ export const batchOperations = defineServerFn({
   permissions: { update: "production" },
   async run(ctx, payload) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
 
     let result: Record<string, unknown> = {};
 
@@ -1328,7 +1330,7 @@ export const batchOperations = defineServerFn({
       }
 
       case "complete": {
-        result = await completeBatch(client, db, {
+        result = await completeBatch(db, {
           companyId,
           userId,
           batchId: payload.batchId,

@@ -20,7 +20,6 @@ export const postMemo = defineServerFn({
   permissions: { update: "invoicing" },
   async run(ctx, { type, memoId }) {
     const { db, companyId, userId } = ctx;
-    const client = await ctx.supabase();
     const today = datetime
       .today(await getCompanyTimeZone(db, companyId))
       .toString();
@@ -30,8 +29,7 @@ export const postMemo = defineServerFn({
       memoId,
       userId,
       companyId,
-      today,
-      client
+      today
     });
     return { success: true, ...result };
   }

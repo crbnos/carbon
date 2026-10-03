@@ -33,11 +33,13 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
+import { assertPostable } from "../lib/postable";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid
@@ -60,7 +62,9 @@ export const postPurchaseInvoice = defineServerFn({
     const { db, companyId, userId } = ctx;
 
     logger.info({ type, invoiceId, userId, skipReceiptPost });
-    const client = await ctx.supabase();
+    const fixedAssetWrites = new FixedAssetWrites();
+    if (type === "post")
+      await assertPostable(db, "purchaseInvoice", invoiceId, companyId);
     try {
       const today = datetime
         .today(await getCompanyTimeZone(db, companyId))
@@ -353,7 +357,7 @@ export const postPurchaseInvoice = defineServerFn({
           }));
 
         const accountingPeriodIdVoid = accountingEnabled
-          ? await getCurrentAccountingPeriod(client, companyId, db, today)
+          ? await getCurrentAccountingPeriod(companyId, db, today)
           : null;
 
         await db.transaction().execute(async (trx) => {
@@ -1652,16 +1656,15 @@ export const postPurchaseInvoice = defineServerFn({
                     { columns: ["id", "acquisitionCost"] }
                   );
                   if (!assetRecord.error) {
-                    await updateRows(
-                      db,
-                      "fixedAsset",
-                      {
-                        acquisitionCost:
-                          Number(assetRecord.data.acquisitionCost) + variance,
-                        updatedBy: userId
-                      },
-                      { id: invoiceLine.assetId }
+                    fixedAssetWrites.overlay(
+                      invoiceLine.assetId,
+                      assetRecord.data
                     );
+                    fixedAssetWrites.patch(invoiceLine.assetId, {
+                      acquisitionCost:
+                        Number(assetRecord.data.acquisitionCost) + variance,
+                      updatedBy: userId
+                    });
                   }
                 }
                 faFixedAssetClassId = faClassId;
@@ -1708,6 +1711,7 @@ export const postPurchaseInvoice = defineServerFn({
 
                 if (assetRecord.error)
                   throw new Error("Failed to fetch fixed asset");
+                fixedAssetWrites.overlay(invoiceLine.assetId, assetRecord.data);
 
                 faFixedAssetClassId =
                   assetRecord.data.fixedAssetClassId ?? null;
@@ -1774,9 +1778,7 @@ export const postPurchaseInvoice = defineServerFn({
                   updateData.locationId = invoiceLine.locationId;
                 }
 
-                await updateRows(db, "fixedAsset", updateData, {
-                  id: invoiceLine.assetId
-                });
+                fixedAssetWrites.patch(invoiceLine.assetId, updateData);
               }
 
               const faJlCount = journalLineInserts.length - jlStartIdxFa;
@@ -1873,12 +1875,13 @@ export const postPurchaseInvoice = defineServerFn({
       }
 
       const accountingPeriodId = accountingEnabled
-        ? await getCurrentAccountingPeriod(client, companyId, db, today)
+        ? await getCurrentAccountingPeriod(companyId, db, today)
         : null;
 
       const createdReceiptIds: string[] = [];
 
       await db.transaction().execute(async (trx) => {
+        await fixedAssetWrites.apply(trx, companyId);
         if (receiptLineInserts.length > 0) {
           const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
             Record<string, typeof receiptLineInserts>

@@ -40,6 +40,8 @@ const MAX_NODE_VISITS: usize = 1_000_000;
 const MAX_VIEW_BYTES: usize = 1 << 30;
 const MAX_VERTICES: usize = 8_000_000;
 const MAX_TRIANGLES: usize = 16_000_000;
+/// Bounds render time: stacked full-frame triangles cost a frame each.
+const MAX_PIXEL_TESTS: u64 = 1 << 32;
 
 #[derive(Debug)]
 pub struct ThumbnailError(pub String);
@@ -322,6 +324,17 @@ impl<'a> Doc<'a> {
             let Some(position) = index_of(&primitive["attributes"]["POSITION"]) else {
                 continue;
             };
+            // Checked on the declared counts, before any view is decoded.
+            let declared = |accessor: usize| index_of(&self.root["accessors"][accessor]["count"]);
+            let declared_vertices = declared(position).unwrap_or(0);
+            let declared_indices = index_of(&primitive["indices"])
+                .and_then(declared)
+                .unwrap_or(declared_vertices);
+            if out.positions.len().saturating_add(declared_vertices) > MAX_VERTICES
+                || out.indices.len().saturating_add(declared_indices / 3) > MAX_TRIANGLES
+            {
+                return err("model is too large to render a thumbnail");
+            }
             let positions = self.accessor(position)?;
             if positions.components != 3 {
                 continue;
@@ -348,11 +361,6 @@ impl<'a> Doc<'a> {
                 .unwrap_or(DEFAULT_COLOR);
 
             let index_count = indices.as_ref().map_or(positions.count, |i| i.count);
-            if out.positions.len() + positions.count > MAX_VERTICES
-                || out.indices.len() + index_count / 3 > MAX_TRIANGLES
-            {
-                return err("model is too large to render a thumbnail");
-            }
 
             let base = out.positions.len() as u32;
             for i in 0..positions.count {
@@ -601,6 +609,7 @@ fn rasterize(triangles: &Triangles, size: usize) -> Result<Vec<u8>, ThumbnailErr
 
     let mut depth = vec![f32::NEG_INFINITY; side * side];
     let mut color = vec![[0u8; 3]; side * side];
+    let mut pixel_tests = 0u64;
 
     for (triangle, base_color) in triangles.indices.iter().zip(&triangles.colors) {
         let [ia, ib, ic] = triangle.map(|i| i as usize);
@@ -619,6 +628,10 @@ fn rasterize(triangles: &Triangles, size: usize) -> Result<Vec<u8>, ThumbnailErr
         let y1 = (a[1].max(b[1]).max(c[1]).ceil() as usize).min(side - 1);
         if x0 > x1 || y0 > y1 {
             continue;
+        }
+        pixel_tests += ((x1 - x0 + 1) * (y1 - y0 + 1)) as u64;
+        if pixel_tests > MAX_PIXEL_TESTS {
+            return err("model is too complex to render a thumbnail");
         }
 
         let face = normalize(cross(
@@ -915,8 +928,11 @@ mod tests {
         assert!(render_png(&triangle_glb(3, |_| {}), 64).is_ok());
 
         // An accessor claiming more elements than its view holds.
-        let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = u64::MAX.into());
+        let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = 1_000.into());
         assert!(message(&glb).contains("runs past its bufferView"));
+
+        let glb = triangle_glb(3, |root| root["accessors"][0]["count"] = u64::MAX.into());
+        assert!(message(&glb).contains("too large to render"));
 
         // A compressed view claiming a decoded size no machine has.
         let glb = triangle_glb(3, |root| {

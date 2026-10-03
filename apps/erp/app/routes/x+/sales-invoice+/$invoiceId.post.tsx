@@ -683,12 +683,22 @@ export async function action(args: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     return {
       success: false,
       message: "Failed to update sales invoice status"
+    };
+  }
+
+  if (!setPendingState.data?.length) {
+    return {
+      success: false,
+      message: "This sales invoice has already been posted"
     };
   }
 

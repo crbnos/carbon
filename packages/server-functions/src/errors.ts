@@ -6,13 +6,8 @@ import { getLogger } from "@carbon/logger";
 
 const logger = getLogger("server-functions");
 
-/**
- * A failure a caller may show the user. `message` is empty when the failure
- * came from the data layer: raw text such as `duplicate key value violates
- * unique constraint "receiptLine_pkey"` must never reach a toast, so the
- * caller's own fallback copy wins. `body` carries structured extras a caller
- * reads, e.g. `invalidLineIds`.
- */
+/** `message` is empty when the failure came from the data layer, so raw
+ *  constraint text never reaches a toast. `body` carries structured extras. */
 export class ServerFnError extends Error {
   readonly status: number;
   readonly body: Record<string, unknown>;
@@ -47,11 +42,7 @@ export class NotFoundError extends ServerFnError {
   }
 }
 
-/**
- * True when `err` came from the data layer rather than from our own `throw`.
- * Structural only: it never reads message text, so an authored message that
- * mentions a table or a constraint is still shown.
- */
+/** Structural only: an authored message naming a table is still shown. */
 export function isDataLayerError(err: unknown): boolean {
   if (err === null || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
@@ -78,10 +69,6 @@ function isZodError(err: unknown): err is ZodLikeError {
   return e?.name === "ZodError" && Array.isArray(e.issues);
 }
 
-/**
- * A payload that fails validation is the caller's input contract, not a data
- * leak, so its issues are summarised (`path: message; …`).
- */
 function summarizeIssues({ issues }: ZodLikeError): string {
   const shown = issues.slice(0, 5).map(({ path, message }) => {
     const text = typeof message === "string" ? message : "invalid";
@@ -93,12 +80,6 @@ function summarizeIssues({ issues }: ZodLikeError): string {
   return `Invalid input — ${shown.join("; ")}${more > 0 ? `; +${more} more` : ""}`;
 }
 
-/**
- * The error a caller receives for anything a server function throws: logged in
- * full, surfaced sanitized. A `ServerFnError` passes through; invalid input is
- * a 400; anything else gets `defaultStatus` (or its own 4xx/5xx `status`) and
- * keeps its message only when it did not come from the data layer.
- */
 export function toServerFnError(
   name: string,
   err: unknown,

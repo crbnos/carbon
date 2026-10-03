@@ -267,7 +267,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", shipmentId);
+    .eq("id", shipmentId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     throw redirect(
@@ -275,6 +278,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(setPendingState.error, "Failed to post shipment")
+      )
+    );
+  }
+
+  if (!setPendingState.data?.length) {
+    throw redirect(
+      path.to.shipments,
+      await flash(
+        request,
+        error(null, "This shipment has already been posted or voided")
       )
     );
   }

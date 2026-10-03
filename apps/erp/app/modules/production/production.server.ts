@@ -6,11 +6,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import type { ServerFnResult } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getDatabaseClient } from "~/services/database.server";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
@@ -95,15 +93,11 @@ export async function releaseJobs({
   const purchaseOrders = { ...purchaseOrdersBySupplierId };
 
   for (const id of jobIds) {
-    const recalc = await recalculateJobRequirements(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        id,
-        companyId,
-        userId
-      }
-    );
+    const recalc = await recalculateJobRequirements(serviceRole, db, {
+      id,
+      companyId,
+      userId
+    });
     if (recalc.error) return { error: `Failed to recalculate job ${id}` };
 
     await runMRP(serviceRole, db, { type: "job", id, companyId, userId });
@@ -116,21 +110,13 @@ export async function releaseJobs({
     });
     if (update.error) return { error: `Failed to release job ${id}` };
 
-    const purchaseOrder = await (create.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        type: "purchaseOrderFromJob",
-        jobId: id,
-        purchaseOrdersBySupplierId: purchaseOrders,
-        companyId,
-        userId
-      }
-    ) as Promise<
-      ServerFnResult<{
-        purchaseOrderIdsBySupplierId?: Record<string, string>;
-      }>
-    >);
+    const purchaseOrder = await create.withClient(serviceRole, db, {
+      type: "purchaseOrderFromJob",
+      jobId: id,
+      purchaseOrdersBySupplierId: purchaseOrders,
+      companyId,
+      userId
+    });
     if (purchaseOrder.error) {
       return {
         error: getErrorMessage(
