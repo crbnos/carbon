@@ -249,3 +249,12 @@ CREATE INDEX IF NOT EXISTS "methodMaterial_materialMakeMethodId_idx" ON "methodM
 CREATE INDEX IF NOT EXISTS "purchaseOrderLine_jobOperationId_idx" ON "purchaseOrderLine" ("jobOperationId");
 CREATE INDEX IF NOT EXISTS "purchaseOrderLine_jobId_idx" ON "purchaseOrderLine" ("jobId");
 CREATE INDEX IF NOT EXISTS "purchaseInvoiceLine_jobOperationId_idx" ON "purchaseInvoiceLine" ("jobOperationId");
+
+-- 5. Every jobOperationDependency insert set the operation's status twice.
+--    20260410031811 moved set_initial_dependency_status onto the event system
+--    as sync_set_initial_dependency_status but dropped the old trigger by the
+--    wrong name (set_initial_dependency_status_trigger), so the original
+--    set_initial_status_on_dependency kept firing too: the same check and the
+--    same jobOperation UPDATE, with its whole trigger chain, a second time.
+DROP TRIGGER IF EXISTS set_initial_status_on_dependency ON "jobOperationDependency";
+DROP FUNCTION IF EXISTS set_initial_dependency_status();
