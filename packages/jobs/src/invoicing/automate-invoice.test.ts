@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // External boundaries only: SMTP, the PDF renderer, the rule engine and the
@@ -251,7 +252,16 @@ describe("postSalesInvoiceUnattended", () => {
       { salesInvoice: [draftInvoice()] },
       (rows) => {
         rows.salesInvoice![0]!.status = "Draft";
-        return { error: new Error("Accounting period is closed") };
+        // What supabase-js hands back for a non-2xx: a fixed message, the
+        // edge function's reason in the response body.
+        return {
+          error: new FunctionsHttpError(
+            new Response(
+              JSON.stringify({ message: "Accounting period is closed" }),
+              { status: 500 }
+            )
+          )
+        };
       }
     );
     expect(await postSalesInvoiceUnattended({ client, ...args })).toEqual({

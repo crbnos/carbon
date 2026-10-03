@@ -17,6 +17,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { SUPABASE_INTERNAL_URL, SUPABASE_URL } from "@carbon/env";
 import { getDocumentType, storage } from "@carbon/files";
+import { getEdgeFunctionErrorMessage } from "@carbon/lib/edge-function-error";
 import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import {
@@ -197,9 +198,16 @@ export async function postSalesInvoiceUnattended(args: {
     const posted = await client.functions.invoke("post-sales-invoice", {
       body: { invoiceId, userId: "system", companyId }
     });
-    postError = posted.error?.message;
+    // A non-2xx response's message is a fixed wrapper; the edge function's
+    // own reason is in the body.
+    if (posted.error) {
+      postError = await getEdgeFunctionErrorMessage(
+        posted.error,
+        "Posting failed"
+      );
+    }
   } catch (error) {
-    postError = error instanceof Error ? error.message : String(error);
+    postError = await getEdgeFunctionErrorMessage(error, "Posting failed");
   }
 
   // The stored status is the truth: a lost response can still have posted.

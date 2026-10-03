@@ -67,8 +67,9 @@ export const recurringBillingFunction = inngest.createFunction(
     const failed: string[] = [];
     for (const company of scheduled) {
       let invoices: DraftedRentalInvoice[];
+      let failures: unknown[];
       try {
-        ({ invoices } = await step.run(
+        ({ invoices, failures } = await step.run(
           `rental-billing-${company.id}`,
           async () => {
             // The cron is UTC; "due" is judged on the company's own calendar.
@@ -80,13 +81,22 @@ export const recurringBillingFunction = inngest.createFunction(
               { companyId: company.id, asOf, userId: "system" }
             );
 
+            for (const failure of drafted.failures) {
+              logger.error(
+                `Failed to bill rental agreement ${failure.rentalAgreementId} for ${company.name}: ${failure.error}`
+              );
+            }
             logger.info(
               drafted.invoices.length > 0
                 ? `Drafted ${drafted.invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
                 : `Nothing due for ${company.name} as of ${asOf}`
             );
 
-            return { asOf, invoices: drafted.invoices };
+            return {
+              asOf,
+              invoices: drafted.invoices,
+              failures: drafted.failures
+            };
           }
         ));
       } catch (error) {
@@ -96,6 +106,9 @@ export const recurringBillingFunction = inngest.createFunction(
         failed.push(company.id);
         continue;
       }
+      // Agreements that failed stay unbilled until tomorrow's run; the rest
+      // were drafted and are automated below.
+      if (failures.length > 0) failed.push(company.id);
 
       // Drafts, then posts and emails per the agreement's invoice automation
       // (spec 2026-10-02-rental-invoice-automation). Draft Only drafts wait

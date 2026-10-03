@@ -388,7 +388,13 @@ export async function generateRentalInvoicesNow(
   db: Kysely<KyselyDatabase>,
   args: RentalInvoiceGenerationArgs
 ): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
-  return createRentalInvoicesForDuePeriods(db, args);
+  // One agreement is billed here, so its failure is the action's failure.
+  const { invoices, invoiceIds, failures } =
+    await createRentalInvoicesForDuePeriods(db, args);
+  if (failures.length > 0) {
+    throw new Error(failures.map((f) => f.error).join("; "));
+  }
+  return { invoices, invoiceIds };
 }
 
 /**

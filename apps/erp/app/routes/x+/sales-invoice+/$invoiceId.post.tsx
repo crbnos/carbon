@@ -679,17 +679,29 @@ export async function action(args: ActionFunctionArgs) {
     stripeSendContext = preflight.context;
   }
 
+  // Claim: only a Draft can be posted. Invoice automation posts the same
+  // invoices in the background, so an unconditional write could post twice.
   const setPendingState = await client
     .from("salesInvoice")
     .update({
       status: "Pending"
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id")
+    .maybeSingle();
 
   if (setPendingState.error) {
     return {
       success: false,
       message: "Failed to update sales invoice status"
+    };
+  }
+  if (!setPendingState.data) {
+    return {
+      success: false,
+      message: "This invoice is no longer a draft — it may be posting already"
     };
   }
 

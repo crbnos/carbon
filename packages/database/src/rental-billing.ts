@@ -45,6 +45,19 @@ export type DraftedRentalInvoice = {
   holdReason: string | null;
 };
 
+export type RentalInvoiceGenerationFailure = {
+  rentalAgreementId: string;
+  error: string;
+};
+
+export type RentalInvoiceGenerationResult = {
+  invoices: DraftedRentalInvoice[];
+  /** `invoices.map(i => i.invoiceId)`. */
+  invoiceIds: string[];
+  /** Agreements whose transaction rolled back; their rows stay unbilled. */
+  failures: RentalInvoiceGenerationFailure[];
+};
+
 /**
  * Drafts the sales invoices of every Active agreement that has something due: every
  * Pending billing period with `dueOn <= asOf` and every unbilled charge dated
@@ -60,7 +73,7 @@ export type DraftedRentalInvoice = {
 export async function createRentalInvoicesForDuePeriods(
   db: Kysely<KyselyDatabase>,
   args: RentalInvoiceGenerationArgs
-): Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }> {
+): Promise<RentalInvoiceGenerationResult> {
   const { companyId, asOf, rentalAgreementId } = args;
 
   // One read for every agreement with anything due; the per-agreement
@@ -117,14 +130,25 @@ export async function createRentalInvoicesForDuePeriods(
   }
   const agreements = await dueQuery.execute();
 
+  // One agreement's failure never stops the others: what earlier agreements
+  // committed is returned (so automation still runs over it) next to the
+  // failures, rather than lost behind a throw.
   const invoices: DraftedRentalInvoice[] = [];
+  const failures: RentalInvoiceGenerationFailure[] = [];
   for (const agreement of agreements) {
-    const drafted = await db
-      .transaction()
-      .execute((trx) => draftAgreementInvoices(trx, args, agreement.id));
-    invoices.push(...drafted);
+    try {
+      const drafted = await db
+        .transaction()
+        .execute((trx) => draftAgreementInvoices(trx, args, agreement.id));
+      invoices.push(...drafted);
+    } catch (error) {
+      failures.push({
+        rentalAgreementId: agreement.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
-  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId) };
+  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId), failures };
 }
 
 type AgreementRow = Selectable<KyselyDatabase["rentalAgreement"]>;
