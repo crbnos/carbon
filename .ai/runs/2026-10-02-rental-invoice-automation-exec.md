@@ -21,3 +21,4 @@ Plan: `.ai/plans/2026-10-02-rental-invoice-automation.md`. Context: `.ai/runs/20
   - Any load/render/upload failure in the email step stamps `sendError` (the invoice shows "Not sent" in Needs Review) instead of throwing.
   - Party-contact check uses `salesInvoice.customerId`, mirroring the manual post route exactly.
   - Tests follow the ramp-sync-bill precedent (stateful fake rows) and assert on outcomes/stored rows, per testing-no-mock-theater; 14 (12 behavioural + 2 pure header helpers).
+- Task 12: email body now spreads the loader's `email` (same sources as the old reads); kept the route's existing timestamped file name; early returns (missing contact/seller) don't stamp sendError.

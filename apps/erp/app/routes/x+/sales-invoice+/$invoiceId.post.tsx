@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, SUPABASE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
@@ -16,6 +16,11 @@ import {
 import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import {
+  loadSalesInvoiceDocument,
+  renderSalesInvoicePdf,
+  type SalesInvoiceDocument
+} from "@carbon/lib/sales-invoice-document.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -31,7 +36,6 @@ import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getSalesInvoice,
@@ -47,12 +51,10 @@ import {
 } from "~/modules/invoicing/stripe-customer.server";
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
-import { getCompany } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
-import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -548,9 +550,10 @@ export async function action(args: ActionFunctionArgs) {
     return { success: false, message: customerContactError };
   }
 
-  let file: ArrayBuffer;
+  let file: Buffer;
   let fileName: string;
   let documentFilePath: string;
+  let invoiceDocument: SalesInvoiceDocument;
 
   const serviceRole = getCarbonServiceRole();
 
@@ -780,26 +783,24 @@ export async function action(args: ActionFunctionArgs) {
   });
 
   try {
-    const pdf = await pdfLoader({
-      ...args,
-      params: { ...args.params, id: invoiceId }
+    invoiceDocument = await loadSalesInvoiceDocument({
+      client: serviceRole,
+      companyId,
+      companyGroupId,
+      invoiceId,
+      locale: locales?.[0] ?? "en-US",
+      storageUrl: SUPABASE_URL ?? ""
     });
 
-    if (pdf.headers.get("content-type") !== "application/pdf") {
-      return {
-        success: false,
-        message: "Failed to generate PDF"
-      };
-    }
-
-    file = await pdf.arrayBuffer();
+    file = await renderSalesInvoicePdf(invoiceDocument.pdfProps);
     fileName = stripSpecialCharacters(
       `${salesInvoice.data.invoiceId} - ${new Date()
         .toISOString()
         .slice(0, -5)}.pdf`
     );
 
-    documentFilePath = `${companyId}/opportunity/${salesInvoice.data.opportunityId}/${fileName}`;
+    const { opportunityId } = salesInvoice.data;
+    documentFilePath = `${companyId}/${opportunityId ? `opportunity/${opportunityId}` : `sales-invoice/${invoiceId}`}/${fileName}`;
 
     const documentFileUpload = await storage(serviceRole)
       .company(companyId)
@@ -852,24 +853,9 @@ export async function action(args: ActionFunctionArgs) {
           };
         }
 
-        const [
-          company,
-          customer,
-          salesInvoice,
-          salesInvoiceLines,
-          salesInvoiceLocations,
-          salesInvoiceShipment,
-          seller,
-          paymentTerms
-        ] = await Promise.all([
-          getCompany(serviceRole, companyId),
+        const [customer, seller] = await Promise.all([
           getCustomerContact(serviceRole, customerContact, companyId),
-          getSalesInvoice(serviceRole, invoiceId),
-          getSalesInvoiceLines(serviceRole, invoiceId),
-          getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
-          getSalesInvoiceShipment(serviceRole, invoiceId),
-          getUser(serviceRole, userId),
-          getPaymentTermsList(serviceRole, companyId)
+          getUser(serviceRole, userId)
         ]);
 
         if (!customer?.data?.contact) {
@@ -878,61 +864,17 @@ export async function action(args: ActionFunctionArgs) {
             message: "Failed to get customer contact"
           };
         }
-        if (!company.data) {
-          return {
-            success: false,
-            message: "Failed to get company"
-          };
-        }
         if (!seller.data) {
           return {
             success: false,
             message: "Failed to get user"
           };
         }
-        if (!salesInvoice.data) {
-          return {
-            success: false,
-            message: "Failed to get sales invoice"
-          };
-        }
-        if (!salesInvoiceLocations.data) {
-          return {
-            success: false,
-            message: "Failed to get sales invoice locations"
-          };
-        }
-        if (!salesInvoiceShipment.data) {
-          return {
-            success: false,
-            message: "Failed to get sales invoice shipment"
-          };
-        }
-        if (!paymentTerms.data) {
-          return {
-            success: false,
-            message: "Failed to get payment terms"
-          };
-        }
 
-        // Same decimals the PDF of this invoice uses.
-        const currencyRow = salesInvoice.data.currencyCode
-          ? await getCurrencyByCode(
-              serviceRole,
-              companyGroupId,
-              salesInvoice.data.currencyCode
-            )
-          : null;
-
+        // The same reads the PDF above rendered from.
         const emailTemplate = SalesInvoiceEmail({
-          // @ts-expect-error TS2739 - TODO: fix type
-          company: company.data,
-          currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
+          ...invoiceDocument.email,
           locale: locales?.[0] ?? "en-US",
-          salesInvoice: salesInvoice.data,
-          salesInvoiceLines: salesInvoiceLines.data ?? [],
-          salesInvoiceLocations: salesInvoiceLocations.data,
-          salesInvoiceShipment: salesInvoiceShipment.data,
           recipient: {
             // @ts-expect-error TS2322 - TODO: fix type
             email: customer.data.contact.email,
@@ -943,8 +885,7 @@ export async function action(args: ActionFunctionArgs) {
             email: seller.data.email,
             firstName: seller.data.firstName,
             lastName: seller.data.lastName
-          },
-          paymentTerms: paymentTerms.data
+          }
         });
 
         const html = await renderAsync(emailTemplate);
@@ -963,7 +904,7 @@ export async function action(args: ActionFunctionArgs) {
           to: [seller.data.email, customer.data.contact.email!],
           cc: ccSelections?.length ? ccSelections : undefined,
           from: seller.data.email,
-          subject: `Invoice ${salesInvoice.data.invoiceId} from ${company.data.name}`,
+          subject: `Invoice ${invoiceDocument.invoiceReadableId} from ${invoiceDocument.email.company.name}`,
           html,
           text,
           attachments: signed.data
@@ -976,8 +917,44 @@ export async function action(args: ActionFunctionArgs) {
             : undefined,
           companyId
         });
-        // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+
+        // trigger() only queues the email, so sentAt here means "queued".
+        const sentStamp = await serviceRole
+          .from("salesInvoice")
+          .update({
+            sentAt: datetime.timestamp(),
+            sentTo: [customer.data.contact.email, ...(ccSelections ?? [])]
+              .filter(Boolean)
+              .join(", "),
+            sendError: null
+          })
+          .eq("id", invoiceId)
+          .eq("companyId", companyId);
+        if (sentStamp.error) {
+          logger.error("Failed to stamp sales invoice as sent", {
+            companyId,
+            invoiceId,
+            error: sentStamp.error
+          });
+        }
       } catch (err) {
+        logger.error("Failed to send sales invoice email", {
+          companyId,
+          invoiceId,
+          error: err
+        });
+        const errorStamp = await serviceRole
+          .from("salesInvoice")
+          .update({ sendError: "Failed to send email" })
+          .eq("id", invoiceId)
+          .eq("companyId", companyId);
+        if (errorStamp.error) {
+          logger.error("Failed to stamp sales invoice send error", {
+            companyId,
+            invoiceId,
+            error: errorStamp.error
+          });
+        }
         return {
           success: false,
           message: "Failed to send email"
