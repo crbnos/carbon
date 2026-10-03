@@ -22,7 +22,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -58,7 +58,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -101,7 +101,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -140,7 +140,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -178,7 +178,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
@@ -216,7 +216,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules-cache
         with:
           path: |
