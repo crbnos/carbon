@@ -2097,6 +2097,9 @@ msgstr "Carbon 데이터에 프로그래밍 방식으로 접근하기 위한 API
 msgid "API, webhooks, and integrations"
 msgstr "API, 웹훅 및 연동"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "적용됨"
 
@@ -5485,9 +5488,6 @@ msgstr "매일 사용량"
 
 msgid "Dark"
 msgstr "다크"
-
-msgid "Dark Mode"
-msgstr "다크 모드"
 
 msgid "Dashboard"
 msgstr "대시보드"
@@ -10200,12 +10200,6 @@ msgstr "누적 사용량(단위)"
 
 msgid "Light"
 msgstr "라이트"
-
-msgid "Light Mode"
-msgstr "라이트 모드"
-
-msgid "Light or dark mode"
-msgstr "밝은 테마 또는 어두운 테마"
 
 msgid "Lights Out (24×7)"
 msgstr "조명 꺼짐 (24×7)"

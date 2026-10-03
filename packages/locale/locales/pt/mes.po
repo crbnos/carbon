@@ -176,6 +176,9 @@ msgstr "Alocar unidades com falha"
 msgid "Allocate units"
 msgstr "Alocar unidades"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
 
@@ -423,8 +426,8 @@ msgstr "Trabalho atual"
 msgid "Customer"
 msgstr "Cliente"
 
-msgid "Dark Mode"
-msgstr "Modo Escuro"
+msgid "Dark"
+msgstr ""
 
 msgid "Date"
 msgstr "Data"
@@ -816,6 +819,9 @@ msgstr "Sair desta página"
 
 msgid "Let's build something"
 msgstr "Vamos construir algo"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "linhas"
@@ -1692,6 +1698,9 @@ msgstr "Suporte Necessário"
 
 msgid "Switch Operator"
 msgstr "Trocar Operador"
+
+msgid "System"
+msgstr ""
 
 msgid "Tag"
 msgstr "Etiqueta"

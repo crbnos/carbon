@@ -20,13 +20,15 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  getSystemMode,
   ItarDisclosure,
-  Switch,
   useDisclosure,
   useEdition,
-  useMode
+  useMode,
+  useModePreference
 } from "@carbon/react";
-import { Edition, themes } from "@carbon/utils";
+import type { ModePreference } from "@carbon/utils";
+import { Edition, modeValidator, themes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
@@ -36,6 +38,7 @@ import {
   LuFileText,
   LuHouse,
   LuLanguages,
+  LuLaptop,
   LuLogOut,
   LuMoon,
   LuPalette,
@@ -59,18 +62,28 @@ const AvatarMenu = () => {
   const edition = useEdition();
 
   const mode = useMode();
+  const modePreference = useModePreference();
   const serverTheme = useTheme();
-
-  const nextMode = mode === "dark" ? "light" : "dark";
 
   const fetcher = useFetcher<typeof action>();
 
-  const onModeToggle = () => {
+  const onModeChange = (value: string) => {
+    const parsed = modeValidator.shape.mode.safeParse(value);
+    if (!parsed.success || parsed.data === modePreference) return;
+    const nextPreference: ModePreference = parsed.data;
+    const nextMode =
+      nextPreference === "system" ? getSystemMode() : nextPreference;
+
     const formData = new FormData();
-    formData.append("mode", nextMode);
-    startModeTransition(nextMode, () => {
+    formData.append("mode", nextPreference);
+    const persist = () =>
       fetcher.submit(formData, { method: "post", action: path.to.root });
-    });
+
+    if (nextMode === mode) {
+      persist();
+    } else {
+      startModeTransition(nextMode, persist);
+    }
   };
   const localeFetcher = useFetcher<{ ok?: boolean }>();
   const [isOpen, setIsOpen] = useState(false);
@@ -129,22 +142,42 @@ const AvatarMenu = () => {
             </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center justify-start">
-                <DropdownMenuIcon
-                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
-                />
-                <Trans>Dark Mode</Trans>
-              </div>
-              <div>
-                <Switch
-                  checked={mode === "dark"}
-                  onCheckedChange={onModeToggle}
-                />
-              </div>
-            </div>
-          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <DropdownMenuIcon
+                icon={mode === "dark" ? <LuMoon /> : <LuSun />}
+              />
+              <Trans>Appearance</Trans>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={modePreference}
+                onValueChange={onModeChange}
+              >
+                <DropdownMenuRadioItem
+                  value="light"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <DropdownMenuIcon icon={<LuSun />} />
+                  <Trans>Light</Trans>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="dark"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <DropdownMenuIcon icon={<LuMoon />} />
+                  <Trans>Dark</Trans>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="system"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <DropdownMenuIcon icon={<LuLaptop />} />
+                  <Trans>System</Trans>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <DropdownMenuIcon icon={<LuPalette />} />

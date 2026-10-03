@@ -176,6 +176,9 @@ msgstr "分配不合格单位"
 msgid "Allocate units"
 msgstr "分配单位"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
 
@@ -423,8 +426,8 @@ msgstr "当前工作"
 msgid "Customer"
 msgstr "客户"
 
-msgid "Dark Mode"
-msgstr "深色模式"
+msgid "Dark"
+msgstr ""
 
 msgid "Date"
 msgstr "日期"
@@ -816,6 +819,9 @@ msgstr "离开此页面"
 
 msgid "Let's build something"
 msgstr "让我们开始构建"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "行"
@@ -1692,6 +1698,9 @@ msgstr "需要支持"
 
 msgid "Switch Operator"
 msgstr "切换操作员"
+
+msgid "System"
+msgstr ""
 
 msgid "Tag"
 msgstr "标签"

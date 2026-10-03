@@ -2097,6 +2097,9 @@ msgstr "API-ключи для программного доступа к ваш�
 msgid "API, webhooks, and integrations"
 msgstr "API, вебхуки и интеграции"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Применено"
 
@@ -5485,9 +5488,6 @@ msgstr "Ежедневное использование"
 
 msgid "Dark"
 msgstr "Тёмный"
-
-msgid "Dark Mode"
-msgstr "Тёмный режим"
 
 msgid "Dashboard"
 msgstr "Панель управления"
@@ -10200,12 +10200,6 @@ msgstr "Использование за весь период (Единицы)"
 
 msgid "Light"
 msgstr "Светлая"
-
-msgid "Light Mode"
-msgstr "Светлый режим"
-
-msgid "Light or dark mode"
-msgstr "Светлая или тёмная тема"
 
 msgid "Lights Out (24×7)"
 msgstr "Темное производство (24×7)"

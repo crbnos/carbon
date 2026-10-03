@@ -2097,6 +2097,9 @@ msgstr "आपके Carbon डेटा के लिए प्रोग्र�
 msgid "API, webhooks, and integrations"
 msgstr "API, वेबहुक, और एकीकरण"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "लागू"
 
@@ -5485,9 +5488,6 @@ msgstr "दैनिक उपयोग"
 
 msgid "Dark"
 msgstr "गहरा"
-
-msgid "Dark Mode"
-msgstr "डार्क मोड"
 
 msgid "Dashboard"
 msgstr "डैशबोर्ड"
@@ -10200,12 +10200,6 @@ msgstr "जीवनकाल उपयोग (इकाइयां)"
 
 msgid "Light"
 msgstr "हल्का"
-
-msgid "Light Mode"
-msgstr "लाइट मोड"
-
-msgid "Light or dark mode"
-msgstr "हल्का या गहरा थीम"
 
 msgid "Lights Out (24×7)"
 msgstr "लाइट्स आउट (24×7)"

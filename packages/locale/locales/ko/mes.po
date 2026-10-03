@@ -176,6 +176,9 @@ msgstr "실패한 단위 할당"
 msgid "Allocate units"
 msgstr "단위 할당"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
 
@@ -423,8 +426,8 @@ msgstr "현재 작업"
 msgid "Customer"
 msgstr "고객"
 
-msgid "Dark Mode"
-msgstr "다크 모드"
+msgid "Dark"
+msgstr ""
 
 msgid "Date"
 msgstr "날짜"
@@ -816,6 +819,9 @@ msgstr "이 페이지 나가기"
 
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "라인"
@@ -1692,6 +1698,9 @@ msgstr "지원 필요"
 
 msgid "Switch Operator"
 msgstr "작업자 전환"
+
+msgid "System"
+msgstr ""
 
 msgid "Tag"
 msgstr "태그"

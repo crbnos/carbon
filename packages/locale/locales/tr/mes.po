@@ -176,6 +176,9 @@ msgstr "Başarısız birimleri tahsis et"
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
 
@@ -423,8 +426,8 @@ msgstr "Mevcut iş"
 msgid "Customer"
 msgstr "Müşteri"
 
-msgid "Dark Mode"
-msgstr "Karanlık Mod"
+msgid "Dark"
+msgstr ""
 
 msgid "Date"
 msgstr "Tarih"
@@ -816,6 +819,9 @@ msgstr "Bu sayfadan ayrıl"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "satırlar"
@@ -1692,6 +1698,9 @@ msgstr "Destek Gerekli"
 
 msgid "Switch Operator"
 msgstr "Operatörü Değiştir"
+
+msgid "System"
+msgstr ""
 
 msgid "Tag"
 msgstr "Etiket"

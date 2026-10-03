@@ -16,7 +16,7 @@ import { validator } from "@carbon/form";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { modeValidator, themes } from "@carbon/utils";
+import { colorSchemeHintScript, modeValidator, themes } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
@@ -89,7 +89,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       },
-      mode: getMode(request),
+      ...getMode(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
     },
@@ -137,6 +137,7 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
 }) {
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
     | undefined;
@@ -174,6 +175,13 @@ function Document({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Before any paint: records the OS color scheme for a `system` user
+            and reloads once if the server rendered the wrong mode. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: colorSchemeHintScript }}
+        />
         <Meta />
         <title>{title}</title>
         <Links />

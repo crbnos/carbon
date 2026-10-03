@@ -2097,6 +2097,9 @@ msgstr "API密钥用于以编程方式访问您的Carbon数据。"
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook 和集成"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "已应用"
 
@@ -5485,9 +5488,6 @@ msgstr "每日使用"
 
 msgid "Dark"
 msgstr "深色"
-
-msgid "Dark Mode"
-msgstr "深色模式"
 
 msgid "Dashboard"
 msgstr "仪表板"
@@ -10200,12 +10200,6 @@ msgstr "生命周期使用情况（单位）"
 
 msgid "Light"
 msgstr "浅色"
-
-msgid "Light Mode"
-msgstr "浅色模式"
-
-msgid "Light or dark mode"
-msgstr "亮色或深色模式"
 
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"

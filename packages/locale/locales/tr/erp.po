@@ -2097,6 +2097,9 @@ msgstr "Carbon verilerinize programatik erişim için API anahtarları."
 msgid "API, webhooks, and integrations"
 msgstr "API, webhook'lar ve entegrasyonlar"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Uygulandı"
 
@@ -5485,9 +5488,6 @@ msgstr "Günlük Kullanım"
 
 msgid "Dark"
 msgstr "Koyu"
-
-msgid "Dark Mode"
-msgstr "Karanlık Mod"
 
 msgid "Dashboard"
 msgstr "Gösterge Paneli"
@@ -10200,12 +10200,6 @@ msgstr "Yaşam Boyu Kullanım (Birimler)"
 
 msgid "Light"
 msgstr "Aydınlık"
-
-msgid "Light Mode"
-msgstr "Aydınlık Mod"
-
-msgid "Light or dark mode"
-msgstr "Açık veya koyu mod"
 
 msgid "Lights Out (24×7)"
 msgstr "Işıklar Kapalı (24×7)"

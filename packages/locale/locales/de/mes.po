@@ -176,6 +176,9 @@ msgstr "Fehlerhafte Einheiten zuordnen"
 msgid "Allocate units"
 msgstr "Einheiten zuordnen"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Möchten Sie diesen Schritt wirklich löschen?"
 
@@ -423,8 +426,8 @@ msgstr "Aktuelle Arbeit"
 msgid "Customer"
 msgstr "Kunde"
 
-msgid "Dark Mode"
-msgstr "Dunkelmodus"
+msgid "Dark"
+msgstr ""
 
 msgid "Date"
 msgstr "Datum"
@@ -816,6 +819,9 @@ msgstr "Diese Seite verlassen"
 
 msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
+
+msgid "Light"
+msgstr ""
 
 msgid "lines"
 msgstr "Zeilen"
@@ -1692,6 +1698,9 @@ msgstr "Unterstützung erforderlich"
 
 msgid "Switch Operator"
 msgstr "Werker wechseln"
+
+msgid "System"
+msgstr ""
 
 msgid "Tag"
 msgstr "Tag"

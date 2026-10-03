@@ -16,6 +16,7 @@ import {
   RadioGroup,
   RadioGroupButton,
   useMode,
+  useModePreference,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
@@ -23,7 +24,7 @@ import { themes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { BiMoon, BiSun } from "react-icons/bi";
+import { BiLaptop, BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
@@ -79,6 +80,7 @@ export default function OnboardingTheme() {
   const { t } = useLingui();
 
   const mode = useMode();
+  const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
   const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
@@ -142,17 +144,17 @@ export default function OnboardingTheme() {
       <OnboardingCardContent>
         <VStack spacing={4}>
           <RadioGroup
-            value={mode === "dark" ? "dark" : "light"}
+            value={modePreference}
             onValueChange={onModeChange}
-            aria-label={t`Light or dark mode`}
+            aria-label={t`Appearance`}
             className="flex w-full gap-2"
           >
             <RadioGroupButton
               value="light"
-              autoFocus={mode !== "dark"}
+              autoFocus={modePreference === "light"}
               className={cn(
                 "flex-1",
-                mode == "light" && "border-2 border-primary"
+                modePreference === "light" && "border-2 border-primary"
               )}
             >
               <BiSun />
@@ -160,14 +162,25 @@ export default function OnboardingTheme() {
             </RadioGroupButton>
             <RadioGroupButton
               value="dark"
-              autoFocus={mode === "dark"}
+              autoFocus={modePreference === "dark"}
               className={cn(
                 "flex-1",
-                mode == "dark" && "border-2 border-primary"
+                modePreference === "dark" && "border-2 border-primary"
               )}
             >
               <BiMoon />
               <Trans>Dark</Trans>
+            </RadioGroupButton>
+            <RadioGroupButton
+              value="system"
+              autoFocus={modePreference === "system"}
+              className={cn(
+                "flex-1",
+                modePreference === "system" && "border-2 border-primary"
+              )}
+            >
+              <BiLaptop />
+              <Trans>System</Trans>
             </RadioGroupButton>
           </RadioGroup>
           <RadioGroup

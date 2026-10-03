@@ -2097,6 +2097,9 @@ msgstr "Klucze API do programowego dostępu do danych Carbon."
 msgid "API, webhooks, and integrations"
 msgstr "API, webhooks i integracje"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Zastosowano"
 
@@ -5485,9 +5488,6 @@ msgstr "Codzienne zużycie"
 
 msgid "Dark"
 msgstr "Ciemny"
-
-msgid "Dark Mode"
-msgstr "Tryb ciemny"
 
 msgid "Dashboard"
 msgstr "Panel glowny"
@@ -10200,12 +10200,6 @@ msgstr "Użycie Całożycia (Jednostki)"
 
 msgid "Light"
 msgstr "Jasne"
-
-msgid "Light Mode"
-msgstr "Tryb jasny"
-
-msgid "Light or dark mode"
-msgstr "Tryb jasny lub ciemny"
 
 msgid "Lights Out (24×7)"
 msgstr "Bez oświetlenia (24×7)"
