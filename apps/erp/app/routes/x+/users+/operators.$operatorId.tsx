@@ -18,9 +18,10 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { Input, Select, Submit } from "~/components/Form";
 import { convertOperatorValidator } from "~/modules/users/users.models";
 import { convertConsoleOperatorToUser } from "~/modules/users/users.server";

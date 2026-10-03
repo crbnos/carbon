@@ -6,8 +6,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, VStack } from "@carbon/react";
+import { redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Form, redirect, useLoaderData } from "react-router";
+import { data, Form, useLoaderData } from "react-router";
 import { z } from "zod";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -171,7 +172,7 @@ export async function action({ request }: ActionFunctionArgs) {
     redirectUrl.searchParams.append("state", state);
   }
 
-  return redirect(redirectUrl.toString());
+  return redirectExternal(redirectUrl.toString());
 }
 
 export default function AuthorizeRoute() {

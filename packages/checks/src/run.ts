@@ -31,6 +31,7 @@ import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+import { noRawRedirect } from "./conformance/no-raw-redirect";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
@@ -158,7 +159,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,
-      noInterpolatedErrorLog
+      noInterpolatedErrorLog,
+      noRawRedirect
     ]),
     ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
       indexRedirectBeforeLoaders

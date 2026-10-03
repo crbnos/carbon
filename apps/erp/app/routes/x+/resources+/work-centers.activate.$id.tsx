@@ -5,11 +5,11 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import { activateWorkCenter } from "~/modules/resources";
 import { path } from "~/utils/path";

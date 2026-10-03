@@ -11,10 +11,11 @@ import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import { updateChangeNotice } from "~/modules/items";
 import {

@@ -2,18 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, safeRedirect, success } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { redirect } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
@@ -36,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (users.includes(userId)) {
     throw redirect(
-      safeRedirect(redirectTo),
+      redirectTo,
       await flash(request, error(null, "You cannot deactivate yourself"))
     );
   }
@@ -52,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ip
     );
 
-    throw redirect(safeRedirect(redirectTo), await flash(request, result));
+    throw redirect(redirectTo, await flash(request, result));
   } else {
     const batchPayload = users.map((id) => ({
       payload: {
@@ -67,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     try {
       await batchTrigger("user-admin", batchPayload);
       throw redirect(
-        safeRedirect(redirectTo),
+        redirectTo,
         await flash(
           request,
           success("Success. Please check back in a few moments.")
@@ -75,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     } catch (e) {
       throw redirect(
-        safeRedirect(redirectTo),
+        redirectTo,
         await flash(request, error(e, "Failed to deactivate users"))
       );
     }

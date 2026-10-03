@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
+import { safePath } from "@carbon/utils";
 import { path } from "./path";
 
 const log = getLogger("auth");
@@ -28,7 +29,7 @@ export function getRedirectTo(
   defaultRedirectTo = path.to.authenticatedRoot
 ) {
   const url = new URL(request.url);
-  return safeRedirect(url.searchParams.get("redirectTo"), defaultRedirectTo);
+  return safePath(url.searchParams.get("redirectTo"), defaultRedirectTo);
 }
 
 export function isGet(request: Request) {
@@ -85,33 +86,6 @@ export function assertIsDelete(
   if (!isDelete(request)) {
     throw notAllowedMethod(message);
   }
-}
-
-/**
- * This should be used any time the redirect path is user-provided
- * (Like the query string on our login/signup pages). This avoids
- * open-redirect vulnerabilities.
- * @param {string} to The redirect destination
- * @param {string} defaultRedirect The redirect to use if the to is unsafe.
- */
-export function safeRedirect(
-  to: FormDataEntryValue | string | null | undefined,
-  defaultRedirect = path.to.authenticatedRoot
-) {
-  // Only a same-origin path. Browsers read `/\host` like `//host` (a
-  // protocol-relative URL to another origin), so a backslash in second place is
-  // refused along with `//`.
-  if (
-    !to ||
-    typeof to !== "string" ||
-    !to.startsWith("/") ||
-    to.startsWith("//") ||
-    to.startsWith("/\\")
-  ) {
-    return defaultRedirect;
-  }
-
-  return to;
 }
 
 export function parseNumberFromUrlParam(

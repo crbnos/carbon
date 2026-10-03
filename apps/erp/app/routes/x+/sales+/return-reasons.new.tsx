@@ -6,11 +6,11 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { returnReasonValidator, upsertReturnReason } from "~/modules/sales";
 import ReturnReasonForm from "~/modules/sales/ui/ReturnReasons/ReturnReasonForm";
-
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
 

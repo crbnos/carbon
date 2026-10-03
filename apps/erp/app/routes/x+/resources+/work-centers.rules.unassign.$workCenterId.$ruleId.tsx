@@ -7,9 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { unassignStorageRule } from "@carbon/ee/rules.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -37,13 +37,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (result.error) {
     throw redirect(
-      request.headers.get("Referer") ?? path.to.storageRules,
+      requestReferrer(request) ?? path.to.storageRules,
       await flash(request, error(result.error, "Failed to unassign rule"))
     );
   }
 
   throw redirect(
-    request.headers.get("Referer") ?? path.to.storageRules,
+    requestReferrer(request) ?? path.to.storageRules,
     await flash(request, success("Rule unassigned"))
   );
 }

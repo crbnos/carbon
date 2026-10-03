@@ -23,7 +23,7 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuShield } from "react-icons/lu";
 import type {
@@ -31,7 +31,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData, useNavigate } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import type { CompanyPermission } from "~/modules/users";

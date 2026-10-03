@@ -17,7 +17,7 @@ import {
 } from "@carbon/ee/onshape";
 import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "react-router";
+import { redirectExternal } from "@carbon/utils";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { IntegrationErrorCode } from "./integration-errors";
@@ -77,7 +77,7 @@ export async function completeOnshapeAuthorization({
   const connectionFailed = (
     reason: IntegrationErrorCode<OnshapeIntegrationId>
   ) =>
-    redirect(
+    redirectExternal(
       `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(integrationId, reason)}`,
       { headers: { "Set-Cookie": consumedState.cookie } }
     );
@@ -214,7 +214,7 @@ export async function completeOnshapeAuthorization({
       }
     }
 
-    return redirect(integrationsUrl(request), {
+    return redirectExternal(integrationsUrl(request), {
       headers: { "Set-Cookie": consumedState.cookie }
     });
   } catch (error) {

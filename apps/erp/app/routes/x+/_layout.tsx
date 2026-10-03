@@ -44,6 +44,8 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  redirect,
+  redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
@@ -54,14 +56,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Await,
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
@@ -141,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Block ERP access when console mode is active on this terminal.
   // Console terminals should only access the MES app.
   if (authSession.console) {
-    throw redirect(getMESUrl());
+    throw redirectExternal(getMESUrl());
   }
 
   // const { computeRegion, proxyRegion } = parseVercelId(

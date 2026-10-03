@@ -27,7 +27,7 @@ import {
   useRealtimeChannel,
   VStack
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -38,7 +38,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFactory, LuSettings2, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";

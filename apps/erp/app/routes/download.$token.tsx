@@ -8,8 +8,8 @@ import {
 } from "@carbon/auth/client.server";
 import { verifyDownloadToken } from "@carbon/auth/download-token.server";
 import { storage } from "@carbon/files";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 // Pure resource route (loader only, no default export): it always returns a

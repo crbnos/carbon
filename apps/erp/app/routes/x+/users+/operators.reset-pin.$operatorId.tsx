@@ -20,9 +20,10 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

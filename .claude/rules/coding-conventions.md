@@ -41,7 +41,13 @@ rules — this file does not repeat them:
   `@carbon/notifications`, `@carbon/stripe`, `@carbon/tiptap`, `@carbon/kv`,
   `@carbon/lib`, `@carbon/locale`, `@carbon/ee`, `@carbon/env`, `@carbon/config`.
 - `react-router` is the framework import for `LoaderFunctionArgs`,
-  `ActionFunctionArgs`, `redirect`, `data`, `useNavigate`, etc.
+  `ActionFunctionArgs`, `data`, `useNavigate`, etc. — but NOT `redirect`.
+- `redirect` comes from `@carbon/utils`. It only goes to a path on this origin;
+  anything else (an absolute URL, `//host`, an empty value) lands on the home
+  page, so a destination read from a query string or a form needs no validation
+  at the call site. Leaving the origin on purpose (OAuth provider, Stripe, ERP ↔
+  MES) is `redirectExternal`, with a URL the server built. Enforced by the
+  `no-raw-redirect` check (`@carbon/checks`).
 - Server-only auth helpers come from subpaths:
   `@carbon/auth/auth.server` (`requirePermissions`), `@carbon/auth/session.server`
   (`flash`), and `@carbon/auth` (`error`, `success`, `assertIsPost`).

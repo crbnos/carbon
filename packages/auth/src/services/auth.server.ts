@@ -11,13 +11,12 @@ import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { annotateRequestSpan } from "@carbon/logger/tracing.server";
-import { Edition, getClientIp, Plan } from "@carbon/utils";
+import { Edition, getClientIp, Plan, redirect } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
 } from "@supabase/supabase-js";
 import { createHash } from "crypto";
-import { redirect } from "react-router";
 import {
   CarbonEdition,
   IS_LOCAL_DEV,

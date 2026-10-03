@@ -16,11 +16,11 @@ import {
   ModalOverlay,
   ModalTitle
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigate,

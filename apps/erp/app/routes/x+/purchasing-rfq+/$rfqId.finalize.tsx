@@ -9,10 +9,9 @@ import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { tiptapToHTML } from "@carbon/utils";
+import { redirect, tiptapToHTML } from "@carbon/utils";
 import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getPurchasingRFQ,
   getPurchasingRFQLines,

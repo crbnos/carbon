@@ -87,12 +87,12 @@ import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
 } from "@carbon/stripe/connect.server";
+import { redirect, redirectExternal } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
-  redirect,
   useLoaderData,
   useNavigate,
   useParams,
@@ -2082,7 +2082,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     // Off to the tenant's consent screen; its callback finishes the install
     // (and registers the release webhook if asset sync is on).
-    throw redirect(started.url, { headers: { "Set-Cookie": started.cookie } });
+    throw redirectExternal(started.url, {
+      headers: { "Set-Cookie": started.cookie }
+    });
   }
 
   if (isOnshapeIntegrationId(integrationId)) {

@@ -14,13 +14,12 @@ import {
   toast
 } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigate,

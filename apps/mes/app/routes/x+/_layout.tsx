@@ -42,6 +42,7 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  redirect,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
@@ -59,7 +60,6 @@ import {
   data,
   Form,
   Outlet,
-  redirect,
   useLoaderData,
   useNavigate
 } from "react-router";

@@ -5,12 +5,12 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getCustomerBankAccounts } from "~/modules/sales";
 import CustomerBankAccounts from "~/modules/sales/ui/Customer/CustomerBankAccounts";
 import { path } from "~/utils/path";

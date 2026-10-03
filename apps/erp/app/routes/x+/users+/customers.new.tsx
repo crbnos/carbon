@@ -16,14 +16,13 @@ import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { redirect } from "react-router";
 import {
   CreateCustomerModal,
   createCustomerAccountValidator

@@ -22,7 +22,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
-import { formatDate, isUnaffectedByNavigation } from "@carbon/utils";
+import { formatDate, isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
 import type {
@@ -32,7 +32,6 @@ import type {
 import {
   Link,
   Outlet,
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigate,

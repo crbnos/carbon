@@ -23,7 +23,7 @@ import {
   MENU_ITEM_SHORTCUTS,
   useDisclosure
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import {
   LuChevronDown,
@@ -42,7 +42,6 @@ import type {
 import {
   Link,
   Outlet,
-  redirect,
   useLoaderData,
   useNavigate,
   useParams

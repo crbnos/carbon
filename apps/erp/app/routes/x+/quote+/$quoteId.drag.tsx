@@ -11,10 +11,11 @@ import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import { generateText, Output } from "ai";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import {

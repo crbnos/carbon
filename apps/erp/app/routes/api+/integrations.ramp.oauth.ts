@@ -16,8 +16,8 @@ import {
   resolveConnectedProviderName
 } from "@carbon/ee/ramp.server";
 import { getLogger } from "@carbon/logger";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import { oAuthCallbackSchema } from "~/modules/shared";
@@ -34,7 +34,7 @@ function connectionFailed(
   reason: IntegrationErrorCode<"ramp">,
   stateCookie: string
 ) {
-  return redirect(
+  return redirectExternal(
     `${getAppUrl()}${path.to.integrations}${integrationErrorSearch(
       "ramp",
       reason
@@ -44,7 +44,7 @@ function connectionFailed(
 }
 
 function connectionSucceeded(stateCookie: string) {
-  return redirect(`${getAppUrl()}${path.to.integrations}`, {
+  return redirectExternal(`${getAppUrl()}${path.to.integrations}`, {
     headers: { "Set-Cookie": stateCookie }
   });
 }

@@ -7,8 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { data, useNavigate, useParams } from "react-router";
 import {
   getStockTransfer,
   isStockTransferLocked,
@@ -18,7 +19,6 @@ import {
 import type { StockTransfer } from "~/modules/inventory/types";
 import StockTransferLineForm from "~/modules/inventory/ui/StockTransfers/StockTransferLineForm";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
-
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

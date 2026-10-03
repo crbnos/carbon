@@ -21,6 +21,7 @@ import {
   ToggleGroupItem,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -32,7 +33,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import { usePermissions } from "~/hooks";
 import { getTraining, getTrainingAssignmentStatus } from "~/modules/resources";

@@ -27,7 +27,7 @@ import {
   HubProvider,
   toFormFields
 } from "@carbon/onboarding/ui";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type {
@@ -37,7 +37,6 @@ import type {
 } from "react-router";
 import {
   Outlet,
-  redirect,
   useFetcher,
   useLoaderData,
   useLocation,

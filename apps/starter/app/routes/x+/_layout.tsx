@@ -14,11 +14,12 @@ import {
   requireAuthSession
 } from "@carbon/auth/session.server";
 import { Toaster, useNProgress } from "@carbon/react";
+import { redirectExternal } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { path } from "~/utils/path";
 
 // The refreshed session reaches the client through this loader, and the
@@ -47,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
-    throw redirect(getAppUrl());
+    throw redirectExternal(getAppUrl());
   }
 
   return {
