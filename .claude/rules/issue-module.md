@@ -83,9 +83,12 @@ in the migrations — **newest wins**; core tables created in
   entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
   (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
-  no value. Origin detected via a `nonConformanceInspection` link to a **Receipt**
-  inspection — only a receipt reject writes the lot off; a Job Operation or First
-  Article reject links an inspection too but moves no stock. Reopen is blocked
+  no value. Origin is `nonTrackedOrigin` over the NCR's `nonConformanceInspection`
+  links: a **Receipt** inspection → `receipt` (the reject wrote the lot off: restore on
+  keep, nothing on scrap); a **Job Operation** or **First Article** inspection →
+  `production` (WIP that never reached on-hand: NO non-tracked movement either way —
+  a write-off would remove stock that was never received); no link → `none` (scrap
+  writes off). Reopen is blocked
   once a `Non-Conformance` `itemLedger` row exists (`$id.status.tsx`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 

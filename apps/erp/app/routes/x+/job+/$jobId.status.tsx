@@ -65,17 +65,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // readiness nor creates first articles.
   let isRelease = false;
   if (status === "Ready" || status === "In Progress") {
-    const { data } = await client
+    const { data, error: jobError } = await client
       .from("job")
       .select("status, item(itemReplenishment(manufacturingBlocked))")
       .eq("id", id)
       .eq("companyId", companyId)
       .single();
-    isRelease = data?.status === "Draft" || data?.status === "Planned";
+    // Fail closed: without the prior status a release would skip the first
+    // article blocker and the manufacturing-blocked check.
+    if (jobError || !data) {
+      logger.error("Failed to load the job before a status change", {
+        jobId: id,
+        companyId,
+        status,
+        error: jobError
+      });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(jobError, "Failed to load job"))
+      );
+    }
+    isRelease = data.status === "Draft" || data.status === "Planned";
 
     if (
       status === "Ready" &&
-      data?.item?.itemReplenishment?.manufacturingBlocked
+      data.item?.itemReplenishment?.manufacturingBlocked
     ) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),

@@ -9,6 +9,7 @@ import { HStack, IconButton, toast, VStack } from "@carbon/react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { LuFileText, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -90,7 +91,10 @@ const CertificateForm = ({
     const folder = jobOperation
       ? jobOperation.uploadFolder
       : `inventory/${receiptLineId}`;
-    const filePath = `${company.id}/${folder}/${
+    // A unique prefix per upload: a same-named file (two certificates both
+    // called cert.pdf, or a job drawing in the same folder) must never be
+    // replaced, since its document row is the quality record.
+    const filePath = `${company.id}/${folder}/${nanoid()}-${
       stripSpecialCharacters(selected.name) || "file"
     }`;
 
@@ -99,7 +103,7 @@ const CertificateForm = ({
       .company(company.id)
       .upload(filePath, selected, {
         cacheControl: `${12 * 60 * 60}`,
-        upsert: true
+        upsert: false
       });
     setIsUploading(false);
 

@@ -1816,20 +1816,29 @@ async function loadFirstArticleContext(
     .groupBy("itemId")
     .execute();
 
+  // Last production of each part, through its make methods rather than the
+  // job's own item: a made sub-assembly is usually built inside a parent job,
+  // so grouping by job.itemId never saw it and a lapse went undetected. Every
+  // job has a root make method, so top-level parts are covered too.
   const completedJobs = await db
-    .selectFrom("job")
+    .selectFrom("jobMakeMethod")
+    .innerJoin("job", (join) =>
+      join
+        .onRef("job.id", "=", "jobMakeMethod.jobId")
+        .onRef("job.companyId", "=", "jobMakeMethod.companyId")
+    )
     .select([
-      "itemId",
-      sql<string>`to_char(max("completedDate") AT TIME ZONE ${company.timezone}, 'YYYY-MM-DD')`.as(
+      "jobMakeMethod.itemId as itemId",
+      sql<string>`to_char(max("job"."completedDate") AT TIME ZONE ${company.timezone}, 'YYYY-MM-DD')`.as(
         "lastCompletedJobDate"
       )
     ])
-    .where("status", "in", ["Completed", "Closed"])
-    .where("completedDate", "is not", null)
-    .where("id", "<>", job.id)
-    .where("itemId", "in", itemIds)
-    .where("companyId", "=", args.companyId)
-    .groupBy("itemId")
+    .where("job.status", "in", ["Completed", "Closed"])
+    .where("job.completedDate", "is not", null)
+    .where("job.id", "<>", job.id)
+    .where("jobMakeMethod.itemId", "in", itemIds)
+    .where("jobMakeMethod.companyId", "=", args.companyId)
+    .groupBy("jobMakeMethod.itemId")
     .execute();
 
   // An open (Draft / Verified) FAI for the part on another job is the part's

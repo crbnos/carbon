@@ -254,8 +254,12 @@ part needs an FAI (switches + due) but resolves no plan. It is treated like
 `missingAssemblies`: the job Release dialog and `BatchReleaseModal` list it and refuse
 release (`production.server.ts` refusal messages ~:181-195), with a link to the part's
 inspection plan slot ("Assign a first article plan for P-1001 Rev B"). The plain
-`status=Ready` post in `$jobId.status.tsx` (:136-149) checks it too, so no release path
-skips it. Nothing else about FAIs blocks anything — shipping and CofC issue only warn.
+`status=Ready` post in `$jobId.status.tsx` (:136-149) checks it too. Two release paths
+deliberately do NOT block: kanban auto-release (`api+/kanban.$id.tsx`, an unattended
+scan with no dialog to show the refusal in) and the MES auto-start of a Draft/Planned
+job (the operator is already working). Both still generate the FAIs they can; a part
+with no plan shows the MES "First article plan missing" banner instead. Nothing else
+about FAIs blocks anything — shipping and CofC issue only warn.
 
 A plan's rows are ballooned or manual features alike — manual features (no balloon, or
 plans with no PDF at all) are ordinary `inspectionFeature` rows and flow into Form 3

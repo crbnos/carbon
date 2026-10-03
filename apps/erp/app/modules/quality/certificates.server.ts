@@ -21,7 +21,8 @@ type CertificateType = Database["public"]["Enums"]["certificateType"];
  * transaction: the `document` row and the `certificate` row land together or
  * not at all. The file was uploaded by the browser before the post; when the
  * write fails it is removed again, unless another document already points at
- * the same path (the upload overwrites a same-named file).
+ * the same path (the form gives every upload a unique path, so this only
+ * guards a path a caller reused).
  *
  * `supplierId` comes from the form and Kysely bypasses RLS, so a supplier that
  * is not this company's is dropped rather than written.

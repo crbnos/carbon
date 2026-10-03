@@ -878,6 +878,29 @@ function requireFeatureOfSizeForBonus(
   }
 }
 
+// An update is partial: a payload that omits `featureOfSize` keeps the stored
+// one, so only an explicit null next to MMC/LMC is refused here. The merged
+// row is held to the rule by the `inspectionFeature_bonus_requires_feature_of_size`
+// CHECK, which also catches a lone `featureOfSize: null` on a stored MMC row.
+function requireFeatureOfSizeForBonusUpdate(
+  item: {
+    materialCondition?: (typeof materialConditions)[number] | null;
+    featureOfSize?: (typeof featureOfSizeTypes)[number] | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (
+    (item.materialCondition === "MMC" || item.materialCondition === "LMC") &&
+    item.featureOfSize === null
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Feature of size is required for MMC/LMC characteristics",
+      path: ["featureOfSize"]
+    });
+  }
+}
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     id: clientIdValidator.optional(),
@@ -916,7 +939,7 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     ...inspectionFeatureCharacteristicFieldsValidator
   })
   .strict()
-  .superRefine(requireFeatureOfSizeForBonus);
+  .superRefine(requireFeatureOfSizeForBonusUpdate);
 
 export const inspectionSaveFeaturesPayloadValidator = z
   .object({

@@ -8,6 +8,10 @@ import { describe, expect, it } from "vitest";
 import CertificateOfConformancePDF from "./CertificateOfConformancePDF";
 import { SAMPLE_CERTIFICATE_OF_CONFORMANCE } from "./certificateOfConformance.samples";
 
+// A react-pdf render (and the first one's font registration) runs past
+// Vitest's 5 s default on CI runners.
+const RENDER_TIMEOUT_MS = 30_000;
+
 function render(issued: boolean) {
   return renderToBuffer(
     createElement(CertificateOfConformancePDF, {
@@ -24,19 +28,27 @@ function render(issued: boolean) {
 const WATERMARK_OPACITY = "/ca 0.08";
 
 describe("CertificateOfConformancePDF", () => {
-  it("renders the sample certificate", async () => {
-    const pdf = await render(true);
-    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
-    const raw = pdf.toString("latin1");
-    expect(raw).not.toContain("PREVIEW");
-    expect(raw).not.toContain(WATERMARK_OPACITY);
-  });
+  it(
+    "renders the sample certificate",
+    async () => {
+      const pdf = await render(true);
+      expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+      const raw = pdf.toString("latin1");
+      expect(raw).not.toContain("PREVIEW");
+      expect(raw).not.toContain(WATERMARK_OPACITY);
+    },
+    RENDER_TIMEOUT_MS
+  );
 
-  it("marks an unissued certificate as a preview", async () => {
-    const pdf = await render(false);
-    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
-    const raw = pdf.toString("latin1");
-    expect(raw).toContain("PREVIEW");
-    expect(raw).toContain(WATERMARK_OPACITY);
-  });
+  it(
+    "marks an unissued certificate as a preview",
+    async () => {
+      const pdf = await render(false);
+      expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+      const raw = pdf.toString("latin1");
+      expect(raw).toContain("PREVIEW");
+      expect(raw).toContain(WATERMARK_OPACITY);
+    },
+    RENDER_TIMEOUT_MS
+  );
 });

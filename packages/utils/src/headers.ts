@@ -71,6 +71,18 @@ export function getRequestOrigin(input: RequestLike): string | null {
   return host ? `${getRequestProtocol(input)}://${host}` : null;
 }
 
+// `supportedLocalesOf` throws a RangeError on a malformed tag, and both the
+// locale cookie and Accept-Language are client input. A bad value must fall
+// back to the default rather than fail the request that read it — often after
+// that request already committed its write.
+const supportedLocalesOf = (locales: string | string[]): string[] => {
+  try {
+    return Intl.DateTimeFormat.supportedLocalesOf(locales);
+  } catch {
+    return [];
+  }
+};
+
 export const getPreferenceHeaders = (request: Request) => {
   const acceptLanguage = request.headers.get("accept-language");
   const cookieHeader = request.headers.get("cookie");
@@ -78,11 +90,9 @@ export const getPreferenceHeaders = (request: Request) => {
     ? cookie.parse(cookieHeader).locale
     : undefined;
   const locales = parseAcceptLanguage(acceptLanguage, {
-    validate: Intl.DateTimeFormat.supportedLocalesOf
+    validate: (locale) => supportedLocalesOf(locale)
   });
-  const [cookieLocale] = localeCookie
-    ? Intl.DateTimeFormat.supportedLocalesOf([localeCookie])
-    : [];
+  const [cookieLocale] = localeCookie ? supportedLocalesOf([localeCookie]) : [];
 
   // get whether it's a mac or pc from the headers
   const platform: OperatingSystemPlatform = request.headers

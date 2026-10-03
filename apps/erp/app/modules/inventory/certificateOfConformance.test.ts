@@ -7,7 +7,9 @@ import type { CertificationLineageRow } from "../quality/certificationLineage";
 import type { ConformityDetailsInput } from "./certificateOfConformance";
 import {
   buildConformityDetails,
-  certificateLineRevision
+  certificateLineRevision,
+  invoiceShipToSalesOrderId,
+  salesOrderShipToLocationId
 } from "./certificateOfConformance";
 
 function lineage(
@@ -156,5 +158,42 @@ describe("certificateLineRevision", () => {
   it("prefers the customer part revision when mapped", () => {
     expect(certificateLineRevision("C", "B")).toBe("C");
     expect(certificateLineRevision("C", "0")).toBe("C");
+  });
+});
+
+describe("salesOrderShipToLocationId", () => {
+  it("uses the order's ship-to", () => {
+    expect(
+      salesOrderShipToLocationId(
+        { customerLocationId: "loc-header" },
+        { dropShipment: false, customerLocationId: "loc-drop" }
+      )
+    ).toBe("loc-header");
+  });
+
+  it("uses the drop shipment's location, never the header's", () => {
+    expect(
+      salesOrderShipToLocationId(
+        { customerLocationId: "loc-header" },
+        { dropShipment: true, customerLocationId: "loc-drop" }
+      )
+    ).toBe("loc-drop");
+    expect(
+      salesOrderShipToLocationId(
+        { customerLocationId: "loc-header" },
+        { dropShipment: true, customerLocationId: null }
+      )
+    ).toBeNull();
+  });
+});
+
+describe("invoiceShipToSalesOrderId", () => {
+  it("names the one order an invoice's lines came from", () => {
+    expect(invoiceShipToSalesOrderId(["so-1", null, "so-1"])).toBe("so-1");
+  });
+
+  it("names none for a standalone or mixed-order invoice", () => {
+    expect(invoiceShipToSalesOrderId([null, null])).toBeNull();
+    expect(invoiceShipToSalesOrderId(["so-1", "so-2"])).toBeNull();
   });
 });

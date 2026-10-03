@@ -482,6 +482,30 @@ export async function getCertificationLineage(
   let startIds: string[];
   if ("trackedEntityIds" in input) {
     startIds = input.trackedEntityIds;
+  } else if (input.jobMakeMethodId) {
+    // One make method's own consumption: the inputs of the Consume activities
+    // the issue path tags with it. A job-wide read would put another make
+    // method's materials on a sub-assembly's Form 2 (itemLedger cannot narrow
+    // it: the tracked-material ledger rows carry no documentLineId).
+    const jobMakeMethodId = input.jobMakeMethodId;
+    const consumed = await fetchAllFromTable<{
+      trackedActivityInput: { trackedEntityId: string }[];
+    }>(
+      client,
+      "trackedActivity",
+      "trackedActivityInput(trackedEntityId)",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("type", "Consume")
+          .eq("attributes->>Job Make Method", jobMakeMethodId)
+          .order("id")
+    );
+    if (consumed.error) return { data: null, error: consumed.error };
+    startIds = consumed.data.flatMap((activity) =>
+      (activity.trackedActivityInput ?? []).map((row) => row.trackedEntityId)
+    );
+    if (input.trackedEntityId) startIds.push(input.trackedEntityId);
   } else {
     const consumed = await fetchAllFromTable<{ trackedEntityId: string }>(
       client,

@@ -9,6 +9,10 @@ import type { FirstArticleInspectionPDFCharacteristic } from "./FirstArticleInsp
 import FirstArticleInspectionPDF from "./FirstArticleInspectionPDF";
 import { SAMPLE_FIRST_ARTICLE_INSPECTION } from "./firstArticleInspection.samples";
 
+// A react-pdf render (and the first one's font registration) runs past
+// Vitest's 5 s default on CI runners.
+const RENDER_TIMEOUT_MS = 30_000;
+
 function render(
   props: Partial<typeof SAMPLE_FIRST_ARTICLE_INSPECTION> = {}
 ): Promise<Buffer> {
@@ -36,40 +40,52 @@ function pageCount(pdf: Buffer): number {
 const DRAFT_OPACITY = "/ca 0.08";
 
 describe("FirstArticleInspectionPDF", () => {
-  it("renders 300 characteristics across landscape continuation pages", async () => {
-    const characteristics: FirstArticleInspectionPDFCharacteristic[] =
-      Array.from({ length: 300 }, (_, index) => ({
-        characteristicNumber: String(index + 1),
-        referenceLocation: "A1",
-        designator: null,
-        requirement: "10.000 ±0.005 mm",
-        results: "10.001",
-        tooling: null,
-        nonconformanceNumber: null,
-        comments: null
-      }));
+  it(
+    "renders 300 characteristics across landscape continuation pages",
+    async () => {
+      const characteristics: FirstArticleInspectionPDFCharacteristic[] =
+        Array.from({ length: 300 }, (_, index) => ({
+          characteristicNumber: String(index + 1),
+          referenceLocation: "A1",
+          designator: null,
+          requirement: "10.000 ±0.005 mm",
+          results: "10.001",
+          tooling: null,
+          nonconformanceNumber: null,
+          comments: null
+        }));
 
-    const pdf = await render({ characteristics });
-    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
+      const pdf = await render({ characteristics });
+      expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
 
-    const [, , width, height] = mediaBox(pdf);
-    expect(width).toBeGreaterThan(height!);
+      const [, , width, height] = mediaBox(pdf);
+      expect(width).toBeGreaterThan(height!);
 
-    // Form 1 + Form 2 + several Form 3 continuation pages.
-    expect(pageCount(pdf)).toBeGreaterThan(4);
-  });
+      // Form 1 + Form 2 + several Form 3 continuation pages.
+      expect(pageCount(pdf)).toBeGreaterThan(4);
+    },
+    RENDER_TIMEOUT_MS
+  );
 
-  it("marks an unapproved report as a draft", async () => {
-    const pdf = await render({ approved: false });
-    const raw = pdf.toString("latin1");
-    expect(raw).toContain("DRAFT");
-    expect(raw).toContain(DRAFT_OPACITY);
-  });
+  it(
+    "marks an unapproved report as a draft",
+    async () => {
+      const pdf = await render({ approved: false });
+      const raw = pdf.toString("latin1");
+      expect(raw).toContain("DRAFT");
+      expect(raw).toContain(DRAFT_OPACITY);
+    },
+    RENDER_TIMEOUT_MS
+  );
 
-  it("renders an approved report without the draft mark", async () => {
-    const pdf = await render({ approved: true });
-    const raw = pdf.toString("latin1");
-    expect(raw).not.toContain("DRAFT");
-    expect(raw).not.toContain(DRAFT_OPACITY);
-  });
+  it(
+    "renders an approved report without the draft mark",
+    async () => {
+      const pdf = await render({ approved: true });
+      const raw = pdf.toString("latin1");
+      expect(raw).not.toContain("DRAFT");
+      expect(raw).not.toContain(DRAFT_OPACITY);
+    },
+    RENDER_TIMEOUT_MS
+  );
 });

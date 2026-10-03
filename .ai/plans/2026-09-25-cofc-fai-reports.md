@@ -1170,7 +1170,9 @@ pnpm exec turbo run typecheck --filter=@carbon/database
 4. Call `afterJobsReleased(getDatabaseClient(), client, …)`:
    - in `releaseJobs` after the jobs are Ready (after :101 succeeds);
    - in `$jobId.status.tsx` after the plain Ready update (:194) succeeds;
-   - in `api+/kanban.$id.tsx` after the auto-release write succeeds.
+   - in `api+/kanban.$id.tsx` after the auto-release write succeeds. Kanban is NOT
+     gated by the readiness blocker (user decision, 2026-09-26): an unattended scan
+     has no dialog to show a refusal in, so it generates what it can and releases.
    Then `grep -rn "updateJobStatus(" apps/erp/app` and confirm every call that can pass
    `"Ready"` is followed by `afterJobsReleased`; add it to any missed site.
 

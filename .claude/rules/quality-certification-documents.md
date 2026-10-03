@@ -82,8 +82,13 @@ Pure half in `certificationLineage.ts` (`findReceivedRoots`, `dedupeLineageRows`
 unit-tested); the service injects the one query.
 
 Input is either `{ trackedEntityIds }` (CofC: the shipped lots) or
-`{ jobId, jobMakeMethodId?, trackedEntityId? }` (FAI Form 2: the entities the
-job consumed — `itemLedger` `Job Consumption` rows for the job).
+`{ jobId, jobMakeMethodId?, trackedEntityId? }` (FAI Form 2). With a
+`jobMakeMethodId` the start entities are that make method's own consumption —
+the inputs of the `Consume` activities the issue path tags with
+`attributes->>Job Make Method` — so a sub-assembly's Form 2 never lists another
+make method's materials (`itemLedger` cannot narrow it: the tracked-material
+ledger rows carry no `documentLineId`). Without one, every `itemLedger`
+`Job Consumption` row of the job.
 
 - **Materials** — breadth-first back through lineage until a branch reaches an
   entity with a `Receipt Line` attribute (written by post-receipt); that entity
@@ -158,7 +163,14 @@ Auto-issue has two call sites, both after the post has committed:
   whatever it returns, and `certificateFailed` makes `SalesInvoicePostModal`
   toast it as an error while still closing. The invoice email is independent.
   The certificate's customer and PO come from the Sales Invoice
-  (`getCertificateOfConformanceData`'s `Sales Invoice` branch).
+  (`getCertificateOfConformanceData`'s `Sales Invoice` branch). A sales
+  invoice has no ship-to (its `locationId` is our warehouse, its
+  `invoiceCustomerLocationId` the bill-to), so field 6 prints the ship-to of
+  the ONE sales order its lines were invoiced from (`invoiceShipToSalesOrderId`)
+  and is left blank for a standalone or mixed-order invoice — never the bill-to.
+  Both sources resolve the order's ship-to with `salesOrderShipToLocationId`
+  (`certificateOfConformance.ts`): a drop shipment prints the order shipment's
+  location, never the header's, the rule `resolveSalesOrderShipTo` applies.
   A shipment the invoice merely references (`salesInvoice.shipmentId`) was
   posted — and certified — by the shipment post route.
 
@@ -200,7 +212,9 @@ Per job make method (root and made sub-assemblies alike):
   Quality tab).
 - **Due** (`evaluateFirstArticleDue`): `New Part` when the item has no Approved
   FAI; `Production Lapse` when the item's last completed job (other jobs only)
-  is more than 2 years before today and no FAI was approved after it.
+  is more than 2 years before today and no FAI was approved after it. "Last
+  completed job" is read through `jobMakeMethod.itemId`, not `job.itemId`, so a
+  sub-assembly built inside parent jobs has a production history too.
 - **Plan**: the First Article slot, else the part's **only** plan
   (`inspectionDocument.partId = itemId`, exactly one). Two plans and no slot
   resolves nothing.

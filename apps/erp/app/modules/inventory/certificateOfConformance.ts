@@ -118,3 +118,38 @@ export function buildConformityDetails(
     reasonForUpdate: input.reasonForUpdate?.trim() || null
   };
 }
+
+/**
+ * The customer ship-to a certificate prints (AS9163 field 6), by the same rule
+ * as the sales rules' `resolveSalesOrderShipTo`: a drop shipment goes to the
+ * order shipment's location — never the header's, and null rather than a
+ * fallback when it is missing, since the header is a different address.
+ */
+export function salesOrderShipToLocationId(
+  order: { customerLocationId: string | null } | null,
+  orderShipment: {
+    dropShipment: boolean | null;
+    customerLocationId: string | null;
+  } | null
+): string | null {
+  if (orderShipment?.dropShipment) {
+    return orderShipment.customerLocationId ?? null;
+  }
+  return order?.customerLocationId ?? null;
+}
+
+/**
+ * The one sales order whose ship-to an invoice-posted shipment can print. A
+ * sales invoice has no ship-to of its own (its `locationId` is our warehouse,
+ * `invoiceCustomerLocationId` the bill-to): only order-derived lines that all
+ * come from ONE order name a destination. Standalone or mixed-order invoices
+ * print no address rather than a wrong one.
+ */
+export function invoiceShipToSalesOrderId(
+  invoiceLineSalesOrderIds: readonly (string | null)[]
+): string | null {
+  const orderIds = new Set(
+    invoiceLineSalesOrderIds.filter((id): id is string => !!id)
+  );
+  return orderIds.size === 1 ? [...orderIds][0] : null;
+}

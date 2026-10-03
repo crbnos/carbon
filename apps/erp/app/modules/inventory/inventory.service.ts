@@ -44,7 +44,9 @@ import {
 import type { ConformityDetails } from "./certificateOfConformance";
 import {
   buildConformityDetails,
-  certificateLineRevision
+  certificateLineRevision,
+  invoiceShipToSalesOrderId,
+  salesOrderShipToLocationId
 } from "./certificateOfConformance";
 import type {
   batchPropertyOrderValidator,
@@ -1597,15 +1599,17 @@ export async function getCertificateOfConformanceData(
   let salesOrderCustomerContactId: string | null = null;
   let salesOrderId: string | null = null;
 
+  // The order whose ship-to field 6 prints: a sales order shipment's own, or
+  // the one order behind an invoice-posted shipment's lines.
+  let shipToSalesOrderId: string | null = null;
+
   if (
     shipment.data.sourceDocument === "Sales Order" &&
     shipment.data.sourceDocumentId
   ) {
     const salesOrder = await client
       .from("salesOrder")
-      .select(
-        "id, customerId, customerLocationId, customerReference, customerContactId"
-      )
+      .select("id, customerId, customerReference, customerContactId")
       .eq("id", shipment.data.sourceDocumentId)
       .eq("companyId", companyId)
       .maybeSingle();
@@ -1614,8 +1618,8 @@ export async function getCertificateOfConformanceData(
     }
     if (salesOrder.data) {
       salesOrderId = salesOrder.data.id;
+      shipToSalesOrderId = salesOrder.data.id;
       customerId = salesOrder.data.customerId ?? customerId;
-      customerLocationId = salesOrder.data.customerLocationId;
       purchaseOrderNumber = salesOrder.data.customerReference;
       salesOrderCustomerContactId = salesOrder.data.customerContactId;
     }
@@ -1623,20 +1627,62 @@ export async function getCertificateOfConformanceData(
     shipment.data.sourceDocument === "Sales Invoice" &&
     shipment.data.sourceDocumentId
   ) {
-    const salesInvoice = await client
-      .from("salesInvoice")
-      .select("customerId, locationId, customerReference")
-      .eq("id", shipment.data.sourceDocumentId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    // A sales invoice has no ship-to: its locationId is our warehouse and
+    // invoiceCustomerLocationId the bill-to. The address comes from the order
+    // its lines were invoiced from, when there is exactly one.
+    const [salesInvoice, invoiceLines] = await Promise.all([
+      client
+        .from("salesInvoice")
+        .select("customerId, customerReference")
+        .eq("id", shipment.data.sourceDocumentId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("salesInvoiceLine")
+        .select("salesOrderId")
+        .eq("invoiceId", shipment.data.sourceDocumentId)
+        .eq("companyId", companyId)
+    ]);
     if (salesInvoice.error) {
       return fail("Failed to load sales invoice", salesInvoice.error);
     }
+    if (invoiceLines.error) {
+      return fail("Failed to load sales invoice lines", invoiceLines.error);
+    }
     if (salesInvoice.data) {
       customerId = salesInvoice.data.customerId ?? customerId;
-      customerLocationId = salesInvoice.data.locationId;
       purchaseOrderNumber = salesInvoice.data.customerReference;
+      shipToSalesOrderId = invoiceShipToSalesOrderId(
+        (invoiceLines.data ?? []).map((line) => line.salesOrderId)
+      );
     }
+  }
+
+  if (shipToSalesOrderId) {
+    const [shipToOrder, shipToOrderShipment] = await Promise.all([
+      client
+        .from("salesOrder")
+        .select("customerLocationId")
+        .eq("id", shipToSalesOrderId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("salesOrderShipment")
+        .select("dropShipment, customerLocationId")
+        .eq("id", shipToSalesOrderId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (shipToOrder.error || shipToOrderShipment.error) {
+      return fail(
+        "Failed to load the sales order ship-to",
+        shipToOrder.error ?? shipToOrderShipment.error
+      );
+    }
+    customerLocationId = salesOrderShipToLocationId(
+      shipToOrder.data,
+      shipToOrderShipment.data
+    );
   }
 
   const lines = shipmentLines.data ?? [];
