@@ -202,8 +202,12 @@ whom it deleted.
     It never ends the run, so the training reminders after it still go out.
 
 - **One exception to "warned first": the manual purge.** `purge-inactive-companies`
-  (`scheduled/purge-inactive-companies.ts`) is triggered only by hand, by sending
-  `carbon/purge-inactive-companies` from the Inngest dashboard. It deletes inactive
+  (`scheduled/purge-inactive-companies.ts`) runs only when someone presses Invoke on it
+  in the Inngest dashboard, on Carbon Cloud. `purgeRefusal` (tested) is the first thing
+  the run checks: any edition but Cloud is refused, and so is any run whose event is not
+  `inngest/function.invoked`, so sending `carbon/purge-inactive-companies` with the event
+  key does nothing. Off Cloud the function is not registered at all
+  (`packages/jobs/src/inngest/index.ts`). It deletes inactive
   companies immediately, with no email and no waiting period, including ones the weekly
   job warned for a later date. The inactivity rule is the weekly job's, unchanged
   (`loadInactiveCompanies` and the in-transaction `inactiveCompanyOwner`, both in

@@ -5,6 +5,7 @@
 // Must load before any function module pulls in pdfjs (extract-document), whose
 // init runs `new DOMMatrix()` — undefined in the Node worker without this shim.
 import "@carbon/lib/shims";
+import { Edition } from "@carbon/utils";
 
 // Re-export the inngest client and helpers
 
@@ -163,7 +164,10 @@ export const functions = [
   updateExchangeRatesFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
-  purgeInactiveCompaniesFunction,
+  // Not registered off Cloud, so a self-hosted Inngest has nothing to invoke.
+  ...(process.env.CARBON_EDITION === Edition.Cloud
+    ? [purgeInactiveCompaniesFunction]
+    : []),
   workflowRunRetentionFunction,
   // Integrations
   jiraSyncFunction,

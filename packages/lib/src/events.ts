@@ -563,8 +563,8 @@ export type Events = {
     data: Record<string, never>;
   };
 
-  // Sent by hand from the Inngest dashboard: delete inactive companies now,
-  // with no warning. A dry run unless `dryRun` is false.
+  // The trigger of the manual inactive-company purge. Sending it does nothing:
+  // the function only runs when invoked from the Inngest dashboard, on Cloud.
   "carbon/purge-inactive-companies": {
     data: {
       dryRun?: boolean;

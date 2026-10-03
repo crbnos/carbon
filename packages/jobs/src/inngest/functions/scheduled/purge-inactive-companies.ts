@@ -32,9 +32,31 @@ export function resolvePurgeOptions(data: {
 }
 
 /**
+ * A run started with the Invoke button of the Inngest dashboard (or dev server)
+ * arrives as this event. Inngest reserves the `inngest/` prefix, so it cannot
+ * be sent through the event API.
+ */
+const INVOKED = "inngest/function.invoked";
+
+/**
+ * Why a run must not purge, or null when it may. Cloud only: a self-hosted
+ * install has no plans, so every company there reads as inactive. And only a
+ * run someone started from the Inngest dashboard: a
+ * `carbon/purge-inactive-companies` event sent with the event key is refused.
+ */
+export function purgeRefusal(
+  eventName: string,
+  edition: string | undefined
+): string | null {
+  if (edition !== Edition.Cloud) return "not Carbon Cloud";
+  if (eventName !== INVOKED) return "not invoked from the Inngest dashboard";
+  return null;
+}
+
+/**
  * Delete inactive companies now, with no warning email and no waiting period.
- * Run by hand, by sending `carbon/purge-inactive-companies` from the Inngest
- * dashboard; nothing schedules it.
+ * Run by hand with the Invoke button of the Inngest dashboard, on Carbon Cloud;
+ * nothing schedules it and nothing else can start it (`purgeRefusal`).
  *
  * "Inactive" is the weekly cleanup's rule and nothing looser: no plan anywhere
  * in the group, older than a week, not a bypass company, and not owned by a
@@ -54,10 +76,14 @@ export const purgeInactiveCompaniesFunction = inngest.createFunction(
   },
   { event: "carbon/purge-inactive-companies" },
   async ({ event, step, logger }) => {
+    const refused = purgeRefusal(event.name, process.env.CARBON_EDITION);
+    if (refused) {
+      logger.warn("Inactive company purge refused", { reason: refused });
+      return { deleted: 0, reason: refused };
+    }
     const { dryRun, limit } = resolvePurgeOptions(event.data);
 
     const plan = await step.run("plan-inactive-company-purge", async () => {
-      if (process.env.CARBON_EDITION !== Edition.Cloud) return null;
       const found = await loadInactiveCompanies(logger);
       if (!found) return null;
       return {

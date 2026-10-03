@@ -9,7 +9,25 @@ vi.mock("../../client", () => ({
 }));
 vi.mock("./company-cleanup", () => ({}));
 
-const { resolvePurgeOptions } = await import("./purge-inactive-companies");
+const { purgeRefusal, resolvePurgeOptions } = await import(
+  "./purge-inactive-companies"
+);
+
+describe("purgeRefusal", () => {
+  it("allows only a dashboard invoke on Cloud", () => {
+    expect(purgeRefusal("inngest/function.invoked", "cloud")).toBeNull();
+  });
+
+  it.each([
+    ["a sent event", "carbon/purge-inactive-companies", "cloud"],
+    ["a cron tick", "inngest/scheduled.timer", "cloud"],
+    ["Community", "inngest/function.invoked", "community"],
+    ["Enterprise", "inngest/function.invoked", "enterprise"],
+    ["no edition", "inngest/function.invoked", undefined]
+  ])("refuses %s", (_label, name, edition) => {
+    expect(purgeRefusal(name, edition)).not.toBeNull();
+  });
+});
 
 describe("resolvePurgeOptions", () => {
   it.each([
