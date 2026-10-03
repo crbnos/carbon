@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "설명 표시"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "썸네일"
 msgid "Tick the jobs this was done for."
 msgstr "이것이 수행된 작업 지시를 체크하세요."
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "시간 기록"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "비활성 후 세션이 잠겼습니다."
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "비활성으로 인해 세션이 잠겼습니다."

@@ -38,11 +38,9 @@ import {
 import { OperationCard } from "~/features/operations/OperationCard";
 import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
 import {
-  deviceToday,
-  isStationDismissed,
-  loadStationOverride,
-  saveStationOverride
-} from "~/features/operations/stationOverride";
+  loadStationFilter,
+  saveStationFilter
+} from "~/features/operations/stationFilter";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
@@ -160,12 +158,9 @@ export default function Operations() {
   const { isTablet } = useLayout();
   const { width: screenWidth } = useWindowDimensions();
   const colors = useThemeColors();
-  // The manning-board station default, and the operator's way out of it.
-  //
-  // Stored, not component state: web remembers the dismissal in a cookie for
-  // the rest of the day, and holding it in `useState` meant it was forgotten
-  // the moment this tab unmounted — so the board reopened on one column of a
-  // seven-column board every time, with the dismissal apparently doing nothing.
+  // The board opens on the WHOLE floor; the operator's manning-board station
+  // is something they ask for. See `stationFilter.ts` for why this is the
+  // opposite of web.
   const { instanceId, companyId: scopeCompanyId } = useAuth();
   const scope = useMemo(
     () => ({
@@ -174,12 +169,11 @@ export default function Operations() {
     }),
     [instanceId, scopeCompanyId]
   );
-  const [dismissedDate, setDismissedDate] = useState<string | null>(null);
+  const [onlyMyStation, setOnlyMyStation] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    void loadStationOverride(scope).then((date) => {
-      if (cancelled) return;
-      setDismissedDate(date);
+    void loadStationFilter(scope).then((on) => {
+      if (!cancelled) setOnlyMyStation(on);
     });
     return () => {
       cancelled = true;
@@ -187,15 +181,9 @@ export default function Operations() {
   }, [scope]);
   const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
   const filterSheet = useRef<SheetHandle>(null);
-  // `peopleDate` is the LOCATION's today and the date the server compares
-  // against, so once a payload has arrived it is the authority; the device's
-  // today is only the optimistic stand-in for the first request.
-  const [serverDate, setServerDate] = useState<string | null>(null);
-  const allWorkCenters = isStationDismissed(dismissedDate, {
-    deviceDate: deviceToday(),
-    serverDate
-  });
-  const query = useOperationsQuery([], allWorkCenters);
+  // The server applies the station default unless told otherwise, so asking
+  // for the whole floor is the DEFAULT request this screen makes.
+  const query = useOperationsQuery([], !onlyMyStation);
 
   // The floor moves while the operator is on another screen.
   useFocusEffect(
@@ -204,10 +192,10 @@ export default function Operations() {
     }, [query.refetch])
   );
 
-  const payloadDate = query.data?.peopleDate ?? null;
-  useEffect(() => {
-    if (payloadDate) setServerDate(payloadDate);
-  }, [payloadDate]);
+  // `myStation` rather than `peopleStation`: the latter is only set when the
+  // server APPLIED the station, and this board asks for the whole floor, so it
+  // would always be null here and the chip would never appear.
+  const stationName = query.data?.myStation?.name || null;
 
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
@@ -268,24 +256,42 @@ export default function Operations() {
           </Text>
         </Pressable>
 
-        {query.data?.peopleStation && !allWorkCenters ? (
+        {/* A TOGGLE, not a dismissal: off is the whole floor and on is just
+            this operator's station. It reads as a filter chip because that is
+            what it is — the previous version looked like a notice with a
+            close button, so an operator had no reason to think tapping it
+            would bring six work centres back. Only shown when the operator
+            actually has a station today. */}
+        {stationName ? (
           <Pressable
             onPress={() => {
-              // The server's own date, so the dismissal is compared against
-              // exactly what it compares against — and lapses tomorrow.
-              const date = payloadDate ?? deviceToday();
-              setDismissedDate(date);
-              void saveStationOverride(scope, date);
+              const next = !onlyMyStation;
+              setOnlyMyStation(next);
+              void saveStationFilter(scope, next);
             }}
             accessibilityRole="button"
-            accessibilityLabel={t`Show every work center`}
-            className="min-h-[44px] flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 active:opacity-70"
+            accessibilityState={{ selected: onlyMyStation }}
+            accessibilityLabel={
+              onlyMyStation
+                ? t`Showing only ${stationName}. Show every work center`
+                : t`Show only my station, ${stationName}`
+            }
+            className={`min-h-[44px] flex-1 flex-row items-center gap-2 rounded-lg border px-3 active:opacity-70 ${
+              onlyMyStation
+                ? "border-primary bg-primary/10"
+                : "border-border bg-card"
+            }`}
           >
-            <Factory size={16} color={colors.mutedForeground} />
+            <Factory
+              size={16}
+              color={onlyMyStation ? colors.foreground : colors.mutedForeground}
+            />
             <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
-              {t`Your station: ${query.data.peopleStation.name}`}
+              {stationName}
             </Text>
-            <X size={16} color={colors.mutedForeground} />
+            {onlyMyStation ? (
+              <X size={16} color={colors.mutedForeground} />
+            ) : null}
           </Pressable>
         ) : null}
       </View>

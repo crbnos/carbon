@@ -2726,14 +2726,17 @@ msgstr "Show {0} on the drawing"
 msgid "Show description"
 msgstr "Show description"
 
-msgid "Show every work center"
-msgstr "Show every work center"
-
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
 
+msgid "Show only my station, {stationName}"
+msgstr "Show only my station, {stationName}"
+
 msgid "Show options"
 msgstr "Show options"
+
+msgid "Showing only {stationName}. Show every work center"
+msgstr "Showing only {stationName}. Show every work center"
 
 msgid "Sign in"
 msgstr "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "Thumbnail"
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
 
+msgid "Time"
+msgstr "Time"
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Time and cost split across jobs proportionally to quantity."
-
-msgid "Time card"
-msgstr "Time card"
 
 msgid "Time Entries"
 msgstr "Time Entries"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Your station: {0}"

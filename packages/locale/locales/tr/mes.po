@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "Küçük Resim"
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında bölünür."
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "Zaman Girişleri"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "İstasyonunuz: {0}"

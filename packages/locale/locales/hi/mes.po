@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "विवरण दिखाएं"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएं"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "थंबनेल"
 msgid "Tick the jobs this was done for."
 msgstr "उन जॉब्स को चेक करें जिनके लिए यह किया गया था।"
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "समय और लागत मात्रा के अनुपात में जॉब में विभाजित है।"
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "आपका स्टेशन: {0}"

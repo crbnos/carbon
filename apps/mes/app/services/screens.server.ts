@@ -74,6 +74,7 @@ import {
   getInspectionSamplingPlans,
   getIssueTypesList
 } from "~/services/quality.service";
+import { resolveStation, type Station } from "~/services/station";
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
@@ -246,25 +247,39 @@ export async function getOperationsScreen(
   // People-assignment station default: when the operator has a manning-board
   // assignment for today and no explicit work-center filter (and hasn't
   // dismissed the default this session), open on their station.
-  let peopleStation: { workCenterId: string; name: string } | null = null;
+  //
+  // `peopleStation` reports the station that was APPLIED, and `myStation` the
+  // one the operator HAS. They are the same thing on web, where the station is
+  // applied unless dismissed — but the mobile board opens on the whole floor
+  // and offers the station as a filter to turn ON, so it needs the name of a
+  // station that is not currently applied. Reporting it through `peopleStation`
+  // instead would make web's chip reappear after a dismissal, with an ✕ that
+  // did nothing.
+  let peopleStation: Station | null = null;
+  let myStation: Station | null = null;
   let peopleDate: string | null = null;
   if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
     const today = datetime
       .today(await getLocationTimeZone(client, locationId, companyId))
       .toString();
     peopleDate = today;
-    if (args.peopleOverrideDate !== today) {
-      const myAssignment = await getMyPeopleAssignment(client, {
-        companyId,
-        employeeId: effectiveUserId,
-        date: today
-      });
-      const assignment = myAssignment.data?.[0];
-      if (assignment) {
-        selectedWorkCenterIds = [assignment.workCenterId];
-        peopleStation = { workCenterId: assignment.workCenterId, name: "" };
-      }
-    }
+    // Runs even when the default was dismissed, which it did not before: the
+    // mobile board needs the station's NAME to offer it as a filter, and that
+    // is exactly the case where it was never looked up. One small indexed
+    // select on a board load that had skipped it.
+    const myAssignment = await getMyPeopleAssignment(client, {
+      companyId,
+      employeeId: effectiveUserId,
+      date: today
+    });
+    const resolved = resolveStation({
+      assignment: myAssignment.data?.[0],
+      overrideDate: args.peopleOverrideDate,
+      today
+    });
+    peopleStation = resolved.applied;
+    myStation = resolved.mine;
+    if (peopleStation) selectedWorkCenterIds = [peopleStation.workCenterId];
   }
 
   const [workCenters, processes, operations] = await Promise.all([
@@ -366,14 +381,18 @@ export async function getOperationsScreen(
     new Set(filteredOperations.flatMap((op) => op.tags || []))
   ).sort();
 
-  if (peopleStation) {
-    peopleStation.name =
-      workCenters.data?.find((wc: any) => wc.id === peopleStation?.workCenterId)
-        ?.name ?? "";
-  }
+  // Named from the full work-center list, not the filtered one: when the
+  // station is only OFFERED rather than applied, the filtered list may not
+  // contain it at all.
+  const stationName = (id: string | undefined) =>
+    workCenters.data?.find((wc: any) => wc.id === id)?.name ?? "";
+  if (peopleStation)
+    peopleStation.name = stationName(peopleStation.workCenterId);
+  if (myStation) myStation.name = stationName(myStation.workCenterId);
 
   return ok({
     peopleStation,
+    myStation,
     peopleDate,
     columns: filteredWorkCenters
       .map((wc: any) => ({

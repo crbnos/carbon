@@ -310,10 +310,24 @@ export const operationsScreen = z
   .object({
     items: z.array(operationCard),
     columns: z.array(workCenterColumn),
-    /** The operator's manning-board station, when they have one for today. */
+    /**
+     * The station the server APPLIED as a filter — non-null only when the
+     * board was narrowed to it. Web's "Your station" chip reads this.
+     */
     peopleStation: z
       .object({ workCenterId: z.string(), name: z.string() })
       .nullable(),
+    /**
+     * The station the operator HAS today, whether or not it was applied.
+     *
+     * The mobile board opens on the whole floor and offers the station as a
+     * filter to switch on, so it needs the name of a station that is NOT
+     * currently applied — which `peopleStation` is null for by definition.
+     */
+    myStation: z
+      .object({ workCenterId: z.string(), name: z.string() })
+      .nullable()
+      .optional(),
     /**
      * Today at the LOCATION, as `YYYY-MM-DD`.
      *

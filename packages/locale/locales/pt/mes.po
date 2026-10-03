@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "Mostrar descrição"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atalhos de teclado"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "Miniatura"
 msgid "Tick the jobs this was done for."
 msgstr "Marque as ordens de produção para as quais isso foi feito."
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Tempo e custo divididos entre as ordens de produção na proporção da quantidade."
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "Registros de Horas"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "Sua sessão foi bloqueada após inatividade."
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Sua estação: {0}"

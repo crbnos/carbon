@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "显示描述"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "缩略图"
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "工时记录"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "您的会话因不活动而被锁定。"
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "您的会话因不活跃而被锁定。"

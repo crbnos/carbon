@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "説明を表示"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "サムネイル"
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "タイムエントリー"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "非アクティビティ後、セッションはロック中になりました。"
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "無操作のためセッションがロック中になりました。"

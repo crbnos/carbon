@@ -2726,13 +2726,16 @@ msgstr ""
 msgid "Show description"
 msgstr "Показать описание"
 
-msgid "Show every work center"
-msgstr ""
-
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"
 
+msgid "Show only my station, {stationName}"
+msgstr ""
+
 msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
 msgstr ""
 
 msgid "Sign in"
@@ -3061,11 +3064,11 @@ msgstr "Миниатюра"
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
 
+msgid "Time"
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."
-
-msgid "Time card"
-msgstr ""
 
 msgid "Time Entries"
 msgstr "Записи учёта времени"
@@ -3360,6 +3363,5 @@ msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован после неактивности."
 
 #. placeholder {0}: peopleStation.name
-#. placeholder {0}: query.data.peopleStation.name
 msgid "Your station: {0}"
 msgstr "Ваша станция: {0}"
