@@ -23,7 +23,7 @@ These refine the spec where the code facts gathered for this plan disagreed with
 ## Progress
 
 - [x] Task 1: Baseline green
-- [ ] Task 2: Migration — enum, columns, views
+- [x] Task 2: Migration — enum, columns, views
 - [ ] Task 3: Apply migration, regenerate types, run DB gates
 - [ ] Task 4: Pure invoice planner + tests
 - [ ] Task 5: Generator drafts rent and charges invoices per the planner
