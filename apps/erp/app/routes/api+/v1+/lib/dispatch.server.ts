@@ -13,7 +13,7 @@
 // callOperation reconstructs the { success:false, error } envelope.
 
 import type { AuthField, ContextSource, ManifestEntry } from "@carbon/api";
-import { ServerFnError } from "@carbon/server-functions";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";

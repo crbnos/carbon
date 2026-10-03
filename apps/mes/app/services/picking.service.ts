@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import { getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPickingListLocked } from "~/services/models";

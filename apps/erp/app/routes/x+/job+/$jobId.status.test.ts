@@ -30,7 +30,7 @@ vi.mock("@carbon/logger", () => ({
 }));
 // The operations are the edge functions' successors: stub them, as the
 // invoke they replaced was, so the route's own ordering is what is tested.
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const invoker = {
     invoke: async (name: string) => {
       events.push(name === "close-job" ? "closeJob" : name);

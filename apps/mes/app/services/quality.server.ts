@@ -7,7 +7,7 @@ import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";

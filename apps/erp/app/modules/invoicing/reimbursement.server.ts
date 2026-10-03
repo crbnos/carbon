@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { EPSILON } from "@carbon/utils";
 import { getDatabaseClient } from "~/services/database.server";
 

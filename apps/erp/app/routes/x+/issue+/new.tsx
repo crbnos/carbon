@@ -10,7 +10,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";

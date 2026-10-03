@@ -5,7 +5,7 @@
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getInventoryCount } from "~/modules/inventory";

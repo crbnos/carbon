@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import type { RampClient, RampTransaction } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -18,7 +18,7 @@ const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
 // Only the posting operation is substituted; everything else is real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const bind = (actor: string) => (fields: object) => ({
     invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
   });

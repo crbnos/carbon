@@ -7,7 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";

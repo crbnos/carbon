@@ -10,7 +10,7 @@ import {
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,

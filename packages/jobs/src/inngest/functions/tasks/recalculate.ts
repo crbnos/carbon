@@ -4,7 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 

@@ -12,7 +12,7 @@ import type {
 } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";

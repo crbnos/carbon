@@ -8,7 +8,7 @@ import {
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions";
+import { ServerFnError } from "@carbon/server-functions/errors";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
@@ -21,7 +21,7 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 // Only the posting operation is substituted. All staging, status transitions,
 // queries, mappings, FKs and rollback use real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions/invoke", () => {
+vi.mock("@carbon/server-functions", () => {
   const bind = (actor: string) => (fields: object) => ({
     invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
   });

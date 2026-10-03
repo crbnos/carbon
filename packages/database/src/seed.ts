@@ -5,7 +5,6 @@
 // import type { User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { resolveInngestEventUrl } from "./inngest-event-url.ts";
 import { devPrices } from "./seed/index.ts";
 import type { Database } from "./types.ts";
 
@@ -83,6 +82,19 @@ async function seedInstanceAdmin() {
   if (error && error.code !== "email_exists") {
     throw new Error(`seed: creating instance admin: ${error.message}`);
   }
+}
+
+// Postgres posts its Inngest events (util.send_inngest_event) to this URL.
+// Same resolution as the Inngest SDK: `${base}e/${eventKey}`.
+function resolveInngestEventUrl(): string | null {
+  const eventKey = process.env.INNGEST_EVENT_KEY;
+  const baseUrl =
+    process.env.INNGEST_EVENT_API_BASE_URL || process.env.INNGEST_BASE_URL;
+  if (!eventKey && !baseUrl) return null;
+  return new URL(
+    `e/${eventKey || "NO_EVENT_KEY_SET"}`,
+    baseUrl || "https://inn.gs/"
+  ).href;
 }
 
 // Postgres calls back to the API from inside the docker network, so the public

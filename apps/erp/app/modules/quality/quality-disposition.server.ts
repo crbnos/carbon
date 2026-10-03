@@ -5,7 +5,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 import {
   buildBatchSplitRecords,
   datetime,

@@ -2,9 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-// The syncer loads this lazily when it posts a payment. Loaded here so that cost
-// lands at import time, not inside the first test's timeout.
-import "@carbon/server-functions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RilletPaymentSyncer } from "../payment";
 
@@ -14,7 +11,7 @@ import { RilletPaymentSyncer } from "../payment";
 
 // Posting imports the post-payment operation lazily; stub it so these tests
 // never reach the database or server env.
-vi.mock("@carbon/server-functions/invoke", () => ({ serverFns: {} }));
+vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 
 // The mapping link runs inside withTriggersDisabled (a real Kysely transaction
 // with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing

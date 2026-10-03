@@ -371,7 +371,7 @@ input, checks the caller's permission, runs, and returns `{ data, error }` inste
 throwing. Call one like any other function:
 
 ```ts
-import { serverFns } from "@carbon/server-functions/invoke";
+import { serverFns } from "@carbon/server-functions";
 
 const { data, error } = await serverFns
   .system({ db: getDatabaseClient(), companyId, userId })

@@ -11,7 +11,7 @@ import {
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions/invoke";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
