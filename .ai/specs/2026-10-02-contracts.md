@@ -8,13 +8,14 @@
 > Builds on: `.ai/specs/2026-10-02-rental-invoice-automation.md` (the shared recurring-invoicing layer — this spec is its second source), `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` (revenue recognition run, Contract Assets accrual, rental revenue posting model)
 > Delivers from the billing side: the "revenue arrangement" of `.ai/specs/2026-07-04-revenue-recognition.md` Phases 2–3 (without SSP allocation)
 > Supersedes: the earlier "Subscriptions" draft of this file (same path history)
+> Coordinates with: `.ai/specs/2026-10-03-projects.md` (branch `projects-wbs-research-spec`) — its Phase 4 adds Time & Materials / Cost Plus lines; the two one-way doors it needs are taken here (project on the line; revenue *method*)
 
 ## TLDR
 
-A **contract** is a new AR document in Sales for everything a customer buys as an agreement rather than a shipment: SaaS access, support and maintenance plans, implementation and setup fees, prepaid licences. Its **lines** are **One-time** or **Recurring** **Service** items, each with quantity, rate, discount %, tax, its own dates, and a **revenue pattern** (*Daily* or *Even per month*, prorated first & last) over revenue dates that default to the line's (a **go-live** date can push the start). A contract has two **independent schedules** built from the same lines:
+A **contract** is a new AR document in Sales for everything a customer buys as an agreement rather than a shipment: SaaS access, support and maintenance plans, implementation and setup fees, prepaid licences. Its **lines** are **One-time** or **Recurring** **Service** items, each with quantity, rate, discount %, tax, its own dates, a **project** (optional), and a **revenue method** (*Daily* or *Even per month*, prorated first & last) over revenue dates that default to the line's (a **go-live** date can push the start). A contract has two **independent schedules** built from the same lines:
 
 - an **invoice schedule** — computed from the billing frequency (Week / Month / Quarter / Year), alignment (Anniversary or Calendar), timing (Advance / Arrears) and first invoice date, with one-time lines on the first invoice — that the user can **edit while Draft** (move, split, merge invoices; each line's billed total conserved);
-- a **revenue schedule** — read-only, computed per line from its pattern and revenue dates — with an **invoiced / recognized / deferred** summary per month.
+- a **revenue schedule** — read-only, computed per line from its revenue method and revenue dates — with an **invoiced / recognized / deferred** summary per month.
 
 Revenue follows the **line, not the invoice**: the monthly recognition run recognizes each line's schedule, releasing Deferred Revenue where it was billed ahead and accruing **Contract Assets** where it was earned first, and invoice posting relieves the accrual before deferring the rest — the rental revenue model, generalized. Due invoices are drafted daily by the shared **`recurring-billing`** job and handed to the shared **recurring-invoicing layer** (post / email / send via Stripe / hold / digest), with the company default automation mode and a per-contract override. Changes are **amendments** (a dated header with a reason and contract type, plus replacement lines), prorated from the change date or effective from the next period. **Cancel** picks an end date and can credit unused prepaid time as a credit memo. A fixed **term** renews automatically with an optional uplift %. Every contract and amendment carries a **contract type** (New Sales, Existing, Expansion, Reactivation, Contraction). Migrated contracts carry **Billed through** and **Recognize revenue from** dates. Contracts are created standalone or from chosen Service lines of a sales order. Rental agreements stay their own document and share the invoicing layer. Nothing on the AP side.
 
@@ -36,12 +37,13 @@ Worked example used throughout: *Acme* signs on 15 October 2026 — implementati
 | Term | Meaning |
 |---|---|
 | **Contract** | The AR agreement header: customer, invoicing terms, schedule settings, term and renewal, contract type, migration dates, automation override. Readable id `CON000001`. |
-| **Contract line** | A Service item, **One-time** or **Recurring**, with quantity, rate, discount %, tax %, start / end dates, revenue pattern, revenue start / end, go-live date. |
+| **Contract line** | A Service item, **One-time** or **Recurring**, with quantity, rate, discount %, tax %, start / end dates, revenue method, revenue start / end, go-live date, project. |
+| **Project** | Optional: the existing accounting project (`project`, on main since `20260919153014_accounting-projects.sql`) on the contract as the default and on a line as an override. Every revenue-side journal line the contract line produces carries it as the Project dimension. |
 | **Rate unit** | Recurring lines only: what the rate is per — Day, Week, Month, Quarter, Year. Independent of the billing frequency ($10 per Day invoiced Monthly). |
 | **Billing frequency / alignment / timing** | Every Week / Month / Quarter / Year; *Anniversary* (from the start date) or *Calendar* (1st of week (Monday) / month / quarter / year, first period prorated); *Advance* (due on the period's first day) or *Arrears* (last day). |
 | **Invoice schedule** | Persisted planned invoices (`customerContractInvoice`) and their lines (`customerContractInvoiceLine` — contract line, billing period, amount). Computed, then editable while Draft with each contract line's billed total conserved. |
-| **Revenue pattern** | *Daily* (equal per day) or *Even per month, prorated first & last* (equal per calendar month, partial first/last months by days) — Rillet `DAILY` / `EVEN_PERIOD`. |
-| **Revenue schedule** | Persisted per line per month (`customerContractRevenue`), computed from the pattern over the line's revenue dates. Read-only. |
+| **Revenue method** | How a line earns revenue. The v1 methods are schedules: *Daily* (equal per day) or *Even per month, prorated first & last* (equal per calendar month, partial first/last months by days) — Rillet `DAILY` / `EVEN_PERIOD`. Deliberately a *method*, not a *pattern*: later methods — *As Invoiced* (time & materials) and *Percent Complete* (project contracts, cost-to-cost) — earn revenue without a schedule known up front and arrive as new enum values, not a rename. |
+| **Revenue schedule** | The **per-line revenue ledger** (`customerContractRevenue`), one row per line per month. For the v1 schedule methods the rows are planned at confirmation from the method over the line's revenue dates. Later methods have the recognition run generate the month's row instead (*As Invoiced*: equal to the line's invoice lines posted in the month; *Percent Complete*: from cost progress, a catch-up landing in the next unposted month's row). Posting is the same either way. Read-only. |
 | **Amendment** | A dated change (`customerContractAmendment`: date, reason, contract type, effective from *Change Date* or *Next Period*) whose replacement lines point at the lines they replace (`amendsLineId`). A billed line is never edited. |
 | **Adjustment** | An invoice-schedule line correcting an already-billed recurring period when its line's end moved (amendment, cancellation), computed from the amount actually billed. |
 | **Contract type** | New Sales, Existing, Expansion, Reactivation, Contraction — on the contract and on each amendment; suggested automatically, editable. |
@@ -73,13 +75,14 @@ Pure math in `packages/database/supabase/functions/shared/contract-schedule.ts` 
 
 ### The revenue schedule
 
-Per line, at confirmation (and on every amendment / cancellation / renewal), `customerContractRevenue` rows — one per calendar month — from the line's revenue pattern over `[revenueStart, revenueEnd]`:
+Per line, at confirmation (and on every amendment / cancellation / renewal), `customerContractRevenue` rows — one per calendar month — from the line's revenue method over `[revenueStart, revenueEnd]`:
 
-- **Recurring lines** default revenue dates = the line's dates; the monthly amount follows the pattern over the same net value the invoice schedule bills for that span.
+- **Recurring lines** default revenue dates = the line's dates; the monthly amount follows the method over the same net value the invoice schedule bills for that span.
 - **One-time lines** default revenue dates = the line's start and end (a one-time line with no end = recognized in the month of its start — point in time).
 - **Go-live** (optional) moves the revenue start; the line's billing dates are unchanged.
 - *Daily*: amount ∝ days in the month. *Even per month*: equal per full calendar month, first/last partial months prorated by days. Totals reconcile exactly (`distributeRoundingResidual`).
 - Months before *Recognize revenue from* are not created (migration).
+- The engine below reads only the rows, never the method — which is what lets a later run-generated method (*As Invoiced*, *Percent Complete*) reuse invoice posting, the recognition run and the contract position unchanged.
 
 ### Accounting — revenue follows the line
 
@@ -89,6 +92,7 @@ Gated on `companySettings.accountingEnabled` (off → invoices post straight to 
 - **Recognition run.** For each contract line and month ≤ the run's period, recognized revenue = the `customerContractRevenue` row: Dr Deferred Revenue up to the line's deferred balance, the rest Dr **Contract Assets** (earned, not yet billed); Cr the line's revenue account (the item's sales account). Rows post once (`journalId` / `postedAt` stamps), Planned → Posted, the existing revenue-recognition-run Draft → Posted lifecycle and close task.
 - **Migration.** For months from *Recognize revenue from*, a line whose periods are *Billed Externally* draws its Dr from the migrated Deferred Revenue opening balance (the line's deferred balance is seeded with its externally-billed-but-unrecognized amount at confirmation, computed from the revenue schedule; the opening journal must have put that balance in Deferred Revenue).
 - **Cancellation credit** (credit memo, below) posts Dr Deferred Revenue up to the line's deferred balance, the rest Dr Contract Assets / revenue for months already recognized beyond the end date (catch-up in the next run), and the line's future revenue rows after the end date are removed.
+- **Project dimension.** Every revenue-side journal line a contract line produces — Contract Assets / Deferred Revenue at invoice posting, Deferred Revenue / Contract Assets / revenue in the recognition run, the cancellation credit — carries the line's project (`customerContractLine.projectId`, else `customerContract.projectId`) as the **Project** dimension, derived at posting like every other dimension (AR keeps the customer). Recorded from the first invoice because nothing can attach it later: the contract would be the only record of which project a line belonged to, and invoices already pushed to an accounting provider would not pick up a dimension added afterwards. It is what puts a project's billing revenue beside its costs (`2026-10-03-projects.md`). No project → posts exactly as without this.
 - **Contract position** per line and month = invoiced (posted invoice lines), recognized (posted revenue rows), deferred = invoiced − recognized (Deferred Revenue when positive, Contract Assets when negative) — the summary on the contract and the input of a later ARR / waterfall report.
 
 Foreign currency: invoices post in the contract currency with base translation as today; revenue rows are computed in contract currency and posted in base at the posting rate of the invoice that funded them (deferred) or the run date's rate (accrued) — the same translation rule the rental model uses; FX remeasurement of the contract balance is out of v1.
@@ -107,7 +111,7 @@ Contracts are the second **source** of the layer defined in `2026-10-02-rental-i
 
 ### Amendments
 
-**Amend** on an Active contract (`update: sales`) creates a `customerContractAmendment` (date, reason, contract type, effective from) with replacement lines — change quantity, rate, rate unit, discount, tax, description, revenue pattern / dates; add a line; end a line:
+**Amend** on an Active contract (`update: sales`) creates a `customerContractAmendment` (date, reason, contract type, effective from) with replacement lines — change quantity, rate, rate unit, discount, tax, description, revenue method / dates, project; add a line; end a line:
 
 - *From the change date* (default): the old line ends the day before the effective date, the new line starts on it; recurring periods are prorated by day and already-billed advance periods adjusted from the billed amount; revenue rows of the old line after the effective date are removed and the new line's are added (prospective).
 - *From the next billing period*: the effective date snaps to the first day of the next unstarted period; nothing is prorated.
@@ -140,7 +144,7 @@ A contract with a **term** (months; presets 6 months / 1, 2, 3 years / custom; o
 | 6 | Alignment / timing | Anniversary (default) or Calendar; Advance or Arrears; first invoice date | Q3, G4, Rillet invoicing |
 | 7 | Proration | By day, exact | NetSuite / BC / Stripe convention |
 | 8 | Invoice schedule | Persisted, computed, editable while Draft with per-line totals conserved | G4; Rillet invoice breakdown |
-| 9 | Revenue | Per-line pattern Daily / Even per month over revenue dates (go-live); read-only schedule; invoiced / recognized / deferred summary | G5; Rillet revenue step |
+| 9 | Revenue | Per-line **revenue method** (v1: Daily / Even per month) over revenue dates (go-live); read-only schedule; invoiced / recognized / deferred summary. `customerContractRevenue` is the per-line revenue ledger — rows planned (schedule methods) or generated by the run (later methods) | G5; Rillet revenue step. Named *method* on 2026-10-03 so *As Invoiced* (T&M) and *Percent Complete* (project contracts, `2026-10-03-projects.md` Phase 4) are added enum values — renaming a column or enum after customer data exists breaks restoring older backups |
 | 10 | Revenue engine | Revenue follows the line: recognition run releases Deferred Revenue or accrues Contract Assets; invoice posting relieves accruals first — rental model generalized | G5 settled-by-model; ASC 606 contract asset / liability |
 | 11 | SSP allocation | None — each line's revenue is its own net price | Rev-rec spec Phase 2–3 allocation stays later |
 | 12 | Discounts | Discount % per line; time-limited via a scheduled amendment | G8 |
@@ -155,7 +159,7 @@ A contract with a **term** (months; presets 6 months / 1, 2, 3 years / custom; o
 | 21 | Recipients / sender | Invoice contact, CC default CC; Reply-To AR email else owner | G7, U3 |
 | 22 | Daily job | One `recurring-billing` job across sources, one digest per owner | U4 |
 | 23 | Origin | Standalone + Create Contract from chosen sales-order Service lines (removed from the order's invoicing) | Q9, Q9b |
-| 24 | Dimensions | Not per line (derived at posting as today) | G7 settled-by-codebase |
+| 24 | Dimensions | No manual per-line dimensions — derived at posting as today. One source field is recorded: an optional **project** on the contract (default) and line (override), written as the Project dimension on the line's revenue-side journal lines | G7 settled-by-codebase; project added 2026-10-03 — a one-way door: revenue posted without it can never be attributed to a project, and project profitability (`2026-10-03-projects.md`) needs it from the first invoice |
 | 25 | Module / naming | Inside `sales` (`sales.models.ts` / `.service.ts` / `.server.ts`, `ui/Contracts/`); tables `customerContract*`; UI "Contracts" | Heuristic 6; rental precedent; room for a supplier contract later |
 | 26 | Multi-tenancy (H1) | `companyId` + `PRIMARY KEY ("id","companyId")` + `id('prefix')` on every table | conventions-database |
 | 27 | Service shape (H2) | `client` first, `{data, error}`, MCP-safe guards (Draft-only edits, explicit field picks) | rental writers precedent |
@@ -177,7 +181,7 @@ CREATE TYPE "contractBillingFrequency"      AS ENUM ('Week', 'Month', 'Quarter',
 CREATE TYPE "contractBillingAlignment"      AS ENUM ('Anniversary', 'Calendar');
 CREATE TYPE "contractBillingTiming"         AS ENUM ('Advance', 'Arrears');
 CREATE TYPE "contractRenewal"               AS ENUM ('Renew', 'End');
-CREATE TYPE "contractRevenuePattern"        AS ENUM ('Daily', 'Even Period');
+CREATE TYPE "contractRevenueMethod"         AS ENUM ('Daily', 'Even Period');   -- later: 'As Invoiced', 'Percent Complete'
 CREATE TYPE "contractAmendmentEffect"       AS ENUM ('Change Date', 'Next Period');
 CREATE TYPE "contractInvoiceStatus"         AS ENUM ('Planned', 'Invoiced', 'Billed Externally');
 ALTER TYPE "invoiceAutomation" ADD VALUE IF NOT EXISTS 'Post and Send via Stripe';  -- enum from the rental automation plan
@@ -195,6 +199,7 @@ CREATE TABLE "customerContract" (
   "invoiceCustomerLocationId" TEXT REFERENCES "customerLocation"("id"),
   "salesPersonId" TEXT REFERENCES "user"("id"),
   "salesOrderId" TEXT,                                   -- origin
+  "projectId" TEXT,                                      -- default Project dimension for every line (existing accounting project)
   "customerReference" TEXT,                              -- PO number → every invoice
   "closeDate" DATE NOT NULL,                             -- booking date
   "startDate" DATE NOT NULL,
@@ -223,6 +228,7 @@ CREATE TABLE "customerContract" (
   CONSTRAINT "customerContract_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "customerContract_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "customerContract_readable_key" UNIQUE ("customerContractId", "companyId"),
+  CONSTRAINT "customerContract_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId"),
   CONSTRAINT "customerContract_dates_check" CHECK ("endDate" IS NULL OR "endDate" >= "startDate" - 1)
 );
 
@@ -258,12 +264,13 @@ CREATE TABLE "customerContractLine" (
   "startDate" DATE NOT NULL,
   "endDate" DATE,
   "goLiveDate" DATE,
-  "revenuePattern" "contractRevenuePattern" NOT NULL DEFAULT 'Daily',
+  "revenueMethod" "contractRevenueMethod" NOT NULL DEFAULT 'Daily',
   "revenueStartDate" DATE,                                -- default goLiveDate ?? startDate
   "revenueEndDate" DATE,                                  -- default endDate (one-time, no end = point in time)
   "amendmentId" TEXT,                                     -- the amendment that created it
   "amendsLineId" TEXT,                                    -- the line it replaces
   "salesOrderLineId" TEXT,
+  "projectId" TEXT,                                       -- overrides the contract's project
   "sortOrder" NUMERIC,
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -272,6 +279,7 @@ CREATE TABLE "customerContractLine" (
   CONSTRAINT "customerContractLine_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "customerContractLine_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
     REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "customerContractLine_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId"),
   CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("kind" = 'Recurring') = ("rateUnit" IS NOT NULL)),
   CONSTRAINT "customerContractLine_amends_check" CHECK ("amendsLineId" IS NULL OR "amendmentId" IS NOT NULL)
 );
@@ -339,10 +347,10 @@ RLS: each new table `company("sales", { read: "sales_view" })`. Backups: tenant 
 
 ## API / Service Changes
 
-- **Pure** — `shared/contract-schedule.ts`: `billingGrid`, `periodUnits`, `planInvoiceSchedule(contract, lines)`, `validateScheduleEdit(lines, plannedRows)` (per-line totals conserved), `revenueSchedule(line, pattern)`, `amendmentPlan(...)`, `cancellationPlan(...)`, `renewalPlan(...)`, `contractPosition(...)`; the reconciliation helper extracted from `rental-billing.ts`.
+- **Pure** — `shared/contract-schedule.ts`: `billingGrid`, `periodUnits`, `planInvoiceSchedule(contract, lines)`, `validateScheduleEdit(lines, plannedRows)` (per-line totals conserved), `revenueSchedule(line, method)`, `amendmentPlan(...)`, `cancellationPlan(...)`, `renewalPlan(...)`, `contractPosition(...)`; the reconciliation helper extracted from `rental-billing.ts`.
 - **Database package** — `@carbon/database/contract-billing`: `createContractInvoicesForDuePlannedInvoices`, `confirmContract`, `applyContractAmendment`, `cancelContract`, `renewDueContracts` (Kysely, one transaction each); `releaseRecurringInvoiceStamps` generalizes `releaseRentalInvoiceStamps`; the revenue-recognition run's synthesizer list gains `synthesizeContractRevenue` (beside `synthesizeRentalAccruals`).
 - **Jobs** — the shared `recurring-billing` cron and `automateSalesInvoice` (rental automation plan) gain the contract source and the Stripe branch.
-- **Edge functions** — `post-sales-invoice`: contract branch (relieve Contract Assets, defer the rest, negative adjustments in reverse); VOID: release + `voidedSalesInvoiceId` on contract rows. `post-memo`: contract branch. `convert`: skip contract-linked order lines.
+- **Edge functions** — `post-sales-invoice`: contract branch (relieve Contract Assets, defer the rest, negative adjustments in reverse; the line's Project dimension on its revenue-side lines — also written by `synthesizeContractRevenue` and the `post-memo` contract branch); VOID: release + `voidedSalesInvoiceId` on contract rows. `post-memo`: contract branch. `convert`: skip contract-linked order lines.
 - **ERP** (`sales.service.ts`, MCP tools with Draft-only guards): `getContracts`, `getContract`, `insertContract`, `updateContract`, `deleteContract`, `getContractLines`, `upsertContractLine`, `deleteContractLine`, `getContractInvoiceSchedule`, `updateContractInvoiceSchedule` (Draft, conserved totals), `getContractRevenueSchedule`, `getContractPosition`, `previewContract`. Server-only (`sales.server.ts`): confirm, amend, cancel, invoice now, create from sales order.
 - **Routes** — `x+/sales+/contracts.tsx`; `x+/contract+/new.tsx`, `$id.tsx` shell, `$id.details.tsx`, `$id.lines.new.tsx`, `$id.$lineId.details.tsx`, `$id.schedule.tsx` (invoice-schedule edits), `$id.confirm.tsx`, `$id.amend.tsx`, `$id.cancel.tsx`, `$id.invoice.tsx`, `$id.delete.tsx`, `update.tsx`; `x+/sales-order+/$orderId.contract.tsx`.
 
@@ -354,13 +362,13 @@ Built with the `carbon-design` skill, following the rental agreement page (explo
 - **Contract page** — header (status, *Confirm*, *Invoice Now*, *Amend*, *Cancel*, *Delete* while Draft); explorer of lines (*Add Line*: product picker, multi-select like Rillet's "Add to contract"); center sections:
   - **Summary** — lines as line items ("Implementation · one-time · $60,000", "Platform access · 10 × $40 per month · 20 % off until 31 Oct 2027"), contract value, recurring per period, next invoice.
   - **Invoices** — the invoice schedule (date, total, lines, status, sales-invoice link); while Draft: move date, split, merge, move a line, with the per-line residual shown until it balances.
-  - **Revenue** — per line pattern and dates, the monthly schedule, and the **invoiced / recognized / deferred** table per month.
+  - **Revenue** — per line method, project and dates, the monthly schedule, and the **invoiced / recognized / deferred** table per month.
   - **Amendments** — history with date, type, reason and changes.
-- **Properties** panel — name, customer, bill-to, contact, sales person, close date, start + **duration** (6 months / 1, 2, 3 years / open-ended / custom) → end date, renewal + uplift, frequency, alignment, timing, first invoice date, billed through, recognize revenue from, invoicing (company default / Draft Only / Post / Post and Email / Post and Send via Stripe), payment term, currency, PO number, contract type, notes, custom fields.
-- **Line form** — Service item, kind, description (customer-facing), quantity, rate (+ per rate unit when Recurring), discount % + ends on, tax %, start / end, go-live, revenue pattern + revenue dates.
+- **Properties** panel — name, customer, bill-to, contact, sales person, project, close date, start + **duration** (6 months / 1, 2, 3 years / open-ended / custom) → end date, renewal + uplift, frequency, alignment, timing, first invoice date, billed through, recognize revenue from, invoicing (company default / Draft Only / Post / Post and Email / Post and Send via Stripe), payment term, currency, PO number, contract type, notes, custom fields.
+- **Line form** — Service item, kind, description (customer-facing), quantity, rate (+ per rate unit when Recurring), discount % + ends on, tax %, start / end, go-live, revenue method + revenue dates, project (defaults from the contract).
 - **Amend / Cancel modals** with previews (as specified above); **Create Contract** on sales orders; "From contract CON000012" links on invoices, lines and memos.
 - **Settings → Invoicing** (rental automation plan) mode list gains *Post and Send via Stripe*.
-- **Docs** — `docs/content/docs/reference/contracts.mdx` (`carbon-docs`), agent KB regenerated, glossary: *Contract*, *Contract type*, *Invoice schedule*, *Revenue pattern*, *Billed through*, *Amendment*.
+- **Docs** — `docs/content/docs/reference/contracts.mdx` (`carbon-docs`), agent KB regenerated, glossary: *Contract*, *Contract type*, *Invoice schedule*, *Revenue method*, *Billed through*, *Amendment*.
 
 ## Acceptance Criteria
 
@@ -380,10 +388,11 @@ Worked example (Acme, accounting enabled):
 - [ ] VOID of a posted contract invoice returns its planned rows to Pending; the next run re-drafts and holds it ("Re-billing INV-…, which was voided").
 - [ ] An invoice containing a negative adjustment line is drafted and held for review regardless of the automation mode.
 - [ ] *Post and Send via Stripe*: confirmation requires the Stripe customer link; the job posts and sends through Connect; failures leave a held Draft with the reason.
-- [ ] Migrated annual contract (start 1 May 2026, Billed through 30 Apr 2027, Recognize revenue from 1 Oct 2026, one line $12,000 per Year invoiced Yearly in advance, revenue pattern Even Period): no invoice before 1 May 2027; the October run recognizes $1,000 from Deferred Revenue (the migrated opening balance); first Carbon invoice 1 May 2027.
+- [ ] Migrated annual contract (start 1 May 2026, Billed through 30 Apr 2027, Recognize revenue from 1 Oct 2026, one line $12,000 per Year invoiced Yearly in advance, revenue method Even Period): no invoice before 1 May 2027; the October run recognizes $1,000 from Deferred Revenue (the migrated opening balance); first Carbon invoice 1 May 2027.
 - [ ] Contract type suggestions: a customer's first contract → New Sales; a customer whose earlier contracts all ended → Reactivation; a seat reduction amendment → Contraction.
 - [ ] *Create Contract* from a sales order ticking only the platform line: invoicing the order bills only the remaining lines; the order completes when they are invoiced.
 - [ ] A EUR contract posts with base translation; recognition rows post in base.
+- [ ] A contract with project *P-100* and one line overriding it to *P-200*: the invoice's Contract Assets / Deferred Revenue lines and each recognition run's lines carry the Project dimension of their own line (P-100 / P-200), AR carries none; a contract with no project posts exactly as before.
 - [ ] One company whose contract billing throws does not stop the `recurring-billing` run for other companies; rental billing behaviour and tests are unchanged after the shared extraction.
 
 ## Risks
@@ -436,3 +445,4 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
 
 - 2026-10-02: Created as "Subscriptions" after research and a 14-question interview.
 - 2026-10-02: Re-scoped to **Contracts** after reviewing Rillet's Contract (G1–G9) and unifying with rental invoice automation into one recurring-invoicing layer (U1–U4): independent invoice and revenue schedules, editable invoice schedule, per-line revenue patterns and the line-level revenue engine, one-time lines, contract types, discounts, migration revenue; delivery, sender and the daily job now come from the shared layer.
+- 2026-10-03: Two one-way doors taken for the Projects spec (`2026-10-03-projects.md`): an optional **project** on the contract and line, written as the Project dimension on revenue-side journal lines (amends decision 24); **revenue pattern renamed revenue method** (`revenueMethod` / `contractRevenueMethod`) and `customerContractRevenue` framed as the per-line revenue ledger, so *As Invoiced* and *Percent Complete* are later enum values rather than a post-data rename.
