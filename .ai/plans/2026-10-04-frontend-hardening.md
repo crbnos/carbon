@@ -35,9 +35,22 @@ Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurre
 - [x] 9. Route modals close to their parent route instead of `navigate(-1)`
 - [x] 10. Small leftovers: unused Radix deps, `h-dvh` in MES, lazy images, `@ts-ignore` → `@ts-expect-error`
 
+## Added after the first pass
+
+- [x] Stable `Card` / `ToggleGroup` context, `aria-sort`, modal overlay blur, three `transition-all`
+- [x] PDF engine out of the client entry; PostHog web vitals
+- [x] `downloadUrl` checks the response at the 12 file-download sites
+
+## Blocked on a running stack for this branch (`crbn up`)
+
+- Browser verification of everything above
+- Auth routes → `@carbon/auth`
+
 ## Needs its own plan (not in this branch)
 
 - Bill of process / bill of material / make-method-tools triplication
 - `Table` boolean flags → composed toolbar
 - Filter components (71% overlap — reconcile before sharing)
 - `root` / `entry.*` bootstrap sharing
+- The 20 baselined duplicates: a per-app provider for `path` / user / stores
+- Six components that sync state to their parent from an effect

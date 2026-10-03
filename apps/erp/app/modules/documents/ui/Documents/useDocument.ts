@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { downloadBlob, storage } from "@carbon/files";
+import { downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
@@ -80,8 +80,7 @@ export const useDocument = () => {
 
       const url = path.to.file.previewFile(`private/${doc.path}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), doc.name ?? "File");
+        await downloadUrl(url, doc.name ?? "File");
       } catch (error) {
         toast.error("Error downloading file");
         logger.error("Error", { error: error });
