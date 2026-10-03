@@ -35,6 +35,7 @@
     "./config.client": "./src/config.client.ts",
     "./middleware.server": "./src/middleware.server.ts",
     "./tracing.server": "./src/tracing.server.ts",
+    "./span": "./src/span.ts",
     "./inngest": "./src/inngest.ts"
   },
   "private": true,

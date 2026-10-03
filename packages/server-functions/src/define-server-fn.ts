@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { failSpan, inSpan } from "@carbon/logger/span";
 import type { z } from "zod";
 import { type ServerFnError, toServerFnError } from "./errors";
 import {
@@ -55,18 +56,29 @@ export function defineServerFn<S extends z.ZodType, R>({
   defaultStatus = 500,
   run
 }: ServerFnDefinition<S, R>): ServerFn<S, R> {
-  const call = async (
+  // One span per call, named as the edge function's was (`function <name>`),
+  // so a trace says which function the SQL under it belongs to.
+  const call = (
     ctx: ServerFnContext,
     input: z.input<S>
-  ): Promise<ServerFnResult<R>> => {
-    try {
-      const parsed = schema.parse(input);
-      await authorize(ctx, resolvePermissions(permissions, parsed));
-      return { data: await run(ctx, parsed), error: null };
-    } catch (err) {
-      return { data: null, error: toServerFnError(name, err, defaultStatus) };
-    }
-  };
+  ): Promise<ServerFnResult<R>> =>
+    inSpan(
+      `function ${name}`,
+      { "carbon.function": name, "carbon.function.actor": ctx.actor },
+      async (span) => {
+        try {
+          const parsed = schema.parse(input);
+          await authorize(ctx, resolvePermissions(permissions, parsed));
+          return { data: await run(ctx, parsed), error: null };
+        } catch (err) {
+          const error = toServerFnError(name, err, defaultStatus);
+          span.setAttribute("carbon.function.status", error.status);
+          // A refusal the caller caused is not a failed span.
+          if (error.status >= 500) failSpan(span, error.message);
+          return { data: null, error };
+        }
+      }
+    );
 
   return Object.assign(call, {
     serverFnName: name,
