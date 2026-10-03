@@ -1271,6 +1271,9 @@ msgstr "Перейти к первоначальной настройке"
 msgid "Hide description"
 msgstr "Скрыть описание"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "Опционально"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "или"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""

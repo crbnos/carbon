@@ -314,6 +314,16 @@ export const operationsScreen = z
     peopleStation: z
       .object({ workCenterId: z.string(), name: z.string() })
       .nullable(),
+    /**
+     * Today at the LOCATION, as `YYYY-MM-DD`.
+     *
+     * It is the date the server compares a station dismissal against, so a
+     * client that wants to remember "I dismissed my station for today" has to
+     * store this one rather than the device's — an operator a timezone from
+     * their plant, or working near midnight, has a device date a day out.
+     * Null when the caller has no assignment to dismiss.
+     */
+    peopleDate: z.string().nullable().optional(),
     availableTags: z.array(z.string())
   })
   .passthrough();
@@ -436,6 +446,16 @@ export const operationDetail = z
         jobId: z.string().nullable().optional(),
         status: z.string().nullable().optional(),
         customerId: z.string().nullable().optional(),
+        /**
+         * The customer's NAME, embedded by the job read. `customerId` is an
+         * opaque `cust_…` key and reads as noise on a shop floor; the web
+         * header shows this and so does the app.
+         */
+        customer: z
+          .object({ name: z.string().nullable().optional() })
+          .passthrough()
+          .nullable()
+          .optional(),
         dueDate: z.string().nullable().optional()
       })
       .passthrough(),

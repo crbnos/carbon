@@ -1271,6 +1271,9 @@ msgstr "Başlangıç adımına git"
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "İsteğe bağlı"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "veya"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""

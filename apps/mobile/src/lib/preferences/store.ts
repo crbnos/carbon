@@ -27,11 +27,21 @@ export type ThemePreference = "light" | "dark" | "system";
 export type Preferences = {
   locale: LocalePreference;
   theme: ThemePreference;
+  /**
+   * Whether the operation dock's secondary controls are open.
+   *
+   * Closed by default: on a phone the dock's work-type toggle is full-width,
+   * so with it open the dock wraps to two rows and takes a quarter of the
+   * screen away from the work. The primary action and Log completed stay on
+   * the bar either way — this only hides what an operator sets once a shift.
+   */
+  dockOpen: boolean;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
   locale: "device",
-  theme: "system"
+  theme: "system",
+  dockOpen: false
 };
 
 const THEMES: ThemePreference[] = ["light", "dark", "system"];
@@ -52,7 +62,11 @@ function parse(raw: string | null): Preferences {
       THEMES.includes(value.theme as ThemePreference)
         ? (value.theme as ThemePreference)
         : DEFAULT_PREFERENCES.theme;
-    return { locale, theme };
+    const dockOpen =
+      typeof value.dockOpen === "boolean"
+        ? value.dockOpen
+        : DEFAULT_PREFERENCES.dockOpen;
+    return { locale, theme, dockOpen };
   } catch {
     // A corrupt blob must not stop the app booting; the defaults are usable.
     return DEFAULT_PREFERENCES;

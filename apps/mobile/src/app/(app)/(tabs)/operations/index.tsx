@@ -6,7 +6,7 @@ import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
 import { Factory, SlidersHorizontal, X } from "lucide-react-native";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -37,6 +37,12 @@ import {
 } from "~/features/operations/boardFilters";
 import { OperationCard } from "~/features/operations/OperationCard";
 import { QueueSwitcher } from "~/features/operations/QueueSwitcher";
+import {
+  deviceToday,
+  isStationDismissed,
+  loadStationOverride,
+  saveStationOverride
+} from "~/features/operations/stationOverride";
 import { useOperationsQuery } from "~/features/operations/useOperationsQuery";
 import { useAuth } from "~/lib/auth/AuthProvider";
 
@@ -155,9 +161,40 @@ export default function Operations() {
   const { width: screenWidth } = useWindowDimensions();
   const colors = useThemeColors();
   // The manning-board station default, and the operator's way out of it.
-  const [allWorkCenters, setAllWorkCenters] = useState(false);
+  //
+  // Stored, not component state: web remembers the dismissal in a cookie for
+  // the rest of the day, and holding it in `useState` meant it was forgotten
+  // the moment this tab unmounted — so the board reopened on one column of a
+  // seven-column board every time, with the dismissal apparently doing nothing.
+  const { instanceId, companyId: scopeCompanyId } = useAuth();
+  const scope = useMemo(
+    () => ({
+      instanceId: instanceId ?? "unknown",
+      companyId: scopeCompanyId ?? ""
+    }),
+    [instanceId, scopeCompanyId]
+  );
+  const [dismissedDate, setDismissedDate] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void loadStationOverride(scope).then((date) => {
+      if (cancelled) return;
+      setDismissedDate(date);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope]);
   const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
   const filterSheet = useRef<SheetHandle>(null);
+  // `peopleDate` is the LOCATION's today and the date the server compares
+  // against, so once a payload has arrived it is the authority; the device's
+  // today is only the optimistic stand-in for the first request.
+  const [serverDate, setServerDate] = useState<string | null>(null);
+  const allWorkCenters = isStationDismissed(dismissedDate, {
+    deviceDate: deviceToday(),
+    serverDate
+  });
   const query = useOperationsQuery([], allWorkCenters);
 
   // The floor moves while the operator is on another screen.
@@ -166,6 +203,11 @@ export default function Operations() {
       void query.refetch();
     }, [query.refetch])
   );
+
+  const payloadDate = query.data?.peopleDate ?? null;
+  useEffect(() => {
+    if (payloadDate) setServerDate(payloadDate);
+  }, [payloadDate]);
 
   const locationName =
     me?.locations.find((l) => l.id === locationId)?.name ?? "";
@@ -228,7 +270,13 @@ export default function Operations() {
 
         {query.data?.peopleStation && !allWorkCenters ? (
           <Pressable
-            onPress={() => setAllWorkCenters(true)}
+            onPress={() => {
+              // The server's own date, so the dismissal is compared against
+              // exactly what it compares against — and lapses tomorrow.
+              const date = payloadDate ?? deviceToday();
+              setDismissedDate(date);
+              void saveStationOverride(scope, date);
+            }}
             accessibilityRole="button"
             accessibilityLabel={t`Show every work center`}
             className="min-h-[44px] flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-card px-3 active:opacity-70"

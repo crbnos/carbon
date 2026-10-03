@@ -27,11 +27,14 @@ type PreferencesContextValue = {
   /** What the operator chose, including "follow the device". */
   locale: LocalePreference;
   theme: ThemePreference;
+  /** Whether the operation dock's secondary controls are open on a phone. */
+  dockOpen: boolean;
   /** The locale and scheme actually in effect, with "device" resolved. */
   resolvedLocale: MesLocale;
   resolvedScheme: "light" | "dark";
   setLocale: (locale: LocalePreference) => void;
   setTheme: (theme: ThemePreference) => void;
+  setDockOpen: (dockOpen: boolean) => void;
   /** False until the stored values have been read. */
   ready: boolean;
 };
@@ -86,10 +89,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     return {
       locale: preferences.locale,
       theme: preferences.theme,
+      dockOpen: preferences.dockOpen,
       resolvedLocale,
       resolvedScheme,
       setLocale: (locale) => update({ ...preferences, locale }),
       setTheme: (theme) => update({ ...preferences, theme }),
+      setDockOpen: (dockOpen) => update({ ...preferences, dockOpen }),
       ready
     };
   }, [preferences, scheme, ready, update]);

@@ -259,13 +259,20 @@ export function OperationDetailView({
         </Screen>
       </View>
 
-      <ActionDock>
-        <WorkTypeToggle
-          types={[...types]}
-          value={activeType}
-          open={open}
-          onChange={setWorkType}
-        />
+      <ActionDock
+        // The work type is set once a shift, not once a unit, and it is the
+        // one full-width control here — on a phone it cost the dock a whole
+        // second row and the operator a quarter of the screen. Start, Log
+        // completed and More stay on the bar.
+        drawer={
+          <WorkTypeToggle
+            types={[...types]}
+            value={activeType}
+            open={open}
+            onChange={setWorkType}
+          />
+        }
+      >
         <HeroButton
           icon={running ? Pause : Play}
           label={running ? t`Pause` : t`Start`}

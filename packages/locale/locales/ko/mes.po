@@ -1271,6 +1271,9 @@ msgstr "온보딩으로 이동"
 msgid "Hide description"
 msgstr "설명 숨기기"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "또는"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""

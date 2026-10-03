@@ -7,7 +7,6 @@ import { formatDate } from "@carbon/utils/date";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import {
-  CirclePlay,
   ClipboardCheck,
   Factory,
   OctagonAlert,
@@ -282,15 +281,17 @@ export function OperationHeader({
           pair is the app's first use of `gap-x`/`gap-y`, and an unsupported
           class is DROPPED by Uniwind in silence rather than erroring. */}
       <View className="flex-row flex-wrap items-center gap-3">
-        {job.jobId ? (
-          <Fact icon={<CirclePlay size={16} color={colors.mutedForeground} />}>
-            {job.jobId}
-          </Fact>
-        ) : null}
-
-        {job.customerId ? (
+        {/* The job id is NOT repeated here: it is this screen's own title
+            (`OperationDetailView` titles the screen with it), and on a phone
+            this bar wraps, so every duplicated fact costs a row of the work
+            the operator came to read. Web can afford it — its header is one
+            line beside a breadcrumb that does not carry the job. */}
+        {/* The NAME, as web's header shows. `customerId` is an opaque
+            `cust_…` key — it filled a whole row of this bar with noise. A job
+            with no customer name shows nothing rather than the key. */}
+        {job.customer?.name ? (
           <Fact icon={<SquareUser size={16} color={colors.mutedForeground} />}>
-            {job.customerId}
+            {job.customer.name}
           </Fact>
         ) : null}
 

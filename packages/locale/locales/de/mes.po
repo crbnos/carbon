@@ -1271,6 +1271,9 @@ msgstr "Gehen Sie zum Onboarding"
 msgid "Hide description"
 msgstr "Beschreibung ausblenden"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "Optional"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "oder"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "Tastaturkürzel anzeigen"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""

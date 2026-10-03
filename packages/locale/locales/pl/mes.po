@@ -1271,6 +1271,9 @@ msgstr "Przejdź do wdrożenia"
 msgid "Hide description"
 msgstr "Ukryj opis"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "Opcjonalnie"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "lub"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "Pokaż skróty klawiaturowe"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""

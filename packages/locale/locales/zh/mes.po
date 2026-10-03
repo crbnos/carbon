@@ -1271,6 +1271,9 @@ msgstr "前往入门"
 msgid "Hide description"
 msgstr "隐藏描述"
 
+msgid "Hide options"
+msgstr ""
+
 msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
 msgstr ""
 
@@ -2004,6 +2007,9 @@ msgstr ""
 msgid "Optional"
 msgstr "可选"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "或"
 
@@ -2725,6 +2731,9 @@ msgstr ""
 
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
+
+msgid "Show options"
+msgstr ""
 
 msgid "Sign in"
 msgstr ""
