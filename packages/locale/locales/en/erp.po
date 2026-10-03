@@ -9656,6 +9656,9 @@ msgstr "is"
 msgid "is any of"
 msgstr "is any of"
 
+msgid "is between"
+msgstr "is between"
+
 msgid "Is console operator"
 msgstr "Is console operator"
 
@@ -9670,6 +9673,12 @@ msgstr "Is employee type group"
 
 msgid "Is identity group"
 msgstr "Is identity group"
+
+msgid "is on or after"
+msgstr "is on or after"
+
+msgid "is on or before"
+msgstr "is on or before"
 
 msgid "Is supplier org group"
 msgstr "Is supplier org group"

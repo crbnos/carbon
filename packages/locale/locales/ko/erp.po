@@ -53,7 +53,7 @@ msgstr "(비활성)"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
-msgstr ""
+msgstr "{0, plural, one {# 구성요소 (그룹 내)} other {# 구성요소 (그룹 내)}}"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -77,7 +77,7 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
-msgstr ""
+msgstr "{0, plural, one {플래너가 이 구성요소를 단일 강체로 처리하고 지시사항의 하나의 단계로 취급합니다. 계획을 다시 실행하여 적용하세요.} other {플래너가 이 # 구성요소들을 단일 강체로 처리하고 지시사항의 하나의 단계로 취급합니다. 계획을 다시 실행하여 적용하세요.}}"
 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
@@ -355,7 +355,7 @@ msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
-msgstr ""
+msgstr "{memberCount, plural, one {# 단계} other {# 단계}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "총액이 일치하지 않는 {mismatchCount}개월"
@@ -389,7 +389,7 @@ msgid "{orderLabel} will be reopened for editing as revision {0}. The document a
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
-msgstr ""
+msgstr "{partCount, plural, one {# 부품} other {# 부품}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
@@ -434,7 +434,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "미실사 라인 {uncounted}개"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
-msgstr ""
+msgstr "{unmappedRequiredCount, plural, one {먼저 남은 # 필수 계정을 매핑하세요.} other {먼저 남은 # 필수 계정들을 매핑하세요.}}"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
@@ -1380,7 +1380,7 @@ msgstr "{0}개 공정 추가"
 
 #. placeholder {0}: addableIds.length
 msgid "Add {0} selected"
-msgstr ""
+msgstr "선택한 {0}개 추가"
 
 msgid "Add & Issue"
 msgstr "추가 및 출고"
@@ -1814,7 +1814,7 @@ msgid "All slotted dimension values are mapped"
 msgstr "모든 슬롯된 차원 값이 매핑되었습니다"
 
 msgid "All steps"
-msgstr ""
+msgstr "모든 단계"
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
@@ -3006,13 +3006,13 @@ msgid "Backflush"
 msgstr "백플러시"
 
 msgid "Backup"
-msgstr ""
+msgstr "백업"
 
 msgid "Backup failed"
 msgstr "백업 실패"
 
 msgid "Backup uploaded"
-msgstr ""
+msgstr "백업 업로드됨"
 
 msgid "Backups"
 msgstr "백업"
@@ -3330,7 +3330,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
 msgid "Built after this step"
-msgstr ""
+msgstr "이 단계 후에 구성됨"
 
 msgid "Built and costed as its own method"
 msgstr "독립적인 방법으로 구성되고 원가가 산정됨"
@@ -3745,7 +3745,7 @@ msgid "Changes"
 msgstr "변경 사항"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
-msgstr ""
+msgstr "구성요소를 변경하면 그룹이 재정의됩니다. 모션 계획을 다시 실행하여 단계에 변경사항을 적용하세요."
 
 msgid "Changing this will overwrite the existing method"
 msgstr "이를 변경하면 기존 제조방법을 덮어씁니다"
@@ -3802,7 +3802,7 @@ msgid "Checkpoints"
 msgstr "체크포인트"
 
 msgid "Choose a backup"
-msgstr ""
+msgstr "백업 선택"
 
 msgid "Choose a batch number"
 msgstr "배치 번호를 선택하세요"
@@ -3970,7 +3970,7 @@ msgid "Collapse {0}"
 msgstr "축소 {0}"
 
 msgid "Collapse {name}"
-msgstr ""
+msgstr "{name} 축소"
 
 msgid "Collapse all"
 msgstr "모두 접기"
@@ -4130,10 +4130,10 @@ msgid "Component details: {0}"
 msgstr "구성품 세부사항: {0}"
 
 msgid "Component group name"
-msgstr ""
+msgstr "구성요소 그룹 이름"
 
 msgid "Component group updated — re-run motion planning to apply the change"
-msgstr ""
+msgstr "구성요소 그룹이 업데이트됨 — 모션 계획을 다시 실행하여 변경사항을 적용하세요."
 
 msgid "Components"
 msgstr "구성품"
@@ -4359,7 +4359,7 @@ msgid "Consumable"
 msgstr "소모품"
 
 msgid "Consumable Cost"
-msgstr ""
+msgstr "소모품 원가"
 
 msgid "Consumable Details"
 msgstr "소모품 세부정보"
@@ -4482,7 +4482,7 @@ msgid "Convert to Quote"
 msgstr "견적으로 전환"
 
 msgid "Converted Total Price"
-msgstr ""
+msgstr "변환된 총가격"
 
 msgid "Converting…"
 msgstr "변환 중…"
@@ -5840,7 +5840,7 @@ msgstr "변경 통지 삭제"
 
 #. placeholder {0}: unit.name
 msgid "Delete component group {0}"
-msgstr ""
+msgstr "구성요소 그룹 {0} 삭제"
 
 msgid "Delete Consumable"
 msgstr "소모품 삭제"
@@ -6059,7 +6059,7 @@ msgid "Delete Storage Unit"
 msgstr "보관 단위 삭제"
 
 msgid "Delete Sub-Assembly"
-msgstr ""
+msgstr "부분조립품 삭제"
 
 msgid "Delete Substance"
 msgstr "재질 삭제"
@@ -6087,7 +6087,7 @@ msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
-msgstr ""
+msgstr "이 부분조립품과 모든 단계를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
 msgid "Delete Timecard"
 msgstr "근무기록 삭제"
@@ -6460,7 +6460,7 @@ msgid "Done when day-to-day runs without us in the room"
 msgstr "저희가 없어도 일상 업무가 원활하게 돌아가면 완료입니다"
 
 msgid "Double-click to open this sub-assembly"
-msgstr ""
+msgstr "이 부분조립품을 열려면 두 번 클릭하세요."
 
 msgid "Double-click to play this step"
 msgstr "이 단계를 재생하려면 더블 클릭"
@@ -6509,7 +6509,7 @@ msgid "Drag handle"
 msgstr "드래그 핸들"
 
 msgid "Drag steps here to build them on their own."
-msgstr ""
+msgstr "단계를 여기로 드래그하여 독립적으로 구성하세요."
 
 msgid "Drag the red waypoints in the viewer"
 msgstr "뷰어에서 빨간 경유점을 드래그합니다"
@@ -6625,7 +6625,7 @@ msgid "Duplicate Item"
 msgstr "품목 복제"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "복제 또는 복사"
 
 msgid "Duplicate Price List"
 msgstr "가격표 복제"
@@ -6796,11 +6796,11 @@ msgid "Edit column visibility"
 msgstr "열 표시 여부 편집"
 
 msgid "Edit Component Group"
-msgstr ""
+msgstr "구성요소 그룹 편집"
 
 #. placeholder {0}: unit.name
 msgid "Edit component group {0}"
-msgstr ""
+msgstr "구성요소 그룹 {0} 편집"
 
 msgid "Edit Contact"
 msgstr "담당자 편집"
@@ -7579,7 +7579,7 @@ msgid "Expand {0}"
 msgstr "{0} 펼치기"
 
 msgid "Expand {name}"
-msgstr ""
+msgstr "{name} 확장"
 
 msgid "Expand all"
 msgstr "모두 펼치기"
@@ -8149,7 +8149,7 @@ msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
 
 msgid "Failed to upload: {reason}"
-msgstr ""
+msgstr "업로드 실패: {reason}"
 
 msgid "Failure"
 msgstr "실패"
@@ -8767,7 +8767,7 @@ msgid "Group"
 msgstr "그룹"
 
 msgid "Group as One Component"
-msgstr ""
+msgstr "하나의 구성요소로 그룹화"
 
 msgid "Group by"
 msgstr "그룹화 기준"
@@ -8815,7 +8815,7 @@ msgid "Headers"
 msgstr "헤더"
 
 msgid "healthy"
-msgstr ""
+msgstr "정상"
 
 msgid "Help"
 msgstr "도움말"
@@ -8836,7 +8836,7 @@ msgid "Hide Again"
 msgstr "다시 숨기기"
 
 msgid "Hide calculation"
-msgstr ""
+msgstr "계산 숨기기"
 
 msgid "Hide raw"
 msgstr "원본 숨기기"
@@ -8998,7 +8998,7 @@ msgid "How strictly each material property must match for operations to share a 
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
 
 msgid "How the finished sub-assembly joins the main build."
-msgstr ""
+msgstr "완성된 부분조립품이 주요 구성에 연결되는 방식입니다."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "스케줄러가 용량을 배분할 때 작업 지시의 순위 — ASAP가 먼저 요청되고, 그 다음 고정 기한, 유연 기한, 기한 없음 순입니다. 순위 신호일 뿐이며, 어떤 기한 유형도 배치를 차단하거나 제한하지 않습니다."
@@ -9013,7 +9013,7 @@ msgid "How the sample size is decided — Inspect All, Inspect First N, Percenta
 msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검사, 로트 비율, 또는 AQL(Z1.4 / ISO 2859-1). 각 모드는 아래에 고유한 파라미터 필드를 표시합니다."
 
 msgid "How the unit price of each quantity was calculated."
-msgstr ""
+msgstr "각 수량의 단가가 계산된 방식입니다."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 계측기의 사용 방식 — 보통 검사(정기 점검) 또는 표준기(다른 계측기 교정)."
@@ -9182,7 +9182,7 @@ msgid "in {0}"
 msgstr "{0} 안에"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "열린 메뉴에서"
 
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshape에서 이 OAuth 애플리케이션의 권한을 편집하여 \"애플리케이션이 문서에 쓸 수 있음\"을 포함하도록 한 후 다시 연결합니다."
@@ -9251,7 +9251,7 @@ msgid "In-app notifications are always delivered. Choose which topics also reach
 msgstr "인앱 알림은 항상 전달됩니다. 이메일로도 전달받을 주제를 선택하세요."
 
 msgid "inactive"
-msgstr ""
+msgstr "비활성"
 
 msgid "Inactive"
 msgstr "비활성"
@@ -9275,7 +9275,7 @@ msgid "Included"
 msgstr "포함됨"
 
 msgid "Includes bought and picked parts"
-msgstr ""
+msgstr "구매한 부품 및 피킹 완료된 부품 포함"
 
 msgid "Includes tax and shipping costs"
 msgstr "세금 및 운송비 포함"
@@ -9360,7 +9360,7 @@ msgstr "토큰 삽입"
 
 #. placeholder {0}: stepTitles.get(headerId) ?? ""
 msgid "inside {0}"
-msgstr ""
+msgstr "{0} 내에서"
 
 msgid "Inspect"
 msgstr "검사"
@@ -9656,6 +9656,9 @@ msgstr "같음"
 msgid "is any of"
 msgstr "다음 중 하나임"
 
+msgid "is between"
+msgstr "사이"
+
 msgid "Is console operator"
 msgstr "콘솔 작업자입니다"
 
@@ -9670,6 +9673,12 @@ msgstr "직원 유형 그룹인가"
 
 msgid "Is identity group"
 msgstr "신원 그룹인가"
+
+msgid "is on or after"
+msgstr "이상"
+
+msgid "is on or before"
+msgstr "이하"
 
 msgid "Is supplier org group"
 msgstr "공급업체 조직 그룹입니다"
@@ -9998,10 +10007,10 @@ msgid "Labor & Machine Variance (default)"
 msgstr "노무 및 기계 차이(기본값)"
 
 msgid "Labor Costs"
-msgstr ""
+msgstr "노무 비용"
 
 msgid "Labor Hours"
-msgstr ""
+msgstr "노무 시간"
 
 msgid "Labor rate"
 msgstr "노무 요금"
@@ -10475,10 +10484,10 @@ msgid "Machine"
 msgstr "기계"
 
 msgid "Machine Costs"
-msgstr ""
+msgstr "기계 원가"
 
 msgid "Machine Hours"
-msgstr ""
+msgstr "기계 시간"
 
 msgid "Machine rate"
 msgstr "기계비율"
@@ -10520,7 +10529,7 @@ msgid "Magic link"
 msgstr "매직 링크"
 
 msgid "Main build (after its last step)"
-msgstr ""
+msgstr "주 조립 (마지막 단계 이후)"
 
 msgid "Maintain a single part and item master"
 msgstr "단일 부품 및 품목 마스터 유지"
@@ -10583,7 +10592,7 @@ msgid "Make size {0} default?"
 msgstr "사이즈 {0}을(를) 기본값으로 설정하시겠습니까?"
 
 msgid "Make Sub-Assembly"
-msgstr ""
+msgstr "부분조립품 생산"
 
 msgid "Make the final go / no-go call"
 msgstr "최종 진행 여부를 판단하세요"
@@ -10728,10 +10737,10 @@ msgid "Marks the person off for every day in the range. They won't be scheduled 
 msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 그들은 휴무 중에 스케줄되지 않습니다."
 
 msgid "Markup by Category"
-msgstr ""
+msgstr "카테고리별 마크업"
 
 msgid "Markup Percent"
-msgstr ""
+msgstr "마크업 비율"
 
 msgid "Master gauge"
 msgstr "표준 계측기"
@@ -10779,7 +10788,7 @@ msgid "Material"
 msgstr "자재"
 
 msgid "Material Cost"
-msgstr ""
+msgstr "자재 원가"
 
 msgid "Material Dimension"
 msgstr "자재 차원"
@@ -11163,13 +11172,13 @@ msgid "Move entities…"
 msgstr "개체 이동…"
 
 msgid "Move Into"
-msgstr ""
+msgstr "안으로 이동"
 
 msgid "Move item"
 msgstr "품목 이동"
 
 msgid "Move Out of Sub-Assembly"
-msgstr ""
+msgstr "부분조립품에서 꺼내기"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "수량의 일부를 새로운 처분 결정 행으로 할당하여 MRB가 각 부분을 별도로 결정할 수 있도록 합니다(예: 일부는 스크랩, 일부는 재작업)."
@@ -11202,7 +11211,7 @@ msgstr "이동"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
-msgstr ""
+msgstr "단계 {0} 이동이 취소됨"
 
 msgid "Mpn"
 msgstr "Mpn"
@@ -11289,10 +11298,10 @@ msgid "Net Income"
 msgstr "순이익"
 
 msgid "Net Unit Price"
-msgstr ""
+msgstr "순 단가"
 
 msgid "Network error"
-msgstr ""
+msgstr "네트워크 오류"
 
 msgid "Never"
 msgstr "안 함"
@@ -11785,7 +11794,7 @@ msgid "No completion date"
 msgstr "완료예정일 없음"
 
 msgid "No components — add a selection or cancel."
-msgstr ""
+msgstr "구성품이 없습니다 — 선택을 추가하거나 취소하세요."
 
 msgid "No components yet"
 msgstr "아직 구성 요소 없음"
@@ -12059,7 +12068,7 @@ msgid "No pricing options found"
 msgstr "가격 책정 옵션을 찾을 수 없습니다."
 
 msgid "No pricing rules apply to this quantity."
-msgstr ""
+msgstr "이 수량에 적용되는 가격 규칙이 없습니다."
 
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"
@@ -12164,10 +12173,10 @@ msgid "No step selected"
 msgstr "선택한 단계 없음"
 
 msgid "No steps match \"{search}\""
-msgstr ""
+msgstr "일치하는 단계가 없습니다 \"{search}\""
 
 msgid "No steps yet. Drag steps into it, or use Move Into from a step's menu."
-msgstr ""
+msgstr "아직 단계가 없습니다. 단계를 여기로 드래그하거나 단계의 메뉴에서 안으로 이동을 사용하세요."
 
 msgid "No stock"
 msgstr "재고 없음"
@@ -12369,10 +12378,10 @@ msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
 msgid "Nothing is synced until you turn sync on."
-msgstr ""
+msgstr "동기화를 켜기 전까지 아무것도 동기화되지 않습니다."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
-msgstr ""
+msgstr "동기화를 켜기 전까지 아무것도 동기화되지 않습니다. 필요한 모든 계정이 매핑되었습니다."
 
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
@@ -12436,7 +12445,7 @@ msgid "of {0}h"
 msgstr "{0}h 중"
 
 msgid "Off"
-msgstr ""
+msgstr "끄기"
 
 msgid "Off — handled outside the sync"
 msgstr "끔 — 동기화 외부에서 처리됨"
@@ -12454,7 +12463,7 @@ msgid "Oldest first"
 msgstr "오래된순"
 
 msgid "On"
-msgstr ""
+msgstr "켜기"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
@@ -12633,7 +12642,7 @@ msgid "Open a change notice"
 msgstr "변경 통지 열기"
 
 msgid "Open Account Mapping"
-msgstr ""
+msgstr "계정 매핑 열기"
 
 msgid "Open Actions"
 msgstr "미결 조치"
@@ -12723,7 +12732,7 @@ msgid "Open Scheduled"
 msgstr "미결 예약 정비"
 
 msgid "Open Sub-Assembly"
-msgstr ""
+msgstr "부분조립품 열기"
 
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
@@ -13138,7 +13147,7 @@ msgid "Part Being Replaced"
 msgstr "대체될 부품"
 
 msgid "Part Cost"
-msgstr ""
+msgstr "부품 원가"
 
 msgid "Part Details"
 msgstr "품목 세부정보"
@@ -13448,7 +13457,7 @@ msgstr "피킹 수량"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
-msgstr ""
+msgstr "단계 {0}을(를) 집어올렸습니다"
 
 msgid "picking in place of {substitutedFrom}, the item on the job"
 msgstr "{substitutedFrom}(작업 지시의 품목) 대신 피킹"
@@ -13495,7 +13504,7 @@ msgid "Pin {0}"
 msgstr "{0} 고정"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "고정 또는 고정 해제"
 
 msgid "Pinned"
 msgstr "고정됨"
@@ -13693,7 +13702,7 @@ msgid "Prefix"
 msgstr "접두사"
 
 msgid "Preparing the backup for restore…"
-msgstr ""
+msgstr "복원을 위한 백업을 준비 중…"
 
 msgid "Prepayments"
 msgstr "선급금"
@@ -13775,7 +13784,7 @@ msgid "Price override"
 msgstr "가격 재정의"
 
 msgid "Priced before pricing traces were recorded — this is today's calculation."
-msgstr ""
+msgstr "가격 추적이 기록되기 전에 가격이 책정됨 — 이것은 오늘의 계산입니다."
 
 msgid "Prices"
 msgstr "가격"
@@ -13936,7 +13945,7 @@ msgid "Profile"
 msgstr "프로필"
 
 msgid "Profit Percent"
-msgstr ""
+msgstr "이윤 비율"
 
 msgid "Progress"
 msgstr "진행 상황"
@@ -14306,7 +14315,7 @@ msgstr "수량"
 
 #. placeholder {0}: price.quantity
 msgid "Quantity {0}"
-msgstr ""
+msgstr "수량 {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "도착 예정 수량 — 미결 발주서 및 생산(사내 생산) 작업 지시상의 수량입니다."
@@ -14740,7 +14749,7 @@ msgid "Records"
 msgstr "레코드"
 
 msgid "Records and posted journals are being sent to and received from this provider."
-msgstr ""
+msgstr "기록 및 전기된 전표가 이 공급자로부터 전송되고 수신되고 있습니다."
 
 msgid "Recovery Period"
 msgstr "회수 기간"
@@ -14903,7 +14912,7 @@ msgstr "{0} 제거"
 #. placeholder {0}: group.name
 #. placeholder {1}: unit.name
 msgid "Remove {0} from {1}"
-msgstr ""
+msgstr "{1}에서 {0} 제거"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
@@ -14989,7 +14998,7 @@ msgid "Remove station"
 msgstr "스테이션 제거"
 
 msgid "Remove this item"
-msgstr ""
+msgstr "이 품목 제거"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장소 유형을 모든 참조 보관 단위에서 제거하고 삭제합니다. 이는 실행 취소할 수 없습니다."
@@ -15008,7 +15017,7 @@ msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "이 경로를 제거하면 {count}개 연결도 끊어집니다{0}. 계속하시겠습니까?"
 
 msgid "Rename"
-msgstr ""
+msgstr "이름 바꾸기"
 
 msgid "Rename Workflow"
 msgstr "워크플로우 이름 바꾸기"
@@ -15101,11 +15110,11 @@ msgid "Reports"
 msgstr "보고서"
 
 msgid "Reprice with current rules"
-msgstr ""
+msgstr "현재 규칙으로 가격 재책정"
 
 #. placeholder {0}: format(repricedPrice)
 msgid "Repricing with today's rules and costs gives <0>{0}</0>."
-msgstr ""
+msgstr "오늘의 규칙 및 원가로 가격을 재책정하면 <0>{0}</0>이 됩니다."
 
 msgid "Reprint"
 msgstr "재출력"
@@ -16141,7 +16150,7 @@ msgid "Search..."
 msgstr "검색..."
 
 msgid "Search…"
-msgstr ""
+msgstr "검색…"
 
 msgid "Seconds to complete"
 msgstr "완료할 시간(초)"
@@ -16174,7 +16183,7 @@ msgid "Select"
 msgstr "선택"
 
 msgid "Select a .carbon.tar.gz backup"
-msgstr ""
+msgstr ".carbon.tar.gz 백업 선택"
 
 msgid "Select a assignee"
 msgstr "담당자 선택"
@@ -16268,7 +16277,7 @@ msgid "Select an option"
 msgstr "옵션 선택"
 
 msgid "Select at least one item to accept the quote"
-msgstr ""
+msgstr "견적서를 수락하려면 최소한 하나의 품목을 선택하세요"
 
 msgid "Select at least one line to convert"
 msgstr "전환할 라인을 하나 이상 선택하세요"
@@ -16883,13 +16892,13 @@ msgid "Show available tracking numbers"
 msgstr "가용 추적 번호 표시"
 
 msgid "Show calculation"
-msgstr ""
+msgstr "계산 표시"
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
 
 msgid "Show Details"
-msgstr ""
+msgstr "세부 정보 표시"
 
 msgid "Show Durations"
 msgstr "소요 시간 표시"
@@ -17309,28 +17318,28 @@ msgstr "단계"
 #. placeholder {0}: subPlan.get(usedIn)?.number ?? ""
 #. placeholder {1}: titleOf(usedIn)
 msgid "Step {0} · {1}"
-msgstr ""
+msgstr "단계 {0} · {1}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} is no longer over a drop position"
-msgstr ""
+msgstr "단계 {0}이(가) 더 이상 드롭 위치 위에 있지 않습니다"
 
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} is over {1}"
-msgstr ""
+msgstr "단계 {0}이(가) {1} 위에 있습니다"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Step {0} was dropped"
-msgstr ""
+msgstr "단계 {0}이(가) 드롭되었습니다"
 
 #. placeholder {0}: plainTitle(active.id)
 #. placeholder {1}: plainTitle(over.id)
 msgid "Step {0} was dropped at {1}"
-msgstr ""
+msgstr "단계 {0}이(가) {1}에 드롭되었습니다"
 
 msgid "Step {number}"
-msgstr ""
+msgstr "단계 {number}"
 
 msgid "Step added"
 msgstr "단계 추가됨"
@@ -17363,7 +17372,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
 
 msgid "Steps built on their own, then fitted as one piece: in the step that uses it, or, when nothing uses it, right after its own steps."
-msgstr ""
+msgstr "단계는 자신의 단계로 구성한 후 하나의 조각으로 조립됩니다: 이를 사용하는 단계에서 또는 사용하지 않으면 자신의 단계 바로 다음에 조립됩니다."
 
 msgid "Still dark out on the floor."
 msgstr "작업장은 여전히 어둡습니다."
@@ -17410,7 +17419,7 @@ msgstr "배송 중지"
 
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
-msgstr ""
+msgstr "이 단계에서 {0} 사용 중지"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "이 날짜 이후로 새로운 구매 제안을 중단합니다."
@@ -17485,33 +17494,33 @@ msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
 
 msgid "Sub-assembly"
-msgstr ""
+msgstr "하위 조립체"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "하위 조립체"
 
 msgid "Sub-Assembly · joins main build"
-msgstr ""
+msgstr "하위 조립체 · 주 조립에 결합"
 
 msgid "Sub-Assembly · used in {usedInNumber}"
-msgstr ""
+msgstr "하위 조립체 · {usedInNumber}에서 사용됨"
 
 #. placeholder {0}: used.number
 #. placeholder {1}: used.partCount
 msgid "Sub-Assembly {0} · {1, plural, one {# part} other {# parts}}"
-msgstr ""
+msgstr "하위 조립체 {0} · {1, plural, one {# 부품} other {# 부품}}"
 
 #. placeholder {0}: subPlan.get(activeInfo.headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName( activeInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "하위 조립체 {0} · {1} — 독립적으로 표시됨"
 
 #. placeholder {0}: openInfo.number
 msgid "Sub-Assembly {0} · {openTitle}"
-msgstr ""
+msgstr "하위 조립체 {0} · {openTitle}"
 
 msgid "Sub-Assembly {number}"
-msgstr ""
+msgstr "하위 조립체 {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "하위 조립품 유효기한만"
@@ -17857,7 +17866,7 @@ msgid "Sync Activity"
 msgstr "동기화 활동"
 
 msgid "sync off"
-msgstr ""
+msgstr "동기화 끄기"
 
 msgid "Sync operation"
 msgstr "동기화 작업"
@@ -18512,7 +18521,7 @@ msgid "The material types you organize your stock by"
 msgstr "재고를 분류하는 자재 유형"
 
 msgid "The model is still loading."
-msgstr ""
+msgstr "모델이 여전히 로드 중입니다."
 
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "귀사 회계연도가 시작되는 월입니다. 기간은 이 월부터 번호가 매겨집니다."
@@ -19154,7 +19163,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
 
 msgid "This price was entered manually, so no pricing rules were applied."
-msgstr ""
+msgstr "이 가격은 수동으로 입력되었으므로 가격 규칙이 적용되지 않았습니다."
 
 msgid "this purchase order"
 msgstr "이 발주서"
@@ -19199,7 +19208,7 @@ msgid "This station runs work with no ability requirement; operators assigned on
 msgstr "이 스테이션은 역량 요구사항이 없는 작업을 실행합니다. 인력 배치 보드에서 할당된 작업자는 가용 노무를 형성합니다."
 
 msgid "This step is part of it"
-msgstr ""
+msgstr "이 단계는 그것의 일부입니다"
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -19464,7 +19473,7 @@ msgid "Tool ID"
 msgstr "공구 ID"
 
 msgid "Tooling Cost"
-msgstr ""
+msgstr "공구 원가"
 
 msgid "tools"
 msgstr "공구"
@@ -19491,7 +19500,7 @@ msgid "Total capitalized cost of the asset (purchase price plus freight, install
 msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 장부가액에 포함되는 기타 비용을 더한 금액)입니다."
 
 msgid "Total Direct Cost"
-msgstr ""
+msgstr "직접 원가 총계"
 
 msgid "Total discount"
 msgstr "총 할인"
@@ -19500,7 +19509,7 @@ msgid "Total Due"
 msgstr "총 미결액"
 
 msgid "Total Estimated Cost"
-msgstr ""
+msgstr "예상 원가 총계"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
@@ -19509,22 +19518,22 @@ msgid "Total Hours"
 msgstr "총 시간"
 
 msgid "Total Indirect Cost"
-msgstr ""
+msgstr "간접 원가 총계"
 
 msgid "Total Material Cost"
-msgstr ""
+msgstr "자재 원가 총계"
 
 msgid "Total Minutes"
 msgstr "총 분"
 
 msgid "Total Outside Cost"
-msgstr ""
+msgstr "외부 원가 총계"
 
 msgid "Total Price"
 msgstr "총 가격"
 
 msgid "Total Profit"
-msgstr ""
+msgstr "총 이익"
 
 msgid "Total quantity"
 msgstr "총 수량"
@@ -19827,10 +19836,10 @@ msgid "Undo"
 msgstr "실행 취소"
 
 msgid "Ungroup"
-msgstr ""
+msgstr "그룹 해제"
 
 msgid "unhealthy"
-msgstr ""
+msgstr "비정상"
 
 msgid "Uninstall"
 msgstr "제거"
@@ -20135,7 +20144,7 @@ msgid "Upload failed. Please try again."
 msgstr "업로드에 실패했습니다. 다시 시도해 주세요."
 
 msgid "Upload new backup…"
-msgstr ""
+msgstr "새로운 백업 업로드…"
 
 msgid "Uploaded model"
 msgstr "업로드된 모델"
@@ -20155,16 +20164,16 @@ msgid "Uploading {fileName}"
 msgstr "{fileName} 업로드 중"
 
 msgid "Uploading backup"
-msgstr ""
+msgstr "백업 업로드 중"
 
 msgid "Uploading model"
-msgstr ""
+msgstr "모델 업로드 중"
 
 msgid "Uploading the backup file"
-msgstr ""
+msgstr "백업 파일 업로드 중"
 
 msgid "Uploading the CAD file"
-msgstr ""
+msgstr "CAD 파일 업로드 중"
 
 msgid "Uploading..."
 msgstr "업로드 중..."
@@ -20206,7 +20215,7 @@ msgid "Use a different email"
 msgstr "다른 이메일 사용"
 
 msgid "Use a finished sub-assembly in this step"
-msgstr ""
+msgstr "이 단계에서 완성된 하위 조립체 사용"
 
 msgid "Use Current View"
 msgstr "현재 보기 사용"
@@ -20215,17 +20224,17 @@ msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법 시스템 사용"
 
 msgid "Use Sub-Assembly"
-msgstr ""
+msgstr "하위 조립체 사용"
 
 msgid "Used in"
-msgstr ""
+msgstr "사용 위치"
 
 msgid "Used In"
 msgstr "사용처"
 
 #. placeholder {0}: subPlan.get(usedIn)?.number ?? ""
 msgid "Used in {0} — moves here"
-msgstr ""
+msgstr "{0}에서 사용됨 — 여기로 이동"
 
 msgid "Used in the navigation and on documents like sales orders"
 msgstr "네비게이션과 수주 같은 문서에 사용됩니다"
@@ -20234,7 +20243,7 @@ msgid "Used in the navigation in dark mode"
 msgstr "다크 모드의 내비게이션에서 사용됩니다"
 
 msgid "Used in this step"
-msgstr ""
+msgstr "이 단계에서 사용됨"
 
 msgid "Used on the home screen and digital quotes"
 msgstr "홈 화면과 디지털 견적에서 사용됩니다"
@@ -20289,17 +20298,17 @@ msgstr "업데이트할 사용자"
 
 #. placeholder {0}: use.number
 msgid "Uses {0}"
-msgstr ""
+msgstr "{0}을 사용"
 
 #. placeholder {0}: subPlan.get(headerId)?.number ?? ""
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "{0} · {1}을 사용"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
-msgstr ""
+msgstr "부분조립 {0} · {1}을 사용"
 
 msgid "Valid From"
 msgstr "유효 시작일"
@@ -20540,7 +20549,7 @@ msgid "View Open RFQs"
 msgstr "미결 견적요청 보기"
 
 msgid "View or open"
-msgstr ""
+msgstr "보기 또는 열기"
 
 msgid "View Payables"
 msgstr "매입채무 보기"
@@ -21027,7 +21036,7 @@ msgid "Where goods on this PO are shipped to by default; per-line delivery locat
 msgstr "이 발주서의 물품이 기본적으로 배송되는 위치; 발주서의 라인별 배송 사업장은 직송 및 분할 배송 시나리오에서 이를 재정의합니다."
 
 msgid "Where it goes"
-msgstr ""
+msgstr "어디로 이동"
 
 msgid "Where it lives today"
 msgstr "현재 위치"
@@ -21394,7 +21403,7 @@ msgid "Your account stays safe even if your login is stolen"
 msgstr "로그인이 도난당해도 계정은 안전하게 유지됩니다"
 
 msgid "Your backups"
-msgstr ""
+msgstr "백업"
 
 msgid "Your books and how money flows."
 msgstr "귀사의 장부와 자금 흐름."

@@ -62,6 +62,12 @@ export function useFilters() {
     }
   };
 
+  // The key's value exactly as written in the URL, whatever the operator
+  const getFilterValue = (searchKey: string): string | null => {
+    const filter = urlFiltersParams.find((f) => f.split(":")[0] === searchKey);
+    return filter?.split(":")[2] ?? null;
+  };
+
   const addFilter = (newKey: string, newValue: string, isArray = false) => {
     if (hasFilterKey(newKey)) {
       const filterIndex = getFilterKeyIndex(newKey);
@@ -142,9 +148,9 @@ export function useFilters() {
 
   // Replace the key's filter with a single value in one update (radio
   // semantics for exclusive filters)
-  const setFilter = (key: string, value: string) => {
+  const setFilter = (key: string, value: string, operator = "eq") => {
     const others = urlFiltersParams.filter((f) => f.split(":")[0] !== key);
-    setParams({ filter: others.concat(`${key}:eq:${value}`) });
+    setParams({ filter: others.concat(`${key}:${operator}:${value}`) });
   };
 
   const clearFilters = () => {
@@ -156,6 +162,7 @@ export function useFilters() {
   return {
     clearFilters,
     getFilter,
+    getFilterValue,
     hasFilter,
     hasFilters,
     hasFilterKey,

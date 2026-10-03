@@ -434,6 +434,9 @@ const JobsTable = memo((props: JobsTableProps) => {
           />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -448,6 +451,9 @@ const JobsTable = memo((props: JobsTableProps) => {
           />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
