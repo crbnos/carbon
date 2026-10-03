@@ -1,5 +1,5 @@
 -- Foreign keys for planningAction references (review follow-up on
--- 20260911041811_mrp-planning-actions.sql, which shipped without them).
+-- 20261003203300_mrp-planning-actions.sql, which shipped without them).
 -- All five referenced tables have single-column ("id") primary keys.
 --
 -- ON DELETE CASCADE throughout: a planning action is regenerable MRP output —

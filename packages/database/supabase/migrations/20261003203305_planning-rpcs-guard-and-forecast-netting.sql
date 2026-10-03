@@ -5,13 +5,14 @@
 -- so both must open with assert_company_access (20260925121735). This migration
 -- is the newest definition of each: the guarded body from 20260925121735 with
 -- one change apiece, so the read paths subtract what MRP recorded as consumed
--- (demandProjection."consumedQuantity", 20260911150012).
+-- (demandProjection."consumedQuantity", 20261003203301).
 --
--- It replaces the copies that 20260911150012 used to carry. Those were forked
--- before the guard existed; applied after 20260925121735 (as `db push
--- --include-all` does with an older-timestamped migration) they removed the
--- guard, and applied before it they were overwritten and lost the netting.
--- A function redefined on two branches belongs in ONE migration newer than both.
+-- It replaces the copies that 20261003203301 used to carry. Those were forked
+-- before the guard existed, while that migration was still dated before
+-- 20260925121735: `db push --include-all` would have applied them after it and
+-- removed the guard, and a fresh database would have overwritten them and lost
+-- the netting. A function redefined on two branches belongs in ONE migration
+-- newer than both.
 
 -- ============================================================
 -- 1. get_purchasing_planning: the demandProjection arm nets consumption.

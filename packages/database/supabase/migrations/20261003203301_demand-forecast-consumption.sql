@@ -506,5 +506,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 --    too, but they are NOT defined here: both are also redefined by
 --    20260925121735_rpc-function-guards.sql (assert_company_access), and a copy
 --    in this file either removed that guard or was overwritten by it, depending
---    on apply order. See 20261002192627_planning-rpcs-guard-and-forecast-netting.sql.
+--    on apply order. See 20261003203305_planning-rpcs-guard-and-forecast-netting.sql.
 -- ============================================================
