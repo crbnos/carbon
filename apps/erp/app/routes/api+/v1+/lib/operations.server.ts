@@ -14,6 +14,11 @@ import raw from "../../mcp+/lib/tool-metadata.json";
 
 export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
 
+/** Every table with a `companyId` column, from the generated database types. */
+export const COMPANY_TABLES: ReadonlySet<string> = new Set(
+  (raw as { companyTables?: string[] }).companyTables ?? []
+);
+
 /**
  * Deprecated operation names → the operation that replaced them. An operation's
  * name is derived from the module its service lives in, so moving a function

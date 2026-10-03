@@ -11,6 +11,7 @@
 // here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
 import { ORPCError } from "@orpc/server";
+import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const spies = vi.hoisted(() => ({
@@ -30,6 +31,7 @@ const spies = vi.hoisted(() => ({
   updateJobOperationStatus: vi.fn(),
   getActiveJobOperationsByLocation: vi.fn(),
   getPurchaseLinePivot: vi.fn(),
+  deleteCustomer: vi.fn(),
   upsertPurchaseOrderLine: vi.fn(),
   updateSupplierTax: vi.fn(),
   upsertPurchasingRFQSuppliers: vi.fn(),
@@ -91,6 +93,7 @@ vi.mock("~/modules/sales/sales.service", () => ({
   recalculateQuoteLinePrices: spies.recalculateQuoteLinePrices,
   updateQuoteMaterialOrder: spies.updateQuoteMaterialOrder,
   cancelSalesOrder: spies.cancelSalesOrder,
+  deleteCustomer: spies.deleteCustomer,
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
@@ -202,7 +205,8 @@ const allSpies = [
   spies.replaceInvoiceSettlements,
   spies.applyCreditsToInvoices,
   spies.upsertPurchaseOrderLine,
-  spies.updateSupplierTax
+  spies.updateSupplierTax,
+  spies.deleteCustomer
 ];
 
 beforeEach(() => {
@@ -1604,5 +1608,44 @@ describe("the HTTP spec and the MCP tools are one contract", () => {
       documentType: "not-a-document"
     });
     expect(result.success).toBe(false);
+  });
+});
+
+// Services match the row they write by its id, and a signed-in user's client
+// reaches every company they belong to. The client the dispatcher hands over
+// adds the caller's company to the write.
+describe("a write is confined to the caller's company", () => {
+  it("a service that deletes by id alone cannot reach another company's row", async () => {
+    const queries: URLSearchParams[] = [];
+    const client = createClient("http://localhost:54321", "anon-key", {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        fetch: async (input) => {
+          queries.push(new URL(String(input)).searchParams);
+          return new Response("[]", {
+            status: 200,
+            headers: { "content-type": "application/json" }
+          });
+        }
+      }
+    });
+    // The real service, in miniature: `.delete().eq("id", customerId)`.
+    spies.deleteCustomer.mockImplementation(
+      (handed: typeof client, customerId: string) =>
+        handed.from("customer").delete().eq("id", customerId)
+    );
+
+    const meta = operationsByName.get("sales_deleteCustomer");
+    if (!meta)
+      throw new Error("sales_deleteCustomer missing from the manifest");
+    await dispatchOperation(
+      meta,
+      { ...ctx, client: client as unknown as AuthedContext["client"] },
+      { customerId: "customer-of-company-b" }
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.get("id")).toBe("eq.customer-of-company-b");
+    expect(queries[0]?.get("companyId")).toBe("eq.c1");
   });
 });

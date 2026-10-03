@@ -16,6 +16,8 @@ import type { AuthField, ContextSource, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import { scopedToCompany } from "./company-scope.server";
+import { COMPANY_TABLES } from "./operations.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
@@ -207,7 +209,7 @@ function isContextParam(meta: ManifestEntry, paramName: string): boolean {
 function contextValue(source: ContextSource, context: AuthedContext): unknown {
   switch (source) {
     case "client":
-      return context.client;
+      return scopedToCompany(context.client, context.companyId, COMPANY_TABLES);
     case "db":
       return getDatabaseClient();
     case "userId":

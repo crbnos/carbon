@@ -591,6 +591,22 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   destructure it out before the row is written, as `upsertPurchaseOrder` does.
   `@mcp audit` replaces all of that for intent the schema cannot express.
 
+- **A write is confined to the caller's company, whatever the service filters
+  on.** The `client` a service is handed is `scopedToCompany(context.client, …)`
+  (`api+/v1+/lib/company-scope.server.ts`): every `.update()` and `.delete()` on
+  a table with a `companyId` column also gets `.eq("companyId", <caller's>)`.
+  Services match the row they write by its id, and a signed-in user's client
+  reaches every company they belong to, so an id from the user's other company
+  used to match — and because the dispatcher stamps the active `companyId` into
+  the payload, an update that spread it moved the row. With the filter a write
+  can only match a row already in the caller's company. The table list is
+  `companyTables` in `tool-metadata.json`, read from the generated database
+  types (`getDbTablesWithColumn`); generation fails if it comes back short.
+  Reads, inserts, RPCs and storage pass through; a Kysely `db` is not wrapped
+  (it is covered by the `no-unscoped-kysely-write` check). Pinned against real
+  request URLs in `company-scope.test.ts` and end to end in
+  `dispatch-parity.test.ts`.
+
 - **An argument is never published blank unless it is.** The input schema is
   built from the signature's text and the validators. What neither resolves — a
   named row type, a `ReturnType<…>`, an enum from another module — used to come
