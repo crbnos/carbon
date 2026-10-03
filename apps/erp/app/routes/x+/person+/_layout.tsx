@@ -12,6 +12,8 @@ import type {
 } from "react-router";
 import { Outlet } from "react-router";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | People" }];
 };

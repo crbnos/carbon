@@ -23,7 +23,7 @@ Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurre
   - codemod every `redirect` import; delete `safeRedirect`
   - `@carbon/checks` rule: no `redirect` import from `react-router`
 - [x] 5. Redirect fixes: magic link, already-signed-in, dev bypass, verify, company switchers
-- [ ] 6. Error boundaries on the `x+` layouts so a failed loader keeps the shell
+- [x] 6. Error boundaries on the `x+` layouts so a failed loader keeps the shell
 - [x] 7. Client state: client-only nanostores → zustand; jotai (tiptap) → zustand
 - [ ] 8. Shared ERP/MES code
   - auth routes (login, callback, mfa, unlock, refresh-session) → `@carbon/auth`

@@ -55,6 +55,8 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Get Started" }];
 };
