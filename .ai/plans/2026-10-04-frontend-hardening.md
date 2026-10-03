@@ -1,0 +1,40 @@
+# Frontend hardening — 2026-10-04
+
+Branch `refactor/frontend-hardening`, one commit per piece, nothing pushed without approval.
+Out of scope (separate session): the TanStack Query caching layer (`cachedClientLoader`,
+root invalidation middleware, `useLoaderQuery`/`useAction`) and the realtime list provider
+rebuild that depends on it.
+
+Verification per piece: `pnpm exec turbo run typecheck --filter=<pkg> --concurrency=1`
+(one filter at a time), `pnpm exec biome check <paths>`, scoped tests where they exist.
+
+## Pieces
+
+- [x] 1. `framer-motion` → `motion` (imports, catalog, unused deps in starter/tiptap)
+- [x] 2. Motion + UI polish in shared components
+  - button press scale 0.98, page overscroll off
+  - `Modal` broken exit class, `Drawer` exit animation + overlay blur
+  - popovers scale from their trigger; tooltips share one provider
+  - reduced motion: `MotionConfig reducedMotion="user"` + global CSS rule
+  - summary-card `y: 50` entrance, `scale: 0`, `ease-in`, BoM/BoP row durations
+- [x] 3. Accessibility: pinch-zoom, dialog titles, combobox ARIA state
+- [x] 4. Redirects safe by default
+  - `redirect` / `redirectExternal` / `safePath` in `@carbon/utils`; home-page fallback
+  - codemod every `redirect` import; delete `safeRedirect`
+  - `@carbon/checks` rule: no `redirect` import from `react-router`
+- [x] 5. Redirect fixes: magic link, already-signed-in, dev bypass, verify, company switchers
+- [ ] 6. Error boundaries on the `x+` layouts so a failed loader keeps the shell
+- [ ] 7. Client state: client-only nanostores → zustand; jotai (tiptap) → zustand
+- [ ] 8. Shared ERP/MES code
+  - auth routes (login, callback, mfa, unlock, refresh-session) → `@carbon/auth`
+  - identical hooks and small components → `@carbon/auth` / `@carbon/react`
+  - `@carbon/checks` rule: no same-named file under both apps' components/hooks
+- [ ] 9. Route modals close to their parent route instead of `navigate(-1)`
+- [ ] 10. Small leftovers: unused Radix deps, `h-dvh` in MES, lazy images, `@ts-ignore` → `@ts-expect-error`
+
+## Needs its own plan (not in this branch)
+
+- Bill of process / bill of material / make-method-tools triplication
+- `Table` boolean flags → composed toolbar
+- Filter components (71% overlap — reconcile before sharing)
+- `root` / `entry.*` bootstrap sharing

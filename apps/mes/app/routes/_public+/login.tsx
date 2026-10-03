@@ -9,6 +9,7 @@ import {
   carbonClient,
   error,
   getMESUrl,
+  getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
   RATE_LIMIT
@@ -76,7 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
   if (authSession) {
     if (await verifyAuthSession(authSession)) {
-      throw redirect(path.to.authenticatedRoot);
+      throw redirect(getRedirectTo(request));
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
@@ -125,7 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, botToken } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
 
   const botError = await verifyBotProtection({
     token: botToken,
@@ -174,7 +175,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await lockout.reset(email);
       logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
       const sessionCookie = await setAuthSession(request, { authSession });
-      return redirect(path.to.authenticatedRoot, {
+      return redirect(redirectTo || path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
       });
     }
@@ -211,7 +212,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, getMESUrl());
+    const magicLink = await sendMagicLink(email, getMESUrl(), redirectTo);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
