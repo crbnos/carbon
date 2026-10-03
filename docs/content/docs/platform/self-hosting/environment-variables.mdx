@@ -65,6 +65,12 @@ Outside Vercel, set both `CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTI
 `INNGEST_SIGNING_KEY` and `INNGEST_EVENT_KEY` are optional only when `INNGEST_DEV=1`. In other environments, the application does not start if either is missing. A self-hosted Inngest server supplies both; the Docker with Caddy recipe generates them.
 </Callout>
 
+The database also sends events to Inngest directly, for the event queue, search embeddings and job notifications. On startup the ERP stores the address for that (built from `INNGEST_EVENT_KEY` and `INNGEST_BASE_URL`) in the database, so no extra step is needed. The database must be able to reach that address. If it uses a different one from the application, set it by hand:
+
+```sql
+SELECT public.set_inngest_event_url('https://inngest.example.com/e/<event key>');
+```
+
 ## Email & billing
 
 <EnvVars>

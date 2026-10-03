@@ -26,6 +26,7 @@
     "./json": "./src/json.ts",
     "./price-trace": "./src/price-trace.ts",
     "./rows": "./src/rows.ts",
+    "./inngest-event-url": "./src/inngest-event-url.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
