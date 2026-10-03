@@ -222,15 +222,12 @@ async function migrate(): Promise<void> {
       }
 
       // Postgres posts its Inngest events (util.send_inngest_event) to this
-      // URL; written every deploy so a rotated event key reaches the database.
-      // Without it the event queue, embeddings and job notifications never
-      // run, so a gap fails the run — after seeding and scripts, which do not
-      // depend on it.
+      // URL. The app also writes it on boot from its own INNGEST_EVENT_KEY, so
+      // a workspace with no key here is wired by its first instance instead.
       if (!workspace.inngest_event_key || !service_role_key) {
-        console.error(
-          `🔴 📨 ${workspace.id} has no Inngest event key or service role key: database events will not be delivered`
+        console.log(
+          `⏭️  📨 ${workspace.id} has no Inngest event key here: the app sets the database's event URL on boot`
         );
-        hasErrors = true;
       } else {
         const eventUrl = new URL(
           `e/${workspace.inngest_event_key}`,
