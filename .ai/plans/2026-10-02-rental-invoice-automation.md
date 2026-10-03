@@ -1,5 +1,7 @@
 # Rental Invoice Automation — implementation plan
 
+> Shared layer (2026-10-02): the automation built here is source-agnostic (`invoiceAutomation`, `packages/jobs/src/invoicing/`, `recurring-billing`, "Recurring invoicing" digest) so AR contracts (`.ai/specs/2026-10-02-contracts.md`) reuse it. Scope is unchanged: rentals only, no Stripe mode.
+
 **Spec:** .ai/specs/2026-10-02-rental-invoice-automation.md
 **Research:** .ai/research/rental-invoice-automation.md
 **Branch:** revenue-recognition-rentals-spec (rentals are not on `main` yet; this builds on them)
@@ -12,11 +14,11 @@ These refine the spec where the code facts gathered for this plan disagreed with
 2. **`checkPartyContactRequirement` moves to `@carbon/lib`, not `@carbon/database` or `@carbon/ee`.** `@carbon/database` lacks `@carbon/logger` and has `@supabase/supabase-js` only as a devDep. `packages/ee` is commercially licensed, and moving AGPL logic there changes its license. `@carbon/lib` already depends on `@carbon/logger`, `@supabase/supabase-js` and `@carbon/database`, and both ERP and jobs depend on it. Its pure sibling `party-contact.ts` moves with it. The ERP files become re-exports, so the six existing callers don't change.
 3. **The shared sales-invoice document loader lives in `@carbon/lib` (`./sales-invoice-document.server`), not `@carbon/documents`.** `@carbon/documents` has no supabase or files runtime deps and no loader precedent. `@carbon/lib` gains workspace deps on `@carbon/documents` and `@react-pdf/renderer` (same version as `packages/jobs`). This is not a cycle: `@carbon/documents` depends on `env`, `notifications`, `react` and `utils`, not `lib`.
 4. **"Needs review" is a derived boolean on the `salesInvoices` view (`needsReview`) plus a sidebar link** `Receivables → Needs Review` (`?filter=needsReview:eq:true`). Saved views are per user (`tableView.createdBy`), and the generic filter syntax can't express the spec's OR.
-5. **"Send" on a posted invoice with `sendError` is a new action route `x+/sales-invoice+/$invoiceId.send.tsx`.** It fires `carbon/rental-invoice.automate` with `mode: "Post and Email"`. `automateRentalInvoice` skips posting an already-Submitted invoice, then emails it. There is no send-only path in `SalesInvoicePostModal` to reuse.
-6. **The event carries an optional `mode`.** When absent, the function resolves the effective mode from the invoice's agreement (`salesInvoiceLine.rentalAgreementId` → `rentalAgreement.invoiceAutomation ?? companySettings.rentalInvoiceAutomation`).
+5. **"Send" on a posted invoice with `sendError` is a new action route `x+/sales-invoice+/$invoiceId.send.tsx`.** It fires `carbon/invoice.automate` with `mode: "Post and Email"`. `automateSalesInvoice` skips posting an already-Submitted invoice, then emails it. There is no send-only path in `SalesInvoicePostModal` to reuse.
+6. **The event carries an optional `mode`.** When absent, the function resolves the effective mode from the invoice's agreement (`salesInvoiceLine.rentalAgreementId` → `rentalAgreement.invoiceAutomation ?? companySettings.invoiceAutomation`).
 7. **The split and hold decision is a pure function in its own file**, `packages/database/src/rental-invoice-plan.ts`, tested with vitest. The existing `shared/rental-billing.test.ts` runs under Deno only.
 8. **Re-billing after a VOID is always held (user, 2026-10-02).** VOID returns a rental invoice's periods and charges to Pending (`post-sales-invoice/index.ts:1704-1715`). With automation on, the next morning's run would redraft and re-post — and email — the same amounts, since an Active agreement's rates are locked. VOID now stamps `voidedSalesInvoiceId` on each released row. The planner holds any rent invoice containing such a row with "Re-billing INV-…, which was voided"; charges are held anyway. The stamp is sticky: deleting the held draft (`releaseRentalInvoiceStamps`) leaves it, so the next draft is held again. A later VOID overwrites it. `Draft Only` agreements get no hold, since nothing is automated.
-9. **Notifications reach an internal person with no setup (user, 2026-10-02: "a good default should be automatic invoices with notifications to the internal person").** The spec's D16 sent nothing when `rentalInvoiceNotificationGroup` was empty, so out of the box nobody heard about anything. Now every cron run sends each agreement's internal owner — `rentalAgreement.salesPersonId ?? createdBy` — one digest covering their agreements' invoices: posted, emailed, held, unsent. The settings group becomes **Also notify**: those people get the company-wide digest on top. An owner listed directly in the group (by user id) gets only the company digest, never both. The default mode stays `Post and Email`.
+9. **Notifications reach an internal person with no setup (user, 2026-10-02: "a good default should be automatic invoices with notifications to the internal person").** The spec's D16 sent nothing when `invoiceNotificationGroup` was empty, so out of the box nobody heard about anything. Now every cron run sends each agreement's internal owner — `rentalAgreement.salesPersonId ?? createdBy` — one digest covering their agreements' invoices: posted, emailed, held, unsent. The settings group becomes **Also notify**: those people get the company-wide digest on top. An owner listed directly in the group (by user id) gets only the company digest, never both. The default mode stays `Post and Email`.
 
 ## Progress
 
@@ -29,9 +31,9 @@ These refine the spec where the code facts gathered for this plan disagreed with
 - [ ] Task 6: Move the party-contact check to `@carbon/lib`
 - [ ] Task 7: Shared sales-invoice document loader in `@carbon/lib`; PDF route uses it
 - [ ] Task 8: Event type + trigger map entry
-- [ ] Task 9: `automateRentalInvoice` + tests
+- [ ] Task 9: `automateSalesInvoice` + tests
 - [ ] Task 10: Inngest wiring — automate function, cron steps, digest
-- [ ] Task 11: `RentalInvoicing` notification event
+- [ ] Task 11: `RecurringInvoicing` notification event
 - [ ] Task 12: Manual post route — shared PDF, storage path fix, sent stamps
 - [ ] Task 13: Settings models/services + Settings → Invoicing page (moving two cards)
 - [ ] Task 14: Agreement override — model, service, update route, properties field
@@ -90,16 +92,16 @@ pnpm --filter @carbon/jobs test && pnpm --filter @carbon/database test && pnpm -
 2. Write:
 ```sql
 DO $$ BEGIN
-  CREATE TYPE "rentalInvoiceAutomation" AS ENUM ('Draft Only', 'Post', 'Post and Email');
+  CREATE TYPE "invoiceAutomation" AS ENUM ('Draft Only', 'Post', 'Post and Email');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 ALTER TABLE "companySettings"
-  ADD COLUMN IF NOT EXISTS "rentalInvoiceAutomation" "rentalInvoiceAutomation" NOT NULL DEFAULT 'Post and Email',
-  ADD COLUMN IF NOT EXISTS "rentalInvoiceNotificationGroup" TEXT[] NOT NULL DEFAULT '{}';
+  ADD COLUMN IF NOT EXISTS "invoiceAutomation" "invoiceAutomation" NOT NULL DEFAULT 'Post and Email',
+  ADD COLUMN IF NOT EXISTS "invoiceNotificationGroup" TEXT[] NOT NULL DEFAULT '{}';
 
 -- NULL = the company default
 ALTER TABLE "rentalAgreement"
-  ADD COLUMN IF NOT EXISTS "invoiceAutomation" "rentalInvoiceAutomation";
+  ADD COLUMN IF NOT EXISTS "invoiceAutomation" "invoiceAutomation";
 
 -- The last invoice this row was billed on that was VOIDED. Set by post-sales-invoice's
 -- void step; the rental invoice planner holds a re-bill. No FK, like salesInvoiceLineId.
@@ -114,7 +116,7 @@ ALTER TABLE "salesInvoice"
   ADD COLUMN IF NOT EXISTS "sentTo" TEXT,
   ADD COLUMN IF NOT EXISTS "sendError" TEXT;
 ```
-3. Recreate `rentalAgreements`. Copy `20260923003525_rental-agreements.sql:320-347` VERBATIM (its `DROP VIEW IF EXISTS` + `CREATE VIEW … WITH(SECURITY_INVOKER=true)` selecting `ra.*`), with one change: add `COALESCE(ra."invoiceAutomation", cs."rentalInvoiceAutomation") AS "effectiveInvoiceAutomation"` to the select list and `LEFT JOIN "companySettings" cs ON cs."id" = ra."companyId"` to the FROM. First `grep -rn '"rentalAgreements"' packages/database/supabase/migrations` and confirm no migration newer than `20260923003525` redefines it. If one does, copy THAT body instead.
+3. Recreate `rentalAgreements`. Copy `20260923003525_rental-agreements.sql:320-347` VERBATIM (its `DROP VIEW IF EXISTS` + `CREATE VIEW … WITH(SECURITY_INVOKER=true)` selecting `ra.*`), with one change: add `COALESCE(ra."invoiceAutomation", cs."invoiceAutomation") AS "effectiveInvoiceAutomation"` to the select list and `LEFT JOIN "companySettings" cs ON cs."id" = ra."companyId"` to the FROM. First `grep -rn '"rentalAgreements"' packages/database/supabase/migrations` and confirm no migration newer than `20260923003525` redefines it. If one does, copy THAT body instead.
 4. Recreate `salesInvoices`. `grep -rln 'VIEW "salesInvoices"' packages/database/supabase/migrations | sort | tail -1` must be `20260916143022_invoice-settlement-source-amount-fallback.sql`; if not, copy the newest. Copy its full `CREATE OR REPLACE VIEW "salesInvoices"` statement and APPEND, after the last column (`si."status" AS "baseStatus"`):
 ```sql
   , si."automationHoldReason"
@@ -131,7 +133,7 @@ ALTER TABLE "salesInvoice"
 
 **Verify:**
 ```bash
-grep -c "rentalInvoiceAutomation" packages/database/supabase/migrations/*_rental-invoice-automation.sql
+grep -c "invoiceAutomation" packages/database/supabase/migrations/*_rental-invoice-automation.sql
 # Expected: >= 4
 grep -n "000000_" <(ls packages/database/supabase/migrations | tail -1)
 # Expected: no output
@@ -153,7 +155,7 @@ grep -n "000000_" <(ls packages/database/supabase/migrations | tail -1)
 
 **Verify:**
 ```bash
-grep -c "rentalInvoiceAutomation" packages/database/src/types.ts
+grep -c "invoiceAutomation" packages/database/src/types.ts
 # Expected: >= 3 (enum + companySettings + rentalAgreement)
 grep -n "needsReview\|effectiveInvoiceAutomation" packages/database/src/types.ts | head
 # Expected: both names present
@@ -184,7 +186,7 @@ pnpm db:check:backups
 ```ts
 import type { Database } from "./types";
 
-export type RentalInvoiceAutomation = Database["public"]["Enums"]["rentalInvoiceAutomation"];
+export type InvoiceAutomation = Database["public"]["Enums"]["invoiceAutomation"];
 
 export const RENTAL_HOLD_CHARGES = "Charges are reviewed before posting";
 export const RENTAL_HOLD_EARLY_RETURN = "Includes an early-return credit";
@@ -205,12 +207,12 @@ export type PlannedInvoice<T> = { lines: T[]; holdReason: string | null; role: "
  *  Otherwise → a rent invoice and a charges invoice (Charge + Purchase Option, always held).
  *  Rent hold precedence: re-bill of a voided invoice (rentalHoldRebill) > early-return adjustment.
  *  Empty invoices are omitted. */
-export function planRentalInvoices<T>(mode: RentalInvoiceAutomation, lines: PlannableLine<T>[]): PlannedInvoice<T>[]
+export function planRentalInvoices<T>(mode: InvoiceAutomation, lines: PlannableLine<T>[]): PlannedInvoice<T>[]
 
 /** The mode in force for an agreement. */
-export function effectiveRentalInvoiceAutomation(
-  agreementMode: RentalInvoiceAutomation | null, companyMode: RentalInvoiceAutomation
-): RentalInvoiceAutomation
+export function effectiveInvoiceAutomation(
+  agreementMode: InvoiceAutomation | null, companyMode: InvoiceAutomation
+): InvoiceAutomation
 ```
    Line order inside each invoice is the input order.
 3. Tests (each a separate `it`):
@@ -223,7 +225,7 @@ export function effectiveRentalInvoiceAutomation(
    - Post with a re-billed rent row AND an adjustment row → the re-bill message wins.
    - Draft Only with a re-billed row → 1 combined invoice, holdReason null.
    - Empty input → `[]` in every mode.
-   - `effectiveRentalInvoiceAutomation(null, "Post")` is `"Post"`; `("Draft Only", "Post and Email")` is `"Draft Only"`.
+   - `effectiveInvoiceAutomation(null, "Post")` is `"Post"`; `("Draft Only", "Post and Email")` is `"Draft Only"`.
 
 **Verify:**
 ```bash
@@ -249,11 +251,11 @@ pnpm --filter @carbon/database test -- rental-invoice-plan
 ```ts
 export type DraftedRentalInvoice = {
   invoiceId: string; rentalAgreementId: string;
-  mode: RentalInvoiceAutomation; holdReason: string | null;
+  mode: InvoiceAutomation; holdReason: string | null;
 };
 Promise<{ invoices: DraftedRentalInvoice[]; invoiceIds: string[] }>  // invoiceIds = invoices.map(i => i.invoiceId), kept for callers
 ```
-2. In `draftAgreementInvoice` (114-340): read the company mode once per agreement inside the transaction, with `selectFrom("companySettings").select("rentalInvoiceAutomation").where("id","=",args.companyId).executeTakeFirstOrThrow()` right after the agreement `forUpdate` read (121-128). Compute `mode = effectiveRentalInvoiceAutomation(agreement.invoiceAutomation, company.rentalInvoiceAutomation)`.
+2. In `draftAgreementInvoice` (114-340): read the company mode once per agreement inside the transaction, with `selectFrom("companySettings").select("invoiceAutomation").where("id","=",args.companyId).executeTakeFirstOrThrow()` right after the agreement `forUpdate` read (121-128). Compute `mode = effectiveInvoiceAutomation(agreement.invoiceAutomation, company.invoiceAutomation)`.
 3. Add `voidedSalesInvoiceId` to the period select (142-175) and the charge select (177-198). Read the readable ids in ONE query (`selectFrom("salesInvoice").select(["id","invoiceId"]).where("companyId","=",…).where("id","in",distinctIds)`, skipped when there are none; no per-row query). Build the `lines` array exactly as today (214-240), carrying each line's `kind`, the period's `isAdjustment` and `voidedInvoiceReadableId` (the readable id, else the raw id if the invoice row is gone). Call `planRentalInvoices(mode, lines.map(l => ({ item: l, kind: l.kind, isAdjustment: l.isAdjustment ?? false, voidedInvoiceReadableId: l.voidedInvoiceReadableId })))`.
 4. Extract the existing per-invoice block (subtotal/tax 242-245, `getNextSequence` 247, invoice insert 252-275, shipment insert 277-286, line insert 288-307, period stamp 310-323, charge stamp 325-337) into `insertRentalInvoice(trx, args, agreement, lines, holdReason)`, returning the invoice id. Insert `automationHoldReason: holdReason` on the `salesInvoice` row. Call it once per planned invoice. The function now returns `DraftedRentalInvoice[]` (empty when nothing is due). The stamping is already scoped by `sil.invoiceId`, so it stays correct per invoice.
 5. Update the three callers to the new shape (`invoiceIds` still exists, so `$id.invoice.tsx`'s counts keep working; the cron logs `invoices.length`).
@@ -379,7 +381,7 @@ Manual: Task 21 opens an invoice PDF and compares it with one rendered before th
 **Steps:**
 1. Events:
 ```ts
-  "carbon/rental-invoice.automate": {
+  "carbon/invoice.automate": {
     data: {
       companyId: string;
       invoiceId: string;
@@ -388,7 +390,7 @@ Manual: Task 21 opens an invoice PDF and compares it with one rendered before th
     };
   };
 ```
-2. `taskToEvent`: `"rental-invoice-automate": "carbon/rental-invoice.automate",`.
+2. `taskToEvent`: `"invoice-automate": "carbon/invoice.automate",`.
 
 **Verify:**
 ```bash
@@ -400,12 +402,12 @@ pnpm exec turbo run typecheck --filter=@carbon/lib --filter=@carbon/jobs
 
 ---
 
-## Task 9: `automateRentalInvoice` + tests
+## Task 9: `automateSalesInvoice` + tests
 
 **Depends on:** 5, 6, 7, 8
 **Files:**
-- Create: `packages/jobs/src/rentals/automate-invoice.ts`
-- Create: `packages/jobs/src/rentals/automate-invoice.test.ts`
+- Create: `packages/jobs/src/invoicing/automate-invoice.ts`
+- Create: `packages/jobs/src/invoicing/automate-invoice.test.ts`
 - Copy from (precedent): `packages/jobs/src/inngest/functions/integrations/ramp-sync-bill.ts:153-221` (claim/invoke/read-back) and `ramp-sync-bill.test.ts:11-58` (fake client fixture)
 
 **Steps:**
@@ -417,7 +419,7 @@ export type AutomationOutcome =
   | { outcome: "posted"; emailed: false; sendError: string | null }
   | { outcome: "posted"; emailed: true; sentTo: string };
 
-export async function postRentalInvoice(args: {
+export async function postSalesInvoiceUnattended(args: {
   client: SupabaseClient<Database>; companyId: string; invoiceId: string;
 }): Promise<{ outcome: "skipped" | "held" | "posted"; reason?: string }>
 
@@ -425,10 +427,10 @@ export async function emailPostedInvoice(args: {
   client: SupabaseClient<Database>; companyId: string; companyGroupId: string; invoiceId: string;
 }): Promise<{ emailed: boolean; sentTo?: string; sendError?: string }>
 
-export async function resolveInvoiceAutomation(client, companyId, invoiceId): Promise<RentalInvoiceAutomation | null>
+export async function resolveInvoiceAutomation(client, companyId, invoiceId): Promise<InvoiceAutomation | null>
 // reads the invoice's rental agreement (first salesInvoiceLine.rentalAgreementId) → rentalAgreements.effectiveInvoiceAutomation; null when not a rental invoice
 ```
-2. `postRentalInvoice`, in order:
+2. `postSalesInvoiceUnattended`, in order:
    1. Read `salesInvoice` (`status, automationHoldReason, customerId, invoiceCustomerId, invoiceCustomerContactId, invoiceCustomerLocationId, opportunityId`) scoped by `companyId`, `maybeSingle`. Missing → `skipped`. Already `Submitted` (or any posted status) → `posted` (idempotent retry). Not Draft → `skipped`. `automationHoldReason` set → `held` with that reason.
    2. `checkPartyContactRequirement(client, companyId, { kind: "customer", id: invoiceCustomerId ?? customerId })` from `@carbon/lib/party-contact.server`. Copy the argument shape from `$invoiceId.post.tsx:523-549`; if that route passes contact/location ids in a different shape, mirror it exactly. A non-null message → write `automationHoldReason` = message → `held`.
    3. `evaluateSalesRulesForSalesDocument({ client, companyId, userId: "system", documentType: "salesInvoice", documentId: invoiceId })` from `@carbon/ee/rules.server`, then `dedupeViolations`. Any violation → hold reason `Sales rule: ${messages.join("; ")}` → `held`. A thrown error → hold reason `Sales rule evaluation failed: <message>` → `held`. If importing `@carbon/ee/rules.server` fails to load in the vitest environment, mock it in the test with `vi.mock`; if it fails to TYPECHECK from `@carbon/jobs`, STOP and report.
@@ -441,7 +443,7 @@ export async function resolveInvoiceAutomation(client, companyId, invoiceId): Pr
    3. `loadSalesInvoiceDocument({ … locale: "en-US", storageUrl: SUPABASE_INTERNAL_URL })` (`@carbon/env`, as `print-job/renderers.tsx:124`) and `renderSalesInvoicePdf`.
    4. Upload to `${companyId}/${opportunityId ? `opportunity/${opportunityId}` : `sales-invoice/${invoiceId}`}/${fileName}` with `storage(client).company(companyId).upload(path, buffer, { contentType: "application/pdf", upsert: true })`. Insert a `document` row with the same fields as ERP `upsertDocument`'s insert branch (`apps/erp/app/modules/documents/documents.service.ts:178`): `path, name, size (KB, rounded), sourceDocument: "Sales Invoice", sourceDocumentId, readGroups/writeGroups: [createdBy], createdBy: "system", companyId, type`. If `type` comes from a helper (`getDocumentType`) that isn't in a package jobs can import, STOP and report.
    5. Render `SalesInvoiceEmail` (`@carbon/documents/email`) with `renderAsync` (html + plain text, as `$invoiceId.post.tsx`), recipient = the contact, sender = `{ firstName: company.name, lastName: "", email: replyTo }`.
-   6. Reply-To = `companySettings.accountsReceivableEmail`, else the agreement creator's `user.email` (the invoice's `rentalAgreementId` → `rentalAgreement.createdBy` → `user.email`). From = `` `"${company.name}" <${address}>` `` where `address` is the `<…>` part of `DEFAULT_FROM` (or all of it when there are no brackets). CC = `customer.defaultCc` if non-empty, else `companySettings.defaultCustomerCc`, plus the receivables email when set, de-duplicated. Subject: `` `Invoice ${invoiceId} from ${company.name}` ``. Attachment: `{ filename: fileName, content: buffer.toString("base64") }`. Confirm against `email.server.ts:121-125` that `content` is expected base64; if it expects raw, adapt.
+   6. Reply-To = `companySettings.accountsReceivableEmail`, else the agreement owner's `user.email` (the invoice's `rentalAgreementId` → `rentalAgreement.salesPersonId ?? createdBy` → `user.email`). From = `` `"${company.name}" <${address}>` `` where `address` is the `<…>` part of `DEFAULT_FROM` (or all of it when there are no brackets). CC = `customer.defaultCc` if non-empty, else `companySettings.defaultCustomerCc`, plus the receivables email when set, de-duplicated. Subject: `` `Invoice ${invoiceId} from ${company.name}` ``. Attachment: `{ filename: fileName, content: buffer.toString("base64") }`. Confirm against `email.server.ts:121-125` that `content` is expected base64; if it expects raw, adapt.
    7. `sendEmail(...)` from `@carbon/lib/email.server`. Error → `update({ sendError: error.message })`. Success → `update({ sentAt: now, sentTo: [to, ...cc].join(", "), sendError: null })`. Use the timestamp helper the codebase uses (`datetime.timestamp()` from `@carbon/utils`, as `updateRentalAgreement`); no JS `Date`.
 4. Tests (fake client in the style of `ramp-sync-bill.test.ts`; `vi.mock` `@carbon/ee/rules.server`, `@carbon/lib/party-contact.server`, `@carbon/lib/sales-invoice-document.server`, `@carbon/lib/email.server`, `@carbon/lib/workflows`):
    - Draft, no rules, invoke → Submitted ⇒ `posted`, the moment is raised once.
@@ -473,66 +475,66 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs
 
 **Depends on:** 9, 11
 **Files:**
-- Create: `packages/jobs/src/inngest/functions/tasks/rental-invoice-automate.ts`
+- Create: `packages/jobs/src/inngest/functions/tasks/invoice-automate.ts`
 - Modify: `packages/jobs/src/inngest/functions/tasks/index.ts` — export it
 - Modify: `packages/jobs/src/inngest/index.ts` — import (~81-103) and add to the `// Tasks` section of the `functions` array (~130-151)
-- Modify: `packages/jobs/src/inngest/functions/scheduled/rental-billing.ts`
-- Create: `packages/jobs/src/rentals/digest.ts` + `digest.test.ts`
+- Rename: `packages/jobs/src/inngest/functions/scheduled/rental-billing.ts` → `scheduled/recurring-billing.ts` (`git mv`; function id and export `recurring-billing` / `recurringBillingFunction`; update the import and `functions` array in `packages/jobs/src/inngest/index.ts` and any test or doc naming it). One daily job drafts every recurring source — rental agreements now, contracts later (`.ai/specs/2026-10-02-contracts.md`, U4)
+- Create: `packages/jobs/src/invoicing/digest.ts` + `digest.test.ts`
 - Copy from (precedent): `functions/tasks/post-transaction.ts:8-11` (event function), `company-import.ts:50` (concurrency), `scheduled/schedule-inputs-changed.ts:374-384` (digest `step.sendEvent`)
 
 **Steps:**
 1. The task function:
 ```ts
-export const rentalInvoiceAutomateFunction = inngest.createFunction(
-  { id: "rental-invoice-automate", retries: 2, concurrency: { key: "event.data.invoiceId", limit: 1 } },
-  { event: "carbon/rental-invoice.automate" },
+export const invoiceAutomateFunction = inngest.createFunction(
+  { id: "invoice-automate", retries: 2, concurrency: { key: "event.data.invoiceId", limit: 1 } },
+  { event: "carbon/invoice.automate" },
   async ({ event, step }) => { … }
 );
 ```
-   Body: `mode = event.data.mode ?? (await step.run("resolve-mode", () => resolveInvoiceAutomation(...)))`. Null or `Draft Only` → return. `step.run("post", () => postRentalInvoice(...))`. If posted and `mode === "Post and Email"`: `step.run("email", () => emailPostedInvoice(...))`. `companyGroupId` is read from `company.companyGroupId` inside the email step.
-2. The cron (`scheduled/rental-billing.ts`): per company, keep the draft step (it now returns `invoices`). Then, for each invoice with `mode !== "Draft Only"` and `holdReason === null`, run `step.run(\`post-${invoiceId}\`)` and, when posted and `Post and Email`, `step.run(\`email-${invoiceId}\`)`, calling the same two functions. Collect `{ posted, emailed, held: invoiceIds[], unsent: invoiceIds[] }`. Pre-held invoices (from the planner) count as held. Replace the comment at :56 with: "Drafts, then posts and emails per the agreement's invoice automation (spec 2026-10-02-rental-invoice-automation)."
+   Body: `mode = event.data.mode ?? (await step.run("resolve-mode", () => resolveInvoiceAutomation(...)))`. Null or `Draft Only` → return. `step.run("post", () => postSalesInvoiceUnattended(...))`. If posted and `mode === "Post and Email"`: `step.run("email", () => emailPostedInvoice(...))`. `companyGroupId` is read from `company.companyGroupId` inside the email step.
+2. The cron (`scheduled/recurring-billing.ts`, renamed above): per company, keep the draft step (it now returns `invoices`). Then, for each invoice with `mode !== "Draft Only"` and `holdReason === null`, run `step.run(\`post-${invoiceId}\`)` and, when posted and `Post and Email`, `step.run(\`email-${invoiceId}\`)`, calling the same two functions. Collect `{ posted, emailed, held: invoiceIds[], unsent: invoiceIds[] }`. Pre-held invoices (from the planner) count as held. Replace the comment at :56 with: "Drafts, then posts and emails per the agreement's invoice automation (spec 2026-10-02-rental-invoice-automation)."
 3. Digests (plan-level decision 9). Track every result per invoice as `{ invoiceId, rentalAgreementId, outcome }`, the planner's pre-held invoices included. After a company's invoices, if anything was posted, emailed or held:
    1. Read owners in ONE query: `selectFrom("rentalAgreement").select(["id","salesPersonId","createdBy"]).where("companyId","=",companyId).where("id","in",agreementIds)`. Owner = `salesPersonId ?? createdBy`. Skip `"system"` and any id with no `userToCompany` row for the company (one `.in()` read).
-   2. Read `companySettings.rentalInvoiceNotificationGroup` (`groupIds`).
-   3. For each owner NOT present in `groupIds`: `step.sendEvent(\`notify-rental-invoicing-${companyId}-${ownerId}\`, { name: "carbon/notify", data: { event: NotificationEvent.RentalInvoicing, companyId, documentIds, recipient: { type: "user", userId: ownerId }, body } })`. `body` and `documentIds` are computed over that owner's invoices only.
+   2. Read `companySettings.invoiceNotificationGroup` (`groupIds`).
+   3. For each owner NOT present in `groupIds`: `step.sendEvent(\`notify-recurring-invoicing-${companyId}-${ownerId}\`, { name: "carbon/notify", data: { event: NotificationEvent.RecurringInvoicing, companyId, documentIds, recipient: { type: "user", userId: ownerId }, body } })`. `body` and `documentIds` are computed over that owner's invoices only.
    4. If `groupIds` is non-empty: one company-wide event with `recipient: { type: "group", groupIds }` over all invoices.
    5. `body = \`${posted} posted, ${emailed} emailed, ${needReview} need review\``. `documentIds` = held + unsent ids; when that's empty, use the posted ids (`notify` throws NonRetriable when an event has neither content nor documentIds).
-   6. Put the grouping in a pure helper `buildRentalInvoicingDigests(results, owners, groupIds)` in `packages/jobs/src/rentals/digest.ts`, with a vitest file covering: two owners get separate digests over their own invoices; an owner listed in `groupIds` gets no owner digest; an empty group sends only owner digests; nothing to report → no digests.
+   6. Put the grouping in a pure helper `buildRecurringInvoicingDigests(results, owners, groupIds)` in `packages/jobs/src/invoicing/digest.ts`, with a vitest file covering: two owners get separate digests over their own invoices; an owner listed in `groupIds` gets no owner digest; an empty group sends only owner digests; nothing to report → no digests.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=@carbon/jobs --filter=erp
 # Expected: no new errors
-grep -n "rentalInvoiceAutomateFunction" packages/jobs/src/inngest/index.ts
+grep -n "invoiceAutomateFunction" packages/jobs/src/inngest/index.ts
 # Expected: one import + one array entry
 pnpm --filter @carbon/jobs test -- digest
 # Expected: 4 passed, 0 failed
 ```
 
-**Out of scope:** changing the cron schedule or retries of `rental-billing`.
+**Out of scope:** changing the cron schedule or retries.
 
 ---
 
-## Task 11: `RentalInvoicing` notification event
+## Task 11: `RecurringInvoicing` notification event
 
 **Depends on:** 3
 **Files:**
-- Modify: `packages/notifications/src/index.ts` — enum (11-60): `RentalInvoicing = "rental-invoicing"`; `getNotificationTopic` (Sales group, ~180-184); `getNotificationEmailHeading` ("Rental invoicing summary"); `getNotificationEmailCtaLabel` ("Review invoices")
+- Modify: `packages/notifications/src/index.ts` — enum (11-60): `RecurringInvoicing = "recurring-invoicing"`; `getNotificationTopic` (Sales group, ~180-184); `getNotificationEmailHeading` ("Recurring invoicing summary"); `getNotificationEmailCtaLabel` ("Review invoices")
 - Modify: `packages/jobs/src/inngest/functions/notifications/content.ts` — `buildEventContent` case
-- Modify: `packages/jobs/src/inngest/functions/notifications/notify.ts:47-195` — `defaultDestinations[RentalInvoicing] = [InApp, Email]` (copy the array literal used by another Sales event)
+- Modify: `packages/jobs/src/inngest/functions/notifications/notify.ts:47-195` — `defaultDestinations[RecurringInvoicing] = [InApp, Email]` (copy the array literal used by another Sales event)
 - Modify: `apps/erp/app/components/Layout/Topbar/Notifications.tsx:267-539` — `GenericNotification` case
 - Modify: `apps/erp/app/routes/api+/link.ts:18-111` — `resolve()` case → `${path.to.invoicingSales}?filter=needsReview:eq:true`
 - Copy from (precedent): the `IntegrationSync` case (payload-carried text) in `content.ts:1358-1363`, and its `Notifications.tsx` case
 
 **Steps:**
-1. `buildEventContent`: description `Rental invoicing: ${payload.body}`, no per-document reads.
-2. `Notifications.tsx`: title "Rental invoicing", description = the notification's body, link to the Needs Review filter. Mirror how the IntegrationSync case reads its payload text. If that case does not exist or reads a different field, STOP and report which payload field carries `body`.
+1. `buildEventContent`: description `Recurring invoicing: ${payload.body}`, no per-document reads.
+2. `Notifications.tsx`: title "Recurring invoicing", description = the notification's body, link to the Needs Review filter. Mirror how the IntegrationSync case reads its payload text. If that case does not exist or reads a different field, STOP and report which payload field carries `body`.
 
 **Verify:**
 ```bash
 pnpm exec turbo run typecheck --filter=@carbon/notifications --filter=@carbon/jobs --filter=erp
 # Expected: no new errors
-grep -rn "RentalInvoicing" packages/notifications/src/index.ts packages/jobs/src/inngest/functions/notifications apps/erp/app/components/Layout/Topbar/Notifications.tsx apps/erp/app/routes/api+/link.ts | wc -l
+grep -rn "RecurringInvoicing" packages/notifications/src/index.ts packages/jobs/src/inngest/functions/notifications apps/erp/app/components/Layout/Topbar/Notifications.tsx apps/erp/app/routes/api+/link.ts | wc -l
 # Expected: >= 7
 ```
 
@@ -567,8 +569,8 @@ grep -n "opportunity/\${salesInvoice.data.opportunityId}" "apps/erp/app/routes/x
 
 **Depends on:** 3
 **Files:**
-- Modify: `apps/erp/app/modules/settings/settings.models.ts` — `rentalInvoiceAutomations` const + `rentalInvoiceAutomationValidator` (precedent `kanbanOutputTypes` :33 / `kanbanOutputValidator` :243-245); `rentalInvoiceNotificationValidator` (precedent `rfqReadyValidator` :347-351)
-- Modify: `apps/erp/app/modules/settings/settings.service.ts` — `updateRentalInvoiceAutomationSetting(client, companyId, mode)` and `updateRentalInvoiceNotificationSetting(client, companyId, group)` (precedent `updateRfqReadySetting` :1395-1405, both `/** @mcp update */`)
+- Modify: `apps/erp/app/modules/settings/settings.models.ts` — `invoiceAutomations` const + `invoiceAutomationValidator` (precedent `kanbanOutputTypes` :33 / `kanbanOutputValidator` :243-245); `rentalInvoiceNotificationValidator` (precedent `rfqReadyValidator` :347-351)
+- Modify: `apps/erp/app/modules/settings/settings.service.ts` — `updateInvoiceAutomationSetting(client, companyId, mode)` and `updateRentalInvoiceNotificationSetting(client, companyId, group)` (precedent `updateRfqReadySetting` :1395-1405, both `/** @mcp update */`)
 - Create: `apps/erp/app/routes/x+/settings+/invoicing.tsx`
 - Modify: `apps/erp/app/routes/x+/settings+/sales.tsx` — remove the moved intents, cards and state
 - Modify: `apps/erp/app/utils/path.ts` — `invoicingSettings: \`${x}/settings/invoicing\`` after `invoicingSales` (~1346)
@@ -576,16 +578,16 @@ grep -n "opportunity/\${salesInvoice.data.opportunityId}" "apps/erp/app/routes/x
 - Copy from (precedent): `routes/x+/settings+/sales.tsx` (page shell :377-384, cards), `routes/x+/settings+/inventory.tsx:235-275` (enum Select card)
 
 **Steps:**
-1. `rentalInvoiceAutomations = ["Draft Only", "Post", "Post and Email"] as const` with a comment that it mirrors the DB enum. `rentalInvoiceAutomationValidator = z.object({ rentalInvoiceAutomation: z.enum(rentalInvoiceAutomations) })`.
+1. `invoiceAutomations = ["Draft Only", "Post", "Post and Email"] as const` with a comment that it mirrors the DB enum. `invoiceAutomationValidator = z.object({ invoiceAutomation: z.enum(invoiceAutomations) })`.
 2. `invoicing.tsx`: loader `requirePermissions({ view: "settings" })` + `getCompanySettings` + `getAccountsReceivableBillingAddress` (same redirect as sales.tsx:78-85). Action `requirePermissions({ update: "settings" })` + `switch (intent)` with:
-   - `rentalInvoiceAutomation` → `updateRentalInvoiceAutomationSetting`
+   - `invoiceAutomation` → `updateInvoiceAutomationSetting`
    - `receivablesEmail` → `accountsReceivableEmailValidator` + `updateAccountsReceivableEmail` (both exist, unused)
    - `rentalInvoiceNotifications` → `updateRentalInvoiceNotificationSetting`
    - `emails`, `accountsReceivableAddressToggle`, `accountsReceivableBillingAddress` → moved verbatim from sales.tsx (:265-290, :117-130, :240-263)
 3. JSX, in order:
-   - "Rental Invoices" card (enum Select; labels `Draft only` / `Post` / `Post and email`; description from spec UI Changes)
+   - "Recurring Invoices" card (enum Select; labels `Draft only` / `Post` / `Post and email`; description from spec UI Changes)
    - "Receivables Email" card (`Input name="accountsReceivableEmail"`)
-   - "Notifications" card: description "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices." plus `Users name="rentalInvoiceNotificationGroup" type="employee"` labelled "Also notify", with helper text "Gets the summary for every agreement"
+   - "Notifications" card: description "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices." plus `Users name="invoiceNotificationGroup" type="employee"` labelled "Also notify", with helper text "Gets the summary for every agreement"
    - then the moved Emails card (sales.tsx:390-431, fixing its spinner check to `intent === "emails"`)
    - the Centralized Billing Address card plus nested form (:480-580) with its state/handlers (:299-374).
 4. Delete those three intents, the two cards, their state, the AR-address loader read and now-unused imports from `sales.tsx`. The "Require a Customer Contact and Location" card (:432-479) STAYS in sales.tsx.
@@ -607,7 +609,7 @@ grep -n "defaultCustomerCc\|accountsReceivableBillingAddress" "apps/erp/app/rout
 
 **Depends on:** 3
 **Files:**
-- Modify: `apps/erp/app/modules/sales/sales.models.ts` — `rentalInvoiceAutomations` const next to `rentalBillingCycles` (:1376); `rentalAgreementInvoiceAutomationValidator = z.object({ invoiceAutomation: z.enum(rentalInvoiceAutomations).nullable() })`
+- Modify: `apps/erp/app/modules/sales/sales.models.ts` — `invoiceAutomations` const next to `rentalBillingCycles` (:1376); `rentalAgreementInvoiceAutomationValidator = z.object({ invoiceAutomation: z.enum(invoiceAutomations).nullable() })`
 - Modify: `apps/erp/app/modules/sales/sales.service.ts` — `updateRentalAgreementInvoiceAutomation` after `updateRentalAgreement` (:8690-8729)
 - Modify: `apps/erp/app/routes/x+/rental-agreement+/update.tsx` — `intent === "invoiceAutomation"` branch BEFORE the `isTermField` check (:66-78)
 - Modify: `apps/erp/app/routes/x+/rental-agreement+/$id.tsx` — loader adds `contactEmail` (customerContact → contact(email)) to the `Promise.all` at :63-73 and returns it
@@ -620,12 +622,12 @@ grep -n "defaultCustomerCc\|accountsReceivableBillingAddress" "apps/erp/app/rout
 /** @mcp update */
 export async function updateRentalAgreementInvoiceAutomation(
   client: SupabaseClient<Database>,
-  args: { id: string; companyId: string; invoiceAutomation: RentalInvoiceAutomation | null; updatedBy: string }
+  args: { id: string; companyId: string; invoiceAutomation: InvoiceAutomation | null; updatedBy: string }
 )
 ```
    It reads the agreement (`status, customerContactId`) under `companyId`. Not Draft/Active → `rentalRefusal("RENTAL_AGREEMENT_CLOSED", "Invoicing can only be changed on a Draft or Active agreement")`. `invoiceAutomation === "Post and Email"` and the contact's `contact.email` is empty → `rentalRefusal("RENTAL_INVOICE_EMAIL_NO_CONTACT", "Add a contact with an email to send invoices")`. Otherwise `update(sanitize({ invoiceAutomation, updatedBy, updatedAt: datetime.timestamp() })).eq("id").eq("companyId")`.
 2. `update.tsx`: when `formData.get("intent") === "invoiceAutomation"`, validate `{ invoiceAutomation: value === "" ? null : value }` with the new validator, call the service, and return `{ error, data }` in the route's existing shape. Same `requirePermissions({ update: "sales" })`.
-3. Properties: a `Select` named `invoiceAutomation`, label "Invoicing", options `[{ value: "", label: \`Company default (${companyLabel})\` }, ...modes]`, where `companyLabel` comes from `useSettings().rentalInvoiceAutomation`. "Post and email" is `disabled` when `!contactEmail`, with helper text "Add a contact with an email to send invoices". If `Select` options don't support `disabled`, filter the option out and show the helper text instead. The field is read-only unless `["Draft","Active"].includes(agreement.status) && permissions.can("update","sales")`. `onChange` submits FormData `{ id, intent: "invoiceAutomation", value }` to `path.to.rentalAgreementUpdate` via the panel's `fetcher`. Under the field, when `agreement.effectiveInvoiceAutomation === "Post and Email" && !contactEmail`, show the note "Invoices will be posted but not emailed — the contact has no email".
+3. Properties: a `Select` named `invoiceAutomation`, label "Invoicing", options `[{ value: "", label: \`Company default (${companyLabel})\` }, ...modes]`, where `companyLabel` comes from `useSettings().invoiceAutomation`. "Post and email" is `disabled` when `!contactEmail`, with helper text "Add a contact with an email to send invoices". If `Select` options don't support `disabled`, filter the option out and show the helper text instead. The field is read-only unless `["Draft","Active"].includes(agreement.status) && permissions.can("update","sales")`. `onChange` submits FormData `{ id, intent: "invoiceAutomation", value }` to `path.to.rentalAgreementUpdate` via the panel's `fetcher`. Under the field, when `agreement.effectiveInvoiceAutomation === "Post and Email" && !contactEmail`, show the note "Invoices will be posted but not emailed — the contact has no email".
 
 **Verify:**
 ```bash
@@ -678,7 +680,7 @@ grep -n "\"primary\"" apps/erp/app/modules/sales/ui/Rentals/RentalAgreementHeade
 - Copy from (precedent): `batchTrigger` in `packages/lib/src/trigger.ts`; ERP `trigger` import `apps/erp/app/routes/api+/webhook.ramp.$companyId.ts:114`
 
 **Steps:**
-1. After generating, `const toAutomate = invoices.filter(i => i.mode !== "Draft Only" && !i.holdReason)`. If non-empty, `await batchTrigger("rental-invoice-automate", toAutomate.map(i => ({ payload: { companyId, invoiceId: i.invoiceId } })))` (import from `@carbon/jobs`, as `trigger` is; if `batchTrigger` isn't re-exported there, loop `trigger`).
+1. After generating, `const toAutomate = invoices.filter(i => i.mode !== "Draft Only" && !i.holdReason)`. If non-empty, `await batchTrigger("invoice-automate", toAutomate.map(i => ({ payload: { companyId, invoiceId: i.invoiceId } })))` (import from `@carbon/jobs`, as `trigger` is; if `batchTrigger` isn't re-exported there, loop `trigger`).
 2. Flash in `$id.invoice.tsx`: when `toAutomate.length > 0`, "Generated N invoice(s); posting M automatically". Otherwise keep today's message. Sell to Customer only produces a held charges invoice under automation, so its flash is unchanged and nothing is triggered unless `toAutomate` is non-empty.
 
 **Verify:**
@@ -727,7 +729,7 @@ pnpm exec turbo run typecheck --filter=erp
    - `status === "Draft" && automationHoldReason` → `<Status color="orange" title={reason}>Held</Status>`.
    - Posted with `sentAt` → `<Status color="green">Emailed</Status>` with title `` `To ${sentTo} on ${formatDate(sentAt)}` `` (`formatDate` from `@carbon/utils`).
    - Posted with `sendError && !sentAt` → `<Status color="red" title={sendError}>Not sent</Status>` plus a "Send" button (`Button variant="secondary"`, `LuSend` icon) that submits a fetcher POST to `path.to.salesInvoiceSend(id)`, disabled without `permissions.can("update","invoicing")`.
-2. Route: `requirePermissions({ update: "invoicing" })`; re-read the invoice under `companyId` (404 on miss). Refuse unless it is posted and `sentAt` is null. `trigger("rental-invoice-automate", { companyId, invoiceId, mode: "Post and Email" })`. Redirect back with flash "Sending invoice".
+2. Route: `requirePermissions({ update: "invoicing" })`; re-read the invoice under `companyId` (404 on miss). Refuse unless it is posted and `sentAt` is null. `trigger("invoice-automate", { companyId, invoiceId, mode: "Post and Email" })`. Redirect back with flash "Sending invoice".
 
 **Verify:**
 ```bash
@@ -766,7 +768,7 @@ pnpm exec turbo run typecheck --filter=erp
 **Files:** generated MCP metadata, `.po` catalogs
 
 **Steps:**
-1. `pnpm run generate:mcp` (new `@mcp update` services: `updateRentalAgreementInvoiceAutomation`, `updateRentalInvoiceAutomationSetting`, `updateRentalInvoiceNotificationSetting`).
+1. `pnpm run generate:mcp` (new `@mcp update` services: `updateRentalAgreementInvoiceAutomation`, `updateInvoiceAutomationSetting`, `updateRentalInvoiceNotificationSetting`).
 2. `pnpm --filter @carbon/checks license-headers` (new files).
 3. `pnpm run lint`.
 4. `/translate` for the new Lingui strings.
@@ -820,7 +822,7 @@ Use `/test` (needs `crbn up`; ask the user before starting it). Then:
 4. Clear the contact's email. The "Post and email" option is disabled and the note shows when the company default is Post and email. Generate: the invoice is Submitted with "Not sent". Click Send after restoring the email: it becomes "Emailed".
 5. Receivables → Needs Review lists the held and unsent invoices.
 6. Open a rental invoice PDF (`file/sales-invoice/<id>.pdf`) and a non-rental invoice PDF. Both render as before.
-7. With NO notification group set, run the cron via the Inngest dev UI ("Invoke" `rental-billing`). The agreement's salesperson (or creator) gets one "Rental invoicing" notification, in the topbar and by email. Then add a different user to "Also notify" and re-run with a new due period: that user also gets one.
+7. With NO notification group set, run the cron via the Inngest dev UI ("Invoke" `recurring-billing`). The agreement's salesperson (or creator) gets one "Recurring invoicing" notification, in the topbar and by email. Then add a different user to "Also notify" and re-run with a new due period: that user also gets one.
 8. Void the posted rent invoice from step 2 (⋯ → Void). The agreement's Billing Periods card shows the period Pending again. Click Invoice (Generate Invoices): the new rent invoice is Draft and "Held" with "Re-billing INV-…, which was voided", and nothing is posted or emailed. Delete that draft and generate again: still held.
 9. On an Active agreement the header shows a secondary "Invoice Now" button, and the summary reads "Next invoice <date> is created automatically, then posted and emailed." Switch the agreement to Draft only: the line says "…left as a draft for review."
 

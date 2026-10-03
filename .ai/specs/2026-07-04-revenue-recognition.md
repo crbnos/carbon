@@ -7,6 +7,7 @@
 > Readiness finding: `.ai/specs/2026-07-03-public-company-readiness.md` GAP-1
 > Research: `.ai/research/public-company-compliance.md` (§ASC 606 answers, §NetSuite ARM)
 > Phasing note (2026-09-22): Phase 1 of this model (recognition schedule, run, deferral/accrual core, deposits, straight-line by date range) is specified in `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md`, which also uses a `revenueRecognitionRun` batch instead of the Draft-journal hook below; arrangements, SSP allocation, modifications and POC remain this spec's later phases on that substrate.
+> Scope note (2026-10-02): the revenue arrangement of Phases 2–3 — contract lines with their own revenue schedules, recognized independently of billing, with contract asset / liability per line — is being delivered from the billing side by `.ai/specs/2026-10-02-contracts.md` (AR contracts), without SSP allocation, POC or contract-combination rules, which stay with this spec.
 
 ## TLDR
 

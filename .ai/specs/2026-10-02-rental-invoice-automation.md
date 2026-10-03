@@ -5,6 +5,7 @@
 > Date: 2026-10-02
 > Research: `.ai/research/rental-invoice-automation.md`
 > Amends: `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` Decision 10 ("propose-only Draft invoices") — reversed for rentals, see D1
+> Shared layer (2026-10-02): this automation is the source-agnostic **recurring-invoicing layer** — one mode list (`invoiceAutomation`), one company default + per-document override, one pipeline in `packages/jobs/src/invoicing/` (`automateSalesInvoice`), one daily `recurring-billing` job and one "Recurring invoicing" digest. Rental agreements are its first source; AR contracts (`.ai/specs/2026-10-02-contracts.md`) plug in as the second and add the `Post and Send via Stripe` mode. Names were generalized before any code existed; behaviour for rentals is unchanged. Decisions: `.ai/runs/2026-10-02-grill-subscriptions.md` (U1–U4, G4b, G7).
 
 ## TLDR
 
@@ -32,9 +33,9 @@ An invoice whose contact has no email is posted and flagged, not sent. A daily n
 ### Flow
 
 ```
-rental-billing cron (05:00 UTC, per company step)
+recurring-billing cron (05:00 UTC, per company step; renamed from `rental-billing`)
   └─ createRentalInvoicesForDuePeriods            (packages/database/src/rental-billing.ts)
-       ├─ effective mode = agreement.invoiceAutomation ?? companySettings.rentalInvoiceAutomation
+       ├─ effective mode = agreement.invoiceAutomation ?? companySettings.invoiceAutomation
        ├─ Draft Only  → one Draft invoice per agreement (today's behaviour, unchanged)
        └─ Post / Post and Email →
             ├─ RENT invoice:    every due rent period (incl. early-return adjustments)
@@ -42,10 +43,10 @@ rental-billing cron (05:00 UTC, per company step)
             └─ CHARGES invoice: every due charge (Charge + Purchase Option), always Draft,
                                 automationHoldReason = "charges are reviewed before posting"
        returns [{ invoiceId, rentalAgreementId, mode, holdReason }]
-  └─ per unheld invoice: step.run("automate-<invoiceId>") → automateRentalInvoice()
+  └─ per unheld invoice: step.run("automate-<invoiceId>") → automateSalesInvoice()
   └─ notify → one digest per agreement owner (salesPersonId ?? createdBy) + one company-wide digest to the "Also notify" group
 
-automateRentalInvoice(invoiceId, mode)          (packages/jobs/src/rentals/automate-invoice.ts)
+automateSalesInvoice(invoiceId, mode)          (packages/jobs/src/invoicing/automate-invoice.ts)
   1. re-read invoice; skip unless status = Draft and automationHoldReason IS NULL
   2. contact requirement (checkPartyContactRequirement, moved to a package)  → hold on fail
   3. evaluateSalesRulesForSalesDocument("salesInvoice") — ANY violation           → hold
@@ -59,36 +60,36 @@ automateRentalInvoice(invoiceId, mode)          (packages/jobs/src/rentals/autom
        else render PDF + email → stamp sentAt / sentTo; on failure stamp sendError
 ```
 
-"Generate Invoices" (`$id.invoice.tsx`) and "Sell to Customer" (`$id.$lineId.sell.tsx`) call the same generator. They then send `carbon/rental-invoice.automate` events for the invoices it returns. A small event-triggered Inngest function runs the same `automateRentalInvoice`. So pressing the button behaves exactly like the cron, minus the digest.
+"Generate Invoices" (`$id.invoice.tsx`) and "Sell to Customer" (`$id.$lineId.sell.tsx`) call the same generator. They then send `carbon/rental-invoice.automate` events for the invoices it returns. A small event-triggered Inngest function runs the same `automateSalesInvoice`. So pressing the button behaves exactly like the cron, minus the digest.
 
 ### Design Decisions
 
 | # | Decision | Choice | Rationale |
 |---|----------|--------|-----------|
 | D1 | Reverse "propose-only" for rentals | Yes, rentals only | The user asked for it (2026-10-02). Rental invoices are fully determined by the agreement's terms; the close-automation posture still governs every other proposal job |
-| D2 | Modes | `Draft Only` / `Post` / `Post and Email`, a new enum `rentalInvoiceAutomation` | The three levels every peer system offers (research). `Post` without email serves customers billed through a portal or EDI |
-| D3 | Where it is set | Company default (`companySettings.rentalInvoiceAutomation`, NOT NULL DEFAULT `'Post and Email'`) plus a nullable per-agreement override (`rentalAgreement.invoiceAutomation`, NULL = company default) | User decision. Follows the flat-default-plus-override shape `.ai/lessons.md` prescribes (`customer.defaultCc` → `companySettings.defaultCustomerCc`). No customer level (user decision) |
+| D2 | Modes | `Draft Only` / `Post` / `Post and Email`, a new enum `invoiceAutomation` | The three levels every peer system offers (research). `Post` without email serves customers billed through a portal or EDI |
+| D3 | Where it is set | Company default (`companySettings.invoiceAutomation`, NOT NULL DEFAULT `'Post and Email'`) plus a nullable per-agreement override (`rentalAgreement.invoiceAutomation`, NULL = company default) | User decision. Follows the flat-default-plus-override shape `.ai/lessons.md` prescribes (`customer.defaultCc` → `companySettings.defaultCustomerCc`). No customer level (user decision) |
 | D4 | Default | `Post and Email` | User decision. Rentals are not on `main`, so no existing company changes behaviour on deploy |
 | D5 | `Post and Email` needs an email | The agreement override can only be SET to `Post and Email` when the agreement's contact has an email (the service refuses it; the UI disables it). At run time, a missing email degrades to post + `sendError`, never a skipped post | User decision. Checked at both ends because a contact's email can be removed after the setting is chosen, and a company default can't be validated per agreement |
 | D6 | Review window | None. Posted in the same run that drafts | User decision. So there is no "will post on" date, and no "an edit makes it manual" rule |
 | D7 | Charges | When automating, charges (kind `Charge` and `Purchase Option`) go on their OWN Draft invoice, held as "charges are reviewed before posting". Rent periods go on the rent invoice, which posts | User decision. A single charge must not delay the rent. Mirrors NetSuite's Ready/Hold billing stage and Point of Rental's contract hold. `Draft Only` agreements keep today's single combined invoice, since nothing is automated |
 | D8 | Holds (left in Draft) | (a) charges invoice; (b) rent invoice carrying an early-return adjustment row; (c) a sales-rule violation of any severity, warnings included; (d) the company requires a customer contact and location and the invoice lacks one; (e) any posting failure (locked or closed period, missing account default, …), with the edge function's message | User decision (holds a–e; first invoice NOT held). The job can't acknowledge a warning, so a warning holds |
 | D9 | First invoice | Not held | User decision. The terms were just reviewed at activation |
-| D10 | Where automation runs | Inline in the `rental-billing` cron, one `step.run` per invoice; plus an event-triggered function for the two ERP buttons. Both call one `automateRentalInvoice` | Steps give per-invoice isolation and memoized retries (one failure never stops the run). Sharing one function keeps the button and the cron identical |
+| D10 | Where automation runs | Inline in the `recurring-billing` cron (renamed from `rental-billing`, U4), one `step.run` per invoice; plus an event-triggered function for the two ERP buttons. Both call one `automateSalesInvoice` | Steps give per-invoice isolation and memoized retries (one failure never stops the run). Sharing one function keeps the button and the cron identical |
 | D11 | Double-post protection | A conditional claim `Draft → Pending` before invoking (the `ramp-sync-bill.ts:179-215` pattern); the step re-reads status first, so a retried step after a successful post skips straight to email | `post-sales-invoice` never checks the invoice is Draft. The button event and the cron can race for the same invoice |
 | D12 | PDF and email in a job | Extract the sales-invoice PDF data loading into a shared server loader in `@carbon/documents` (takes a supabase client). The ERP PDF route, the manual post route and the job all use it. Storage path is `${companyId}/sales-invoice/${invoiceId}/<file>` when the invoice has no opportunity, `opportunity/<id>/…` otherwise | The route loader needs a session (`requirePermissions` `view: sales`), so a job can't call it. Jobs already render `@carbon/documents` PDFs (`tasks/print-job/renderers.tsx`). Also fixes the `opportunity/null` bug on the manual path |
-| D13 | Sender | From: `"<Company name>" <DEFAULT_FROM address>`. Reply-To: `companySettings.accountsReceivableEmail`, else the agreement creator's email. To: the invoice contact. CC: `customer.defaultCc` ?? `companySettings.defaultCustomerCc`, plus the receivables email | User decision. Our SMTP can't send AS the customer's domain without SPF/DKIM, so we send from our domain under the company's name and route replies to receivables |
+| D13 | Sender | From: `"<Company name>" <DEFAULT_FROM address>`. Reply-To: `companySettings.accountsReceivableEmail`, else the agreement's owner (`salesPersonId ?? createdBy`) email. To: the invoice contact. CC: `customer.defaultCc` ?? `companySettings.defaultCustomerCc`, plus the receivables email | User decision. Our SMTP can't send AS the customer's domain without SPF/DKIM, so we send from our domain under the company's name and route replies to receivables |
 | D14 | Sent tracking | New `salesInvoice.sentAt`, `sentTo`, `sendError`. The manual post modal's Email path stamps them too | Needed for idempotency (never email twice on retry), for the "Needs review" filter, and so a person can see an invoice went out. Stamping on the manual path keeps one meaning for the columns |
 | D15 | Hold reason storage | `salesInvoice.automationHoldReason TEXT` (a human-readable message) | Read-only display data; the reasons are open-ended (edge-function errors), so an enum would lose the message. Only meaningful while Draft. Kept after a manual post as history and ignored by the filter |
-| D16 | Notification | A new digest event `NotificationEvent.RentalInvoicing` (documentIds-shaped), at most once per recipient per cron run when anything was posted, emailed or held. **By default each agreement's internal owner (`salesPersonId ?? createdBy`) gets a digest of their agreements' invoices; no setup needed.** `companySettings.rentalInvoiceNotificationGroup` (`text[]`, users/groups) is "Also notify": those people get the company-wide digest, and an owner listed in it gets only that one. Delivered in-app and by email | User decisions (daily notification; "a good default should be automatic invoices with notifications to the internal person"). The button path sends none; the person who pressed it is looking at the result |
-| D17 | Settings page | A new `x+/settings+/invoicing.tsx`, with a nav entry in `useSettingsSubmodules`. Cards: **Rental Invoices** (default mode), **Receivables Email** (`accountsReceivableEmail`, which has no UI today), **Notifications** (`rentalInvoiceNotificationGroup`), plus **Emails** (default customer CC) and **Centralized Billing Address** MOVED from `settings+/sales.tsx` with their intents and actions | User decision (new page; move the invoice-related cards) |
+| D16 | Notification | A new digest event `NotificationEvent.RecurringInvoicing` (documentIds-shaped), at most once per recipient per cron run when anything was posted, emailed or held. **By default each agreement's internal owner (`salesPersonId ?? createdBy`) gets a digest of their agreements' invoices; no setup needed.** `companySettings.invoiceNotificationGroup` (`text[]`, users/groups) is "Also notify": those people get the company-wide digest, and an owner listed in it gets only that one. Delivered in-app and by email | User decisions (daily notification; "a good default should be automatic invoices with notifications to the internal person"). The button path sends none; the person who pressed it is looking at the result |
+| D17 | Settings page | A new `x+/settings+/invoicing.tsx`, with a nav entry in `useSettingsSubmodules`. Cards: **Recurring Invoices** (default mode), **Receivables Email** (`accountsReceivableEmail`, which has no UI today), **Notifications** (`invoiceNotificationGroup`), plus **Emails** (default customer CC) and **Centralized Billing Address** MOVED from `settings+/sales.tsx` with their intents and actions | User decision (new page; move the invoice-related cards) |
 | D18 | Agreement override editable when | Draft and Active (not Closed / Cancelled), through a dedicated service `updateRentalAgreementInvoiceAutomation` and a dedicated `intent` in `x+/rental-agreement+/update.tsx` that bypasses the Draft-only terms guard | It is an operational preference, not a lease term, and touches no accounting. `updateRentalAgreement` stays Draft-only (it is an MCP tool with its own guard) |
 | D19 | Multi-tenancy (heuristic 1) | No new tables. New columns sit on `companySettings` / `rentalAgreement` / `salesInvoice`, all already company-scoped | — |
 | D20 | Service shape (heuristic 2) | `updateRentalAgreementInvoiceAutomation(client, …)` returns `{data, error}` and refuses with a PostgrestError-shaped `RENTAL_INVOICE_EMAIL_NO_CONTACT`, like the other `RENTAL_*` codes | Matches the rental service conventions in sales AGENTS |
 | D21 | RLS (heuristic 3) | Unchanged. The new columns inherit their tables' policies; the job writes with the service role | — |
 | D22 | Permissions (heuristic 4) | Settings → Invoicing: `view: settings` to load, `update: settings` to save (as `settings+/sales.tsx`). The agreement override: `update: sales` | Same scopes as the pages the cards move from |
 | D23 | Forms (heuristic 5) | Settings cards are `ValidatedForm` + fetcher intents like `settings+/sales.tsx`. The agreement field saves through the properties-panel pattern | Existing patterns |
-| D24 | Module layout (heuristic 6) | Validators in `settings.models.ts` / `sales.models.ts`, services in `settings.service.ts` / `sales.service.ts`. The automation itself lives in `packages/jobs/src/rentals/` (not an ERP module) | One service/models file per module |
+| D24 | Module layout (heuristic 6) | Validators in `settings.models.ts` / `sales.models.ts`, services in `settings.service.ts` / `sales.service.ts`. The automation itself lives in `packages/jobs/src/invoicing/` (not an ERP module) | One service/models file per module |
 | D25 | Backward compatibility (heuristic 7) | `updateRentalAgreement` (MCP) unchanged. The new service becomes an MCP tool (regenerate the MCP metadata). `checkPartyContactRequirement` moves from `apps/erp/app/modules/settings/party-contact.server.ts` to a package the job can import (`@carbon/database` or `@carbon/ee/rules.server`, to be settled in /plan), and the ERP re-imports it | Nothing frozen is touched |
 | D26 | Re-billing after a VOID | VOID stamps `voidedSalesInvoiceId` on the periods and charges it releases; when automating, a rent invoice re-billing any such row is held with "Re-billing INV-…, which was voided". The stamp survives a deleted draft and is overwritten by a later VOID | User decision. Otherwise the next morning's run re-posts and re-emails the same amounts nobody decided to re-bill (an Active agreement's rates are locked) |
 
@@ -97,15 +98,15 @@ automateRentalInvoice(invoiceId, mode)          (packages/jobs/src/rentals/autom
 One migration (`pnpm db:migrate:new rental-invoice-automation`):
 
 ```sql
-CREATE TYPE "rentalInvoiceAutomation" AS ENUM ('Draft Only', 'Post', 'Post and Email');
+CREATE TYPE "invoiceAutomation" AS ENUM ('Draft Only', 'Post', 'Post and Email');
 
 ALTER TABLE "companySettings"
-  ADD COLUMN "rentalInvoiceAutomation" "rentalInvoiceAutomation" NOT NULL DEFAULT 'Post and Email',
-  ADD COLUMN "rentalInvoiceNotificationGroup" TEXT[] NOT NULL DEFAULT '{}';
+  ADD COLUMN "invoiceAutomation" "invoiceAutomation" NOT NULL DEFAULT 'Post and Email',
+  ADD COLUMN "invoiceNotificationGroup" TEXT[] NOT NULL DEFAULT '{}';
 
 -- NULL = use the company default
 ALTER TABLE "rentalAgreement"
-  ADD COLUMN "invoiceAutomation" "rentalInvoiceAutomation";
+  ADD COLUMN "invoiceAutomation" "invoiceAutomation";
 
 ALTER TABLE "rentalBillingPeriod" ADD COLUMN "voidedSalesInvoiceId" TEXT;
 ALTER TABLE "rentalAgreementCharge" ADD COLUMN "voidedSalesInvoiceId" TEXT;
@@ -117,7 +118,7 @@ ALTER TABLE "salesInvoice"
   ADD COLUMN "sendError" TEXT;
 ```
 
-- The `rentalAgreements` view is recreated so it exposes `invoiceAutomation` and the effective mode (`COALESCE(ra."invoiceAutomation", cs."rentalInvoiceAutomation")`). Fork the body from its LATEST definition (lesson: backdated view forks).
+- The `rentalAgreements` view is recreated so it exposes `invoiceAutomation` and the effective mode (`COALESCE(ra."invoiceAutomation", cs."invoiceAutomation")`). Fork the body from its LATEST definition (lesson: backdated view forks).
 - `salesInvoices` is recreated only if the list's "Needs review" filter needs a derived column. Prefer filtering on the base columns.
 - `accountsReceivableEmail` already exists (`20260304112615`). No change.
 - After migrating: `pnpm run generate:types`; `pnpm db:check:datasets` (the satellite dataset seeds rental agreements); `pnpm db:check:backups`.
@@ -129,14 +130,14 @@ ALTER TABLE "salesInvoice"
 - Rent invoices with an `isAdjustment` row are stamped with the early-return hold.
 - Stamping and idempotency are unchanged: periods and charges are stamped in the same transaction.
 
-**`packages/jobs/src/rentals/automate-invoice.ts`** (new)
-- `automateRentalInvoice({ client, db, companyId, invoiceId, mode })` returns `{ outcome: "posted" | "emailed" | "held" | "skipped", reason? }`. The flow is above.
+**`packages/jobs/src/invoicing/automate-invoice.ts`** (new)
+- `automateSalesInvoice({ client, db, companyId, invoiceId, mode })` returns `{ outcome: "posted" | "emailed" | "held" | "skipped", reason? }`. The flow is above.
 - The hold-reason strings are constants exported from one module, so the UI and tests share them.
 
 **`packages/jobs/src/inngest/functions/scheduled/rental-billing.ts`**
 - After the draft step: one `step.run` per unheld invoice, then a `notify` step.
 
-**`packages/jobs/src/inngest/functions/tasks/rental-invoice-automate.ts`** (new)
+**`packages/jobs/src/inngest/functions/tasks/invoice-automate.ts`** (new)
 - Event `carbon/rental-invoice.automate` with `{ companyId, invoiceId }`. Concurrency key `event.data.invoiceId`, limit 1.
 - Register it in `packages/jobs/src/inngest/index.ts` and add the event to the client schema.
 
@@ -153,18 +154,18 @@ ALTER TABLE "salesInvoice"
 - Add `invoiceAutomation` to the validators.
 
 **`apps/erp/app/modules/settings`**
-- Validators and services for `rentalInvoiceAutomation`, `rentalInvoiceNotificationGroup` and `accountsReceivableEmail`. `updateAccountsReceivableEmail` already exists, at `settings.service.ts:1361`.
+- Validators and services for `invoiceAutomation`, `invoiceNotificationGroup` and `accountsReceivableEmail`. `updateAccountsReceivableEmail` already exists, at `settings.service.ts:1361`.
 
 **`$id.invoice.tsx` / `$id.$lineId.sell.tsx`**
 - After generating, send one `carbon/rental-invoice.automate` event per unheld invoice. The flash says "Invoices generated and being posted" when any were sent.
 
 **`@carbon/notifications`**
-- `NotificationEvent.RentalInvoicing` plus its text: "Rental invoicing: N posted, M emailed, K need review".
+- `NotificationEvent.RecurringInvoicing` plus its text: "Recurring invoicing: N posted, M emailed, K need review".
 
 ## UI Changes
 
 **Settings → Invoicing (new page)**
-- **Rental Invoices** card: a select (Draft only / Post / Post and email) with the description "What happens to rental invoices when they're created each day. Invoices with charges, early-return credits or rule violations always wait for review."
+- **Recurring Invoices** card: a select (Draft only / Post / Post and email) with the description "What happens to rental invoices when they're created each day. Invoices with charges, early-return credits or rule violations always wait for review."
 - **Receivables Email**: an email input. Description: "Replies to emailed invoices go here, and it's copied on each one."
 - **Notifications**: a users/groups picker, "Who gets the daily rental invoicing summary".
 - **Emails** and **Centralized Billing Address**: moved verbatim from Sales settings.
@@ -202,19 +203,19 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 - [ ] On a `Post and Email` company default where the contact has no email, the invoice is `Submitted`, `sentAt` is NULL and `sendError` = "The invoice contact has no email". It appears under **Needs review**.
 - [ ] Setting an agreement's override to `Post and Email` when its contact has no email is refused (UI disabled; the service returns `RENTAL_INVOICE_EMAIL_NO_CONTACT`).
 - [ ] Re-running the cron step for an invoice that is already `Submitted` with `sentAt` set posts and emails nothing. Pressing Generate Invoices while the cron automates the same agreement produces exactly one posted invoice (the claim test).
-- [ ] With no notification group configured, an agreement's salesperson (or creator, when none) receives exactly one "Rental invoicing" notification (in-app and email) per cron run that posted, emailed or held one of their invoices. A user added to "Also notify" additionally receives the company-wide digest, and never two digests for the same run.
+- [ ] With no notification group configured, an agreement's salesperson (or creator, when none) receives exactly one "Recurring invoicing" notification (in-app and email) per cron run that posted, emailed or held one of their invoices. A user added to "Also notify" additionally receives the company-wide digest, and never two digests for the same run.
 - [ ] An Active agreement's header shows a secondary "Invoice Now" button, and its summary states when the next invoice is created and what happens to it, matching the effective mode.
 - [ ] Voiding a posted rent invoice and then generating again produces a Draft rent invoice held as "Re-billing INV-…, which was voided"; nothing is posted or emailed. Deleting that draft and generating again holds it again.
 - [ ] Posting a non-rental invoice manually with Send Via = Email stamps `sentAt`. A rental invoice posted manually with Email stores its PDF under `sales-invoice/<id>/`, not `opportunity/null/`.
 - [ ] Settings → Invoicing shows the five cards. Settings → Sales no longer shows Emails or Centralized Billing Address, and their saves still work from the new page.
-- [ ] Unit tests: the generator's split/hold decisions (pure helper) and `automateRentalInvoice`'s outcome per hold case (vitest, mocked clients).
+- [ ] Unit tests: the generator's split/hold decisions (pure helper) and `automateSalesInvoice`'s outcome per hold case (vitest, mocked clients).
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
 | An email is sent but the `sentAt` stamp fails, so an Inngest retry sends it twice | Med | Stamp `sentAt` in the same step immediately after `sendEmail` resolves. Give the email step `retries: 0` on the send itself and record `sendError` on any throw, so a human re-sends rather than the job |
-| An invoice is stuck in `Pending` when the `invoke` call itself fails (network), since the edge function's own catch never ran | Med | `automateRentalInvoice` resets `Pending → Draft` (conditional on `Pending`) on any non-Submitted outcome before recording the hold |
+| An invoice is stuck in `Pending` when the `invoke` call itself fails (network), since the edge function's own catch never ran | Med | `automateSalesInvoice` resets `Pending → Draft` (conditional on `Pending`) on any non-Submitted outcome before recording the hold |
 | Posting an invoice nobody looked at with a wrong rate or tax | Med | Rates and tax were set on the agreement at activation. Charges and credits are held. `Draft Only` exists per agreement. VOID is available |
 | `Post and Email` is the default, so a company's first rental invoice goes to a customer automatically | Low | Rentals are new and unreleased. The settings card and the agreement field both state the effective mode before activation |
 | Rental lines' provider sync (Xero/QBO/Rillet) is unverified (parent spec risk) | Med | Unchanged by this spec; automation only makes posting more frequent. Track it under the parent spec's open follow-up |
@@ -232,7 +233,7 @@ Follow the `carbon-design` skill for badge and filter conventions. Wrap all stri
 - [x] What if the contact has no email? — **Answer:** Post anyway, flag it (`sendError`), don't send. Record `sentAt` when sent. Send under the company's receivables email.
 - [x] Review window before posting? — **Answer:** None; post immediately in the same run.
 - [x] Where does the company setting live? — **Answer:** A new Settings → Invoicing page.
-- [x] Who is the email from? — **Answer:** Carbon's default sender under the company name, Reply-To the receivables email (fallback: the agreement creator), receivables CC'd.
+- [x] Who is the email from? — **Answer:** Carbon's default sender under the company name, Reply-To the receivables email (fallback: the agreement creator; refined 2026-10-02 to the owner, `salesPersonId ?? createdBy`), receivables CC'd.
 - [x] How are charges handled? — **Answer:** On a separate Draft invoice for review; the rent posts on its own.
 - [x] Hold the agreement's first invoice? — **Answer:** No.
 - [x] How do people learn what happened? — **Answer:** Badges, a Needs review filter, AND a daily notification (recipients: a notification group on the Invoicing page, per the existing `*NotificationGroup` pattern).
