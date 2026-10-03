@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { APP_REVIEW_EMAILS, getMESUrl } from "@carbon/auth";
+import { APP_REVIEW_EMAILS, getMESUrl, IS_LOCAL_DEV } from "@carbon/auth";
 import { ApiError } from "@carbon/auth/api-user.server";
 import { authCodeRequest } from "@carbon/mes-core";
 import { getClientIp } from "@carbon/utils";
@@ -51,15 +51,7 @@ export const action = apiRoute(
       origin: getMESUrl(),
       lockout: signInLockout(),
       channel: "mobile",
-      ip,
-      // The DEV_BYPASS_EMAIL shortcut is a WEB mechanism: the web login action
-      // answers `bypass` by minting a session cookie on the spot. This route
-      // has no cookie to mint, so honouring it here meant answering
-      // `{ ok: true }` and sending nothing — the developer's own account could
-      // never sign in on a device, and they waited for a code that was never
-      // going to arrive. A device always gets a real code; locally the dev
-      // mailbox catches it. (Unset in production, where this changes nothing.)
-      allowBypass: false
+      ip
     });
 
     switch (result.kind) {
@@ -80,9 +72,23 @@ export const action = apiRoute(
           undefined,
           { retryAfterSeconds: result.retryAfterSeconds }
         );
+      case "bypass":
+        // DEV_BYPASS_EMAIL: no code is sent, because `POST /auth/verify`
+        // signs this account in whatever code it is given (local development
+        // only — `signInWithBypassEmail` refuses anywhere else). Saying so
+        // lets the app skip a code screen that would only ever be filled with
+        // six arbitrary digits, which is what the web login does: it never
+        // shows one for this account either.
+        //
+        // The hint is gated on IS_LOCAL_DEV itself, not just on the variable
+        // being set: outside local development the answer must stay
+        // indistinguishable from every other, or it would say which address is
+        // the configured bypass account.
+        return IS_LOCAL_DEV
+          ? { ok: true as const, devBypass: true as const }
+          : { ok: true as const };
       default:
-        // sent, unknown_user and error all answer identically. (`bypass`
-        // cannot occur: `allowBypass` is false above.)
+        // sent, unknown_user and error all answer identically.
         return { ok: true as const };
     }
   }

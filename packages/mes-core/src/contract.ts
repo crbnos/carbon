@@ -147,7 +147,17 @@ export type AuthCodeRequest = z.infer<typeof authCodeRequest>;
  */
 export const authCodeResponse = z.object({
   ok: z.literal(true),
-  method: z.literal("password").optional()
+  method: z.literal("password").optional(),
+  /**
+   * Local development only: this is the DEV_BYPASS_EMAIL account, no code was
+   * sent, and `POST /auth/verify` will sign it in with any six digits. The app
+   * skips the code screen, as the web login does for the same account. Never
+   * present outside local development.
+   *
+   * A separate optional flag rather than a second `method` value, so a build
+   * that predates it ignores it instead of failing to parse the response.
+   */
+  devBypass: z.boolean().optional()
 });
 export type AuthCodeResponse = z.infer<typeof authCodeResponse>;
 

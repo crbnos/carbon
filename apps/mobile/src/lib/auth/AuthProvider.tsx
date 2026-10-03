@@ -31,7 +31,6 @@ import { getSupabase } from "./supabase";
 import {
   chooseCompany,
   chooseLocation,
-  clearWorkContext,
   loadWorkContext,
   saveWorkContext
 } from "./workContext";
@@ -74,7 +73,12 @@ type AuthContextValue = {
   /** Shown on every sign-in screen so a bad QR cannot hide the host. */
   serverUrl: string | null;
   insecure: boolean;
-  requestCode: (email: string) => Promise<void>;
+  /**
+   * Ask for a sign-in code. `signedIn` is true when the server signed the
+   * account straight in instead (local development's bypass account), in which
+   * case there is no code screen to show.
+   */
+  requestCode: (email: string) => Promise<{ signedIn: boolean }>;
   verifyCode: (code: string) => Promise<void>;
   verifyMfa: (code: string) => Promise<void>;
   signInWithPassword: (password: string) => Promise<void>;
@@ -402,7 +406,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isPublic: true
         });
         setEmail(nextEmail);
+        if (result.devBypass) {
+          // Local development's bypass account: the server sends no code and
+          // accepts any, so asking the developer to type six digits is theatre.
+          // The email is passed explicitly — `setEmail` above has not landed
+          // yet, and `verifyCode` reads the state.
+          const session = await api.request("/auth/verify", {
+            method: "POST",
+            body: { email: nextEmail, code: "000000" },
+            schema: authSessionResponse,
+            isPublic: true
+          });
+          await applySession(session);
+          await loadMe();
+          return { signedIn: true };
+        }
         setState(result.method === "password" ? "needs_password" : "code_sent");
+        return { signedIn: false };
       },
 
       async verifyCode(code) {
@@ -490,9 +510,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMe(null);
         setCompanyIdState(null);
         setLocationIdState(null);
-        // The next person to sign in on this device starts from their own
-        // companies, not from where the last one was working.
-        if (instanceId) await clearWorkContext(instanceId);
+        // The remembered company and location are deliberately KEPT. They are
+        // validated against the next account's own companies before use
+        // (`chooseCompany`), so a different person cannot inherit a company
+        // they are not in — and the same person signing back in should not
+        // have to say where they work again.
         setState(instanceId ? "signed_out" : "no_instance");
       },
       // Not in the dependency list: it reads a ref, so its identity never has

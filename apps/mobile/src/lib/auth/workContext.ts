@@ -77,17 +77,6 @@ export async function saveWorkContext(
   }
 }
 
-export async function clearWorkContext(instanceId: string) {
-  try {
-    const all = parseWorkContexts(await AsyncStorage.getItem(KEY));
-    delete all[instanceId];
-    await AsyncStorage.setItem(KEY, JSON.stringify(all));
-  } catch {
-    // Nothing to recover: a context that survives is validated against the
-    // next account's own companies before it is used.
-  }
-}
-
 /**
  * The company to work in, or null when the operator has to choose.
  *

@@ -8,25 +8,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * `POST /api/v1/auth/code` — what the ROUTE decides, with the shared sign-in
  * gates stubbed (they talk to Redis, Postgres and SMTP).
  *
- * The decision worth pinning is that a device never takes the DEV_BYPASS_EMAIL
- * shortcut. `requestSignInCode` answers `bypass` for that account so the WEB
- * login action can mint a session cookie on the spot; this route has no cookie
- * to mint, so honouring it meant answering `{ ok: true }` and sending nothing.
- * The developer's own account — the one their browser is signed in with —
- * could never sign in on a phone, so the phone ended up on a second account in
- * a different company, showing a different company's work centers.
+ * The decision worth pinning is what the DEV_BYPASS_EMAIL account is told.
+ * `requestSignInCode` answers `bypass` for it and sends no code, because
+ * `POST /auth/verify` signs that account in whatever code it is given (local
+ * development only). In local development this route says so — `devBypass` —
+ * and the app skips the code screen, as the web login does. Anywhere else the
+ * answer must be indistinguishable from every other, or it would reveal which
+ * address is the configured bypass account.
  */
 
-const { requestSignInCode, limit } = vi.hoisted(() => ({
+const { requestSignInCode, limit, env } = vi.hoisted(() => ({
   requestSignInCode: vi.fn(),
-  limit: vi.fn()
+  limit: vi.fn(),
+  env: { isLocalDev: true }
 }));
 
 // The real `@carbon/auth` graph reaches `@carbon/content`, whose glossary needs
 // the Lingui macro transform this vitest config does not run.
 vi.mock("@carbon/auth", () => ({
   APP_REVIEW_EMAILS: ["reviewer@example.com"],
-  getMESUrl: () => "http://mes.test"
+  getMESUrl: () => "http://mes.test",
+  // A getter, so a test can flip it: the route reads it per request.
+  get IS_LOCAL_DEV() {
+    return env.isLocalDev;
+  }
 }));
 
 vi.mock("@carbon/auth/api-user.server", () => {
@@ -91,25 +96,50 @@ const post = (body: unknown) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  env.isLocalDev = true;
   limit.mockResolvedValue({ success: true });
   requestSignInCode.mockResolvedValue({ kind: "sent" });
 });
 
 describe("POST /api/v1/auth/code", () => {
-  it("never takes the dev bypass, so every account gets a real code", async () => {
+  it("runs the shared gates as the mobile channel, on a normalised email", async () => {
     const response = await post({ email: "Dev@Carbon.ms" });
 
     expect(response.status).toBe(200);
     expect(requestSignInCode).toHaveBeenCalledWith(
-      expect.objectContaining({
-        // Normalised before the gates see it.
-        email: "dev@carbon.ms",
-        channel: "mobile",
-        // The line under test. Without it the bypass account is answered
-        // `{ ok: true }` and no email is ever sent.
-        allowBypass: false
-      })
+      expect.objectContaining({ email: "dev@carbon.ms", channel: "mobile" })
     );
+    // The bypass is left to the shared function's default. Forcing it off
+    // here made the dev account wait for an emailed code the verify endpoint
+    // never needed.
+    expect(requestSignInCode.mock.calls[0]?.[0]).not.toHaveProperty(
+      "allowBypass"
+    );
+  });
+
+  it("tells the app to skip the code screen for the dev bypass account", async () => {
+    requestSignInCode.mockResolvedValue({
+      kind: "bypass",
+      email: "dev@carbon.ms"
+    });
+
+    const payload = await (await post({ email: "dev@carbon.ms" })).json();
+
+    expect(payload).toEqual({ ok: true, devBypass: true });
+  });
+
+  it("says nothing about the bypass account outside local development", async () => {
+    // A deployment with DEV_BYPASS_EMAIL left set must not reveal which
+    // address it is: the answer has to match an ordinary account's exactly.
+    env.isLocalDev = false;
+    requestSignInCode.mockResolvedValue({
+      kind: "bypass",
+      email: "dev@carbon.ms"
+    });
+
+    const payload = await (await post({ email: "dev@carbon.ms" })).json();
+
+    expect(payload).toEqual({ ok: true });
   });
 
   it("answers identically whether or not the account exists", async () => {

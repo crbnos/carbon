@@ -39,8 +39,11 @@ export default function SignIn() {
     setError(null);
     setBusy(true);
     try {
-      await requestCode(email.trim());
-      router.push("/(auth)/verify");
+      const { signedIn } = await requestCode(email.trim());
+      // Already in (local development's bypass account): go to the app, not
+      // to a code screen with nothing to type into it.
+      if (signedIn) router.replace("/");
+      else router.push("/(auth)/verify");
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(
