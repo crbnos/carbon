@@ -233,10 +233,18 @@ async function migrate(): Promise<void> {
           `e/${workspace.inngest_event_key}`,
           workspace.inngest_base_url ?? "https://inn.gs/"
         ).href;
-        const { error: eventUrlError } = await createClient(
-          database_url,
-          service_role_key
-        ).rpc("set_inngest_event_url", { p_url: eventUrl });
+        // PostgREST reloads its schema a few seconds after a migration, so the
+        // function this run just created is not callable at once.
+        const eventUrlClient = createClient(database_url, service_role_key);
+        let eventUrlError: { message: string } | null = null;
+        for (let attempt = 1; attempt <= 6; attempt++) {
+          ({ error: eventUrlError } = await eventUrlClient.rpc(
+            "set_inngest_event_url",
+            { p_url: eventUrl }
+          ));
+          if (!eventUrlError) break;
+          await new Promise((resolve) => setTimeout(resolve, 5_000));
+        }
         if (eventUrlError) {
           console.error(
             `🔴 📨 Failed to set the Inngest event URL for ${workspace.id}: ${eventUrlError.message}`
