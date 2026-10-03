@@ -77,6 +77,12 @@ export interface ManifestEntry {
     keys: string[];
     lookups?: Array<{ table: string; match: Record<string, string> }>;
   };
+  /** When the dispatcher fills the defaults the schema publishes: on every
+   *  call (`always` — a read, a create, an action), or only when an upsert
+   *  resolves to a create (`create` — an update that leaves a field out keeps
+   *  the stored value). Absent when the schema publishes none; the generator
+   *  strips a default nothing would apply. */
+  defaults?: "always" | "create";
   /** The JSON Schema for the operation's input. */
   schema: Record<string, unknown>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the

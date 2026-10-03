@@ -38,9 +38,11 @@ import {
   MCP_VERBS,
   type McpVerb
 } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
+import type { Node, Type } from "ts-morph";
 import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
+  typeToJsonSchema as reflectType,
 } from "./response-schema";
 import {
   loadSqlFunctionEffects,
@@ -482,6 +484,21 @@ function typeToJsonSchema(
           ...(extra.properties as Record<string, unknown>),
         };
       }
+      // What the service cannot run without stays required. `getDocuments`
+      // filters on `active` unconditionally, and with it published as optional
+      // a call without it sent `active = undefined` to Postgres. A field that
+      // admits null (`search: string | null`) is left optional: omitting it
+      // says the same thing, and every caller already does.
+      const properties = extra.properties as
+        | Record<string, { type?: unknown }>
+        | undefined;
+      const required = ((extra.required as string[] | undefined) ?? []).filter(
+        (name) => {
+          const type = properties?.[name]?.type;
+          return !(Array.isArray(type) && type.includes("null"));
+        }
+      );
+      if (required.length > 0) base.required = required;
     }
     return base;
   }
@@ -1055,6 +1072,248 @@ export function withPayloadUserId(
 }
 
 /**
+ * A payload object that declares `companyGroupId` gets it from the caller's
+ * session: the schema never publishes the field, so nobody else can supply
+ * it. Read off the parameter's type, so a named or inferred type counts as
+ * much as an inline one. Every pivot report failed without it — the SQL
+ * function was called with no group at all.
+ */
+export function withPayloadCompanyGroup(
+  fields: AuthField[],
+  func: Pick<ServiceFunction, "node" | "name">
+): AuthField[] {
+  if (fields.includes("companyGroupId")) return fields;
+  let declares = false;
+  for (const param of func.node.getParameters()) {
+    const type = param.getType();
+    const members = type.isUnion() ? type.getUnionTypes() : [type];
+    const declaring = members.filter((member) =>
+      member.getProperty("companyGroupId")
+    );
+    if (declaring.length === 0) continue;
+    // The dispatcher cannot tell the shapes of a union apart, so it stamps all
+    // of them. A shape that does not expect the field would spread it into its
+    // row — `upsertPurchaseOrder`'s update wrote it to a table with no such column.
+    if (declaring.length < members.length) {
+      throw new Error(
+        `${func.name}: only some shapes of \`${param.getName()}\` declare companyGroupId, and the API fills it on all of them. Declare it on each (optional where unused) and keep it out of the row.`
+      );
+    }
+    declares = true;
+  }
+  return declares ? [...fields, "companyGroupId"] : fields;
+}
+
+/** A schema that says nothing about its value (a description aside). */
+function saysNothing(schema: unknown): boolean {
+  return (
+    schema !== null &&
+    typeof schema === "object" &&
+    !Array.isArray(schema) &&
+    Object.keys(schema).every((key) => key === "description")
+  );
+}
+
+/**
+ * `any`, `unknown` and the database's `Json` really are anything. `Json` is
+ * recognised by what it is — a string, a number, a boolean, a list or a map —
+ * because `customFields?: Json` reaches the checker as a flattened union with
+ * the alias gone.
+ */
+function isFreeForm(type: Type): boolean {
+  if (type.isAny() || type.isUnknown()) return true;
+  if (!type.isUnion()) return false;
+  const members = type.getUnionTypes();
+  return (
+    members.some((member) => member.isString()) &&
+    members.some((member) => member.isNumber()) &&
+    members.some((member) => member.isArray()) &&
+    members.some(
+      (member) => member.isObject() && member.getStringIndexType() !== undefined
+    )
+  );
+}
+
+/** The type of `name` on an object type, or on the first shape of a union that has it. */
+function propertyType(type: Type, name: string, at: Node): Type | undefined {
+  const members = type.isUnion() ? type.getUnionTypes() : [type];
+  for (const member of members) {
+    const property = member.getProperty(name);
+    if (property) return property.getTypeAtLocation(at);
+  }
+  return undefined;
+}
+
+function elementType(type: Type): Type | undefined {
+  const members = type.isUnion() ? type.getUnionTypes() : [type];
+  return members.find((member) => member.isArray())?.getArrayElementType();
+}
+
+function typed(schema: unknown, type: Type, at: Node): unknown {
+  if (schema === null || typeof schema !== "object" || Array.isArray(schema)) {
+    return schema;
+  }
+  const node = schema as Record<string, unknown>;
+  if (saysNothing(node)) {
+    return isFreeForm(type) ? node : { ...reflectType(type, at), ...node };
+  }
+  if (node.properties && typeof node.properties === "object") {
+    const properties = node.properties as Record<string, unknown>;
+    for (const [name, property] of Object.entries(properties)) {
+      const inner = propertyType(type, name, at);
+      if (inner) properties[name] = typed(property, inner, at);
+    }
+  }
+  if (node.items && typeof node.items === "object") {
+    const element = elementType(type);
+    if (element) node.items = typed(node.items, element, at);
+  }
+  for (const keyword of ["anyOf", "oneOf"]) {
+    const alternatives = node[keyword];
+    if (Array.isArray(alternatives)) {
+      node[keyword] = alternatives.map((alternative) => typed(alternative, type, at));
+    }
+  }
+  return node;
+}
+
+/**
+ * Describe every argument the schema left blank from the parameter's own
+ * TYPE. The schema is built from the signature's text and the validators, and
+ * what neither resolves — a named row type, a `ReturnType<…>`, an enum from
+ * another module — used to be published as `{}`: an argument with no shape,
+ * which a caller can only guess at (`getDocumentTemplate`'s `documentType` is
+ * one of six strings). The type checker knows; only `any`, `unknown` and `Json`
+ * stay blank, because they are.
+ */
+export function describeUntypedArguments(
+  schema: Record<string, unknown>,
+  func: Pick<ServiceFunction, "node">,
+  contextParams: Record<string, unknown>
+): void {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  if (!properties) return;
+  const params = func.node
+    .getParameters()
+    .filter((param) => !(param.getName() in contextParams));
+  const payload = params.length === 1 ? params[0].getType() : undefined;
+  for (const [name, property] of Object.entries(properties)) {
+    // A flat schema's property is a field of the one payload; otherwise it is
+    // the parameter of that name.
+    const type =
+      (payload && propertyType(payload, name, func.node)) ??
+      params.find((param) => param.getName() === name)?.getType();
+    if (type) properties[name] = typed(property, type, func.node);
+  }
+}
+
+/**
+ * When the dispatcher fills a default the schema publishes. A default is a
+ * promise to the caller: "leave this out and you get X". It can be kept where
+ * the call supplies a whole value — a read's options, a new row, an action's
+ * arguments. On an update a field left out means "leave it alone", so filling
+ * it would overwrite the stored value; and an upsert the dispatcher cannot tell
+ * apart (no rule) might be one.
+ */
+export function defaultsPolicy(
+  verb: McpVerb,
+  upsert: ManifestEntry["upsert"]
+): ManifestEntry["defaults"] {
+  if (verb === "read" || verb === "create" || verb === "action") return "always";
+  if (verb === "upsert" && upsert) return "create";
+  return undefined;
+}
+
+const CREATE_ONLY_NOTE = "Applied when creating; on update a field left out keeps its value.";
+
+/**
+ * Make the schema's defaults say only what the dispatcher does. It fills a
+ * default on an object it was sent, through `properties`, an array's `items`,
+ * and a union's one object (or one array) alternative; one anywhere else
+ * (a union of several objects, a record's values) is never applied, and with
+ * no policy none is. Those are removed, so no schema promises a value the
+ * caller will not get. Returns whether any is left. `withSchemaDefaults` in
+ * the dispatcher is the same walk over a value.
+ */
+export function publishDefaults(
+  schema: Record<string, unknown>,
+  policy: ManifestEntry["defaults"]
+): boolean {
+  let kept = false;
+  const isObject = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+
+  const visit = (node: unknown, applied: boolean): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item, false);
+      return;
+    }
+    if (!isObject(node)) return;
+    if ("default" in node) {
+      if (policy && applied) {
+        kept = true;
+        if (policy === "create") {
+          node.description =
+            typeof node.description === "string" && node.description
+              ? `${node.description} ${CREATE_ONLY_NOTE}`
+              : CREATE_ONLY_NOTE;
+        }
+      } else {
+        delete node.default;
+      }
+    }
+    for (const [keyword, child] of Object.entries(node)) {
+      // Values, not schemas: a default of `{ default: … }` is not a keyword.
+      if (keyword === "default" || keyword === "enum" || keyword === "const") {
+        continue;
+      }
+      if (keyword === "properties" && isObject(child)) {
+        for (const property of Object.values(child)) visit(property, applied);
+      } else if (keyword === "items" && isObject(child)) {
+        visit(child, applied);
+      } else if (
+        (keyword === "anyOf" || keyword === "oneOf") &&
+        Array.isArray(child)
+      ) {
+        for (const kind of ["object", "array"]) {
+          const fitting = child.filter(
+            (alternative) => isObject(alternative) && alternative.type === kind
+          );
+          for (const alternative of fitting) {
+            visit(alternative, applied && fitting.length === 1);
+          }
+        }
+        for (const alternative of child) {
+          if (
+            !isObject(alternative) ||
+            (alternative.type !== "object" && alternative.type !== "array")
+          ) {
+            visit(alternative, false);
+          }
+        }
+      } else if (isObject(child) && keyword.endsWith("roperties")) {
+        // patternProperties / additionalProperties hold schemas by name.
+        for (const property of Object.values(child)) visit(property, false);
+        visit(child, false);
+      } else {
+        visit(child, false);
+      }
+    }
+  };
+
+  // The root is the payload itself, never a property with a default of its own.
+  for (const property of Object.values(
+    isObject(schema.properties) ? schema.properties : {}
+  )) {
+    visit(property, true);
+  }
+  for (const [keyword, child] of Object.entries(schema)) {
+    if (keyword !== "properties") visit(child, false);
+  }
+  return kept;
+}
+
+/**
  * Delete `pattern` wherever a sibling `format` is present, recursively. zod
  * v4's email conversion emits BOTH — `format: "email"` plus a ~200-character
  * regex — on every email field of every validator-derived schema. The format
@@ -1377,6 +1636,10 @@ function buildToolSchema(
         type: "object",
         properties: { [param.name]: innerSchema },
       };
+      // The wrapper is required exactly when something inside it is.
+      if (Array.isArray(innerSchema.required) && !param.optional) {
+        schema.required = [param.name];
+      }
       const propCount = Object.keys(
         (innerSchema.properties as Record<string, unknown>) || {}
       ).length;
@@ -1572,14 +1835,17 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       // A declared `@mcp audit` states INTENT and wins outright (a ledger row
       // keeps `updatedBy` NULL even though the column exists); only the verb's
       // own set is checked against the real schema.
-      const injectAuth = withPayloadUserId(
-        declaredAudit(func) ??
-          withoutAbsentAuditColumns(
-            ["companyId", ...verb.audit],
-            func,
-            (table, dropped) =>
-              opts.onAuditColumnsDropped?.(toolName, table, dropped)
-          ),
+      const injectAuth = withPayloadCompanyGroup(
+        withPayloadUserId(
+          declaredAudit(func) ??
+            withoutAbsentAuditColumns(
+              ["companyId", ...verb.audit],
+              func,
+              (table, dropped) =>
+                opts.onAuditColumnsDropped?.(toolName, table, dropped)
+            ),
+          func
+        ),
         func
       );
       // A JSDoc on the function itself beats the override table (code closest
@@ -1602,6 +1868,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         onResolved: (validatorName, how) =>
           opts.onValidatorResolved?.(toolName, validatorName, how),
       });
+      describeUntypedArguments(schema, func, contextParams);
       stripRedundantPatterns(schema);
       // A service that picks insert-vs-update by testing for an audit field on
       // the payload needs exactly ONE of them stamped. BOTH directions count:
@@ -1609,12 +1876,22 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       // `"updatedBy" in` (update-branch first, upsertQuoteMaterial /
       // upsertJobMaterial). Which one is decided by the dispatcher from the
       // rule recorded here, never by an argument the caller has to supply.
+      // A service that branches some other way (`"id" in payload`) is given
+      // the same rule whenever its type makes `id` decisive. Without one the
+      // dispatcher stamped both audit fields on every call, so an update
+      // through the API rewrote the row's createdBy.
       const upsert =
         injectAuth.includes("createdBy") &&
         branchesOnKeyPresence(func.node, OPERATION_FIELDS)
           ? upsertRule(func, schema)
-          : undefined;
+          : declared.verb === "upsert" &&
+              settingLines(func, "key").length === 0 &&
+              idDistinguishesUpdate(func.node, CONTEXT_PARAMS)
+            ? { keys: ["id"] }
+            : undefined;
       if (upsert) describeUpsertKeys(schema, upsert);
+      const defaults = defaultsPolicy(declared.verb, upsert);
+      const publishesDefaults = publishDefaults(schema, defaults);
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
 
@@ -1634,6 +1911,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         // `get*List` reads), so the MCP layer pages the response instead.
         paginates: bodyPaginates(func.node),
         ...(upsert ? { upsert } : {}),
+        ...(defaults && publishesDefaults ? { defaults } : {}),
         schema,
         ...(responseSchema ? { responseSchema } : {}),
       });

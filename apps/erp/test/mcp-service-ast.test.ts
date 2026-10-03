@@ -18,8 +18,10 @@ import {
   assertReadCallsOnlyReads,
   contextParamsOf,
   declarationOf,
+  describeUntypedArguments,
   upsertRule,
-  withoutAbsentAuditColumns
+  withoutAbsentAuditColumns,
+  withPayloadCompanyGroup
 } from "../../../scripts/lib/service-metadata";
 
 // The generator's questions about a service function, asked of real source
@@ -603,5 +605,143 @@ describe("a read tool and the SQL functions it calls", () => {
     expect(() => assertReadCallsOnlyReads(fns.getAnything, sql)).toThrow(
       /not a string literal/
     );
+  });
+});
+
+describe("a payload that declares companyGroupId", () => {
+  const fns = parse(`
+    type Report = { companyId: string; companyGroupId: string; key: string };
+    export async function getPivot(client: Client, args: Report) {}
+    export async function getRows(client: Client, args: { companyId: string }) {}
+    export async function getBalances(client: Client, companyGroupId: string) {}
+    export async function upsertOrder(
+      client: Client,
+      order:
+        | { companyGroupId: string; createdBy: string }
+        | { id: string; companyGroupId?: string; updatedBy: string }
+    ) {}
+    export async function upsertAccount(
+      client: Client,
+      account:
+        | { companyGroupId: string; createdBy: string }
+        | { id: string; updatedBy: string }
+    ) {}
+  `);
+
+  it("is filled from the session, whether the type is inline or named", () => {
+    // accounting_getDimensionPivot: the SQL function was called with no group.
+    expect(withPayloadCompanyGroup(["companyId"], fns.getPivot)).toEqual([
+      "companyId",
+      "companyGroupId"
+    ]);
+    expect(withPayloadCompanyGroup(["companyId"], fns.upsertOrder)).toEqual([
+      "companyId",
+      "companyGroupId"
+    ]);
+  });
+
+  it("is left alone when no payload declares it", () => {
+    expect(withPayloadCompanyGroup(["companyId"], fns.getRows)).toEqual([
+      "companyId"
+    ]);
+    // A positional companyGroupId is a context param, not a payload field.
+    expect(withPayloadCompanyGroup(["companyId"], fns.getBalances)).toEqual([
+      "companyId"
+    ]);
+  });
+
+  it("refuses a union where only some shapes declare it", () => {
+    // upsertPurchaseOrder: the update spread it into a table with no such column.
+    expect(() => withPayloadCompanyGroup(["companyId"], fns.upsertAccount)).toThrow(
+      /upsertAccount: only some shapes of `account` declare companyGroupId/
+    );
+  });
+});
+
+describe("an argument the schema left blank", () => {
+  const fns = parse(`
+    const statuses = ["Open", "Closed"] as const;
+    type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+    type Row = { id: string; quoteLineId: string | null; notes: Json };
+    export async function getTemplate(client: Client, kind: "quote" | "invoice", companyId: string) {}
+    export async function getRisks(
+      client: Client,
+      args: { status?: typeof statuses; bucketDays?: [number, number]; search: string }
+    ) {}
+    export async function getDocuments(client: Client, job: Pick<Row, "id" | "quoteLineId">, itemId: string) {}
+    export async function upsertThing(
+      client: Client,
+      thing: { name: string; customFields?: Json; payload: unknown; extra: any }
+    ) {}
+  `);
+  const context = { client: "client", companyId: "companyId" };
+
+  it("is described from the parameter's type", () => {
+    // settings_getDocumentTemplate: the caller could only guess at documentType.
+    const template = { type: "object", properties: { kind: {} } };
+    describeUntypedArguments(template, fns.getTemplate, context);
+    expect(template.properties.kind).toEqual({
+      type: "string",
+      enum: ["quote", "invoice"]
+    });
+
+    // A named row narrowed to what the function reads, among other params.
+    const documents = {
+      type: "object",
+      properties: { job: {}, itemId: { type: "string" } }
+    };
+    describeUntypedArguments(documents, fns.getDocuments, context);
+    expect(documents.properties).toEqual({
+      job: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          quoteLineId: { type: ["string", "null"] }
+        },
+        required: ["id", "quoteLineId"]
+      },
+      itemId: { type: "string" }
+    });
+  });
+
+  it("reaches a blank field of a flat payload, and reads a tuple as a list", () => {
+    const risks = {
+      type: "object",
+      properties: {
+        status: { description: "Filter." },
+        bucketDays: {},
+        search: { type: "string" }
+      }
+    };
+    describeUntypedArguments(risks, fns.getRisks, context);
+    expect(risks.properties).toEqual({
+      // quality_getRisks: an \`as const\` list came out as a map of statuses.
+      status: {
+        type: ["array", "null"],
+        items: { type: "string", enum: ["Open", "Closed"] },
+        description: "Filter."
+      },
+      bucketDays: { type: ["array", "null"], items: { type: "number" } },
+      search: { type: "string" }
+    });
+  });
+
+  it("stays blank where the type really is anything", () => {
+    const thing = {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        customFields: {},
+        payload: {},
+        extra: {}
+      }
+    };
+    describeUntypedArguments(thing, fns.upsertThing, context);
+    expect(thing.properties).toEqual({
+      name: { type: "string" },
+      customFields: {},
+      payload: {},
+      extra: {}
+    });
   });
 });

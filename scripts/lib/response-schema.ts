@@ -129,6 +129,16 @@ export function typeToJsonSchema(
       items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
     };
   }
+  // A tuple or a readonly array is a list on the wire too. Neither is
+  // `isArray()`, so both fell through to the object walk and came out as a map
+  // (`typeof riskStatus`, an `as const` list, read as `Record<string, status>`).
+  if (type.isTuple() || type.isReadonlyArray()) {
+    const element = type.getNumberIndexType();
+    return {
+      type: "array",
+      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+    };
+  }
 
   if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
 

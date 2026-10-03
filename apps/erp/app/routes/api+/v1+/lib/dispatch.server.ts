@@ -344,6 +344,66 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   return own.length === 1 && own[0] === paramName;
 }
 
+/**
+ * Whether the schema declares `paramName` as an argument of its own that a
+ * caller may leave out — as opposed to the one payload param the body IS. A
+ * scalar is always its own argument. An object or a list is too when the
+ * service takes more than one payload param; when it is the only one, a caller
+ * may send its contents flat and the whole body is that param.
+ */
+function omittedNamedParam(meta: ManifestEntry, paramName: string): boolean {
+  if (declaredScalarParam(meta, paramName)) return true;
+  const properties = (meta.schema as { properties?: Record<string, unknown> })
+    ?.properties;
+  if (!properties || !(paramName in properties)) return false;
+  const payloadParams = meta.serviceParams.filter(
+    (p) => !isContextParam(meta, p) && p !== "args"
+  );
+  return payloadParams.length > 1;
+}
+
+/**
+ * The value with every default its schema publishes filled in, wherever the
+ * object holding the field was sent: through `properties`, each element of a
+ * list, and a union with exactly one alternative of the value's kind (a
+ * nullable object; `string | { limit, offset }`). A default is a promise to
+ * the caller, and a service typed from a validator's OUTPUT requires the
+ * field: a pivot sent `state: {}` crashed reading `state.columnAxis.type`. The
+ * generator publishes a default only where this walk reaches it
+ * (`publishDefaults`).
+ */
+export function withSchemaDefaults(schema: unknown, value: unknown): unknown {
+  if (!isRecord(schema)) return value;
+  const alternatives = schema.anyOf ?? schema.oneOf;
+  if (Array.isArray(alternatives)) {
+    const kind = Array.isArray(value)
+      ? "array"
+      : isRecord(value)
+        ? "object"
+        : "";
+    const fitting = alternatives.filter(
+      (alternative) => isRecord(alternative) && alternative.type === kind
+    );
+    return fitting.length === 1 ? withSchemaDefaults(fitting[0], value) : value;
+  }
+  if (Array.isArray(value)) {
+    return isRecord(schema.items)
+      ? value.map((element) => withSchemaDefaults(schema.items, element))
+      : value;
+  }
+  if (!isRecord(schema.properties) || !isRecord(value)) return value;
+  const filled: Record<string, unknown> = { ...value };
+  for (const [name, property] of Object.entries(schema.properties)) {
+    if (!isRecord(property)) continue;
+    if (filled[name] !== undefined) {
+      filled[name] = withSchemaDefaults(property, filled[name]);
+    } else if ("default" in property) {
+      filled[name] = structuredClone(property.default);
+    }
+  }
+  return filled;
+}
+
 function supabaseErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) {
@@ -419,6 +479,19 @@ export async function dispatchOperation(
         }
       )));
 
+  // Published defaults are filled where the call supplies a whole value, and
+  // never on an update: there a field left out keeps what is stored. Each
+  // argument is filled against ITS schema once the body's shape is known —
+  // filling the raw body first would add keys beside a wrapper and change
+  // which shape it is read as.
+  const fills =
+    meta.defaults === "always" ||
+    (meta.defaults === "create" && operation === "create");
+  const filled = (schema: unknown, value: unknown) =>
+    fills ? withSchemaDefaults(schema, value) : value;
+  const declared = (meta.schema as { properties?: Record<string, unknown> })
+    ?.properties;
+
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {
     if (isContextParam(meta, paramName)) {
@@ -431,41 +504,59 @@ export async function dispatchOperation(
       // inert, since setGenericQueryFilters reads only filters/sorts/offset/limit.
       const wrapped = normalizedArgs?.args;
       const value =
-        (meta.schema as { properties?: Record<string, unknown> })?.properties
-          ?.args &&
+        declared?.args &&
         wrapped &&
         typeof wrapped === "object" &&
         !Array.isArray(wrapped)
           ? wrapped
           : normalizedArgs || {};
       functionArgs.push(
-        enrichWithAuthContext(value, context, meta.injectAuth, operation)
-      );
-    } else if (
-      normalizedArgs &&
-      paramName in normalizedArgs &&
-      addressesWholeParam(meta, paramName)
-    ) {
-      functionArgs.push(
         enrichWithAuthContext(
-          normalizedArgs[paramName],
+          filled(declared?.args ?? meta.schema, value),
           context,
           meta.injectAuth,
           operation
         )
       );
     } else if (
-      declaredScalarParam(meta, paramName) &&
+      normalizedArgs &&
+      paramName in normalizedArgs &&
       addressesWholeParam(meta, paramName)
     ) {
-      // A scalar param with no matching key. The object fallbacks below would
-      // hand the service the whole payload as an id (`.eq("id", { apiKeyId })`
-      // matches nothing and reports success); `undefined` keeps the positional
-      // arity intact. A missing REQUIRED scalar is rejected earlier by input
-      // validation, so only optional ones legitimately reach here. The
+      // The param's own schema when it is published as an argument; the whole
+      // schema when the caller wrapped a flat payload in the param's name.
+      functionArgs.push(
+        enrichWithAuthContext(
+          filled(
+            declared?.[paramName] ?? meta.schema,
+            normalizedArgs[paramName]
+          ),
+          context,
+          meta.injectAuth,
+          operation
+        )
+      );
+    } else if (
+      omittedNamedParam(meta, paramName) &&
+      addressesWholeParam(meta, paramName)
+    ) {
+      // A param the caller addresses by name, with no matching key: it was
+      // left out. The object fallbacks below would hand the service the whole
+      // payload in its place — as an id (`.eq("id", { apiKeyId })` matches
+      // nothing and reports success), or as a list
+      // (`getActiveJobOperationsByLocation({ locationId })` sent the body as
+      // `workCenterIds` and Postgres answered "expected JSON array").
+      // `undefined` keeps the positional arity intact and lets the service's
+      // own default apply. A missing REQUIRED param is rejected earlier by
+      // input validation, so only optional ones legitimately reach here. The
       // addressesWholeParam guard keeps a collision op — whose same-named schema
       // entry describes a FIELD, so it looks scalar — falling through instead.
-      functionArgs.push(undefined);
+      const own = declared?.[paramName];
+      functionArgs.push(
+        fills && isRecord(own) && "default" in own
+          ? structuredClone(own.default)
+          : undefined
+      );
     } else if (
       normalizedArgs &&
       Object.keys(normalizedArgs).length === 1 &&
@@ -477,7 +568,7 @@ export async function dispatchOperation(
       // positionally (the documented `{ args: {...} }` wrapper, or a guessed key).
       functionArgs.push(
         enrichWithAuthContext(
-          Object.values(normalizedArgs)[0],
+          filled(meta.schema, Object.values(normalizedArgs)[0]),
           context,
           meta.injectAuth,
           operation
@@ -488,7 +579,7 @@ export async function dispatchOperation(
       // like upsertPart(client, part)).
       functionArgs.push(
         enrichWithAuthContext(
-          { ...normalizedArgs },
+          filled(meta.schema, { ...normalizedArgs }),
           context,
           meta.injectAuth,
           operation

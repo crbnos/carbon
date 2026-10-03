@@ -948,32 +948,22 @@ export async function upsertPurchaseInvoice(
   return invoice;
 }
 
-/** @mcp upsert */
+/**
+ * Updates an invoice's delivery. The row is created with the invoice and
+ * shares its id, so there is nothing to insert here.
+ * @mcp update
+ */
 export async function upsertPurchaseInvoiceDelivery(
   client: SupabaseClient<Database>,
-  purchaseInvoiceDelivery:
-    | (z.infer<typeof purchaseInvoiceDeliveryValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof purchaseInvoiceDeliveryValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in purchaseInvoiceDelivery) {
-    return client
-      .from("purchaseInvoiceDelivery")
-      .update(sanitize(purchaseInvoiceDelivery))
-      .eq("id", purchaseInvoiceDelivery.id)
-      .select("id")
-      .single();
+  purchaseInvoiceDelivery: z.infer<typeof purchaseInvoiceDeliveryValidator> & {
+    updatedBy: string;
+    customFields?: Json;
   }
+) {
   return client
     .from("purchaseInvoiceDelivery")
-    .insert([purchaseInvoiceDelivery])
+    .update(sanitize(purchaseInvoiceDelivery))
+    .eq("id", purchaseInvoiceDelivery.id)
     .select("id")
     .single();
 }
@@ -1336,32 +1326,22 @@ export async function upsertSalesInvoice(
   return invoice;
 }
 
-/** @mcp upsert */
+/**
+ * Updates an invoice's shipment. The row is created with the invoice and
+ * shares its id, so there is nothing to insert here.
+ * @mcp update
+ */
 export async function upsertSalesInvoiceShipment(
   client: SupabaseClient<Database>,
-  salesInvoiceShipment:
-    | (z.infer<typeof salesInvoiceShipmentValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof salesInvoiceShipmentValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesInvoiceShipment) {
-    return client
-      .from("salesInvoiceShipment")
-      .update(sanitize(salesInvoiceShipment))
-      .eq("id", salesInvoiceShipment.id)
-      .select("id")
-      .single();
+  salesInvoiceShipment: z.infer<typeof salesInvoiceShipmentValidator> & {
+    updatedBy: string;
+    customFields?: Json;
   }
+) {
   return client
     .from("salesInvoiceShipment")
-    .insert([salesInvoiceShipment])
+    .update(sanitize(salesInvoiceShipment))
+    .eq("id", salesInvoiceShipment.id)
     .select("id")
     .single();
 }

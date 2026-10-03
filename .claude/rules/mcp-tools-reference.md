@@ -504,6 +504,38 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
+- **The read-tool sweep** (`pnpm sweep:tools`, `apps/erp/test/sweep/`) is the
+  only place a tool is run for real: this branch's dispatcher and services, a
+  signed-in user's client, a seeded company on a running local stack. Arguments
+  are not guessed: `paramFilters` (`service-ast.ts`) reads which column each
+  parameter is compared to (`.eq("id", jobId)` on `job`), and a value that
+  exists is sampled as the user; a name the tool's own body does not tie to a
+  column falls back to what that name is compared to across every service, then
+  to the database's own tables and columns of that name. When the company has
+  no row to take a value from, the tool is still called, with a value of the
+  column's type that matches nothing (the report lists these under
+  `placeholder`). The few arguments nothing can answer (`targetCurrency`,
+  `timeZone`) are written down per tool in `read-tools.inputs.ts`. It records
+  `ok` / `failed` / `not-found` / `not-called`, refuses a stack that has not
+  applied this branch's migrations, and gates on `read-tools.baseline.json`,
+  which is empty and stays that way unless a failure is knowingly accepted.
+  Seed a demo dataset and run the planner first (`pnpm db:seed:dev`): on the
+  satellite dataset all 810 read tools are called. It has found three bugs no
+  unit test had:
+  - An omitted optional list or object argument was handed the whole request
+    body (`getActiveJobOperationsByLocation({ locationId })` sent it as
+    `workCenterIds`). `omittedNamedParam` now leaves such an argument
+    `undefined` when the service takes more than one payload param
+    (`dispatch-parity.test.ts` a5).
+  - A read did not get the defaults its schema publishes. A service typed from
+    a validator's output requires those fields, so `getPurchaseLinePivot` sent
+    `state: {}` crashed on `state.columnAxis.type`. `withSchemaDefaults` fills
+    them (a6); see "A published default is a promise" below for when.
+  - `companyGroupId` inside a payload object was hidden from the schema and
+    never filled, so every pivot report, and creating an account, order, quote
+    or invoice, ran with no group (see injectAuth below).
+
+  Not part of `pnpm test`: it needs the stack.
 - **A `read` tool may only call SQL functions that read**
   (`assertReadCallsOnlyReads`). The generator sees every `.rpc("name")`
   (`rpcCalls`, through casts) but not the SQL behind it, so the function's own
@@ -551,8 +583,53 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   would otherwise send a column that does not exist (PGRST204, how
   `items_upsertItemCustomerPart` failed). Zero or several relations leaves the
   set alone. `userId` is added when the payload's own type declares one
-  (`withPayloadUserId`). `@mcp audit` replaces all of that for intent the schema
-  cannot express.
+  (`withPayloadUserId`), and `companyGroupId` when any payload parameter's TYPE
+  has that property (`withPayloadCompanyGroup`, asked of the type checker, so a
+  named or inferred type counts). The dispatcher cannot tell the shapes of a
+  union apart and stamps all of them, so the generator refuses a union where
+  only some shapes declare it: declare it on each (optional where unused) and
+  destructure it out before the row is written, as `upsertPurchaseOrder` does.
+  `@mcp audit` replaces all of that for intent the schema cannot express.
+
+- **An argument is never published blank unless it is.** The input schema is
+  built from the signature's text and the validators. What neither resolves — a
+  named row type, a `ReturnType<…>`, an enum from another module — used to come
+  out as `{}`: an argument with no shape (`getDocumentTemplate`'s
+  `documentType`, one of eleven strings; 21 tools in all).
+  `describeUntypedArguments` now fills every blank node from the parameter's
+  own TYPE, with the reflection the response schemas use (`typeToJsonSchema` in
+  `response-schema.ts`, which reads a tuple or readonly array as a list). Only
+  `any`, `unknown` and `Json` stay blank — `Json` recognised by its members,
+  since `customFields?: Json` reaches the checker with the alias gone. The API
+  validates input against the schema, so a service that takes a whole row but
+  reads three fields now DEMANDS the whole row: type the parameter as what it
+  reads (`Pick<Job, "id" | "salesOrderLineId" | "quoteLineId">`).
+
+- **A published default is a promise, kept or not made.** `default` in JSON
+  Schema enforces nothing; a caller reading `taxPercent: default 0` leaves the
+  field out and expects 0. The defaults come from the form validators
+  (`.default(0)`), written for a form that submits every field, so the same
+  default sits on create and update alike — and over the API an update is
+  partial. The manifest entry's `defaults` (`defaultsPolicy`, in the digest)
+  says when the dispatcher fills them:
+  - `always` — `read`, `create`, `action`: the call supplies a whole value.
+  - `create` — an `upsert` with a rule, only when it resolves to a create. On
+    update a field left out keeps what is stored; the property's description
+    says so.
+  - absent — `update`, `delete`, and an upsert with no rule (nothing says
+    whether the call updates). `publishDefaults` REMOVES every default from
+    such a schema, and from any place the dispatcher's walk does not reach
+    (several object alternatives of a union, a record's values), so no schema
+    publishes one that is not applied.
+  The dispatcher fills each ARGUMENT against its own schema after the body's
+  shape is known (`filled` in `dispatchOperation`), never the raw body: adding
+  keys beside a `{ args: {…} }` wrapper would change which shape it is read as.
+  `withSchemaDefaults` and `publishDefaults` are the same walk (`properties`,
+  `items`, a union's one object or array alternative), pinned against one
+  fixture in `dispatch-parity.test.ts`; `mcp-tool-metadata.test.ts` fails a
+  tool that publishes a default with no policy. When this landed every default
+  filled on a create equalled the column's own database default, except
+  `salesInvoiceLine.unitOfMeasureCode` ("EA", as the form sends).
 
 - **Create vs update on an upsert is never the caller's question.** A service
   that picks insert-vs-update by testing for an audit field on the payload
@@ -562,7 +639,12 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   the two stamped — stamp both and an `"updatedBy" in` service takes its UPDATE
   branch on every create, matches zero rows and returns PGRST116. The generator
   records how to decide in the manifest entry's `upsert` (also in the digest), and
-  fails generation for a branching upsert it cannot give a rule to:
+  fails generation for a branching upsert it cannot give a rule to. An `upsert`
+  that branches some other way (`"id" in line`, twenty of them: invoice, order
+  and quote lines) gets the by-`id` rule too whenever its type makes `id`
+  decisive. Without one both audit fields were stamped on every call, and since
+  those services spread the payload into their UPDATE, editing a row through
+  the API rewrote its `createdBy` (`dispatch-parity.test.ts` a8):
   - **By `id`** (`{ keys: ["id"] }`, most upserts) — read off the parameter's TYPE
     (`idDistinguishesUpdate`, `service-ast.ts`): every union member that requires
     `updatedBy` has an `id`, and no other member requires one. Sending `id` means

@@ -4091,6 +4091,7 @@ export async function upsertAccount(
       })
     | (Omit<z.infer<typeof accountValidator>, "id"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -4098,9 +4099,10 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
+  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
   return client
     .from("account")
-    .update(sanitize(account))
+    .update(sanitize(accountUpdate))
     .eq("id", account.id)
     .select("id")
     .single();
@@ -4394,6 +4396,7 @@ export async function upsertDimension(
       })
     | (Omit<z.infer<typeof dimensionValidator>, "id" | "dimensionValues"> & {
         id: string;
+        companyGroupId?: string;
         updatedBy: string;
       }),
   dimensionValues?: string[]
@@ -4407,9 +4410,10 @@ export async function upsertDimension(
       .select("id, companyGroupId")
       .single();
   } else {
+    const { companyGroupId: _companyGroupId, ...dimensionUpdate } = dimension;
     dimensionResult = await client
       .from("dimension")
-      .update(sanitize(dimension))
+      .update(sanitize(dimensionUpdate))
       .eq("id", dimension.id)
       .select("id, companyGroupId")
       .single();

@@ -960,7 +960,7 @@ export const getPartDocuments = async (
 export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: Job,
+  job: Pick<Job, "id" | "salesOrderLineId" | "quoteLineId">,
   itemId: string
 ): Promise<StorageItem[]> {
   const itemFiles = await getPartDocuments(client, companyId, { itemId });

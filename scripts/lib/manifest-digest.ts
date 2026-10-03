@@ -44,6 +44,8 @@ export interface DigestEntry {
   /** How create is told from update: the key fields, or `table(columns)` for
    *  each row the dispatcher looks up. Absent when the service does not branch. */
   upsert?: string;
+  /** When published defaults are filled: `always`, or `create` for an upsert. */
+  defaults?: string;
 }
 
 export interface ManifestDigest {
@@ -141,7 +143,8 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
           ? { result: t.resultShape }
           : {}),
         ...(describeContext(t) ? { context: describeContext(t) } : {}),
-        ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {})
+        ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {}),
+        ...(t.defaults ? { defaults: t.defaults } : {})
       }))
   };
 }
@@ -199,6 +202,11 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.upsert !== after.upsert) {
       parts.push(`upsert ${before.upsert ?? "none"} → ${after.upsert ?? "none"}`);
+    }
+    if (before.defaults !== after.defaults) {
+      parts.push(
+        `defaults ${before.defaults ?? "none"} → ${after.defaults ?? "none"}`
+      );
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {
