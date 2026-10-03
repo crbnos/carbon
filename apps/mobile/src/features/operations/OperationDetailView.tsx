@@ -5,9 +5,9 @@
 import { useLingui } from "@lingui/react/macro";
 import { useKeepAwake } from "expo-keep-awake";
 import { router } from "expo-router";
-import { Pause, Play } from "lucide-react-native";
+import { Ellipsis, Pause, Play } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { toast } from "sonner-native";
 import { ActionDock } from "~/components/ActionDock";
 import type { SheetHandle } from "~/components/BottomSheet";
@@ -15,6 +15,7 @@ import { HeroButton } from "~/components/HeroButton";
 import { TabBar, type TabDef, TabPanel } from "~/components/Tabs";
 import { Button, ErrorNote, Screen, Skeleton } from "~/components/ui";
 import { useIsTablet } from "~/components/useIsTablet";
+import { useThemeColors } from "~/components/useThemeColor";
 import { ApiClientError } from "~/lib/api/errors";
 import {
   commandMessage,
@@ -74,6 +75,7 @@ export function OperationDetailView({
 }) {
   const { t } = useLingui();
   const isTablet = useIsTablet();
+  const colors = useThemeColors();
   useKeepAwake();
 
   // Null means "whichever unit the server auto-selects". It only becomes a
@@ -286,16 +288,32 @@ export function OperationDetailView({
           variant="secondary"
           onPress={() => quantitySheet.current?.open()}
           disabled={locked}
+          // 56pt on a phone so the row's three controls share one height.
+          className={isTablet ? undefined : "min-h-[56px] rounded-xl px-4"}
         >
           {t`Log completed`}
         </Button>
-        <Button
-          variant="ghost"
-          onPress={() => moreSheet.current?.open()}
-          accessibilityLabel={t`More actions`}
-        >
-          {t`More`}
-        </Button>
+        {isTablet ? (
+          <Button
+            variant="ghost"
+            onPress={() => moreSheet.current?.open()}
+            accessibilityLabel={t`More actions`}
+          >
+            {t`More`}
+          </Button>
+        ) : (
+          // The word costs a third of a phone's row and says less than the
+          // glyph: three dots is what "more actions" looks like everywhere
+          // else on the device.
+          <Pressable
+            onPress={() => moreSheet.current?.open()}
+            accessibilityRole="button"
+            accessibilityLabel={t`More actions`}
+            className="size-14 items-center justify-center rounded-xl border border-border bg-secondary active:opacity-70"
+          >
+            <Ellipsis size={24} color={colors.foreground} />
+          </Pressable>
+        )}
       </ActionDock>
 
       <QuantitySheet

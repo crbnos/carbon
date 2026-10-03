@@ -2368,8 +2368,14 @@ msgstr "आंशिक रिकॉर्ड करें"
 msgid "Record this step in Carbon MES in a browser."
 msgstr ""
 
+msgid "Record time as"
+msgstr ""
+
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"
+
+msgid "Recording"
+msgstr ""
 
 msgid "Reject"
 msgstr "अस्वीकार करें"

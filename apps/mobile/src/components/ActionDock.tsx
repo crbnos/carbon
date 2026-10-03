@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
+import { useSegments } from "expo-router";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -56,6 +57,11 @@ export function ActionDock({
   // split view switches branch, and a hook below it would stop being called.
   const { dockOpen, setDockOpen } = usePreferences();
   const asColumn = (layout ?? (isTablet ? "column" : "bar")) === "column";
+  // Inside the tabs the tab bar is below this dock and already owns the home
+  // indicator's inset. Adding it here as well put a 34pt strip of nothing
+  // between the dock's buttons and the tab bar on every phone with one.
+  const segments = useSegments() as string[];
+  const aboveTabBar = segments.includes("(tabs)");
 
   if (asColumn) {
     return (
@@ -78,7 +84,7 @@ export function ActionDock({
       // makes that read as a drawer rather than a jump.
       layout={LinearTransition.duration(180)}
       className="border-t border-border bg-card"
-      style={{ paddingBottom: insets.bottom + 12 }}
+      style={{ paddingBottom: (aboveTabBar ? 0 : insets.bottom) + 12 }}
     >
       {drawer ? (
         <>
@@ -89,7 +95,7 @@ export function ActionDock({
             accessibilityLabel={dockOpen ? t`Hide options` : t`Show options`}
             // Full width so the handle is hit without aiming, and 44pt tall so
             // it clears the floor for a gloved thumb.
-            className="min-h-[44px] flex-row items-center justify-center gap-2 active:opacity-60"
+            className="min-h-[40px] flex-row items-center justify-center gap-2 active:opacity-60"
           >
             {dockOpen ? (
               <ChevronDown size={18} color={colors.mutedForeground} />
