@@ -14,7 +14,6 @@ import {
   stateMap
 } from "@carbon/onboarding";
 import {
-  detectImplementationSignals,
   getImplementationCheckStates,
   getImplementationFieldValues,
   getImplementationHub,
@@ -52,6 +51,7 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
+import { getImplementationSignals } from "~/services/implementation-signals.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
@@ -162,7 +162,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getImplementationCheckStates(client, companyId),
     getImplementationFieldValues(client, companyId),
     getImplementationRows(client, companyId),
-    detectImplementationSignals(client, companyId)
+    getImplementationSignals(client, companyId)
   ]);
 
   return {

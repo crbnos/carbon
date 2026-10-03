@@ -25,7 +25,6 @@ import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import {
-  detectImplementationSignals,
   getImplementationCheckStates,
   getImplementationHub
 } from "@carbon/onboarding/server";
@@ -92,6 +91,7 @@ import {
   getUserDefaults,
   getUserGroups
 } from "~/modules/users/users.server";
+import { getImplementationSignals } from "~/services/implementation-signals.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -160,7 +160,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getImplementationHub(client, companyId)
   );
   const implementationSignalsPromise = implementationHubPromise.then((hub) =>
-    hub.data ? detectImplementationSignals(client, companyId) : null
+    // A finished hub shows no badge and no card, so it needs no signals.
+    hub.data && hub.data.status !== "complete" && hub.data.status !== "archived"
+      ? getImplementationSignals(client, companyId)
+      : null
   );
 
   // ITAR gate status — only queried in controlled environments; elsewhere the
