@@ -17,22 +17,17 @@ import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
-import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
-import { makeDurations } from "~/utils/durations";
+import { getActiveScreen } from "~/services/screens.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
-  const [operations] = await Promise.all([
-    getActiveJobOperationsByEmployee(client, {
-      employeeId: userId,
-      companyId
-    })
-  ]);
+  // Read through `screens.server.ts`, as the user and not the service role, so
+  // the MES mobile API answers this screen with the same query and the same
+  // client — see `.claude/rules/mes-mobile-api.md`.
+  const screen = await getActiveScreen(client, { companyId, userId });
 
-  return {
-    operations: operations?.data?.map(makeDurations) ?? []
-  };
+  return screen.data;
 }
 
 export default function ActiveRoute() {

@@ -15,22 +15,18 @@ import {
 } from "@carbon/auth";
 import {
   botProtection,
-  getMagicLinkErrorMessage,
   logAuthEvent,
-  sendMagicLink,
   signInWithBypassEmail,
   verifyAuthSession,
   verifyBotProtection
 } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   clearAuthCookies,
   flash,
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
-import { getUserByEmail } from "@carbon/auth/users.server";
-import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
+import { isSsoEnabled } from "@carbon/ee/sso.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import {
@@ -67,6 +63,11 @@ import {
   useSearchParams
 } from "react-router";
 
+import {
+  LOCKED_MESSAGE,
+  requestSignInCode,
+  SSO_REQUIRED_MESSAGE
+} from "~/services/auth.server";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -146,100 +147,74 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
-  // above, keyed by the normalized email. Rejects with a GENERIC message that
-  // never reveals whether the account exists (avoids user enumeration).
+  // above, keyed by the normalized email. Every gate from here on is shared
+  // with the mobile sign-in endpoint; see `~/services/auth.server`.
   const lockout = new AccountLockout({ redis });
-  const LOCKED_MESSAGE =
-    "For your security, sign-in for this account is temporarily paused. Please try again later.";
 
-  const lockStatus = await lockout.status(email);
-  if (lockStatus.locked) {
-    logAuthEvent("login_locked", {
-      actor: email,
-      ip,
-      reason: "account temporarily locked",
-      retryAfterSeconds: lockStatus.retryAfterSeconds
-    });
-    return data(
-      { success: false, message: LOCKED_MESSAGE },
-      await flash(request, error(null, LOCKED_MESSAGE))
-    );
-  }
+  let result = await requestSignInCode({
+    email,
+    origin: getMESUrl(),
+    lockout,
+    channel: "web",
+    ip
+  });
 
-  const user = await getUserByEmail(email);
-
-  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
-  if (
-    devBypassEmail &&
-    email.toLowerCase() === devBypassEmail.toLowerCase() &&
-    user.data?.active
-  ) {
-    const authSession = await signInWithBypassEmail(email);
+  if (result.kind === "bypass") {
+    const authSession = await signInWithBypassEmail(result.email);
     if (authSession) {
       // Genuine completed login — clear any accumulated lockout state.
       await lockout.reset(email);
-      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
+      logAuthEvent("login_success", {
+        actor: email,
+        ip,
+        channel: "web",
+        method: "bypass"
+      });
       const sessionCookie = await setAuthSession(request, { authSession });
       return redirect(path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
       });
     }
-  }
-
-  const attempt = await lockout.recordFailure(email);
-  if (attempt.locked) {
-    logAuthEvent("login_locked", {
-      actor: email,
+    // Bypass sign-in failed — fall through to the remaining gates, exactly as
+    // this action has always done.
+    result = await requestSignInCode({
+      email,
+      origin: getMESUrl(),
+      lockout,
+      channel: "web",
       ip,
-      reason: "account temporarily locked",
-      retryAfterSeconds: attempt.retryAfterSeconds
+      allowBypass: false
     });
-    return data(
-      { success: false, message: LOCKED_MESSAGE },
-      await flash(request, error(null, LOCKED_MESSAGE))
-    );
   }
 
-  // Require-SSO gate: a covered + enforced domain may only authenticate via
-  // SSO — refuse the magic link here, server-side.
-  if (await isSsoRequiredForEmail(getCarbonServiceRole(), email)) {
-    const SSO_REQUIRED_MESSAGE =
-      "Your organization requires single sign-on. Sign in with your work email to continue.";
-    logAuthEvent("login_failed", {
-      actor: email,
-      ip,
-      reason: "sso required for domain"
-    });
-    return data(
-      { success: false, message: SSO_REQUIRED_MESSAGE },
-      await flash(request, error(null, SSO_REQUIRED_MESSAGE))
-    );
-  }
-
-  if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, getMESUrl());
-
-    if (magicLink.error) {
-      logAuthEvent("login_failed", {
-        actor: email,
-        ip,
-        reason: "magic link send failed"
-      });
-      const message = getMagicLinkErrorMessage(magicLink.error);
+  switch (result.kind) {
+    case "locked":
       return data(
-        error(magicLink, message),
-        await flash(request, error(magicLink, message))
+        { success: false, message: LOCKED_MESSAGE },
+        await flash(request, error(null, LOCKED_MESSAGE))
       );
-    }
-    logAuthEvent("magic_link_sent", { actor: email, ip });
-  } else {
-    return data(
-      { success: false, message: "Invalid email/password combination" },
-      await flash(request, error(null, "Failed to sign in"))
-    );
+    case "sso_required":
+      return data(
+        { success: false, message: SSO_REQUIRED_MESSAGE },
+        await flash(request, error(null, SSO_REQUIRED_MESSAGE))
+      );
+    case "error":
+      return data(
+        error(null, result.message),
+        await flash(request, error(null, result.message))
+      );
+    case "sent":
+      return { success: true };
+    // `unknown_user` — and a `bypass` that cannot occur here, because the
+    // retry above passes `allowBypass: false` — get the same generic failure
+    // this action has always returned: it never reveals whether the account
+    // exists.
+    default:
+      return data(
+        { success: false, message: "Invalid email/password combination" },
+        await flash(request, error(null, "Failed to sign in"))
+      );
   }
-
-  return { success: true };
 }
 
 export default function LoginRoute() {

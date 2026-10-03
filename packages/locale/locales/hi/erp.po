@@ -803,6 +803,9 @@ msgstr "एक पार्ट में एक विशिष्ट आइट�
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "इस चरण में एक पार्ट रखे जाने के बाद गिर सकता है — एक फिक्स्चर या किसी अन्य की सहायता पर विचार करें।"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "एक फ़ोटो या PDF जो ऑपरेटर इस चरण में देखता है"
 
@@ -4319,6 +4322,9 @@ msgstr "Jira समस्या से कनेक्ट करें"
 msgid "Connect Linear issue"
 msgstr "Linear समस्या से कनेक्ट करें"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "पहले सेटिंग्स → एकीकरण के तहत Slack कनेक्ट करें।"
 
@@ -4672,6 +4678,9 @@ msgstr "विक्रय आदेश की विशिष्ट पहच�
 
 msgid "Copy sales return order unique identifier"
 msgstr "विक्रय रिटर्न आदेश की विशिष्ट पहचान नकल करें"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "सेवा संख्या कॉपी करें"
@@ -9184,6 +9193,9 @@ msgstr "{0} में"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshape में, इस OAuth एप्लिकेशन की अनुमतियों को संपादित करें ताकि „एप्लिकेशन आपके दस्तावेज़ों में लिख सके”, फिर फिर से कनेक्ट करें।"
 
@@ -9412,6 +9424,9 @@ msgstr "निरीक्षण: विभिन्न निरीक्षक
 
 msgid "Install"
 msgstr "इंस्टॉल करें"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Install mode"
 msgstr "इंस्टॉल मोड"
@@ -12897,6 +12912,9 @@ msgstr "या"
 msgid "Or enter this secret manually:"
 msgstr "या इस गुप्त को मैन्युअल रूप से दर्ज करें:"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Order"
 msgstr "आदेश"
 
@@ -13596,6 +13614,9 @@ msgstr "PO संख्या"
 msgid "PO PDF"
 msgstr "पीओ पीडीएफ"
 
+msgid "Point the Carbon MES app at this server so the shop floor can clock in, pick and report from a phone or tablet."
+msgstr ""
+
 msgid "Policy"
 msgstr "नीति"
 
@@ -14242,6 +14263,9 @@ msgstr "लेखांकन को धकेलें"
 
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"
+
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -15944,6 +15968,9 @@ msgstr "अपने ऑथेंटिकेटर ऐप (जैसे Google 
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "अपने प्रमाणकर्ता ऐप से इसे स्कैन करें, फिर इसके द्वारा दिखाया गया 6-अंकीय कोड दर्ज करें।"
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"

@@ -45,7 +45,14 @@ export type WorkModule =
  * into the back office. Nothing else distinguishes those two, and they mean
  * completely different things about adoption.
  */
-export type WorkSource = "erp" | "mes" | "mes_qr" | "api" | "portal";
+export type WorkSource =
+  | "erp"
+  | "mes"
+  | "mes_qr"
+  /** The Carbon MES native app, through `/api/v1` (`apps/mobile`). */
+  | "mes_mobile"
+  | "api"
+  | "portal";
 
 /**
  * Where a job came from.

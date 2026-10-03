@@ -242,6 +242,43 @@ jobs:
 
       - run: pnpm test
 
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # apps/mobile is NOT a pnpm workspace member (it runs React 19 while the
+      # web tree is pinned to 18 — see pnpm-workspace.yaml), so turbo cannot see
+      # it and it needs its own install with its own lockfile. The root install
+      # is still needed: `mobile:typecheck` rebuilds the Lingui catalogs from
+      # packages/locale through the repo's own lingui:compile.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            docs/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: actions/cache@v4
+        with:
+          path: apps/mobile/node_modules
+          key: mobile-node-modules-${{ hashFiles('apps/mobile/pnpm-lock.yaml') }}
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir apps/mobile --ignore-workspace install --frozen-lockfile
+
+      - run: pnpm run mobile:typecheck
+      - run: pnpm run mobile:test
+      - run: pnpm exec biome check apps/mobile
+
   edge-functions:
     name: Edge Functions
     runs-on: ubuntu-latest

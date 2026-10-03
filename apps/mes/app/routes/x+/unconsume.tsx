@@ -5,13 +5,12 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { FAILURE_STATUS } from "~/services/api-result.server";
+import type { RuleRefusalDetails } from "~/services/commands.materials.server";
+import { unconsumeTrackedEntities } from "~/services/commands.materials.server";
 import { issueTrackedEntityValidator } from "~/services/models";
-
-const log = getLogger("mes", "unconsume");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -27,108 +26,34 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { materialId, parentTrackedEntityId, children } = validation.data;
-  if (!materialId) {
-    return data(
-      { success: false, message: "materialId required" },
-      { status: 400 }
-    );
-  }
-  const acknowledged = Boolean(
-    (payload as { acknowledged?: boolean }).acknowledged
-  );
-
   const serviceRole = await getCarbonServiceRole();
 
-  // materialReceive surface — return-to-stock from a job operation. Resolve
-  // workCenter via jobMaterial → jobOperation. Skip rule eval if material's
-  // operation is unresolvable (consistent with permissive-fallback elsewhere).
-  const { data: matRow } = await serviceRole
-    .from("jobMaterial")
-    .select("jobOperationId, itemId, quantity")
-    .eq("id", materialId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!matRow) {
-    log.warn("Job material not found for company", { companyId, materialId });
-    return data(
-      { success: false, message: "Material not found" },
-      { status: 404 }
-    );
-  }
-
-  if (matRow.jobOperationId) {
-    // `workInstructionId` is in the runtime row but absent from the generated
-    // DB types (stale until next regen). Select only the typed column;
-    // pick up `workInstructionId` via cast below.
-    const { data: jobOpRow } = await serviceRole
-      .from("jobOperation")
-      .select("workCenterId")
-      .eq("id", matRow.jobOperationId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-
-    if (jobOpRow?.workCenterId) {
-      const workInstructionId =
-        (jobOpRow as { workInstructionId?: string | null }).workInstructionId ??
-        null;
-      const ruleEval = await evaluateLinesForSurface({
-        client: serviceRole,
-        companyId,
-        userId,
-        targetType: "workCenter",
-        surface: "materialReceive",
-        lines: [
-          {
-            lineId: materialId,
-            itemId: (matRow.itemId as string | null) ?? null,
-            workCenterId: jobOpRow.workCenterId,
-            operation: {
-              id: matRow.jobOperationId,
-              itemId: (matRow.itemId as string | null) ?? null,
-              quantity: matRow.quantity ?? null,
-              workInstructionId
-            },
-            quantity: matRow.quantity ?? 0
-          }
-        ]
-      });
-      if (
-        ruleEval.violations.length > 0 &&
-        isBlocked(ruleEval.violations, acknowledged)
-      ) {
-        return data(
-          {
-            success: false,
-            message:
-              ruleEval.violations[0]?.message ??
-              "Rule violation prevented material return",
-            violations: ruleEval.violations,
-            ruleNames: ruleEval.ruleNames
-          },
-          { status: 400 }
-        );
-      }
+  const result = await unconsumeTrackedEntities(
+    serviceRole,
+    { companyId, userId },
+    {
+      ...validation.data,
+      acknowledged: Boolean(
+        (payload as { acknowledged?: boolean }).acknowledged
+      )
     }
-  }
+  );
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
-      type: "unconsumeTrackedEntities",
-      materialId,
-      parentTrackedEntityId,
-      children,
-      companyId,
-      userId
+  if (!result.ok) {
+    const { failure } = result;
+    // This route has always answered a rules refusal with 400 and the
+    // violations inline — the API answers the same refusal 409 with `details`.
+    // Keeping the web status here is deliberate: the Materials dialog reads it.
+    if (failure.kind === "blocked") {
+      const { violations, ruleNames } = failure.details as RuleRefusalDetails;
+      return data(
+        { success: false, message: failure.message, violations, ruleNames },
+        { status: 400 }
+      );
     }
-  });
-
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
     return data(
-      { success: false, message: "Failed to issue material" },
-      { status: 400 }
+      { success: false, message: failure.message },
+      { status: FAILURE_STATUS[failure.kind] }
     );
   }
 

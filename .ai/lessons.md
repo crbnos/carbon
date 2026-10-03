@@ -249,6 +249,38 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `crates/planner/src` (`FASTENER_NAME_RE`, `_classify_fasteners`, `removal_priority`, `_reselect_base`); future classification heuristics.
 
+## A cookie carries `mfaVerified`; a Bearer token only carries `aal`
+
+**Context:** The MES mobile API (`apps/mes/app/routes/api+/v1+/`,
+`requireApiUser` in `@carbon/auth`) mirrors the web's MFA bounce: refuse a token
+that is not `aal2` when the user has a verified TOTP factor. The first live
+call with a `DEV_BYPASS_EMAIL` session answered `401 mfa_required` and no
+endpoint was reachable at all.
+
+**Problem:** The web and the API learn "this session already satisfied MFA" from
+different places. `signInWithBypassEmail` mints an `AuthSession` with
+`mfaVerified: true` and the web carries that bit in the signed `carbon` cookie,
+so `requireAuthSession` never challenges it. A native client has no cookie — the
+only thing it presents is the Supabase access token, whose `aal` claim the
+bypass leaves at `aal1` because no TOTP challenge ever ran. So any API that
+infers MFA from the token alone locks out the dev bypass the moment the local
+test user happens to have enrolled a factor, which is invisible until someone
+runs a real request (typecheck and unit tests both pass).
+
+**Rule:** When porting a cookie-session gate to a Bearer-token API, list what
+the cookie carried that the token does not — `mfaVerified`, `console`,
+`companyId`, `lastActiveAt` are all session-only — and decide each one
+explicitly. For the bypass specifically, exempt it in the token path too, gated
+on `IS_LOCAL_DEV` (the same flag `signInWithBypassEmail` itself refuses to run
+without, so the exemption cannot exist in a deployed environment), exactly as
+`DEV_BYPASS_EMAIL` is already exempt from the SSO-required gate. Pin it with a
+test that asserts the exemption does NOT apply when `IS_LOCAL_DEV` is false.
+
+**Applies to:** `packages/auth/src/services/api-user.server.ts`; any future
+Bearer-token surface that reimplements a `requireAuthSession` check; the
+`consolePinMaxAgeMs` / idle-lock rules, which are cookie-based for the same
+reason.
+
 ## Client-side entity caches must be company-keyed in a multi-tenant app
 
 **Context:** A prod company export failed its closure guard: a `salesOrder` (and its `opportunity`) in one company referenced another company's customer. Root cause chain: `RealtimeDataProvider` (ERP + MES) cached the customer/item/supplier/people lists in IndexedDB under **global** keys (`"customers"`), and company switching is a client-side navigation — so after a switch, the previous company's cached list could hydrate the pickers before the properly-scoped server fetch landed. Nothing downstream caught the bad pick: zod validated `customerId` as a bare string, services inserted it blindly, RLS only checks the row's own `companyId`, and the FK was single-column (`customerId → customer(id)`).
@@ -2880,6 +2912,56 @@ tag until proven otherwise.
 **Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
 
 
+## A local run cannot verify a step that needs something the repo does not carry
+
+**Context:** `apps/mobile`'s typecheck was green on every local run and failed in CI
+twice in a row, for two unrelated reasons. First `pnpm install --frozen-lockfile` broke
+on a lockfile entry for a dependency nothing imported; then `tsc --noEmit` reported
+`Property 'className' does not exist on type 'ViewProps'` across every component.
+
+**Problem:** Both were the same shape. `pnpm install` skips the clean-checkout
+verification when `node_modules` already satisfies the manifest, and
+`src/uniwind-types.d.ts` — the generated declaration that augments React Native's props
+with `className` — is gitignored and was written by an earlier `expo start`. The machine
+that had already run the app was the only machine where either step could pass, so a
+local green told me nothing about a fresh checkout.
+
+**Rule:** A verification command must create everything it depends on. A gitignored
+generated artifact belongs in the script that needs it (`typecheck` now runs
+`uniwind generate-artifacts` first), not in a developer's working directory. Before
+trusting a local pass on install or typecheck, delete the artifact — `rm` the generated
+file, or install into an empty `node_modules` — and run it again.
+
+**Applies to:** `apps/mobile/package.json` scripts, `apps/mobile/.gitignore`, the
+`Mobile` job in `.github/workflows/check.yml`.
+
+## Uniwind only styles React Native's own components
+
+**Context:** Every screen in `apps/mobile` is built on a shared `Screen`, whose root
+was `SafeAreaView` from `react-native-safe-area-context` carrying
+`className="flex-1 bg-background"`.
+
+**Problem:** Uniwind applies `className` to React Native's core components. A
+third-party component is not patched and silently ignores the prop — so that
+`SafeAreaView` had no flex and no height, every screen rendered into a
+zero-height box, and the whole app was blank from its first frame. Nothing threw,
+so there was no error to find, and the empty screen showed iOS's own `#F2F2F7`,
+which is one shade from this theme's `--background`. Typecheck passed (the prop
+is valid TypeScript), all 271 tests passed (they are pure logic), and
+`expo export` bundled cleanly. Reading the bundle was misleading too: the theme
+tokens ARE compiled into it, which makes Uniwind look like it is working.
+
+**Rule:** Only give `className` to a component from `react-native` itself. For a
+third-party one, either wrap it in `withUniwind()` from `uniwind`, or use the
+core equivalent — `View` plus `useSafeAreaInsets()` instead of `SafeAreaView`,
+which is what `Screen` does now. When a React Native screen is blank with no
+error, bisect with an entry that renders an inline-styled `View` and no
+`className`: if that shows and the real screen does not, the fault is a class
+that was never applied, not a crash.
+
+**Applies to:** `apps/mobile/src/components/ui.tsx`, any new component wrapping a
+third-party one, `apps/mobile/AGENTS.md`.
+
 ## A `resolve.alias` stub reaches the server bundle too
 
 **Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
@@ -2889,3 +2971,33 @@ tag until proven otherwise.
 **Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
 
 **Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.
+
+## A native addon reachable from a route file takes the dev server down on a cold start
+
+**Context:** The MES inspection drawing endpoint rasterises a PDF page through `@carbon/files/pdf/node`, whose canvas backend is `@napi-rs/canvas` — a native addon whose entry `require`s a `.node` binary. It was built and verified against a dev server that was already running.
+
+**Problem:** Vite's dev dependency scan follows every route file, server-only ones included, and through a linked workspace package. It reached the `import("@napi-rs/canvas")` in `pdf/node.ts`, tried to pre-bundle the addon, could not read the binary as source (`UNLOADABLE_DEPENDENCY … stream did not contain valid UTF-8`), and the unhandled rejection killed the whole dev server seconds after it printed its URLs. A warm optimizer cache hides it completely: the scan only runs when the lockfile or config hash changes, so the server that was running when the endpoint was written kept working, and typecheck, vitest and `react-router build` never run the optimizer at all. Starting a second dev server for the same app also DELETES the shared `node_modules/.vite/deps` of the one already running.
+
+**Rule:** A native addon (anything that loads a `.node` file) imported anywhere a route file can reach goes in that app's `optimizeDeps.exclude`. After adding a server-side dependency, verify with a COLD start — stop the dev server, delete `apps/<app>/node_modules/.vite`, start it — not against the server that was already up. Never start a second dev server for an app someone else is running.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `packages/files/src/pdf/node.ts`, any new native dependency.
+
+## Inventory adjustment names are inventory's point of view, not the job's
+
+**Context:** The MES mobile app issues an untracked part through `POST /operations/:id/materials/issue`, which runs the `issue` edge function's `partToOperation` branch with an `adjustmentType` of `Set Quantity`, `Positive Adjmt.` or `Negative Adjmt.`.
+
+**Problem:** The app sent `Positive Adjmt.` for an issue, reading it as "add to what is issued". In the edge function a positive adjustment is a RETURN: it writes a positive `itemLedger` row (stock goes up) and SUBTRACTS from `jobMaterial.quantityIssued`. Every tap of Issue would have put stock back that the job never took and driven the issued quantity negative. The comment beside it argued for the wrong reading, and no test pinned the value.
+
+**Rule:** Issuing material to a job is `Negative Adjmt.` — the same default web's `IssueMaterialModal` uses. Build the body in one tested function (`untrackedIssueBody`) rather than at each call site, and verify a stock-moving change against the database (ledger sign and `quantityIssued`), not against a 200.
+
+**Applies to:** `apps/mobile/src/features/operations/`, any client of `/materials/issue`, the `issue` edge function.
+
+## A parser tested only against fixtures can reject every real payload
+
+**Context:** The mobile operation screen validated `materials` with `z.array(operationMaterial)`.
+
+**Problem:** The server sends `{ materials, trackedInputs }`, not an array. Every test fed the parser an array, so the tests passed while the Materials tab told every operator on every operation that its materials could not be read.
+
+**Rule:** Build at least one fixture from a captured live response (`curl` the endpoint, keep the shape), and accept the documented older shape alongside it when a self-hosted server may lag. When a parser distinguishes "empty" from "malformed", test it with the real envelope.
+
+**Applies to:** `apps/mobile/src/features/*/logic.ts`, any client-side parse of a passthrough field.

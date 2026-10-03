@@ -63,10 +63,12 @@ import ItemThumbnail from "~/components/ItemThumbnail";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { ShortPickModal } from "~/components/ShortPickModal";
 import type { PickingListRecommendation } from "~/services/inventory.service";
-import { getPickingListRecommendations } from "~/services/inventory.service";
 import { isPickingListLocked } from "~/services/models";
-import type { UnresolvedPickingListLine } from "~/services/picking.service";
-import { getPickingListForExecution } from "~/services/picking.service";
+import type {
+  getPickingListForExecution,
+  UnresolvedPickingListLine
+} from "~/services/picking.service";
+import { getPickingListScreen } from "~/services/screens.server";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -76,21 +78,21 @@ export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
     : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
   const pickingListId = params.pickingListId!;
 
-  const result = await getPickingListForExecution(client, pickingListId);
+  // The read itself lives in `~/services/screens.server` so this screen and
+  // `GET /api/v1/picking/:listId` cannot drift.
+  const screen = await getPickingListScreen(client, {
+    companyId,
+    pickingListId
+  });
 
-  if (result.error || !result.data) {
+  if (!screen.ok) {
     throw new Response("Picking list not found", { status: 404 });
   }
 
-  return {
-    pickingList: result.data,
-    // Deferred (not awaited): recommended serial/batch lots per line, streamed in
-    // after the list paints so the at-a-glance subtext never blocks first render.
-    recommendations: getPickingListRecommendations(client, pickingListId)
-  };
+  return screen.data;
 }
 
 type Line = NonNullable<

@@ -60,6 +60,7 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
     completeAllSteps: `${x}/steps/complete-all`,
+    connectMobile: `${x}/connect-mobile`,
     consolePinIn: `${x}/console/pin-in`,
     consolePinOut: `${x}/console/pin-out`,
     consoleToggle: `${x}/console/toggle`,

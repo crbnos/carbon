@@ -5,7 +5,7 @@ description: The shop-floor surface where operators run operations, report quant
 
 The <Term>MES</Term> app is Carbon's shop-floor interface. Planners release and schedule work in the ERP; operators execute and report that work from tablets or shared stations in MES. See the [run the floor tour](/guides/floor) for a walkthrough and [jobs](/docs/reference/jobs), [picking lists](/docs/reference/picking), and [quality](/docs/reference/quality) for the underlying records.
 
-MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but it has **no offline mode**. Operators cannot start work, report output, or issue material while disconnected.
+MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but in a browser it has **no offline mode**: operators cannot start work, report output, or issue material while disconnected. The [native app](#the-native-app) does queue work offline.
 
 ## Getting onto the floor
 
@@ -142,6 +142,97 @@ Inspections and work instructions run as typed steps inside the procedure tab. A
 ### Maintenance dispatch
 
 When a machine goes down, an operator raises a maintenance dispatch from the floor. Every dispatch created here is `Reactive` by source (scheduled and non-conformance dispatches originate elsewhere). It carries a severity, a priority, and an OEE impact; choosing an OEE impact of **"Down"** ends the work center's active production events, because the center can't produce while it's under repair. The maintenance worker executes it from a detail view with Play, Pause, and Complete controls, a **"Time Worked"** total, and a **"Spare Parts"** section (**"Add & Issue"**), landing on **"Maintenance Completed"** when done.
+
+## The native app
+
+Carbon MES also runs as a native app on iOS and Android, built on the same data
+through a JSON API (`/api/v1`) that executes the same server code the browser's
+own routes execute. That is the design's central constraint rather than a note
+about it: a write from a tablet runs the same material backflush, the same cost
+posting, the same genealogy and the same floor gates as a write from Chrome, so
+the two cannot report a job differently.
+
+<Callout type="warn" title="Not in the app stores yet">
+The app is not published to the App Store or Google Play. It runs today through
+Expo Go or an internal build made from this repository, which is what the pilot
+devices use. Nothing below describes a download you can install from a store.
+</Callout>
+
+### Linking a device
+
+A device is pointed at one Carbon by scanning the QR code on the **"Connect a
+device"** page in the ERP or MES, or by typing the server's address. One device
+can hold several linked instances — a production server and a staging one, or
+two customers' servers — and every piece of state the app keeps is scoped to the
+one it is on: the session, the chosen company and location, the read cache and
+the offline queue.
+
+Sign-in is the same 6-digit emailed code the browser uses. A password is
+accepted only for the store-review accounts listed in `APP_REVIEW_EMAILS`,
+because an App Store reviewer cannot receive a code sent to someone else's
+mailbox.
+
+### What an operator can do
+
+<FieldTable>
+  <Field name="Operations">The operations at the chosen location, filtered by work center. Start and pause Setup, Labor or Machine time; report good, scrap and rework; finish the operation.</Field>
+  <Field name="Materials">The operation's bill of material with issued-against-required. Scanning a part anywhere on the tab issues it. Tracked parts carry their lot or serial.</Field>
+  <Field name="Instructions">The work instructions with their step records, per unit. A File step takes a photo with the camera or from the library, stored in the job's own files.</Field>
+  <Field name="Notes">The operation's notes — what the last shift left for this one.</Field>
+  <Field name="Picking">The lists assigned to this kitter, with quantity and tracked-lot picking and the company's expiry policy enforced.</Field>
+  <Field name="Timecard">The week's entries with a live elapsed timer, and End Shift.</Field>
+  <Field name="Scan">The camera, and a hardware scanner paired in keyboard mode. A Carbon QR code opens the operation or picking list it names.</Field>
+</FieldTable>
+
+Quality issues and label printing are available from the operation's **"More"**
+sheet. Nothing is printed by the device — the print is queued on the server,
+which already knows the printers.
+
+### What stays in the browser
+
+The app is deliberately narrower than the MES in a browser, and it says so in
+place rather than hiding the control:
+
+- **Assembly and inspection operations** open in the browser; the app sends the
+  operator there by name.
+- **Batch-mode operations** are reported in the browser.
+- **Timestamp, Person and Inspection** work-instruction steps are recorded in
+  the browser. The instruction text is still readable in the app.
+- **Maintenance requests** are raised in the browser.
+- **Editing or deleting a time-card entry** happens in the browser.
+
+### Shared terminals
+
+A tablet bolted to a work center is turned into a shared terminal from the
+app's **"More"** screen, the same idea as the browser's console mode and gated
+by the same company setting and plan. Each operator then picks their name and
+enters their console PIN, and a header above the tab bar shows whose name the
+next write will carry — amber while nobody is pinned in, because on a shared
+terminal that is not a neutral state. Both the terminal and operator claims are
+held in memory only, so a stolen tablet carries no operator session and a cold
+start asks for a PIN.
+
+### Offline work
+
+Unlike the browser, the app queues what it cannot send. Commands are ordered
+per operation, so two reports on one operation apply in the order the operator
+made them, while a jammed operation never blocks another. A retry reuses the
+original request key, so a replay cannot post a second production event; a
+failure the server already recorded stops that operation's queue and waits for
+the operator rather than retrying by itself.
+
+### Air-gapped and controlled environments
+
+When `/me` reports an air-gapped deployment or a controlled environment, the app
+makes no outbound request to any host but the linked Carbon — analytics are not
+merely disabled but never initialised. In a controlled environment an idle
+device signs itself out; on a shared terminal an idle device pins the operator
+out instead, so the terminal stays ready for the next person.
+
+### Languages
+
+Thirteen languages, sharing the browser MES's own translation catalog — so a
+string already translated for the web is already translated in the app.
 
 <AgentContext>
 ## Troubleshooting

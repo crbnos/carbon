@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Carbon MES",
+    "slug": "carbon-mes",
+    "version": "1.0.0",
+    "scheme": "carbon-mes",
+    "description": "The Carbon shop-floor app. Start and pause work, report good, scrap and rework, issue material by scan, follow work instructions, pick lists and clock in and out.",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#09090B",
+    "icon": "./assets/images/icon.png",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "checkAutomatically": "NEVER"
+    },
+    "ios": {
+      "bundleIdentifier": "ms.carbon.mes",
+      "supportsTablet": true,
+      "requireFullScreen": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Carbon MES uses the camera to scan job, material and location barcodes on the shop floor, to read the QR code that links this device to your company's Carbon server, and to take photos you attach to a work instruction step.",
+        "NSPhotoLibraryUsageDescription": "Carbon MES opens your photo library when you choose an existing photo to attach to a work instruction step. Only the photo you pick is read, and it is uploaded to your company's own Carbon server.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "ms.carbon.mes",
+      "adaptiveIcon": {
+        "backgroundColor": "#09090B",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "permissions": ["android.permission.CAMERA"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f2f2f3",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 180,
+          "dark": {
+            "backgroundColor": "#161313",
+            "image": "./assets/images/splash-icon-dark.png"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -12,13 +12,45 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "‹ Previous"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "(비활성)"
+
+#. placeholder {0}: summary.needsConfirmation
+msgid "{0, plural, one {# action from an earlier shift needs confirming} other {# actions from an earlier shift need confirming}}"
+msgstr ""
+
+#. placeholder {0}: summary.needsAttention
+msgid "{0, plural, one {# action needs your attention} other {# actions need your attention}}"
+msgstr ""
+
+#. placeholder {0}: summary.lanes
+msgid "{0, plural, one {# operation affected} other {# operations affected}}"
+msgstr ""
+
+#. placeholder {0}: summary.sending
+msgid "{0, plural, one {Sending # action} other {Sending # actions}}"
+msgstr ""
 
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
 msgstr "{0} - {1} 설정"
+
+#. placeholder {0}: item.name
+#. placeholder {1}: item.type
+msgid "{0} — {1}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available, locale)
+msgid "{0} {unit} available"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(data.quantityRequired, locale)
+msgid "{0} {unit} still to pick"
+msgstr ""
 
 #. placeholder {0}: employeeIds.length
 msgid "{0} Active"
@@ -28,13 +60,53 @@ msgstr "{0} 활성"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: allColumns.length
+msgid "{0} are hidden by the filter."
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available, locale)
+#. placeholder {0}: formatQuantity(entity.quantity, locale)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} 고객"
 
+#. placeholder {0}: pin.length
+msgid "{0} digits entered"
+msgstr ""
+
+#. placeholder {0}: (targets.data ?? []).length
+msgid "{0} earlier operation(s) can take this back."
+msgstr ""
+
+#. placeholder {0}: model.tally.fails
+#. placeholder {0}: recorded.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 지시에 설정한 다음 완료 처리하세요."
+
+#. placeholder {0}: workCenter.name
+#. placeholder {1}: workCenter.blockingDispatchReadableId
+msgid "{0} is blocked by maintenance {1}."
+msgstr ""
+
+#. placeholder {0}: workCenter.name
+msgid "{0} is blocked for maintenance."
+msgstr ""
+
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
+msgid "{0} is expired and cannot be picked"
+msgstr ""
+
+#. placeholder {0}: text.trim()
+#. placeholder {1}: material.itemReadableId ?? ""
+msgid "{0} is not an available {1}"
+msgstr ""
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -44,14 +116,27 @@ msgstr "{0} 품목"
 msgid "{0} jobs"
 msgstr "{0} 작업 지시"
 
+#. placeholder {0}: model.remaining
+msgid "{0} left to make"
+msgstr ""
+
+#. placeholder {0}: row.sampleSize
+msgid "{0} needed"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(picked, locale)
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: columns.length
+#. placeholder {1}: formatQuantity(toPick, locale)
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{1} 중 {0}"
+
+#. placeholder {0}: formatQuantity(picked, locale)
+#. placeholder {1}: formatQuantity(toPick, locale)
+msgid "{0} of {1} {unit}"
+msgstr ""
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
@@ -63,9 +148,40 @@ msgstr "{1} 중 {0} 완료"
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
+#. placeholder {0}: resolvedLineCount(kit.lines)
+#. placeholder {1}: kit.lines.length
+msgid "{0} of {1} lines"
+msgstr ""
+
+#. placeholder {0}: recorded.recorded
+#. placeholder {1}: row.sampleSize
+msgid "{0} of {1} recorded"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(target - done, locale)
+#. placeholder {1}: formatQuantity(target, locale)
+msgid "{0} of {1} will not be made"
+msgstr ""
+
+#. placeholder {0}: missingContainment.length
+msgid "{0} open containment actions need signing off on this operation. Open it in Carbon MES on the web."
+msgstr ""
+
+#. placeholder {0}: operations.length
+msgid "{0} operation(s)"
+msgstr ""
+
+#. placeholder {0}: model.tally.passes
+msgid "{0} passed"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 대기열"
+
+#. placeholder {0}: quantity(reworked)
+msgid "{0} reworked"
+msgstr ""
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
@@ -76,9 +192,52 @@ msgstr "{0} 실행 중"
 msgid "{0} runs in batch {1}"
 msgstr "{0}이 배치 {1}에서 실행"
 
+#. placeholder {0}: quantity(scrapped)
+msgid "{0} scrapped"
+msgstr ""
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 스크랩됨"
+
+#. placeholder {0}: formatQuantity( line.outstanding, locale )
+msgid "{0} short"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(data.quantityRequired, locale)
+#. placeholder {0}: formatQuantity(outstanding, locale)
+msgid "{0} still to pick"
+msgstr ""
+
+#. placeholder {0}: commandMessage(error, t`Some material is still unpicked.`)
+#. placeholder {1}: unresolved .map((line) => line.itemName) .join(", ")
+msgid "{0} Still unpicked: {1}"
+msgstr ""
+
+#. placeholder {0}: column.title
+#. placeholder {1}: column.count
+msgid "{0}, {1} operations"
+msgstr ""
+
+#. placeholder {0}: column.title
+msgid "{0}, blocked for maintenance"
+msgstr ""
+
+#. placeholder {0}: gaugeLabel(gauge) ?? ""
+msgid "{0}, out of calibration"
+msgstr ""
+
+msgid "{built} of {count} built"
+msgstr ""
+
+msgid "{code} is not a material on this operation"
+msgstr ""
+
+msgid "{code} is not a part of this assembly"
+msgstr ""
+
+msgid "{code} is not used on this step"
+msgstr ""
 
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
@@ -86,15 +245,101 @@ msgstr "{completed} / {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 
+msgid "{count} work centers"
+msgstr ""
+
+#. placeholder {0}: steps.length
+msgid "{done} / {0} done"
+msgstr ""
+
+msgid "{done} of {total} lines"
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. Picking one needs a second tap to confirm."
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. This company allows them to be picked."
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. This company does not allow expired stock to be picked."
+msgstr ""
+
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
+
+msgid "{hours}h {minutes}m"
+msgstr ""
+
+msgid "{label} is waiting to send"
+msgstr ""
+
+msgid "{max} remaining"
+msgstr ""
+
+#. placeholder {0}: part.readableId
+#. placeholder {1}: part.name
+msgid "{quantity} × {0} — {1}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 작업 지시"
 
+#. placeholder {0}: lines.length
+msgid "{resolved} of {0} lines"
+msgstr ""
+
+msgid "{resolved} of {lines} lines"
+msgstr ""
+
+msgid "{scrapped} scrapped"
+msgstr ""
+
+msgid "{text} is not a unit of this operation"
+msgstr ""
+
+msgid "{title} is blocked for maintenance"
+msgstr ""
+
+msgid "{waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
+msgstr ""
+
+msgid "{worked} so far"
+msgstr ""
+
+#. placeholder {0}: columnIndex + 1
+msgid "#{0}"
+msgstr ""
+
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
+
+msgid "1 work center"
+msgstr ""
+
+msgid "48pt minimum"
+msgstr ""
+
+msgid "6-digit code"
+msgstr ""
+
+msgid "A connected barcode scanner still works."
+msgstr ""
+
+msgid "A connected barcode scanner works without it."
+msgstr ""
+
+msgid "A field"
+msgstr ""
+
+msgid "A list shows up here as soon as it is assigned to you."
+msgstr ""
+
+msgid "A phone cannot reach this address"
+msgstr ""
+
+msgid "A photo is attached."
+msgstr ""
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
@@ -105,11 +350,19 @@ msgstr "정보"
 msgid "Accept"
 msgstr "수락"
 
+#. placeholder {0}: lot.acceptanceNumber
+#. placeholder {1}: lot.rejectionNumber
+msgid "Accept {0} / reject {1}"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "로트 수락"
 
 msgid "Accept lot?"
 msgstr "로트를 수락하시겠습니까?"
+
+msgid "Accept the lot"
+msgstr ""
 
 msgid "Account Settings"
 msgstr "계정 설정"
@@ -133,8 +386,14 @@ msgstr "추가"
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
+msgid "Add a note"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
+
+msgid "Add a server"
+msgstr ""
 
 msgid "Add Inventory"
 msgstr "재고 추가"
@@ -145,8 +404,20 @@ msgstr "샘플 추가"
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
+msgid "Added"
+msgstr ""
+
+msgid "After a period of inactivity the pinned operator is signed out."
+msgstr ""
+
+msgid "After a period of inactivity this device signs itself out."
+msgstr ""
+
 msgid "All"
 msgstr "전체"
+
+msgid "All {openUnitCount} open units will be scrapped. To send some to rework instead, close this lot in Carbon MES on the web."
+msgstr ""
 
 msgid "All clear"
 msgstr "모두 정상"
@@ -170,11 +441,60 @@ msgstr "모든 스크랩"
 msgid "All steps"
 msgstr ""
 
+msgid "All units built — this operation is finished"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
 
 msgid "Allocate units"
 msgstr "단위 할당"
+
+msgid "Allow camera access to scan the code"
+msgstr ""
+
+msgid "Allow Carbon MES to use the camera"
+msgstr ""
+
+msgid "Allow photo access to attach an existing photo"
+msgstr ""
+
+msgid "Allow the camera"
+msgstr ""
+
+msgid "Allow the camera to take a photo for this step"
+msgstr ""
+
+msgid "Already issued"
+msgstr ""
+
+msgid "An open containment action needs signing off on this operation. Open it in Carbon MES on the web."
+msgstr ""
+
+msgid "Analytics are off: this is a controlled environment."
+msgstr ""
+
+msgid "Analytics are off: this server has not configured them."
+msgstr ""
+
+msgid "Analytics are off: this server is air-gapped."
+msgstr ""
+
+msgid "Anything the next person should know"
+msgstr ""
+
+msgid "Anything you add here is what the next shift reads."
+msgstr ""
+
+msgid "Anything your supervisor should know"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+#. placeholder {0}: lot.aql
+msgid "AQL {0}"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -191,6 +511,9 @@ msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공�
 msgid "Are you sure you want to leave this page?"
 msgstr "이 페이지를 나가시겠습니까?"
 
+msgid "Assembly"
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "조립 단계"
 
@@ -202,6 +525,14 @@ msgstr "나에게 배정됨"
 
 msgid "Assignee"
 msgstr "담당자"
+
+#. placeholder {0}: step.minValue
+msgid "At least {0}"
+msgstr ""
+
+#. placeholder {0}: step.maxValue
+msgid "At most {0}"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "인증 오류"
@@ -231,6 +562,10 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+#. placeholder {0}: operation.batchSize
+msgid "Batch of {0}"
+msgstr ""
+
 msgid "Batch quantity"
 msgstr "배치 수량"
 
@@ -242,6 +577,11 @@ msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
 #. placeholder {0}: step.minValue
 #. placeholder {1}: step.maxValue
+msgid "Between {0} and {1}"
+msgstr ""
+
+#. placeholder {0}: step.minValue
+#. placeholder {1}: step.maxValue
 #. placeholder {2}: step.unitOfMeasureCode ?? ""
 msgid "Between {0} and {1} {2}"
 msgstr "{0}과 {1} 사이의 {2}"
@@ -250,14 +590,29 @@ msgstr "{0}과 {1} 사이의 {2}"
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
 
+msgid "Blocked for maintenance"
+msgstr ""
+
 msgid "Blocking"
 msgstr "차단"
 
 msgid "Board view"
 msgstr "보드 보기"
 
+msgid "Build"
+msgstr ""
+
+msgid "Built"
+msgstr ""
+
+msgid "Built by this job — not issued from stock."
+msgstr ""
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크를 요청할 수 있습니다."
+
+msgid "Buttons"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -274,8 +629,26 @@ msgstr "취소됨"
 msgid "Carbon Logo"
 msgstr "Carbon 로고"
 
+msgid "Carbon MES"
+msgstr ""
+
+msgid "Carbon MES cannot use the camera. Turn the camera on for Carbon MES in your device's Settings app."
+msgstr ""
+
+msgid "Carbon MES needs the camera to read barcodes and QR codes."
+msgstr ""
+
 msgid "Cards"
 msgstr "카드"
+
+msgid "Change company or location"
+msgstr ""
+
+msgid "Change location"
+msgstr ""
+
+msgid "Change server"
+msgstr ""
 
 msgid "Characteristic"
 msgstr "특성"
@@ -289,11 +662,48 @@ msgstr "채팅"
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
+msgid "Checkbox"
+msgstr ""
+
+msgid "Choose"
+msgstr ""
+
+msgid "Choose a company to see its locations."
+msgstr ""
+
+msgid "Choose a gauge"
+msgstr ""
+
 msgid "Choose a job"
 msgstr "작업 지시 선택"
 
+msgid "Choose a lot"
+msgstr ""
+
+msgid "Choose a lot to pick"
+msgstr ""
+
+msgid "Choose a photo"
+msgstr ""
+
+msgid "Choose a reason"
+msgstr ""
+
+msgid "Choose something else"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Choose the gauge for {0}"
+msgstr ""
+
+msgid "Choose the unit first"
+msgstr ""
+
 msgid "Clear"
 msgstr "지우기"
+
+msgid "Clear {count} filter(s)"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "필터 지우기"
@@ -307,17 +717,51 @@ msgstr "검색 지우기"
 msgid "Clear station default"
 msgstr "스테이션 기본값 초기화"
 
+msgid "Clear the filter"
+msgstr ""
+
+msgid "Clear the gauge"
+msgstr ""
+
 msgid "Clock In"
 msgstr "작업 시작"
+
+msgid "Clock in and this week fills up."
+msgstr ""
 
 msgid "Clock Out"
 msgstr "작업 종료"
 
+msgid "Clock out?"
+msgstr ""
+
+msgid "Clocked in"
+msgstr ""
+
+msgid "Clocked in at {since}"
+msgstr ""
+
+#. placeholder {0}: formatClockMoment(openEntry.clockIn, timeZone, locale, todayDay)
+msgid "Clocked in since {0}"
+msgstr ""
+
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "닫기"
+
+msgid "Close the lot"
+msgstr ""
+
+msgid "Cloud has more than one region. If your team gave you a code, scan that instead."
+msgstr ""
+
+msgid "Code sent"
+msgstr ""
 
 msgid "Collapse characteristics table"
 msgstr "특성 표 축소"
@@ -351,8 +795,14 @@ msgstr "회사"
 msgid "Complete"
 msgstr "완료"
 
+msgid "Complete {acceptRemaining} and pass the lot"
+msgstr ""
+
 msgid "Complete All"
 msgstr "모두 완료"
+
+msgid "Complete all steps"
+msgstr ""
 
 msgid "Complete batch"
 msgstr "배치 완료 처리"
@@ -363,11 +813,34 @@ msgstr "배치 완료"
 msgid "Complete passed"
 msgstr "완료 처리 통과"
 
+#. placeholder {0}: model.completable
+msgid "Complete passed ({0})"
+msgstr ""
+
 msgid "Completed"
 msgstr "완료됨"
 
+#. placeholder {0}: result.completed
+msgid "Completed {0}"
+msgstr ""
+
 msgid "Completing"
 msgstr "완료 처리 중"
+
+msgid "Condemn {openUnitCount} open units"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Connect Mobile App"
+msgstr ""
+
+msgid "Connect to a Carbon to get started."
+msgstr ""
+
+msgid "Connect to Carbon"
+msgstr ""
 
 msgid "Connecting"
 msgstr "연결 중"
@@ -390,12 +863,162 @@ msgstr "복사되었습니다!"
 msgid "Copy"
 msgstr "복사"
 
+msgid "Copy server address"
+msgstr ""
+
 msgid "Copy to clipboard"
 msgstr "클립보드에 복사"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
+
+msgid "Could not add that unit"
+msgstr ""
+
+msgid "Could not attach that photo"
+msgstr ""
+
+msgid "Could not clock in"
+msgstr ""
+
+msgid "Could not clock out"
+msgstr ""
+
+msgid "Could not close the lot"
+msgstr ""
+
+msgid "Could not complete the unit"
+msgstr ""
+
+msgid "Could not complete those units"
+msgstr ""
+
+msgid "Could not end the shift"
+msgstr ""
+
+msgid "Could not finish the operation"
+msgstr ""
+
+msgid "Could not issue that material"
+msgstr ""
+
+msgid "Could not load operations"
+msgstr ""
+
+msgid "Could not load the issue types."
+msgstr ""
+
+msgid "Could not load the lots"
+msgstr ""
+
+msgid "Could not load the notes."
+msgstr ""
+
+msgid "Could not load the operator list."
+msgstr ""
+
+msgid "Could not load the scrap reasons."
+msgstr ""
+
+msgid "Could not load what is on the shelf."
+msgstr ""
+
+msgid "Could not load your hours"
+msgstr ""
+
+msgid "Could not load your picking lists"
+msgstr ""
+
+msgid "Could not log the quantity"
+msgstr ""
+
+msgid "Could not look up that code."
+msgstr ""
+
+msgid "Could not open this assembly"
+msgstr ""
+
+msgid "Could not open this inspection"
+msgstr ""
+
+msgid "Could not open this operation"
+msgstr ""
+
+msgid "Could not open this picking list"
+msgstr ""
+
+msgid "Could not pause"
+msgstr ""
+
+msgid "Could not pick that lot"
+msgstr ""
+
+msgid "Could not pick this line"
+msgstr ""
+
+msgid "Could not post that note"
+msgstr ""
+
+msgid "Could not print that label"
+msgstr ""
+
+msgid "Could not raise the issue"
+msgstr ""
+
+msgid "Could not reach the server"
+msgstr ""
+
+msgid "Could not record that gauge"
+msgstr ""
+
+msgid "Could not record that step"
+msgstr ""
+
+msgid "Could not refresh your hours"
+msgstr ""
+
+msgid "Could not remove that"
+msgstr ""
+
+msgid "Could not report the rework"
+msgstr ""
+
+msgid "Could not report the scrap"
+msgstr ""
+
+msgid "Could not save that reading"
+msgstr ""
+
+msgid "Could not start"
+msgstr ""
+
+msgid "Could not start the timer"
+msgstr ""
+
+msgid "Could not stop the timer"
+msgstr ""
+
+msgid "Could not switch company"
+msgstr ""
+
+msgid "Could not turn it on"
+msgstr ""
+
+msgid "Could not undo that"
+msgstr ""
+
+msgid "Could not unpick that lot"
+msgstr ""
+
+msgid "Could not unpick this line"
+msgstr ""
+
+msgid "Could not update this line"
+msgstr ""
+
+msgid "Could not update this list"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -417,11 +1040,17 @@ msgstr "현재 작업"
 msgid "Customer"
 msgstr "고객"
 
+msgid "Dark"
+msgstr ""
+
 msgid "Dark Mode"
 msgstr "다크 모드"
 
 msgid "Date"
 msgstr "날짜"
+
+msgid "Day unknown"
+msgstr ""
 
 msgid "Deadline"
 msgstr "마감일"
@@ -447,11 +1076,26 @@ msgstr "문제를 설명하세요..."
 msgid "Describe what needs to be reworked..."
 msgstr "재작업이 필요한 내용을 설명하세요..."
 
+msgid "Describe what you found"
+msgstr ""
+
 msgid "Description"
 msgstr "설명"
 
+msgid "Design primitives (dev)"
+msgstr ""
+
+msgid "Destructive"
+msgstr ""
+
 msgid "Details"
 msgstr "상세 정보"
+
+msgid "Device language"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
 
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
@@ -497,11 +1141,14 @@ msgstr "드래그하여 도면 및 특성 크기 조정"
 msgid "Dragging {0} cancelled."
 msgstr "{0} 드래그 취소됨."
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "기한"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatDate(due, undefined, locale)
+#. placeholder {0}: formatDate(due.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -531,8 +1178,14 @@ msgstr "기간"
 msgid "Each job's output is its own lot — keep each job's parts apart."
 msgstr "각 작업 지시의 산출물은 각자의 로트입니다 — 각 작업 지시의 부품을 분리하여 보관하세요."
 
+msgid "Each unit's serial is made when the unit before it is complete."
+msgstr ""
+
 msgid "Edit"
 msgstr "편집"
+
+msgid "Edit an entry"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "경과 시간"
@@ -545,6 +1198,21 @@ msgstr "빈 작업장"
 
 msgid "End Operations"
 msgstr "공정작업 종료"
+
+msgid "End shift"
+msgstr ""
+
+msgid "End shift?"
+msgstr ""
+
+msgid "Enter a number"
+msgstr ""
+
+msgid "Enter a quantity"
+msgstr ""
+
+msgid "Enter at least {MIN_PIN} digits"
+msgstr ""
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
@@ -559,6 +1227,15 @@ msgstr "인증 앱의 6자리 코드를 입력하세요"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
 
+msgid "Enter your code"
+msgstr ""
+
+msgid "Enter your password"
+msgstr ""
+
+msgid "Enter your PIN"
+msgstr ""
+
 msgid "Error"
 msgstr "오류"
 
@@ -568,8 +1245,14 @@ msgstr "예상"
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모두에 대해 한 번에 단계를 기록하세요."
 
+msgid "Every timer you have running stops"
+msgstr ""
+
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "각 개는 판정을 가집니다: {passes}개 통과하고 {fails}개 불합격합니다. 로트는 각 개가 자신의 결과로 배정되면서 마감됩니다."
+
+msgid "Every unit of this lot has been scanned."
+msgstr ""
 
 msgid "Expand characteristics table"
 msgstr "특성 표 확대"
@@ -580,15 +1263,39 @@ msgstr "패널 확대"
 msgid "Expired"
 msgstr "만료됨"
 
+msgid "Expired — this cannot be picked."
+msgstr ""
+
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
 msgid "Expired {0}"
 msgstr "만료됨 {0}"
+
+msgid "Expired {expiry}"
+msgstr ""
+
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
+msgid "Expires {0}"
+msgstr ""
+
+msgid "Expires {expiry}"
+msgstr ""
 
 msgid "Expires <0/>"
 msgstr "만료 <0/>"
 
+msgid "Expiring"
+msgstr ""
+
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Fail {0}"
+msgstr ""
 
 msgid "Failed"
 msgstr "실패"
@@ -631,6 +1338,9 @@ msgstr "파일을 업로드하지 못했습니다: {0}"
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
 
+msgid "File"
+msgstr ""
+
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
 
@@ -646,6 +1356,12 @@ msgstr "필터"
 msgid "Filter by location"
 msgstr "위치별 필터"
 
+msgid "Filter the board"
+msgstr ""
+
+msgid "Filter the board, {filterCount} active"
+msgstr ""
+
 msgid "Finish"
 msgstr "마감"
 
@@ -656,8 +1372,14 @@ msgstr "{0} 완료"
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+msgid "Finish operation"
+msgstr ""
+
 msgid "Finish setting up your account"
 msgstr "계정 설정을 완료하세요"
+
+msgid "Finish this operation?"
+msgstr ""
 
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
@@ -668,6 +1390,9 @@ msgstr "첫 번째 기한 {0}"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "완료하기 전에 강조된 수량을 수정하세요."
+
+msgid "Follow the device"
+msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
@@ -689,6 +1414,21 @@ msgstr "온보딩으로 이동"
 
 msgid "Hide description"
 msgstr "설명 숨기기"
+
+msgid "Hide options"
+msgstr ""
+
+msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
+msgstr ""
+
+msgid "How many are finished?"
+msgstr ""
+
+msgid "How many are you issuing?"
+msgstr ""
+
+msgid "How many need rework?"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -721,14 +1461,32 @@ msgstr "{0} 후"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Progress"
 msgstr "진행 중"
+
+msgid "In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account."
+msgstr ""
+
+msgid "In use"
+msgstr ""
+
+msgid "Insecure connection"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "항목 검사"
 
 msgid "inspected"
 msgstr "검사됨"
+
+msgid "Inspection"
+msgstr ""
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Instructions"
 msgstr "작업 지침"
@@ -751,14 +1509,32 @@ msgstr "다음 중 하나임"
 msgid "Issue"
 msgstr "이슈"
 
+#. placeholder {0}: formatQuantity(total, locale)
+#. placeholder {0}: formatQuantity(value, locale)
+#. placeholder {0}: material.itemReadableId ?? ""
+msgid "Issue {0}"
+msgstr ""
+
+msgid "Issue material"
+msgstr ""
+
 msgid "Issue Material"
 msgstr "자재 출고"
+
+msgid "Issue type"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "이슈 유형"
 
 msgid "Issued"
 msgstr "발급됨"
+
+#. placeholder {0}: formatQuantity(total, locale)
+#. placeholder {0}: formatQuantity(value, locale)
+#. placeholder {1}: material.itemReadableId ?? ""
+msgid "Issued {0} {1}"
+msgstr ""
 
 msgid "Issued {issuedQuantity} of {lotLabel}"
 msgstr "{issuedQuantity}를 {lotLabel}에서 발급함"
@@ -778,6 +1554,9 @@ msgstr "작업"
 msgid "Job Details"
 msgstr "작업 상세정보"
 
+msgid "Job operation"
+msgstr ""
+
 msgid "Job Traveler"
 msgstr "작업 이동표"
 
@@ -796,6 +1575,12 @@ msgstr "키트"
 msgid "Labor"
 msgstr "노무"
 
+msgid "Labor — 01:22:40"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
 msgid "Last completed"
 msgstr "마지막 완료"
 
@@ -811,8 +1596,14 @@ msgstr "이 페이지 나가기"
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
+msgid "Light"
+msgstr ""
+
 msgid "lines"
 msgstr "라인"
+
+msgid "List"
+msgstr ""
 
 msgid "List view"
 msgstr "목록 보기"
@@ -820,8 +1611,14 @@ msgstr "목록 보기"
 msgid "Load list"
 msgstr "목록 불러오기"
 
+msgid "Loading"
+msgstr ""
+
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading your hours…"
+msgstr ""
 
 msgid "Loading..."
 msgstr "불러오는 중..."
@@ -831,6 +1628,9 @@ msgstr "로컬"
 
 msgid "Location"
 msgstr "위치"
+
+msgid "Log {value} completed"
+msgstr ""
 
 msgid "Log completed"
 msgstr "완료 기록"
@@ -856,17 +1656,30 @@ msgstr "스크랩 기록"
 msgid "Log scrap for {0}"
 msgstr "{0} 스크랩 기록"
 
+msgid "Logged — this operation is finished"
+msgstr ""
+
+msgid "Logged {value} completed"
+msgstr ""
+
 msgid "Login"
 msgstr "로그인"
 
 msgid "Lot"
 msgstr "로트"
 
+#. placeholder {0}: lot.lotSize
+msgid "Lot {0}"
+msgstr ""
+
 msgid "Lot numbers missing"
 msgstr "로트 번호 누락"
 
 msgid "Lot tracked"
 msgstr "로트 추적됨"
+
+msgid "Lots on the shelf"
+msgstr ""
 
 msgid "Machine"
 msgstr "기계"
@@ -883,6 +1696,9 @@ msgstr "유지보수 완료"
 msgid "Maintenance overdue"
 msgstr "유지보수 기한 초과"
 
+msgid "Maintenance request"
+msgstr ""
+
 msgid "Make a replacement"
 msgstr "교체품 만들기"
 
@@ -892,11 +1708,21 @@ msgstr "재고에 품목을 수동으로 추가"
 msgid "Manually remove items from inventory"
 msgstr "재고에서 품목을 수동으로 제거"
 
+msgid "Mark done"
+msgstr ""
+
+msgid "Mark short"
+msgstr ""
+
 msgid "Mark Short"
 msgstr "부족으로 표시"
 
 msgid "Mark the step done / record"
 msgstr "단계를 완료로 표시 / 기록"
+
+#. placeholder {0}: formatQuantity(value, locale)
+msgid "Marked short at {0}"
+msgstr ""
 
 msgid "matches"
 msgstr "일치"
@@ -910,11 +1736,17 @@ msgstr "발급된 자재"
 msgid "Maximum number of records reached"
 msgstr "최대 레코드 수에 도달했습니다"
 
+msgid "Measurement"
+msgstr ""
+
 msgid "Metric"
 msgstr "미터법"
 
 msgid "Model"
 msgstr "모델"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "더 많은 작업"
@@ -924,6 +1756,9 @@ msgstr "추가 작업"
 
 msgid "More options"
 msgstr "추가 옵션"
+
+msgid "More than the lot holds"
+msgstr ""
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -959,11 +1794,23 @@ msgstr "최신순"
 msgid "Next"
 msgstr "다음"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "다음 단계"
 
+msgid "Next unit"
+msgstr ""
+
 msgid "No"
 msgstr "아니요"
+
+msgid "No active gauge of the type this characteristic needs."
+msgstr ""
+
+msgid "No active gauges."
+msgstr ""
 
 msgid "No active job at this work center"
 msgstr "이 작업장에서 진행 중인 작업 지시가 없습니다"
@@ -983,6 +1830,12 @@ msgstr "배정된 공정작업이 없습니다"
 msgid "No available filters"
 msgstr "가용 필터가 없습니다"
 
+msgid "No available lot matches that code."
+msgstr ""
+
+msgid "No available lots are on record for this item at this location."
+msgstr ""
+
 msgid "No available serial numbers found"
 msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 
@@ -994,6 +1847,12 @@ msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 
 msgid "No files"
 msgstr "파일 없음"
+
+msgid "No filters"
+msgstr ""
+
+msgid "No gauge"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "계측기가 없습니다."
@@ -1016,6 +1875,9 @@ msgstr "자재 없음"
 msgid "No materials on this batch."
 msgstr "이 배치에 자재가 없습니다."
 
+msgid "No notes yet"
+msgstr ""
+
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
@@ -1025,11 +1887,17 @@ msgstr "할당할 열린 단위가 없습니다"
 msgid "No operators"
 msgstr "작업자 없음"
 
+msgid "No operators have a PIN"
+msgstr ""
+
 msgid "No option found."
 msgstr "옵션이 없습니다."
 
 msgid "No options found."
 msgstr "옵션이 없습니다."
+
+msgid "No parts for this step."
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "할당된 피킹 리스트가 없습니다"
@@ -1058,11 +1926,20 @@ msgstr "필요한 샘플이 없습니다."
 msgid "No scheduled time"
 msgstr "예정된 시간 없음"
 
+msgid "No scheduled work"
+msgstr ""
+
 msgid "No serial numbers"
 msgstr "시리얼 번호 없음"
 
 msgid "No serial numbers found"
 msgstr "시리얼 번호를 찾을 수 없습니다"
+
+msgid "No serial, lot or part on this Carbon has that code."
+msgstr ""
+
+msgid "No servers yet"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
@@ -1070,11 +1947,23 @@ msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
 msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
 
+msgid "No steps defined for this operation. Issue the parts, then complete the unit."
+msgstr ""
+
 msgid "No stock"
 msgstr "재고 없음"
 
+msgid "No stock on record"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
+
+msgid "No unit selected"
+msgstr ""
+
+msgid "No units scanned yet"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -1082,20 +1971,63 @@ msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피
 msgid "No Work Center"
 msgstr "작업장 없음"
 
+msgid "No work centers"
+msgstr ""
+
 msgid "No work centers are blocked"
 msgstr "차단된 작업장이 없습니다"
+
+msgid "No work centers at {locationName}"
+msgstr ""
 
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+msgid "No work centers match"
+msgstr ""
+
+msgid "No work instructions"
+msgstr ""
+
+msgid "Nobody is pinned in — tap to pin in"
+msgstr ""
+
 msgid "None"
 msgstr "없음"
+
+msgid "Not clocked in"
+msgstr ""
+
+msgid "Not every characteristic has the readings it needs"
+msgstr ""
+
+msgid "Note (optional)"
+msgstr ""
 
 msgid "Notes"
 msgstr "메모"
 
+msgid "Nothing has failed yet"
+msgstr ""
+
+msgid "Nothing is available to issue for this part."
+msgstr ""
+
+msgid "Nothing left to send"
+msgstr ""
+
+#. placeholder {0}: scan.value
+msgid "Nothing matches {0}"
+msgstr ""
+
+msgid "Nothing queued here."
+msgstr ""
+
 msgid "Nothing running"
 msgstr "실행 중인 것 없음"
+
+msgid "Nothing scanned yet."
+msgstr ""
 
 msgid "Nothing scheduled at this work center"
 msgstr "이 작업장에 예정된 작업이 없습니다"
@@ -1103,21 +2035,69 @@ msgstr "이 작업장에 예정된 작업이 없습니다"
 msgid "Nothing to scrap"
 msgstr "스크랩할 것이 없습니다"
 
+msgid "Nothing to show"
+msgstr ""
+
+msgid "Nothing was generated for it. Check the job's materials in the ERP."
+msgstr ""
+
+msgid "Nothing was picked"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "OEE 영향"
 
 msgid "OEM Required"
 msgstr "OEM 필요"
 
+#. placeholder {0}: formatQuantity(available, locale)
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/{0}"
 
+#. placeholder {0}: quantity(required)
+#. placeholder {1}: material.unitOfMeasureCode ?? ""
+msgid "of {0} {1}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(target.required, locale)
+#. placeholder {1}: target.material.unitOfMeasureCode ?? ""
+msgid "of {0} {1} issued"
+msgstr ""
+
+msgid "Off — this device is yours alone"
+msgstr ""
+
+msgid "Offline · {label} is waiting to send"
+msgstr ""
+
+msgid "Offline · {waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "오래된순"
 
+msgid "On — nobody pinned in"
+msgstr ""
+
+#. placeholder {0}: operator.name
+msgid "On — working as {0}"
+msgstr ""
+
+msgid "On the shelf"
+msgstr ""
+
+msgid "On this entry"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
+
+msgid "One less"
+msgstr ""
+
+msgid "One more"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "작업 지시당 하나 · 계획됨"
@@ -1125,15 +2105,30 @@ msgstr "작업 지시당 하나 · 계획됨"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "하나의 피킹이 전체 배치를 커버합니다 — 자동으로 작업 지시에 공유됩니다."
 
+msgid "One unit"
+msgstr ""
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "{0}개만 가용합니다"
+
+msgid "Only a serial or batch unit has a label to print."
+msgstr ""
+
+msgid "Only the operator who recorded this can undo it."
+msgstr ""
+
+msgid "Only when it is truly empty — never while loading."
+msgstr ""
 
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페이지가 될 예정입니다."
 
 msgid "Open"
 msgstr "열림"
+
+msgid "Open a confirmation"
+msgstr ""
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "작업장에 설치된 화면에 디스플레이를 열고 계속 실행 상태로 두세요. 각 보드는 자동으로 새로고침됩니다."
@@ -1147,9 +2142,44 @@ msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 msgid "Open Jobs"
 msgstr "작업 지시 열기"
 
+msgid "Open More"
+msgstr ""
+
+#. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
+msgid "Open operation {0}"
+msgstr ""
+
+msgid "Open picking list {label}"
+msgstr ""
+
+msgid "Open Settings"
+msgstr ""
+
+#. placeholder {0}: formatClockMoment(openEntry.clockIn, timeZone, locale, todayDay)
+msgid "Open since {0} — before today. If you forgot to clock out, fix it in Carbon MES in a browser."
+msgstr ""
+
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
+msgid "Open the Settings app"
+msgstr ""
+
+msgid "Open the sheet"
+msgstr ""
+
+msgid "Open timers will be closed."
+msgstr ""
+
+msgid "Open your authenticator app and enter the current code."
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Operation finished"
 msgstr ""
 
 msgid "Operations"
@@ -1164,11 +2194,29 @@ msgstr "작업자"
 msgid "Operator Performed"
 msgstr "작업자 수행"
 
+msgid "Operators"
+msgstr ""
+
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "또는"
+
+msgid "Or choose a unit"
+msgstr ""
+
+msgid "Or type the address"
+msgstr ""
+
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
+msgid "Order"
+msgstr ""
 
 msgid "Out of calibration"
 msgstr "교정 기한 만료"
@@ -1182,6 +2230,10 @@ msgstr "전체 결과"
 msgid "Overdue PMs?"
 msgstr "기한 초과된 PM이 있나요?"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "파라미터"
 
@@ -1194,6 +2246,19 @@ msgstr "부분"
 msgid "Partial Disposition"
 msgstr "부분 처분 결정"
 
+msgid "Parts"
+msgstr ""
+
+msgid "Pass"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Pass {0}"
+msgstr ""
+
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "검사 통과"
 
@@ -1203,15 +2268,56 @@ msgstr "검사 통과"
 msgid "Passkey unlock failed"
 msgstr "패스키 잠금 해제 실패"
 
+msgid "Password"
+msgstr ""
+
 msgid "Pause"
 msgstr "일시 중지"
+
+#. placeholder {0}: workTypeLabels[activeType]
+msgid "Pause {0}"
+msgstr ""
+
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
+msgid "Person"
+msgstr ""
+
+msgid "Phone layout: the dock is the bottom bar."
+msgstr ""
+
+msgid "Photo attached"
+msgstr ""
+
+msgid "Photos go to this job's files."
+msgstr ""
 
 msgid "Pick"
 msgstr "피킹"
 
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "피킹 {0}"
+
+msgid "Pick {itemName}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "Pick all {0}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "Pick all {0} {unit}"
+msgstr ""
+
+msgid "Pick expired lot"
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -1219,11 +2325,19 @@ msgstr "추적 품목 선택"
 msgid "Picked"
 msgstr "피킹됨"
 
+#. placeholder {0}: formatQuantity(toPick, locale)
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
+msgid "Picked {0}"
+msgstr ""
+
 msgid "Picked as"
 msgstr "피킹 항목"
 
 msgid "Picked quantity"
 msgstr "피킹 수량"
+
+msgid "Picked quantity ({unit})"
+msgstr ""
 
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
@@ -1240,11 +2354,44 @@ msgstr "{substitutedFrom} 대신 피킹, 작업의 품목"
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
+msgid "Picking list"
+msgstr ""
+
+#. placeholder {0}: result.status
+msgid "Picking list {0}"
+msgstr ""
+
+msgid "Picking started"
+msgstr ""
+
+msgid "Pin in"
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Pin in as {0}"
+msgstr ""
+
 msgid "Pin or unpin"
+msgstr ""
+
+msgid "Pin out"
 msgstr ""
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
+
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
+#. placeholder {0}: selected.name
+msgid "Pinned in as {0}"
+msgstr ""
+
+msgid "Pinned out"
+msgstr ""
+
+msgid "PINs are set per employee in the ERP, under People."
+msgstr ""
 
 msgid "Planned"
 msgstr "계획됨"
@@ -1258,6 +2405,9 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+msgid "Post note"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
 
@@ -1267,11 +2417,26 @@ msgstr "이전"
 msgid "Preventive"
 msgstr "예방"
 
+msgid "Previous page"
+msgstr ""
+
 msgid "Previous step"
 msgstr "이전 단계"
 
+msgid "Previous unit"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Primitives"
+msgstr ""
+
 msgid "Print"
 msgstr "인쇄"
+
+msgid "Print a label"
+msgstr ""
 
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
@@ -1281,6 +2446,9 @@ msgstr "프린터 설정"
 
 msgid "Priority"
 msgstr "우선순위"
+
+msgid "Privacy"
+msgstr ""
 
 msgid "Procedure"
 msgstr "절차서"
@@ -1297,6 +2465,9 @@ msgstr "공정 파라미터"
 msgid "Processes"
 msgstr "공정"
 
+msgid "Product"
+msgstr ""
+
 msgid "Progress"
 msgstr "진행 상황"
 
@@ -1305,20 +2476,61 @@ msgstr "진행 상황"
 msgid "Proj. {0}"
 msgstr "예상. {0}"
 
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
+
 msgid "Quality Issue"
 msgstr "품질 이슈"
 
 msgid "Quality issue created"
 msgstr "품질 이슈가 생성되었습니다"
 
+msgid "Quality issue raised"
+msgstr ""
+
+msgid "Quality issues"
+msgstr ""
+
+msgid "Quantities"
+msgstr ""
+
 msgid "Quantity"
 msgstr "수량"
+
+msgid "Quantity {quantity}"
+msgstr ""
+
+msgid "Quantity from this lot"
+msgstr ""
 
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
 msgid "Queue empty"
 msgstr "대기열 비었음"
+
+msgid "Raise a quality issue"
+msgstr ""
+
+msgid "Raise the issue"
+msgstr ""
+
+#. placeholder {0}: result.readableId
+msgid "Raised {0}"
+msgstr ""
+
+msgid "Reading"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Reading for {0}"
+msgstr ""
+
+msgid "Reason"
+msgstr ""
+
+msgid "Reason (optional)"
+msgstr ""
 
 msgid "Reason for rework"
 msgstr "재작업 사유"
@@ -1328,6 +2540,9 @@ msgstr "최근"
 
 msgid "Recently used"
 msgstr "최근 사용"
+
+msgid "Recently used here"
+msgstr ""
 
 msgid "Record"
 msgstr "기록"
@@ -1346,8 +2561,26 @@ msgstr "기록만"
 msgid "Record Partial"
 msgstr "부분 기록"
 
+msgid "Record the time now"
+msgstr ""
+
+msgid "Record this step in Carbon MES in a browser."
+msgstr ""
+
+msgid "Record time as"
+msgstr ""
+
 msgid "Recorded"
 msgstr "기록됨"
+
+msgid "Recorded: {display}"
+msgstr ""
+
+msgid "Recorded: {display} — out of spec"
+msgstr ""
+
+msgid "Recording"
+msgstr ""
 
 msgid "Reject"
 msgstr "거부"
@@ -1355,11 +2588,18 @@ msgstr "거부"
 msgid "Reject Lot"
 msgstr "로트 거부"
 
+msgid "Reject the lot"
+msgstr ""
+
 msgid "Released"
 msgstr "릴리스됨"
 
 msgid "Remove"
 msgstr "제거"
+
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Remove {0}"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "필터 제거"
@@ -1370,14 +2610,33 @@ msgstr "재고 제거"
 msgid "Remove part"
 msgstr "품목 제거"
 
+msgid "Remove this server?"
+msgstr ""
+
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Removed {0}"
+msgstr ""
+
 msgid "Rename"
 msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
+msgid "Replace"
+msgstr ""
+
+msgid "Report rework"
+msgstr ""
+
+msgid "Report scrap"
+msgstr ""
+
 msgid "Required"
 msgstr "필수"
+
+msgid "Requires scan"
+msgstr ""
 
 msgid "Result"
 msgstr "결과"
@@ -1385,8 +2644,17 @@ msgstr "결과"
 msgid "Retry Completion"
 msgstr "완료 다시 시도"
 
+msgid "Review"
+msgstr ""
+
+msgid "Review unsent actions"
+msgstr ""
+
 msgid "Rework"
 msgstr "재작업"
+
+msgid "Rework {value}"
+msgstr ""
 
 msgid "Rework created successfully"
 msgstr "재작업이 생성되었습니다"
@@ -1394,14 +2662,33 @@ msgstr "재작업이 생성되었습니다"
 msgid "Rework quantity"
 msgstr "재작업 수량"
 
+msgid "Rework reason"
+msgstr ""
+
+msgid "Rotate the device to swap the dock between a column and a bar."
+msgstr ""
+
 msgid "Running"
 msgstr "실행 중"
+
+msgid "S/N"
+msgstr ""
+
+msgid "Sales order"
+msgstr ""
 
 msgid "Sales Order"
 msgstr "수주"
 
 msgid "Same for every job"
 msgstr "모든 작업 지시에 동일"
+
+#. placeholder {0}: lot.sampleSize
+msgid "Sample {0}"
+msgstr ""
+
+msgid "Samples"
+msgstr ""
 
 msgid "Save"
 msgstr "저장"
@@ -1412,8 +2699,42 @@ msgstr "편집 중인 양식 저장"
 msgid "Scan"
 msgstr "스캔"
 
+#. placeholder {0}: material.itemReadableId ?? ""
+msgid "Scan {0}"
+msgstr ""
+
+#. placeholder {0}: gatedBy.length
+#. placeholder {1}: gatedBy.join(", ")
+msgid "Scan {0} parts to complete this step: {1}."
+msgstr ""
+
+#. placeholder {0}: gatedBy[0]
+msgid "Scan {0} to complete this step."
+msgstr ""
+
+msgid "Scan a part to issue it"
+msgstr ""
+
+msgid "Scan a part to issue it."
+msgstr ""
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
+
+msgid "Scan a unit"
+msgstr ""
+
+msgid "Scan a unit to start inspecting it."
+msgstr ""
+
+msgid "Scan or choose a lot"
+msgstr ""
+
+msgid "Scan or choose a serial"
+msgstr ""
+
+msgid "Scan or enter a lot number"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "시리얼 번호를 스캔하거나 입력하세요"
@@ -1430,6 +2751,30 @@ msgstr "시리얼 번호를 스캔하거나 검색하세요..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 결과를 기록하세요."
 
+msgid "Scan or type the lot number"
+msgstr ""
+
+msgid "Scan or type the serial number"
+msgstr ""
+
+msgid "Scan the code"
+msgstr ""
+
+msgid "Scan the code from Carbon, or type your server's address. Your supervisor can show the code from Settings."
+msgstr ""
+
+msgid "Scan the lot label"
+msgstr ""
+
+msgid "Scan the parts first."
+msgstr ""
+
+msgid "Scan to connect"
+msgstr ""
+
+msgid "Scan with the camera"
+msgstr ""
+
 msgid "Schedule"
 msgstr "일정"
 
@@ -1442,17 +2787,35 @@ msgstr "스크랩"
 msgid "Scrap {readableId}"
 msgstr "{readableId} 스크랩"
 
+msgid "Scrap {value}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "자재 스크랩"
+
+msgid "Scrap or rework the failed units"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "스크랩 수량"
 
+msgid "Scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
 
+msgid "scrapped"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "스크랩됨"
+
+msgid "Scrapped — a replacement unit is ready"
+msgstr ""
+
+msgid "Scrapped {value}"
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "일련번호 {trackedEntityReadableId} 폐기"
@@ -1477,6 +2840,9 @@ msgstr "작업자 검색..."
 
 msgid "Search..."
 msgstr "검색..."
+
+msgid "Secondary"
+msgstr ""
 
 msgid "Select"
 msgstr "선택"
@@ -1528,8 +2894,38 @@ msgstr "선택됨"
 msgid "Send"
 msgstr "전송"
 
+msgid "Send a new code"
+msgstr ""
+
+msgid "Send code"
+msgstr ""
+
+msgid "Send now"
+msgstr ""
+
+msgid "Send rework back to"
+msgstr ""
+
 msgid "Send to Carbon"
 msgstr "Carbon으로 보내기"
+
+msgid "Send unsent actions now"
+msgstr ""
+
+msgid "Sending now"
+msgstr ""
+
+msgid "Sending to the printer…"
+msgstr ""
+
+msgid "Sent {value} for rework"
+msgstr ""
+
+msgid "Sent to the printer"
+msgstr ""
+
+msgid "Sent to the shop printer"
+msgstr ""
 
 msgid "Separate lots"
 msgstr "별도 로트"
@@ -1556,6 +2952,12 @@ msgstr "시리얼 번호"
 msgid "Serialized"
 msgstr "일련화됨"
 
+msgid "Server"
+msgstr ""
+
+msgid "Servers"
+msgstr ""
+
 msgid "Session locked"
 msgstr "세션 잠김"
 
@@ -1574,6 +2976,27 @@ msgstr "배치가 계획되었을 때 설정됩니다."
 msgid "Setup"
 msgstr "설정"
 
+msgid "Setup — 00:14:02"
+msgstr ""
+
+msgid "Shared terminal"
+msgstr ""
+
+msgid "Shared terminal off"
+msgstr ""
+
+msgid "Shared-terminal mode is not available on this Carbon."
+msgstr ""
+
+msgid "Sheet and confirmation"
+msgstr ""
+
+msgid "Shift ended"
+msgstr ""
+
+msgid "Shift ended. You are signed out of this tablet."
+msgstr ""
+
 msgid "short"
 msgstr "부족"
 
@@ -1583,11 +3006,39 @@ msgstr "짧게"
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "설명 표시"
 
 msgid "Show keyboard shortcuts"
 msgstr "키보드 바로가기 표시"
+
+msgid "Show only my station, {stationName}"
+msgstr ""
+
+msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
+msgstr ""
+
+msgid "Showing the first 40. Scan a label to find another."
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
+msgstr ""
+
+msgid "Sign in to look up a scanned code."
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
@@ -1607,11 +3058,35 @@ msgstr "로그아웃"
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+msgid "Sign out?"
+msgstr ""
+
+msgid "Signed in as"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
 
+msgid "Signing back in needs the address again. Anything waiting to send is discarded."
+msgstr ""
+
 msgid "Size"
 msgstr "사이즈"
+
+msgid "Skip ›"
+msgstr ""
+
+msgid "Some material is still unpicked."
+msgstr ""
+
+msgid "Some units failed — accept is not available"
+msgstr ""
+
+msgid "Something that limits what they can do here."
+msgstr ""
+
+msgid "Something the operator must read."
+msgstr ""
 
 msgid "Source"
 msgstr "소스"
@@ -1626,11 +3101,15 @@ msgid "Start"
 msgstr "시작"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+#. placeholder {0}: workTypeLabels[activeType]
 msgid "Start {0}"
 msgstr "{0} 시작"
 
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
+
+msgid "States"
+msgstr ""
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1651,11 +3130,27 @@ msgstr "상태"
 msgid "Stay on this page"
 msgstr "이 페이지에 머무르기"
 
+#. placeholder {0}: state.stepNumbers.join(", ")
+msgid "Step {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Step {0} of {total}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+#. placeholder {1}: step.name
+msgid "Step {0}: {1}"
+msgstr ""
+
 msgid "Steps"
 msgstr "단계"
 
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
+
+msgid "Stops every running timer and clocks you out"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "보관 단위"
@@ -1678,20 +3173,80 @@ msgstr ""
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
+#. placeholder {0}: material.substitutedFromItemId
+msgid "Substituted for {0}."
+msgstr ""
+
 msgid "Suggestion"
 msgstr "제안"
 
 msgid "Support Required"
 msgstr "지원 필요"
 
+msgid "Switch"
+msgstr ""
+
+msgid "Switch operator"
+msgstr ""
+
 msgid "Switch Operator"
 msgstr "작업자 전환"
+
+#. placeholder {0}: operator.name
+msgid "Switch operator from {0}"
+msgstr ""
+
+msgid "Switch server"
+msgstr ""
+
+msgid "Tablet layout: the dock is the right-hand column."
+msgstr ""
 
 msgid "Tag"
 msgstr "태그"
 
+msgid "Take"
+msgstr ""
+
+msgid "Take a photo"
+msgstr ""
+
+msgid "Task"
+msgstr ""
+
+msgid "That code is not a unit of this lot"
+msgstr ""
+
+msgid "That code was printed by {host}, which is not the Carbon this tablet is linked to."
+msgstr ""
+
+msgid "That does not look like a Carbon address"
+msgstr ""
+
+msgid "That is all this part needs"
+msgstr ""
+
+#. placeholder {0}: formatQuantity( toPick, locale )
+msgid "That is more than the {0} this line asks for. Pick the line instead of marking it short."
+msgstr ""
+
+msgid "That lot is expired and cannot be picked."
+msgstr ""
+
+msgid "That photo could not be read"
+msgstr ""
+
+msgid "That PIN was not accepted"
+msgstr ""
+
+msgid "The camera is off"
+msgstr ""
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The drawing could not be loaded. Pull down to try again."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
@@ -1704,6 +3259,9 @@ msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개�
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
+
+msgid "The selected unit"
+msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
@@ -1721,11 +3279,83 @@ msgstr "부품표(BOM)에 완전히 발행되지 않은 시리얼 또는 배치 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
+msgid "These work instructions could not be read. Use Carbon MES in a browser for them."
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "이 배치는 작업 표준서가 없습니다."
 
+msgid "This Carbon refused to make this device a shared terminal."
+msgstr ""
+
+msgid "This Carbon server needs an update before the app can sign in."
+msgstr ""
+
+msgid "This company has no locations yet."
+msgstr ""
+
+#. placeholder {0}: elsewhere.join(", ")
+msgid "This company's work centers are at {0}."
+msgstr ""
+
+msgid "This connection is not encrypted. Only continue on a network you trust."
+msgstr ""
+
+msgid "This is a controlled environment. The app locks itself after a period of inactivity."
+msgstr ""
+
+msgid "This is past its expiry date."
+msgstr ""
+
+msgid "This is past its expiry date. Give a reason to issue it anyway."
+msgstr ""
+
+msgid "This is the current week"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "This line asks for {0} {unit}."
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "This line asks for {0}."
+msgstr ""
+
+msgid "This line was cancelled."
+msgstr ""
+
+msgid "This list has no lines"
+msgstr ""
+
+#. placeholder {0}: list?.status ?? ""
+#. placeholder {0}: status ?? ""
+msgid "This list is {0}. Completed lists are reopened from the ERP."
+msgstr ""
+
+msgid "This lot expired {expiry}. Pick it anyway?"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
+
+msgid "This lot is expired. Pick it anyway?"
+msgstr ""
+
+#. placeholder {0}: lot.status
+msgid "This lot was closed as {0}. Nothing here can be changed."
+msgstr ""
+
+msgid "This operation consumes nothing from stock."
+msgstr ""
+
+msgid "This operation has no steps to record."
+msgstr ""
+
+msgid "This operation runs as part of a batch. Use Carbon MES in a browser to report it."
+msgstr ""
+
+msgid "This operation's materials could not be read. Use Carbon MES in a browser to issue them."
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
@@ -1733,14 +3363,47 @@ msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
+msgid "This server is air-gapped. The app talks to it and to nothing else."
+msgstr ""
+
+msgid "This step has {slides} reference images. Open the job in Carbon MES on the web to see them."
+msgstr ""
+
+msgid "This step has a reference image. Open the job in Carbon MES on the web to see it."
+msgstr ""
+
+msgid "This step needs a photo."
+msgstr ""
+
+msgid "This sub-assembly is built by the job."
+msgstr ""
+
+msgid "This tablet is not a shared terminal yet. Turn it on from More."
+msgstr ""
+
+msgid "This takes it off the floor."
+msgstr ""
+
+msgid "This takes it off the floor. Nothing is running."
+msgstr ""
+
+msgid "This unit has no serial or lot number yet, so a tracked part cannot be issued to it."
+msgstr ""
+
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "썸네일"
 
 msgid "Tick the jobs this was done for."
 msgstr "이것이 수행된 작업 지시를 체크하세요."
+
+msgid "Time"
+msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."
@@ -1751,6 +3414,9 @@ msgstr "시간 기록"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "작업 시간: {0}"
+
+msgid "Timestamp"
+msgstr ""
 
 msgid "To pick"
 msgstr "피킹할"
@@ -1763,6 +3429,9 @@ msgstr "오늘"
 
 msgid "Toggle the sidebar"
 msgstr "사이드바 전환"
+
+msgid "Tool"
+msgstr ""
 
 msgid "Tools"
 msgstr "공구"
@@ -1787,8 +3456,20 @@ msgstr "추적 대상"
 msgid "tracked lines"
 msgstr "추적된 라인"
 
+msgid "Tracked parts on this unit have not been fully issued. Completing without them leaves its traceability record incomplete."
+msgstr ""
+
 msgid "Tracking"
 msgstr "추적"
+
+msgid "Try again"
+msgstr ""
+
+msgid "Turn off shared terminal"
+msgstr ""
+
+msgid "Turn the camera off"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
@@ -1796,14 +3477,49 @@ msgstr "2단계 인증"
 msgid "Two-factor authentication required"
 msgstr "2단계 인증 필수"
 
+msgid "Two-factor code"
+msgstr ""
+
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
 msgid "Unable to unlock"
 msgstr "잠금을 해제할 수 없음"
 
+#. placeholder {0}: step.name
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Unissued serial or batch parts"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
+
+#. placeholder {0}: row.unit.index + 1
+msgid "Unit {0}"
+msgstr ""
+
+#. placeholder {0}: unitIndex + 1
+msgid "Unit {0} complete"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}. Show every unit."
+msgstr ""
+
+msgid "Unit {label}, {status}"
+msgstr ""
+
+msgid "Unit {label}, not inspected"
+msgstr ""
+
+msgid "Units"
+msgstr ""
 
 msgid "Unknown"
 msgstr "알 수 없음"
@@ -1811,18 +3527,28 @@ msgstr "알 수 없음"
 msgid "Unknown gauge"
 msgstr "알 수 없는 계측기"
 
+msgid "Unknown job"
+msgstr ""
+
 msgid "Unlock"
 msgstr "잠금 해제"
 
 msgid "Unlock with passkey"
 msgstr "패스키로 잠금 해제"
 
+msgid "Unnamed part"
+msgstr ""
+
 msgid "Unpick"
 msgstr "피킹 취소"
 
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
 #. placeholder {0}: pickedLots[0].trackedEntity.readableId
 msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
+
+msgid "Unpicked"
+msgstr ""
 
 msgid "Unplanned downtime"
 msgstr "계획되지 않은 비가동 시간"
@@ -1858,8 +3584,23 @@ msgstr "업로드됨: {0}"
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
 
+msgid "Usage analytics are on for this server."
+msgstr ""
+
 msgid "Use a different account"
 msgstr "다른 계정 사용"
+
+msgid "Use a different email"
+msgstr ""
+
+msgid "Use Carbon Cloud"
+msgstr ""
+
+msgid "Use Carbon MES in a browser for this."
+msgstr ""
+
+msgid "Use this device as a shared terminal"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "완료 시 자동으로 사용됨"
@@ -1869,8 +3610,15 @@ msgstr "완료 시 자동으로 사용됨"
 msgid "Uses {0} · {1}"
 msgstr ""
 
+msgid "Using Carbon Cloud?"
+msgstr ""
+
 msgid "Value"
 msgstr "값"
+
+#. placeholder {0}: step.unitOfMeasureCode
+msgid "Value ({0})"
+msgstr ""
 
 msgid "Verify"
 msgstr "확인"
@@ -1881,17 +3629,48 @@ msgstr "유지보수 지시 보기"
 msgid "View or open"
 msgstr ""
 
+msgid "Waiting for a connection"
+msgstr ""
+
+#. placeholder {0}: email ?? ""
+msgid "We emailed a 6-digit code to {0}."
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
+
+msgid "What happened?"
+msgstr ""
+
+msgid "What has to be put right"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
 
+msgid "What kind of problem is it?"
+msgstr ""
+
+msgid "What should the next person know?"
+msgstr ""
+
+msgid "Where are you working?"
+msgstr ""
+
+msgid "Who is working?"
+msgstr ""
+
 msgid "Whole batch"
 msgstr "전체 배치"
 
+msgid "Why was it scrapped?"
+msgstr ""
+
 msgid "WIP"
 msgstr "재공품"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "작업장"
@@ -1899,20 +3678,59 @@ msgstr "작업장"
 msgid "Work Center Displays"
 msgstr "작업장 화면"
 
+msgid "Work centers appear here once they exist."
+msgstr ""
+
+msgid "Work email"
+msgstr ""
+
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Work is now recorded against this device's account."
+msgstr ""
+
+msgid "Working as"
+msgstr ""
+
+msgid "Working at"
+msgstr ""
+
+msgid "Working at {label}. Change company or location"
+msgstr ""
 
 msgid "Yes"
 msgstr "예"
 
+msgid "You are clocked out — {worked} on this entry"
+msgstr ""
+
+msgid "You are signed out of this tablet"
+msgstr ""
+
+msgid "You can change this later from More."
+msgstr ""
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
+
+msgid "You will need your email code again."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
+
+msgid "Your hours could not be loaded, so this is not safe to press."
+msgstr ""
+
+msgid "Your hours for this entry stop now."
+msgstr ""
+
+msgid "Your operations are left as they are — nothing is completed or finished."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

@@ -2,347 +2,67 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
+import { success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  finishJobOperation,
-  getNextIncompleteSerialEntity,
-  getTrackedEntitiesByMakeMethodId,
-  insertProductionQuantity,
-  isSerialEntityIncompleteForOperation
-} from "~/services/operations.service";
+import { completeOperationFromScan } from "~/services/commands.time.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("mes", "end-operation");
-
+/**
+ * The kanban scan completion: a GET that WRITES, which is why
+ * `rejectCrossSiteNavigation` guards it. The work is in the
+ * `completeOperationFromScan` command (`~/services/commands.time.server`),
+ * which `/api/v1` calls too.
+ *
+ * Deliberately ungated — closing out work that was physically done is never
+ * refused (`.claude/rules/mes-job-operation-ui.md`).
+ */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Writes on GET: a link on another site must not trigger it.
   rejectCrossSiteNavigation(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, sessionUserId, companyId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
   const url = new URL(request.url);
-  let trackedEntityId = url.searchParams.get("trackedEntityId");
+  const trackedEntityId = url.searchParams.get("trackedEntityId");
   const serviceRole = await getCarbonServiceRole();
 
-  const [jobOperation, productionQuantities] = await Promise.all([
-    serviceRole
-      .from("jobOperation")
-      .select("*, ...process(completeAllOnScan)")
-      .eq("id", operationId)
-      .maybeSingle(),
-    serviceRole
-      .from("productionQuantity")
-      .select("*")
-      .eq("type", "Production")
-      .eq("jobOperationId", operationId)
-  ]);
+  const completed = await completeOperationFromScan(serviceRole, {
+    companyId,
+    userId,
+    sessionUserId,
+    operationId,
+    trackedEntityId: trackedEntityId ?? undefined,
+    acknowledged: url.searchParams.get("acknowledged") === "true",
+    source: "mes_qr"
+  });
 
-  if (
-    jobOperation.error ||
-    !jobOperation.data ||
-    !jobOperation.data.jobMakeMethodId
-  ) {
+  if (!completed.ok) {
     return redirect(
-      path.to.operations,
-      await flash(request, {
-        ...error(jobOperation.error, "Failed to fetch job operation"),
-        flash: "error"
-      })
+      completed.failure.redirectTo ?? path.to.operations,
+      await flash(request, completed.failure.details as Result)
     );
   }
 
-  if (jobOperation.data?.companyId !== companyId) {
-    logger.warn("Job operation does not belong to company", {
-      companyId,
-      operationId
-    });
+  if (completed.data.outcome === "advance") {
     return redirect(
-      path.to.operations,
-      await flash(request, {
-        ...error(
-          "You are not authorized to start this operation",
-          "Unauthorized"
-        ),
-        flash: "error"
-      })
-    );
-  }
-  const completeAll = jobOperation.data?.completeAllOnScan ?? false;
-
-  const [jobMakeMethod] = await Promise.all([
-    serviceRole
-      .from("jobMakeMethod")
-      .select("*")
-      .eq("id", jobOperation.data.jobMakeMethodId)
-      .maybeSingle()
-  ]);
-
-  if (jobMakeMethod.error || !jobMakeMethod.data) {
-    return redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error(jobMakeMethod.error, "Failed to fetch job make method")
-      )
+      `${path.to.operation(operationId)}?trackedEntityId=${
+        completed.data.trackedEntityId
+      }`
     );
   }
 
-  const currentQuantity =
-    productionQuantities.data?.reduce((acc, curr) => acc + curr.quantity, 0) ??
-    0;
-
-  const quantityToComplete = completeAll
-    ? Math.max(
-        0,
-        (jobOperation.data.operationQuantity ?? 0) -
-          currentQuantity -
-          (jobOperation.data.quantityReworked ?? 0)
-      )
-    : 1;
-
-  const willBeFinished =
-    quantityToComplete + currentQuantity >=
-    (jobOperation.data.targetQuantity ??
-      jobOperation.data.operationQuantity ??
-      0);
-
-  const isTrackedEntity =
-    jobMakeMethod.data.requiresSerialTracking ||
-    jobMakeMethod.data.requiresBatchTracking;
-
-  // Business-rule pre-flight on operationFinish. Only fires when this scan
-  // actually closes the operation (`willBeFinished`); transient quantity
-  // events don't trigger finish rules.
-  if (willBeFinished && jobOperation.data.workCenterId) {
-    const acknowledged = url.searchParams.get("acknowledged") === "true";
-    const ruleEval = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "workCenter",
-      surface: "operationFinish",
-      lines: [
-        {
-          lineId: operationId,
-          itemId: jobMakeMethod.data.itemId as string | null,
-          workCenterId: jobOperation.data.workCenterId,
-          operation: {
-            id: operationId,
-            itemId: jobMakeMethod.data.itemId as string | null,
-            quantity: jobOperation.data.operationQuantity ?? null,
-            workInstructionId:
-              (jobOperation.data as { workInstructionId?: string | null })
-                .workInstructionId ?? null
-          },
-          quantity: quantityToComplete
-        }
-      ]
-    });
-    if (
-      ruleEval.violations.length > 0 &&
-      isBlocked(ruleEval.violations, acknowledged)
-    ) {
-      return redirect(
-        path.to.operation(operationId),
-        await flash(
-          request,
-          error(
-            ruleEval.violations[0]?.message ?? "Rule violation",
-            "Cannot finish operation"
-          )
-        )
-      );
-    }
-  }
-
-  if (quantityToComplete > 0) {
-    if (isTrackedEntity) {
-      if (!trackedEntityId) {
-        const trackedEntities = await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobOperation.data.jobMakeMethodId,
-          companyId
-        );
-
-        // Complete the next incomplete serial unit for this operation (createdAt
-        // asc), falling back to the last entity when every unit is complete.
-        const nextTrackedEntity = getNextIncompleteSerialEntity(
-          trackedEntities.data ?? [],
-          operationId
-        );
-        if (nextTrackedEntity) {
-          trackedEntityId = nextTrackedEntity.id;
-        }
-      }
-
-      if (jobMakeMethod.data.requiresSerialTracking) {
-        const response = await serviceRole.functions.invoke("issue", {
-          body: {
-            type: "jobOperationSerialComplete",
-            quantity: 1,
-            jobOperationId: jobOperation.data.id,
-            trackedEntityId,
-            trackingType: "Serial",
-            notes: "Generated by QR code",
-            companyId,
-            userId
-          }
-        });
-
-        const newTrackedEntityId = response.data?.newTrackedEntityId;
-
-        if (newTrackedEntityId) {
-          return redirect(
-            `${path.to.operation(
-              operationId
-            )}?trackedEntityId=${newTrackedEntityId}`
-          );
-        }
-
-        if (willBeFinished) {
-          const finishOperation = await finishJobOperation(serviceRole, {
-            jobOperationId: jobOperation.data.id,
-            userId,
-            companyId
-          });
-
-          if (finishOperation.error) {
-            return redirect(
-              path.to.operation(operationId),
-              await flash(
-                request,
-                error(finishOperation.error, "Failed to finish operation")
-              )
-            );
-          }
-
-          return redirect(
-            path.to.operations,
-            await flash(request, {
-              ...success("Operation finished successfully"),
-              flash: "success"
-            })
-          );
-        }
-
-        // Pre-split flow: the issue function did not spawn a new entity (all
-        // units already exist), so advance to the next incomplete serial unit
-        // for this operation. When none remain, fall through to the shared
-        // "operation complete" redirect below.
-        const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobOperation.data.jobMakeMethodId,
-          companyId
-        );
-        const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
-          (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
-        );
-        if (nextTrackedEntity) {
-          return redirect(
-            `${path.to.operation(
-              operationId
-            )}?trackedEntityId=${nextTrackedEntity.id}`
-          );
-        }
-      } else if (jobMakeMethod.data.requiresBatchTracking) {
-        const response = await serviceRole.functions.invoke("issue", {
-          body: {
-            type: "jobOperationBatchComplete",
-            quantity: quantityToComplete,
-            jobOperationId: jobOperation.data.id,
-            trackedEntityId,
-            trackingType: "Batch",
-            notes: "Generated by QR code",
-            companyId,
-            userId
-          }
-        });
-
-        if (response.error) {
-          return redirect(
-            path.to.operation(operationId),
-            await flash(request, {
-              ...error(response.error, "Failed to complete job operation"),
-              flash: "error"
-            })
-          );
-        }
-      }
-    } else {
-      const insertProduction = await insertProductionQuantity(
-        serviceRole,
-        {
-          quantity: quantityToComplete,
-          jobOperationId: jobOperation.data.id,
-          notes: "Generated by QR code",
-          companyId,
-          createdBy: userId
-        },
-        "mes_qr"
-      );
-
-      if (insertProduction.error) {
-        return redirect(
-          path.to.operation(operationId),
-          await flash(request, {
-            ...error(
-              insertProduction.error,
-              "Failed to record production quantity"
-            ),
-            flash: "error"
-          })
-        );
-      }
-
-      const issue = await serviceRole.functions.invoke("issue", {
-        body: {
-          id: operationId,
-          type: "jobOperation",
-          quantity: quantityToComplete,
-          companyId,
-          userId
-        }
-      });
-
-      if (issue.error) {
-        return redirect(
-          path.to.operation(operationId),
-          await flash(request, {
-            ...error(issue.error, "Failed to issue materials"),
-            flash: "error"
-          })
-        );
-      }
-    }
-  }
-
-  if (willBeFinished) {
-    const finishOperation = await finishJobOperation(serviceRole, {
-      jobOperationId: jobOperation.data.id,
-      userId,
-      companyId
-    });
-
-    if (finishOperation.error) {
-      return redirect(
-        path.to.operation(operationId),
-        await flash(request, {
-          ...error(finishOperation.error, "Failed to finish operation"),
-          flash: "error"
-        })
-      );
-    }
-
+  if (completed.data.outcome === "finished") {
     return redirect(
       path.to.operations,
       await flash(request, {

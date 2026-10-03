@@ -9,38 +9,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { completePassedInspectionUnits } from "~/services/commands.inspection.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { inspectionCompletePassedValidator } from "~/services/models";
-import { returnPickedRemainders } from "~/services/operations.service";
-import {
-  getInspectionOutcomeState,
-  getSerialCompletionCandidates,
-  postBulkCompletion,
-  postSerialCompletions
-} from "~/services/quality.server";
 import { path } from "~/utils/path";
 
-// Completions posted here insert productionQuantity rows, whose SQL interceptor
-// can auto-flip the operation to 'Done' (and complete the job) inside the DB —
-// no app hook fires on that path, so the picked-material return sweep is
-// orchestrated here after the postings land.
-async function sweepIfOperationDone(
-  serviceRole: Awaited<ReturnType<typeof getCarbonServiceRole>>,
-  args: { jobOperationId: string; userId: string; companyId: string }
-) {
-  const op = await serviceRole
-    .from("jobOperation")
-    .select("status")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (op.data?.status !== "Done") return;
-  await returnPickedRemainders(serviceRole, args);
-}
-
-// Progressive completion while the lot stays open: any unit that passed
-// inspection can move on immediately, without waiting for the disposition.
-// Explicit (a button, not auto-on-pass) so a verdict typo doesn't need a
-// compensating transaction — un-posted verdicts stay editable.
+// Progressive completion while the lot stays open — the work is in the
+// `completePassedInspectionUnits` command, which `/api/v1` calls too.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -62,109 +37,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   } = validation.data;
-  const eventIds = {
-    setupProductionEventId,
-    laborProductionEventId,
-    machineProductionEventId
-  };
   const returnTo = path.to.inspection(operationId);
-  const fail = async (err: unknown, message: string): Promise<never> => {
-    throw redirect(returnTo, await flash(request, error(err, message)));
-  };
 
-  const serviceRole = await getCarbonServiceRole();
-  const stateResult = await getInspectionOutcomeState(serviceRole, {
-    inspectionId: id,
-    companyId
-  });
-  if (stateResult.error !== null || !stateResult.data) {
-    return fail(stateResult.error, stateResult.message ?? "Failed to load lot");
-  }
-  const state = stateResult.data;
-  if (state.jobOperationId !== operationId) {
-    return fail(null, "Operation does not match the inspection lot");
-  }
-  if (["Passed", "Failed", "Partial"].includes(state.inspection.status)) {
-    return fail(null, "Inspection is closed — the disposition already ran");
-  }
-
-  if (state.requiresSerialTracking) {
-    const candidates = getSerialCompletionCandidates(state, {
-      includePending: false,
-      includeSampleless: false
-    });
-    if (candidates.length === 0) {
-      return fail(null, "No passed units to complete");
-    }
-    if (candidates.length > state.opRemaining) {
-      return fail(
-        null,
-        `Passed units (${candidates.length}) exceed the operation's remaining quantity (${state.opRemaining}) — quantities were already recorded from the actions menu`
-      );
-    }
-    const completions = await postSerialCompletions(serviceRole, {
-      candidates,
-      jobOperationId: state.jobOperationId,
+  const result = await completePassedInspectionUnits(
+    {
+      serviceRole: await getCarbonServiceRole(),
+      client,
+      db: getDatabaseClient()
+    },
+    { companyId, userId },
+    {
       inspectionId: id,
-      eventIds,
-      companyId,
-      userId
-    });
-    if (completions.error) {
-      return fail(
-        completions.error,
-        `Completing units failed after ${completions.completed} of ${candidates.length}`
-      );
+      operationId,
+      eventIds: {
+        setupProductionEventId,
+        laborProductionEventId,
+        machineProductionEventId
+      }
     }
-    await sweepIfOperationDone(serviceRole, {
-      jobOperationId: state.jobOperationId,
-      userId,
-      companyId
-    });
+  );
+
+  if (!result.ok) {
+    const { failure } = result;
     throw redirect(
       returnTo,
-      await flash(
-        request,
-        success(
-          `${completions.completed} unit${completions.completed === 1 ? "" : "s"} completed`
-        )
-      )
+      await flash(request, error(failure.details ?? null, failure.message))
     );
   }
 
-  const passedCount = state.samples.filter((s) => s.status === "Passed").length;
-  const quantity = Math.min(
-    Math.max(0, passedCount - state.linkedProductionQuantity),
-    state.opRemaining
-  );
-  if (quantity <= 0) {
-    return fail(null, "No passed units to complete");
-  }
-
-  const completion = await postBulkCompletion(serviceRole, client, state, {
-    quantity,
-    eventIds,
-    companyId,
-    userId
-  });
-  if (completion.error) {
-    return fail(
-      completion.error,
-      completion.message ?? "Failed to complete units"
-    );
-  }
-
-  await sweepIfOperationDone(serviceRole, {
-    jobOperationId: state.jobOperationId,
-    userId,
-    companyId
-  });
+  const { completed } = result.data;
 
   throw redirect(
     returnTo,
     await flash(
       request,
-      success(`${quantity} unit${quantity === 1 ? "" : "s"} completed`)
+      success(`${completed} unit${completed === 1 ? "" : "s"} completed`)
     )
   );
 }

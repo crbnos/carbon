@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteAttributeRecord } from "~/services/operations.service";
+import { deleteStepRecord } from "~/services/commands.steps.server";
 
 export async function action({ params, request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,18 +21,18 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const attributeDelete = await deleteAttributeRecord(serviceRole, {
-    id,
-    companyId,
-    userId
-  });
+  const result = await deleteStepRecord(
+    serviceRole,
+    { companyId, userId },
+    { id }
+  );
 
-  if (attributeDelete.error) {
+  if (!result.ok) {
     return data(
       { success: false },
       await flash(
         request,
-        error(attributeDelete.error, "Failed to delete step")
+        error(result.failure.details, result.failure.message)
       )
     );
   }

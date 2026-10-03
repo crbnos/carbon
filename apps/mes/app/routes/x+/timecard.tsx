@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCompanyTimeZone } from "@carbon/database";
 import {
   Badge,
   Button,
@@ -34,7 +33,6 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -52,9 +50,9 @@ import { DateTime } from "~/components";
 import {
   clockIn,
   clockOut,
-  getOpenClockEntry,
   updateTimeCardEntry
 } from "~/services/people.service";
+import { getTimecardScreen } from "~/services/screens.server";
 import { path } from "~/utils/path";
 
 function formatDuration(clockInStr: string, clockOutStr: string | null) {
@@ -103,34 +101,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const weekOffset = parseInt(url.searchParams.get("week") ?? "0", 10);
-  // Week runs Monday → Sunday on the company calendar (one payroll boundary
-  // per books, not the server's zone).
-  const tz = await getCompanyTimeZone(client, companyId);
-  const { from, to } = datetime.weekBounds(tz, weekOffset);
-  // Calendar days of the window on the COMPANY calendar — the client renders
-  // these directly so the header never shifts a day in a different browser tz.
-  const weekStart = datetime.businessDay(from, tz).toString();
-  const weekEnd = datetime.businessDay(to, tz).toString();
 
-  const [entries, openEntry] = await Promise.all([
-    client
-      .from("timeCardEntry")
-      .select("*")
-      .eq("employeeId", userId)
-      .eq("companyId", companyId)
-      .gte("clockIn", from)
-      .lte("clockIn", to)
-      .order("clockIn", { ascending: false }),
-    getOpenClockEntry(client, userId, companyId)
-  ]);
+  // The read itself lives in `~/services/screens.server` so this screen and
+  // `GET /api/v1/timecard` cannot drift.
+  const screen = await getTimecardScreen(client, {
+    companyId,
+    userId,
+    weekOffset
+  });
 
-  return {
-    entries: entries.data ?? [],
-    openEntry: openEntry.data,
-    weekOffset,
-    weekStart,
-    weekEnd
-  };
+  return screen.data;
 }
 
 export async function action({ request }: ActionFunctionArgs) {

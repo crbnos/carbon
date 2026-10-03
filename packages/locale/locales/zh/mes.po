@@ -12,13 +12,45 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "‹ Previous"
+msgstr ""
+
 msgid "(Inactive)"
 msgstr "（已停用）"
+
+#. placeholder {0}: summary.needsConfirmation
+msgid "{0, plural, one {# action from an earlier shift needs confirming} other {# actions from an earlier shift need confirming}}"
+msgstr ""
+
+#. placeholder {0}: summary.needsAttention
+msgid "{0, plural, one {# action needs your attention} other {# actions need your attention}}"
+msgstr ""
+
+#. placeholder {0}: summary.lanes
+msgid "{0, plural, one {# operation affected} other {# operations affected}}"
+msgstr ""
+
+#. placeholder {0}: summary.sending
+msgid "{0, plural, one {Sending # action} other {Sending # actions}}"
+msgstr ""
 
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
 msgstr "{0} - 组 {1}"
+
+#. placeholder {0}: item.name
+#. placeholder {1}: item.type
+msgid "{0} — {1}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available, locale)
+msgid "{0} {unit} available"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(data.quantityRequired, locale)
+msgid "{0} {unit} still to pick"
+msgstr ""
 
 #. placeholder {0}: employeeIds.length
 msgid "{0} Active"
@@ -28,13 +60,53 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: allColumns.length
+msgid "{0} are hidden by the filter."
+msgstr ""
+
+#. placeholder {0}: formatQuantity(available, locale)
+#. placeholder {0}: formatQuantity(entity.quantity, locale)
+msgid "{0} available"
+msgstr ""
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} 个客户"
 
+#. placeholder {0}: pin.length
+msgid "{0} digits entered"
+msgstr ""
+
+#. placeholder {0}: (targets.data ?? []).length
+msgid "{0} earlier operation(s) can take this back."
+msgstr ""
+
+#. placeholder {0}: model.tally.fails
+#. placeholder {0}: recorded.failed
+msgid "{0} failed"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
+
+#. placeholder {0}: workCenter.name
+#. placeholder {1}: workCenter.blockingDispatchReadableId
+msgid "{0} is blocked by maintenance {1}."
+msgstr ""
+
+#. placeholder {0}: workCenter.name
+msgid "{0} is blocked for maintenance."
+msgstr ""
+
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
+msgid "{0} is expired and cannot be picked"
+msgstr ""
+
+#. placeholder {0}: text.trim()
+#. placeholder {1}: material.itemReadableId ?? ""
+msgid "{0} is not an available {1}"
+msgstr ""
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -44,14 +116,27 @@ msgstr "{0} 个物料"
 msgid "{0} jobs"
 msgstr "{0} 个工作"
 
+#. placeholder {0}: model.remaining
+msgid "{0} left to make"
+msgstr ""
+
+#. placeholder {0}: row.sampleSize
+msgid "{0} needed"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(picked, locale)
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: columns.length
+#. placeholder {1}: formatQuantity(toPick, locale)
 #. placeholder {1}: operation.operationQuantity
-#. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
+
+#. placeholder {0}: formatQuantity(picked, locale)
+#. placeholder {1}: formatQuantity(toPick, locale)
+msgid "{0} of {1} {unit}"
+msgstr ""
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
@@ -63,9 +148,40 @@ msgstr "{0} / {1} 已完成"
 msgid "{0} of {1} completed"
 msgstr "{0} / {1} 已完成"
 
+#. placeholder {0}: resolvedLineCount(kit.lines)
+#. placeholder {1}: kit.lines.length
+msgid "{0} of {1} lines"
+msgstr ""
+
+#. placeholder {0}: recorded.recorded
+#. placeholder {1}: row.sampleSize
+msgid "{0} of {1} recorded"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(target - done, locale)
+#. placeholder {1}: formatQuantity(target, locale)
+msgid "{0} of {1} will not be made"
+msgstr ""
+
+#. placeholder {0}: missingContainment.length
+msgid "{0} open containment actions need signing off on this operation. Open it in Carbon MES on the web."
+msgstr ""
+
+#. placeholder {0}: operations.length
+msgid "{0} operation(s)"
+msgstr ""
+
+#. placeholder {0}: model.tally.passes
+msgid "{0} passed"
+msgstr ""
+
 #. placeholder {0}: rows.length
 msgid "{0} queued"
 msgstr "{0} 排队中"
+
+#. placeholder {0}: quantity(reworked)
+msgid "{0} reworked"
+msgstr ""
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
@@ -76,9 +192,52 @@ msgstr "运行中 {0} 个"
 msgid "{0} runs in batch {1}"
 msgstr "工单 {0} 在生产批次 {1}"
 
+#. placeholder {0}: quantity(scrapped)
+msgid "{0} scrapped"
+msgstr ""
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
+
+#. placeholder {0}: formatQuantity( line.outstanding, locale )
+msgid "{0} short"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(data.quantityRequired, locale)
+#. placeholder {0}: formatQuantity(outstanding, locale)
+msgid "{0} still to pick"
+msgstr ""
+
+#. placeholder {0}: commandMessage(error, t`Some material is still unpicked.`)
+#. placeholder {1}: unresolved .map((line) => line.itemName) .join(", ")
+msgid "{0} Still unpicked: {1}"
+msgstr ""
+
+#. placeholder {0}: column.title
+#. placeholder {1}: column.count
+msgid "{0}, {1} operations"
+msgstr ""
+
+#. placeholder {0}: column.title
+msgid "{0}, blocked for maintenance"
+msgstr ""
+
+#. placeholder {0}: gaugeLabel(gauge) ?? ""
+msgid "{0}, out of calibration"
+msgstr ""
+
+msgid "{built} of {count} built"
+msgstr ""
+
+msgid "{code} is not a material on this operation"
+msgstr ""
+
+msgid "{code} is not a part of this assembly"
+msgstr ""
+
+msgid "{code} is not used on this step"
+msgstr ""
 
 msgid "{completed} of {quantity}"
 msgstr "{completed} 的 {quantity}"
@@ -86,15 +245,101 @@ msgstr "{completed} 的 {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} 个已通过的件将被完成。"
 
+msgid "{count} work centers"
+msgstr ""
+
+#. placeholder {0}: steps.length
+msgid "{done} / {0} done"
+msgstr ""
+
+msgid "{done} of {total} lines"
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. Picking one needs a second tap to confirm."
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. This company allows them to be picked."
+msgstr ""
+
+msgid "{expiredCount} of these lots are expired. This company does not allow expired stock to be picked."
+msgstr ""
+
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
+
+msgid "{hours}h {minutes}m"
+msgstr ""
+
+msgid "{label} is waiting to send"
+msgstr ""
+
+msgid "{max} remaining"
+msgstr ""
+
+#. placeholder {0}: part.readableId
+#. placeholder {1}: part.name
+msgid "{quantity} × {0} — {1}"
+msgstr ""
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
 
+#. placeholder {0}: lines.length
+msgid "{resolved} of {0} lines"
+msgstr ""
+
+msgid "{resolved} of {lines} lines"
+msgstr ""
+
+msgid "{scrapped} scrapped"
+msgstr ""
+
+msgid "{text} is not a unit of this operation"
+msgstr ""
+
+msgid "{title} is blocked for maintenance"
+msgstr ""
+
+msgid "{waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
+msgstr ""
+
+msgid "{worked} so far"
+msgstr ""
+
+#. placeholder {0}: columnIndex + 1
+msgid "#{0}"
+msgstr ""
+
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
+
+msgid "1 work center"
+msgstr ""
+
+msgid "48pt minimum"
+msgstr ""
+
+msgid "6-digit code"
+msgstr ""
+
+msgid "A connected barcode scanner still works."
+msgstr ""
+
+msgid "A connected barcode scanner works without it."
+msgstr ""
+
+msgid "A field"
+msgstr ""
+
+msgid "A list shows up here as soon as it is assigned to you."
+msgstr ""
+
+msgid "A phone cannot reach this address"
+msgstr ""
+
+msgid "A photo is attached."
+msgstr ""
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
@@ -105,11 +350,19 @@ msgstr "关于"
 msgid "Accept"
 msgstr "接受"
 
+#. placeholder {0}: lot.acceptanceNumber
+#. placeholder {1}: lot.rejectionNumber
+msgid "Accept {0} / reject {1}"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "接受批次"
 
 msgid "Accept lot?"
 msgstr "接受批次？"
+
+msgid "Accept the lot"
+msgstr ""
 
 msgid "Account Settings"
 msgstr "账户设置"
@@ -133,8 +386,14 @@ msgstr "添加"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
+msgid "Add a note"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
+
+msgid "Add a server"
+msgstr ""
 
 msgid "Add Inventory"
 msgstr "添加库存管理"
@@ -145,8 +404,20 @@ msgstr "添加样本"
 msgid "Add Spare Part"
 msgstr "添加备件"
 
+msgid "Added"
+msgstr ""
+
+msgid "After a period of inactivity the pinned operator is signed out."
+msgstr ""
+
+msgid "After a period of inactivity this device signs itself out."
+msgstr ""
+
 msgid "All"
 msgstr "全部"
+
+msgid "All {openUnitCount} open units will be scrapped. To send some to rework instead, close this lot in Carbon MES on the web."
+msgstr ""
 
 msgid "All clear"
 msgstr "一切正常"
@@ -170,11 +441,60 @@ msgstr "全部报废"
 msgid "All steps"
 msgstr ""
 
+msgid "All units built — this operation is finished"
+msgstr ""
+
 msgid "Allocate failed units"
 msgstr "分配不合格单位"
 
 msgid "Allocate units"
 msgstr "分配单位"
+
+msgid "Allow camera access to scan the code"
+msgstr ""
+
+msgid "Allow Carbon MES to use the camera"
+msgstr ""
+
+msgid "Allow photo access to attach an existing photo"
+msgstr ""
+
+msgid "Allow the camera"
+msgstr ""
+
+msgid "Allow the camera to take a photo for this step"
+msgstr ""
+
+msgid "Already issued"
+msgstr ""
+
+msgid "An open containment action needs signing off on this operation. Open it in Carbon MES on the web."
+msgstr ""
+
+msgid "Analytics are off: this is a controlled environment."
+msgstr ""
+
+msgid "Analytics are off: this server has not configured them."
+msgstr ""
+
+msgid "Analytics are off: this server is air-gapped."
+msgstr ""
+
+msgid "Anything the next person should know"
+msgstr ""
+
+msgid "Anything you add here is what the next shift reads."
+msgstr ""
+
+msgid "Anything your supervisor should know"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+#. placeholder {0}: lot.aql
+msgid "AQL {0}"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
@@ -191,6 +511,9 @@ msgstr "您确定要完成此工序吗？这会结束此工序的所有活跃生
 msgid "Are you sure you want to leave this page?"
 msgstr "您确定要离开此页面吗？"
 
+msgid "Assembly"
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "装配步骤"
 
@@ -202,6 +525,14 @@ msgstr "已分配给我"
 
 msgid "Assignee"
 msgstr "经办人"
+
+#. placeholder {0}: step.minValue
+msgid "At least {0}"
+msgstr ""
+
+#. placeholder {0}: step.maxValue
+msgid "At most {0}"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "认证错误"
@@ -231,6 +562,10 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
+#. placeholder {0}: operation.batchSize
+msgid "Batch of {0}"
+msgstr ""
+
 msgid "Batch quantity"
 msgstr "批次数量"
 
@@ -242,6 +577,11 @@ msgstr "落后于目标 {daysBehindTarget} 天"
 
 #. placeholder {0}: step.minValue
 #. placeholder {1}: step.maxValue
+msgid "Between {0} and {1}"
+msgstr ""
+
+#. placeholder {0}: step.minValue
+#. placeholder {1}: step.maxValue
 #. placeholder {2}: step.unitOfMeasureCode ?? ""
 msgid "Between {0} and {1} {2}"
 msgstr "{0} 至 {1} {2}"
@@ -250,14 +590,29 @@ msgstr "{0} 至 {1} {2}"
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
 
+msgid "Blocked for maintenance"
+msgstr ""
+
 msgid "Blocking"
 msgstr "阻塞中"
 
 msgid "Board view"
 msgstr "看板视图"
 
+msgid "Build"
+msgstr ""
+
+msgid "Built"
+msgstr ""
+
+msgid "Built by this job — not issued from stock."
+msgstr ""
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
+
+msgid "Buttons"
+msgstr ""
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -274,8 +629,26 @@ msgstr "已取消"
 msgid "Carbon Logo"
 msgstr "Carbon 标志"
 
+msgid "Carbon MES"
+msgstr ""
+
+msgid "Carbon MES cannot use the camera. Turn the camera on for Carbon MES in your device's Settings app."
+msgstr ""
+
+msgid "Carbon MES needs the camera to read barcodes and QR codes."
+msgstr ""
+
 msgid "Cards"
 msgstr "卡片"
+
+msgid "Change company or location"
+msgstr ""
+
+msgid "Change location"
+msgstr ""
+
+msgid "Change server"
+msgstr ""
 
 msgid "Characteristic"
 msgstr "特性"
@@ -289,11 +662,48 @@ msgstr "聊天"
 msgid "Check your email"
 msgstr "请查收邮件"
 
+msgid "Checkbox"
+msgstr ""
+
+msgid "Choose"
+msgstr ""
+
+msgid "Choose a company to see its locations."
+msgstr ""
+
+msgid "Choose a gauge"
+msgstr ""
+
 msgid "Choose a job"
 msgstr "选择工单"
 
+msgid "Choose a lot"
+msgstr ""
+
+msgid "Choose a lot to pick"
+msgstr ""
+
+msgid "Choose a photo"
+msgstr ""
+
+msgid "Choose a reason"
+msgstr ""
+
+msgid "Choose something else"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Choose the gauge for {0}"
+msgstr ""
+
+msgid "Choose the unit first"
+msgstr ""
+
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear {count} filter(s)"
+msgstr ""
 
 msgid "Clear Filters"
 msgstr "清除筛选"
@@ -307,17 +717,51 @@ msgstr "清除搜索"
 msgid "Clear station default"
 msgstr "清除工作站默认值"
 
+msgid "Clear the filter"
+msgstr ""
+
+msgid "Clear the gauge"
+msgstr ""
+
 msgid "Clock In"
 msgstr "开工"
+
+msgid "Clock in and this week fills up."
+msgstr ""
 
 msgid "Clock Out"
 msgstr "收工"
 
+msgid "Clock out?"
+msgstr ""
+
+msgid "Clocked in"
+msgstr ""
+
+msgid "Clocked in at {since}"
+msgstr ""
+
+#. placeholder {0}: formatClockMoment(openEntry.clockIn, timeZone, locale, todayDay)
+msgid "Clocked in since {0}"
+msgstr ""
+
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 起打卡"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "关闭"
+
+msgid "Close the lot"
+msgstr ""
+
+msgid "Cloud has more than one region. If your team gave you a code, scan that instead."
+msgstr ""
+
+msgid "Code sent"
+msgstr ""
 
 msgid "Collapse characteristics table"
 msgstr "折叠特性表格"
@@ -351,8 +795,14 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+msgid "Complete {acceptRemaining} and pass the lot"
+msgstr ""
+
 msgid "Complete All"
 msgstr "全部完成"
+
+msgid "Complete all steps"
+msgstr ""
 
 msgid "Complete batch"
 msgstr "完成生产批次"
@@ -363,11 +813,34 @@ msgstr "完成批次"
 msgid "Complete passed"
 msgstr "完成已通过"
 
+#. placeholder {0}: model.completable
+msgid "Complete passed ({0})"
+msgstr ""
+
 msgid "Completed"
 msgstr "已完成"
 
+#. placeholder {0}: result.completed
+msgid "Completed {0}"
+msgstr ""
+
 msgid "Completing"
 msgstr "完成中"
+
+msgid "Condemn {openUnitCount} open units"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Connect Mobile App"
+msgstr ""
+
+msgid "Connect to a Carbon to get started."
+msgstr ""
+
+msgid "Connect to Carbon"
+msgstr ""
 
 msgid "Connecting"
 msgstr "连接中"
@@ -390,12 +863,162 @@ msgstr "已复制！"
 msgid "Copy"
 msgstr "复制"
 
+msgid "Copy server address"
+msgstr ""
+
 msgid "Copy to clipboard"
 msgstr "复制到剪贴板"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
+
+msgid "Could not add that unit"
+msgstr ""
+
+msgid "Could not attach that photo"
+msgstr ""
+
+msgid "Could not clock in"
+msgstr ""
+
+msgid "Could not clock out"
+msgstr ""
+
+msgid "Could not close the lot"
+msgstr ""
+
+msgid "Could not complete the unit"
+msgstr ""
+
+msgid "Could not complete those units"
+msgstr ""
+
+msgid "Could not end the shift"
+msgstr ""
+
+msgid "Could not finish the operation"
+msgstr ""
+
+msgid "Could not issue that material"
+msgstr ""
+
+msgid "Could not load operations"
+msgstr ""
+
+msgid "Could not load the issue types."
+msgstr ""
+
+msgid "Could not load the lots"
+msgstr ""
+
+msgid "Could not load the notes."
+msgstr ""
+
+msgid "Could not load the operator list."
+msgstr ""
+
+msgid "Could not load the scrap reasons."
+msgstr ""
+
+msgid "Could not load what is on the shelf."
+msgstr ""
+
+msgid "Could not load your hours"
+msgstr ""
+
+msgid "Could not load your picking lists"
+msgstr ""
+
+msgid "Could not log the quantity"
+msgstr ""
+
+msgid "Could not look up that code."
+msgstr ""
+
+msgid "Could not open this assembly"
+msgstr ""
+
+msgid "Could not open this inspection"
+msgstr ""
+
+msgid "Could not open this operation"
+msgstr ""
+
+msgid "Could not open this picking list"
+msgstr ""
+
+msgid "Could not pause"
+msgstr ""
+
+msgid "Could not pick that lot"
+msgstr ""
+
+msgid "Could not pick this line"
+msgstr ""
+
+msgid "Could not post that note"
+msgstr ""
+
+msgid "Could not print that label"
+msgstr ""
+
+msgid "Could not raise the issue"
+msgstr ""
+
+msgid "Could not reach the server"
+msgstr ""
+
+msgid "Could not record that gauge"
+msgstr ""
+
+msgid "Could not record that step"
+msgstr ""
+
+msgid "Could not refresh your hours"
+msgstr ""
+
+msgid "Could not remove that"
+msgstr ""
+
+msgid "Could not report the rework"
+msgstr ""
+
+msgid "Could not report the scrap"
+msgstr ""
+
+msgid "Could not save that reading"
+msgstr ""
+
+msgid "Could not start"
+msgstr ""
+
+msgid "Could not start the timer"
+msgstr ""
+
+msgid "Could not stop the timer"
+msgstr ""
+
+msgid "Could not switch company"
+msgstr ""
+
+msgid "Could not turn it on"
+msgstr ""
+
+msgid "Could not undo that"
+msgstr ""
+
+msgid "Could not unpick that lot"
+msgstr ""
+
+msgid "Could not unpick this line"
+msgstr ""
+
+msgid "Could not update this line"
+msgstr ""
+
+msgid "Could not update this list"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -417,11 +1040,17 @@ msgstr "当前工作"
 msgid "Customer"
 msgstr "客户"
 
+msgid "Dark"
+msgstr ""
+
 msgid "Dark Mode"
 msgstr "深色模式"
 
 msgid "Date"
 msgstr "日期"
+
+msgid "Day unknown"
+msgstr ""
 
 msgid "Deadline"
 msgstr "截止日期"
@@ -447,11 +1076,26 @@ msgstr "描述问题..."
 msgid "Describe what needs to be reworked..."
 msgstr "描述需要返工的内容..."
 
+msgid "Describe what you found"
+msgstr ""
+
 msgid "Description"
 msgstr "描述"
 
+msgid "Design primitives (dev)"
+msgstr ""
+
+msgid "Destructive"
+msgstr ""
+
 msgid "Details"
 msgstr "详情"
+
+msgid "Device language"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
 
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
@@ -497,11 +1141,14 @@ msgstr "拖动调整图形和特性的大小"
 msgid "Dragging {0} cancelled."
 msgstr "拖拽 {0} 已取消。"
 
+msgid "Drawing"
+msgstr ""
+
 msgid "Due"
 msgstr "应交期"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatDate(due, undefined, locale)
+#. placeholder {0}: formatDate(due.slice(0, 10), undefined, locale)
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "截止 {0}"
@@ -531,8 +1178,14 @@ msgstr "时长"
 msgid "Each job's output is its own lot — keep each job's parts apart."
 msgstr "每个工单的产出是其自己的批次 — 保持每个工单的零件分开。"
 
+msgid "Each unit's serial is made when the unit before it is complete."
+msgstr ""
+
 msgid "Edit"
 msgstr "编辑"
+
+msgid "Edit an entry"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "已用时长"
@@ -545,6 +1198,21 @@ msgstr "空的工作中心"
 
 msgid "End Operations"
 msgstr "结束工序"
+
+msgid "End shift"
+msgstr ""
+
+msgid "End shift?"
+msgstr ""
+
+msgid "Enter a number"
+msgstr ""
+
+msgid "Enter a quantity"
+msgstr ""
+
+msgid "Enter at least {MIN_PIN} digits"
+msgstr ""
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
@@ -559,6 +1227,15 @@ msgstr "输入您的身份验证器应用中的6位代码"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "请输入身份验证器应用中的 6 位代码以继续。"
 
+msgid "Enter your code"
+msgstr ""
+
+msgid "Enter your password"
+msgstr ""
+
+msgid "Enter your PIN"
+msgstr ""
+
 msgid "Error"
 msgstr "错误"
 
@@ -568,8 +1245,14 @@ msgstr "估计"
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
 msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工单记录一个步骤。"
 
+msgid "Every timer you have running stops"
+msgstr ""
+
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
+
+msgid "Every unit of this lot has been scanned."
+msgstr ""
 
 msgid "Expand characteristics table"
 msgstr "展开特性表格"
@@ -580,15 +1263,39 @@ msgstr "展开面板"
 msgid "Expired"
 msgstr "已过期"
 
+msgid "Expired — this cannot be picked."
+msgstr ""
+
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
 msgid "Expired {0}"
 msgstr "已过期 {0}"
+
+msgid "Expired {expiry}"
+msgstr ""
+
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
+msgid "Expires {0}"
+msgstr ""
+
+msgid "Expires {expiry}"
+msgstr ""
 
 msgid "Expires <0/>"
 msgstr "过期于 <0/>"
 
+msgid "Expiring"
+msgstr ""
+
 msgid "Expiring first"
 msgstr "即将过期优先"
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Fail {0}"
+msgstr ""
 
 msgid "Failed"
 msgstr "失败"
@@ -631,6 +1338,9 @@ msgstr "文件上传失败：{0}"
 msgid "Failed to upload image"
 msgstr "图片上传失败"
 
+msgid "File"
+msgstr ""
+
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
 
@@ -646,6 +1356,12 @@ msgstr "筛选"
 msgid "Filter by location"
 msgstr "按位置筛选"
 
+msgid "Filter the board"
+msgstr ""
+
+msgid "Filter the board, {filterCount} active"
+msgstr ""
+
 msgid "Finish"
 msgstr "完成"
 
@@ -656,8 +1372,14 @@ msgstr "完成 {0}"
 msgid "Finish Anyways"
 msgstr "仍然完成"
 
+msgid "Finish operation"
+msgstr ""
+
 msgid "Finish setting up your account"
 msgstr "完成账户设置"
+
+msgid "Finish this operation?"
+msgstr ""
 
 msgid "Finish with material unpicked?"
 msgstr "物料未拣货的情况下要完成吗？"
@@ -668,6 +1390,9 @@ msgstr "最早应交期 {0}"
 
 msgid "Fix the highlighted quantities before completing."
 msgstr "完成前请修正突出显示的数量。"
+
+msgid "Follow the device"
+msgstr ""
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
@@ -689,6 +1414,21 @@ msgstr "前往入门"
 
 msgid "Hide description"
 msgstr "隐藏描述"
+
+msgid "Hide options"
+msgstr ""
+
+msgid "Hold a traveller, a kanban card or a part label up to the camera, or use a connected barcode scanner."
+msgstr ""
+
+msgid "How many are finished?"
+msgstr ""
+
+msgid "How many are you issuing?"
+msgstr ""
+
+msgid "How many need rework?"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
@@ -721,14 +1461,32 @@ msgstr "在 {0}"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Progress"
 msgstr "进行中"
+
+msgid "In shared-terminal mode each operator pins in with their PIN, and their work is recorded against them rather than this device's account."
+msgstr ""
+
+msgid "In use"
+msgstr ""
+
+msgid "Insecure connection"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "检验物品"
 
 msgid "inspected"
 msgstr "已检验"
+
+msgid "Inspection"
+msgstr ""
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Instructions"
 msgstr "作业指导"
@@ -751,14 +1509,32 @@ msgstr "是以下任一"
 msgid "Issue"
 msgstr "发放"
 
+#. placeholder {0}: formatQuantity(total, locale)
+#. placeholder {0}: formatQuantity(value, locale)
+#. placeholder {0}: material.itemReadableId ?? ""
+msgid "Issue {0}"
+msgstr ""
+
+msgid "Issue material"
+msgstr ""
+
 msgid "Issue Material"
 msgstr "领料"
+
+msgid "Issue type"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "问题类型"
 
 msgid "Issued"
 msgstr "已发出"
+
+#. placeholder {0}: formatQuantity(total, locale)
+#. placeholder {0}: formatQuantity(value, locale)
+#. placeholder {1}: material.itemReadableId ?? ""
+msgid "Issued {0} {1}"
+msgstr ""
 
 msgid "Issued {issuedQuantity} of {lotLabel}"
 msgstr "已发放 {issuedQuantity} 个 {lotLabel}"
@@ -778,6 +1554,9 @@ msgstr "工单"
 msgid "Job Details"
 msgstr "工单详情"
 
+msgid "Job operation"
+msgstr ""
+
 msgid "Job Traveler"
 msgstr "工单流转卡"
 
@@ -796,6 +1575,12 @@ msgstr "套件"
 msgid "Labor"
 msgstr "人工"
 
+msgid "Labor — 01:22:40"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
 msgid "Last completed"
 msgstr "最后完成"
 
@@ -811,8 +1596,14 @@ msgstr "离开此页面"
 msgid "Let's build something"
 msgstr "让我们开始构建"
 
+msgid "Light"
+msgstr ""
+
 msgid "lines"
 msgstr "行"
+
+msgid "List"
+msgstr ""
 
 msgid "List view"
 msgstr "列表视图"
@@ -820,8 +1611,14 @@ msgstr "列表视图"
 msgid "Load list"
 msgstr "加载列表"
 
+msgid "Loading"
+msgstr ""
+
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
+
+msgid "Loading your hours…"
+msgstr ""
 
 msgid "Loading..."
 msgstr "加载中..."
@@ -831,6 +1628,9 @@ msgstr "本地"
 
 msgid "Location"
 msgstr "位置"
+
+msgid "Log {value} completed"
+msgstr ""
 
 msgid "Log completed"
 msgstr "记录完成"
@@ -856,17 +1656,30 @@ msgstr "记录报废"
 msgid "Log scrap for {0}"
 msgstr "记录 {0} 的报废"
 
+msgid "Logged — this operation is finished"
+msgstr ""
+
+msgid "Logged {value} completed"
+msgstr ""
+
 msgid "Login"
 msgstr "登录"
 
 msgid "Lot"
 msgstr "批次"
 
+#. placeholder {0}: lot.lotSize
+msgid "Lot {0}"
+msgstr ""
+
 msgid "Lot numbers missing"
 msgstr "缺少批次号"
 
 msgid "Lot tracked"
 msgstr "批次已追踪"
+
+msgid "Lots on the shelf"
+msgstr ""
 
 msgid "Machine"
 msgstr "机器"
@@ -883,6 +1696,9 @@ msgstr "维护已完成"
 msgid "Maintenance overdue"
 msgstr "维护已逾期"
 
+msgid "Maintenance request"
+msgstr ""
+
 msgid "Make a replacement"
 msgstr "制作替换件"
 
@@ -892,11 +1708,21 @@ msgstr "手动添加物料至库存管理"
 msgid "Manually remove items from inventory"
 msgstr "手动从库存管理中移除物料"
 
+msgid "Mark done"
+msgstr ""
+
+msgid "Mark short"
+msgstr ""
+
 msgid "Mark Short"
 msgstr "标记短缺"
 
 msgid "Mark the step done / record"
 msgstr "标记步骤完成/记录"
+
+#. placeholder {0}: formatQuantity(value, locale)
+msgid "Marked short at {0}"
+msgstr ""
 
 msgid "matches"
 msgstr "匹配"
@@ -910,11 +1736,17 @@ msgstr "已发出原材料"
 msgid "Maximum number of records reached"
 msgstr "已达到最大记录数"
 
+msgid "Measurement"
+msgstr ""
+
 msgid "Metric"
 msgstr "公制"
 
 msgid "Model"
 msgstr "模型"
+
+msgid "More"
+msgstr ""
 
 msgid "More actions"
 msgstr "更多操作"
@@ -924,6 +1756,9 @@ msgstr "更多操作"
 
 msgid "More options"
 msgstr "更多选项"
+
+msgid "More than the lot holds"
+msgstr ""
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -959,11 +1794,23 @@ msgstr "最新优先"
 msgid "Next"
 msgstr "下一个"
 
+msgid "Next page"
+msgstr ""
+
 msgid "Next step"
 msgstr "下一步骤"
 
+msgid "Next unit"
+msgstr ""
+
 msgid "No"
 msgstr "否"
+
+msgid "No active gauge of the type this characteristic needs."
+msgstr ""
+
+msgid "No active gauges."
+msgstr ""
 
 msgid "No active job at this work center"
 msgstr "此工作中心无活跃工单"
@@ -983,6 +1830,12 @@ msgstr "无已分配工序"
 msgid "No available filters"
 msgstr "无可用筛选条件"
 
+msgid "No available lot matches that code."
+msgstr ""
+
+msgid "No available lots are on record for this item at this location."
+msgstr ""
+
 msgid "No available serial numbers found"
 msgstr "未找到可用的序列号"
 
@@ -994,6 +1847,12 @@ msgstr "没有分配给您的维护工单"
 
 msgid "No files"
 msgstr "无文件"
+
+msgid "No filters"
+msgstr ""
+
+msgid "No gauge"
+msgstr ""
 
 msgid "No gauges found."
 msgstr "未找到量具。"
@@ -1016,6 +1875,9 @@ msgstr "没有原材料"
 msgid "No materials on this batch."
 msgstr "此生产批次上没有物料。"
 
+msgid "No notes yet"
+msgstr ""
+
 msgid "No open jobs"
 msgstr "没有未结的工单"
 
@@ -1025,11 +1887,17 @@ msgstr "没有未结的件可分配"
 msgid "No operators"
 msgstr "无操作员"
 
+msgid "No operators have a PIN"
+msgstr ""
+
 msgid "No option found."
 msgstr "未找到选项。"
 
 msgid "No options found."
 msgstr "未找到选项。"
+
+msgid "No parts for this step."
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "没有分配的拣货单"
@@ -1058,11 +1926,20 @@ msgstr "不需要样本。"
 msgid "No scheduled time"
 msgstr "无排定时间"
 
+msgid "No scheduled work"
+msgstr ""
+
 msgid "No serial numbers"
 msgstr "无序列号"
 
 msgid "No serial numbers found"
 msgstr "未找到序列号"
+
+msgid "No serial, lot or part on this Carbon has that code."
+msgstr ""
+
+msgid "No servers yet"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "此页面上无可用的快捷键。"
@@ -1070,11 +1947,23 @@ msgstr "此页面上无可用的快捷键。"
 msgid "No spare parts added yet"
 msgstr "尚未添加备件"
 
+msgid "No steps defined for this operation. Issue the parts, then complete the unit."
+msgstr ""
+
 msgid "No stock"
 msgstr "无库存"
 
+msgid "No stock on record"
+msgstr ""
+
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
+
+msgid "No unit selected"
+msgstr ""
+
+msgid "No units scanned yet"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
@@ -1082,20 +1971,63 @@ msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负�
 msgid "No Work Center"
 msgstr "无工作中心"
 
+msgid "No work centers"
+msgstr ""
+
 msgid "No work centers are blocked"
 msgstr "无工作中心被阻塞"
+
+msgid "No work centers at {locationName}"
+msgstr ""
 
 msgid "No work centers exist"
 msgstr "无工作中心"
 
+msgid "No work centers match"
+msgstr ""
+
+msgid "No work instructions"
+msgstr ""
+
+msgid "Nobody is pinned in — tap to pin in"
+msgstr ""
+
 msgid "None"
 msgstr "无"
+
+msgid "Not clocked in"
+msgstr ""
+
+msgid "Not every characteristic has the readings it needs"
+msgstr ""
+
+msgid "Note (optional)"
+msgstr ""
 
 msgid "Notes"
 msgstr "备注"
 
+msgid "Nothing has failed yet"
+msgstr ""
+
+msgid "Nothing is available to issue for this part."
+msgstr ""
+
+msgid "Nothing left to send"
+msgstr ""
+
+#. placeholder {0}: scan.value
+msgid "Nothing matches {0}"
+msgstr ""
+
+msgid "Nothing queued here."
+msgstr ""
+
 msgid "Nothing running"
 msgstr "没有运行"
+
+msgid "Nothing scanned yet."
+msgstr ""
 
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
@@ -1103,21 +2035,69 @@ msgstr "该工作中心没有计划任务"
 msgid "Nothing to scrap"
 msgstr "没有需要报废的"
 
+msgid "Nothing to show"
+msgstr ""
+
+msgid "Nothing was generated for it. Check the job's materials in the ERP."
+msgstr ""
+
+msgid "Nothing was picked"
+msgstr ""
+
 msgid "OEE Impact"
 msgstr "OEE 影响"
 
 msgid "OEM Required"
 msgstr "需要 OEM"
 
+#. placeholder {0}: formatQuantity(available, locale)
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/"
 
+#. placeholder {0}: quantity(required)
+#. placeholder {1}: material.unitOfMeasureCode ?? ""
+msgid "of {0} {1}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(target.required, locale)
+#. placeholder {1}: target.material.unitOfMeasureCode ?? ""
+msgid "of {0} {1} issued"
+msgstr ""
+
+msgid "Off — this device is yours alone"
+msgstr ""
+
+msgid "Offline · {label} is waiting to send"
+msgstr ""
+
+msgid "Offline · {waiting, plural, one {# action waiting to send} other {# actions waiting to send}}"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "最早优先"
 
+msgid "On — nobody pinned in"
+msgstr ""
+
+#. placeholder {0}: operator.name
+msgid "On — working as {0}"
+msgstr ""
+
+msgid "On the shelf"
+msgstr ""
+
+msgid "On this entry"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "一个组合批次 · 已计划"
+
+msgid "One less"
+msgstr ""
+
+msgid "One more"
+msgstr ""
 
 msgid "one per job · planned"
 msgstr "每个工单一个 · 已计划"
@@ -1125,15 +2105,30 @@ msgstr "每个工单一个 · 已计划"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "一次拣货覆盖整个生产批次 — 自动分配给各工单。"
 
+msgid "One unit"
+msgstr ""
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "仅 {0} 可用"
+
+msgid "Only a serial or batch unit has a label to print."
+msgstr ""
+
+msgid "Only the operator who recorded this can undo it."
+msgstr ""
+
+msgid "Only when it is truly empty — never while loading."
+msgstr ""
 
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "抱歉，您不应该看到此页面。此页面最终将成为首页。"
 
 msgid "Open"
 msgstr "未结"
+
+msgid "Open a confirmation"
+msgstr ""
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "在安装于工作中心的屏幕上打开显示屏并保持其运行。每个看板自动刷新。"
@@ -1147,9 +2142,44 @@ msgstr "为MRB处置打开NCR"
 msgid "Open Jobs"
 msgstr "未结工单"
 
+msgid "Open More"
+msgstr ""
+
+#. placeholder {0}: operation.itemReadableId ?? operation.jobReadableId ?? ""
+msgid "Open operation {0}"
+msgstr ""
+
+msgid "Open picking list {label}"
+msgstr ""
+
+msgid "Open Settings"
+msgstr ""
+
+#. placeholder {0}: formatClockMoment(openEntry.clockIn, timeZone, locale, todayDay)
+msgid "Open since {0} — before today. If you forgot to clock out, fix it in Carbon MES in a browser."
+msgstr ""
+
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
+msgstr ""
+
+msgid "Open the Settings app"
+msgstr ""
+
+msgid "Open the sheet"
+msgstr ""
+
+msgid "Open timers will be closed."
+msgstr ""
+
+msgid "Open your authenticator app and enter the current code."
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Operation finished"
 msgstr ""
 
 msgid "Operations"
@@ -1164,11 +2194,29 @@ msgstr "操作员"
 msgid "Operator Performed"
 msgstr "操作员执行"
 
+msgid "Operators"
+msgstr ""
+
 msgid "Optional"
 msgstr "可选"
 
+msgid "Options"
+msgstr ""
+
 msgid "or"
 msgstr "或"
+
+msgid "Or choose a unit"
+msgstr ""
+
+msgid "Or type the address"
+msgstr ""
+
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
+msgid "Order"
+msgstr ""
 
 msgid "Out of calibration"
 msgstr "需要校准"
@@ -1182,6 +2230,10 @@ msgstr "总体结果"
 msgid "Overdue PMs?"
 msgstr "已逾期的PM？"
 
+#. placeholder {0}: pages.length
+msgid "Page {page} of {0}"
+msgstr ""
+
 msgid "Parameters"
 msgstr "参数"
 
@@ -1194,6 +2246,19 @@ msgstr "部分"
 msgid "Partial Disposition"
 msgstr "部分处置"
 
+msgid "Parts"
+msgstr ""
+
+msgid "Pass"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Pass {0}"
+msgstr ""
+
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "已通过检验"
 
@@ -1203,15 +2268,56 @@ msgstr "已通过检验"
 msgid "Passkey unlock failed"
 msgstr "通行密钥解锁失败"
 
+msgid "Password"
+msgstr ""
+
 msgid "Pause"
 msgstr "暂停"
+
+#. placeholder {0}: workTypeLabels[activeType]
+msgid "Pause {0}"
+msgstr ""
+
+#. placeholder {0}: facts.unitOfMeasure
+msgid "per {0}"
+msgstr ""
+
+msgid "per unit"
+msgstr ""
+
+msgid "Person"
+msgstr ""
+
+msgid "Phone layout: the dock is the bottom bar."
+msgstr ""
+
+msgid "Photo attached"
+msgstr ""
+
+msgid "Photos go to this job's files."
+msgstr ""
 
 msgid "Pick"
 msgstr "拣货"
 
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "拣货 {0}"
+
+msgid "Pick {itemName}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "Pick all {0}"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "Pick all {0} {unit}"
+msgstr ""
+
+msgid "Pick expired lot"
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -1219,11 +2325,19 @@ msgstr "拣货追踪物料"
 msgid "Picked"
 msgstr "已拣货"
 
+#. placeholder {0}: formatQuantity(toPick, locale)
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
+msgid "Picked {0}"
+msgstr ""
+
 msgid "Picked as"
 msgstr "拣货为"
 
 msgid "Picked quantity"
 msgstr "已拣货数量"
+
+msgid "Picked quantity ({unit})"
+msgstr ""
 
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
@@ -1240,11 +2354,44 @@ msgstr "拣货替代{substitutedFrom}（工单上的物料）"
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "拣货替代{substitutedFrom}（工单上的物料），{substitutedAssemblies}个装配"
 
+msgid "Picking list"
+msgstr ""
+
+#. placeholder {0}: result.status
+msgid "Picking list {0}"
+msgstr ""
+
+msgid "Picking started"
+msgstr ""
+
+msgid "Pin in"
+msgstr ""
+
+#. placeholder {0}: person.name
+msgid "Pin in as {0}"
+msgstr ""
+
 msgid "Pin or unpin"
+msgstr ""
+
+msgid "Pin out"
 msgstr ""
 
 msgid "Pin Out"
 msgstr "退出登录"
+
+msgid "Pinch to zoom, double tap to reset. Tap a balloon to jump to its characteristic."
+msgstr ""
+
+#. placeholder {0}: selected.name
+msgid "Pinned in as {0}"
+msgstr ""
+
+msgid "Pinned out"
+msgstr ""
+
+msgid "PINs are set per employee in the ERP, under People."
+msgstr ""
 
 msgid "Planned"
 msgstr "已计划"
@@ -1258,6 +2405,9 @@ msgstr "请选择一个物料"
 msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
 
+msgid "Post note"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
 
@@ -1267,11 +2417,26 @@ msgstr "上一个"
 msgid "Preventive"
 msgstr "预防性"
 
+msgid "Previous page"
+msgstr ""
+
 msgid "Previous step"
 msgstr "上一步骤"
 
+msgid "Previous unit"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Primitives"
+msgstr ""
+
 msgid "Print"
 msgstr "打印"
+
+msgid "Print a label"
+msgstr ""
 
 msgid "Print batch list"
 msgstr "打印生产批次列表"
@@ -1281,6 +2446,9 @@ msgstr "打印机设置"
 
 msgid "Priority"
 msgstr "优先级"
+
+msgid "Privacy"
+msgstr ""
 
 msgid "Procedure"
 msgstr "程序文件"
@@ -1297,6 +2465,9 @@ msgstr "工艺参数"
 msgid "Processes"
 msgstr "工艺"
 
+msgid "Product"
+msgstr ""
+
 msgid "Progress"
 msgstr "进度"
 
@@ -1305,20 +2476,61 @@ msgstr "进度"
 msgid "Proj. {0}"
 msgstr "预计 {0}"
 
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
+
 msgid "Quality Issue"
 msgstr "质量问题"
 
 msgid "Quality issue created"
 msgstr "质量问题已创建"
 
+msgid "Quality issue raised"
+msgstr ""
+
+msgid "Quality issues"
+msgstr ""
+
+msgid "Quantities"
+msgstr ""
+
 msgid "Quantity"
 msgstr "数量"
+
+msgid "Quantity {quantity}"
+msgstr ""
+
+msgid "Quantity from this lot"
+msgstr ""
 
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于 0"
 
 msgid "Queue empty"
 msgstr "队列为空"
+
+msgid "Raise a quality issue"
+msgstr ""
+
+msgid "Raise the issue"
+msgstr ""
+
+#. placeholder {0}: result.readableId
+msgid "Raised {0}"
+msgstr ""
+
+msgid "Reading"
+msgstr ""
+
+#. placeholder {0}: row.label
+msgid "Reading for {0}"
+msgstr ""
+
+msgid "Reason"
+msgstr ""
+
+msgid "Reason (optional)"
+msgstr ""
 
 msgid "Reason for rework"
 msgstr "返工原因"
@@ -1328,6 +2540,9 @@ msgstr "最近"
 
 msgid "Recently used"
 msgstr "最近使用"
+
+msgid "Recently used here"
+msgstr ""
 
 msgid "Record"
 msgstr "记录"
@@ -1346,8 +2561,26 @@ msgstr "仅记录"
 msgid "Record Partial"
 msgstr "记录部分"
 
+msgid "Record the time now"
+msgstr ""
+
+msgid "Record this step in Carbon MES in a browser."
+msgstr ""
+
+msgid "Record time as"
+msgstr ""
+
 msgid "Recorded"
 msgstr "已记录"
+
+msgid "Recorded: {display}"
+msgstr ""
+
+msgid "Recorded: {display} — out of spec"
+msgstr ""
+
+msgid "Recording"
+msgstr ""
 
 msgid "Reject"
 msgstr "拒绝"
@@ -1355,11 +2588,18 @@ msgstr "拒绝"
 msgid "Reject Lot"
 msgstr "拒绝批次"
 
+msgid "Reject the lot"
+msgstr ""
+
 msgid "Released"
 msgstr "已下达"
 
 msgid "Remove"
 msgstr "移除"
+
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Remove {0}"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "移除筛选"
@@ -1370,14 +2610,33 @@ msgstr "移除库存管理"
 msgid "Remove part"
 msgstr "移除零件"
 
+msgid "Remove this server?"
+msgstr ""
+
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Removed {0}"
+msgstr ""
+
 msgid "Rename"
 msgstr ""
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "重新打开子装配件并创建替代件"
 
+msgid "Replace"
+msgstr ""
+
+msgid "Report rework"
+msgstr ""
+
+msgid "Report scrap"
+msgstr ""
+
 msgid "Required"
 msgstr "必填"
+
+msgid "Requires scan"
+msgstr ""
 
 msgid "Result"
 msgstr "结果"
@@ -1385,8 +2644,17 @@ msgstr "结果"
 msgid "Retry Completion"
 msgstr "重试完成"
 
+msgid "Review"
+msgstr ""
+
+msgid "Review unsent actions"
+msgstr ""
+
 msgid "Rework"
 msgstr "返工"
+
+msgid "Rework {value}"
+msgstr ""
 
 msgid "Rework created successfully"
 msgstr "返工创建成功"
@@ -1394,14 +2662,33 @@ msgstr "返工创建成功"
 msgid "Rework quantity"
 msgstr "返工数量"
 
+msgid "Rework reason"
+msgstr ""
+
+msgid "Rotate the device to swap the dock between a column and a bar."
+msgstr ""
+
 msgid "Running"
 msgstr "运行中"
+
+msgid "S/N"
+msgstr ""
+
+msgid "Sales order"
+msgstr ""
 
 msgid "Sales Order"
 msgstr "销售订单"
 
 msgid "Same for every job"
 msgstr "对所有工单相同"
+
+#. placeholder {0}: lot.sampleSize
+msgid "Sample {0}"
+msgstr ""
+
+msgid "Samples"
+msgstr ""
 
 msgid "Save"
 msgstr "保存"
@@ -1412,8 +2699,42 @@ msgstr "保存您正在编辑的表单"
 msgid "Scan"
 msgstr "扫码"
 
+#. placeholder {0}: material.itemReadableId ?? ""
+msgid "Scan {0}"
+msgstr ""
+
+#. placeholder {0}: gatedBy.length
+#. placeholder {1}: gatedBy.join(", ")
+msgid "Scan {0} parts to complete this step: {1}."
+msgstr ""
+
+#. placeholder {0}: gatedBy[0]
+msgid "Scan {0} to complete this step."
+msgstr ""
+
+msgid "Scan a part to issue it"
+msgstr ""
+
+msgid "Scan a part to issue it."
+msgstr ""
+
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
+
+msgid "Scan a unit"
+msgstr ""
+
+msgid "Scan a unit to start inspecting it."
+msgstr ""
+
+msgid "Scan or choose a lot"
+msgstr ""
+
+msgid "Scan or choose a serial"
+msgstr ""
+
+msgid "Scan or enter a lot number"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "扫码或输入序列号"
@@ -1430,6 +2751,30 @@ msgstr "扫码或搜索序列号..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
 
+msgid "Scan or type the lot number"
+msgstr ""
+
+msgid "Scan or type the serial number"
+msgstr ""
+
+msgid "Scan the code"
+msgstr ""
+
+msgid "Scan the code from Carbon, or type your server's address. Your supervisor can show the code from Settings."
+msgstr ""
+
+msgid "Scan the lot label"
+msgstr ""
+
+msgid "Scan the parts first."
+msgstr ""
+
+msgid "Scan to connect"
+msgstr ""
+
+msgid "Scan with the camera"
+msgstr ""
+
 msgid "Schedule"
 msgstr "排程"
 
@@ -1442,17 +2787,35 @@ msgstr "报废"
 msgid "Scrap {readableId}"
 msgstr "报废 {readableId}"
 
+msgid "Scrap {value}"
+msgstr ""
+
 msgid "Scrap material"
 msgstr "报废原材料"
+
+msgid "Scrap or rework the failed units"
+msgstr ""
 
 msgid "Scrap quantity"
 msgstr "报废数量"
 
+msgid "Scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "报废原因"
 
+msgid "scrapped"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "已报废"
+
+msgid "Scrapped — a replacement unit is ready"
+msgstr ""
+
+msgid "Scrapped {value}"
+msgstr ""
 
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "报废序列号 {trackedEntityReadableId}"
@@ -1477,6 +2840,9 @@ msgstr "搜索操作员..."
 
 msgid "Search..."
 msgstr "搜索..."
+
+msgid "Secondary"
+msgstr ""
 
 msgid "Select"
 msgstr "选择"
@@ -1528,8 +2894,38 @@ msgstr "已选择"
 msgid "Send"
 msgstr "发送"
 
+msgid "Send a new code"
+msgstr ""
+
+msgid "Send code"
+msgstr ""
+
+msgid "Send now"
+msgstr ""
+
+msgid "Send rework back to"
+msgstr ""
+
 msgid "Send to Carbon"
 msgstr "发送至 Carbon"
+
+msgid "Send unsent actions now"
+msgstr ""
+
+msgid "Sending now"
+msgstr ""
+
+msgid "Sending to the printer…"
+msgstr ""
+
+msgid "Sent {value} for rework"
+msgstr ""
+
+msgid "Sent to the printer"
+msgstr ""
+
+msgid "Sent to the shop printer"
+msgstr ""
 
 msgid "Separate lots"
 msgstr "单独批次"
@@ -1556,6 +2952,12 @@ msgstr "序列号"
 msgid "Serialized"
 msgstr "已序列号化"
 
+msgid "Server"
+msgstr ""
+
+msgid "Servers"
+msgstr ""
+
 msgid "Session locked"
 msgstr "会话已锁定"
 
@@ -1574,6 +2976,27 @@ msgstr "在规划生产批次时设置。"
 msgid "Setup"
 msgstr "换型"
 
+msgid "Setup — 00:14:02"
+msgstr ""
+
+msgid "Shared terminal"
+msgstr ""
+
+msgid "Shared terminal off"
+msgstr ""
+
+msgid "Shared-terminal mode is not available on this Carbon."
+msgstr ""
+
+msgid "Sheet and confirmation"
+msgstr ""
+
+msgid "Shift ended"
+msgstr ""
+
+msgid "Shift ended. You are signed out of this tablet."
+msgstr ""
+
 msgid "short"
 msgstr "短缺"
 
@@ -1583,11 +3006,39 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+#. placeholder {0}: row.label
+msgid "Show {0} on the drawing"
+msgstr ""
+
 msgid "Show description"
 msgstr "显示描述"
 
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
+
+msgid "Show only my station, {stationName}"
+msgstr ""
+
+msgid "Show options"
+msgstr ""
+
+msgid "Showing only {stationName}. Show every work center"
+msgstr ""
+
+msgid "Showing the first 40. Scan a label to find another."
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid "Sign in again to attach a photo"
+msgstr ""
+
+msgid "Sign in again to see the drawing."
+msgstr ""
+
+msgid "Sign in to look up a scanned code."
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
@@ -1607,11 +3058,35 @@ msgstr "退出登录"
 msgid "Sign out instead"
 msgstr "改为登出"
 
+msgid "Sign out?"
+msgstr ""
+
+msgid "Signed in as"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
 
+msgid "Signing back in needs the address again. Anything waiting to send is discarded."
+msgstr ""
+
 msgid "Size"
 msgstr "大小"
+
+msgid "Skip ›"
+msgstr ""
+
+msgid "Some material is still unpicked."
+msgstr ""
+
+msgid "Some units failed — accept is not available"
+msgstr ""
+
+msgid "Something that limits what they can do here."
+msgstr ""
+
+msgid "Something the operator must read."
+msgstr ""
 
 msgid "Source"
 msgstr "来源"
@@ -1626,11 +3101,15 @@ msgid "Start"
 msgstr "开始"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+#. placeholder {0}: workTypeLabels[activeType]
 msgid "Start {0}"
 msgstr "开始 {0}"
 
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
+
+msgid "States"
+msgstr ""
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1651,11 +3130,27 @@ msgstr "状态"
 msgid "Stay on this page"
 msgstr "留在此页面"
 
+#. placeholder {0}: state.stepNumbers.join(", ")
+msgid "Step {0}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Step {0} of {total}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+#. placeholder {1}: step.name
+msgid "Step {0}: {1}"
+msgstr ""
+
 msgid "Steps"
 msgstr "步骤"
 
 msgid "Steps are missing"
 msgstr "缺少步骤"
+
+msgid "Stops every running timer and clocks you out"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "存储单元"
@@ -1678,20 +3173,80 @@ msgstr ""
 msgid "Submit anonymously"
 msgstr "匿名提交"
 
+#. placeholder {0}: material.substitutedFromItemId
+msgid "Substituted for {0}."
+msgstr ""
+
 msgid "Suggestion"
 msgstr "建议"
 
 msgid "Support Required"
 msgstr "需要支持"
 
+msgid "Switch"
+msgstr ""
+
+msgid "Switch operator"
+msgstr ""
+
 msgid "Switch Operator"
 msgstr "切换操作员"
+
+#. placeholder {0}: operator.name
+msgid "Switch operator from {0}"
+msgstr ""
+
+msgid "Switch server"
+msgstr ""
+
+msgid "Tablet layout: the dock is the right-hand column."
+msgstr ""
 
 msgid "Tag"
 msgstr "标签"
 
+msgid "Take"
+msgstr ""
+
+msgid "Take a photo"
+msgstr ""
+
+msgid "Task"
+msgstr ""
+
+msgid "That code is not a unit of this lot"
+msgstr ""
+
+msgid "That code was printed by {host}, which is not the Carbon this tablet is linked to."
+msgstr ""
+
+msgid "That does not look like a Carbon address"
+msgstr ""
+
+msgid "That is all this part needs"
+msgstr ""
+
+#. placeholder {0}: formatQuantity( toPick, locale )
+msgid "That is more than the {0} this line asks for. Pick the line instead of marking it short."
+msgstr ""
+
+msgid "That lot is expired and cannot be picked."
+msgstr ""
+
+msgid "That photo could not be read"
+msgstr ""
+
+msgid "That PIN was not accepted"
+msgstr ""
+
+msgid "The camera is off"
+msgstr ""
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+msgid "The drawing could not be loaded. Pull down to try again."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"
@@ -1704,6 +3259,9 @@ msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
+
+msgid "The selected unit"
+msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
@@ -1721,11 +3279,83 @@ msgstr "物料清单中有序列号或生产批次追踪的物料尚未完全领
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
+msgid "These work instructions could not be read. Use Carbon MES in a browser for them."
+msgstr ""
+
 msgid "This batch has no work instructions."
 msgstr "此生产批次没有作业指导书。"
 
+msgid "This Carbon refused to make this device a shared terminal."
+msgstr ""
+
+msgid "This Carbon server needs an update before the app can sign in."
+msgstr ""
+
+msgid "This company has no locations yet."
+msgstr ""
+
+#. placeholder {0}: elsewhere.join(", ")
+msgid "This company's work centers are at {0}."
+msgstr ""
+
+msgid "This connection is not encrypted. Only continue on a network you trust."
+msgstr ""
+
+msgid "This is a controlled environment. The app locks itself after a period of inactivity."
+msgstr ""
+
+msgid "This is past its expiry date."
+msgstr ""
+
+msgid "This is past its expiry date. Give a reason to issue it anyway."
+msgstr ""
+
+msgid "This is the current week"
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "This line asks for {0} {unit}."
+msgstr ""
+
+#. placeholder {0}: formatQuantity(toPick, locale)
+msgid "This line asks for {0}."
+msgstr ""
+
+msgid "This line was cancelled."
+msgstr ""
+
+msgid "This list has no lines"
+msgstr ""
+
+#. placeholder {0}: list?.status ?? ""
+#. placeholder {0}: status ?? ""
+msgid "This list is {0}. Completed lists are reopened from the ERP."
+msgstr ""
+
+msgid "This lot expired {expiry}. Pick it anyway?"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
+
+msgid "This lot is expired. Pick it anyway?"
+msgstr ""
+
+#. placeholder {0}: lot.status
+msgid "This lot was closed as {0}. Nothing here can be changed."
+msgstr ""
+
+msgid "This operation consumes nothing from stock."
+msgstr ""
+
+msgid "This operation has no steps to record."
+msgstr ""
+
+msgid "This operation runs as part of a batch. Use Carbon MES in a browser to report it."
+msgstr ""
+
+msgid "This operation's materials could not be read. Use Carbon MES in a browser to issue them."
+msgstr ""
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路线以制造替换件。"
@@ -1733,14 +3363,47 @@ msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "此零件将从库存报废。其要求保持未结，以便您可以领料替代品。"
 
+msgid "This server is air-gapped. The app talks to it and to nothing else."
+msgstr ""
+
+msgid "This step has {slides} reference images. Open the job in Carbon MES on the web to see them."
+msgstr ""
+
+msgid "This step has a reference image. Open the job in Carbon MES on the web to see it."
+msgstr ""
+
+msgid "This step needs a photo."
+msgstr ""
+
+msgid "This sub-assembly is built by the job."
+msgstr ""
+
+msgid "This tablet is not a shared terminal yet. Turn it on from More."
+msgstr ""
+
+msgid "This takes it off the floor."
+msgstr ""
+
+msgid "This takes it off the floor. Nothing is running."
+msgstr ""
+
+msgid "This unit has no serial or lot number yet, so a tracked part cannot be issued to it."
+msgstr ""
+
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "此单元将被永久报废，并将创建替换序列号。"
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"
@@ -1751,6 +3414,9 @@ msgstr "工时记录"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
 msgstr "工作时间：{0}"
+
+msgid "Timestamp"
+msgstr ""
 
 msgid "To pick"
 msgstr "待拣货"
@@ -1763,6 +3429,9 @@ msgstr "今天"
 
 msgid "Toggle the sidebar"
 msgstr "切换侧栏"
+
+msgid "Tool"
+msgstr ""
 
 msgid "Tools"
 msgstr "工具"
@@ -1787,8 +3456,20 @@ msgstr "追踪实体"
 msgid "tracked lines"
 msgstr "已跟踪行"
 
+msgid "Tracked parts on this unit have not been fully issued. Completing without them leaves its traceability record incomplete."
+msgstr ""
+
 msgid "Tracking"
 msgstr "追踪"
+
+msgid "Try again"
+msgstr ""
+
+msgid "Turn off shared terminal"
+msgstr ""
+
+msgid "Turn the camera off"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "双因素认证"
@@ -1796,14 +3477,49 @@ msgstr "双因素认证"
 msgid "Two-factor authentication required"
 msgstr "需要双因素认证"
 
+msgid "Two-factor code"
+msgstr ""
+
 msgid "Type a message..."
 msgstr "输入消息..."
 
 msgid "Unable to unlock"
 msgstr "无法解锁"
 
+#. placeholder {0}: step.name
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Unissued serial or batch parts"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "未领料的序列号/生产批次物料"
+
+#. placeholder {0}: row.unit.index + 1
+msgid "Unit {0}"
+msgstr ""
+
+#. placeholder {0}: unitIndex + 1
+msgid "Unit {0} complete"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}. Show every unit."
+msgstr ""
+
+msgid "Unit {label}, {status}"
+msgstr ""
+
+msgid "Unit {label}, not inspected"
+msgstr ""
+
+msgid "Units"
+msgstr ""
 
 msgid "Unknown"
 msgstr "未知"
@@ -1811,18 +3527,28 @@ msgstr "未知"
 msgid "Unknown gauge"
 msgstr "未知量具"
 
+msgid "Unknown job"
+msgstr ""
+
 msgid "Unlock"
 msgstr "解锁"
 
 msgid "Unlock with passkey"
 msgstr "使用通行密钥解锁"
 
+msgid "Unnamed part"
+msgstr ""
+
 msgid "Unpick"
 msgstr "取消拣选"
 
+#. placeholder {0}: lot.readableId ?? lot.trackedEntityId
 #. placeholder {0}: pickedLots[0].trackedEntity.readableId
 msgid "Unpick {0}"
 msgstr "取消拣选 {0}"
+
+msgid "Unpicked"
+msgstr ""
 
 msgid "Unplanned downtime"
 msgstr "非计划停机时间"
@@ -1858,8 +3584,23 @@ msgstr "已上传：{0}"
 msgid "Uploading {0}"
 msgstr "正在上传 {0}"
 
+msgid "Usage analytics are on for this server."
+msgstr ""
+
 msgid "Use a different account"
 msgstr "使用不同的帐户"
+
+msgid "Use a different email"
+msgstr ""
+
+msgid "Use Carbon Cloud"
+msgstr ""
+
+msgid "Use Carbon MES in a browser for this."
+msgstr ""
+
+msgid "Use this device as a shared terminal"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "在完成时自动使用"
@@ -1869,8 +3610,15 @@ msgstr "在完成时自动使用"
 msgid "Uses {0} · {1}"
 msgstr ""
 
+msgid "Using Carbon Cloud?"
+msgstr ""
+
 msgid "Value"
 msgstr "值"
+
+#. placeholder {0}: step.unitOfMeasureCode
+msgid "Value ({0})"
+msgstr ""
 
 msgid "Verify"
 msgstr "验证"
@@ -1881,17 +3629,48 @@ msgstr "查看维护工单"
 msgid "View or open"
 msgstr ""
 
+msgid "Waiting for a connection"
+msgstr ""
+
+#. placeholder {0}: email ?? ""
+msgid "We emailed a 6-digit code to {0}."
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"
+
+msgid "What happened?"
+msgstr ""
+
+msgid "What has to be put right"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
 
+msgid "What kind of problem is it?"
+msgstr ""
+
+msgid "What should the next person know?"
+msgstr ""
+
+msgid "Where are you working?"
+msgstr ""
+
+msgid "Who is working?"
+msgstr ""
+
 msgid "Whole batch"
 msgstr "整个生产批次"
 
+msgid "Why was it scrapped?"
+msgstr ""
+
 msgid "WIP"
 msgstr "在制品"
+
+msgid "Work center"
+msgstr ""
 
 msgid "Work Center"
 msgstr "工作中心"
@@ -1899,20 +3678,59 @@ msgstr "工作中心"
 msgid "Work Center Displays"
 msgstr "工作中心显示屏"
 
+msgid "Work centers appear here once they exist."
+msgstr ""
+
+msgid "Work email"
+msgstr ""
+
 msgid "Work instructions"
 msgstr "作业指导书"
+
+msgid "Work is now recorded against this device's account."
+msgstr ""
+
+msgid "Working as"
+msgstr ""
+
+msgid "Working at"
+msgstr ""
+
+msgid "Working at {label}. Change company or location"
+msgstr ""
 
 msgid "Yes"
 msgstr "是"
 
+msgid "You are clocked out — {worked} on this entry"
+msgstr ""
+
+msgid "You are signed out of this tablet"
+msgstr ""
+
+msgid "You can change this later from More."
+msgstr ""
+
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您仍在工作。"
+
+msgid "You will need your email code again."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"
+
+msgid "Your hours could not be loaded, so this is not safe to press."
+msgstr ""
+
+msgid "Your hours for this entry stop now."
+msgstr ""
+
+msgid "Your operations are left as they are — nothing is completed or finished."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

@@ -6,8 +6,21 @@
     "includes": [
       "./**/app/**/*.ts*",
       "./**/app/**/*.tsx*",
+      // apps/mobile keeps its sources under src/ (Expo Router convention), so
+      // the app/** globs above do not reach it.
+      "./mobile/src/**/*.ts*",
+      "./mobile/*.ts",
       "!**/mcp*/lib/tools/**",
       "!**/mcp*/lib/server.ts"
     ]
-  }
+  },
+  "overrides": [
+    {
+      // React Native injects `__DEV__` at build time — it is a real global in
+      // every Expo bundle, and TypeScript knows it through expo's own types,
+      // but Biome has no way to learn it from a .d.ts.
+      "includes": ["./mobile/src/**/*.ts*", "./mobile/*.ts"],
+      "javascript": { "globals": ["__DEV__"] }
+    }
+  ]
 }

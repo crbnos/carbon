@@ -2,43 +2,42 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
+import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { finishOperation } from "~/services/commands.quantities.server";
 import { finishValidator } from "~/services/models";
-import { finishJobOperation } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
+/**
+ * Finish an operation. The work is in the `finishOperation` command
+ * (`~/services/commands.quantities.server`), which `/api/v1` calls too.
+ */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {});
+  const { userId, sessionUserId, companyId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(finishValidator).validate(formData);
-  const serviceRole = await getCarbonServiceRole();
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const finishOperation = await finishJobOperation(serviceRole, {
-    ...validation.data,
-    userId,
-    companyId
-  });
+  const finished = await finishOperation(
+    { companyId, userId, sessionUserId, source: "mes" },
+    validation.data
+  );
 
-  if (finishOperation.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(finishOperation.error, "Failed to finish operation")
-      )
-    );
+  if (!finished.ok) {
+    return data({}, await flash(request, finished.failure.details as Result));
   }
 
   throw redirect(

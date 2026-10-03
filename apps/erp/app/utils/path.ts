@@ -548,6 +548,7 @@ export const path = {
       generatePath(`${x}/part/${itemId}/parameter/order`),
     configurationRule: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/rule`),
+    connectMobile: `${x}/settings/connect-mobile`,
     consumable: (id: string) => generatePath(`${x}/consumable/${id}`),
     consumableCosting: (id: string) =>
       generatePath(`${x}/consumable/${id}/costing`),

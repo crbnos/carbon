@@ -138,3 +138,69 @@ export async function getInspectionDocumentWithBalloons(
     error: null
   };
 }
+
+/**
+ * The drawing as a client with no PDF engine can use it: the document's name
+ * and its balloon geometry, with no PDF and no url to one.
+ *
+ * A sibling of `getInspectionDocumentWithBalloons` rather than a replacement —
+ * that one still serves the web pane, which needs the `pdfUrl` this
+ * deliberately omits. Both read the same two tables, so the two panes cannot
+ * disagree about where a balloon sits.
+ *
+ * Scoped by `companyId`, which the web read is not. The id arrives from the
+ * lot row rather than from a caller, but a drawing is the one record here that
+ * several lots share, so scoping it is the difference between "this lot's
+ * drawing" and "any drawing whose id I can name".
+ */
+export async function getInspectionDrawing(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string,
+  companyId: string
+) {
+  const document = await client
+    .from("inspectionDocument")
+    .select("id, drawingNumber, fileName")
+    .eq("id", inspectionDocumentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (document.error || !document.data) return null;
+
+  const balloons = await client
+    .from("balloon")
+    .select(
+      "id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate, regionX, regionY, regionWidth, regionHeight"
+    )
+    .eq("inspectionDocumentId", inspectionDocumentId);
+
+  return {
+    documentName:
+      document.data.drawingNumber ??
+      document.data.fileName ??
+      "Untitled Diagram",
+    balloons: balloons.data ?? []
+  };
+}
+
+/**
+ * Where the drawing's PDF lives, for the endpoint that rasterises a page.
+ *
+ * Returns the storage key only. The caller still has to guard it
+ * (`isUnsafeStoragePath`, and that `companyId` is a real path segment) before
+ * handing it to storage: this row is the caller's own company's, but a
+ * malformed `storagePath` in it must not be able to read another tenant's
+ * bucket.
+ */
+export async function getInspectionDrawingStoragePath(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocument")
+    .select("id, storagePath")
+    .eq("id", inspectionDocumentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}

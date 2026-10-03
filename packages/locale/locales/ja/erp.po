@@ -803,6 +803,9 @@ msgstr "パーツには、購入または製造できる特定の品目に関す
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "このステップの部品は配置後に転倒する可能性があります。治具または第2作業者の使用を検討してください。"
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "このステップで作業者が見る写真またはPDF"
 
@@ -4319,6 +4322,9 @@ msgstr "Jira課題に接続"
 msgid "Connect Linear issue"
 msgstr "Linear イシューを接続"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "まず設定→連携の下でSlackに接続します。"
 
@@ -4672,6 +4678,9 @@ msgstr "受注の一意識別子をコピー"
 
 msgid "Copy sales return order unique identifier"
 msgstr "売上返品の一意識別子をコピー"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "サービス番号をコピー"
@@ -9184,6 +9193,9 @@ msgstr "{0}以内に"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "Onshapeでこのoauthアプリケーションの権限を編集して、\"アプリケーションがドキュメントに書き込むことができます\"を含めてから、もう一度接続してください。"
 
@@ -9412,6 +9424,9 @@ msgstr "検査：別の検査官が必要です"
 
 msgid "Install"
 msgstr "インストール"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Install mode"
 msgstr "インストール方式"
@@ -12897,6 +12912,9 @@ msgstr "または"
 msgid "Or enter this secret manually:"
 msgstr "または、このシークレットを手動で入力します："
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Order"
 msgstr "注文"
 
@@ -13596,6 +13614,9 @@ msgstr "発注番号"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Point the Carbon MES app at this server so the shop floor can clock in, pick and report from a phone or tablet."
+msgstr ""
+
 msgid "Policy"
 msgstr "ポリシー"
 
@@ -14242,6 +14263,9 @@ msgstr "会計にプッシュ"
 
 msgid "Putting your data back"
 msgstr "データを復元中"
+
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -15944,6 +15968,9 @@ msgstr "認証器アプリ（Google AuthenticatorまたはOne Passwordなど）�
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "認証アプリでスキャンして、表示される6桁のコードを入力してください。"
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"

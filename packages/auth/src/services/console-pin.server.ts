@@ -42,7 +42,7 @@ const CONSOLE_PIN_MAX_AGE_MS = CONSOLE_PIN_MAX_AGE * 1000;
 // to re-PIN after the standard idle-lock window instead of 1h. pinnedAt is refreshed
 // on every shell navigation (see MES x+/_layout loader), so this is an inactivity
 // window.
-const consolePinMaxAgeMs = () =>
+export const consolePinMaxAgeMs = () =>
   CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : CONSOLE_PIN_MAX_AGE_MS;
 
 export interface ConsolePinIn {
@@ -52,7 +52,7 @@ export interface ConsolePinIn {
   pinnedAt: number; // unix timestamp ms
 }
 
-interface StoredConsolePinIn extends ConsolePinIn {
+export interface StoredConsolePinIn extends ConsolePinIn {
   companyId: string;
   sessionUserId: string;
 }
@@ -126,6 +126,42 @@ export async function readConsolePinInCookieUnverified(
   };
 }
 
+/**
+ * Is this pin-in still allowed to act? The operator must still be an ACTIVE
+ * employee of the pin-in's own company and console mode must still be switched
+ * on for it.
+ *
+ * A signature (cookie or token) only proves WE issued the claim; it says
+ * nothing about whether the operator is still permitted. Both carriers of a
+ * pin-in therefore call this: the cookie through `resolveConsolePinIn` below,
+ * and the signed operator token through `requireApiUser`'s operator hook.
+ * One copy, so the web and the mobile API cannot disagree about who may work.
+ */
+export async function revalidateConsolePinIn(
+  stored: StoredConsolePinIn
+): Promise<boolean> {
+  const serviceRole = getCarbonServiceRole();
+  // `employees` only lists users whose `user.active` is true; `employee.active`
+  // is false once the person is deactivated in this company.
+  const [employee, settings] = await Promise.all([
+    serviceRole
+      .from("employees")
+      .select("id")
+      .eq("id", stored.userId)
+      .eq("companyId", stored.companyId)
+      .eq("active", true)
+      .maybeSingle(),
+    serviceRole
+      .from("companySettings")
+      .select("consoleEnabled")
+      .eq("id", stored.companyId)
+      .maybeSingle()
+  ]);
+
+  if (employee.error || settings.error) return false;
+  return !!employee.data && !!settings.data?.consoleEnabled;
+}
+
 async function loadConsolePinIn(
   request: Request,
   companyId: string,
@@ -138,26 +174,12 @@ async function loadConsolePinIn(
   );
   if (!pinIn) return null;
 
-  const serviceRole = getCarbonServiceRole();
-  // `employees` only lists users whose `user.active` is true; `employee.active`
-  // is false once the person is deactivated in this company.
-  const [employee, settings] = await Promise.all([
-    serviceRole
-      .from("employees")
-      .select("id")
-      .eq("id", pinIn.userId)
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .maybeSingle(),
-    serviceRole
-      .from("companySettings")
-      .select("consoleEnabled")
-      .eq("id", companyId)
-      .maybeSingle()
-  ]);
-
-  if (employee.error || settings.error) return null;
-  if (!employee.data || !settings.data?.consoleEnabled) return null;
+  const allowed = await revalidateConsolePinIn({
+    ...pinIn,
+    companyId,
+    sessionUserId
+  });
+  if (!allowed) return null;
 
   return pinIn;
 }

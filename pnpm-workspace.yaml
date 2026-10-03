@@ -1,5 +1,21 @@
 packages:
   - apps/*
+  # apps/mobile is DELIBERATELY not a workspace member. It is an Expo SDK 57 app
+  # on React 19.2 / React Native 0.86; the web tree is pinned to React 18.3.1 by
+  # the bare `react` / `react-dom` overrides below, and a pnpm override applies to
+  # the whole workspace with no per-package escape. Both ways of scoping the pin
+  # were measured and both put two React majors in one tree:
+  #   * parent-scoped pins only  -> react-router (peers "react-dom: >=18") resolved
+  #     react-dom@19 next to react@18 inside erp AND mes (main has 0 such pairings).
+  #   * a version-qualified `react@^19.2.0` key -> matches the RESOLVED version, not
+  #     the requested range, so permissive web ranges matched it too: 144 react-dom@18
+  #     next to react@19 pairings.
+  # Either shape is the dual-major hazard that took production down in .ai/lessons.md
+  # ("Dual-major deps ... crash the SSR bundle"). So apps/mobile keeps its own
+  # lockfile and node_modules (`pnpm mobile:install`), shares `packages/mes-core`
+  # as SOURCE through a Metro alias rather than a package dependency, and is driven
+  # in CI by the root `mobile:*` scripts because turbo cannot see it.
+  - '!apps/mobile'
   - ci
   - docs
   - docs/content
@@ -11,6 +27,12 @@ minimumReleaseAgeExclude:
   - '@carbon/*'
 
 overrides:
+  # LOAD-BEARING, do not scope or remove. react-router, radix, cmdk and visx all
+  # declare permissive peer ranges (react-router: "react-dom: >=18"), and pnpm
+  # resolves a permissive peer to the newest matching version instead of reusing
+  # the app's copy — so dropping these keys installs React 19 beside React 18.
+  # apps/mobile needs React 19 and is therefore outside this workspace entirely
+  # (see the `packages:` note above).
   react: 18.3.1
   react-dom: 18.3.1
   "@types/react": 18.3.28

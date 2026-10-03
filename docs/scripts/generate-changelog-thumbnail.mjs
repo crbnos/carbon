@@ -198,6 +198,32 @@ const M = {
     panel(760, 266, 270, 144, 16, PANEL, ACCENT),
     bar(790, 300, 120, ACCENT, 12, 6), bar(790, 332, 196, DIM), bar(790, 360, 150, DIM)].join("\n"),
 
+  // A tablet clamped to a machine beside a phone in a hand: the two shapes the
+  // native app has to be. Flat panels and one accent, like every motif here —
+  // deliberately NOT a drawn device outline with a notch, which would read as a
+  // platform logo at feed scale.
+  device: (r) => {
+    const rows = [0, 1, 2, 3].map((i) =>
+      [dot(252, 300 + i * 52, 5, i === 0 ? ACCENT : i === 1 ? GREEN : MID),
+       bar(274, 294 + i * 52, pick(r, 150, 240), i === 0 ? ACCENT : DIM, 10, 5),
+       bar(540, 294 + i * 52, pick(r, 50, 74), i === 0 ? MID : FAINT, 10, 5)].join("\n"));
+    return [
+      // The tablet: a list on the left, the dock as a column on the right.
+      panel(214, 176, 560, 356, 20), chrome(214, 176, 560),
+      hr(214, 246, 560), vr(640, 246, 286),
+      ...rows,
+      `  <rect x="664" y="272" width="86" height="86" rx="43" fill="${ACC_BG}" stroke="${ACCENT}" stroke-width="1.5"/>`,
+      dot(707, 315, 14, ACCENT),
+      bar(664, 388, 86, DIM, 12, 6), bar(664, 416, 86, FAINT, 12, 6),
+      // The phone: the same dock, as a bar under the thumb.
+      panel(830, 216, 212, 276, 20, PANEL2, STROKE), chrome(830, 216, 212),
+      ...[0, 1, 2].map((i) => bar(856, 290 + i * 34, pick(r, 96, 158), i === 0 ? MID : FAINT, 10, 5)),
+      hr(830, 420, 212),
+      `  <rect x="856" y="440" width="160" height="32" rx="10" fill="${ACC_BG}"/>`,
+      bar(874, 450, 76, ACCENT, 12, 6),
+    ].join("\n");
+  },
+
   grid: (r) => {
     const cells = [];
     for (let row = 0; row < 3; row++) for (let c = 0; c < 4; c++) {
@@ -250,6 +276,8 @@ const MOTIFS = [
   ["rings", /passkey|sign-in|sso|two-factor|mcp|console|api\b|security/i],
   ["ledger", /accounting|ledger|invoice|payment|card transaction|journal|budget|valuation/i],
   ["balloons", /balloon/i],
+  // Narrow on purpose: "app" alone would catch a sentence about the ERP app.
+  ["device", /mobile|tablet|iOS|Android|native app|on the floor, natively/i],
 ];
 
 /** Earliest keyword position in the title wins; tags only break a total miss. */

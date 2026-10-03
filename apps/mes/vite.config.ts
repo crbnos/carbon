@@ -75,6 +75,21 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     define: {
       global: "globalThis",
     },
+    optimizeDeps: {
+      /**
+       * `@napi-rs/canvas` is a NATIVE addon: its entry `require`s a `.node`
+       * binary. The dev dependency scan follows every route file, server-only
+       * ones included, so it reaches the dynamic import in
+       * `@carbon/files/pdf/node` (the inspection drawing endpoint), tries to
+       * pre-bundle the addon, cannot read the binary as source, and takes the
+       * whole dev server down at startup. A warm optimizer cache hides it —
+       * it only fails on the first start after the lockfile changes.
+       *
+       * Nothing in the browser ever asks for it, and the server loads it
+       * through Node as an external, so there is nothing to pre-bundle.
+       */
+      exclude: ["@napi-rs/canvas"],
+    },
     ssr: {
       noExternal: ssrNoExternal,
     },

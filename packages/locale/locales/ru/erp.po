@@ -803,6 +803,9 @@ msgstr "Деталь содержит информацию о конкретно
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "Деталь на этом шаге может опрокинуться при размещении — рассмотрите использование приспособления или второго физического лица."
 
+msgid "A phone cannot reach this address"
+msgstr ""
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "Фотография или PDF, которые оператор видит на этом шаге"
 
@@ -4319,6 +4322,9 @@ msgstr "Подключить проблему Jira"
 msgid "Connect Linear issue"
 msgstr "Подключить Linear issue"
 
+msgid "Connect Mobile App"
+msgstr ""
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Сначала подключите Slack в разделе Настройки → Интеграции."
 
@@ -4672,6 +4678,9 @@ msgstr "Скопировать уникальный идентификатор �
 
 msgid "Copy sales return order unique identifier"
 msgstr "Скопировать уникальный идентификатор возврата по заказу покупателя"
+
+msgid "Copy server address"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Копировать номер услуги"
@@ -9184,6 +9193,9 @@ msgstr "через {0}"
 msgid "In an open menu"
 msgstr ""
 
+msgid "In local development the address above is this Mac's own localhost, which a phone on the same network cannot open. Type the Mac's LAN address on the app's Connect screen instead — for example http://192.168.1.100:3001."
+msgstr ""
+
 msgid "In Onshape, edit this OAuth application's permissions to include \"Application can write to your documents\", then connect again."
 msgstr "В Onshape отредактируйте разрешения этого приложения OAuth, чтобы включить «Application can write to your documents», затем подключитесь снова."
 
@@ -9412,6 +9424,9 @@ msgstr "Контроли: требуется другой инспектор"
 
 msgid "Install"
 msgstr "Установить"
+
+msgid "Install Carbon MES from the App Store or Google Play, then scan this code."
+msgstr ""
 
 msgid "Install mode"
 msgstr "Режим установки"
@@ -12897,6 +12912,9 @@ msgstr "ИЛИ"
 msgid "Or enter this secret manually:"
 msgstr "Или введите этот секрет вручную:"
 
+msgid "Or type the address on the app's Connect screen."
+msgstr ""
+
 msgid "Order"
 msgstr "Заказ"
 
@@ -13596,6 +13614,9 @@ msgstr "Номер ПО"
 msgid "PO PDF"
 msgstr "ПО PDF"
 
+msgid "Point the Carbon MES app at this server so the shop floor can clock in, pick and report from a phone or tablet."
+msgstr ""
+
 msgid "Policy"
 msgstr "Политика"
 
@@ -14242,6 +14263,9 @@ msgstr "Отправить в бухгалтерию"
 
 msgid "Putting your data back"
 msgstr "Восстановление ваших данных"
+
+msgid "QR code linking the Carbon MES app to {serverUrl}"
+msgstr ""
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -15944,6 +15968,9 @@ msgstr "Отсканируйте этот QR код с помощью прило
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Отсканируйте это с помощью приложения аутентификатора, затем введите 6-значный код, который оно покажет."
+
+msgid "Scan to connect"
+msgstr ""
 
 msgid "SCAR"
 msgstr "SCAR"

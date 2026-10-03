@@ -18,6 +18,14 @@ $EDITOR .env                # hosts, URLs, ACME email, SMTP
 ./deploy.sh status
 ```
 
+> **Email templates.** This stack points GoTrue at the ERP's own copies
+> (`GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html`), so
+> `apps/erp/public/templates/` is the live template and an edit ships with the next
+> `./deploy.sh up`. A **hosted Supabase project does not read the repo file** — paste
+> the same template into Dashboard → Authentication → Email Templates → Magic Link, or
+> its users get the default email with no `{{ .Token }}` code and cannot sign in to the
+> Carbon MES mobile app.
+
 ## Files
 
 | File | Purpose |

@@ -2,94 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
+import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { reportQuantity } from "~/services/commands.quantities.server";
 import { nonScrapQuantityValidator } from "~/services/models";
-import {
-  finishJobOperation,
-  insertProductionQuantity
-} from "~/services/operations.service";
 import { path } from "~/utils/path";
 
-const log = getLogger("mes");
-
 /**
- * Triggers an auto-print of the entity's label when this is its first
- * operation (i.e. the entity was just minted) and the work center's
- * printer assignment has auto-print enabled.
+ * Report good parts. The work is in the `reportQuantity` command
+ * (`~/services/commands.quantities.server`), which `/api/v1` calls too —
+ * including the auto-print that is wrapped in a try/catch so it can never
+ * block the completion.
+ *
+ * The command reports WHICH branch ran, which is what keeps the four distinct
+ * responses below:
+ *   - finished → back to the operations list with the finish flash;
+ *   - Serial, not finished → `{ completed: true }`, so the client (useOperation
+ *     / AssemblyView) stays the single unit-advancement authority and nothing
+ *     races it; the marker is how AssemblyView tells a success from a failure
+ *     (which returns an empty `{}`);
+ *   - Batch, not finished → a plain redirect back to the operation;
+ *   - untracked, not finished → the inserted `productionQuantity` rows.
  */
-async function autoPrintFirstOperationLabel({
-  serviceRole,
-  trackedEntityId,
-  workCenterId,
-  companyId,
-  userId
-}: {
-  serviceRole: ReturnType<typeof getCarbonServiceRole>;
-  trackedEntityId: string;
-  workCenterId: string | undefined;
-  companyId: string;
-  userId: string;
-}) {
-  try {
-    const { data: entity } = await serviceRole
-      .from("trackedEntity")
-      .select("attributes")
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    // Service-role read: an entity outside the caller's company prints nothing.
-    if (!entity) return;
-
-    const attributes = (entity?.attributes ?? {}) as Record<string, unknown>;
-    const operationCount = Object.keys(attributes).filter((k) =>
-      k.startsWith("Operation ")
-    ).length;
-    if (operationCount > 1) return;
-
-    if (!workCenterId) return;
-    const { data: workCenter } = await serviceRole
-      .from("workCenter")
-      .select("locationId")
-      .eq("id", workCenterId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    const locationId = workCenter?.locationId ?? undefined;
-    if (!locationId) return;
-
-    const config = await getCachedPrinterConfig(
-      serviceRole,
-      companyId,
-      locationId,
-      "workCenter",
-      workCenterId
-    );
-    if (config?.autoPrint ?? true) {
-      await trigger("print-job", {
-        sourceDocument: "Job",
-        sourceDocumentId: trackedEntityId,
-        companyId,
-        userId,
-        locationId,
-        workCenterId
-      });
-    }
-  } catch (e) {
-    log.error("Auto-print failed", { error: e });
-  }
-}
-
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(nonScrapQuantityValidator).validate(
@@ -100,148 +45,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const serviceRole = await getCarbonServiceRole();
+  const reported = await reportQuantity(
+    client,
+    { companyId, userId, sessionUserId, source: "mes" },
+    validation.data
+  );
 
-  // Get current job operation and production quantities to check if operation will be finished
-  const jobOperation = await serviceRole
-    .from("jobOperation")
-    .select("*")
-    .eq("id", validation.data.jobOperationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  if (!reported.ok) {
+    return data({}, await flash(request, reported.failure.details as Result));
+  }
 
-  if (jobOperation.error || !jobOperation.data) {
-    log.error("Job operation not found in company", {
-      companyId,
-      jobOperationId: validation.data.jobOperationId,
-      error: jobOperation.error
-    });
-    return data(
-      {},
+  if (reported.data.finished) {
+    return redirect(
+      path.to.operations,
       await flash(request, {
-        ...error(jobOperation.error, "Failed to fetch job operation"),
-        flash: "error"
+        ...success("Operation finished successfully"),
+        flash: "success"
       })
     );
   }
 
-  // The production event ids ride along into the productionQuantity row and
-  // the issue call; RLS does not check a foreign key's tenant, so verify them.
-  const productionEventIds = [
-    validation.data.setupProductionEventId,
-    validation.data.laborProductionEventId,
-    validation.data.machineProductionEventId
-  ].filter((id): id is string => Boolean(id));
-  if (productionEventIds.length > 0) {
-    const uniqueEventIds = [...new Set(productionEventIds)];
-    const ownedEvents = await serviceRole
-      .from("productionEvent")
-      .select("id")
-      .in("id", uniqueEventIds)
-      .eq("companyId", companyId);
-    if (
-      ownedEvents.error ||
-      (ownedEvents.data ?? []).length !== uniqueEventIds.length
-    ) {
-      log.error("Production event not found in company", {
-        companyId,
-        productionEventIds: uniqueEventIds,
-        error: ownedEvents.error
-      });
-      return data(
-        {},
-        await flash(request, {
-          ...error(ownedEvents.error, "Production event not found"),
-          flash: "error"
-        })
-      );
-    }
-  }
-
-  // Mirror the DB auto-Done predicate (sync_update_job_operation_quantities,
-  // 20260807090629): scrap does NOT count toward targetQuantity — the op is
-  // finished only once GOOD (+ reworked) quantity reaches the target.
-  const totalAccountedQuantity =
-    (jobOperation.data.quantityComplete ?? 0) +
-    (jobOperation.data.quantityReworked ?? 0) +
-    validation.data.quantity;
-
-  const willBeFinished =
-    totalAccountedQuantity >=
-    (jobOperation.data.targetQuantity ??
-      jobOperation.data.operationQuantity ??
-      0);
-
-  if (validation.data.trackingType === "Serial") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationSerialComplete",
-        ...validation.data,
-        companyId,
-        userId
-      }
-    });
-
-    const newTrackedEntityId = response.data?.newTrackedEntityId;
-    // Print the entity that was just completed (from form), not the new reserved one
-    const completedEntityId = validation.data.trackedEntityId;
-
-    // Auto-print label on first operation only (entity was just minted)
-    const printEntityId = completedEntityId || newTrackedEntityId;
-    if (printEntityId) {
-      await autoPrintFirstOperationLabel({
-        serviceRole,
-        trackedEntityId: printEntityId,
-        workCenterId: jobOperation.data.workCenterId ?? undefined,
-        companyId,
-        userId
-      });
-    }
-
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
-    }
-
-    if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
-
-      if (finishOperation.error) {
-        return data(
-          {},
-          await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
-            flash: "error"
-          })
-        );
-      }
-
-      return redirect(
-        path.to.operations,
-        await flash(request, {
-          ...success("Operation finished successfully"),
-          flash: "success"
-        })
-      );
-    }
-
-    // Not finished: complete this unit and let the client (useOperation for the
-    // operation view, AssemblyView for assembly ops) decide how to advance —
-    // auto-select the next unit on the first operation, or open the scan/select
-    // picker on later operations. Returning data (instead of redirecting to a
-    // specific next unit) keeps the just-completed unit in the URL and revalidates
-    // the loader, so the client is the single advancement authority and nothing
-    // races it. The `{ completed: true }` marker lets AssemblyView tell a
-    // successful completion apart from a failure (which returns an empty `{}`).
+  if (reported.data.tracking === "Serial") {
     return data(
       { completed: true },
       await flash(request, {
@@ -249,138 +73,17 @@ export async function action({ request }: ActionFunctionArgs) {
         flash: "success"
       })
     );
-  } else if (validation.data.trackingType === "Batch") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationBatchComplete",
-        ...validation.data,
-        companyId,
-        userId
-      }
-    });
-
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
-    }
-
-    // Auto-print label on first operation only (batch entity was just minted)
-    if (validation.data.trackedEntityId) {
-      await autoPrintFirstOperationLabel({
-        serviceRole,
-        trackedEntityId: validation.data.trackedEntityId,
-        workCenterId: jobOperation.data.workCenterId ?? undefined,
-        companyId,
-        userId
-      });
-    }
-
-    if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
-
-      if (finishOperation.error) {
-        return data(
-          {},
-          await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
-            flash: "error"
-          })
-        );
-      }
-
-      return redirect(
-        path.to.operations,
-        await flash(request, {
-          ...success("Operation finished successfully"),
-          flash: "success"
-        })
-      );
-    }
-
-    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
-  } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { trackedEntityId, trackingType, ...d } = validation.data;
-    const insertProduction = await insertProductionQuantity(client, {
-      ...d,
-      companyId,
-      createdBy: userId
-    });
-
-    if (insertProduction.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(
-            insertProduction.error,
-            "Failed to record production quantity"
-          ),
-          flash: "error"
-        })
-      );
-    }
-
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
-        id: validation.data.jobOperationId,
-        type: "jobOperation",
-        quantity: validation.data.quantity,
-        companyId,
-        userId
-      }
-    });
-
-    if (issue.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(issue.error, "Failed to issue materials"),
-          flash: "error"
-        })
-      );
-    }
-
-    if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
-
-      if (finishOperation.error) {
-        return data(
-          {},
-          await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
-            flash: "error"
-          })
-        );
-      }
-
-      return redirect(
-        path.to.operations,
-        await flash(request, {
-          ...success("Operation finished successfully"),
-          flash: "success"
-        })
-      );
-    }
-
-    return data(
-      insertProduction.data,
-      await flash(request, {
-        ...success("Successfully completed part"),
-        flash: "success"
-      })
-    );
   }
+
+  if (reported.data.tracking === "Batch") {
+    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+  }
+
+  return data(
+    reported.data.productionQuantities,
+    await flash(request, {
+      ...success("Successfully completed part"),
+      flash: "success"
+    })
+  );
 }

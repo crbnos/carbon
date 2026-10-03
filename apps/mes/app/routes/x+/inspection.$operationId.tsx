@@ -6,38 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  getOrCreateJobOperationInspection,
-  getRecentInspectionGauges,
-  reconcileInspectionSamplingPlans
-} from "@carbon/database/quality";
-import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
-import {
-  getJobByOperationId,
-  getJobMakeMethod,
-  getJobOperationById,
-  getProductionEventsForJobOperation,
-  getProductionQuantitiesForJobOperation,
-  getTrackedEntitiesByMakeMethodId
-} from "~/services/operations.service";
-import {
-  getInspection,
-  getInspectionDocumentWithBalloons,
-  getInspectionGauges,
-  getInspectionMeasurements,
-  getInspectionSamplingPlans,
-  getIssueTypesList
-} from "~/services/quality.service";
-import type { InspectionSample, OperationWithDetails } from "~/services/types";
-import { makeDurations } from "~/utils/durations";
-import { resolveOperationView } from "~/utils/operationView";
+import { getInspectionDocumentWithBalloons } from "~/services/quality.service";
+import { getInspectionScreen } from "~/services/screens.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("mes", "inspection");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -48,182 +23,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const serviceRole = await getCarbonServiceRole();
 
-  // Every read below uses the service role, so prove the operation belongs to
-  // this company before any of them runs.
-  const scopedOperation = await serviceRole
-    .from("jobOperation")
-    .select("id")
-    .eq("id", operationId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (scopedOperation.error || !scopedOperation.data) {
-    logger.warn("Job operation not found for company", {
-      companyId,
-      operationId,
-      error: scopedOperation.error
-    });
-    throw redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error(scopedOperation.error, "Failed to fetch operation")
-      )
-    );
-  }
-
-  const [job, operation] = await Promise.all([
-    getJobByOperationId(serviceRole, operationId),
-    getJobOperationById(serviceRole, operationId)
-  ]);
-
-  if (job.error)
-    throw redirect(
-      path.to.operations,
-      await flash(request, error(job.error, "Failed to fetch job"))
-    );
-  if (operation.error)
-    throw redirect(
-      path.to.operations,
-      await flash(request, error(operation.error, "Failed to fetch operation"))
-    );
-
-  const op = operation.data?.[0];
-  if (!op) throw redirect(path.to.operations);
-
-  // Redirect guard (ADR-0005): only Inspection operations render here.
-  // Guards only redirect kinds they don't serve, so no loop.
-  if (resolveOperationView(op.operationType) !== "inspection") {
-    throw redirect(path.to.operation(operationId) + url.search);
-  }
-
-  // Lazy find-or-create of the inspection lot for this operation — mirrors
-  // post-receipt lot creation (plan snapshot + per-feature plans from the
-  // operation's inspectionDocumentId FK). Idempotent per (sourceDocument,
-  // sourceDocumentLineId).
-  const lot = await getOrCreateJobOperationInspection(getDatabaseClient(), {
-    jobOperationId: operationId,
+  // The read itself lives in `~/services/screens.server` so this screen and
+  // `GET /api/v1/operations/:id/inspection` cannot drift.
+  const screen = await getInspectionScreen(serviceRole, getDatabaseClient(), {
     companyId,
-    userId
+    userId,
+    operationId
   });
-  if (lot.error || !lot.data) {
+
+  if (!screen.ok) {
+    const { failure } = screen;
+    // The wrong-view guard carries the selected unit across the hop.
+    if ((failure.details as { view?: string } | undefined)?.view) {
+      throw redirect(`${failure.redirectTo}${url.search}`);
+    }
+    // An empty message is how the loader's two bare redirects are reported.
+    if (!failure.message) {
+      throw redirect(failure.redirectTo ?? path.to.operations);
+    }
     throw redirect(
-      path.to.operations,
-      await flash(request, error(lot.error, "Failed to create inspection"))
+      failure.redirectTo ?? path.to.operations,
+      await flash(request, error(failure.details ?? null, failure.message))
     );
   }
 
-  const inspectionResult = await getInspection(serviceRole, lot.data.id);
-  if (inspectionResult.error || !inspectionResult.data) {
-    throw redirect(
-      path.to.operations,
-      await flash(
-        request,
-        error(inspectionResult.error, "Failed to fetch inspection")
+  // The drawing pane is web-only: `react-konva` + `react-pdf` cannot run on
+  // React Native, so this read stays here rather than in the shared screen.
+  const inspection = screen.data.inspection as {
+    inspectionDocumentId?: string | null;
+  };
+  const document = inspection.inspectionDocumentId
+    ? await getInspectionDocumentWithBalloons(
+        serviceRole,
+        inspection.inspectionDocumentId
       )
-    );
-  }
-  const inspection = inspectionResult.data as any;
-
-  // The lot references its document live: features added to the document
-  // after lot creation get their per-lot plan rows resolved lazily.
-  if (inspection.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(
-      getDatabaseClient(),
-      lot.data.id,
-      companyId
-    );
-  }
-
-  const [
-    features,
-    measurements,
-    issueTypes,
-    trackedEntities,
-    jobMakeMethod,
-    events,
-    quantities,
-    linkedQuantities,
-    document,
-    gauges,
-    recentGauges
-  ] = await Promise.all([
-    getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
-    getInspectionMeasurements(serviceRole, lot.data.id, companyId),
-    getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      op.jobMakeMethodId,
-      companyId
-    ),
-    getJobMakeMethod(serviceRole, op.jobMakeMethodId),
-    getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
-    getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    // Verdict-driven postings link back to their sample — the UI derives
-    // "Complete passed (n)" from what is passed but not yet posted.
-    serviceRole
-      .from("productionQuantity")
-      .select("id, type, quantity, inspectionSampleId")
-      .eq("inspectionId", lot.data.id),
-    inspection.inspectionDocumentId
-      ? getInspectionDocumentWithBalloons(
-          serviceRole,
-          inspection.inspectionDocumentId
-        )
-      : Promise.resolve(null),
-    getInspectionGauges(serviceRole, companyId, lot.data.id),
-    getRecentInspectionGauges(getDatabaseClient(), {
-      inspectionId: lot.data.id,
-      companyId
-    })
-  ]);
-
-  const linkedProductionRows = (linkedQuantities.data ?? []).filter(
-    (row) => row.type === "Production"
-  );
-
-  const productionQuantities = (quantities.data ?? []).reduce(
-    (acc, curr) => {
-      if (curr.type === "Scrap") acc.scrap += curr.quantity;
-      else if (curr.type === "Production") acc.production += curr.quantity;
-      else if (curr.type === "Rework") acc.rework += curr.quantity;
-      return acc;
-    },
-    { scrap: 0, production: 0, rework: 0 }
-  );
-
-  // Sample column order must match the engine's required-feature derivation
-  // (createdAt asc, id asc).
-  const samples = (
-    [...(inspection.inspectionSample ?? [])] as InspectionSample[]
-  ).sort(
-    (a, b) =>
-      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
-      a.id.localeCompare(b.id)
-  );
+    : null;
 
   return {
-    job: job.data,
-    operation: makeDurations(op) as OperationWithDetails,
-    inspection,
-    samples,
-    features: features.data ?? [],
-    measurements: measurements.data ?? [],
-    gauges: gauges.data ?? [],
-    recentGaugeIds: recentGauges.data ?? [],
-    issueTypes: issueTypes.data ?? [],
-    trackedEntities: trackedEntities.data ?? [],
-    requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-    requiresBatchTracking: jobMakeMethod.data?.requiresBatchTracking ?? false,
-    events: events.data ?? [],
-    productionQuantities,
-    linkedSampleIds: linkedProductionRows
-      .map((row) => row.inspectionSampleId)
-      .filter((sampleId): sampleId is string => Boolean(sampleId)),
-    linkedProductionQuantity: linkedProductionRows.reduce(
-      (sum, row) => sum + (row.quantity ?? 0),
-      0
-    ),
-    jobId: job.data.id ?? null,
+    ...screen.data,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
     pdfUrl: document?.data?.pdfUrl ?? null

@@ -97,6 +97,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Inventory (lots, bins, adjustments) | `.claude/rules/inventory-system.md` + `modules/inventory/AGENTS.md` |
 | Production (work orders, scheduling, routings) | `.claude/rules/scheduling-data-structures.md` + `modules/production/AGENTS.md` |
 | MES (shop floor, job operations) | `.claude/rules/mes-job-operation-ui.md` |
+| MES mobile app (Expo) + the `/api/v1` it calls | `apps/mobile/AGENTS.md` + `.claude/rules/mes-mobile-api.md` + `packages/mes-core/AGENTS.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |
@@ -200,8 +201,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Framework**: React Router v7 (NOT Remix), flat routes via `remix-flat-routes`
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
-- **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example), `mobile` (Carbon MES for iOS/Android — Expo, deliberately OUTSIDE the pnpm workspace, see `apps/mobile/AGENTS.md`)
+- **Packages**: 27 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, planning, viewer, workflows-core, mes-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

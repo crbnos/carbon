@@ -1,0 +1,10 @@
+{
+  "extends": "@carbon/config/tsconfig/base.json",
+  "compilerOptions": {
+    // `node` is for the TEST files only — they read lingui.config.js off disk.
+    // Runtime sources here must stay Hermes-safe: zod plus type-only imports.
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": ["dist", "build", "node_modules"]
+}

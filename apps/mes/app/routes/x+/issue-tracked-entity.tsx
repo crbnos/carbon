@@ -5,12 +5,11 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { FAILURE_STATUS } from "~/services/api-result.server";
+import { issueTrackedEntities } from "~/services/commands.materials.server";
 import { issueTrackedEntityValidator } from "~/services/models";
-
-const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -26,91 +25,25 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const {
-    materialId,
-    jobOperationId,
-    itemId,
-    batchId,
-    parentTrackedEntityId,
-    children,
-    jobOperationStepId,
-    unitNumber,
-    overrideExpired,
-    overrideReason
-  } = validation.data;
+  const serviceRole = await getCarbonServiceRole();
 
-  if (batchId ? !itemId : !parentTrackedEntityId) {
+  const result = await issueTrackedEntities(
+    serviceRole,
+    { companyId, userId },
+    validation.data
+  );
+
+  if (!result.ok) {
     return data(
-      { success: false, message: "Failed to validate payload" },
-      { status: 400 }
+      { success: false, message: result.failure.message },
+      { status: FAILURE_STATUS[result.failure.kind] }
     );
   }
-
-  const serviceRole = await getCarbonServiceRole();
-  // Batch mode: one pick for the whole operation batch. The edge fn splits the
-  // picked lots pro-rata by each member's remaining requirement and records
-  // per-member consumption, so costing and genealogy stay per job.
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: batchId
-      ? {
-          type: "trackedEntitiesToBatch",
-          batchId,
-          itemId,
-          children,
-          overrideExpired,
-          overrideReason,
-          companyId,
-          userId
-        }
-      : {
-          type: "trackedEntitiesToOperation",
-          materialId,
-          jobOperationId,
-          itemId,
-          parentTrackedEntityId,
-          children,
-          jobOperationStepId,
-          unitNumber,
-          overrideExpired,
-          overrideReason,
-          companyId,
-          userId
-        }
-  });
-
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
-    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError where
-    // the actual body lives on `context`. Try to pull our { message } out;
-    // fall back to the wrapper's own message if parsing fails.
-    let message = "Failed to issue material";
-    const ctx = (issue.error as { context?: Response })?.context;
-    if (ctx && typeof ctx.json === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body.message === "string") {
-          message = body.message;
-        }
-      } catch {
-        /* fall through to default */
-      }
-    } else if ((issue.error as { message?: string }).message) {
-      message = (issue.error as { message: string }).message;
-    }
-    return data({ success: false, message }, { status: 400 });
-  }
-
-  const splitEntities = issue.data?.splitEntities || [];
-  const warning = issue.data?.warning as string | undefined;
-
-  // No label print on issue: the split child is CONSUMED (it departed into the
-  // job) and consumed portions get no label; the surviving lineside entity
-  // keeps its existing label.
 
   return {
     success: true,
     message: "Material issued successfully",
-    splitEntities,
-    warning
+    splitEntities: result.data.splitEntities,
+    warning: result.data.warning
   };
 }

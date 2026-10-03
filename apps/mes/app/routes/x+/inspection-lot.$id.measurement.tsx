@@ -5,10 +5,10 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { upsertInspectionMeasurement } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { recordInspectionMeasurement } from "~/services/commands.inspection.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionMeasurementValidator } from "~/services/models";
 
@@ -26,6 +26,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
+  // The form carries the lot id as well as the path; only this client sends it
+  // twice, so the two-source check stays here rather than in the command.
   if (validation.data.inspectionId !== id) {
     return data(
       { error: { message: "Inspection id mismatch" } },
@@ -33,20 +35,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInspectionMeasurement(getDatabaseClient(), {
-    ...validation.data,
-    companyId,
-    userId
-  });
+  const result = await recordInspectionMeasurement(
+    getDatabaseClient(),
+    { companyId, userId },
+    { ...validation.data, inspectionId: id }
+  );
 
-  if (result.error) {
+  if (!result.ok) {
     return data(
-      { error: result.error },
-      await flash(request, error(result.error, "Failed to save measurement"))
+      { error: result.failure.details ?? { message: result.failure.message } },
+      await flash(
+        request,
+        error(result.failure.details ?? null, "Failed to save measurement")
+      )
     );
   }
 
   // No success flash — per-cell saves must be quiet; the matrix consumes the
   // returned ids/statuses to update itself.
-  return data(result);
+  return data({ data: result.data, error: null });
 }
