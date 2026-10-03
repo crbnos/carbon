@@ -146,7 +146,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Creating/refreshing an AGENTS.md | `.claude/skills/create-agents-md/SKILL.md` |
 | **Design Specs** | |
 | Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` |
-| Writing a new spec | `.claude/skills/spec-writing/SKILL.md` |
+| Writing a new spec | `.claude/skills/spec-writing/SKILL.md` + `.claude/rules/writing-ste.md` |
+| Explain a spec/plan as an HTML page (diagram + plain prose) | `.claude/skills/explain/SKILL.md` |
 | **Workflows** | |
 | Skills index — pipelines + all skills | `.claude/skills/README.md` |
 | Competitor research for a feature | `.claude/skills/research/SKILL.md` |
