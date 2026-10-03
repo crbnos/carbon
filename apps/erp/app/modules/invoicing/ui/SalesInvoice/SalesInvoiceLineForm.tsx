@@ -80,7 +80,6 @@ import {
   usePercentFormatter,
   usePermissions,
   useRouteData,
-  useSettings,
   useUser
 } from "~/hooks";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
@@ -277,7 +276,6 @@ const SalesInvoiceItemLineForm = ({
 }: SalesInvoiceLineFormProps) => {
   const { t, i18n } = useLingui();
   const permissions = usePermissions();
-  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
 
   const { company, defaults } = useUser();
@@ -833,7 +831,7 @@ const SalesInvoiceItemLineForm = ({
                               }))
                             }
                           />
-                          {accountingEnabled && lineType === "Service" && (
+                          {lineType === "Service" && (
                             <>
                               <DatePicker
                                 name="serviceStartDate"

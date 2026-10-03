@@ -6507,6 +6507,10 @@ export async function upsertSalesOrderLine(
     serviceStartDate: (isService && salesOrderLine.serviceStartDate) || null,
     serviceEndDate: (isService && salesOrderLine.serviceEndDate) || null
   };
+  // A service is promised for the day it starts: a line with a service period
+  // takes its promised date from it, and the form hides the field.
+  const promisedDate =
+    servicePeriod.serviceStartDate ?? salesOrderLine.promisedDate;
 
   if ("id" in salesOrderLine) {
     return client
@@ -6514,7 +6518,8 @@ export async function upsertSalesOrderLine(
       .update(
         sanitize({
           ...salesOrderLine,
-          ...servicePeriod
+          ...servicePeriod,
+          promisedDate
         })
       )
       .eq("id", salesOrderLine.id)
@@ -6563,6 +6568,7 @@ export async function upsertSalesOrderLine(
         nonTaxableAddOnCost: salesOrderLine.nonTaxableAddOnCost ?? 0,
         taxPercent: salesOrderLine.taxPercent ?? 0,
         ...servicePeriod,
+        promisedDate,
         exchangeRate,
         sortOrder: maxSortOrder + 1
       }

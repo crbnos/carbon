@@ -84,7 +84,6 @@ import {
   usePercentFormatter,
   usePermissions,
   useRouteData,
-  useSettings,
   useUser
 } from "~/hooks";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
@@ -118,7 +117,6 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
   const permissions = usePermissions();
-  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const { orderId } = useParams();
@@ -773,12 +771,16 @@ const SalesOrderLineForm = ({
                                 }
                               />
                             </div>
-                            <DatePicker
-                              name="promisedDate"
-                              label={t`Promised Date`}
-                              termId="sales-order-line-promised-date"
-                            />
-                            {accountingEnabled && lineType === "Service" && (
+                            {/* A service is promised for the day it starts, so
+                                the server copies the start date across. */}
+                            {!isService && (
+                              <DatePicker
+                                name="promisedDate"
+                                label={t`Promised Date`}
+                                termId="sales-order-line-promised-date"
+                              />
+                            )}
+                            {isService && (
                               <>
                                 <DatePicker
                                   name="serviceStartDate"
