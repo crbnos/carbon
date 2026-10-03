@@ -7,6 +7,9 @@
 --
 -- Named planningHorizonDays on purpose: planningTimeFenceDays is reserved by the
 -- MRP v2 spec for the auto-firm fence, which is a different concept.
+--
+-- The fence is compared against planningAction."horizonDate", defined with the
+-- table in 20261003203300_mrp-planning-actions.sql.
 
 -- 1. Per item + location horizon, with a company-wide default.
 ALTER TABLE "itemPlanning"
@@ -17,24 +20,7 @@ ALTER TABLE "companySettings"
   ADD COLUMN IF NOT EXISTS "defaultPlanningHorizonDays" INTEGER
   CHECK ("defaultPlanningHorizonDays" IS NULL OR "defaultPlanningHorizonDays" >= 0);
 
--- 2. The two dates the grids read off a stored action.
---    horizonDate     — the date that decides whether the action is inside a fence:
---                      the earlier of the target order's current date and the
---                      suggested date (so a Defer counts from where the order
---                      sits today, an Expedite from when it is needed).
---    latestOrderDate — Order / Make / Increase only: the required date less the
---                      item's lead time, i.e. the last day to place the order.
-ALTER TABLE "planningAction"
-  ADD COLUMN IF NOT EXISTS "horizonDate" DATE,
-  ADD COLUMN IF NOT EXISTS "latestOrderDate" DATE;
-
--- Rows written before this migration: the suggested date is the right fence date
--- for every type but Defer, and the next MRP run rewrites all of them.
-UPDATE "planningAction" SET "horizonDate" = "suggestedDate" WHERE "horizonDate" IS NULL;
-
-ALTER TABLE "planningAction" ALTER COLUMN "horizonDate" SET NOT NULL;
-
--- 3. Grid wrappers. The base RPCs stay the one definition of the projection
+-- 2. Grid wrappers. The base RPCs stay the one definition of the projection
 --    (generatePlanningActions reads them too); these add the columns only the
 --    grids need and evaluate the Actions and Assignee filters in the
 --    database, inside each item's fence, so the filter is complete at any volume

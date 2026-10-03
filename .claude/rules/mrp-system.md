@@ -171,7 +171,7 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs); MRP never inserts it but DELETES every row at the company's locations in Phase 7 |
-| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261003203300`, `20261003203304`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, period, target) via a partial unique index |
+| `planningAction` | `(id, companyId)` | `type`, `status`, `suggestedQuantity`, `suggestedDate`, `horizonDate`, `latestOrderDate`, `purchaseOrderLineId` / `jobId`, `assignee` | the MRP worklist (`20261003203300`). `type` enum `planningActionType` = Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` = Open / Dismissed / Actioned. Diff-written by `generatePlanningActions`; one non-Actioned row per (item, location, type, period, target) via a partial unique index |
 | `supplyActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `supplySourceType` = `'Purchase Order'\|'Production Order'` |
 | `demandForecastSource` | surrogate `id` | `sourceType`, `jobId`/`salesOrderLineId`/`demandProjectionId`, `parentItemId`, `quantity` | MRP lineage; enum `demandForecastSourceType` = `'Job Material'\|'Sales Order'\|'Demand Projection'`; CHECK exactly one source id set |
 
@@ -188,11 +188,11 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 
 ## Planning split functions
 
-Latest definitions: `get_production_planning` in
-`20261003203301_demand-forecast-consumption.sql` (supersedes `20260715195226`);
-`get_purchasing_planning` — and `get_inventory_quantities` — in
-`20261003203305_planning-rpcs-guard-and-forecast-netting.sql`, forked from the
-guarded `20260925121735` bodies and opening with `assert_company_access`.
+Latest definition of BOTH, and of `get_inventory_quantities`:
+`20261003203301_demand-forecast-consumption.sql`. `get_production_planning`
+supersedes `20260715195226`; `get_purchasing_planning` and
+`get_inventory_quantities` are forked from the guarded `20260925121735` bodies
+and open with `assert_company_access`.
 Their `demand_data` CTEs read the projection arm net of consumption
 (`GREATEST("forecastQuantity" - "consumedQuantity", 0)`).
 

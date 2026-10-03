@@ -28,6 +28,17 @@ CREATE TABLE IF NOT EXISTS "planningAction" (
     "suggestedDate" DATE NOT NULL,
     "isASAP" BOOLEAN NOT NULL DEFAULT false,
 
+    -- The two dates the planning grids read off a stored action:
+    --   horizonDate     — the date that decides whether the action is inside a
+    --                     planning horizon (time fence): the earlier of the target
+    --                     order's current date and the suggested date, so a Defer
+    --                     counts from where the order sits today and an Expedite
+    --                     from when it is needed.
+    --   latestOrderDate — Order / Make / Increase only: the required date less the
+    --                     item's lead time, i.e. the last day to place the order.
+    "horizonDate" DATE NOT NULL,
+    "latestOrderDate" DATE,
+
     -- Target of a CHANGE action (exactly one set; both NULL for Order/Make):
     "purchaseOrderLineId" TEXT,
     "jobId" TEXT,
@@ -50,6 +61,20 @@ CREATE TABLE IF NOT EXISTS "planningAction" (
 
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+    -- ON DELETE CASCADE throughout: a planning action is regenerable MRP output —
+    -- when its item, location, period or target disappears, the suggestion is
+    -- meaningless and must never block the delete or linger until the next run.
+    -- All five referenced tables have single-column ("id") primary keys.
+    CONSTRAINT "planningAction_itemId_fkey"
+      FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+    CONSTRAINT "planningAction_locationId_fkey"
+      FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
+    CONSTRAINT "planningAction_periodId_fkey"
+      FOREIGN KEY ("periodId") REFERENCES "period"("id") ON DELETE CASCADE,
+    CONSTRAINT "planningAction_purchaseOrderLineId_fkey"
+      FOREIGN KEY ("purchaseOrderLineId") REFERENCES "purchaseOrderLine"("id") ON DELETE CASCADE,
+    CONSTRAINT "planningAction_jobId_fkey"
+      FOREIGN KEY ("jobId") REFERENCES "job"("id") ON DELETE CASCADE,
     CONSTRAINT "planningAction_change_target_chk" CHECK (
       ("type" IN ('Order','Make') AND "purchaseOrderLineId" IS NULL AND "jobId" IS NULL)
       OR ("type" NOT IN ('Order','Make') AND (("purchaseOrderLineId" IS NOT NULL)::int + ("jobId" IS NOT NULL)::int) = 1)
@@ -61,6 +86,19 @@ CREATE INDEX IF NOT EXISTS "planningAction_assignee_idx"  ON "planningAction" ("
 CREATE INDEX IF NOT EXISTS "planningAction_item_loc_idx"  ON "planningAction" ("companyId", "itemId", "locationId");
 CREATE INDEX IF NOT EXISTS "planningAction_status_idx"    ON "planningAction" ("companyId", "status");
 CREATE INDEX IF NOT EXISTS "planningAction_createdBy_idx" ON "planningAction" ("createdBy");
+
+-- Foreign-key indexes, for cascade deletes: a job / purchaseOrderLine delete
+-- scans these columns. The two nullable targets are partial.
+CREATE INDEX IF NOT EXISTS "planningAction_jobId_idx"
+  ON "planningAction" ("jobId") WHERE "jobId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "planningAction_purchaseOrderLineId_idx"
+  ON "planningAction" ("purchaseOrderLineId") WHERE "purchaseOrderLineId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "planningAction_itemId_idx"
+  ON "planningAction" ("itemId");
+CREATE INDEX IF NOT EXISTS "planningAction_periodId_idx"
+  ON "planningAction" ("periodId");
+CREATE INDEX IF NOT EXISTS "planningAction_locationId_idx"
+  ON "planningAction" ("locationId");
 
 -- Deterministic regen identity (diff-write): one non-terminal action per
 -- (item, location, type, period, target document)
