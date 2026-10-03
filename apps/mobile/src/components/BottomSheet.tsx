@@ -17,6 +17,7 @@ import {
   useRef
 } from "react";
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Heading } from "./ui";
 import { useThemeColors } from "./useThemeColor";
 
@@ -40,6 +41,7 @@ export const Sheet = forwardRef<
 >(function Sheet({ title, children }, ref) {
   const sheet = useRef<BottomSheetModal>(null);
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   useImperativeHandle(ref, () => ({
     open: () => sheet.current?.present(),
@@ -65,6 +67,10 @@ export const Sheet = forwardRef<
       ref={sheet}
       backdropComponent={backdrop}
       enableDynamicSizing
+      // A sheet taller than the screen stops under the status bar rather than
+      // sliding beneath it: a long list (every unit of a ten-unit build) put
+      // its title behind the clock.
+      topInset={insets.top}
       // This library takes a style object, not a Uniwind className, so it
       // cannot read `--card` — hence `themeColor`. A sheet that stayed white in
       // dark mode would be the brightest thing on a night-shift tablet.

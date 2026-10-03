@@ -493,6 +493,27 @@ export const operationDetail = z
     batch: z.unknown().nullable(),
     /** The selected serial/batch unit, resolved by the server when it can be. */
     trackedEntityId: z.string().nullable().optional(),
+    /**
+     * The make method this operation builds. Its two flags are the PARENT's
+     * tracking, and they decide which completion branch a report runs: a
+     * quantity, scrap or rework on a tracked parent must carry `trackingType`
+     * (and the unit), or the server takes the untracked branch — no serial is
+     * completed, no replacement is minted and no label prints.
+     */
+    jobMakeMethod: z
+      .object({
+        requiresSerialTracking: z.boolean().nullable().optional(),
+        requiresBatchTracking: z.boolean().nullable().optional()
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+    /**
+     * `Warn`, `Block` or `BlockWithOverride`: what the company allows when a
+     * lot being issued is past its expiry. A string rather than the enum so a
+     * policy added later does not fail the whole screen on an older app.
+     */
+    expiredEntityPolicy: z.string().nullable().optional(),
     isFirstOperation: z.boolean(),
     workCenter: z
       .object({
@@ -723,6 +744,8 @@ export const operationMaterial = z
     itemReadableIdWithoutRevision: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     methodType: z.string().nullable().optional(),
+    /** The bill-of-material quantity for ONE unit of the parent. */
+    quantity: z.number().nullable().optional(),
     /** What the job plans to consume, including its scrap allowance. */
     estimatedQuantity: z.number().nullable().optional(),
     quantityIssued: z.number().nullable().optional(),
@@ -1396,8 +1419,6 @@ export type AssemblyTrackedEntity = z.infer<typeof assemblyTrackedEntity>;
  */
 export const assemblyMaterial = operationMaterial
   .extend({
-    /** Per-unit bill-of-material quantity. Fractional for a consumable. */
-    quantity: z.number().nullable().optional(),
     /** Part, Material, Consumable, Fixture, Tool or Service — the card order. */
     itemType: z.string().nullable().optional(),
     jobId: z.string().nullable().optional(),

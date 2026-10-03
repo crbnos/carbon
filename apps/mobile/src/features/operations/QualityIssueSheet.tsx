@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OperationDetail } from "@carbon/mes-core";
 import { useLingui } from "@lingui/react/macro";
 import { forwardRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -17,6 +16,7 @@ import {
   Skeleton
 } from "~/components/ui";
 import { commandMessage, useRaiseQualityIssue } from "./commands";
+import type { ReportTarget } from "./logic";
 import { useQualityIssueTypes } from "./useLookups";
 
 /**
@@ -31,13 +31,13 @@ import { useQualityIssueTypes } from "./useLookups";
  */
 export const QualityIssueSheet = forwardRef<
   SheetHandle,
-  { detail: OperationDetail; onClose: () => void }
->(function QualityIssueSheet({ detail, onClose }, ref) {
+  { target: ReportTarget; onClose: () => void }
+>(function QualityIssueSheet({ target, onClose }, ref) {
   const { t } = useLingui();
   const [description, setDescription] = useState("");
   const [typeId, setTypeId] = useState<string | null>(null);
   const types = useQualityIssueTypes(true);
-  const raise = useRaiseQualityIssue(detail.operation.id);
+  const raise = useRaiseQualityIssue(target.operationId);
 
   const submit = async () => {
     const text = description.trim();
@@ -46,7 +46,7 @@ export const QualityIssueSheet = forwardRef<
       const result = await raise.mutateAsync({
         description: text,
         nonConformanceTypeId: typeId ?? undefined,
-        trackedEntityId: detail.trackedEntityId ?? undefined
+        trackedEntityId: target.trackedEntityId
       });
       onClose();
       setDescription("");

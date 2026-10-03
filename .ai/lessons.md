@@ -2981,3 +2981,23 @@ third-party one, `apps/mobile/AGENTS.md`.
 **Rule:** A native addon (anything that loads a `.node` file) imported anywhere a route file can reach goes in that app's `optimizeDeps.exclude`. After adding a server-side dependency, verify with a COLD start — stop the dev server, delete `apps/<app>/node_modules/.vite`, start it — not against the server that was already up. Never start a second dev server for an app someone else is running.
 
 **Applies to:** `apps/{erp,mes}/vite.config.ts`, `packages/files/src/pdf/node.ts`, any new native dependency.
+
+## Inventory adjustment names are inventory's point of view, not the job's
+
+**Context:** The MES mobile app issues an untracked part through `POST /operations/:id/materials/issue`, which runs the `issue` edge function's `partToOperation` branch with an `adjustmentType` of `Set Quantity`, `Positive Adjmt.` or `Negative Adjmt.`.
+
+**Problem:** The app sent `Positive Adjmt.` for an issue, reading it as "add to what is issued". In the edge function a positive adjustment is a RETURN: it writes a positive `itemLedger` row (stock goes up) and SUBTRACTS from `jobMaterial.quantityIssued`. Every tap of Issue would have put stock back that the job never took and driven the issued quantity negative. The comment beside it argued for the wrong reading, and no test pinned the value.
+
+**Rule:** Issuing material to a job is `Negative Adjmt.` — the same default web's `IssueMaterialModal` uses. Build the body in one tested function (`untrackedIssueBody`) rather than at each call site, and verify a stock-moving change against the database (ledger sign and `quantityIssued`), not against a 200.
+
+**Applies to:** `apps/mobile/src/features/operations/`, any client of `/materials/issue`, the `issue` edge function.
+
+## A parser tested only against fixtures can reject every real payload
+
+**Context:** The mobile operation screen validated `materials` with `z.array(operationMaterial)`.
+
+**Problem:** The server sends `{ materials, trackedInputs }`, not an array. Every test fed the parser an array, so the tests passed while the Materials tab told every operator on every operation that its materials could not be read.
+
+**Rule:** Build at least one fixture from a captured live response (`curl` the endpoint, keep the shape), and accept the documented older shape alongside it when a self-hosted server may lag. When a parser distinguishes "empty" from "malformed", test it with the real envelope.
+
+**Applies to:** `apps/mobile/src/features/*/logic.ts`, any client-side parse of a passthrough field.

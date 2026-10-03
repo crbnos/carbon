@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OperationDetail } from "@carbon/mes-core";
 import { useLingui } from "@lingui/react/macro";
+import { Square, SquareCheck } from "lucide-react-native";
 import { forwardRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { toast } from "sonner-native";
@@ -16,13 +16,21 @@ import {
   Muted,
   Skeleton
 } from "~/components/ui";
+import { useThemeColors } from "~/components/useThemeColor";
 import {
   commandMessage,
   useReportQuantity,
   useReportRework,
   useReportScrap
 } from "./commands";
-import { type EventIds, parseQuantity, remainingQuantity } from "./logic";
+import {
+  type EventIds,
+  needsUnit,
+  parseQuantity,
+  type ReportTarget,
+  remainingQuantity,
+  trackingFields
+} from "./logic";
 import { QuantityInput } from "./QuantityInput";
 import { useReworkTargets, useScrapReasons } from "./useLookups";
 
@@ -41,10 +49,28 @@ import { useReworkTargets, useScrapReasons } from "./useLookups";
  */
 
 type SheetProps = {
-  detail: OperationDetail;
+  target: ReportTarget;
   eventIds: EventIds;
   onClose: () => void;
 };
+
+/**
+ * A serial part is reported ONE unit at a time: the quantity is not a choice,
+ * so it is shown as the unit it is rather than as a field to get wrong. Web's
+ * `QuantityModal` makes the same field read-only.
+ */
+function SerialUnit({ target }: { target: ReportTarget }) {
+  const { t } = useLingui();
+  return (
+    <View className="gap-1 rounded-lg border border-border bg-card p-4">
+      <Muted className="text-sm">{t`One unit`}</Muted>
+      <Body className="text-xl font-semibold">
+        {target.trackedEntityReadableId ??
+          (target.trackedEntityId ? t`The selected unit` : t`No unit selected`)}
+      </Body>
+    </View>
+  );
+}
 
 type ScrapSheetProps = SheetProps & {
   /**
@@ -56,13 +82,32 @@ type ScrapSheetProps = SheetProps & {
   onReplacementEntity: (trackedEntityId: string) => void;
 };
 
-export const QuantitySheet = forwardRef<SheetHandle, SheetProps>(
-  function QuantitySheet({ detail, eventIds, onClose }, ref) {
+type QuantitySheetProps = SheetProps & {
+  /**
+   * Tracked parts this unit has not been issued in full. Completing anyway is
+   * allowed — the web allows it — but it leaves a hole in the genealogy, so
+   * the operator has to say they mean it.
+   */
+  unissuedTracked?: boolean;
+  /** Runs after a successful report, with what the server said happened. */
+  onReported?: (result: { finished: boolean }) => void;
+};
+
+export const QuantitySheet = forwardRef<SheetHandle, QuantitySheetProps>(
+  function QuantitySheet(
+    { target, eventIds, onClose, unissuedTracked = false, onReported },
+    ref
+  ) {
     const { t } = useLingui();
+    const colors = useThemeColors();
     const [quantity, setQuantity] = useState("1");
     const [notes, setNotes] = useState("");
-    const report = useReportQuantity(detail.operation.id);
-    const value = parseQuantity(quantity);
+    const [confirmedUnissued, setConfirmedUnissued] = useState(false);
+    const report = useReportQuantity(target.operationId);
+    const serial = target.trackingType === "Serial";
+    const value = serial ? 1 : parseQuantity(quantity);
+    const blocked =
+      needsUnit(target) || (unissuedTracked && !confirmedUnissued);
 
     const submit = async () => {
       if (!value) return;
@@ -70,17 +115,19 @@ export const QuantitySheet = forwardRef<SheetHandle, SheetProps>(
         const result = await report.mutateAsync({
           quantity: value,
           notes: notes || undefined,
-          trackedEntityId: detail.trackedEntityId ?? undefined,
+          ...trackingFields(target),
           ...eventIds
         });
         onClose();
         setQuantity("1");
         setNotes("");
+        setConfirmedUnissued(false);
         toast.success(
           result.finished
             ? t`Logged — this operation is finished`
             : t`Logged ${value} completed`
         );
+        onReported?.({ finished: result.finished });
       } catch (error) {
         toast.error(commandMessage(error, t`Could not log the quantity`));
       }
@@ -89,12 +136,41 @@ export const QuantitySheet = forwardRef<SheetHandle, SheetProps>(
     return (
       <Sheet ref={ref} title={t`Log completed`}>
         <View className="gap-4 px-2 pt-2">
-          <QuantityInput
-            label={t`How many are finished?`}
-            value={quantity}
-            onChange={setQuantity}
-            max={remainingQuantity(detail.operation)}
-          />
+          {unissuedTracked ? (
+            <Pressable
+              onPress={() => setConfirmedUnissued(!confirmedUnissued)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: confirmedUnissued }}
+              className="gap-2 rounded-lg border border-red-500 bg-red-500/10 p-3 active:opacity-80"
+            >
+              <Body className="font-semibold">
+                {t`Unissued serial or batch parts`}
+              </Body>
+              <Muted className="text-sm">
+                {t`Tracked parts on this unit have not been fully issued. Completing without them leaves its traceability record incomplete.`}
+              </Muted>
+              <View className="flex-row items-center gap-3 pt-1">
+                {confirmedUnissued ? (
+                  <SquareCheck size={24} color={colors.foreground} />
+                ) : (
+                  <Square size={24} color={colors.mutedForeground} />
+                )}
+                <Body className="flex-1 text-sm">
+                  {t`I understand and want to complete without issuing`}
+                </Body>
+              </View>
+            </Pressable>
+          ) : null}
+          {serial ? (
+            <SerialUnit target={target} />
+          ) : (
+            <QuantityInput
+              label={t`How many are finished?`}
+              value={quantity}
+              onChange={setQuantity}
+              max={remainingQuantity(target)}
+            />
+          )}
           <Field
             label={t`Note (optional)`}
             value={notes}
@@ -102,8 +178,16 @@ export const QuantitySheet = forwardRef<SheetHandle, SheetProps>(
             placeholder={t`Anything the next person should know`}
             multiline
           />
-          <Button onPress={submit} disabled={!value} loading={report.isPending}>
-            {value ? t`Log ${value} completed` : t`Enter a quantity`}
+          <Button
+            onPress={submit}
+            disabled={!value || blocked}
+            loading={report.isPending}
+          >
+            {needsUnit(target)
+              ? t`Choose the unit first`
+              : value
+                ? t`Log ${value} completed`
+                : t`Enter a quantity`}
           </Button>
         </View>
       </Sheet>
@@ -112,15 +196,16 @@ export const QuantitySheet = forwardRef<SheetHandle, SheetProps>(
 );
 
 export const ScrapSheet = forwardRef<SheetHandle, ScrapSheetProps>(
-  function ScrapSheet({ detail, eventIds, onClose, onReplacementEntity }, ref) {
+  function ScrapSheet({ target, eventIds, onClose, onReplacementEntity }, ref) {
     const { t } = useLingui();
     const [quantity, setQuantity] = useState("1");
     const [notes, setNotes] = useState("");
     const [reasonId, setReasonId] = useState<string | null>(null);
     // Only fetched once the sheet is mounted with a reason still unpicked.
     const reasons = useScrapReasons(true);
-    const report = useReportScrap(detail.operation.id);
-    const value = parseQuantity(quantity);
+    const report = useReportScrap(target.operationId);
+    const serial = target.trackingType === "Serial";
+    const value = serial ? 1 : parseQuantity(quantity);
 
     const submit = async () => {
       if (!value || !reasonId) return;
@@ -129,7 +214,7 @@ export const ScrapSheet = forwardRef<SheetHandle, ScrapSheetProps>(
           quantity: value,
           scrapReasonId: reasonId,
           notes: notes || undefined,
-          trackedEntityId: detail.trackedEntityId ?? undefined,
+          ...trackingFields(target),
           ...eventIds
         });
         onClose();
@@ -192,11 +277,20 @@ export const ScrapSheet = forwardRef<SheetHandle, ScrapSheetProps>(
             )}
           </View>
 
-          <QuantityInput
-            label={t`How many?`}
-            value={quantity}
-            onChange={setQuantity}
-          />
+          {serial ? (
+            <>
+              <SerialUnit target={target} />
+              <Muted className="text-sm">
+                {t`This unit will be permanently scrapped and a replacement serial number will be created.`}
+              </Muted>
+            </>
+          ) : (
+            <QuantityInput
+              label={t`How many?`}
+              value={quantity}
+              onChange={setQuantity}
+            />
+          )}
           <Field
             label={t`Note (optional)`}
             value={notes}
@@ -206,14 +300,16 @@ export const ScrapSheet = forwardRef<SheetHandle, ScrapSheetProps>(
           <Button
             variant="destructive"
             onPress={submit}
-            disabled={!value || !reasonId}
+            disabled={!value || !reasonId || needsUnit(target)}
             loading={report.isPending}
           >
-            {reasonId
-              ? value
-                ? t`Scrap ${value}`
-                : t`Enter a quantity`
-              : t`Choose a reason`}
+            {needsUnit(target)
+              ? t`Choose the unit first`
+              : reasonId
+                ? value
+                  ? t`Scrap ${value}`
+                  : t`Enter a quantity`
+                : t`Choose a reason`}
           </Button>
         </View>
       </Sheet>
@@ -222,13 +318,14 @@ export const ScrapSheet = forwardRef<SheetHandle, ScrapSheetProps>(
 );
 
 export const ReworkSheet = forwardRef<SheetHandle, SheetProps>(
-  function ReworkSheet({ detail, eventIds, onClose }, ref) {
+  function ReworkSheet({ target, eventIds, onClose }, ref) {
     const { t } = useLingui();
     const [quantity, setQuantity] = useState("1");
     const [notes, setNotes] = useState("");
-    const targets = useReworkTargets(detail.operation.id, true);
-    const report = useReportRework(detail.operation.id);
-    const value = parseQuantity(quantity);
+    const targets = useReworkTargets(target.operationId, true);
+    const report = useReportRework(target.operationId);
+    const serial = target.trackingType === "Serial";
+    const value = serial ? 1 : parseQuantity(quantity);
 
     const submit = async () => {
       if (!value) return;
@@ -236,7 +333,7 @@ export const ReworkSheet = forwardRef<SheetHandle, SheetProps>(
         await report.mutateAsync({
           quantity: value,
           notes: notes || undefined,
-          trackedEntityId: detail.trackedEntityId ?? undefined,
+          ...trackingFields(target),
           ...eventIds
         });
         onClose();
@@ -251,11 +348,15 @@ export const ReworkSheet = forwardRef<SheetHandle, SheetProps>(
     return (
       <Sheet ref={ref} title={t`Report rework`}>
         <View className="gap-4 px-2 pt-2">
-          <QuantityInput
-            label={t`How many need rework?`}
-            value={quantity}
-            onChange={setQuantity}
-          />
+          {serial ? (
+            <SerialUnit target={target} />
+          ) : (
+            <QuantityInput
+              label={t`How many need rework?`}
+              value={quantity}
+              onChange={setQuantity}
+            />
+          )}
           {targets.isLoading ? (
             <Skeleton className="h-10" />
           ) : (targets.data ?? []).length ? (
@@ -269,8 +370,16 @@ export const ReworkSheet = forwardRef<SheetHandle, SheetProps>(
             onChangeText={setNotes}
             multiline
           />
-          <Button onPress={submit} disabled={!value} loading={report.isPending}>
-            {value ? t`Rework ${value}` : t`Enter a quantity`}
+          <Button
+            onPress={submit}
+            disabled={!value || needsUnit(target)}
+            loading={report.isPending}
+          >
+            {needsUnit(target)
+              ? t`Choose the unit first`
+              : value
+                ? t`Rework ${value}`
+                : t`Enter a quantity`}
           </Button>
         </View>
       </Sheet>

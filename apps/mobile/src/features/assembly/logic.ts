@@ -12,7 +12,8 @@
  * has three columns and a phone has one — but the arithmetic is web's, kept
  * line for line where it could be, because an operator who records a step on a
  * tablet and reopens the job in a browser must find the same unit on the same
- * step with the same parts issued.
+ * step with the same parts issued. The ONE place it departs from web is marked
+ * where it happens (`materialStates`, an operation with no steps).
  *
  * The types here are structural and minimal on purpose: they name only what a
  * rule reads, so the wire contract's fuller rows satisfy them and a test can
@@ -91,6 +92,41 @@ export function unitCount(
 ) {
   const raw = operationQuantity ?? entityCount;
   return Math.max(1, Math.round(Number.isFinite(raw) ? raw : 1));
+}
+
+/**
+ * Units already built, as a whole count — what the next unit to build is
+ * indexed by. Web rounds it the same way (`Math.round(quantityComplete)`), for
+ * the same reason as `unitCount`: it positions a pager, it is not stored.
+ */
+export function completedUnits(quantityComplete: number | null | undefined) {
+  const raw = quantityComplete ?? 0;
+  return Math.max(0, Math.round(Number.isFinite(raw) ? raw : 0));
+}
+
+/**
+ * A typed measurement as a number, or null when it is not one.
+ *
+ * Not `parseQuantity`: a measurement may be zero or negative (an offset, a
+ * deviation from nominal), and refusing those would leave an inspector unable
+ * to record a perfectly good reading. Still strict about the rest — no hex,
+ * no exponent, no thousands separators — because `Number(" ")` is 0 and a
+ * blank field must not record a zero.
+ */
+export function parseMeasurement(text: string) {
+  const trimmed = text.trim();
+  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(trimmed)) return null;
+  const value = Number.parseFloat(trimmed);
+  return Number.isFinite(value) ? value : null;
+}
+
+/** What a step's chip in the steps bar shows for one unit. */
+export function stepChipState(
+  step: AssemblyStep,
+  unitIndex: number
+): "bad" | "done" | "todo" {
+  if (isStepBadResult(step, unitIndex)) return "bad";
+  return isStepDone(step, unitIndex) ? "done" : "todo";
 }
 
 /**
@@ -389,8 +425,17 @@ export function materialStates<M extends AssemblyMaterial>(args: {
         : steps.some(
             (s) => assigned.includes(s.id) && isStepDone(s, unitIndex)
           );
+    // The override mirrors a backflush that happens WHEN A STEP IS RECORDED.
+    // An operation with no steps has no such moment, so there is nothing to
+    // mirror and the real issued total is the only truthful number: without
+    // this, a part issued by hand on a step-less operation read "0 of 1"
+    // for ever. (Web has that quirk; this is the one place the two differ.)
     const issuedOverride =
-      !isTracked && perUnit > 0 ? (ownedStepDone ? perUnit : 0) : undefined;
+      steps.length > 0 && !isTracked && perUnit > 0
+        ? ownedStepDone
+          ? perUnit
+          : 0
+        : undefined;
     // Shadow the line quantity with the step's share so the numbers describe
     // this step's portion of a split, not the whole line.
     const effective = linkShare !== null ? { ...m, quantity: perUnit } : m;
@@ -441,10 +486,122 @@ export function shouldAutoCompleteUnit(args: {
 }) {
   if (args.unitCount <= 1) return false;
   if (args.unitCount - args.quantityComplete <= 0) return false;
-  const alreadyBuilt =
-    args.navigatesByEntity && args.entity
-      ? !isUnitIncompleteForOperation(args.entity, args.operationId)
-      : args.unitIndex < args.quantityComplete;
-  if (alreadyBuilt) return false;
+  if (isUnitBuilt(args)) return false;
   return args.allStepsRecorded;
+}
+
+/**
+ * Whether a unit is already built at this operation.
+ *
+ * A serial unit answers for itself — its own completion marker — because
+ * serial units may be worked in any order. Everything else builds strictly in
+ * order, so a unit is built when its index is below the completed count.
+ */
+export function isUnitBuilt(args: {
+  navigatesByEntity: boolean;
+  entity: TrackedUnit | null | undefined;
+  unitIndex: number;
+  quantityComplete: number;
+  operationId: string;
+}) {
+  return args.navigatesByEntity && args.entity
+    ? !isUnitIncompleteForOperation(args.entity, args.operationId)
+    : args.unitIndex < args.quantityComplete;
+}
+
+/**
+ * The furthest unit an operator can page to.
+ *
+ * A serial parent mints one serial at a time — the next unit's entity is
+ * created when the current one completes — so a unit with no entity yet cannot
+ * be worked on: scanning tracked parts and completing the unit both need it.
+ * Batch and untracked parents page purely by index, so every unit is reachable.
+ */
+export function maxNavigableUnitIndex<E>(
+  units: Unit<E>[],
+  navigatesByEntity: boolean
+) {
+  if (!navigatesByEntity) return Math.max(0, units.length - 1);
+  return units.reduce(
+    (max, unit) => (unit.entity ? Math.max(max, unit.index) : max),
+    0
+  );
+}
+
+/** The first serial unit still to build here, in axis order, or null. */
+export function nextIncompleteUnit<E extends TrackedUnit>(
+  units: Unit<E>[],
+  operationId: string
+): Unit<E> | null {
+  return (
+    units.find(
+      (unit) =>
+        unit.entity != null &&
+        isUnitIncompleteForOperation(unit.entity, operationId)
+    ) ?? null
+  );
+}
+
+/**
+ * Open containment actions that have no Inspection step on this operation yet.
+ *
+ * Web MES adds a step for each when its assembly view opens. This app cannot
+ * yet, so it has to SAY so: an operator must not complete a unit believing
+ * there was nothing to sign off.
+ */
+export function containmentWithoutStep<A extends { id: string }>(
+  actions: A[],
+  steps: { type?: string | null; nonConformanceActionId?: string | null }[]
+): A[] {
+  const covered = new Set(
+    steps
+      .filter(
+        (step) =>
+          step.type === "Inspection" && step.nonConformanceActionId != null
+      )
+      .map((step) => step.nonConformanceActionId)
+  );
+  return actions.filter((action) => !covered.has(action.id));
+}
+
+/**
+ * Every tracked part of the operation that this unit has not been issued in
+ * full — across ALL steps, not only the one on screen.
+ *
+ * This is the question Complete asks. The per-step scan gate is narrower on
+ * purpose (it only holds up the step whose parts are missing); completing the
+ * unit is the last chance to notice any of them.
+ */
+export function unissuedTrackedParts<M extends AssemblyMaterial>(args: {
+  materials: M[];
+  unitIndex: number;
+  parentIsTracked: boolean;
+}): M[] {
+  return args.materials.filter((material) => {
+    const isTracked = Boolean(
+      material.requiresSerialTracking || material.requiresBatchTracking
+    );
+    if (!isTracked) return false;
+    const state = issuedForUnit(material, {
+      unitIndex: args.unitIndex,
+      issuedIsPerUnit: args.parentIsTracked
+    });
+    return state.required > 0 && !state.fullyIssued;
+  });
+}
+
+/**
+ * How much of a part to offer when the operator opens it to issue: what this
+ * unit still needs, and one when it needs nothing more (an extra).
+ *
+ * Never the job's whole remaining requirement. Assembly issues one unit at a
+ * time, and a default of ten on a ten-unit job is how every unit's worth gets
+ * charged to the first one.
+ */
+export function unitRemainingToIssue(state: {
+  required: number;
+  issued: number;
+}) {
+  const remaining = state.required - state.issued;
+  return remaining > 0 ? remaining : 1;
 }

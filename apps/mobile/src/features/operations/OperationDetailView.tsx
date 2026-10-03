@@ -33,6 +33,7 @@ import {
   type OpenEvents,
   parseMaterials,
   parseSteps,
+  reportTargetFor,
   WORK_TYPES,
   type WorkType
 } from "./logic";
@@ -116,6 +117,11 @@ export function OperationDetailView({
   const activeType: WorkType =
     workType ?? WORK_TYPES.find((type) => open[type]) ?? types[0] ?? "Labor";
   const openEvent = open[activeType];
+  const workTypeLabels: Record<WorkType, string> = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  };
   const running = Boolean(openEvent);
 
   const blockedReason = (() => {
@@ -155,11 +161,11 @@ export function OperationDetailView({
     }
   };
 
-  // An inspection operation has its own screen, and the operations endpoint
-  // refuses to answer for one — it reports `details.view` instead, which is
-  // what the web loader redirects on. Doing the same here means tapping an
-  // inspection card lands on the inspection rather than on an error telling
-  // the operator to go and find a browser.
+  // An inspection or an assembly operation has its own screen, and the
+  // operations endpoint refuses to answer for one — it reports `details.view`
+  // instead, which is what the web loader redirects on. Doing the same here
+  // means tapping such a card lands on its screen rather than on an error
+  // telling the operator to go and find a browser.
   //
   // Above the early returns, with the other hooks: this component returns a
   // skeleton before it ever returns the screen, so a hook below them would be
@@ -172,12 +178,20 @@ export function OperationDetailView({
       ? (query.error.details as { view?: string } | undefined)?.view
       : undefined;
   useEffect(() => {
-    if (wrongView === "inspection" && operationId) {
+    if (!operationId) return;
+    if (wrongView === "inspection") {
       router.replace(`/(app)/inspection/${operationId}`);
+    } else if (wrongView === "assembly") {
+      router.replace(`/(app)/assembly/${operationId}`);
     }
   }, [wrongView, operationId]);
 
-  if (query.isLoading) {
+  // Never flash the refusal on the way: the error IS the redirect.
+  if (
+    query.isLoading ||
+    wrongView === "inspection" ||
+    wrongView === "assembly"
+  ) {
     return (
       <Screen className="gap-4 py-4" title={t`Operation`} onBack={onBack}>
         <Skeleton className="h-24" />
@@ -222,6 +236,7 @@ export function OperationDetailView({
   ];
 
   const eventIds = eventIdsFrom(open);
+  const target = reportTargetFor(detail);
 
   return (
     /*
@@ -256,7 +271,7 @@ export function OperationDetailView({
             <MaterialsTab detail={detail} />
           </TabPanel>
           <TabPanel active={tab === "notes"}>
-            <NotesTab detail={detail} />
+            <NotesTab operationId={operationId} />
           </TabPanel>
         </Screen>
       </View>
@@ -277,7 +292,13 @@ export function OperationDetailView({
       >
         <HeroButton
           icon={running ? Pause : Play}
-          label={running ? t`Pause` : t`Start`}
+          // Names the kind of time: Start opens the first one the operation
+          // plans, which is often Setup, not the Labor an operator expects.
+          label={
+            running
+              ? t`Pause ${workTypeLabels[activeType]}`
+              : t`Start ${workTypeLabels[activeType]}`
+          }
           tone={running ? "stop" : "start"}
           onPress={toggle}
           disabled={locked}
@@ -318,20 +339,20 @@ export function OperationDetailView({
 
       <QuantitySheet
         ref={quantitySheet}
-        detail={detail}
+        target={target}
         eventIds={eventIds}
         onClose={() => quantitySheet.current?.close()}
       />
       <ScrapSheet
         ref={scrapSheet}
-        detail={detail}
+        target={target}
         eventIds={eventIds}
         onClose={() => scrapSheet.current?.close()}
         onReplacementEntity={setSelectedEntityId}
       />
       <ReworkSheet
         ref={reworkSheet}
-        detail={detail}
+        target={target}
         eventIds={eventIds}
         onClose={() => reworkSheet.current?.close()}
       />
@@ -375,12 +396,12 @@ export function OperationDetailView({
       />
       <QualityIssueSheet
         ref={qualitySheet}
-        detail={detail}
+        target={target}
         onClose={() => qualitySheet.current?.close()}
       />
       <FinishDialog
         open={finishing}
-        detail={detail}
+        target={target}
         openEvents={open}
         onClose={() => setFinishing(false)}
       />

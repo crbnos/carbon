@@ -5,6 +5,7 @@
 import type { OperationMaterial, OperationStep } from "@carbon/mes-core";
 import { describe, expect, it } from "vitest";
 import {
+  consumedForMaterial,
   isBuiltLine,
   isTrackedLine,
   matchMaterialToScan,
@@ -43,9 +44,46 @@ const step = (over: Partial<OperationStep> = {}): OperationStep =>
   }) as OperationStep;
 
 describe("parseMaterials", () => {
+  // The shape the server actually sends: the lines, and the tracked inputs
+  // already consumed. Captured from `GET /operations/:id` — every test here
+  // used to feed a bare array, which is how the parser came to reject the
+  // real payload on every operation while its tests passed.
+  const live = (materials: unknown[], trackedInputs: unknown[] = []) => ({
+    materials,
+    trackedInputs
+  });
+
+  it("reads the payload the server sends", () => {
+    const parsed = parseMaterials(
+      live(
+        [material({ id: "a" })],
+        [
+          {
+            id: "te_1",
+            readableId: "LOT-1",
+            quantity: 2,
+            activityAttributes: { "Job Material": "a" }
+          }
+        ]
+      )
+    );
+    expect(parsed.malformed).toBe(false);
+    expect(parsed.materials.map((m) => m.id)).toEqual(["a"]);
+    expect(parsed.trackedInputs.map((i) => i.id)).toEqual(["te_1"]);
+  });
+
+  it("still reads the bare array an older server sends", () => {
+    const parsed = parseMaterials([material({ id: "a" })]);
+    expect(parsed.malformed).toBe(false);
+    expect(parsed.materials).toHaveLength(1);
+    expect(parsed.trackedInputs).toEqual([]);
+  });
+
   it("separates an empty list from an unreadable payload", () => {
-    expect(parseMaterials(null)).toEqual({ materials: [], malformed: false });
-    expect(parseMaterials([])).toEqual({ materials: [], malformed: false });
+    const empty = { materials: [], trackedInputs: [], malformed: false };
+    expect(parseMaterials(null)).toEqual(empty);
+    expect(parseMaterials([])).toEqual(empty);
+    expect(parseMaterials(live([]))).toEqual(empty);
     // A shape this build cannot read is a BUG, and the tab says so rather than
     // rendering "No materials" for a job that has six.
     expect(parseMaterials("nonsense").malformed).toBe(true);
@@ -53,25 +91,56 @@ describe("parseMaterials", () => {
   });
 
   it("drops rows with no item and kit parents", () => {
-    const { materials } = parseMaterials([
-      material({ id: "a" }),
-      // Nothing to name it and nothing to issue.
-      material({ id: "b", itemId: null }),
-      // A container whose children are the real lines: showing it would
-      // double every quantity on screen.
-      material({ id: "c", kit: true })
-    ]);
+    const { materials } = parseMaterials(
+      live([
+        material({ id: "a" }),
+        // Nothing to name it and nothing to issue.
+        material({ id: "b", itemId: null }),
+        // A container whose children are the real lines: showing it would
+        // double every quantity on screen.
+        material({ id: "c", kit: true })
+      ])
+    );
     expect(materials.map((m) => m.id)).toEqual(["a"]);
   });
 
   it("keeps unknown extra columns rather than rejecting the row", () => {
     // The source is a VIEW that gains columns; a schema that rejected them
     // would take out the whole tab on a server one migration ahead.
-    const { materials, malformed } = parseMaterials([
-      { id: "a", itemId: "i1", somethingNew: 42 }
-    ]);
+    const { materials, malformed } = parseMaterials(
+      live([{ id: "a", itemId: "i1", somethingNew: 42 }])
+    );
     expect(malformed).toBe(false);
     expect(materials).toHaveLength(1);
+  });
+});
+
+describe("consumedForMaterial", () => {
+  const inputs = [
+    {
+      id: "te_1",
+      quantity: 1,
+      activityAttributes: { "Job Material": "jm_a" }
+    },
+    {
+      id: "te_2",
+      quantity: 1,
+      activityAttributes: { "Job Material": "jm_b" }
+    },
+    { id: "te_3", quantity: 1, activityAttributes: null }
+  ];
+
+  it("lists only what was consumed against that line", () => {
+    expect(consumedForMaterial(inputs, "jm_a").map((i) => i.id)).toEqual([
+      "te_1"
+    ]);
+  });
+
+  it("offers nothing for an input it cannot place", () => {
+    // Removing a lot that might belong to another line pulls the wrong part
+    // out of the unit's genealogy.
+    expect(consumedForMaterial(inputs, null)).toEqual([]);
+    expect(consumedForMaterial(inputs, "jm_zzz")).toEqual([]);
   });
 });
 

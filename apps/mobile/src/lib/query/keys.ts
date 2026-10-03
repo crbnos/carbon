@@ -46,6 +46,17 @@ export const keys = {
    */
   inspection: (s: Scope, operationId: string) =>
     ["inspection", s.instanceId, s.companyId, operationId] as const,
+  /**
+   * The assembly screen of one operation. The unit on screen is appended by
+   * the hook rather than here: the payload's materials are attributed to ONE
+   * unit, so two units are two answers, and invalidating by this prefix clears
+   * every unit an operator has paged through.
+   */
+  assembly: (s: Scope, operationId: string) =>
+    ["assembly", s.instanceId, s.companyId, operationId] as const,
+  /** The serials or lots of one item that are on the shelf to be issued. */
+  availableEntities: (s: Scope, itemId: string) =>
+    ["available-entities", s.instanceId, s.companyId, itemId] as const,
   picking: (s: Scope) => ["picking", s.instanceId, s.companyId] as const,
   pickingList: (s: Scope, listId: string) =>
     ["picking-list", s.instanceId, s.companyId, listId] as const,

@@ -168,6 +168,53 @@ look like `apps/mes/app/components/Inspection/`:
   patch; a refetch would re-seed the cells under the inspector's thumb and lose a
   half-typed value. Only the lot-level writes invalidate.
 
+## The assembly screen is web's three columns, stacked
+
+`features/assembly/` is web MES's assembly view (`apps/mes/app/components/AssemblyView.tsx`)
+for one column. Web puts units and progress on the left, the step in the
+middle, parts and tools on the right and the timers in its header; a phone
+stacks them in the order an assembler uses them — which unit (`UnitPager`),
+which step (`StepsBar` + `StepCard`), what goes in (`PartsList`), with the timer
+and Complete in the dock. On a tablet the step and its parts sit side by side
+again.
+
+- **One read, no assembly-specific writes.** `GET /operations/:id/assembly`
+  (`useAssemblyQuery`) carries everything; every write goes through the same
+  `/operations/:id/...` commands the operation screen uses, so
+  `useInvalidateOperation` invalidates the assembly key too. The unit is part
+  of the query key — the payload's materials are attributed to one unit — and
+  `keepPreviousData` holds the last unit on screen while the next loads, with
+  every action disabled until it does.
+- **Every rule is in `logic.ts`, ported from web and tested**: the unit axis,
+  which unit to land on, a step's done/bad state, which parts and tools a step
+  shows, a unit's share of a job-wide issued total, the scan gate, when a unit
+  completes itself. It departs from web in ONE place, marked where it happens:
+  an operation with no steps shows the real issued quantity, because web's
+  backflush mirror waits for a first step that does not exist and reads 0 for
+  ever.
+- **Three things happen without a tap, as on web**: recording the step on
+  screen moves to the next and the first one starts Labor (`exclusive`, ending
+  Setup); recording the last stops Labor; on a multi-unit operation it also
+  completes the unit and moves on. None can fire on an operation with no
+  steps.
+- **Reports carry the PARENT's tracking.** `ReportTarget` (operations
+  `logic.ts`) is what the quantity, scrap, rework, finish and quality sheets
+  take on both screens; its `trackingType` selects the server's serial or batch
+  completion branch. Leaving it out is silent — the untracked branch runs, no
+  serial completes, nothing prints.
+- **Tracked parts are issued with the UNIT as parent and the scanned part as
+  child** (`trackedIssueBody`, `operations/trackedIssue.ts`), stamped with the
+  step and the 1-based unit. The shelf is read over PostgREST
+  (`useAvailableEntities`) with web's own query: every revision of a material,
+  FEFO then FIFO, expired stock hidden under `Block`.
+- **An untracked issue is `Negative Adjmt.`** (`untrackedIssueBody`). The
+  names are inventory's point of view: an issue takes stock OUT. `Positive
+  Adjmt.` is the return.
+- **The 3D model is not shown.** The payload carries it as storage paths, but
+  the demo GLBs need a WebAssembly meshopt decoder Hermes does not have, and
+  playing them needs a native module — an Ask First item. Reference images on
+  steps are not shown yet either; the step says so.
+
 ## Ask First
 
 - Adding a native module or a config plugin: it ends Expo Go compatibility, so
@@ -233,6 +280,7 @@ src/
     (app)/             guarded: session + company + location
       (tabs)/          Operations · Picking · Scan · Timecard · More
       inspection/      an inspection operation — outside the tabs on purpose
+      assembly/        an assembly operation — outside the tabs, like inspection
   components/          shared primitives (ActionDock, HeroButton, StatusBadge, …)
   features/<area>/     screen-specific components, queries and commands
   lib/

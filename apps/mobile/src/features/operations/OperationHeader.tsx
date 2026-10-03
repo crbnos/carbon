@@ -18,8 +18,8 @@ import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { BigNumber } from "~/components/BigNumber";
 import { useThemeColors } from "~/components/useThemeColor";
+import { formatDuration } from "./duration";
 import { OVERDUE_COLOR, statusColorFor, statusIcon } from "./statusVocabulary";
-import { formatElapsed } from "./useTimer";
 
 /**
  * A port of web MES's operation header — its `header` and the `context` bar
@@ -234,12 +234,17 @@ export function OperationHeader({
     (operation.setupDuration ?? 0) +
     Math.max(operation.laborDuration ?? 0, operation.machineDuration ?? 0);
 
+  // With no date, the deadline TYPE is still worth reading — the board card
+  // says "Hard Deadline", and a lone dash here read as missing data.
   const dueLabel =
     facts.deadlineType === "ASAP" || facts.deadlineType === "No Deadline"
       ? facts.deadlineType
       : due
         ? t`Due ${formatDate(due.slice(0, 10), undefined, locale)}`
-        : "–";
+        : (facts.deadlineType ?? "–");
+  // A plan, not a clock: "28m", as the board card writes it. `hh:mm:ss` here
+  // read as a timer that was running.
+  const plannedLabel = formatDuration(planned);
 
   return (
     <View className="gap-3 py-4">
@@ -316,9 +321,9 @@ export function OperationHeader({
           </Fact>
         ) : null}
 
-        {planned > 1 ? (
+        {plannedLabel ? (
           <Fact icon={<Timer size={16} color={colors.mutedForeground} />}>
-            {formatElapsed(planned)}
+            {plannedLabel}
           </Fact>
         ) : null}
 

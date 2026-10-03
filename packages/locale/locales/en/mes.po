@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "‹ Previous"
+msgstr "‹ Previous"
+
 msgid "(Inactive)"
 msgstr "(Inactive)"
 
@@ -62,6 +65,7 @@ msgid "{0} are hidden by the filter."
 msgstr "{0} are hidden by the filter."
 
 #. placeholder {0}: formatQuantity(available, locale)
+#. placeholder {0}: formatQuantity(entity.quantity, locale)
 msgid "{0} available"
 msgstr "{0} available"
 
@@ -98,6 +102,11 @@ msgstr "{0} is blocked for maintenance."
 #. placeholder {0}: lot.readableId ?? lot.trackedEntityId
 msgid "{0} is expired and cannot be picked"
 msgstr "{0} is expired and cannot be picked"
+
+#. placeholder {0}: text.trim()
+#. placeholder {1}: material.itemReadableId ?? ""
+msgid "{0} is not an available {1}"
+msgstr "{0} is not an available {1}"
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -154,6 +163,10 @@ msgstr "{0} of {1} recorded"
 msgid "{0} of {1} will not be made"
 msgstr "{0} of {1} will not be made"
 
+#. placeholder {0}: missingContainment.length
+msgid "{0} open containment actions need signing off on this operation. Open it in Carbon MES on the web."
+msgstr "{0} open containment actions need signing off on this operation. Open it in Carbon MES on the web."
+
 #. placeholder {0}: operations.length
 msgid "{0} operation(s)"
 msgstr "{0} operation(s)"
@@ -166,6 +179,10 @@ msgstr "{0} passed"
 msgid "{0} queued"
 msgstr "{0} queued"
 
+#. placeholder {0}: quantity(reworked)
+msgid "{0} reworked"
+msgstr "{0} reworked"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} running"
@@ -174,6 +191,10 @@ msgstr "{0} running"
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} runs in batch {1}"
+
+#. placeholder {0}: quantity(scrapped)
+msgid "{0} scrapped"
+msgstr "{0} scrapped"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -206,8 +227,17 @@ msgstr "{0}, blocked for maintenance"
 msgid "{0}, out of calibration"
 msgstr "{0}, out of calibration"
 
+msgid "{built} of {count} built"
+msgstr "{built} of {count} built"
+
 msgid "{code} is not a material on this operation"
 msgstr "{code} is not a material on this operation"
+
+msgid "{code} is not a part of this assembly"
+msgstr "{code} is not a part of this assembly"
+
+msgid "{code} is not used on this step"
+msgstr "{code} is not used on this step"
 
 msgid "{completed} of {quantity}"
 msgstr "{completed} of {quantity}"
@@ -217,6 +247,10 @@ msgstr "{completions} passed unit(s) will be completed."
 
 msgid "{count} work centers"
 msgstr "{count} work centers"
+
+#. placeholder {0}: steps.length
+msgid "{done} / {0} done"
+msgstr "{done} / {0} done"
 
 msgid "{done} of {total} lines"
 msgstr "{done} of {total} lines"
@@ -260,6 +294,9 @@ msgstr "{resolved} of {lines} lines"
 
 msgid "{scrapped} scrapped"
 msgstr "{scrapped} scrapped"
+
+msgid "{text} is not a unit of this operation"
+msgstr "{text} is not a unit of this operation"
 
 msgid "{title} is blocked for maintenance"
 msgstr "{title} is blocked for maintenance"
@@ -367,6 +404,9 @@ msgstr "Add Sample"
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
 
+msgid "Added"
+msgstr "Added"
+
 msgid "After a period of inactivity the pinned operator is signed out."
 msgstr "After a period of inactivity the pinned operator is signed out."
 
@@ -401,6 +441,9 @@ msgstr "All scrap"
 msgid "All steps"
 msgstr "All steps"
 
+msgid "All units built — this operation is finished"
+msgstr "All units built — this operation is finished"
+
 msgid "Allocate failed units"
 msgstr "Allocate failed units"
 
@@ -421,6 +464,12 @@ msgstr "Allow the camera"
 
 msgid "Allow the camera to take a photo for this step"
 msgstr "Allow the camera to take a photo for this step"
+
+msgid "Already issued"
+msgstr "Already issued"
+
+msgid "An open containment action needs signing off on this operation. Open it in Carbon MES on the web."
+msgstr "An open containment action needs signing off on this operation. Open it in Carbon MES on the web."
 
 msgid "Analytics are off: this is a controlled environment."
 msgstr "Analytics are off: this is a controlled environment."
@@ -462,6 +511,9 @@ msgstr "Are you sure you want to finish this operation? This will end all active
 msgid "Are you sure you want to leave this page?"
 msgstr "Are you sure you want to leave this page?"
 
+msgid "Assembly"
+msgstr "Assembly"
+
 msgid "Assembly steps"
 msgstr "Assembly steps"
 
@@ -473,6 +525,14 @@ msgstr "Assigned to Me"
 
 msgid "Assignee"
 msgstr "Assignee"
+
+#. placeholder {0}: step.minValue
+msgid "At least {0}"
+msgstr "At least {0}"
+
+#. placeholder {0}: step.maxValue
+msgid "At most {0}"
+msgstr "At most {0}"
 
 msgid "Authentication Error"
 msgstr "Authentication Error"
@@ -539,6 +599,12 @@ msgstr "Blocking"
 msgid "Board view"
 msgstr "Board view"
 
+msgid "Build"
+msgstr "Build"
+
+msgid "Built"
+msgstr "Built"
+
 msgid "Built by this job — not issued from stock."
 msgstr "Built by this job — not issued from stock."
 
@@ -596,6 +662,9 @@ msgstr "Chat"
 msgid "Check your email"
 msgstr "Check your email"
 
+msgid "Checkbox"
+msgstr "Checkbox"
+
 msgid "Choose"
 msgstr "Choose"
 
@@ -626,6 +695,9 @@ msgstr "Choose something else"
 #. placeholder {0}: row.label
 msgid "Choose the gauge for {0}"
 msgstr "Choose the gauge for {0}"
+
+msgid "Choose the unit first"
+msgstr "Choose the unit first"
 
 msgid "Clear"
 msgstr "Clear"
@@ -729,6 +801,9 @@ msgstr "Complete {acceptRemaining} and pass the lot"
 msgid "Complete All"
 msgstr "Complete All"
 
+msgid "Complete all steps"
+msgstr "Complete all steps"
+
 msgid "Complete batch"
 msgstr "Complete batch"
 
@@ -813,6 +888,9 @@ msgstr "Could not clock out"
 msgid "Could not close the lot"
 msgstr "Could not close the lot"
 
+msgid "Could not complete the unit"
+msgstr "Could not complete the unit"
+
 msgid "Could not complete those units"
 msgstr "Could not complete those units"
 
@@ -843,6 +921,9 @@ msgstr "Could not load the operator list."
 msgid "Could not load the scrap reasons."
 msgstr "Could not load the scrap reasons."
 
+msgid "Could not load what is on the shelf."
+msgstr "Could not load what is on the shelf."
+
 msgid "Could not load your hours"
 msgstr "Could not load your hours"
 
@@ -854,6 +935,9 @@ msgstr "Could not log the quantity"
 
 msgid "Could not look up that code."
 msgstr "Could not look up that code."
+
+msgid "Could not open this assembly"
+msgstr "Could not open this assembly"
 
 msgid "Could not open this inspection"
 msgstr "Could not open this inspection"
@@ -894,6 +978,9 @@ msgstr "Could not record that step"
 msgid "Could not refresh your hours"
 msgstr "Could not refresh your hours"
 
+msgid "Could not remove that"
+msgstr "Could not remove that"
+
 msgid "Could not report the rework"
 msgstr "Could not report the rework"
 
@@ -906,11 +993,20 @@ msgstr "Could not save that reading"
 msgid "Could not start"
 msgstr "Could not start"
 
+msgid "Could not start the timer"
+msgstr "Could not start the timer"
+
+msgid "Could not stop the timer"
+msgstr "Could not stop the timer"
+
 msgid "Could not switch company"
 msgstr "Could not switch company"
 
 msgid "Could not turn it on"
 msgstr "Could not turn it on"
+
+msgid "Could not undo that"
+msgstr "Could not undo that"
 
 msgid "Could not unpick that lot"
 msgstr "Could not unpick that lot"
@@ -1082,6 +1178,9 @@ msgstr "Duration"
 msgid "Each job's output is its own lot — keep each job's parts apart."
 msgstr "Each job's output is its own lot — keep each job's parts apart."
 
+msgid "Each unit's serial is made when the unit before it is complete."
+msgstr "Each unit's serial is made when the unit before it is complete."
+
 msgid "Edit"
 msgstr "Edit"
 
@@ -1168,11 +1267,16 @@ msgid "Expired — this cannot be picked."
 msgstr "Expired — this cannot be picked."
 
 #. placeholder {0}: formatDate(date)
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
 msgid "Expired {0}"
 msgstr "Expired {0}"
 
 msgid "Expired {expiry}"
 msgstr "Expired {expiry}"
+
+#. placeholder {0}: formatDate(entity.expirationDate.slice(0, 10), undefined, locale)
+msgid "Expires {0}"
+msgstr "Expires {0}"
 
 msgid "Expires {expiry}"
 msgstr "Expires {expiry}"
@@ -1233,6 +1337,9 @@ msgstr "Failed to upload file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
+
+msgid "File"
+msgstr "File"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -1402,6 +1509,7 @@ msgstr "is any of"
 msgid "Issue"
 msgstr "Issue"
 
+#. placeholder {0}: formatQuantity(total, locale)
 #. placeholder {0}: formatQuantity(value, locale)
 #. placeholder {0}: material.itemReadableId ?? ""
 msgid "Issue {0}"
@@ -1422,6 +1530,7 @@ msgstr "Issue Type"
 msgid "Issued"
 msgstr "Issued"
 
+#. placeholder {0}: formatQuantity(total, locale)
 #. placeholder {0}: formatQuantity(value, locale)
 #. placeholder {1}: material.itemReadableId ?? ""
 msgid "Issued {0} {1}"
@@ -1492,6 +1601,9 @@ msgstr "Light"
 
 msgid "lines"
 msgstr "lines"
+
+msgid "List"
+msgstr "List"
 
 msgid "List view"
 msgstr "List view"
@@ -1566,6 +1678,9 @@ msgstr "Lot numbers missing"
 msgid "Lot tracked"
 msgstr "Lot tracked"
 
+msgid "Lots on the shelf"
+msgstr "Lots on the shelf"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -1621,6 +1736,9 @@ msgstr "Materials issued"
 msgid "Maximum number of records reached"
 msgstr "Maximum number of records reached"
 
+msgid "Measurement"
+msgstr "Measurement"
+
 msgid "Metric"
 msgstr "Metric"
 
@@ -1638,6 +1756,9 @@ msgstr "More Actions"
 
 msgid "More options"
 msgstr "More options"
+
+msgid "More than the lot holds"
+msgstr "More than the lot holds"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1678,6 +1799,9 @@ msgstr "Next page"
 
 msgid "Next step"
 msgstr "Next step"
+
+msgid "Next unit"
+msgstr "Next unit"
 
 msgid "No"
 msgstr "No"
@@ -1772,6 +1896,9 @@ msgstr "No option found."
 msgid "No options found."
 msgstr "No options found."
 
+msgid "No parts for this step."
+msgstr "No parts for this step."
+
 msgid "No picking lists assigned"
 msgstr "No picking lists assigned"
 
@@ -1820,6 +1947,9 @@ msgstr "No shortcuts available on this page."
 msgid "No spare parts added yet"
 msgstr "No spare parts added yet"
 
+msgid "No steps defined for this operation. Issue the parts, then complete the unit."
+msgstr "No steps defined for this operation. Issue the parts, then complete the unit."
+
 msgid "No stock"
 msgstr "No stock"
 
@@ -1828,6 +1958,9 @@ msgstr "No stock on record"
 
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
+
+msgid "No unit selected"
+msgstr "No unit selected"
 
 msgid "No units scanned yet"
 msgstr "No units scanned yet"
@@ -1877,6 +2010,9 @@ msgstr "Notes"
 msgid "Nothing has failed yet"
 msgstr "Nothing has failed yet"
 
+msgid "Nothing is available to issue for this part."
+msgstr "Nothing is available to issue for this part."
+
 msgid "Nothing left to send"
 msgstr "Nothing left to send"
 
@@ -1914,6 +2050,7 @@ msgstr "OEE Impact"
 msgid "OEM Required"
 msgstr "OEM Required"
 
+#. placeholder {0}: formatQuantity(available, locale)
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "of {0}"
@@ -1923,9 +2060,10 @@ msgstr "of {0}"
 msgid "of {0} {1}"
 msgstr "of {0} {1}"
 
-#. placeholder {0}: formatQuantity(material.estimatedQuantity ?? 0, locale)
-msgid "of {0} issued"
-msgstr "of {0} issued"
+#. placeholder {0}: formatQuantity(target.required, locale)
+#. placeholder {1}: target.material.unitOfMeasureCode ?? ""
+msgid "of {0} {1} issued"
+msgstr "of {0} {1} issued"
 
 msgid "Off — this device is yours alone"
 msgstr "Off — this device is yours alone"
@@ -1946,6 +2084,9 @@ msgstr "On — nobody pinned in"
 msgid "On — working as {0}"
 msgstr "On — working as {0}"
 
+msgid "On the shelf"
+msgstr "On the shelf"
+
 msgid "On this entry"
 msgstr "On this entry"
 
@@ -1964,9 +2105,18 @@ msgstr "one per job · planned"
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
 msgstr "One pick covers the whole batch — it is shared out to the jobs automatically."
 
+msgid "One unit"
+msgstr "One unit"
+
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
 msgstr "Only {0} available"
+
+msgid "Only a serial or batch unit has a label to print."
+msgstr "Only a serial or batch unit has a label to print."
+
+msgid "Only the operator who recorded this can undo it."
+msgstr "Only the operator who recorded this can undo it."
 
 msgid "Only when it is truly empty — never while loading."
 msgstr "Only when it is truly empty — never while loading."
@@ -2096,12 +2246,18 @@ msgstr "Partial"
 msgid "Partial Disposition"
 msgstr "Partial Disposition"
 
+msgid "Parts"
+msgstr "Parts"
+
 msgid "Pass"
 msgstr "Pass"
 
 #. placeholder {0}: row.label
 msgid "Pass {0}"
 msgstr "Pass {0}"
+
+msgid "Passed"
+msgstr "Passed"
 
 msgid "Passed inspection"
 msgstr "Passed inspection"
@@ -2118,12 +2274,19 @@ msgstr "Password"
 msgid "Pause"
 msgstr "Pause"
 
+#. placeholder {0}: workTypeLabels[activeType]
+msgid "Pause {0}"
+msgstr "Pause {0}"
+
 #. placeholder {0}: facts.unitOfMeasure
 msgid "per {0}"
 msgstr "per {0}"
 
 msgid "per unit"
 msgstr "per unit"
+
+msgid "Person"
+msgstr "Person"
 
 msgid "Phone layout: the dock is the bottom bar."
 msgstr "Phone layout: the dock is the bottom bar."
@@ -2260,6 +2423,9 @@ msgstr "Previous page"
 msgid "Previous step"
 msgstr "Previous step"
 
+msgid "Previous unit"
+msgstr "Previous unit"
+
 msgid "Primary"
 msgstr "Primary"
 
@@ -2299,6 +2465,9 @@ msgstr "Process Parameters"
 msgid "Processes"
 msgstr "Processes"
 
+msgid "Product"
+msgstr "Product"
+
 msgid "Progress"
 msgstr "Progress"
 
@@ -2319,6 +2488,9 @@ msgstr "Quality issue created"
 msgid "Quality issue raised"
 msgstr "Quality issue raised"
 
+msgid "Quality issues"
+msgstr "Quality issues"
+
 msgid "Quantities"
 msgstr "Quantities"
 
@@ -2327,6 +2499,9 @@ msgstr "Quantity"
 
 msgid "Quantity {quantity}"
 msgstr "Quantity {quantity}"
+
+msgid "Quantity from this lot"
+msgstr "Quantity from this lot"
 
 msgid "Quantity must be greater than 0"
 msgstr "Quantity must be greater than 0"
@@ -2350,6 +2525,12 @@ msgstr "Reading"
 #. placeholder {0}: row.label
 msgid "Reading for {0}"
 msgstr "Reading for {0}"
+
+msgid "Reason"
+msgstr "Reason"
+
+msgid "Reason (optional)"
+msgstr "Reason (optional)"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -2380,6 +2561,9 @@ msgstr "Record only"
 msgid "Record Partial"
 msgstr "Record Partial"
 
+msgid "Record the time now"
+msgstr "Record the time now"
+
 msgid "Record this step in Carbon MES in a browser."
 msgstr "Record this step in Carbon MES in a browser."
 
@@ -2388,6 +2572,12 @@ msgstr "Record time as"
 
 msgid "Recorded"
 msgstr "Recorded"
+
+msgid "Recorded: {display}"
+msgstr "Recorded: {display}"
+
+msgid "Recorded: {display} — out of spec"
+msgstr "Recorded: {display} — out of spec"
 
 msgid "Recording"
 msgstr "Recording"
@@ -2407,6 +2597,10 @@ msgstr "Released"
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Remove {0}"
+msgstr "Remove {0}"
+
 msgid "Remove filter"
 msgstr "Remove filter"
 
@@ -2418,6 +2612,10 @@ msgstr "Remove part"
 
 msgid "Remove this server?"
 msgstr "Remove this server?"
+
+#. placeholder {0}: input.readableId ?? input.id
+msgid "Removed {0}"
+msgstr "Removed {0}"
 
 msgid "Rename"
 msgstr "Rename"
@@ -2436,6 +2634,9 @@ msgstr "Report scrap"
 
 msgid "Required"
 msgstr "Required"
+
+msgid "Requires scan"
+msgstr "Requires scan"
 
 msgid "Result"
 msgstr "Result"
@@ -2470,6 +2671,12 @@ msgstr "Rotate the device to swap the dock between a column and a bar."
 msgid "Running"
 msgstr "Running"
 
+msgid "S/N"
+msgstr "S/N"
+
+msgid "Sales order"
+msgstr "Sales order"
+
 msgid "Sales Order"
 msgstr "Sales Order"
 
@@ -2492,6 +2699,22 @@ msgstr "Save the form you're editing"
 msgid "Scan"
 msgstr "Scan"
 
+#. placeholder {0}: material.itemReadableId ?? ""
+msgid "Scan {0}"
+msgstr "Scan {0}"
+
+#. placeholder {0}: gatedBy.length
+#. placeholder {1}: gatedBy.join(", ")
+msgid "Scan {0} parts to complete this step: {1}."
+msgstr "Scan {0} parts to complete this step: {1}."
+
+#. placeholder {0}: gatedBy[0]
+msgid "Scan {0} to complete this step."
+msgstr "Scan {0} to complete this step."
+
+msgid "Scan a part to issue it"
+msgstr "Scan a part to issue it"
+
 msgid "Scan a part to issue it."
 msgstr "Scan a part to issue it."
 
@@ -2503,6 +2726,12 @@ msgstr "Scan a unit"
 
 msgid "Scan a unit to start inspecting it."
 msgstr "Scan a unit to start inspecting it."
+
+msgid "Scan or choose a lot"
+msgstr "Scan or choose a lot"
+
+msgid "Scan or choose a serial"
+msgstr "Scan or choose a serial"
 
 msgid "Scan or enter a lot number"
 msgstr "Scan or enter a lot number"
@@ -2522,6 +2751,12 @@ msgstr "Scan or search serial number..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
+msgid "Scan or type the lot number"
+msgstr "Scan or type the lot number"
+
+msgid "Scan or type the serial number"
+msgstr "Scan or type the serial number"
+
 msgid "Scan the code"
 msgstr "Scan the code"
 
@@ -2531,11 +2766,14 @@ msgstr "Scan the code from Carbon, or type your server's address. Your superviso
 msgid "Scan the lot label"
 msgstr "Scan the lot label"
 
-msgid "Scan the lot or serial to issue this part"
-msgstr "Scan the lot or serial to issue this part"
+msgid "Scan the parts first."
+msgstr "Scan the parts first."
 
 msgid "Scan to connect"
 msgstr "Scan to connect"
+
+msgid "Scan with the camera"
+msgstr "Scan with the camera"
 
 msgid "Schedule"
 msgstr "Schedule"
@@ -2787,6 +3025,9 @@ msgstr "Show options"
 msgid "Showing only {stationName}. Show every work center"
 msgstr "Showing only {stationName}. Show every work center"
 
+msgid "Showing the first 40. Scan a label to find another."
+msgstr "Showing the first 40. Scan a label to find another."
+
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -2832,6 +3073,9 @@ msgstr "Signing back in needs the address again. Anything waiting to send is dis
 msgid "Size"
 msgstr "Size"
 
+msgid "Skip ›"
+msgstr "Skip ›"
+
 msgid "Some material is still unpicked."
 msgstr "Some material is still unpicked."
 
@@ -2857,6 +3101,7 @@ msgid "Start"
 msgstr "Start"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+#. placeholder {0}: workTypeLabels[activeType]
 msgid "Start {0}"
 msgstr "Start {0}"
 
@@ -2884,6 +3129,19 @@ msgstr "Statuses"
 
 msgid "Stay on this page"
 msgstr "Stay on this page"
+
+#. placeholder {0}: state.stepNumbers.join(", ")
+msgid "Step {0}"
+msgstr "Step {0}"
+
+#. placeholder {0}: index + 1
+msgid "Step {0} of {total}"
+msgstr "Step {0} of {total}"
+
+#. placeholder {0}: index + 1
+#. placeholder {1}: step.name
+msgid "Step {0}: {1}"
+msgstr "Step {0}: {1}"
 
 msgid "Steps"
 msgstr "Steps"
@@ -2947,8 +3205,14 @@ msgstr "Tablet layout: the dock is the right-hand column."
 msgid "Tag"
 msgstr "Tag"
 
+msgid "Take"
+msgstr "Take"
+
 msgid "Take a photo"
 msgstr "Take a photo"
+
+msgid "Task"
+msgstr "Task"
 
 msgid "That code is not a unit of this lot"
 msgstr "That code is not a unit of this lot"
@@ -2958,6 +3222,9 @@ msgstr "That code was printed by {host}, which is not the Carbon this tablet is 
 
 msgid "That does not look like a Carbon address"
 msgstr "That does not look like a Carbon address"
+
+msgid "That is all this part needs"
+msgstr "That is all this part needs"
 
 #. placeholder {0}: formatQuantity( toPick, locale )
 msgid "That is more than the {0} this line asks for. Pick the line instead of marking it short."
@@ -2992,6 +3259,9 @@ msgstr "The lot will be marked Passed and {remaining} remaining unit(s) will be 
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
+
+msgid "The selected unit"
+msgstr "The selected unit"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
@@ -3033,6 +3303,12 @@ msgstr "This connection is not encrypted. Only continue on a network you trust."
 
 msgid "This is a controlled environment. The app locks itself after a period of inactivity."
 msgstr "This is a controlled environment. The app locks itself after a period of inactivity."
+
+msgid "This is past its expiry date."
+msgstr "This is past its expiry date."
+
+msgid "This is past its expiry date. Give a reason to issue it anyway."
+msgstr "This is past its expiry date. Give a reason to issue it anyway."
 
 msgid "This is the current week"
 msgstr "This is the current week"
@@ -3081,9 +3357,6 @@ msgstr "This operation runs as part of a batch. Use Carbon MES in a browser to r
 msgid "This operation's materials could not be read. Use Carbon MES in a browser to issue them."
 msgstr "This operation's materials could not be read. Use Carbon MES in a browser to issue them."
 
-msgid "This part is tracked. Scan its lot or serial label to issue it."
-msgstr "This part is tracked. Scan its lot or serial label to issue it."
-
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 
@@ -3092,6 +3365,12 @@ msgstr "This part will be scrapped from stock. Its requirement stays open so you
 
 msgid "This server is air-gapped. The app talks to it and to nothing else."
 msgstr "This server is air-gapped. The app talks to it and to nothing else."
+
+msgid "This step has {slides} reference images. Open the job in Carbon MES on the web to see them."
+msgstr "This step has {slides} reference images. Open the job in Carbon MES on the web to see them."
+
+msgid "This step has a reference image. Open the job in Carbon MES on the web to see it."
+msgstr "This step has a reference image. Open the job in Carbon MES on the web to see it."
 
 msgid "This step needs a photo."
 msgstr "This step needs a photo."
@@ -3107,6 +3386,9 @@ msgstr "This takes it off the floor."
 
 msgid "This takes it off the floor. Nothing is running."
 msgstr "This takes it off the floor. Nothing is running."
+
+msgid "This unit has no serial or lot number yet, so a tracked part cannot be issued to it."
+msgstr "This unit has no serial or lot number yet, so a tracked part cannot be issued to it."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
@@ -3133,6 +3415,9 @@ msgstr "Time Entries"
 msgid "Time Worked: {0}"
 msgstr "Time Worked: {0}"
 
+msgid "Timestamp"
+msgstr "Timestamp"
+
 msgid "To pick"
 msgstr "To pick"
 
@@ -3144,6 +3429,9 @@ msgstr "Today"
 
 msgid "Toggle the sidebar"
 msgstr "Toggle the sidebar"
+
+msgid "Tool"
+msgstr "Tool"
 
 msgid "Tools"
 msgstr "Tools"
@@ -3168,6 +3456,9 @@ msgstr "Tracked Entity"
 msgid "tracked lines"
 msgstr "tracked lines"
 
+msgid "Tracked parts on this unit have not been fully issued. Completing without them leaves its traceability record incomplete."
+msgstr "Tracked parts on this unit have not been fully issued. Completing without them leaves its traceability record incomplete."
+
 msgid "Tracking"
 msgstr "Tracking"
 
@@ -3176,6 +3467,9 @@ msgstr "Try again"
 
 msgid "Turn off shared terminal"
 msgstr "Turn off shared terminal"
+
+msgid "Turn the camera off"
+msgstr "Turn the camera off"
 
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
@@ -3192,8 +3486,31 @@ msgstr "Type a message..."
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
 
+#. placeholder {0}: step.name
+msgid "Undo {0}"
+msgstr "Undo {0}"
+
+msgid "Unissued serial or batch parts"
+msgstr "Unissued serial or batch parts"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
+
+#. placeholder {0}: row.unit.index + 1
+msgid "Unit {0}"
+msgstr "Unit {0}"
+
+#. placeholder {0}: unitIndex + 1
+msgid "Unit {0} complete"
+msgstr "Unit {0} complete"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}"
+msgstr "Unit {0} of {count}"
+
+#. placeholder {0}: index + 1
+msgid "Unit {0} of {count}. Show every unit."
+msgstr "Unit {0} of {count}. Show every unit."
 
 msgid "Unit {label}, {status}"
 msgstr "Unit {label}, {status}"

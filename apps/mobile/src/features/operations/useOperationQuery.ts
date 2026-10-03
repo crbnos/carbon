@@ -59,6 +59,12 @@ export function useOperationQuery(
  * poll. The operations LIST is invalidated too — finishing an operation
  * removes its card, and an operator who taps back to a list still showing it
  * has been told the write failed when it did not.
+ *
+ * The assembly screen is invalidated with it. An assembly operation is read
+ * through its own endpoint but written through these same commands, so a
+ * recorded step or an issued part has to refresh that screen too — and doing
+ * it here, rather than in each command, means a command added later cannot
+ * forget to.
  */
 export function useInvalidateOperation(operationId: string) {
   const queryClient = useQueryClient();
@@ -74,6 +80,9 @@ export function useInvalidateOperation(operationId: string) {
     await Promise.all([
       queryClient.invalidateQueries({
         queryKey: keys.operation(scope, operationId)
+      }),
+      queryClient.invalidateQueries({
+        queryKey: keys.assembly(scope, operationId)
       }),
       queryClient.invalidateQueries({ queryKey: ["operations", instance] })
     ]);

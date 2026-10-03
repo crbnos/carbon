@@ -46,10 +46,17 @@ export function HeroButton({
   loading = false,
   /** Shown under the button when `disabled` — never hide a control silently. */
   disabledReason,
-  shape
+  shape,
+  accessibilityLabel
 }: {
   icon: LucideIcon;
   label: string;
+  /**
+   * What a screen reader says, when the visible label is not a word — the
+   * assembly dock shows the running clock on its pause button, as web's
+   * header timer does, and "00:12:03" is not an instruction.
+   */
+  accessibilityLabel?: string;
   tone: Tone;
   onPress: () => void;
   disabled?: boolean;
@@ -72,7 +79,7 @@ export function HeroButton({
           onPress={onPress}
           disabled={inactive}
           accessibilityRole="button"
-          accessibilityLabel={label}
+          accessibilityLabel={accessibilityLabel ?? label}
           accessibilityState={{ disabled: inactive }}
           accessibilityHint={inactive ? disabledReason : undefined}
           className={`flex-row items-center justify-center gap-2 rounded-xl ${bg} ${border} ${
@@ -90,7 +97,14 @@ export function HeroButton({
           ) : (
             <Icon size={24} color="#ffffff" />
           )}
-          <Text className="text-lg font-semibold text-white" numberOfLines={1}>
+          <Text
+            className="text-lg font-semibold text-white"
+            numberOfLines={1}
+            // "Machine 01:02:03" beside Complete is wider than a narrow
+            // phone's bar: shrink a little rather than lose the clock.
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
             {label}
           </Text>
         </Pressable>
@@ -109,7 +123,7 @@ export function HeroButton({
         onPress={onPress}
         disabled={inactive}
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ disabled: inactive }}
         accessibilityHint={inactive ? disabledReason : undefined}
         className={`items-center justify-center rounded-full border-b-4 ${bg} ${border} ${

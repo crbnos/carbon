@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OperationDetail } from "@carbon/mes-core";
 import { formatQuantity } from "@carbon/utils/format";
 import { useLingui } from "@lingui/react/macro";
 import { toast } from "sonner-native";
@@ -12,6 +11,7 @@ import {
   type EventIds,
   eventIdsFrom,
   type OpenEvents,
+  type ReportTarget,
   WORK_TYPES,
   type WorkType
 } from "./logic";
@@ -30,18 +30,21 @@ import { elapsedSince, formatElapsed } from "./useTimer";
  */
 export function FinishDialog({
   open,
-  detail,
+  target: reportTarget,
   openEvents,
-  onClose
+  onClose,
+  onFinished
 }: {
   open: boolean;
-  detail: OperationDetail;
+  target: ReportTarget;
   openEvents: OpenEvents;
   onClose: () => void;
+  /** Runs once the operation is finished — it is off the floor now. */
+  onFinished?: () => void;
 }) {
   const { t, i18n } = useLingui();
   const locale = i18n.locale || "en";
-  const finish = useFinishOperation(detail.operation.id);
+  const finish = useFinishOperation(reportTarget.operationId);
   const eventIds: EventIds = eventIdsFrom(openEvents);
 
   const labels: Record<WorkType, string> = {
@@ -60,8 +63,8 @@ export function FinishDialog({
     }
   }
 
-  const target = detail.operation.operationQuantity ?? 0;
-  const done = detail.operation.quantityComplete ?? 0;
+  const target = reportTarget.operationQuantity ?? 0;
+  const done = reportTarget.quantityComplete ?? 0;
   if (target > done) {
     affected.push(
       t`${formatQuantity(target - done, locale)} of ${formatQuantity(target, locale)} will not be made`
@@ -73,6 +76,7 @@ export function FinishDialog({
       await finish.mutateAsync(eventIds);
       onClose();
       toast.success(t`Operation finished`);
+      onFinished?.();
     } catch (error) {
       // A 409 here is a real rule refusing it — an unissued material, an
       // inspection still open. The server's own words are what the operator

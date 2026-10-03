@@ -8,9 +8,14 @@ import {
   availableWorkTypes,
   closedDurations,
   eventIdsFrom,
+  needsUnit,
   openEvents,
+  parentTrackingType,
   parseQuantity,
-  remainingQuantity
+  remainingQuantity,
+  reportTargetFor,
+  trackingFields,
+  untrackedIssueBody
 } from "./logic";
 import { elapsedSince, formatElapsed } from "./useTimer";
 
@@ -132,22 +137,88 @@ describe("elapsedSince", () => {
 describe("remainingQuantity", () => {
   it("is the shortfall, floored at zero", () => {
     expect(
-      remainingQuantity({
-        id: "op",
-        operationQuantity: 40,
-        quantityComplete: 12
-      })
+      remainingQuantity({ operationQuantity: 40, quantityComplete: 12 })
     ).toBe(28);
     // Over-reporting happens (a batch that yielded more than planned). A
     // negative "remaining" would render as "-5 remaining" under the keypad.
     expect(
-      remainingQuantity({
-        id: "op",
-        operationQuantity: 40,
-        quantityComplete: 45
-      })
+      remainingQuantity({ operationQuantity: 40, quantityComplete: 45 })
     ).toBe(0);
-    expect(remainingQuantity({ id: "op" })).toBe(0);
+    expect(remainingQuantity({})).toBe(0);
+  });
+});
+
+describe("reportTargetFor", () => {
+  const detail = (over: Record<string, unknown>) =>
+    ({
+      operation: { id: "op", operationQuantity: 10, quantityComplete: 3 },
+      job: {},
+      events: [],
+      quantities: { scrap: 0, production: 0, rework: 0 },
+      batch: null,
+      isFirstOperation: true,
+      ...over
+    }) as Parameters<typeof reportTargetFor>[0];
+
+  it("names the parent's tracking, serial before batch", () => {
+    expect(parentTrackingType({ requiresSerialTracking: true })).toBe("Serial");
+    expect(parentTrackingType({ requiresBatchTracking: true })).toBe("Batch");
+    expect(
+      parentTrackingType({
+        requiresSerialTracking: true,
+        requiresBatchTracking: true
+      })
+    ).toBe("Serial");
+    expect(parentTrackingType({})).toBeUndefined();
+    expect(parentTrackingType(null)).toBeUndefined();
+  });
+
+  it("carries the unit and the tracking type for a serial parent", () => {
+    // Without `trackingType` the server takes the untracked branch: the
+    // serial is never completed, no next unit is minted, no label prints.
+    const target = reportTargetFor(
+      detail({
+        trackedEntityId: "te_1",
+        jobMakeMethod: { requiresSerialTracking: true }
+      })
+    );
+    expect(trackingFields(target)).toEqual({
+      trackedEntityId: "te_1",
+      trackingType: "Serial"
+    });
+    expect(needsUnit(target)).toBe(false);
+  });
+
+  it("does not send an untracked job's stray entity", () => {
+    // An untracked make method can still carry an inventory entity. It is not
+    // the thing being built, and web's QuantityModal does not send it either.
+    const target = reportTargetFor(
+      detail({ trackedEntityId: "te_stray", jobMakeMethod: {} })
+    );
+    expect(trackingFields(target)).toEqual({
+      trackedEntityId: undefined,
+      trackingType: undefined
+    });
+  });
+
+  it("treats a payload with no make method as untracked", () => {
+    // An older server does not send `jobMakeMethod` at all.
+    expect(reportTargetFor(detail({})).trackingType).toBeUndefined();
+  });
+
+  it("asks for a unit before a serial parent can be reported", () => {
+    const noUnit = reportTargetFor(
+      detail({ jobMakeMethod: { requiresSerialTracking: true } })
+    );
+    expect(needsUnit(noUnit)).toBe(true);
+    // A batch reports against the lot the server resolves; no unit to choose.
+    expect(
+      needsUnit(
+        reportTargetFor(
+          detail({ jobMakeMethod: { requiresBatchTracking: true } })
+        )
+      )
+    ).toBe(false);
   });
 });
 
@@ -186,5 +257,41 @@ describe("eventIdsFrom", () => {
       laborProductionEventId: undefined,
       machineProductionEventId: "m"
     });
+  });
+});
+
+describe("untrackedIssueBody", () => {
+  it("issues with a NEGATIVE adjustment", () => {
+    // Inventory's point of view: an issue takes stock out. `Positive Adjmt.`
+    // is the return — it puts stock back and LOWERS `quantityIssued` — and
+    // this app once sent it for every issue.
+    expect(
+      untrackedIssueBody({ itemId: "item_1", materialId: "jm_1", quantity: 2 })
+    ).toEqual({
+      itemId: "item_1",
+      materialId: "jm_1",
+      quantity: 2,
+      adjustmentType: "Negative Adjmt."
+    });
+  });
+
+  it("scopes an unplanned part to its step, and only then", () => {
+    expect(
+      untrackedIssueBody({
+        itemId: "item_1",
+        materialId: null,
+        quantity: 1,
+        jobOperationStepId: "step_1"
+      })
+    ).toEqual({
+      itemId: "item_1",
+      materialId: undefined,
+      quantity: 1,
+      adjustmentType: "Negative Adjmt.",
+      jobOperationStepId: "step_1"
+    });
+    expect(
+      untrackedIssueBody({ itemId: "item_1", quantity: 1 })
+    ).not.toHaveProperty("jobOperationStepId");
   });
 });

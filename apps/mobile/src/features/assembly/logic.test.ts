@@ -6,22 +6,31 @@ import { describe, expect, it } from "vitest";
 import {
   type AssemblyMaterial,
   type AssemblyStep,
+  completedUnits,
+  containmentWithoutStep,
   deriveUnits,
   firstIncompleteStep,
   isStepBadResult,
   isStepDone,
   issuedForUnit,
+  isUnitBuilt,
   isUnitIncompleteForOperation,
   materialStates,
+  maxNavigableUnitIndex,
+  nextIncompleteUnit,
+  parseMeasurement,
   pendingScans,
   recordedDisplay,
   resolveUnitIndex,
   shouldAutoCompleteUnit,
   sortSteps,
+  stepChipState,
   stepTools,
+  unissuedTrackedParts,
   unitCount,
   unitHasBadResult,
   unitIsRecorded,
+  unitRemainingToIssue,
   visibleMaterials
 } from "./logic";
 
@@ -603,5 +612,212 @@ describe("shouldAutoCompleteUnit", () => {
         entity: { id: "a", attributes: { "Operation op1": true } }
       })
     ).toBe(false);
+  });
+});
+
+describe("an operation with no steps", () => {
+  // The real case on the test board: nineteen parts, one tool, no steps.
+  it("shows what was really issued, because nothing will ever backflush", () => {
+    const states = materialStates({
+      materials: [part({ id: "bar", quantity: 1, quantityIssued: 1 })],
+      steps: [],
+      stepIndex: 0,
+      unitIndex: 0,
+      parentIsTracked: true
+    });
+    // Web reads 0 here for ever: its override waits on a first step that
+    // does not exist. An operator who just issued the part must see it.
+    expect(states[0]).toMatchObject({ issued: 1, fullyIssued: true });
+  });
+
+  it("still gives each unit only its own share", () => {
+    const at = (unitIndex: number) =>
+      materialStates({
+        materials: [part({ quantity: 2, quantityIssued: 3 })],
+        steps: [],
+        stepIndex: 0,
+        unitIndex,
+        parentIsTracked: false
+      })[0]?.issued;
+    expect(at(0)).toBe(2);
+    expect(at(1)).toBe(1);
+    expect(at(2)).toBe(0);
+  });
+});
+
+describe("isUnitBuilt", () => {
+  it("counts by index for an untracked or batch parent", () => {
+    const base = {
+      navigatesByEntity: false,
+      entity: null,
+      quantityComplete: 2,
+      operationId: "op1"
+    };
+    expect(isUnitBuilt({ ...base, unitIndex: 1 })).toBe(true);
+    expect(isUnitBuilt({ ...base, unitIndex: 2 })).toBe(false);
+  });
+
+  it("asks the serial itself", () => {
+    const base = {
+      navigatesByEntity: true,
+      unitIndex: 0,
+      // Deliberately misleading: a serial ignores the completed count.
+      quantityComplete: 5,
+      operationId: "op1"
+    };
+    expect(isUnitBuilt({ ...base, entity: { id: "a" } })).toBe(false);
+    expect(
+      isUnitBuilt({
+        ...base,
+        entity: { id: "a", attributes: { "Operation op1": true } }
+      })
+    ).toBe(true);
+  });
+});
+
+describe("maxNavigableUnitIndex", () => {
+  it("stops a serial parent at the last unit that has a serial", () => {
+    // Ten to build, one serial minted: the real state of the test job.
+    expect(maxNavigableUnitIndex(deriveUnits(10, [{ id: "a" }]), true)).toBe(0);
+    expect(
+      maxNavigableUnitIndex(deriveUnits(10, [{ id: "a" }, { id: "b" }]), true)
+    ).toBe(1);
+  });
+
+  it("lets every other parent reach every unit", () => {
+    expect(maxNavigableUnitIndex(deriveUnits(10, [{ id: "lot" }]), false)).toBe(
+      9
+    );
+    expect(maxNavigableUnitIndex(deriveUnits(1, []), false)).toBe(0);
+  });
+});
+
+describe("nextIncompleteUnit", () => {
+  it("is the first serial not yet built here", () => {
+    const units = deriveUnits(3, [
+      { id: "a", attributes: { "Operation op1": true } },
+      { id: "b", status: "Scrapped" },
+      { id: "c", status: "Available" }
+    ]);
+    expect(nextIncompleteUnit(units, "op1")?.entity?.id).toBe("c");
+  });
+
+  it("is null when every minted serial is built", () => {
+    const units = deriveUnits(3, [
+      { id: "a", attributes: { "Operation op1": true } }
+    ]);
+    expect(nextIncompleteUnit(units, "op1")).toBeNull();
+  });
+});
+
+describe("containmentWithoutStep", () => {
+  it("lists the open actions no step covers yet", () => {
+    const actions = [{ id: "act_1" }, { id: "act_2" }];
+    expect(
+      containmentWithoutStep(actions, [
+        { type: "Inspection", nonConformanceActionId: "act_1" }
+      ])
+    ).toEqual([{ id: "act_2" }]);
+  });
+
+  it("only counts an Inspection step as cover", () => {
+    // Web's own rule: the marker on any other step type does not count.
+    expect(
+      containmentWithoutStep(
+        [{ id: "act_1" }],
+        [{ type: "Task", nonConformanceActionId: "act_1" }]
+      )
+    ).toEqual([{ id: "act_1" }]);
+  });
+});
+
+describe("unissuedTrackedParts", () => {
+  it("looks across every step, not just the one on screen", () => {
+    const materials = [
+      part({
+        id: "battery",
+        requiresSerialTracking: true,
+        jobOperationStepIds: ["s9"]
+      }),
+      part({ id: "loose" }),
+      part({
+        id: "motor",
+        requiresSerialTracking: true,
+        quantityIssued: 1
+      })
+    ];
+    expect(
+      unissuedTrackedParts({
+        materials,
+        unitIndex: 0,
+        parentIsTracked: true
+      }).map((m) => m.id)
+    ).toEqual(["battery"]);
+  });
+
+  it("derives a unit's share under an untracked parent", () => {
+    const tire = part({
+      id: "tire",
+      quantity: 2,
+      quantityIssued: 2,
+      requiresBatchTracking: true
+    });
+    const at = (unitIndex: number) =>
+      unissuedTrackedParts({
+        materials: [tire],
+        unitIndex,
+        parentIsTracked: false
+      }).length;
+    expect(at(0)).toBe(0);
+    expect(at(1)).toBe(1);
+  });
+});
+
+describe("unitRemainingToIssue", () => {
+  it("offers what this unit still needs, never the job's remainder", () => {
+    expect(unitRemainingToIssue({ required: 2, issued: 0 })).toBe(2);
+    expect(unitRemainingToIssue({ required: 2, issued: 1 })).toBe(1);
+  });
+
+  it("offers one when the unit needs nothing more", () => {
+    expect(unitRemainingToIssue({ required: 2, issued: 2 })).toBe(1);
+    expect(unitRemainingToIssue({ required: 0, issued: 3 })).toBe(1);
+  });
+});
+
+describe("completedUnits", () => {
+  it("is a whole, non-negative count", () => {
+    expect(completedUnits(3)).toBe(3);
+    expect(completedUnits(2.5)).toBe(3);
+    expect(completedUnits(null)).toBe(0);
+    expect(completedUnits(-1)).toBe(0);
+    expect(completedUnits(Number.NaN)).toBe(0);
+  });
+});
+
+describe("parseMeasurement", () => {
+  it("takes zero and negatives, which a quantity would refuse", () => {
+    expect(parseMeasurement("0")).toBe(0);
+    expect(parseMeasurement("-0.25")).toBe(-0.25);
+    expect(parseMeasurement(" 12.5 ")).toBe(12.5);
+    expect(parseMeasurement(".5")).toBe(0.5);
+    expect(parseMeasurement("7.")).toBe(7);
+  });
+
+  it("refuses anything that is not plainly a number", () => {
+    for (const text of ["", " ", "-", ".", "1e3", "0x10", "1,5", "12mm"]) {
+      expect(parseMeasurement(text)).toBeNull();
+    }
+  });
+});
+
+describe("stepChipState", () => {
+  it("reads bad before done", () => {
+    const failed = step("s", { type: "Inspection" }, [
+      { index: 0, booleanValue: false }
+    ]);
+    expect(stepChipState(failed, 0)).toBe("bad");
+    expect(stepChipState(step("t", {}, [{ index: 0 }]), 0)).toBe("done");
+    expect(stepChipState(step("u"), 0)).toBe("todo");
   });
 });

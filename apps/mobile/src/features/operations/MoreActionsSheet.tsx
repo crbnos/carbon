@@ -11,7 +11,7 @@ import {
   Trash2,
   Wrench
 } from "lucide-react-native";
-import { forwardRef } from "react";
+import { forwardRef, type ReactNode } from "react";
 import { Sheet, type SheetHandle, SheetRow } from "~/components/BottomSheet";
 
 /**
@@ -39,8 +39,12 @@ export const MoreActionsSheet = forwardRef<
     onQualityIssue: () => void;
     onPrint: () => void;
     printing?: boolean;
+    /** Why there is no label to print here — an untracked unit has none. */
+    printDisabledReason?: string;
     /** Null while the operation cannot be acted on (a batch, a blocked centre). */
     disabledReason?: string;
+    /** Rows a screen adds after the shared ones. */
+    children?: ReactNode;
   }
 >(function MoreActionsSheet(
   {
@@ -50,7 +54,9 @@ export const MoreActionsSheet = forwardRef<
     onQualityIssue,
     onPrint,
     printing = false,
-    disabledReason
+    printDisabledReason,
+    disabledReason,
+    children
   },
   ref
 ) {
@@ -93,8 +99,10 @@ export const MoreActionsSheet = forwardRef<
           printing ? t`Sending to the printer…` : t`Sent to the shop printer`
         }
         onPress={onPrint}
-        disabled={printing}
-        disabledReason={printing ? t`Sending to the printer…` : undefined}
+        disabled={printing || Boolean(printDisabledReason)}
+        disabledReason={
+          printing ? t`Sending to the printer…` : printDisabledReason
+        }
       />
       <SheetRow
         icon={Wrench}
@@ -102,6 +110,7 @@ export const MoreActionsSheet = forwardRef<
         disabled
         disabledReason={t`Use Carbon MES in a browser for this.`}
       />
+      {children}
     </Sheet>
   );
 });

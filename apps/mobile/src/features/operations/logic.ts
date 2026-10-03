@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  type AssemblyTrackedInput,
+  assemblyTrackedInput,
   type OperationDetail,
   type OperationMaterial,
   type OperationStep,
@@ -93,10 +95,99 @@ export function eventIdsFrom(open: OpenEvents): EventIds {
 }
 
 /** What is left to make, floored at zero — never a negative "remaining". */
-export function remainingQuantity(operation: OperationDetail["operation"]) {
+export function remainingQuantity(operation: {
+  operationQuantity?: number | null;
+  quantityComplete?: number | null;
+}) {
   const target = operation.operationQuantity ?? 0;
   const done = operation.quantityComplete ?? 0;
   return target > done ? target - done : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Reporting
+// ---------------------------------------------------------------------------
+
+export type TrackingType = "Serial" | "Batch";
+
+/**
+ * What a reporting sheet needs to know about the work, and nothing else.
+ *
+ * The operation screen and the assembly screen read different payloads, and
+ * the sheets used to take the operation screen's whole one while reading four
+ * fields of it. Naming those fields lets both screens open the SAME quantity,
+ * scrap, rework, finish and quality sheets, so a report means one thing
+ * wherever it was made.
+ */
+export type ReportTarget = {
+  operationId: string;
+  operationQuantity?: number | null;
+  quantityComplete?: number | null;
+  /** The unit being reported on. Only ever set for a tracked parent. */
+  trackedEntityId?: string;
+  /** What an operator reads off that unit's label. */
+  trackedEntityReadableId?: string | null;
+  /**
+   * The PARENT's tracking. It selects the server's completion branch: Serial
+   * completes this unit, mints the next one and prints its label; Batch
+   * completes against the lot. Left out, a tracked parent's report takes the
+   * untracked branch and none of that happens — silently.
+   */
+  trackingType?: TrackingType;
+};
+
+/** A make method's tracking, as the one value the reports carry. */
+export function parentTrackingType(
+  method:
+    | {
+        requiresSerialTracking?: boolean | null;
+        requiresBatchTracking?: boolean | null;
+      }
+    | null
+    | undefined
+): TrackingType | undefined {
+  if (method?.requiresSerialTracking) return "Serial";
+  if (method?.requiresBatchTracking) return "Batch";
+  return undefined;
+}
+
+/**
+ * The reporting target for the plain operation screen.
+ *
+ * The unit is sent only for a tracked parent, exactly as web's `QuantityModal`
+ * does it: an untracked job can still carry a stray inventory entity, and that
+ * entity is not the thing being built.
+ */
+export function reportTargetFor(detail: OperationDetail): ReportTarget {
+  const trackingType = parentTrackingType(detail.jobMakeMethod);
+  return {
+    operationId: detail.operation.id,
+    operationQuantity: detail.operation.operationQuantity,
+    quantityComplete: detail.operation.quantityComplete,
+    trackedEntityId: trackingType
+      ? (detail.trackedEntityId ?? undefined)
+      : undefined,
+    trackingType
+  };
+}
+
+/** The two fields every quantity, scrap and rework report carries. */
+export function trackingFields(target: ReportTarget) {
+  return {
+    trackedEntityId: target.trackedEntityId,
+    trackingType: target.trackingType
+  };
+}
+
+/**
+ * Why a report cannot be made yet, or null.
+ *
+ * A serial parent is reported one named unit at a time, so with no unit
+ * chosen there is nothing to complete or scrap. The server would refuse it;
+ * saying so on the button is kinder than a toast after the tap.
+ */
+export function needsUnit(target: ReportTarget) {
+  return target.trackingType === "Serial" && !target.trackedEntityId;
 }
 
 /**
@@ -118,6 +209,28 @@ export function parseQuantity(text: string) {
 // ---------------------------------------------------------------------------
 
 /**
+ * A lot or serial already consumed into the unit — what Remove is offered.
+ * The same row the assembly screen reads; one function builds both.
+ */
+export type ConsumedInput = AssemblyTrackedInput;
+
+/**
+ * What the server sends as `materials`: the lines, and the tracked inputs
+ * already consumed. A bare array is accepted as well — it is what the read
+ * returned before it grew `trackedInputs`, and a self-hosted server can be
+ * months behind the app.
+ */
+const materialsPayload = z.union([
+  z.array(operationMaterial),
+  z
+    .object({
+      materials: z.array(operationMaterial),
+      trackedInputs: z.array(assemblyTrackedInput).nullable().optional()
+    })
+    .passthrough()
+]);
+
+/**
  * The material lines worth showing on the Materials tab.
  *
  * `materials` rides in on a passthrough field, so it is `unknown` and has to be
@@ -126,20 +239,60 @@ export function parseQuantity(text: string) {
  * is a bug, and showing an empty list for both is exactly the silent-empty
  * failure that is worst on a shop floor.
  *
+ * That distinction is also how this once failed completely. The parser took a
+ * bare array, the server sends `{ materials, trackedInputs }`, and every test
+ * fed it an array — so the tests passed and the tab told every operator on
+ * every operation that its materials could not be read. The fixtures in
+ * `tabs.test.ts` are now the live shape.
+ *
  * A row with no item is dropped — nothing to name it, nothing to issue. A kit
  * PARENT is dropped too: it is a container whose children are the real lines,
  * so showing it would double every quantity on screen.
  */
 export function parseMaterials(materials: unknown): {
   materials: OperationMaterial[];
+  trackedInputs: ConsumedInput[];
   malformed: boolean;
 } {
   if (materials === null || materials === undefined) {
-    return { materials: [], malformed: false };
+    return { materials: [], trackedInputs: [], malformed: false };
   }
-  const parsed = z.array(operationMaterial).safeParse(materials);
-  if (!parsed.success) return { materials: [], malformed: true };
-  return { materials: issuableMaterials(parsed.data), malformed: false };
+  const parsed = materialsPayload.safeParse(materials);
+  if (!parsed.success) {
+    return { materials: [], trackedInputs: [], malformed: true };
+  }
+  const lines = Array.isArray(parsed.data)
+    ? parsed.data
+    : parsed.data.materials;
+  const trackedInputs = Array.isArray(parsed.data)
+    ? []
+    : (parsed.data.trackedInputs ?? []);
+  return {
+    materials: issuableMaterials(lines),
+    trackedInputs,
+    malformed: false
+  };
+}
+
+/**
+ * The inputs already consumed against ONE material line.
+ *
+ * `activityAttributes` belongs to the consume: its `Job Material` is the line
+ * the lot was issued against. An input with no such attribute is left out —
+ * offering Remove on a lot that might belong to another line is how the wrong
+ * part gets pulled out of a unit's genealogy.
+ */
+export function consumedForMaterial(
+  trackedInputs: ConsumedInput[],
+  materialId: string | null | undefined
+): ConsumedInput[] {
+  if (!materialId) return [];
+  return trackedInputs.filter(
+    (input) =>
+      (
+        input.activityAttributes as Record<string, unknown> | null | undefined
+      )?.["Job Material"] === materialId
+  );
 }
 
 export function issuableMaterials(
@@ -186,6 +339,39 @@ export function remainingToIssue(material: OperationMaterial) {
   const required = material.estimatedQuantity ?? 0;
   const issued = material.quantityIssued ?? 0;
   return required > issued ? required - issued : 0;
+}
+
+/**
+ * The body of an untracked issue.
+ *
+ * **`Negative Adjmt.` is the issue.** The three names are INVENTORY's point of
+ * view, not the job's: issuing a part takes it out of stock, so it is a
+ * negative adjustment — the `issue` edge function writes a negative ledger row
+ * and ADDS the quantity to `jobMaterial.quantityIssued`. `Positive Adjmt.` is
+ * the return: stock goes back up and `quantityIssued` comes down.
+ *
+ * This app sent `Positive Adjmt.` for an issue, reading the word as "add to
+ * what is issued". Every tap of Issue would have returned stock the job never
+ * took and driven the issued quantity negative. It is built here, once, and
+ * pinned by a test, so the direction cannot be flipped by a sheet again. Web's
+ * `IssueMaterialModal` defaults to the same value.
+ */
+export function untrackedIssueBody(args: {
+  itemId: string;
+  materialId?: string | null;
+  quantity: number;
+  /** Scopes an unplanned part to the step it was issued on. */
+  jobOperationStepId?: string;
+}) {
+  return {
+    itemId: args.itemId,
+    materialId: args.materialId ?? undefined,
+    quantity: args.quantity,
+    adjustmentType: "Negative Adjmt." as const,
+    ...(args.jobOperationStepId
+      ? { jobOperationStepId: args.jobOperationStepId }
+      : {})
+  };
 }
 
 /** True when the job BUILDS this line rather than consuming it from stock. */

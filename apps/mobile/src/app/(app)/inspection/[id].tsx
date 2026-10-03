@@ -2,8 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { InspectionView } from "~/features/inspection/InspectionView";
+import { backOrBoard } from "~/lib/navigation/backOrBoard";
 
 /**
  * An inspection operation, addressed by the OPERATION id — as on the web,
@@ -17,5 +18,5 @@ import { InspectionView } from "~/features/inspection/InspectionView";
  */
 export default function InspectionRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <InspectionView operationId={id ?? ""} onBack={() => router.back()} />;
+  return <InspectionView operationId={id ?? ""} onBack={backOrBoard} />;
 }

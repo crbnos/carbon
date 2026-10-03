@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OperationDetail, OperationMaterial } from "@carbon/mes-core";
+import type { OperationDetail } from "@carbon/mes-core";
 import { formatQuantity } from "@carbon/utils/format";
 import { useLingui } from "@lingui/react/macro";
 import { Barcode, Check } from "lucide-react-native";
@@ -19,8 +19,15 @@ import {
 } from "~/components/ui";
 import { useThemeColors } from "~/components/useThemeColor";
 import { useKeyboardWedge } from "~/features/scan/useKeyboardWedge";
-import { IssueSheet } from "./IssueSheet";
-import { matchMaterialToScan, parseMaterials } from "./logic";
+import { IssueSheet, type IssueTarget } from "./IssueSheet";
+import {
+  consumedForMaterial,
+  isTrackedLine,
+  matchMaterialToScan,
+  parentTrackingType,
+  parseMaterials,
+  remainingToIssue
+} from "./logic";
 
 /**
  * What this operation consumes, and how much of it has been issued.
@@ -39,20 +46,54 @@ export function MaterialsTab({ detail }: { detail: OperationDetail }) {
   const { t, i18n } = useLingui();
   const locale = i18n.locale || "en";
   const colors = useThemeColors();
-  const [selected, setSelected] = useState<OperationMaterial | null>(null);
+  // By id, so the open sheet reads the line as it is NOW: it stays open through
+  // a Remove, and a kept copy went on showing what was issued before it.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { materials, malformed } = useMemo(
+  const { materials, trackedInputs, malformed } = useMemo(
     () => parseMaterials(detail.materials),
     [detail.materials]
   );
+  const selected =
+    selectedId === null
+      ? null
+      : (materials.find((material) => material.id === selectedId) ?? null);
+
+  // What the sheet holds the selected line to. A serial parent is built one
+  // unit at a time, so its tracked parts are issued one unit's worth at a time
+  // and the server reports their issued quantity for THAT unit; everything
+  // else is issued against the whole job's requirement.
+  const target = useMemo((): IssueTarget | null => {
+    if (!selected) return null;
+    const perUnit =
+      parentTrackingType(detail.jobMakeMethod) === "Serial" &&
+      isTrackedLine(selected);
+    const required = perUnit
+      ? (selected.quantity ?? selected.estimatedQuantity ?? 0)
+      : (selected.estimatedQuantity ?? 0);
+    const issued = selected.quantityIssued ?? 0;
+    const outstanding = perUnit
+      ? required - issued
+      : remainingToIssue(selected);
+    return {
+      operationId: detail.operation.id,
+      material: selected,
+      required,
+      issued,
+      suggested: outstanding > 0 ? outstanding : 1,
+      parentEntityId: detail.trackedEntityId ?? undefined,
+      expiredEntityPolicy: detail.expiredEntityPolicy,
+      consumed: consumedForMaterial(trackedInputs, selected.id)
+    };
+  }, [selected, detail, trackedInputs]);
 
   // A hidden input a Bluetooth or USB scanner in keyboard mode types into.
   const wedge = useKeyboardWedge({
     enabled: materials.length > 0,
     onScan: (code) => {
       const match = matchMaterialToScan(materials, code);
-      if (match) {
-        setSelected(match);
+      if (match?.id) {
+        setSelectedId(match.id);
         return;
       }
       toast.error(t`${code} is not a material on this operation`);
@@ -104,7 +145,9 @@ export function MaterialsTab({ detail }: { detail: OperationDetail }) {
           return (
             <Pressable
               key={material.id ?? material.itemId ?? ""}
-              onPress={() => (built ? undefined : setSelected(material))}
+              onPress={() =>
+                built || !material.id ? undefined : setSelectedId(material.id)
+              }
               disabled={built}
               accessibilityRole="button"
               accessibilityState={{ disabled: built }}
@@ -163,12 +206,8 @@ export function MaterialsTab({ detail }: { detail: OperationDetail }) {
         })}
       </ScrollView>
 
-      {selected ? (
-        <IssueSheet
-          detail={detail}
-          material={selected}
-          onClose={() => setSelected(null)}
-        />
+      {target ? (
+        <IssueSheet target={target} onClose={() => setSelectedId(null)} />
       ) : null}
     </>
   );

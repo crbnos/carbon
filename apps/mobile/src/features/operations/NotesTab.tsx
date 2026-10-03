@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { OperationDetail } from "@carbon/mes-core";
 import { formatDateTime } from "@carbon/utils/date";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -32,11 +31,11 @@ import { useOperationNotes } from "./useNotes";
  * an instant, and parsing it with `Date` is what puts a note on the wrong day
  * for anyone west of UTC.
  */
-export function NotesTab({ detail }: { detail: OperationDetail }) {
+export function NotesTab({ operationId }: { operationId: string }) {
   const { t, i18n } = useLingui();
   const locale = i18n.locale || "en";
-  const notes = useOperationNotes(detail.operation.id);
-  const add = useAddNote(detail.operation.id);
+  const notes = useOperationNotes(operationId);
+  const add = useAddNote(operationId);
   const [draft, setDraft] = useState("");
 
   const post = async () => {
