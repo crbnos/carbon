@@ -354,7 +354,7 @@ when, the plan rule and the FAI extension row.
 
 ## Bonus tolerance (MMC / LMC)
 
-`valuateGeometricMeasurement` (`functions/shared/inspection-verdict.ts`,
+`valuateGeometricMeasurement` (`packages/database/src/inspection-verdict.ts`,
 re-exported by `@carbon/database/quality`, tested in
 `src/inspection-verdict.test.ts`). A geometric tolerance stated at MMC or LMC
 grows by how far its related feature of size (`sizeFeatureId`) departs from

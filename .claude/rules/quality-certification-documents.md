@@ -40,11 +40,11 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   that is not the company's is dropped; delete is scoped to the line and fails
   when it removed nothing.
 
-  **Regenerating a receipt keeps its certificates.** The `create` edge function
+  **Regenerating a receipt keeps its certificates.** The `create` server function
   rebuilds every line of an existing receipt when its source document or
   location changes (`receiptFromPurchaseOrder`, `receiptFromInboundTransfer`,
   `receiptFromSalesReturnOrder`), and `receiptLineId` is ON DELETE CASCADE. The
-  rebuild goes through `replaceReceiptLines` (`functions/create/index.ts`): in
+  rebuild goes through `replaceReceiptLines` (`packages/server-functions/src/create/index.ts`): in
   the same transaction it reads the receipt's certificates, inserts the new
   lines, MOVES each certificate (one `UPDATE … CASE "id"`, so it keeps its id)
   to the new line with the same `receiptLine.lineId` — or the same `itemId`
@@ -117,7 +117,7 @@ them as warnings, and FAI Form 2 seeds them with the comment
 
 Record: `certificateOfConformance` (`coc` id) — `certificateId` (the `COC`
 sequence number, seeded for existing companies by the migration and in
-`functions/lib/seed.data.ts`), `revision`, `shipmentId`, `customerId`,
+`packages/database/src/seed-data.ts`), `revision`, `shipmentId`, `customerId`,
 `reasonForUpdate` (CHECK: required when `revision > 0`), `documentId`, the
 signature snapshot (`signedBy/Name/Title/At`), `lastSentAt` / `lastSentTo`.
 UNIQUE `(companyId, certificateId, revision)`. Printed number is
