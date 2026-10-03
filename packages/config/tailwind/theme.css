@@ -148,7 +148,7 @@
 @layer base {
   html,
   body {
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   /* Reduced motion keeps the fades and drops the movement: the enter/exit

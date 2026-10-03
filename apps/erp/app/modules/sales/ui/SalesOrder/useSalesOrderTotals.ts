@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { atom } from "nanostores";
-import { useNanoStore } from "~/hooks";
+import { create } from "zustand";
 
-const $totals = atom<{ total: number }>({
-  total: 0
-});
-export const useSalesOrderTotals = () => useNanoStore($totals);
+type Totals = { total: number };
+
+const useTotals = create<Totals>()(() => ({ total: 0 }));
+const setTotals = (totals: Totals) => useTotals.setState(totals, true);
+
+export const useSalesOrderTotals = () => [useTotals(), setTotals] as const;

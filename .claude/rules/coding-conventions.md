@@ -163,8 +163,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 - **Client read-through cache**: TanStack React Query (`window.clientCache`);
   query keys are company-scoped, e.g. `["things", companyId]`
   (`apps/erp/app/utils/react-query.ts`).
-- **Global UI state**: nanostores atoms + `@nanostores/react`
-  (e.g. `apps/erp/app/stores/items.ts`).
+- **Global UI state**: zustand (`apps/erp/app/stores/ui.ts`). nanostores is
+  legacy: it now only holds the realtime lists (`stores/items.ts`, `customers.ts`,
+  `suppliers.ts`, `people.ts`) and goes when that provider is rebuilt — do not add
+  new atoms.
 
 ## Path Helpers
 
