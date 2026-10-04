@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Einheiten zuordnen"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Darstellung"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Möchten Sie diesen Schritt wirklich löschen?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "Einstempeln"
 
 msgid "Clock out"
-msgstr ""
+msgstr "Ausstempeln"
 
 msgid "Clock Out"
 msgstr "Ausstempeln"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "Angestempelt"
 
 msgid "Clocked in since <0/>"
 msgstr "Eingecheckt seit <0/>"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Kunde"
 
 msgid "Dark"
-msgstr ""
+msgstr "Dunkel"
 
 msgid "Date"
 msgstr "Datum"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
 
 msgid "Light"
-msgstr ""
+msgstr "Hell"
 
 msgid "lines"
 msgstr "Zeilen"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "Legen Sie die Uhrzeit fest, zu der Sie die Arbeit beendet haben, oder bestätigen Sie, dass Sie noch arbeiten."
 
 msgid "Set up in Carbon"
 msgstr "In Carbon einrichten"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "Werker wechseln"
 
 msgid "System"
-msgstr ""
+msgstr "System"
 
 msgid "Tag"
 msgstr "Tag"

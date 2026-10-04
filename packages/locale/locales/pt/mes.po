@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Alocar unidades"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Aparência"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "Apontar início"
 
 msgid "Clock out"
-msgstr ""
+msgstr "Apontar fim"
 
 msgid "Clock Out"
 msgstr "Apontar fim"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "Apontado"
 
 msgid "Clocked in since <0/>"
 msgstr "Registrado desde <0/>"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Cliente"
 
 msgid "Dark"
-msgstr ""
+msgstr "Escuro"
 
 msgid "Date"
 msgstr "Data"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "Vamos construir algo"
 
 msgid "Light"
-msgstr ""
+msgstr "Claro"
 
 msgid "lines"
 msgstr "linhas"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "Definir apontar fim"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "Defina a hora que você parou de trabalhar ou reconheça que ainda está trabalhando."
 
 msgid "Set up in Carbon"
 msgstr "Configurar no Carbon"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "Trocar Operador"
 
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 msgid "Tag"
 msgstr "Etiqueta"

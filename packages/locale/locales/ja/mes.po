@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "ユニットを割り当てる"
 
 msgid "Appearance"
-msgstr ""
+msgstr "外観"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "作業開始"
 
 msgid "Clock out"
-msgstr ""
+msgstr "作業終了"
 
 msgid "Clock Out"
 msgstr "作業終了"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "勤務中"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "得意先"
 
 msgid "Dark"
-msgstr ""
+msgstr "ダーク"
 
 msgid "Date"
 msgstr "日付"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
 
 msgid "Light"
-msgstr ""
+msgstr "ライト"
 
 msgid "lines"
 msgstr "行"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "作業終了を設定"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "作業を終了した時刻を設定するか、まだ作業中であることを確認してください。"
 
 msgid "Set up in Carbon"
 msgstr "Carbonで設定"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "作業者を切り替える"
 
 msgid "System"
-msgstr ""
+msgstr "システム"
 
 msgid "Tag"
 msgstr "タグ"

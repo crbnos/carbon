@@ -95,3 +95,8 @@
 
 ## Task 27
 - ESCAPE HATCH TRIGGERED: `path.to.api.stripeConnectCustomer` (`api+/stripe-connect.customer.$invoiceId.ts`) and `resolveStripeCustomer` resolve the billed customer from an invoice; there is no by-customer variant. The contract confirm modal does NOT link a Stripe customer. In Stripe mode it shows whether the billing customer is linked (`$id.confirm.tsx` loader, `getLinkedStripeCustomerId`); unlinked → warning + Confirm disabled; the server function refuses too. OPEN DECISION for Brad: build a by-customer Stripe link step.
+
+## Task 33 — i18n
+- `lingui:extract` → 219 new strings × 12 locales = 2628, filled via the translate skill (84 Haiku chunks). Merge: 2628 filled, 0 unmatched, remaining 0. `linguito check` exit 0. Glossary coverage 100% for all 12 locales.
+- `check-glossary.mjs`: 1560 enforced violations vs 1456 at HEAD (pre-existing failure); this run added 104 (≈4% of new strings), several apparently inflected forms the checker misses. Reported for review per the skill; repair is the consistency runbook, not a re-run.
+- Gates: lint 34/34; typecheck 10 packages; tests utils 577, database 338, server-functions 331, jobs 894, checks 260, documents 56, ee accounting 1028, erp sales/invoicing 256 — all pass. MCP manifest current; workflow catalog regenerated (commit bc50296243).

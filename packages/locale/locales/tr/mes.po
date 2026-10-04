@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Birimleri tahsis et"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Görünüm"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "İş başlangıcı"
 
 msgid "Clock out"
-msgstr ""
+msgstr "İş Bitişi"
 
 msgid "Clock Out"
 msgstr "İş bitişi"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "İş başında"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Müşteri"
 
 msgid "Dark"
-msgstr ""
+msgstr "Koyu"
 
 msgid "Date"
 msgstr "Tarih"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
 
 msgid "Light"
-msgstr ""
+msgstr "Açık"
 
 msgid "lines"
 msgstr "satırlar"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "İş bitişini ayarla"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "Çalışmayı durdurduğunuz saati ayarlayın veya hala çalışmakta olduğunuzu onaylayın."
 
 msgid "Set up in Carbon"
 msgstr "Carbon'da ayarla"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "Operatörü Değiştir"
 
 msgid "System"
-msgstr ""
+msgstr "Sistem"
 
 msgid "Tag"
 msgstr "Etiket"
