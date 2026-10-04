@@ -207,6 +207,7 @@ to a route action. A `fetcher.load` of a page route stays on `useFetcher`.
 | Tables with a trigger (user, 2026-10-04) | Only tables that a route or a live list declares | A table that no page watches gets no write overhead and stores no messages. |
 | Page coverage (user, 2026-10-04) | Operational pages in the ERP, all of the MES, and the cached reference lists | Settings and admin pages change rarely. They reload on navigation as today. |
 | Reference lists | One shared topic, `company:<companyId>:reference` | One channel for each client covers every reference table. A topic for each table would hold about 30 channels open for the whole session. |
+| Policies on `realtime.messages` (user, 2026-10-04) | The authz manifest, entry `"realtime.messages"` | One system owns every policy. A hand-written migration would bypass `authz sync` and the migration check. |
 | Source of truth for the table list | `REALTIME_TABLES` constant in `@carbon/database` | The migration, the route declarations and the check all read one list. |
 | Missed-declaration guard | New `realtime-table-has-trigger` check in `@carbon/checks` | `postgres_changes` fails silently for an unpublished table. The check makes that a build failure. |
 | Publication (user, 2026-10-04) | Drop the moved tables from `supabase_realtime` in this PR | A tab on the old build goes quiet until a reload. It shows no error. |
@@ -274,8 +275,8 @@ BEGIN
   RETURN NULL;
 END $$;
 
--- 2. Who can join a company topic
-CREATE POLICY "Employees receive their company's broadcasts"
+-- 2. Who can join a company topic (authored in authz/manifest.ts, not in a migration)
+CREATE POLICY "company topic"
 ON realtime.messages FOR SELECT TO authenticated
 USING (
   split_part(realtime.topic(), ':', 1) = 'company'
@@ -284,7 +285,7 @@ USING (
   )
 );
 
-CREATE POLICY "Users receive their own broadcasts"
+CREATE POLICY "user topic"
 ON realtime.messages FOR SELECT TO authenticated
 USING (
   split_part(realtime.topic(), ':', 1) = 'user'
@@ -340,7 +341,9 @@ Rules for the migration:
 - The people list reads the `employees` view. A change to `user.name` sends no
   message, as today. The checksum catches it on the next load or reconnect.
 - The 3 broadcast functions are managed files under `packages/database/src/event-system/functions/`. They ship through `authz migration`, not a hand-written migration.
-- The 2 policies on `realtime.messages` go in a hand-written migration. The authz manifest covers `public` tables only.
+- The authz manifest owns the 2 policies on `realtime.messages`. The manifest key is `"realtime.messages"`, built with `external()`.
+- `authz sync`, `authz migration` and the `no-authz-ddl-in-migrations` check read the schema from the key. A key with no dot is a `public` table.
+- Supabase owns the RLS switch of `realtime.messages`. The sync fails if the switch is off. The sync never changes it.
 - Run `pnpm run generate:types` after the migration, before the typecheck.
 
 ## API / Service Changes
@@ -446,3 +449,4 @@ existing subscriptions only.
 - 2026-10-04: Created. All nine questions were answered by the user before writing.
 - 2026-10-04: Notifications and the implementation hub move to broadcast. The publication ends empty.
 - 2026-10-04: Planning found that the broadcast functions are managed event-system files. `@carbon/react` gains `@tanstack/react-query`.
+- 2026-10-04: The authz manifest owns the `realtime.messages` policies (user decision). The authz system now handles one table outside `public`.

@@ -116,6 +116,26 @@ describe("unshipped: production gets every rule and helper through a migration",
     expect(result.tables).toContain("note");
   });
 
+  test("a table outside public ships its policies without touching its RLS switch", async () => {
+    const only = {
+      "realtime.messages": manifest["realtime.messages"]
+    } as Manifest;
+    const sql = await renderMigration(only, [], ["realtime.messages"]);
+    expect(sql).toContain(`ON "realtime"."messages"`);
+    expect(sql).toContain("schemaname = 'realtime' AND tablename = 'messages'");
+    expect(sql).not.toContain("ENABLE ROW LEVEL SECURITY");
+
+    const shipped = migrations({ "20270101000001_realtime.sql": sql });
+    expect(await unshipped(only, [], shipped)).toEqual({
+      tables: [],
+      helpers: [],
+      problems: []
+    });
+    expect((await unshipped(only, [], migrations({}))).tables).toEqual([
+      "realtime.messages"
+    ]);
+  });
+
   test("a retired helper is accepted only in the migration that last shipped it", async () => {
     const securityFixes = "20260927172338_authz-security-fixes.sql";
     const dir = migrations({

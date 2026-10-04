@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md" />
-<meta name="explain-source-hash" content="74053763bf8d650ca5f7eb5f88f4122301e9b731" />
+<meta name="explain-source-hash" content="ff81b21730ea7dac33cde274a3edc045374ea518" />
 <title>Client cache and realtime</title>
 <style>
   :root {
@@ -266,6 +266,7 @@
       <li><code>implementationHub</code> has no <code>companyId</code> column. The function reads the company from <code>id</code> for this table.</li>
       <li><code>itemLedger</code> keeps its existing handler, <code>apply_item_stock_quantities</code>, beside the new one.</li>
       <li>The 3 broadcast functions are managed files. They ship through <code>authz migration</code>.</li>
+      <li>The authz manifest owns the 2 policies on <code>realtime.messages</code>, under the key <code>"realtime.messages"</code>.</li>
       <li>The migration drops each moved table from the <code>supabase_realtime</code> publication.</li>
     </ul>
   </section>

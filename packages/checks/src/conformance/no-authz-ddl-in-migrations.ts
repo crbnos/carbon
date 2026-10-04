@@ -54,7 +54,9 @@ export const GENERATED_AUTHZ_MIGRATION =
 // Group 2 is the schema when the statement names one, group 3 the function.
 const NAME = String.raw`(?:"?(\w+)"?\s*\.\s*)?"?(\w+)"?`;
 // The target may be on a later line; group 2 is its schema, when it names one. The manifest
-// owns public tables only, so storage.objects (bucket) policies stay in migrations.
+// owns public tables and realtime.messages (broadcast authorization); storage.objects
+// (bucket) policies stay in migrations.
+const MANIFEST_SCHEMAS = new Set(["public", "realtime"]);
 const POLICY_DDL =
   /\b(?:CREATE|ALTER)\s+POLICY\s+(?:"[^"]*"|\S+)\s+ON\s+(?:"?(\w+)"?\s*\.\s*)?"?\w+"?/gi;
 const FUNCTION_DDL = new RegExp(
@@ -96,7 +98,7 @@ export const noAuthzDdlInMigrations = (
     const line = (index: number) => sql.slice(0, index).split("\n").length;
     const violations: Violation[] = [];
     for (const m of sql.matchAll(POLICY_DDL)) {
-      if ((m[1] ?? "public").toLowerCase() !== "public") continue;
+      if (!MANIFEST_SCHEMAS.has((m[1] ?? "public").toLowerCase())) continue;
       violations.push({
         file,
         line: line(m.index),

@@ -7,7 +7,7 @@
 ## Progress
 - [ ] Task 1: Install dependencies and prove broadcast on the local stack
 - [x] Task 2: Add the realtime table lists
-- [ ] Task 3: Add the three broadcast functions
+- [x] Task 3: Add the three broadcast functions and the `realtime.messages` policies (authz manifest)
 - [ ] Task 4: Write the attach migration
 - [ ] Task 5: Apply the migrations and regenerate types
 - [ ] Task 6: Add the database tests
@@ -104,7 +104,7 @@ pnpm --filter @carbon/database exec vitest run src/realtime-tables.test.ts
 
 ---
 
-## Task 3: Add the three broadcast functions
+## Task 3: Add the three broadcast functions and the `realtime.messages` policies
 
 **Depends on:** Task 2
 **Files:**
@@ -112,6 +112,8 @@ pnpm --filter @carbon/database exec vitest run src/realtime-tables.test.ts
 - Create: `packages/database/src/event-system/functions/broadcast_user_changes.sql`
 - Create: `packages/database/src/event-system/functions/broadcast_reference_changes.sql`
 - Modify: `packages/database/src/event-dispatch.test.ts` — check the ignored-column list in the 3 new files
+- Modify: `packages/database/src/authz/rules.ts`, `sync.ts`, `migration.ts`, `manifest.ts` — the manifest owns `"realtime.messages"`
+- Modify: `packages/checks/src/conformance/no-authz-ddl-in-migrations.ts` — flag a policy on the `realtime` schema
 - Copy from (precedent): `packages/database/src/event-system/functions/dispatch_event_batch.sql`
 
 **Steps:**
@@ -121,9 +123,13 @@ pnpm --filter @carbon/database exec vitest run src/realtime-tables.test.ts
 4. Write `broadcast_reference_changes.sql`. Use the same body. Send `{ table, op }` to `'company:' || company_id || ':reference'`.
 5. In each file, declare `ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];` on one line.
 6. In `event-dispatch.test.ts`, run the existing constant check for each of the 4 files in a loop.
-7. Run `pnpm --filter @carbon/database authz sync` to create the functions in the local database.
-8. Run `pnpm --filter @carbon/database authz migration realtime-broadcast-functions`.
-9. Do not edit the generated migration.
+7. Add `locate(key)` and `external()` to `rules.ts`. A key with a dot names `<schema>.<table>`.
+8. Add the `"realtime.messages"` entry with the 2 policies to `manifest.ts`.
+9. Make `sync.ts` and `migration.ts` read the schema from the key. Keep the `public` output byte for byte.
+10. Run `pnpm --filter @carbon/database authz migration realtime-broadcast`.
+11. If the timestamp is older than the newest migration on `main`, rename the file to a later timestamp.
+12. Do not edit the content of the generated migration.
+13. When the local stack runs, run `pnpm --filter @carbon/database authz sync` and the `sync.test.ts` file.
 
 **Verify:**
 ```bash
@@ -145,7 +151,7 @@ pnpm --filter @carbon/database exec vitest run src/event-dispatch.test.ts src/au
 **Steps:**
 1. Run `pnpm db:migrate:new realtime-broadcast-attach`.
 2. Confirm that its timestamp is later than the generated migration of Task 3.
-3. Add `DROP POLICY IF EXISTS` then `CREATE POLICY` for the 2 policies on `realtime.messages` from the spec.
+3. Write no policy in this file. The generated migration of Task 3 ships the 2 policies.
 4. Add one `SELECT attach_statement_handler('<table>', ARRAY['broadcast_table_changes']);` line for each name in `REALTIME_TABLES`, except `itemLedger`.
 5. For `itemLedger`, pass `ARRAY['apply_item_stock_quantities', 'broadcast_table_changes']`.
 6. Add one line with `ARRAY['broadcast_reference_changes']` for each name in `REALTIME_REFERENCE_TABLES`.
@@ -165,7 +171,7 @@ pnpm --filter @carbon/checks exec vitest run src/conformance/no-authz-ddl-in-mig
 # Expected: passed
 ```
 
-**Out of scope:** a policy on a `public` table. If `no-authz-ddl-in-migrations` rejects the `realtime.messages` policies, STOP and report.
+**Out of scope:** any `CREATE POLICY`. The check rejects a policy on `public` or `realtime` in a hand-written migration.
 
 ---
 

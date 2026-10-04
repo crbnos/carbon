@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "libpg-query";
 import { type Helper, helperKey, RETIRED_HELPERS } from "./helpers";
-import { type AnyRule, type Manifest, render } from "./rules";
+import { type AnyRule, locate, type Manifest, render } from "./rules";
 import { assertOnlyPolicies } from "./sync";
 
 /**
@@ -43,13 +43,17 @@ const ident = (s: string) => `"${s.replaceAll('"', '""')}"`;
 export const hash = (sql: string) =>
   createHash("sha256").update(sql).digest("hex").slice(0, 16);
 
-const dropAllPolicies = (table: string) =>
+// The public form is kept byte for byte: `readShipped` compares it with the text
+// of every generated migration already in the repository.
+const dropAllPolicies = (table: string, schema = "public") =>
   [
     "DO $authz$",
     "DECLARE p record;",
     "BEGIN",
-    `  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = ${literal(table)} LOOP`,
-    `    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, ${literal(table)});`,
+    `  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = ${literal(schema)} AND tablename = ${literal(table)} LOOP`,
+    schema === "public"
+      ? `    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, ${literal(table)});`
+      : `    EXECUTE format('DROP POLICY %I ON %I.%I', p.policyname, ${literal(schema)}, ${literal(table)});`,
     "  END LOOP;",
     "END",
     "$authz$;"
@@ -73,17 +77,20 @@ export async function renderMigration(
 
   for (const helper of helpers) parts.push(helper.sql.trim());
 
-  for (const table of tables) {
-    const rule = (manifest as Record<string, AnyRule>)[table];
+  for (const key of tables) {
+    const rule = (manifest as Record<string, AnyRule>)[key];
     if (!rule)
-      throw new Error(`authz migration: no rule for "${table}" in manifest.ts`);
-    const sql = render(rule, table);
-    if (sql) await assertOnlyPolicies(sql, "public", table);
+      throw new Error(`authz migration: no rule for "${key}" in manifest.ts`);
+    const { schema, table } = locate(key);
+    const sql = render(rule, table, schema);
+    if (sql) await assertOnlyPolicies(sql, schema, table);
     parts.push(
       [
-        `-- ${table}`,
-        dropAllPolicies(table),
-        `ALTER TABLE public.${ident(table)} ENABLE ROW LEVEL SECURITY;`,
+        `-- ${key}`,
+        dropAllPolicies(table, schema),
+        // An external table's RLS switch belongs to its owner.
+        schema === "public" &&
+          `ALTER TABLE public.${ident(table)} ENABLE ROW LEVEL SECURITY;`,
         sql
       ]
         .filter(Boolean)
@@ -136,7 +143,9 @@ async function readShipped(dir: string, managed: Set<string>) {
   for (const file of files) {
     const sql = readFileSync(path.join(dir, file), "utf8");
     if (!sql.startsWith(GENERATED_HEADER)) continue;
+    // The manifest key of the block being read, and where that table lives.
     let table: string | undefined;
+    let at = { schema: "public", table: "" };
     for (const { node, text } of await statements(sql)) {
       const fn = node.CreateFunctionStmt;
       const alter = node.AlterTableStmt;
@@ -150,18 +159,35 @@ async function readShipped(dir: string, managed: Set<string>) {
         }
         if (RETIRED_HELPERS[key] === file) continue;
       } else if (node.DoStmt) {
-        table = /tablename = '((?:[^']|'')+)'/
-          .exec(text)?.[1]
-          ?.replaceAll("''", "'");
+        const named =
+          /schemaname = '((?:[^']|'')+)' AND tablename = '((?:[^']|'')+)'/.exec(
+            text
+          );
+        table = undefined;
+        if (named) {
+          at = {
+            schema: (named[1] as string).replaceAll("''", "'"),
+            table: (named[2] as string).replaceAll("''", "'")
+          };
+          table =
+            at.schema === "public" ? at.table : `${at.schema}.${at.table}`;
+        }
         if (
           table &&
-          text === (await statements(dropAllPolicies(table)))[0]?.text
-        )
+          text ===
+            (await statements(dropAllPolicies(at.table, at.schema)))[0]?.text
+        ) {
+          // No ENABLE ROW LEVEL SECURITY follows for an external table, so
+          // its block opens here.
+          if (at.schema !== "public")
+            shipped.tables.set(table, { file, policies: [] });
           continue;
+        }
       } else if (alter) {
         const cmds = alter.cmds ?? [];
         if (
           table &&
+          at.schema === "public" &&
           alter.relation?.schemaname === "public" &&
           alter.relation?.relname === table &&
           cmds.length === 1 &&
@@ -172,8 +198,8 @@ async function readShipped(dir: string, managed: Set<string>) {
         }
       } else if (
         table &&
-        policy?.schemaname === "public" &&
-        policy?.relname === table &&
+        policy?.schemaname === at.schema &&
+        policy?.relname === at.table &&
         shipped.tables.get(table)?.file === file
       ) {
         shipped.tables.get(table)?.policies.push(text);
@@ -211,7 +237,8 @@ export async function unshipped(
   };
 
   for (const [table, rule] of Object.entries(manifest) as [string, AnyRule][]) {
-    const sql = render(rule, table);
+    const at = locate(table);
+    const sql = render(rule, at.table, at.schema);
     const got = shipped.tables.get(table);
     const same = got
       ? JSON.stringify(got.policies) ===

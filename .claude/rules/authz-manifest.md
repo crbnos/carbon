@@ -16,7 +16,16 @@ Every RLS policy on a `public` table, and the 16 RLS/auth helper functions, are 
 (`no-authz-ddl-in-migrations` in `@carbon/checks` fails them, from `20260927000000` on).
 `storage.objects` (bucket) policies are not in the manifest and stay in migrations.
 
-The same machinery owns the event system's 37 functions — see
+One table outside `public` is in the manifest: **`realtime.messages`**, the policies that
+decide who may join a private Realtime broadcast topic (`company:<companyId>:<table>`,
+`user:<userId>:<table>`). Its key is `"realtime.messages"` and its rule is built with
+`external()`. A key with a dot is `<schema>.<table>` (`locate()` in `rules.ts`); sync, the
+migration generator and `no-authz-ddl-in-migrations` all read the schema from it. Supabase
+owns that table and its RLS switch, so sync and the generated migration never run
+`ENABLE ROW LEVEL SECURITY` on it — sync fails instead if the switch is off. To add another
+external table, extend `ExternalTable` in `rules.ts` and `MANIFEST_SCHEMAS` in the check.
+
+The same machinery owns the event system's 40 functions — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -76,8 +85,8 @@ or `baseline.json` by hand.
 ## Event-system functions
 
 `packages/database/src/event-system/functions/` holds one file per function for dispatch,
-subscriptions, the queue wake-up, the audit log, the search index and embeddings (37:
-31 in `public`, 6 in `util`). They are loaded, synced, shipped and guarded exactly like the
+subscriptions, the queue wake-up, the audit log, the search index, embeddings and the
+realtime broadcast triggers (40: 34 in `public`, 6 in `util`). They are loaded, synced, shipped and guarded exactly like the
 RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries its `schema`.
 
 - **File name is the function**: `dispatch_event_batch.sql` defines

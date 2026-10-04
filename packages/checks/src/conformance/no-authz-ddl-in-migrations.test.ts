@@ -52,6 +52,11 @@ CREATE POLICY "x" ON "storage"."objects" FOR INSERT WITH CHECK (true);`;
     expect(check.scan(NEW, sql)).toEqual([]);
   });
 
+  it("flags a policy on realtime.messages (broadcast authorization is in the manifest)", () => {
+    const sql = `CREATE POLICY "company topic" ON realtime.messages FOR SELECT USING (true);`;
+    expect(check.scan(NEW, sql)).toHaveLength(1);
+  });
+
   it("allows DROP POLICY (needed before dropping a column a policy uses)", () => {
     expect(
       check.scan(NEW, `DROP POLICY "SELECT" ON "public"."widget";`)
