@@ -303,6 +303,7 @@ impl JobStore {
     }
 
     pub async fn set_error(&self, id: &str, code: &str, message: String) {
+        crate::telemetry::record_error(code, &message);
         if let Some(mut rec) = self.read(id).await {
             if rec.status == "canceled" {
                 return;

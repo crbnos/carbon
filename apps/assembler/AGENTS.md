@@ -101,6 +101,41 @@ a constant or derived in `config.rs` (max parts 5000, shutdown grace 600 s, job
 and result TTLs 24 h, pending TTL 5 min, long-poll cap 25 s) — deliberately not
 env-tunable.
 
+## Tracing
+
+`src/telemetry.rs` — OpenTelemetry traces over OTLP/HTTP, off unless
+`OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) is set.
+It reads the same variables as the Node apps (`packages/logger`):
+`OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_SERVICE_NAME`
+(default `assembler`), `OTEL_TRACES_SAMPLER[_ARG]`. Traces only — no metrics or
+logs; `eprintln!` stays the log.
+
+One trace per job: the caller's `traceparent` → the request span
+(`POST /v1/convert`, named by matched route; `/health` has none) → `job <action>`
+→ `download source` / `compute` / `upload artifact` / `callback`.
+
+- **A job is spawned with `telemetry::spawn_job`, never bare `tokio::spawn`.**
+  The job outlives its request, so the span context has to travel with the task;
+  a bare spawn starts a job whose spans belong to no trace.
+- **Across the Lambda self-invoke the parent rides in the run-job spec**
+  (`traceparent`, written by `telemetry::inject` in `lambda_dispatch`, restored
+  by `telemetry::attach` in `run::spawn_from_spec`). A spec built anywhere else
+  can carry the same key.
+- **Outbound requests go through `http::{download_hashed, upload, post_json}`**,
+  which record the host only. The URLs are signed, and error text that quotes
+  one is reduced to its origin before it is put on a span (`without_urls`).
+- **Export uses the reqwest already in the binary** (`ExportClient`), not the
+  exporter's bundled client: that one is reqwest 0.13 and brings a second TLS
+  stack (aws-lc) beside ours (ring).
+- **On Lambda every request flushes before it responds** — the process freezes
+  once the response is sent. That adds one export round trip to each response
+  there; ECS and local runs export on the batch timer.
+- **Every exit path calls `telemetry::shutdown()`** — `process::exit` runs no
+  destructors, so a path that skips it drops the last batch.
+
+`apps/assembler/sst.config.ts` forwards the `OTEL_*` variables that are set at
+deploy time; `ci/src/assembler.ts` does not set any yet.
+
 ## Completion & lifecycle
 
 Every action is an async job: POST returns 202 and the job runs in a background

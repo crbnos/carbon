@@ -7,7 +7,7 @@
 //! late-mint uploaded (a `planPath` was given) or returned inline in the result.
 
 use crate::jobs::{opts_hash, Done, Output};
-use crate::{admission, config, http, AppState};
+use crate::{admission, config, http, telemetry, AppState};
 use planner::steps::PlanUnit;
 use serde_json::{json, Value};
 use std::time::Instant;
@@ -27,7 +27,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
+    telemetry::spawn_job(&job_id.clone(), "plan", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -72,7 +72,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
             .acquire(admission::plan_estimate_mb(source_bytes, None))
             .await;
         let runtime = tokio::runtime::Handle::current();
-        let res = tokio::task::spawn_blocking(move || {
+        let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
             let grant = std::sync::Mutex::new(grant);
             planner::steps::plan_step_observed(
                 &tmp_str,
@@ -90,7 +90,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: PlanReq) {
                     runtime.block_on(grant.resize(estimate));
                 },
             )
-        })
+        }))
         .await;
         let _ = tokio::fs::remove_file(&tmp).await;
 
