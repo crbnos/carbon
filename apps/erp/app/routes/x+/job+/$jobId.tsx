@@ -76,7 +76,20 @@ export const handle: Handle = {
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
   ),
-  module: "production"
+  module: "production",
+  // Everything the job's pages show: an operation finished on the shop floor,
+  // a pick, a step record — all reach this page without a reload.
+  realtime: [
+    "job",
+    "jobOperation",
+    "jobMaterial",
+    "jobMakeMethod",
+    "jobOperationStep",
+    "jobOperationStepRecord",
+    "productionEvent",
+    "pickingListLine",
+    "modelUpload"
+  ]
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>

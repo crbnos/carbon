@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
-import { createInvalidationMiddleware } from "./invalidate.client";
+import { createInvalidationMiddleware } from "./invalidation";
 
 const run = async (method: string, url: string) => {
   const invalidateQueries = vi.fn();

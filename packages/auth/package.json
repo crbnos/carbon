@@ -29,7 +29,7 @@
     "./middleware/form-body.server": "./src/middleware/form-body.server.ts",
     "./middleware/security.server": "./src/middleware/security.server.ts",
     "./middleware/flash.client": "./src/middleware/flash.client.ts",
-    "./middleware/invalidate.client": "./src/middleware/invalidate.client.ts"
+    "./middleware/invalidation": "./src/middleware/invalidation.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { LOADER_QUERY_KEY } from "@carbon/auth/middleware/invalidate.client";
+import { LOADER_QUERY_KEY } from "@carbon/auth/middleware/invalidation";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ClientLoaderFunctionArgs } from "react-router";
 
