@@ -8,7 +8,7 @@
 - [ ] Task 1: Install dependencies and prove broadcast on the local stack
 - [x] Task 2: Add the realtime table lists
 - [x] Task 3: Add the three broadcast functions and the `realtime.messages` policies (authz manifest)
-- [ ] Task 4: Write the attach migration
+- [x] Task 4: Write the attach migration
 - [ ] Task 5: Apply the migrations and regenerate types
 - [ ] Task 6: Add the database tests
 - [ ] Task 7: Add the `realtime-table-has-trigger` check
