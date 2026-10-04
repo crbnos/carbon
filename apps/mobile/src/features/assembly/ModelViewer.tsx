@@ -400,14 +400,20 @@ function LoadedScene({
       transformManager.openLocalTransformTransaction();
       for (const { entity, seated } of moving) {
         // A threaded fastener turns about its own axis as it backs out, and
-        // that axis passes through `origin` rather than the part's own
-        // centre — so the rotation is sandwiched between a move to the
-        // origin and back.
+        // that axis passes through `origin` rather than the part's centre, so
+        // the rotation is sandwiched between a move to the origin and back.
+        //
+        // Filament's `Mat4` methods PRE-multiply — `m.translate(v)` is
+        // `T(v) · m`, verified on device — so the calls read in the opposite
+        // order to the matrices they build. Moving to the origin first means
+        // calling `.translate(-origin)` FIRST, which lands leftmost-last.
+        // Written the intuitive way round it pivots about `-origin`, which on
+        // this engine is a metre out and still animates, just wrongly.
         const posed = spin
           ? seated
-              .translate(spin.origin)
-              .rotate(spin.radians, spin.axis)
               .translate([-spin.origin[0], -spin.origin[1], -spin.origin[2]])
+              .rotate(spin.radians, spin.axis)
+              .translate(spin.origin)
               .translate(offset)
           : seated.translate(offset);
         transformManager.setTransform(entity, t >= 1 ? seated : posed);

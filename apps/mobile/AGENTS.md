@@ -261,6 +261,14 @@ again.
   the second. Cleanups are also skipped on unmount via an `alive` ref: there
   is nothing to restore, and the asset is already released, so touching it
   throws "Pointer FilamentAssetWrapper has already been manually released".
+- **Filament's `Mat4` methods PRE-multiply.** `m.translate(v)` is `T(v) · m`,
+  not `m · T(v)` — verified on device, and the docblock ("multiplying the
+  provided matrix with this matrix") is ambiguous enough to read either way.
+  So a chain reads in the OPPOSITE order to the matrices it builds: to rotate
+  about a point, call `.translate(-origin)` FIRST. Written the intuitive way
+  round it pivots about `-origin` and still animates, just wrongly — proven
+  by applying the composed matrix to the pivot, which a correct one leaves
+  exactly where it was and the inverted one moved 280 units.
 - **No step in the demo data animates, and web does not animate it either.**
   Every authored motion is `none`, and the fallback refuses to fabricate a
   path through a mate. Motion appears with planner-baked instructions.
