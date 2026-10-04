@@ -5750,7 +5750,7 @@ msgid "Credited on <0>{0}</0>"
 msgstr "Creditado em <0>{0}</0>"
 
 msgid "Crediting needs permission to create invoices."
-msgstr ""
+msgstr "Crédito necessita de permissão para criar faturas."
 
 msgid "Credits"
 msgstr "Créditos"
@@ -12911,7 +12911,7 @@ msgid "No eligible operations"
 msgstr "Nenhuma operação elegível"
 
 msgid "No email address for this customer"
-msgstr ""
+msgstr "Sem endereço de e-mail para este cliente"
 
 msgid "No employees assigned this week"
 msgstr "Nenhum funcionário atribuído esta semana"
@@ -19078,10 +19078,10 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe envia a fatura por email para o cliente, portanto um endereço é necessário. Isso também será salvo no contato no Carbon."
 
 msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
-msgstr ""
+msgstr "Stripe envia as faturas por e-mail para o cliente, portanto um endereço é necessário. Também é salvo no contato de fatura do contrato no Carbon, se houver um."
 
 msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
-msgstr ""
+msgstr "Stripe não tem um cliente para este cliente do Carbon ainda. Confirmar criará um em sua conta conectada."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe ainda não tem um cliente para este cliente do Carbon. A Contabilização criará um na sua conta conectada."
@@ -19881,7 +19881,7 @@ msgid "The contract ends on the end date and does not renew. Planned invoices af
 msgstr "O contrato termina na data de término e não é renovado. As faturas planejadas após ele são removidas."
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "As faturas do contrato serão faturadas para o cliente do Stripe já vinculado a este cliente do Carbon. Para alterar seus detalhes, edite no painel do Stripe."
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "A disponibilidade semanal esperada do terceirizado; o agendamento usa isso como o limite superior ao atribuir este terceirizado a operações ao longo da semana."
@@ -22797,7 +22797,7 @@ msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Quando receitas diferidas, acumuladas e de juros de arrendamento forem reconhecidas"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
-msgstr ""
+msgstr "Quando cada período de faturamento de um acordo de aluguel ou contrato vence para faturamento: Adiantado no seu primeiro dia, antes do período ser usado, ou Atrasado no seu último dia, após ser ganho."
 
 msgid "When expired stock is used"
 msgstr "Quando o estoque vencido é usado"

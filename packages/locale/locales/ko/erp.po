@@ -5750,7 +5750,7 @@ msgid "Credited on <0>{0}</0>"
 msgstr "크레딧으로 적용됨 <0>{0}</0>"
 
 msgid "Crediting needs permission to create invoices."
-msgstr ""
+msgstr "송장 생성을 위해서는 권한이 필요합니다."
 
 msgid "Credits"
 msgstr "대변"
@@ -12911,7 +12911,7 @@ msgid "No eligible operations"
 msgstr "적격 공정이 없습니다"
 
 msgid "No email address for this customer"
-msgstr ""
+msgstr "이 고객의 이메일 주소가 없습니다."
 
 msgid "No employees assigned this week"
 msgstr "이번 주에 배치된 직원이 없습니다"
@@ -19078,10 +19078,10 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe가 고객에게 송장을 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 연락처에 저장됩니다."
 
 msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
-msgstr ""
+msgstr "Stripe는 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 또한 있는 경우 Carbon의 계약 송장 담당자로 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
-msgstr ""
+msgstr "Stripe에는 아직 이 Carbon 고객을 위한 고객이 없습니다. 확인하면 연결된 계정에서 고객이 생성됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
@@ -19881,7 +19881,7 @@ msgid "The contract ends on the end date and does not renew. Planned invoices af
 msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이후의 계획된 송장은 제거됩니다."
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "계약의 송장은 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하세요."
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동안의 공정에 할당할 때 스케줄링이 이를 상한선으로 사용합니다."
@@ -22797,7 +22797,7 @@ msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
-msgstr ""
+msgstr "임차료 계약 또는 계약의 각 청구 기간이 송장 발급 시 도래할 때: 기간이 사용되기 전 첫 날에 선급하거나, 이익이 발생한 후 마지막 날에 후급합니다."
 
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"

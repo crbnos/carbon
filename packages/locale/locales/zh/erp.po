@@ -5750,7 +5750,7 @@ msgid "Credited on <0>{0}</0>"
 msgstr "于 <0>{0}</0> 贷记"
 
 msgid "Crediting needs permission to create invoices."
-msgstr ""
+msgstr "贷项需要创建发票的权限。"
 
 msgid "Credits"
 msgstr "贷方"
@@ -12911,7 +12911,7 @@ msgid "No eligible operations"
 msgstr "没有符合条件的操作"
 
 msgid "No email address for this customer"
-msgstr ""
+msgstr "此客户没有电子邮件地址"
 
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
@@ -19078,10 +19078,10 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe 将发票通过电子邮件发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
-msgstr ""
+msgstr "Stripe将发票通过电子邮件发送给客户，因此需要地址。如果合同有发票联系人，它也会保存到Carbon中。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
-msgstr ""
+msgstr "Stripe还没有为此Carbon客户创建对应的客户。确认将在您连接的帐户上创建一个。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
@@ -19881,7 +19881,7 @@ msgid "The contract ends on the end date and does not renew. Planned invoices af
 msgstr "合同在期末日期结束，不会续期。之后的已计划发票将被移除。"
 
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "合同的发票将计费给已与此Carbon客户关联的Stripe客户。要更改其详细信息，请在Stripe仪表板中编辑。"
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "外协人员的预期每周可用性；排程在整周将此外协人员分配给工序时使用此作为上限。"
@@ -22797,7 +22797,7 @@ msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "当递延收入、应计收入和租赁利息收入被确认时"
 
 msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
-msgstr ""
+msgstr "当租赁协议或合同的每个计费期到期开票时：可选择在第一天（期间使用前）的提前开票方式，或在最后一天（期间应得后）的后付开票方式。"
 
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"
