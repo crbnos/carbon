@@ -576,9 +576,26 @@ export const path = {
       generatePath(`${x}/consumable/${id}/suppliers`),
     consumables: `${x}/items/consumables`,
     contact: `${x}/people/contact`,
+    contract: (id: string) => generatePath(`${x}/contract/${id}`),
+    contractAmend: (id: string) => generatePath(`${x}/contract/${id}/amend`),
+    contractCancel: (id: string) => generatePath(`${x}/contract/${id}/cancel`),
+    contractConfirm: (id: string) =>
+      generatePath(`${x}/contract/${id}/confirm`),
+    contractDetails: (id: string) =>
+      generatePath(`${x}/contract/${id}/details`),
+    contractInvoice: (id: string) =>
+      generatePath(`${x}/contract/${id}/invoice`),
+    contractLine: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/details`),
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
+    contractRevertCancellation: (id: string) =>
+      generatePath(`${x}/contract/${id}/revert-cancellation`),
+    contractSchedule: (id: string) =>
+      generatePath(`${x}/contract/${id}/schedule`),
+    contracts: `${x}/sales/contracts`,
+    contractUpdate: `${x}/contract/update`,
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert`),
     convertSupplierQuoteToOrder: (id: string) =>
@@ -699,6 +716,9 @@ export const path = {
       generatePath(`${x}/part/${itemId}/rule/delete/${field}`),
     deleteConsumableSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/consumable/${itemId}/purchasing/${id}/delete`),
+    deleteContract: (id: string) => generatePath(`${x}/contract/${id}/delete`),
+    deleteContractLine: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/delete`),
     deleteContractor: (id: string) =>
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCostCenter: (id: string) =>
@@ -1590,6 +1610,9 @@ export const path = {
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing/new`),
+    newContract: `${x}/contract/new`,
+    newContractLine: (id: string) =>
+      generatePath(`${x}/contract/${id}/lines/new`),
     newContractor: `${x}/resources/contractors/new`,
     newCostCenter: `${x}/accounting/cost-centers/new`,
     newCustomer: `${x}/customer/new`,
@@ -2174,6 +2197,8 @@ export const path = {
       generatePath(`${x}/sales-order/${id}/cancel-preview`),
     salesOrderConfirm: (id: string) =>
       generatePath(`${x}/sales-order/${id}/confirm`),
+    salesOrderContract: (orderId: string) =>
+      generatePath(`${x}/sales-order/${orderId}/contract`),
     salesOrderDetails: (id: string) =>
       generatePath(`${x}/sales-order/${id}/details`),
     salesOrderExchangeRate: (id: string) =>

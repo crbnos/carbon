@@ -347,6 +347,9 @@ msgstr "{days}天"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送它。您保存的选择将被保留，以防情况发生变化。"
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -4619,6 +4622,9 @@ msgstr "连接 Linear 问题"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "先在设置 → 集成中连接 Slack。"
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运行。"
 
@@ -4741,6 +4747,9 @@ msgstr "外协人员"
 
 msgid "Contractors"
 msgstr "外协人员"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "通过修订版/ECO控制设计变更"
@@ -6730,6 +6739,9 @@ msgstr "停产日期"
 
 msgid "Discount"
 msgstr "折扣"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "折扣天数"
@@ -14462,6 +14474,9 @@ msgstr "过账日期"
 
 msgid "Posting Date"
 msgstr "过账日期"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "潜在数据丢失"

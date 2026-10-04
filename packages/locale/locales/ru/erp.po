@@ -347,6 +347,9 @@ msgstr "{days}д"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} отправляет это в вашу бухгалтерскую книгу, поэтому Carbon не отправляет это. Ваш сохраненный выбор сохраняется на случай, если это изменится."
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -4619,6 +4622,9 @@ msgstr "Подключить Linear issue"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Сначала подключите Slack в разделе Настройки → Интеграции."
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Подключите обработчик Otherwise к узлу для запуска, когда ни одно условие не совпадает."
 
@@ -4741,6 +4747,9 @@ msgstr "Подрядчик"
 
 msgid "Contractors"
 msgstr "Подрядчики"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Управление изменениями конструкции с помощью ревизий и ECO"
@@ -6730,6 +6739,9 @@ msgstr "Дата снятия с производства"
 
 msgid "Discount"
 msgstr "Скидка"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "Дни скидки"
@@ -14462,6 +14474,9 @@ msgstr "Дата проведения"
 
 msgid "Posting Date"
 msgstr "Дата проведения"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "Потенциальная потеря данных"

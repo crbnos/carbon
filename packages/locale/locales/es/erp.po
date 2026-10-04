@@ -347,6 +347,9 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} publica esto en tu libro mayor, por lo que Carbon no lo envía. Tu opción guardada se mantiene en caso de que eso cambie."
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases completadas"
 
@@ -4619,6 +4622,9 @@ msgstr "Conectar problema de Linear"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Conecta Slack en Configuración → Integraciones primero."
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Conecta el manejador Otherwise a un nodo para ejecutarlo cuando ninguna condición coincida."
 
@@ -4741,6 +4747,9 @@ msgstr "Contratista"
 
 msgid "Contractors"
 msgstr "Contratistas"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controlar cambios de diseño con revisiones / ECOs"
@@ -6730,6 +6739,9 @@ msgstr "Fecha de Discontinuación"
 
 msgid "Discount"
 msgstr "Descuento"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "Días de Descuento"
@@ -14462,6 +14474,9 @@ msgstr "fecha de contabilización"
 
 msgid "Posting Date"
 msgstr "Fecha de contabilización"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "Pérdida potencial de datos"

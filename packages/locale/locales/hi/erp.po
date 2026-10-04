@@ -347,6 +347,9 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} यह आपके लेजर में पोस्ट करता है, इसलिए Carbon इसे पुश नहीं करता है। आपकी सहेजी गई पसंद को इस बात के मामले में रखा जाता है कि यह बदल जाए।"
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -4619,6 +4622,9 @@ msgstr "Linear समस्या से कनेक्ट करें"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "पहले सेटिंग्स → एकीकरण के तहत Slack कनेक्ट करें।"
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "कोई शर्त मेल नहीं खाने पर चलाने के लिए हैंडल को एक नोड से कनेक्ट करें।"
 
@@ -4741,6 +4747,9 @@ msgstr "ठेकेदार"
 
 msgid "Contractors"
 msgstr "ठेकेदार"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "रिवीजन / ECO के साथ डिज़ाइन परिवर्तनों को नियंत्रित करें"
@@ -6730,6 +6739,9 @@ msgstr "बंद करने की तारीख"
 
 msgid "Discount"
 msgstr "छूट"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "छूट दिन"
@@ -14462,6 +14474,9 @@ msgstr "पोस्टिंग तारीख"
 
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "संभावित डेटा हानि"

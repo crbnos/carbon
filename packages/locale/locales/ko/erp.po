@@ -347,6 +347,9 @@ msgstr "{days}일"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
@@ -4619,6 +4622,9 @@ msgstr "Linear 이슈 연결"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "설정 → 연동에서 먼저 Slack을 연결합니다."
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들을 연결합니다."
 
@@ -4741,6 +4747,9 @@ msgstr "외주 인력"
 
 msgid "Contractors"
 msgstr "외주 인력"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
@@ -6730,6 +6739,9 @@ msgstr "단종일"
 
 msgid "Discount"
 msgstr "할인"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "할인 일수"
@@ -14462,6 +14474,9 @@ msgstr "전기 날짜"
 
 msgid "Posting Date"
 msgstr "전기일"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "데이터 손실 가능성"

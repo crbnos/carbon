@@ -37,7 +37,8 @@ export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 export const invoiceAutomations = [
   "Draft Only",
   "Post",
-  "Post and Email"
+  "Post and Email",
+  "Post and Send via Stripe"
 ] as const;
 
 export const purchasePriceUpdateTimingTypes = [

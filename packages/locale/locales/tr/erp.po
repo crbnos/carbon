@@ -347,6 +347,9 @@ msgstr "{days}g"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
@@ -4619,6 +4622,9 @@ msgstr "Linear sorununu bağla"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Önce Ayarlar → Entegrasyonlar altında Slack'i bağlayın."
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi takdirde işlecini bağlayın."
 
@@ -4741,6 +4747,9 @@ msgstr "Taşeron"
 
 msgid "Contractors"
 msgstr "Taşeronlar"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
@@ -6730,6 +6739,9 @@ msgstr "Üretim Durdurma Tarihi"
 
 msgid "Discount"
 msgstr "İskonto"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "İskonto Günleri"
@@ -14462,6 +14474,9 @@ msgstr "Muhasebeleştirme tarihi"
 
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "Potansiyel Veri Kaybı"

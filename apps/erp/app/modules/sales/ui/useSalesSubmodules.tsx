@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
+  LuFileText,
   LuGlobe,
   LuKeyRound,
   LuList,
@@ -56,6 +57,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
+        },
+        {
+          name: t`Contracts`,
+          to: path.to.contracts,
+          icon: <LuFileText />,
+          table: "customerContract"
         },
         {
           name: t`Rentals`,

@@ -4,6 +4,7 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Hidden,
@@ -28,6 +29,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -65,10 +67,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, arBillingAddress] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId)
-  ]);
+  const [companySettings, arBillingAddress, stripeAccountId] =
+    await Promise.all([
+      getCompanySettings(client, companyId),
+      getAccountsReceivableBillingAddress(client, companyId),
+      getStripeConnectAccountId(getCarbonServiceRole(), companyId)
+    ]);
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -79,7 +83,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   return {
     companySettings: companySettings.data,
-    arBillingAddress: arBillingAddress.data
+    arBillingAddress: arBillingAddress.data,
+    isStripeConnected: stripeAccountId !== null
   };
 }
 
@@ -99,6 +104,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (validation.error) {
         return { success: false, message: "Invalid form data" };
+      }
+
+      // The option is disabled in the form while Stripe Connect is not
+      // connected; refuse it here too, or every recurring invoice would be held.
+      if (
+        validation.data.invoiceAutomation === "Post and Send via Stripe" &&
+        !(await getStripeConnectAccountId(getCarbonServiceRole(), companyId))
+      ) {
+        return {
+          success: false,
+          message: "Connect Stripe in Integrations first"
+        };
       }
 
       const result = await updateInvoiceAutomationSetting(
@@ -234,7 +251,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function InvoicingSettingsRoute() {
   const { t } = useLingui();
-  const { companySettings, arBillingAddress } = useLoaderData<typeof loader>();
+  const { companySettings, arBillingAddress, isStripeConnected } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
   const [arAddressEnabled, setArAddressEnabled] = useState(
@@ -247,8 +265,12 @@ export default function InvoicingSettingsRoute() {
   > = {
     "Draft Only": t`Draft only`,
     Post: t`Post`,
-    "Post and Email": t`Post and email`
+    "Post and Email": t`Post and email`,
+    "Post and Send via Stripe": t`Post and send via Stripe`
   };
+  const [invoiceAutomation, setInvoiceAutomation] = useState<string>(
+    companySettings.invoiceAutomation ?? "Post and Email"
+  );
 
   const handleArAddressToggle = useCallback(
     (checked: boolean) => {
@@ -324,8 +346,22 @@ export default function InvoicingSettingsRoute() {
                   label={t`When an invoice is created`}
                   options={invoiceAutomations.map((mode) => ({
                     value: mode,
-                    label: invoiceAutomationLabels[mode]
+                    label: invoiceAutomationLabels[mode],
+                    helper:
+                      mode === "Post and Send via Stripe" && !isStripeConnected
+                        ? t`Connect Stripe in Integrations first`
+                        : undefined
                   }))}
+                  onChange={(selected) =>
+                    setInvoiceAutomation(selected?.value ?? "")
+                  }
+                  helperText={
+                    invoiceAutomation === "Post and Send via Stripe"
+                      ? isStripeConnected
+                        ? t`Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held.`
+                        : t`Connect Stripe in Integrations first`
+                      : undefined
+                  }
                 />
               </div>
             </CardContent>

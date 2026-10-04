@@ -347,6 +347,9 @@ msgstr "{days}日"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
 
+msgid "{discount} off"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -4619,6 +4622,9 @@ msgstr "Linear イシューを接続"
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "まず設定→連携の下でSlackに接続します。"
 
+msgid "Connect Stripe in Integrations first"
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "条件に一致しないときに実行するノードにOtherwiseハンドルを接続します。"
 
@@ -4741,6 +4747,9 @@ msgstr "外部作業者"
 
 msgid "Contractors"
 msgstr "外部作業者"
+
+msgid "Contracts"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
@@ -6730,6 +6739,9 @@ msgstr "廃止日"
 
 msgid "Discount"
 msgstr "値引"
+
+msgid "Discount (%)"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "値引日数"
@@ -14462,6 +14474,9 @@ msgstr "転記日付"
 
 msgid "Posting Date"
 msgstr "転記日付"
+
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgstr ""
 
 msgid "Potential Data Loss"
 msgstr "潜在的データ損失"
