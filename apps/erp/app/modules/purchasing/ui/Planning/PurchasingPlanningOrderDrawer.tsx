@@ -69,7 +69,10 @@ import type {
   PlannedOrder,
   purchaseOrderStatusType
 } from "../../purchasing.models";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import {
+  isPurchaseOrderEditableFromPlanning,
+  isPurchaseOrderLocked
+} from "../../purchasing.models";
 import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingStatus } from "../PurchaseOrder";
 
@@ -274,7 +277,8 @@ export const PurchasingPlanningOrderDrawer = memo(
           status: order.existingStatus ?? null,
           quantity: order.quantity,
           dueDate: order.dueDate ?? null,
-          isEditable: !isPurchaseOrderLocked(order.existingStatus),
+          // the server's gate: Draft / Planned only, not in approval or sent
+          isEditable: isPurchaseOrderEditableFromPlanning(order.existingStatus),
           action,
           // the action's quantity is in inventory units; the row is in
           // purchase units, rounded up to whole units as Apply does

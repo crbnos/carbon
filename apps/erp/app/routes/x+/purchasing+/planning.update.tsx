@@ -23,10 +23,10 @@ import {
   reopenPlanningActions
 } from "~/modules/production";
 import {
+  deleteUnsentPurchaseOrderLine,
   insertPurchaseOrder,
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditableFromPlanning,
   plannedOrderValidator,
-  shortClosePurchaseOrderLine,
   updatePurchaseOrderLineSchedule,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
@@ -804,12 +804,12 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const targetStatus = target.data.purchaseOrder?.status;
-      if (!targetStatus || isPurchaseOrderLocked(targetStatus)) {
+      if (!isPurchaseOrderEditableFromPlanning(targetStatus)) {
         return data(
           {
             success: false,
             message:
-              "This purchase order has been sent to the supplier. Change it on the order."
+              "This purchase order is in approval or has been sent to the supplier. Change it on the order."
           },
           { status: 409 }
         );
@@ -818,6 +818,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const saved = await updatePurchaseOrderLineSchedule(client, {
         lineId: target.data.id,
         companyId,
+        companyGroupId,
         userId,
         ...(parsedLine.data.field === "quantity"
           ? { purchaseQuantity: parsedLine.data.value }
@@ -931,8 +932,8 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         const poStatus = line.data.purchaseOrder?.status;
-        if (!poStatus || isPurchaseOrderLocked(poStatus)) {
-          // committed supply — surface "Review on PO" instead of editing
+        if (!isPurchaseOrderEditableFromPlanning(poStatus)) {
+          // In approval or sent — surface "Review on PO" instead of editing
           requiresManualAction.push({
             id: planningActionId,
             purchaseOrderId: line.data.purchaseOrderId
@@ -965,13 +966,14 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (row.type === "Cancel") {
+          // The PO is unsent, so cancelling the line removes it. Deleting the
+          // line also deletes this action (its foreign key cascades).
+          let deleted: boolean;
           try {
-            await shortClosePurchaseOrderLine(db, {
+            deleted = await deleteUnsentPurchaseOrderLine(db, {
               lineId: line.data.id,
               purchaseOrderId: line.data.purchaseOrderId,
-              companyId,
-              userId,
-              intent: "close"
+              companyId
             });
           } catch (err) {
             await reopenPlanningActions(client, {
@@ -980,16 +982,31 @@ export async function action({ request }: ActionFunctionArgs) {
               userId
             });
             errors.push(
-              `Failed to close PO line for planning action ${planningActionId}: ${
+              `Failed to delete PO line for planning action ${planningActionId}: ${
                 err instanceof Error ? err.message : "unknown error"
               }`
             );
+            continue;
+          }
+          if (!deleted) {
+            // Since it was read, the PO was sent or the line received or
+            // invoiced: not ours to delete any more.
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
+            requiresManualAction.push({
+              id: planningActionId,
+              purchaseOrderId: line.data.purchaseOrderId
+            });
             continue;
           }
         } else if (row.type === "Expedite" || row.type === "Defer") {
           const update = await updatePurchaseOrderLineSchedule(client, {
             lineId: line.data.id,
             companyId,
+            companyGroupId,
             userId,
             requiredDate: row.suggestedDate
           });
@@ -1019,6 +1036,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const update = await updatePurchaseOrderLineSchedule(client, {
             lineId: line.data.id,
             companyId,
+            companyGroupId,
             userId,
             purchaseQuantity
           });

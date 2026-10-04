@@ -353,6 +353,13 @@ anywhere else.
   selected items, ONE batched request). Shared UI:
   `modules/production/ui/Planning/PlanningActionLines.tsx`; every mutation posts
   to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
+  **Cancel** on a job runs `cancelJob` (`production.server.ts`), the job status
+  route's own path: picked material back, picking lists closed, then
+  Cancelled. On a PO line it DELETES the line (`deleteUnsentPurchaseOrderLine`),
+  in one statement that also requires a Draft / Planned PO and nothing
+  received or invoiced; when that guard holds the row back the action goes back to Open
+  as "Review on PO". Never `shortClosePurchaseOrderLine` — it recomputes the
+  header status from the lines and turned an unsent Draft into "Completed".
   The Actions column filter (`filter=planningActions:eq:<type>`) and the
   Assignee column's people filter (`filter=planningAssignee:in:<userId>,…` —
   the same people list every other assignee filter uses; the column is hidden
@@ -408,10 +415,18 @@ anywhere else.
     A cell edit SAVES that one field (optimistic, reverted with a toast on
     failure) through `planning.update`'s `updateLine` / `updateJob` action,
     which re-reads the record under the company and refuses a committed record
-    with 409: `updateJob` allows only Draft / Planned jobs; `updateLine` refuses
-    a PO that `isPurchaseOrderLocked` (To Receive and later). The gates are NOT
-    yet identical to Apply's — Apply blocks only Ready / In Progress / Paused
-    jobs, and neither PO gate blocks Needs Approval / To Review / Rejected.
+    with 409. Jobs: `updateJob` and Apply share `isJobEditableFromPlanning`
+    (`production.models.ts`), an allowlist of Draft / Planned — anything else
+    (on the floor, finished, closed, cancelled) is "Review on Job". POs:
+    `updateLine`, Apply and the drawer's editable rows share
+    `isPurchaseOrderEditableFromPlanning` (`purchasing.models.ts`), the same
+    Draft / Planned allowlist — a PO in approval (Needs Approval, To Review,
+    Rejected) or sent is "Review on PO", matching MRP's own
+    `isCommittedPurchaseOrderStatus`. A quantity edit restates the line's tax
+    pair (`taxPairForQuantity`): the extended price is generated, the tax
+    amount is stored. A failed follow-up on a saved job edit (recalculating
+    requirements, telling the scheduler) is reported as a warning, never a
+    revert — the edit stands.
     Locked rows render as plain cells
     (`Grid isRowEditable`). Each row carries the planning action that targets
     it — type, suggested value, reason, Apply / Review — so there is no

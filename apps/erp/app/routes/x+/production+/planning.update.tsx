@@ -13,6 +13,7 @@ import {
   dismissPlanningActions,
   getPlanningAction,
   insertJob,
+  isJobEditableFromPlanning,
   markPlanningActionsActioned,
   notifyScheduleInputsChanged,
   productionOrderValidator,
@@ -20,12 +21,34 @@ import {
   reopenDismissedPlanningActions,
   reopenPlanningActions,
   updateJob,
-  updateJobStatus,
   upsertJobMethod
 } from "~/modules/production";
+import { cancelJob } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
+
+// Telling the scheduler is a follow-up to a write that already landed, so its
+// failure is logged and reported, never thrown: a throw here used to end an
+// Apply loop with a 500 after earlier actions were already applied.
+async function notifyScheduleChange(
+  companyId: string,
+  reason: string,
+  jobId: string
+): Promise<boolean> {
+  try {
+    await notifyScheduleInputsChanged(companyId, "reorder", reason, jobId);
+    return true;
+  } catch (error) {
+    logger.error("Failed to notify the scheduler from planning", {
+      companyId,
+      jobId,
+      reason,
+      error
+    });
+    return false;
+  }
+}
 
 const itemsValidator = z
   .object({
@@ -395,11 +418,16 @@ export async function action({ request }: ActionFunctionArgs) {
         // Trigger recalculation for all jobs
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, getDatabaseClient(), {
-              id: jobId,
-              companyId,
-              userId
-            });
+            const recalc = await recalculateJobRequirements(
+              client,
+              getDatabaseClient(),
+              { id: jobId, companyId, userId }
+            );
+            if (recalc.error) {
+              const errorMsg = `Created job ${jobId}, but its requirements could not be recalculated`;
+              logger.error(errorMsg, { companyId, jobId, error: recalc.error });
+              errors.push(errorMsg);
+            }
           }
         }
 
@@ -442,7 +470,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         const message =
-          processedItems === itemsToOrder.length
+          processedItems === itemsToOrder.length && errors.length === 0
             ? `Successfully processed all ${processedItems} items with ${allJobIds.length} jobs`
             : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
                 errors.length
@@ -521,12 +549,12 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 404 }
         );
       }
-      if (target.data.status !== "Draft" && target.data.status !== "Planned") {
+      if (!isJobEditableFromPlanning(target.data.status)) {
         return data(
           {
             success: false,
             message:
-              "This job has been released to the floor. Change it on the job."
+              "This job is no longer Draft or Planned. Change it on the job."
           },
           { status: 409 }
         );
@@ -553,19 +581,42 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+      // The field is saved from here on, so a failure below is a warning on a
+      // saved edit, never a failure — the drawer keeps the new value.
       if (parsedJob.data.field === "quantity") {
-        await recalculateJobRequirements(client, getDatabaseClient(), {
-          id: target.data.id,
-          companyId,
-          userId
-        });
+        const recalc = await recalculateJobRequirements(
+          client,
+          getDatabaseClient(),
+          { id: target.data.id, companyId, userId }
+        );
+        if (recalc.error) {
+          logger.error("Failed to recalculate job requirements from planning", {
+            companyId,
+            userId,
+            jobId: target.data.id,
+            error: recalc.error
+          });
+          return {
+            success: true,
+            message: "Updated job",
+            warning:
+              "The quantity is saved, but the job's materials and operations were not recalculated. Recalculate the job."
+          };
+        }
       } else {
-        await notifyScheduleInputsChanged(
+        const notified = await notifyScheduleChange(
           companyId,
-          "reorder",
           "Planning changed a job's due date",
           target.data.id
         );
+        if (!notified) {
+          return {
+            success: true,
+            message: "Updated job",
+            warning:
+              "The due date is saved, but the schedule was not refreshed. Reschedule the location."
+          };
+        }
       }
 
       return { success: true, message: "Updated job" };
@@ -607,11 +658,11 @@ export async function action({ request }: ActionFunctionArgs) {
       };
       const changeActionTypes = new Set(Object.values(wireToType));
 
-      const COMMITTED_JOB_STATUSES = ["Ready", "In Progress", "Paused"];
-
       const applied: string[] = [];
       const requiresManualAction: { id: string; jobId: string | null }[] = [];
       const errors: string[] = [];
+      // Applied, but a follow-up step failed: reported, never rolled back.
+      const warnings: string[] = [];
 
       for (const planningActionId of parsedIds.data) {
         const actionRow = await getPlanningAction(client, {
@@ -657,11 +708,9 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
-        if (
-          !job.data.status ||
-          COMMITTED_JOB_STATUSES.includes(job.data.status)
-        ) {
-          // released to the floor — surface "Review on Job" instead of editing
+        if (!isJobEditableFromPlanning(job.data.status)) {
+          // Past Planned (on the floor, finished, closed or cancelled since
+          // MRP ran) — surface "Review on Job" instead of editing it
           requiresManualAction.push({
             id: planningActionId,
             jobId: job.data.id
@@ -694,20 +743,23 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (row.type === "Cancel") {
-          const cancel = await updateJobStatus(client, {
-            id: job.data.id,
+          // The job status route's cancel: picked material goes back and the
+          // job's picking lists close before the status changes.
+          const failed = await cancelJob({
+            client,
+            db: getDatabaseClient(),
+            jobId: job.data.id,
             companyId,
-            status: "Cancelled",
-            updatedBy: userId
+            userId
           });
-          if (cancel.error) {
+          if (failed) {
             await reopenPlanningActions(client, {
               ids: [planningActionId],
               companyId,
               userId
             });
             errors.push(
-              `Failed to cancel job for planning action ${planningActionId}: ${cancel.error.message}`
+              `Failed to cancel job for planning action ${planningActionId}: ${failed.message}`
             );
             continue;
           }
@@ -728,12 +780,16 @@ export async function action({ request }: ActionFunctionArgs) {
             );
             continue;
           }
-          await notifyScheduleInputsChanged(
+          const notified = await notifyScheduleChange(
             companyId,
-            "reorder",
             "Planning action rescheduled a job",
             job.data.id
           );
+          if (!notified) {
+            warnings.push(
+              `Planning action ${planningActionId}: the due date is saved, but the schedule was not refreshed`
+            );
+          }
         } else {
           const update = await updateJob(client, {
             id: job.data.id,
@@ -751,11 +807,28 @@ export async function action({ request }: ActionFunctionArgs) {
             );
             continue;
           }
-          await recalculateJobRequirements(client, getDatabaseClient(), {
-            id: job.data.id,
-            companyId,
-            userId
-          });
+          const recalc = await recalculateJobRequirements(
+            client,
+            getDatabaseClient(),
+            { id: job.data.id, companyId, userId }
+          );
+          if (recalc.error) {
+            // The quantity change stands (and the action stays Actioned):
+            // undoing it would be a second write that can fail the same way.
+            logger.error(
+              "Failed to recalculate job requirements after a planning action",
+              {
+                companyId,
+                userId,
+                jobId: job.data.id,
+                planningActionId,
+                error: recalc.error
+              }
+            );
+            warnings.push(
+              `Planning action ${planningActionId}: the quantity is saved, but the job's materials and operations were not recalculated`
+            );
+          }
         }
 
         applied.push(planningActionId);
@@ -773,15 +846,21 @@ export async function action({ request }: ActionFunctionArgs) {
           `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
         );
       }
+      if (warnings.length > 0) {
+        messageParts.push(`${warnings.length} need a follow-up`);
+      }
       if (errors.length > 0) {
         messageParts.push(`${errors.length} failed`);
       }
       return {
         success:
-          errors.length === 0 && !(applied.length === 0 && manualCount > 0),
+          errors.length === 0 &&
+          warnings.length === 0 &&
+          !(applied.length === 0 && manualCount > 0),
         message: messageParts.join("; "),
         applied,
         requiresManualAction,
+        warnings: warnings.length > 0 ? warnings : undefined,
         errors: errors.length > 0 ? errors : undefined
       };
     }

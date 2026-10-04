@@ -31,7 +31,10 @@ import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { PlanningAction, ProductionOrder } from "~/modules/production";
-import type { jobStatus } from "~/modules/production/production.models";
+import {
+  isJobEditableFromPlanning,
+  type jobStatus
+} from "~/modules/production/production.models";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
 import type {
@@ -62,11 +65,6 @@ function periodIdFor(periods: Period[], date: string | null | undefined) {
     periods.find((p) => date >= p.startDate && date <= p.endDate)?.id ??
     periods[periods.length - 1].id
   );
-}
-
-/** Planning may still change a job that has not been released to the floor. */
-function isJobEditable(status: string | null | undefined) {
-  return status === "Draft" || status === "Planned";
 }
 
 type ProductionPlanningOrderDrawerProps = {
@@ -201,7 +199,7 @@ export const ProductionPlanningOrderDrawer = memo(
           status: job.existingStatus ?? null,
           quantity: job.quantity,
           dueDate: job.dueDate ?? null,
-          isEditable: isJobEditable(job.existingStatus),
+          isEditable: isJobEditableFromPlanning(job.existingStatus),
           action,
           suggestedQuantity: action ? Number(action.suggestedQuantity) : null
         };
@@ -267,8 +265,13 @@ export const ProductionPlanningOrderDrawer = memo(
           const result = (await response.json().catch(() => null)) as {
             success?: boolean;
             message?: string;
+            warning?: string;
           } | null;
-          if (response.ok && result?.success) return true;
+          if (response.ok && result?.success) {
+            // Saved, but a follow-up step failed: keep the new value and say so.
+            if (result.warning) toast.error(result.warning);
+            return true;
+          }
           toast.error(result?.message ?? t`Failed to update job`);
           return false;
         } catch {
@@ -292,7 +295,9 @@ export const ProductionPlanningOrderDrawer = memo(
       () => [
         ...orders,
         ...(Array.isArray(openJobs)
-          ? openJobs.filter((job) => isJobEditable(job.existingStatus))
+          ? openJobs.filter((job) =>
+              isJobEditableFromPlanning(job.existingStatus)
+            )
           : [])
       ],
       [orders, openJobs]

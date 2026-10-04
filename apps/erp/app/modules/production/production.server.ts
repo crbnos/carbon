@@ -9,9 +9,11 @@ import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
+  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "./production.service";
@@ -137,6 +139,65 @@ export async function releaseJobs({
       .eq("companyId", companyId);
   }
   return { error: null };
+}
+
+// Cancel a job. The one cancel path: the job status route and the planning
+// Cancel action both call it, so neither can skip a step. In order:
+//   1. return the picked material the job did not consume,
+//   2. cancel its lines on every open picking list,
+//   3. set the job Cancelled and clear its assignee.
+// It stops at the first failure, before the status changes, so a retry starts
+// from the same place. Returns null on success, else the failure with the
+// message to show the user.
+export async function cancelJob({
+  client,
+  db,
+  jobId,
+  companyId,
+  userId
+}: {
+  client: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  jobId: string;
+  companyId: string;
+  userId: string;
+}): Promise<{ error: unknown; message: string } | null> {
+  const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), db, {
+    jobId,
+    userId,
+    companyId
+  });
+  if (sweep.error) {
+    return {
+      error: sweep.error,
+      message: "Cancel aborted: returning picked material failed"
+    };
+  }
+
+  const picks = await cancelOpenPickingListsForJob(db, {
+    jobId,
+    companyId,
+    userId
+  });
+  if (picks.error) {
+    return {
+      error: picks.error,
+      message: "Cancel aborted: its picking lists could not be closed"
+    };
+  }
+
+  const update = await updateJobStatus(client, {
+    id: jobId,
+    companyId,
+    status: "Cancelled",
+    assignee: null,
+    updatedBy: userId
+  });
+  if (update.error) {
+    return { error: update.error, message: "Failed to update job status" };
+  }
+
+  return null;
 }
 
 // Releasing a batch releases its Draft/Planned member jobs through the same

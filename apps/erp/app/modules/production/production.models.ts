@@ -96,6 +96,19 @@ export const planningActionDismissValidator = z.object({
     .min(1, { message: "Select at least one action" })
 });
 
+/**
+ * The job statuses planning may change: Apply on a planning action and the
+ * order drawer's inline edits. An allowlist on purpose — a job past Planned is
+ * on the floor, finished, closed or cancelled, and is reviewed on the job.
+ */
+export const PLANNING_EDITABLE_JOB_STATUSES = ["Draft", "Planned"] as const;
+
+export function isJobEditableFromPlanning(
+  status: string | null | undefined
+): boolean {
+  return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
+}
+
 export const planningActionAssignValidator = z.object({
   id: z.string().min(1, { message: "Action is required" }),
   assignee: zfd.text(z.string().optional())

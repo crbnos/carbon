@@ -60,7 +60,11 @@ import type {
   supplierTypeValidator,
   supplierValidator
 } from "./purchasing.models";
-import { PURCHASE_ORDER_LOCKED_STATUSES } from "./purchasing.models";
+import {
+  PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
+  PURCHASE_ORDER_LOCKED_STATUSES,
+  taxPairForQuantity
+} from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
@@ -2150,6 +2154,58 @@ export async function shortClosePurchaseOrderLine(
   });
 }
 
+/**
+ * Delete the line a planning Cancel action targets, while its purchase order is
+ * one planning may change (Draft / Planned — not sent, not in approval) and
+ * nothing on the line has been received or invoiced. A PO reopened as a revision is back in Draft with that history on
+ * its lines, and deleting such a line would erase it.
+ *
+ * Every condition is in the one DELETE, so a finalize or a receipt that lands
+ * after the caller read the PO cannot slip in between the check and the delete.
+ * Returns whether the line was deleted; false means it is no longer safe to
+ * delete and needs a person to look at the PO.
+ *
+ * Not `shortClosePurchaseOrderLine`: that recomputes the header status from the
+ * lines, which is only meaningful on a released PO — it turned an unsent
+ * one-line Draft into "Completed".
+ */
+export async function deleteUnsentPurchaseOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    purchaseOrderId,
+    companyId
+  }: {
+    lineId: string;
+    purchaseOrderId: string;
+    companyId: string;
+  }
+): Promise<boolean> {
+  const deleted = await db
+    .deleteFrom("purchaseOrderLine")
+    .where("id", "=", lineId)
+    .where("purchaseOrderId", "=", purchaseOrderId)
+    .where("companyId", "=", companyId)
+    .where((eb) =>
+      eb.and([
+        eb(eb.fn.coalesce("quantityReceived", eb.val(0)), "=", 0),
+        eb(eb.fn.coalesce("quantityInvoiced", eb.val(0)), "=", 0)
+      ])
+    )
+    .where("purchaseOrderId", "in", (eb) =>
+      eb
+        .selectFrom("purchaseOrder")
+        .select("id")
+        .where("id", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
+    )
+    .returning("id")
+    .execute();
+
+  return deleted.length > 0;
+}
+
 /** @mcp upsert */
 export async function upsertPurchaseOrderPayment(
   client: SupabaseClient<Database>,
@@ -3283,22 +3339,64 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
- * Apply a planning-action schedule/quantity change to an UNCOMMITTED PO line
- * (parent status Draft/Planned — the caller gates on isPurchaseOrderLocked).
+ * Apply a planning schedule/quantity change to a PO line the caller has gated
+ * with `isPurchaseOrderEditableFromPlanning` (Draft / Planned).
  * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
  * units via the line's conversionFactor.
+ *
+ * A quantity change also restates the line's tax pair (`taxPairForQuantity`):
+ * the extended price is generated from the quantity, the tax amount is stored,
+ * so writing the quantity alone left the old amount against a new base.
  */
 export async function updatePurchaseOrderLineSchedule(
   client: SupabaseClient<Database>,
   args: {
     lineId: string;
     companyId: string;
+    companyGroupId: string;
     userId: string;
     requiredDate?: string;
     purchaseQuantity?: number;
   }
-) {
-  return client
+): Promise<{ error: { message: string } | null }> {
+  let tax: { taxPercent: number; supplierTaxAmount: number } | undefined;
+
+  if (args.purchaseQuantity !== undefined) {
+    const line = await client
+      .from("purchaseOrderLine")
+      .select(
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+      )
+      .eq("id", args.lineId)
+      .eq("companyId", args.companyId)
+      .single();
+    if (line.error) return { error: line.error };
+
+    const currencyCode = line.data.purchaseOrder?.currencyCode;
+    if (!currencyCode) {
+      return { error: { message: "Purchase order has no currency" } };
+    }
+    const currency = await getCurrencyByCode(
+      client,
+      args.companyGroupId,
+      currencyCode
+    );
+    if (currency.error) return { error: currency.error };
+    if (currency.data?.decimalPlaces == null) {
+      return {
+        error: { message: `Currency ${currencyCode} has no precision` }
+      };
+    }
+
+    const pair = taxPairForQuantity(
+      line.data,
+      args.purchaseQuantity,
+      currency.data.decimalPlaces
+    );
+    tax = { taxPercent: pair.percent, supplierTaxAmount: pair.amount };
+  }
+
+  const update = await client
     .from("purchaseOrderLine")
     .update({
       ...(args.requiredDate !== undefined
@@ -3307,10 +3405,13 @@ export async function updatePurchaseOrderLineSchedule(
       ...(args.purchaseQuantity !== undefined
         ? { purchaseQuantity: args.purchaseQuantity }
         : {}),
+      ...(tax ?? {}),
       updatedBy: args.userId
     })
     .eq("id", args.lineId)
     .eq("companyId", args.companyId);
+
+  return { error: update.error };
 }
 
 // ─── Purchase Return Orders (Supplier Returns) ───

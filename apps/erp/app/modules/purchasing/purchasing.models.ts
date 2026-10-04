@@ -5,7 +5,11 @@
 import {
   bicMatchesCountry,
   getBankFieldConfig,
-  isValidSwiftBic
+  isValidSwiftBic,
+  type TaxPair,
+  taxableBase,
+  taxPairFromAmount,
+  taxPairFromPercent
 } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
@@ -738,6 +742,63 @@ export function isPurchaseOrderLocked(
 ): boolean {
   return PURCHASE_ORDER_LOCKED_STATUSES.includes(
     status as PurchaseOrderLockedStatus
+  );
+}
+
+/**
+ * The PO statuses planning may change: Apply on a planning action, the order
+ * drawer's inline edits, and Cancel's line delete. An allowlist on purpose —
+ * a PO in approval (Needs Approval, To Review, Rejected) or sent to the supplier
+ * is reviewed on the PO. Matches MRP's own `isCommittedPurchaseOrderStatus`
+ * (`@carbon/planning`), which offers "Review on PO" for every other status.
+ */
+export const PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES = [
+  "Draft",
+  "Planned"
+] as const;
+
+export function isPurchaseOrderEditableFromPlanning(
+  status: string | null | undefined
+): boolean {
+  return PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES.some(
+    (editable) => editable === status
+  );
+}
+
+/**
+ * The tax pair for a PO line whose quantity changes. The extended price is a
+ * generated column, the tax amount is not, so a quantity write must restate
+ * the amount at the line's rate or the pair stops agreeing.
+ *
+ * A line with a rate keeps it. A line that holds only an amount (written before
+ * the pair was enforced) has its rate derived once from the old base, so its
+ * tax scales with the quantity instead of being zeroed.
+ */
+export function taxPairForQuantity(
+  line: {
+    supplierUnitPrice: number | null;
+    supplierShippingCost: number | null;
+    purchaseQuantity: number | null;
+    taxPercent: number | null;
+    supplierTaxAmount: number | null;
+  },
+  purchaseQuantity: number,
+  currencyDecimals: number
+): TaxPair {
+  const unitPrice = Number(line.supplierUnitPrice ?? 0);
+  const shippingCost = Number(line.supplierShippingCost ?? 0);
+  const rate =
+    line.taxPercent ??
+    taxPairFromAmount(
+      taxableBase(unitPrice, Number(line.purchaseQuantity ?? 0), shippingCost),
+      Number(line.supplierTaxAmount ?? 0),
+      0
+    ).percent;
+
+  return taxPairFromPercent(
+    taxableBase(unitPrice, purchaseQuantity, shippingCost),
+    rate,
+    currencyDecimals
   );
 }
 
