@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useControlField, useField, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Combobox,
   FormControl,
@@ -150,15 +151,12 @@ const CustomerContact = ({
   } = useField(name);
   const [value, setValue] = useControlField<string | null>(name);
 
-  const customerContactFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerContacts>>>();
+  const customerContactFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerContacts>>
+  >(customer ? path.to.api.customerContacts(customer) : null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (customer) {
-      customerContactFetcher.load(path.to.api.customerContacts(customer));
-    }
-
     if (initialLoad.current) {
       initialLoad.current = false;
     } else {

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -42,7 +43,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuCalendarClock,
   LuChevronDown,
@@ -56,7 +57,7 @@ import {
   LuShieldX
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useFetcher, useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 import {
   Bar,
   BarChart,
@@ -307,9 +308,6 @@ export default function QualityDashboard() {
     return { start, end };
   });
 
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const avgFetcher = useFetcher<typeof kpiLoader>();
-
   const selectedChartData =
     QualityKPIs.find((c) => c.key === selectedChart) || QualityKPIs[0];
 
@@ -347,16 +345,19 @@ export default function QualityDashboard() {
     setInterval(value);
   };
 
-  // Fetch chart data when filters change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: don't include the load functions
-  useEffect(() => {
-    if (!dateRange?.start || !dateRange?.end) return;
-    const params = `?start=${dateRange.start.toString()}&end=${dateRange.end.toString()}&interval=${interval}${
-      issueTypeId === "all" ? "" : `&issueTypeId=${issueTypeId}`
-    }`;
-    kpiFetcher.load(path.to.api.qualityKpi(selectedChart) + params);
-    avgFetcher.load(path.to.api.qualityKpi("avgDaysToClose") + params);
-  }, [selectedChart, dateRange, interval, issueTypeId]);
+  // The chart data follows the filters.
+  const kpiParams =
+    dateRange?.start && dateRange?.end
+      ? `?start=${dateRange.start.toString()}&end=${dateRange.end.toString()}&interval=${interval}${
+          issueTypeId === "all" ? "" : `&issueTypeId=${issueTypeId}`
+        }`
+      : null;
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    kpiParams ? path.to.api.qualityKpi(selectedChart) + kpiParams : null
+  );
+  const avgFetcher = useLoaderQuery<typeof kpiLoader>(
+    kpiParams ? path.to.api.qualityKpi("avgDaysToClose") + kpiParams : null
+  );
 
   const avgDaysToClose = (avgFetcher.data?.data as any)?.[0]?.value ?? null;
 
