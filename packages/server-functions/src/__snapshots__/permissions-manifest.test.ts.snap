@@ -270,6 +270,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-charge": {
     "update": "invoicing",
   },
+  "post-customer-contract": {
+    "update": "sales",
+  },
   "post-inventory-adjustment": {
     "update": "inventory",
   },

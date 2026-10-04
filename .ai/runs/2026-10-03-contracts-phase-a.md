@@ -52,3 +52,8 @@
 - Invoice line discount is entered in percent points (`INPUT_FORMAT.percentPoints`) and the route divides by 100. (The plan's "as quote pricing does" was inaccurate: quotes store the fraction directly.)
 - `nonTaxableAddOnCost` in `SalesInvoiceSummary` is NOT missing: it is added after tax, matching the view. No change.
 - FOLLOW-UP: `upsertSalesInvoiceLine` (`@mcp upsert`) takes its type from the points validator but writes the value as given; an MCP caller passing 20 is rejected by the 0–1 CHECK rather than stored wrongly. Convert in the service in a later change.
+
+## Tasks 9–11 (one commit: one server function)
+- `post-customer-contract`: confirm, edit-schedule, reset-schedule, amend (+preview), cancel (+preview), revert-cancellation; `{ update: "sales" }`.
+- Choices beyond the plan: a One-time line is changed/ended as a whole (old line ends the day before it starts); a future-dated line changes from its own start; amendment percents are points ÷ 100; discount-ends applies to Recurring lines only; confirming an edited open-ended contract compares totals up to the last persisted period; the credit memo amount rounds to the currency's decimals.
+- Found and fixed (separate commit): reconcile re-cut split installments one by one to the full line amount.

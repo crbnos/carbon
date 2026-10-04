@@ -25,6 +25,7 @@ const registry = {
   issue: () => import("./issue"),
   "post-asset-transfer": () => import("./post-asset-transfer"),
   "post-charge": () => import("./post-charge"),
+  "post-customer-contract": () => import("./post-customer-contract"),
   "post-inventory-adjustment": () => import("./post-inventory-adjustment"),
   "post-inventory-count": () => import("./post-inventory-count"),
   "post-maintenance-event": () => import("./post-maintenance-event"),
