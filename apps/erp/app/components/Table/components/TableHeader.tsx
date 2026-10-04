@@ -204,7 +204,9 @@ const TableHeader = <T extends object>({
     !canSaveView &&
     !withCsvExport &&
     !withPagination &&
-    !withInlineEditing;
+    // Forced edit mode hides the Edit/Lock toggle, the only control inline
+    // editing adds to the toolbar.
+    (!withInlineEditing || forceEditMode);
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>

@@ -1471,7 +1471,7 @@ const Table = <T extends object>({
                           }}
                         >
                           {!footer.isPlaceholder &&
-                            footer.column.columnDef.meta?.renderTotal && (
+                            (footer.column.columnDef.meta?.renderTotal ? (
                               <AggregateSelector
                                 value={total}
                                 aggregateFunction={aggregateFn}
@@ -1485,7 +1485,14 @@ const Table = <T extends object>({
                                   footer.column.columnDef.meta?.formatter
                                 }
                               />
-                            )}
+                            ) : footer.column.columnDef.footer ? (
+                              // A caller-defined footer (e.g. a grid's
+                              // per-column remainder), never editable.
+                              flexRender(
+                                footer.column.columnDef.footer,
+                                footer.getContext()
+                              )
+                            ) : null)}
                         </Th>
                       );
                     })}

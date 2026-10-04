@@ -4,21 +4,34 @@
 
 import ContractAmendModal from "./ContractAmendModal";
 import ContractAmendments from "./ContractAmendments";
+import ContractBillTo, { ContractRevenueMigration } from "./ContractBillTo";
 import ContractCancelModal from "./ContractCancelModal";
 import ContractConfirmModal from "./ContractConfirmModal";
+import ContractDetailsForm from "./ContractDetailsForm";
 import ContractExplorer from "./ContractExplorer";
-import ContractForm from "./ContractForm";
 import ContractHeader from "./ContractHeader";
-import ContractInvoiceSplitModal from "./ContractInvoiceSplitModal";
+import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractInvoices from "./ContractInvoices";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
+import ContractProductsGrid from "./ContractProductsGrid";
 import ContractProject from "./ContractProject";
 import ContractProperties from "./ContractProperties";
 import ContractRevenue from "./ContractRevenue";
+import ContractRevenueGrid, {
+  ContractRecognitionGrid
+} from "./ContractRevenueGrid";
+import {
+  ContractSetupBody,
+  ContractSetupFooter,
+  ContractSetupFrame,
+  ContractSetupSection
+} from "./ContractSetupLayout";
+import ContractSetupSteps, { contractSetupSteps } from "./ContractSetupSteps";
 import ContractStatus from "./ContractStatus";
 import ContractSummary from "./ContractSummary";
 import ContractsTable from "./ContractsTable";
+import { contractLineName } from "./contractGrid";
 import {
   scheduleRows,
   toContractLineTerms,
@@ -26,29 +39,41 @@ import {
 } from "./contractTerms";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
 
-export type { ContractSplitRow } from "./ContractInvoiceSplitModal";
+export type { ContractSetupStep } from "./ContractSetupSteps";
 export type { ContractScheduleRow } from "./contractTerms";
 export type * from "./types";
 
 export {
   ContractAmendModal,
   ContractAmendments,
+  ContractBillTo,
   ContractCancelModal,
   ContractConfirmModal,
+  ContractDetailsForm,
   ContractExplorer,
-  ContractForm,
   ContractHeader,
-  ContractInvoiceSplitModal,
+  ContractInvoiceGrid,
   ContractInvoices,
   ContractLineForm,
   ContractMoney,
+  ContractProductsGrid,
   ContractProject,
   ContractProperties,
+  ContractRecognitionGrid,
   ContractRevenue,
+  ContractRevenueGrid,
+  ContractRevenueMigration,
+  ContractSetupBody,
+  ContractSetupFooter,
+  ContractSetupFrame,
+  ContractSetupSection,
+  ContractSetupSteps,
   ContractStatus,
   ContractSummary,
   ContractsTable,
   contractDurationOf,
+  contractLineName,
+  contractSetupSteps,
   scheduleRows,
   toContractLineTerms,
   toContractTerms,

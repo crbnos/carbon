@@ -9,6 +9,11 @@
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1
 
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  addMovement,
+  applyContractMovement,
+  EMPTY_POSITION
+} from "@carbon/database/contract-position";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   daysBetweenInclusive,
@@ -19,6 +24,11 @@ import {
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
+import {
+  loadContractPositions,
+  lockContractPositions
+} from "../lib/contract-ledger";
+import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
 
 export type RunProposalContext = {
   companyId: string;
@@ -239,11 +249,295 @@ export async function synthesizeRentalAccruals(
     .execute();
 }
 
+/**
+ * Recognizes contract revenue (plan D5): every Planned `customerContractRevenue`
+ * month starting on or before `periodEnd`, of a confirmed contract (Active, or
+ * Ended with months still to recognize — a cancellation's catch-up rows), that
+ * no schedule row has synthesized yet. Each month is a movement of −amount on
+ * its line's position against revenue, at the period end's rate: the part the
+ * deferred pool covers becomes a Deferral row (Dr Deferred Revenue / Cr Sales),
+ * the rest an Accrual row (Dr Contract Assets / Cr Sales). A negative month (a
+ * catch-up) raises the position instead, so its rows come out negative and post
+ * with their sides swapped. One Recognition ledger entry per schedule row, so a
+ * row deleted with its entry (the FK cascades) leaves the position consistent.
+ *
+ * Idempotent: a month with a schedule row is skipped. The plan row is marked
+ * Recognized when its run posts, not here. A Planned contract schedule row
+ * whose plan month has since been replaced (an amendment reconciles Planned
+ * months by delete + insert, which nulls the row's `customerContractRevenueId`)
+ * is dropped first, with its ledger entry, so the replacement is recognized
+ * once.
+ */
+export async function synthesizeContractRevenue(
+  trx: KyselyTx,
+  ctx: RunProposalContext
+): Promise<void> {
+  const { companyId, periodEnd, userId } = ctx;
+
+  // The position lock, shared with invoice posting and credit memos: the
+  // movements below are computed from the positions as read.
+  await lockContractPositions(trx, companyId);
+
+  const orphans = await trx
+    .selectFrom("revenueRecognitionSchedule")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Planned")
+    .where("customerContractLineId", "is not", null)
+    .where("customerContractRevenueId", "is", null)
+    .execute();
+  if (orphans.length > 0) {
+    const orphanIds = orphans.map((row) => row.id);
+    await syncDraftRecognitionRuns(trx, {
+      companyId,
+      userId,
+      deletedScheduleIds: orphanIds
+    });
+    await trx
+      .deleteFrom("revenueRecognitionSchedule")
+      .where("companyId", "=", companyId)
+      .where("id", "in", orphanIds)
+      .execute();
+  }
+
+  const due = await trx
+    .selectFrom("customerContractRevenue as r")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "r.customerContractId")
+        .onRef("c.companyId", "=", "r.companyId")
+    )
+    .innerJoin("company as co", "co.id", "r.companyId")
+    .select([
+      "r.id",
+      "r.customerContractId",
+      "r.customerContractLineId",
+      sql<string>`r."periodStart"::text`.as("periodStart"),
+      sql<string>`r."periodEnd"::text`.as("periodEnd"),
+      "r.amount",
+      // Base currency → 1; raises when the currency has no rate.
+      sql<number>`get_exchange_rate(r."companyId", COALESCE(c."currencyCode", co."baseCurrencyCode"), ${periodEnd}::date)`.as(
+        "rate"
+      )
+    ])
+    .where("r.companyId", "=", companyId)
+    .where("r.status", "=", "Planned")
+    .where("r.periodStart", "<=", periodEnd)
+    .where("r.amount", "<>", 0)
+    .where("c.status", "<>", "Draft")
+    .where(({ not, exists, selectFrom }) =>
+      not(
+        exists(
+          selectFrom("revenueRecognitionSchedule as s")
+            .select("s.id")
+            .whereRef("s.customerContractRevenueId", "=", "r.id")
+            .where("s.companyId", "=", companyId)
+        )
+      )
+    )
+    .orderBy("r.customerContractLineId")
+    .orderBy("r.periodStart")
+    .orderBy("r.id")
+    .execute();
+  if (due.length === 0) return;
+
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select(["deferredRevenueAccount", "contractAssetAccount", "salesAccount"])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (
+    !defaults?.deferredRevenueAccount ||
+    !defaults.contractAssetAccount ||
+    !defaults.salesAccount
+  ) {
+    throw new Error(
+      "Set the Deferred Revenue, Contract Assets and Sales account defaults before recognizing contract revenue"
+    );
+  }
+
+  const positions = await loadContractPositions(
+    trx,
+    companyId,
+    due.map((row) => row.customerContractLineId)
+  );
+
+  type Planned = {
+    schedule: {
+      companyId: string;
+      type: "Deferral" | "Accrual";
+      status: "Planned";
+      customerContractLineId: string;
+      customerContractRevenueId: string;
+      periodStart: string;
+      periodEnd: string;
+      scheduledDate: string;
+      amount: number;
+      contractAmount: number;
+      debitAccountId: string;
+      creditAccountId: string;
+      createdBy: string;
+    };
+    entry: {
+      customerContractId: string;
+      customerContractLineId: string;
+      customerContractRevenueId: string;
+      postingDate: string;
+      deferredAmount: number;
+      deferredBase: number;
+      assetAmount: number;
+      assetBase: number;
+    };
+  };
+  const planned: Planned[] = [];
+  for (const row of due) {
+    const position =
+      positions.get(row.customerContractLineId) ?? EMPTY_POSITION;
+    const movement = applyContractMovement({
+      position,
+      amount: -Number(row.amount),
+      rate: Number(row.rate),
+      counterpart: "revenue"
+    });
+    positions.set(row.customerContractLineId, addMovement(position, movement));
+    // A month ending after the run's period end (a mid-month period end)
+    // still belongs to this run.
+    const scheduledDate = row.periodEnd < periodEnd ? row.periodEnd : periodEnd;
+    const common = {
+      companyId,
+      status: "Planned" as const,
+      customerContractLineId: row.customerContractLineId,
+      customerContractRevenueId: row.id,
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      scheduledDate,
+      creditAccountId: defaults.salesAccount,
+      createdBy: userId
+    };
+    const entry = {
+      customerContractId: row.customerContractId,
+      customerContractLineId: row.customerContractLineId,
+      customerContractRevenueId: row.id,
+      postingDate: scheduledDate
+    };
+    if (movement.deferredAmount !== 0 || movement.deferredBase !== 0) {
+      planned.push({
+        schedule: {
+          ...common,
+          type: "Deferral",
+          amount: round(-movement.deferredBase),
+          contractAmount: round(-movement.deferredAmount),
+          debitAccountId: defaults.deferredRevenueAccount
+        },
+        entry: {
+          ...entry,
+          deferredAmount: movement.deferredAmount,
+          deferredBase: movement.deferredBase,
+          assetAmount: 0,
+          assetBase: 0
+        }
+      });
+    }
+    if (movement.assetAmount !== 0 || movement.assetBase !== 0) {
+      planned.push({
+        schedule: {
+          ...common,
+          type: "Accrual",
+          amount: movement.assetBase,
+          contractAmount: movement.assetAmount,
+          debitAccountId: defaults.contractAssetAccount
+        },
+        entry: {
+          ...entry,
+          deferredAmount: 0,
+          deferredBase: 0,
+          assetAmount: movement.assetAmount,
+          assetBase: movement.assetBase
+        }
+      });
+    }
+  }
+  if (planned.length === 0) return;
+
+  // RETURNING follows the VALUES order, so each entry pairs with its row.
+  const inserted = await trx
+    .insertInto("revenueRecognitionSchedule")
+    .values(planned.map((p) => p.schedule))
+    .returning("id")
+    .execute();
+  await trx
+    .insertInto("customerContractLedgerEntry")
+    .values(
+      planned.map((p, index) => ({
+        ...p.entry,
+        entryType: "Recognition" as const,
+        revenueRecognitionScheduleId: inserted[index]!.id,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+}
+
 export const RUN_ROW_SYNTHESIZERS: RunRowSynthesizer[] = [
-  synthesizeRentalAccruals
+  synthesizeRentalAccruals,
+  synthesizeContractRevenue
 ];
 
 export type RunProposal = { id: string; runId: string; lineCount: number };
+
+/** Every Planned row dated on or before `periodEnd` that no run holds yet. */
+export async function selectDueScheduleRows(
+  trx: KyselyTx,
+  { companyId, periodEnd }: RunProposalContext
+) {
+  return trx
+    .selectFrom("revenueRecognitionSchedule")
+    .select(["id", "amount"])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Planned")
+    .where("runLineId", "is", null)
+    .where("scheduledDate", "<=", periodEnd)
+    .orderBy("scheduledDate")
+    .orderBy("id")
+    .execute();
+}
+
+/** Claims `due` into the run: one line per row, each copying the row's
+ *  amount, and the row stamped with its line. */
+export async function claimScheduleRows(
+  trx: KyselyTx,
+  runId: string,
+  due: { id: string; amount: number }[],
+  { companyId, userId }: RunProposalContext
+): Promise<void> {
+  if (due.length === 0) return;
+
+  await trx
+    .insertInto("revenueRecognitionRunLine")
+    .values(
+      due.map((row) => ({
+        runId,
+        scheduleId: row.id,
+        amount: row.amount,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  // Stamp each claimed row with its line in one statement (the line ↔
+  // schedule pair is unique per company, so the join is one-to-one).
+  await trx
+    .updateTable("revenueRecognitionSchedule as s")
+    .from("revenueRecognitionRunLine as l")
+    .set({ runLineId: sql`l.id`, updatedBy: userId })
+    .whereRef("l.scheduleId", "=", "s.id")
+    .where("l.runId", "=", runId)
+    .where("l.companyId", "=", companyId)
+    .where("s.companyId", "=", companyId)
+    .execute();
+}
 
 /**
  * Claims every Planned schedule row dated on or before `periodEnd` that no run
@@ -262,17 +556,7 @@ async function createRevenueRecognitionRunProposal(
       await synthesize(trx, args);
     }
 
-    const due = await trx
-      .selectFrom("revenueRecognitionSchedule")
-      .select(["id", "amount"])
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Planned")
-      .where("runLineId", "is", null)
-      .where("scheduledDate", "<=", periodEnd)
-      .orderBy("scheduledDate")
-      .orderBy("id")
-      .execute();
-
+    const due = await selectDueScheduleRows(trx, args);
     if (due.length === 0) return null;
 
     const runId = await getNextSequence(
@@ -292,30 +576,7 @@ async function createRevenueRecognitionRunProposal(
       .returning(["id"])
       .executeTakeFirstOrThrow();
 
-    await trx
-      .insertInto("revenueRecognitionRunLine")
-      .values(
-        due.map((row) => ({
-          runId: run.id,
-          scheduleId: row.id,
-          amount: row.amount,
-          companyId,
-          createdBy: userId
-        }))
-      )
-      .execute();
-
-    // Stamp each claimed row with its line in one statement (the line ↔
-    // schedule pair is unique per company, so the join is one-to-one).
-    await trx
-      .updateTable("revenueRecognitionSchedule as s")
-      .from("revenueRecognitionRunLine as l")
-      .set({ runLineId: sql`l.id`, updatedBy: userId })
-      .whereRef("l.scheduleId", "=", "s.id")
-      .where("l.runId", "=", run.id)
-      .where("l.companyId", "=", companyId)
-      .where("s.companyId", "=", companyId)
-      .execute();
+    await claimScheduleRows(trx, run.id, due, args);
 
     return { id: run.id, runId, lineCount: due.length };
   });

@@ -3,20 +3,28 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import { accountTypeFromClass, debit } from "@carbon/database/ledger";
+import {
+  applyContractMovement,
+  type ContractMovement,
+  EMPTY_POSITION
+} from "@carbon/database/contract-position";
 import { buildMemoJournal } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
-  type DeferralRow,
   datetime,
-  releaseDeferral,
+  EPSILON,
   round,
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/utils";
-import { type Kysely, sql, type Transaction } from "kysely";
+import type { Kysely, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import {
+  loadContractPositions,
+  lockContractPositions,
+  signedCreditAmount
+} from "../lib/contract-ledger";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 
 export type PostMemoArgs = {
@@ -301,32 +309,32 @@ export function postMemoTransaction(
       // leg credits GRNI back to zero while the control leg reduces AP. Every
       // other memo keeps the deterministic-by-party offset.
       //
-      // A contract cancellation credit takes back unearned revenue: it debits
-      // Deferred Revenue for the Planned deferral it releases and Sales for
-      // whatever was already recognized, so the cancelled days are never
-      // recognized afterwards.
-      const contractRelease =
+      // A contract cancellation credit lowers each credited line's position
+      // (plan D7): it debits Deferred Revenue up to the line's deferred pool
+      // and Contract Assets for the rest, so the cancelled months are never
+      // recognized afterwards and anything already recognized becomes an
+      // asset the next run clears against the cancellation's catch-up rows.
+      const contractCredit =
         memo.customerContractId && isAR && memo.direction === "Credit"
-          ? await releaseContractDeferral(trx, {
+          ? await planContractCredit(trx, {
               memoId,
               companyId,
               customerContractId: memo.customerContractId,
-              exchangeRate,
-              magnitude: toBaseAmount(amount, exchangeRate)
+              amount,
+              exchangeRate
             })
           : null;
-      // Both parts present: the offset is split over two debit lines.
-      const splitsOffset =
-        !!contractRelease &&
-        contractRelease.released > 0 &&
-        contractRelease.fromRevenue > 0;
-      const salesRemainderAccountId = splitsOffset
-        ? defaults.salesAccount
+      const contractAccountIds = contractCredit
+        ? {
+            deferredRevenue: defaults.deferredRevenueAccount,
+            contractAsset: defaults.contractAssetAccount,
+            sales: defaults.salesAccount,
+            fxGain: defaults.realizedExchangeGainAccount,
+            fxLoss: defaults.realizedExchangeLossAccount
+          }
         : null;
-      reasonAccountId = contractRelease
-        ? contractRelease.released > 0
-          ? defaults.deferredRevenueAccount
-          : defaults.salesAccount
+      reasonAccountId = contractCredit
+        ? defaults.deferredRevenueAccount
         : memo.salesReturnOrderId
           ? (defaults.salesReturnsAccount ?? defaults.salesAccount)
           : memo.purchaseReturnOrderId
@@ -334,20 +342,29 @@ export function postMemoTransaction(
             : isAR
               ? defaults.salesDiscountAccount
               : defaults.supplierPaymentDiscountAccount;
-      if (
-        !controlAccountId ||
-        !reasonAccountId ||
-        (splitsOffset && !salesRemainderAccountId)
-      ) {
+      if (!controlAccountId || !reasonAccountId) {
         throw new Error(
           "Memo control and reason account defaults are required"
         );
       }
+      // Each contract leg's account, required only when the leg posts.
+      const contractLegs = contractCredit
+        ? contractCreditLegs(contractCredit, contractAccountIds!)
+        : [];
+      for (const leg of contractLegs) {
+        if (!leg.accountId) {
+          throw new Error(
+            `Contract credit memos need the ${leg.description} account mapped in the accounting defaults`
+          );
+        }
+      }
       const accountIds = [
         ...new Set(
-          [controlAccountId, reasonAccountId, salesRemainderAccountId].filter(
-            (id): id is string => !!id
-          )
+          [
+            controlAccountId,
+            reasonAccountId,
+            ...contractLegs.map((leg) => leg.accountId)
+          ].filter((id): id is string => !!id)
         )
       ];
       const accounts = await trx
@@ -360,14 +377,15 @@ export function postMemoTransaction(
         .execute();
       const control = accounts.find((a) => a.id === controlAccountId);
       const reason = accounts.find((a) => a.id === reasonAccountId);
-      const salesRemainder = salesRemainderAccountId
-        ? accounts.find((a) => a.id === salesRemainderAccountId)
-        : null;
       if (
         accounts.length !== accountIds.length ||
         control?.class !== (isAR ? "Asset" : "Liability") ||
         !reason?.class ||
-        (salesRemainderAccountId && !salesRemainder?.class)
+        contractLegs.some(
+          (leg) =>
+            accounts.find((a) => a.id === leg.accountId)?.class !==
+            leg.accountClass
+        )
       ) {
         throw new Error(
           "Memo accounts must be active posting accounts in this company group with the correct control class"
@@ -468,41 +486,25 @@ export function postMemoTransaction(
         varianceAccountId: defaults.purchaseVarianceAccount,
         reasonDescription: memo.purchaseReturnOrderId
           ? "Goods Received Not Invoiced"
-          : contractRelease
-            ? contractRelease.released > 0
-              ? "Deferred Revenue"
-              : "Sales"
+          : contractCredit
+            ? "Deferred Revenue"
             : undefined
       });
-      if (contractRelease) {
-        if (splitsOffset && salesRemainder?.class) {
-          // The builder books one reason leg (index 1, after the control
-          // leg). Split it: Deferred Revenue keeps what the release covers
-          // and Sales takes the already-recognized remainder. The two debits
-          // add up to the leg they replace, so the entry still balances.
-          const reasonLine = lines[1]!;
-          lines.splice(
-            1,
-            1,
-            {
-              ...reasonLine,
-              amount: debit(
-                accountTypeFromClass(reason.class),
-                contractRelease.released
-              )
-            },
-            {
-              ...reasonLine,
-              accountId: salesRemainder.id,
-              description: "Sales",
-              amount: debit(
-                accountTypeFromClass(salesRemainder.class),
-                contractRelease.fromRevenue
-              )
-            }
-          );
-        }
-        await applyDeferralRelease(trx, companyId, userId, contractRelease);
+      if (contractCredit) {
+        // The builder books one reason leg (index 1, after the control leg).
+        // Replace it with the contract legs; they add up to it exactly (the
+        // FX leg is the remainder), so the entry still balances.
+        const reasonLine = lines[1]!;
+        lines.splice(
+          1,
+          1,
+          ...contractLegs.map((leg) => ({
+            ...reasonLine,
+            accountId: leg.accountId!,
+            description: leg.description,
+            amount: signedCreditAmount(leg.accountClass, leg.credit)
+          }))
+        );
       }
       const journal = await trx
         .insertInto("journal")
@@ -527,6 +529,27 @@ export function postMemoTransaction(
         .values(lines.map((line) => ({ ...line, journalId: journal.id })))
         .returning("id")
         .execute();
+      if (contractCredit && contractCredit.lines.length > 0) {
+        await trx
+          .insertInto("customerContractLedgerEntry")
+          .values(
+            contractCredit.lines.map(({ lineId, movement }) => ({
+              customerContractId: memo.customerContractId!,
+              customerContractLineId: lineId,
+              entryType: "Credit Memo" as const,
+              postingDate: today,
+              memoId,
+              journalId: journal.id,
+              deferredAmount: movement.deferredAmount,
+              deferredBase: movement.deferredBase,
+              assetAmount: movement.assetAmount,
+              assetBase: movement.assetBase,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
       const dimensions = await trx
         .selectFrom("dimension")
         .select(["id", "entityType"])
@@ -578,212 +601,142 @@ export function postMemoTransaction(
   });
 }
 
-type ContractDeferralRelease = {
-  /** Base amount the memo takes out of Deferred Revenue. */
-  released: number;
-  /** Base amount already recognized, so taken out of Sales. */
-  fromRevenue: number;
-  deleteIds: string[];
-  reduce: { id: string; amount: number }[];
+type ContractCredit = {
+  /** One movement per credited contract line. */
+  lines: { lineId: string; movement: ContractMovement }[];
+  /** The memo in base: what the AR leg credits. */
+  memoBase: number;
+  /** The part of the memo no credited line covers, in base (debits Sales). */
+  uncoveredBase: number;
 };
 
 /**
- * What a contract cancellation credit releases. Each memo-borne adjustment
- * row credits one contract line for one billed period; the invoiced rows for
- * the same line and period name the sales invoice lines whose Service
- * deferrals hold that period's unearned revenue. A split period was billed in
- * several installments, each on its own invoice line, so the credit is shared
- * across them in proportion to what each billed (the last takes the rest).
- * The release is capped at the memo's own base amount, so the journal always
- * balances against it.
+ * What a contract cancellation credit does to each line it credits: the
+ * memo-borne adjustment rows (`customerContractInvoiceLine.memoId`), summed
+ * per line, applied to the line's position as a reducing movement at the
+ * memo's rate against the receivable. Takes the position lock; the ledger
+ * entries are written with the journal.
  */
-async function releaseContractDeferral(
+async function planContractCredit(
   trx: Transaction<KyselyDatabase>,
   args: {
     memoId: string;
     companyId: string;
     customerContractId: string;
+    amount: number;
     exchangeRate: number;
-    magnitude: number;
   }
-): Promise<ContractDeferralRelease> {
-  const { memoId, companyId, customerContractId, exchangeRate, magnitude } =
-    args;
-  const adjustments = await trx
+): Promise<ContractCredit> {
+  const { memoId, companyId, customerContractId, amount, exchangeRate } = args;
+  await lockContractPositions(trx, companyId);
+  const credited = await trx
     .selectFrom("customerContractInvoiceLine")
-    .select(["customerContractLineId", "periodEnd", "amount"])
+    .select(["customerContractLineId", "amount"])
     .where("companyId", "=", companyId)
     .where("customerContractId", "=", customerContractId)
     .where("memoId", "=", memoId)
-    .orderBy("periodEnd")
+    .orderBy("customerContractLineId")
     .orderBy("id")
     .execute();
-  const nothing: ContractDeferralRelease = {
-    released: 0,
-    fromRevenue: magnitude,
-    deleteIds: [],
-    reduce: []
-  };
-  if (!adjustments.length) return nothing;
-
-  const invoiced = await trx
-    .selectFrom("customerContractInvoiceLine as l")
-    .innerJoin("customerContractInvoice as i", (join) =>
-      join
-        .onRef("i.id", "=", "l.customerContractInvoiceId")
-        .onRef("i.companyId", "=", "l.companyId")
-    )
-    .select([
-      "l.customerContractLineId",
-      "l.periodEnd",
-      "l.salesInvoiceLineId",
-      "l.amount"
-    ])
-    .where("l.companyId", "=", companyId)
-    .where("l.customerContractId", "=", customerContractId)
-    .where("l.isAdjustment", "=", false)
-    .where("l.salesInvoiceLineId", "is not", null)
-    .where("i.status", "=", "Invoiced")
-    .where("l.customerContractLineId", "in", [
-      ...new Set(adjustments.map((a) => a.customerContractLineId))
-    ])
-    .execute();
-  const periodKey = (lineId: string, periodEnd: string) =>
-    `${lineId}|${periodEnd}`;
-  // Every installment that billed a period: its invoice line and amount.
-  const installmentsByPeriod = new Map<
-    string,
-    { salesInvoiceLineId: string; amount: number }[]
-  >();
-  for (const row of invoiced) {
-    const key = periodKey(row.customerContractLineId, String(row.periodEnd));
-    const installments = installmentsByPeriod.get(key) ?? [];
-    installments.push({
-      salesInvoiceLineId: row.salesInvoiceLineId!,
-      amount: Number(row.amount)
-    });
-    installmentsByPeriod.set(key, installments);
-  }
-  const salesInvoiceLineIds = [
-    ...new Set(invoiced.map((row) => row.salesInvoiceLineId!))
-  ];
-  if (!salesInvoiceLineIds.length) return nothing;
-
-  const schedule = await trx
-    .selectFrom("revenueRecognitionSchedule")
-    .select(["id", "periodStart", "amount", "status", "salesInvoiceLineId"])
-    .where("companyId", "=", companyId)
-    .where("type", "=", "Deferral")
-    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .forUpdate()
-    .execute();
-  const originalAmount = new Map(
-    schedule.map((row) => [row.id, Number(row.amount)])
-  );
-  const working = new Map<string, DeferralRow[]>();
-  for (const row of schedule) {
-    const rows = working.get(row.salesInvoiceLineId!) ?? [];
-    rows.push({
-      id: row.id,
-      periodStart: String(row.periodStart),
-      amount: Number(row.amount),
-      status: row.status
-    });
-    working.set(row.salesInvoiceLineId!, rows);
-  }
-
-  let budget = magnitude;
-  let released = 0;
-  for (const adjustment of adjustments) {
-    const want = Math.min(
-      toBaseAmount(Math.abs(Number(adjustment.amount)), exchangeRate),
-      budget
+  const byLine = new Map<string, number>();
+  for (const row of credited) {
+    byLine.set(
+      row.customerContractLineId,
+      (byLine.get(row.customerContractLineId) ?? 0) + Number(row.amount)
     );
-    if (want <= 0) continue;
-    budget = round(budget - want);
-    const installments =
-      installmentsByPeriod.get(
-        periodKey(
-          adjustment.customerContractLineId,
-          String(adjustment.periodEnd)
-        )
-      ) ?? [];
-    const billed = installments.reduce((sum, i) => sum + i.amount, 0);
-    let placed = 0;
-    installments.forEach((installment, index) => {
-      const share =
-        index === installments.length - 1
-          ? round(want - placed)
-          : billed > 0
-            ? round((want * installment.amount) / billed)
-            : round(want / installments.length);
-      placed = round(placed + share);
-      const rows = working.get(installment.salesInvoiceLineId);
-      if (!rows || share <= 0) return;
-      const release = releaseDeferral(rows, share);
-      released = round(released + share - release.fromRevenue);
-      const deleted = new Set(release.deleteIds);
-      const reduced = new Map(release.reduce.map((r) => [r.id, r.amount]));
-      working.set(
-        installment.salesInvoiceLineId,
-        rows
-          .filter((row) => !deleted.has(row.id))
-          .map((row) => ({
-            ...row,
-            amount: reduced.get(row.id) ?? row.amount
-          }))
-      );
+  }
+  const positions = await loadContractPositions(trx, companyId, [
+    ...byLine.keys()
+  ]);
+  const lines: ContractCredit["lines"] = [];
+  let covered = 0;
+  for (const [lineId, sum] of byLine) {
+    const lineAmount = round(sum);
+    if (lineAmount === 0) continue;
+    covered = round(covered - lineAmount);
+    lines.push({
+      lineId,
+      movement: applyContractMovement({
+        position: positions.get(lineId) ?? EMPTY_POSITION,
+        amount: lineAmount,
+        rate: exchangeRate,
+        counterpart: "receivable"
+      })
     });
   }
-
-  const remaining = new Map(
-    [...working.values()].flat().map((row) => [row.id, row.amount])
-  );
+  const uncovered = round(amount - covered);
+  if (uncovered < -EPSILON) {
+    throw new Error(
+      "The contract lines this memo credits add up to more than the memo amount"
+    );
+  }
   return {
-    released,
-    fromRevenue: round(magnitude - released),
-    deleteIds: [...originalAmount.keys()].filter((id) => !remaining.has(id)),
-    reduce: [...remaining]
-      .filter(([id, amount]) => amount !== originalAmount.get(id))
-      .map(([id, amount]) => ({ id, amount }))
+    lines,
+    memoBase: toBaseAmount(amount, exchangeRate),
+    uncoveredBase:
+      uncovered > EPSILON ? toBaseAmount(uncovered, exchangeRate) : 0
   };
 }
 
-/** Deletes and trims the released Planned deferral rows, in the posting transaction. */
-async function applyDeferralRelease(
-  trx: Transaction<KyselyDatabase>,
-  companyId: string,
-  userId: string,
-  release: ContractDeferralRelease
-) {
-  if (release.deleteIds.length) {
-    await trx
-      .deleteFrom("revenueRecognitionSchedule")
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Planned")
-      .where("id", "in", release.deleteIds)
-      .execute();
+/** The journal legs replacing a contract credit memo's reason leg, as signed
+ *  credits (negative = debit): Deferred Revenue and Contract Assets by the
+ *  pools' base deltas, Sales for any part no line covers, and the realized
+ *  FX that makes them sum to the AR credit. Zero legs are dropped. */
+function contractCreditLegs(
+  credit: ContractCredit,
+  accounts: {
+    deferredRevenue: string | null;
+    contractAsset: string | null;
+    sales: string | null;
+    fxGain: string | null;
+    fxLoss: string | null;
   }
-  if (release.reduce.length) {
-    await trx
-      .updateTable("revenueRecognitionSchedule")
-      .set({
-        amount: sql<number>`CASE "id" ${sql.join(
-          release.reduce.map(
-            ({ id, amount }) => sql`WHEN ${id} THEN ${amount}::numeric`
-          ),
-          sql` `
-        )} END`,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Planned")
-      .where(
-        "id",
-        "in",
-        release.reduce.map((r) => r.id)
-      )
-      .execute();
-  }
+): {
+  accountId: string | null;
+  accountClass: "Liability" | "Asset" | "Revenue" | "Expense";
+  description: string;
+  credit: number;
+}[] {
+  const deferred = round(
+    credit.lines.reduce((sum, { movement }) => sum + movement.deferredBase, 0)
+  );
+  const asset = round(
+    -credit.lines.reduce((sum, { movement }) => sum + movement.assetBase, 0)
+  );
+  const sales = -credit.uncoveredBase;
+  // The revenue side must debit exactly what AR credits.
+  const fx = round(-credit.memoBase - deferred - asset - sales);
+  return [
+    {
+      accountId: accounts.deferredRevenue,
+      accountClass: "Liability" as const,
+      description: "Deferred Revenue",
+      credit: deferred
+    },
+    {
+      accountId: accounts.contractAsset,
+      accountClass: "Asset" as const,
+      description: "Contract Assets",
+      credit: asset
+    },
+    {
+      accountId: accounts.sales,
+      accountClass: "Revenue" as const,
+      description: "Sales",
+      credit: sales
+    },
+    fx > 0
+      ? {
+          accountId: accounts.fxGain,
+          accountClass: "Revenue" as const,
+          description: "Realized FX gain",
+          credit: fx
+        }
+      : {
+          accountId: accounts.fxLoss,
+          accountClass: "Expense" as const,
+          description: "Realized FX loss",
+          credit: fx
+        }
+  ].filter((leg) => leg.credit !== 0);
 }

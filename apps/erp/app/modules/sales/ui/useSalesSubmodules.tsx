@@ -5,11 +5,11 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
-  LuFileText,
   LuGlobe,
   LuKeyRound,
   LuList,
   LuPercent,
+  LuSection,
   LuShapes,
   LuShieldCheck,
   LuSquareUser,
@@ -61,7 +61,7 @@ export default function useSalesSubmodules() {
         {
           name: t`Contracts`,
           to: path.to.contracts,
-          icon: <LuFileText />,
+          icon: <LuSection />,
           table: "customerContract"
         },
         {

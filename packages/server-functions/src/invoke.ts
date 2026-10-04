@@ -45,6 +45,8 @@ const registry = {
   "propose-revenue-recognition-run": () =>
     import("./propose-revenue-recognition-run"),
   recalculate: () => import("./recalculate"),
+  "recalculate-revenue-recognition-run": () =>
+    import("./recalculate-revenue-recognition-run"),
   reschedule: () => import("./reschedule"),
   "seed-company": () => import("./seed-company"),
   sync: () => import("./sync"),

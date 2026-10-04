@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import { BarProgress, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -21,7 +21,11 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
@@ -163,8 +167,9 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
         accessorKey: "invoicedToDate",
         header: t`Invoiced to Date`,
         cell: ({ row }) => (
-          <ContractMoney
-            value={row.original.invoicedToDate ?? 0}
+          <InvoicedProgress
+            invoiced={Number(row.original.invoicedToDate ?? 0)}
+            total={Number(row.original.contractValue ?? 0)}
             currencyCode={row.original.currencyCode}
           />
         ),
@@ -273,5 +278,30 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
   );
 });
 ContractsTable.displayName = "ContractsTable";
+
+/** Invoiced to date as a share of the contract value. A Draft with no stored
+ *  schedule has no value to measure against, so it shows a dash. */
+const InvoicedProgress = ({
+  invoiced,
+  total,
+  currencyCode
+}: {
+  invoiced: number;
+  total: number;
+  currencyCode?: string | null;
+}) => {
+  const formatter = useCurrencyFormatter({
+    currency: currencyCode ?? undefined
+  });
+  if (total <= 0) return <span>—</span>;
+  return (
+    <BarProgress
+      className="min-w-32"
+      progress={invoiced}
+      max={total}
+      value={formatter.format(invoiced)}
+    />
+  );
+};
 
 export default ContractsTable;

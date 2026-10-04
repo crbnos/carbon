@@ -71,7 +71,7 @@ import { useContractLabels } from "./useContractLabels";
 
 type Effect = (typeof contractAmendmentEffects)[number];
 type RateUnit = (typeof contractRateUnits)[number];
-/** An added line's kind and rate unit as one choice: one-time, or per unit. */
+/** An added line's revenue type and rate unit as one choice: one-time, or per unit. */
 type Billing = "One-time" | RateUnit;
 type AmendmentChange = z.infer<typeof contractAmendmentChangeValidator>;
 
@@ -220,7 +220,7 @@ const ContractAmendModal = ({
       (line): AmendmentChange => ({
         op: "add",
         line: {
-          kind: line.billing === "One-time" ? "One-time" : "Recurring",
+          revenueType: line.billing === "One-time" ? "One-time" : "Recurring",
           itemId: line.itemId,
           description: line.description || undefined,
           quantity: line.quantity,

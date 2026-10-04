@@ -980,7 +980,7 @@ export const CONTRACTS: ContractSpec[] = [
     billingTiming: "Advance",
     lines: [
       {
-        kind: "One-time",
+        revenueType: "One-time",
         item: "Motor Test Cell Setup",
         description: "Test cell build for the traction motor program",
         quantity: 1,
@@ -990,7 +990,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Daily"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Predictive Maintenance Monitoring",
         description: "Condition monitoring per installed motor",
         quantity: 12,
@@ -1000,7 +1000,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Even Period"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Dynamometer Certification",
         description: "Annual dynamometer certification",
         quantity: 1,

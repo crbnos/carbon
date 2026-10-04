@@ -44,7 +44,7 @@ export type ContractTerms = {
 
 export type ContractLineTerms = {
   id: string;
-  kind: "One-time" | "Recurring";
+  revenueType: "One-time" | "Recurring";
   quantity: number;
   rate: number;
   rateUnit: ContractRateUnit | null;
@@ -376,7 +376,7 @@ export function planInvoiceSchedule(
   };
 
   for (const line of lines) {
-    if (line.kind === "One-time") {
+    if (line.revenueType === "One-time") {
       const periodEnd = line.endDate ?? line.startDate;
       if (periodEnd < line.startDate) continue;
       push(line, line.startDate, periodEnd, 1, line.startDate);
@@ -709,7 +709,7 @@ export function reconcileContractSchedule({
       first.periodEnd
     );
     const line = lineById.get(first.lineId);
-    if (!line || line.kind !== "Recurring" || !line.endDate) continue;
+    if (!line || line.revenueType !== "Recurring" || !line.endDate) continue;
     if (line.endDate >= periodEnd) continue;
 
     const ideal = idealByKey.get(rowKey);
@@ -758,10 +758,12 @@ export function reconcileContractSchedule({
  *  it never counts. Null when no Recurring line has a row. */
 export function lastRecurringPeriodEnd(
   existing: Pick<ExistingRow, "lineId" | "periodEnd" | "isAdjustment">[],
-  lines: Pick<ContractLineTerms, "id" | "kind">[]
+  lines: Pick<ContractLineTerms, "id" | "revenueType">[]
 ): string | null {
   const recurring = new Set(
-    lines.filter((line) => line.kind === "Recurring").map((line) => line.id)
+    lines
+      .filter((line) => line.revenueType === "Recurring")
+      .map((line) => line.id)
   );
   let last: string | null = null;
   for (const row of existing) {
@@ -798,14 +800,18 @@ export type ContractDiscountEndSplit = {
  *  `contractEndDate` when it has no end of its own; an open-ended contract
  *  never ends. */
 export function discountEndSplits(
-  lines: (Pick<ContractLineTerms, "id" | "kind" | "startDate" | "endDate"> & {
+  lines: (Pick<
+    ContractLineTerms,
+    "id" | "revenueType" | "startDate" | "endDate"
+  > & {
     discountEndsOn: string | null;
   })[],
   contractEndDate: string | null
 ): ContractDiscountEndSplit[] {
   const splits: ContractDiscountEndSplit[] = [];
   for (const line of lines) {
-    if (line.kind !== "Recurring" || line.discountEndsOn === null) continue;
+    if (line.revenueType !== "Recurring" || line.discountEndsOn === null)
+      continue;
     if (line.discountEndsOn < line.startDate) continue;
     const resumesOn = addDays(line.discountEndsOn, 1);
     const lineEnd = line.endDate ?? contractEndDate;
@@ -856,7 +862,7 @@ export function recurringValuePerPeriod(
 ): number {
   let total = 0;
   for (const line of lines) {
-    if (line.kind !== "Recurring" || !line.rateUnit) continue;
+    if (line.revenueType !== "Recurring" || !line.rateUnit) continue;
     if (line.startDate > on) continue;
     if (line.endDate && line.endDate < on) continue;
     const perFrequency =

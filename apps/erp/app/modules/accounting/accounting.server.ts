@@ -8,16 +8,33 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { datetime, toStoredAmount } from "@carbon/utils";
+import { datetime, equals, toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import {
   applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
+  getBaseCurrencyDecimalPlaces,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries
 } from "./accounting.service";
-import { acquisitionLines } from "./accounting.utils";
+import {
+  acquisitionLines,
+  buildDepreciationLines,
+  type DepreciationLine,
+  depreciationRunLinesMatch
+} from "./accounting.utils";
+
+/** A Draft period run (revenue recognition, depreciation) no longer matches
+ * what its period should post. Its message is meant for the user — the post
+ * routes show it, where other posting failures get a generic toast. */
+export class RunOutOfDateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RunOutOfDateError";
+  }
+}
 
 /** Resolve only the authorized group's root CTA configuration for reporting.
  * Operating-company balances continue to use the loader's RLS client.
@@ -491,6 +508,208 @@ export async function postAssetRegistration(
   });
 }
 
+/**
+ * What a depreciation run for `periodEnd` should hold, from the assets as they
+ * are now: every Active asset no OTHER run of the period covers (`runId` is
+ * the run being checked or rebuilt, absent for a new one), depreciated from
+ * the last run posted before the period, with Units of Production summing the
+ * usage logged since then. New, Repeat, Recalculate and the check at Post all
+ * read it, so a Draft that still matches is exactly what a fresh run would
+ * propose. `laterPostedRunId` is set when a run for a LATER period is already
+ * posted: this period's depreciation is then counted in it, and a run here
+ * would post those months twice.
+ */
+export async function buildDepreciationRunLines(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    periodEnd: string;
+    runId?: string;
+  }
+): Promise<
+  | {
+      data: { lines: DepreciationLine[]; laterPostedRunId: string | null };
+      error: null;
+    }
+  | { data: null; error: unknown }
+> {
+  const { companyId, companyGroupId, periodEnd, runId } = args;
+
+  let covered = client
+    .from("depreciationRunLine")
+    .select("fixedAssetId, depreciationRun!inner(periodEnd)")
+    .eq("companyId", companyId)
+    .eq("depreciationRun.periodEnd", periodEnd);
+  if (runId) covered = covered.neq("depreciationRunId", runId);
+
+  const [settings, lastPosted, laterPosted, coveredLines, assets, decimals] =
+    await Promise.all([
+      client
+        .from("companySettings")
+        .select("assetTaxDepreciationEnabled")
+        .eq("id", companyId)
+        .single(),
+      client
+        .from("depreciationRun")
+        .select("periodEnd")
+        .eq("companyId", companyId)
+        .eq("status", "Posted")
+        .lt("periodEnd", periodEnd)
+        .order("periodEnd", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      client
+        .from("depreciationRun")
+        .select("depreciationRunId")
+        .eq("companyId", companyId)
+        .eq("status", "Posted")
+        .gt("periodEnd", periodEnd)
+        .order("periodEnd")
+        .limit(1)
+        .maybeSingle(),
+      covered,
+      client
+        .from("fixedAsset")
+        .select("*")
+        .eq("companyId", companyId)
+        .eq("status", "Active"),
+      getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
+    ]);
+
+  if (lastPosted.error) return { data: null, error: lastPosted.error };
+  if (laterPosted.error) return { data: null, error: laterPosted.error };
+  if (coveredLines.error) return { data: null, error: coveredLines.error };
+  if (assets.error) return { data: null, error: assets.error };
+
+  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
+
+  // A run can cover several months (a picked later period), so units of
+  // production sums every usage log since the last posted run.
+  let usageQuery = client
+    .from("fixedAssetUsageLog")
+    .select("fixedAssetId, unitsProduced")
+    .eq("companyId", companyId)
+    .lte("periodEnd", periodEnd);
+  if (lastPostedPeriodEnd) {
+    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
+  }
+  const usageLogs = await usageQuery;
+  if (usageLogs.error) return { data: null, error: usageLogs.error };
+
+  const usageMap = new Map<string, { unitsProduced: number }>();
+  for (const u of usageLogs.data) {
+    const current = usageMap.get(u.fixedAssetId)?.unitsProduced ?? 0;
+    usageMap.set(u.fixedAssetId, {
+      unitsProduced: current + Number(u.unitsProduced)
+    });
+  }
+
+  const coveredAssetIds = new Set(
+    coveredLines.data.map((line) => line.fixedAssetId)
+  );
+
+  const lines = buildDepreciationLines(
+    assets.data
+      .filter((asset) => !coveredAssetIds.has(asset.id))
+      .map((asset) => ({
+        ...asset,
+        accumulatedTaxDepreciation: Number(
+          asset.accumulatedTaxDepreciation ?? 0
+        )
+      })),
+    periodEnd,
+    lastPostedPeriodEnd,
+    settings.data?.assetTaxDepreciationEnabled ?? false,
+    usageMap,
+    decimals
+  );
+
+  return {
+    data: {
+      lines,
+      laterPostedRunId: laterPosted.data?.depreciationRunId ?? null
+    },
+    error: null
+  };
+}
+
+/**
+ * Replaces a Draft depreciation run's lines with `lines`, keeping the run's id
+ * and number. A run left with nothing to depreciate is deleted. Returns
+ * whether the lines changed, so the route can say "already up to date".
+ */
+export async function replaceDepreciationRunLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    depreciationRunId: string;
+    lines: DepreciationLine[];
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ changed: boolean; deleted: boolean }> {
+  const { depreciationRunId, lines, companyId, userId } = args;
+
+  return db.transaction().execute(async (trx) => {
+    const run = await trx
+      .selectFrom("depreciationRun")
+      .select(["depreciationRunId", "status"])
+      .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Draft") {
+      throw new Error(
+        `Depreciation run ${run.depreciationRunId} is ${run.status}; only a draft can be recalculated`
+      );
+    }
+
+    const before = await trx
+      .selectFrom("depreciationRunLine")
+      .select(["fixedAssetId", "amount", "taxAmount"])
+      .where("depreciationRunId", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const changed = !depreciationRunLinesMatch(before, lines);
+
+    if (lines.length === 0) {
+      await trx
+        .deleteFrom("depreciationRun")
+        .where("id", "=", depreciationRunId)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { changed, deleted: true };
+    }
+    if (!changed) return { changed, deleted: false };
+
+    await trx
+      .deleteFrom("depreciationRunLine")
+      .where("depreciationRunId", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+    await trx
+      .insertInto("depreciationRunLine")
+      .values(
+        lines.map((line) => ({
+          depreciationRunId,
+          fixedAssetId: line.fixedAssetId,
+          amount: line.amount,
+          taxAmount: line.taxAmount,
+          companyId
+        }))
+      )
+      .execute();
+    await trx
+      .updateTable("depreciationRun")
+      .set({ updatedBy: userId })
+      .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { changed, deleted: false };
+  });
+}
+
 type DepreciationRunLine = {
   id: string;
   fixedAssetId: string;
@@ -844,6 +1063,8 @@ export type RevenueRecognitionDimensionIds = {
   customer?: string;
   item?: string;
   location?: string;
+  /** Contract rows only: the contract line's project, else the contract's. */
+  project?: string;
 };
 
 type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
@@ -896,9 +1117,10 @@ export async function postRevenueRecognitionRun(
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("revenueRecognitionRun")
-      .select(["id", "runId", "status"])
+      .select(["id", "runId", "status", "periodEnd"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
@@ -915,19 +1137,75 @@ export async function postRevenueRecognitionRun(
       )
       .select([
         "l.amount",
+        "s.amount as scheduleAmount",
+        "s.status as scheduleStatus",
         "s.id as scheduleId",
         "s.type",
         "s.debitAccountId",
         "s.creditAccountId",
         "s.salesInvoiceLineId",
         "s.rentalAgreementLineId",
-        "s.rentalLeaseScheduleLineId"
+        "s.rentalLeaseScheduleLineId",
+        "s.customerContractLineId",
+        "s.customerContractRevenueId"
       ])
       .where("l.runId", "=", runId)
       .where("l.companyId", "=", companyId)
       .execute();
     if (rows.length === 0) {
       throw new Error(`Revenue recognition run ${run.runId} has no lines`);
+    }
+
+    // A Draft is a snapshot of the schedule when it was proposed. Posting it
+    // after a row it holds changed, or after another row fell due by its
+    // period end, would recognize the wrong amount or leave that revenue to a
+    // later period. Recalculating rebuilds it from the schedule as it is now.
+    const unclaimed = await trx
+      .selectFrom("revenueRecognitionSchedule")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Planned")
+      .where("runLineId", "is", null)
+      .where("scheduledDate", "<=", run.periodEnd)
+      .executeTakeFirst();
+    // Contract months are synthesized into schedule rows at proposal time, so
+    // a month that fell due since (a contract confirmed later) has no row yet;
+    // and a held contract row whose plan month an amendment replaced (its
+    // `customerContractRevenueId` nulled) would recognize a stale amount.
+    const unsynthesizedContractRevenue = await trx
+      .selectFrom("customerContractRevenue as r")
+      .innerJoin("customerContract as c", (join) =>
+        join
+          .onRef("c.id", "=", "r.customerContractId")
+          .onRef("c.companyId", "=", "r.companyId")
+      )
+      .select("r.id")
+      .where("r.companyId", "=", companyId)
+      .where("r.status", "=", "Planned")
+      .where("r.periodStart", "<=", run.periodEnd)
+      .where("r.amount", "<>", 0)
+      .where("c.status", "<>", "Draft")
+      .where(({ not, exists, selectFrom }) =>
+        not(
+          exists(
+            selectFrom("revenueRecognitionSchedule as s")
+              .select("s.id")
+              .whereRef("s.customerContractRevenueId", "=", "r.id")
+              .where("s.companyId", "=", companyId)
+          )
+        )
+      )
+      .executeTakeFirst();
+    const drifted = rows.some(
+      (row) =>
+        row.scheduleStatus !== "Planned" ||
+        !equals(Number(row.amount), Number(row.scheduleAmount)) ||
+        (row.customerContractLineId && !row.customerContractRevenueId)
+    );
+    if (unclaimed || unsynthesizedContractRevenue || drifted) {
+      throw new RunOutOfDateError(
+        `Revenue recognition run ${run.runId} is out of date with the revenue schedule; recalculate it before posting`
+      );
     }
 
     // `account` is group-scoped (no companyId); the ids came from rows already
@@ -1018,6 +1296,42 @@ export async function postRevenueRecognitionRun(
             .execute();
     const rentalLineById = new Map(rentalLines.map((line) => [line.id, line]));
 
+    // Contract rows (synthesized from the contract's revenue plan) point at a
+    // contract line; the journal line references the contract and carries its
+    // customer, the line's item and the line's (else the contract's) project.
+    const contractLineIds = [
+      ...new Set(
+        rows
+          .map((row) => row.customerContractLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    const contractLines =
+      contractLineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("customerContractLine as ccl")
+            .innerJoin("customerContract as cc", (join) =>
+              join
+                .onRef("cc.id", "=", "ccl.customerContractId")
+                .on("cc.companyId", "=", companyId)
+            )
+            .select([
+              "ccl.id",
+              "ccl.itemId",
+              "cc.id as customerContractId",
+              "cc.customerId",
+              sql<string | null>`COALESCE(ccl."projectId", cc."projectId")`.as(
+                "projectId"
+              )
+            ])
+            .where("ccl.id", "in", contractLineIds)
+            .where("ccl.companyId", "=", companyId)
+            .execute();
+    const contractLineById = new Map(
+      contractLines.map((line) => [line.id, line])
+    );
+
     const journalEntryId = await getNextSequence(
       trx,
       "journalEntry",
@@ -1042,7 +1356,10 @@ export async function postRevenueRecognitionRun(
 
     for (const row of rows) {
       const amount = Number(row.amount);
-      const descriptions = REVENUE_LINE_DESCRIPTIONS[row.type];
+      const descriptions =
+        row.customerContractLineId && row.type === "Accrual"
+          ? { debit: "Contract asset accrued", credit: "Revenue recognized" }
+          : REVENUE_LINE_DESCRIPTIONS[row.type];
       const invoiceSource = row.salesInvoiceLineId
         ? invoiceLineById.get(row.salesInvoiceLineId)
         : undefined;
@@ -1050,7 +1367,18 @@ export async function postRevenueRecognitionRun(
         !invoiceSource && row.rentalAgreementLineId
           ? rentalLineById.get(row.rentalAgreementLineId)
           : undefined;
-      const source = invoiceSource ?? rentalSource;
+      const contractSource =
+        !invoiceSource && !rentalSource && row.customerContractLineId
+          ? contractLineById.get(row.customerContractLineId)
+          : undefined;
+      const source:
+        | {
+            customerId: string | null;
+            itemId: string | null;
+            locationId?: string | null;
+            projectId?: string | null;
+          }
+        | undefined = invoiceSource ?? rentalSource ?? contractSource;
       const document = invoiceSource
         ? {
             documentType: "Invoice" as const,
@@ -1061,7 +1389,12 @@ export async function postRevenueRecognitionRun(
               documentType: "Rental Agreement" as const,
               documentId: rentalSource.rentalAgreementId
             }
-          : {};
+          : contractSource
+            ? {
+                documentType: "Contract" as const,
+                documentId: contractSource.customerContractId
+              }
+            : {};
 
       if (amount !== 0) {
         // A negative row (a credit memo's deferral) reverses the legs: the
@@ -1124,6 +1457,12 @@ export async function postRevenueRecognitionRun(
             valueId: source.locationId
           });
         }
+        if (dimensionIds.project && source?.projectId) {
+          dimensionValues.push({
+            dimensionId: dimensionIds.project,
+            valueId: source.projectId
+          });
+        }
         if (dimensionValues.length > 0) {
           await trx
             .insertInto("journalLineDimension")
@@ -1145,6 +1484,35 @@ export async function postRevenueRecognitionRun(
         .updateTable("revenueRecognitionSchedule")
         .set({ journalId: journal.id, status: "Posted", updatedBy: userId })
         .where("id", "=", row.scheduleId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // A contract month is recognized once its schedule rows post, and each
+    // row's Recognition ledger entry records the journal that posted it.
+    const contractScheduleIds = rows
+      .filter((row) => row.customerContractLineId)
+      .map((row) => row.scheduleId);
+    const recognizedRevenueIds = [
+      ...new Set(
+        rows
+          .map((row) => row.customerContractRevenueId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (recognizedRevenueIds.length > 0) {
+      await trx
+        .updateTable("customerContractRevenue")
+        .set({ status: "Recognized", updatedBy: userId, updatedAt: now })
+        .where("id", "in", recognizedRevenueIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    if (contractScheduleIds.length > 0) {
+      await trx
+        .updateTable("customerContractLedgerEntry")
+        .set({ journalId: journal.id })
+        .where("revenueRecognitionScheduleId", "in", contractScheduleIds)
         .where("companyId", "=", companyId)
         .execute();
     }

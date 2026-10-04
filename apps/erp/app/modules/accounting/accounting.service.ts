@@ -3133,6 +3133,39 @@ export async function getPeriodExternalGlSyncReadiness(
 const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 /**
+ * Planned contract revenue months starting on or before `endDate`, of a
+ * confirmed (non-Draft) contract, that no revenue recognition schedule row
+ * references yet — the contract half of the "Recognize revenue for the
+ * period" close task. Mirrors `synthesizeContractRevenue` (the
+ * `propose-revenue-recognition-run` server function); a month it has already
+ * synthesized is counted by its Planned schedule rows instead. A failed read
+ * counts as failing (1), never as a silent pass.
+ */
+async function countUnsynthesizedContractRevenue(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  endDate: string
+): Promise<number> {
+  const result = await client
+    .from("customerContractRevenue")
+    .select(
+      "id, customerContract!inner(status), revenueRecognitionSchedule(id)",
+      {
+        count: "exact",
+        head: true
+      }
+    )
+    .eq("companyId", companyId)
+    .eq("status", "Planned")
+    .lte("periodStart", endDate)
+    .neq("amount", 0)
+    .neq("customerContract.status", "Draft")
+    .is("revenueRecognitionSchedule", null);
+  if (result.error) return 1;
+  return result.count ?? 0;
+}
+
+/**
  * Rental-treated lines that earned rent inside [startDate, endDate] which no
  * posted invoice covers and no Accrual row for this period end accrues — the
  * accrual half of the "Recognize revenue for the period" close task. Mirrors
@@ -3384,8 +3417,17 @@ async function computePeriodReadiness(
     startDate,
     endDate
   );
+  // Contract months due by the period end that no run has synthesized yet
+  // (the run turns a month into schedule rows when it is proposed).
+  const unsynthesizedContractRevenue = await countUnsynthesizedContractRevenue(
+    client,
+    companyId,
+    endDate
+  );
   const unrecognizedRevenue =
-    (unpostedRevenueSchedules.count ?? 0) + unaccruedRentalLines;
+    (unpostedRevenueSchedules.count ?? 0) +
+    unaccruedRentalLines +
+    unsynthesizedContractRevenue;
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>

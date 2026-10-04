@@ -45,7 +45,7 @@ const calendarMonthly = (
 const line = (
   overrides: Partial<ContractLineTerms> & { id: string }
 ): ContractLineTerms => ({
-  kind: "Recurring",
+  revenueType: "Recurring",
   quantity: 1,
   rate: 0,
   rateUnit: "Month",
@@ -80,7 +80,7 @@ describe("planInvoiceSchedule", () => {
     const lines = [
       line({
         id: "implementation",
-        kind: "One-time",
+        revenueType: "One-time",
         rate: 60000,
         rateUnit: null,
         startDate: "2026-11-01",
@@ -333,7 +333,7 @@ describe("reconcileContractSchedule", () => {
     const implementation = (rate: number) =>
       line({
         id: "implementation",
-        kind: "One-time",
+        revenueType: "One-time",
         rateUnit: null,
         rate,
         startDate: "2026-11-01",
@@ -591,8 +591,8 @@ describe("lastRecurringPeriodEnd", () => {
           })
         ],
         [
-          { id: "implementation", kind: "One-time" },
-          { id: "seats", kind: "Recurring" }
+          { id: "implementation", revenueType: "One-time" },
+          { id: "seats", revenueType: "Recurring" }
         ]
       )
     ).toBe("2026-02-28");
@@ -602,7 +602,7 @@ describe("lastRecurringPeriodEnd", () => {
     expect(
       lastRecurringPeriodEnd(
         [existingRow({ id: "impl", lineId: "implementation" })],
-        [{ id: "implementation", kind: "One-time" }]
+        [{ id: "implementation", revenueType: "One-time" }]
       )
     ).toBeNull();
   });
@@ -746,7 +746,7 @@ describe("discountEndSplits", () => {
         [
           {
             id: "seats",
-            kind: "Recurring",
+            revenueType: "Recurring",
             startDate: "2026-11-01",
             endDate: null,
             discountEndsOn: "2027-04-30"
@@ -766,7 +766,7 @@ describe("discountEndSplits", () => {
           // Already split: ends the day its discount does.
           {
             id: "split",
-            kind: "Recurring",
+            revenueType: "Recurring",
             startDate: "2026-11-01",
             endDate: "2027-04-30",
             discountEndsOn: "2027-04-30"
@@ -774,14 +774,14 @@ describe("discountEndSplits", () => {
           // Runs with the contract; the discount outlasts it.
           {
             id: "beyond",
-            kind: "Recurring",
+            revenueType: "Recurring",
             startDate: "2026-11-01",
             endDate: null,
             discountEndsOn: "2028-04-30"
           },
           {
             id: "once",
-            kind: "One-time",
+            revenueType: "One-time",
             startDate: "2026-11-01",
             endDate: "2027-10-31",
             discountEndsOn: "2027-04-30"
@@ -798,7 +798,7 @@ describe("discountEndSplits", () => {
         [
           {
             id: "seats",
-            kind: "Recurring",
+            revenueType: "Recurring",
             startDate: "2026-11-01",
             endDate: null,
             discountEndsOn: "2028-04-30"

@@ -349,6 +349,32 @@ export type DepreciationLine = {
   taxAmount: number | null;
 };
 
+/**
+ * Whether a Draft depreciation run's stored lines are exactly what the period
+ * should post now — same assets, same book and tax amounts. A Draft is
+ * computed once; an asset disposed, added or re-valued since makes it stale.
+ */
+export function depreciationRunLinesMatch(
+  stored: Array<{
+    fixedAssetId: string;
+    amount: number | string;
+    taxAmount: number | string | null;
+  }>,
+  computed: DepreciationLine[]
+): boolean {
+  if (stored.length !== computed.length) return false;
+  const byAsset = new Map(stored.map((line) => [line.fixedAssetId, line]));
+  if (byAsset.size !== stored.length) return false;
+  return computed.every((line) => {
+    const match = byAsset.get(line.fixedAssetId);
+    if (!match || !equals(Number(match.amount), line.amount)) return false;
+    if (match.taxAmount === null || line.taxAmount === null) {
+      return match.taxAmount === null && line.taxAmount === null;
+    }
+    return equals(Number(match.taxAmount), line.taxAmount);
+  });
+}
+
 export function getMonthsBetween(start: Date, end: Date): number {
   const years = end.getFullYear() - start.getFullYear();
   const months = end.getMonth() - start.getMonth();

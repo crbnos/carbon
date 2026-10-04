@@ -566,8 +566,13 @@ export const terms = {
   },
   "invoice-schedule": {
     term: msg`Invoice schedule`,
-    definition: msg`The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount.`,
+    definition: msg`The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount.`,
     href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "contract-close-date": {
+    term: msg`Contract close date`,
+    definition: msg`The date the customer agreed to the contract — when the deal was won. It records the booking for reporting; billing and revenue start from the contract's start date, not its close date.`,
+    href: "/docs/reference/contracts#setting-up-a-contract"
   },
   "revenue-method": {
     term: msg`Revenue method`,

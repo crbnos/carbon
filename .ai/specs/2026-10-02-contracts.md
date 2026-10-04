@@ -1,6 +1,6 @@
 # Contracts — AR contracts with independent billing and revenue schedules
 
-> Status: Phase A implemented (2026-10-04, plan `.ai/plans/2026-10-03-contracts-phase-a.md`); Phase B not started
+> Status: Phase A implemented (2026-10-04, plan `.ai/plans/2026-10-03-contracts-phase-a.md`); Phase B and the setup wizard implemented (2026-10-04, plan `.ai/plans/2026-10-04-contracts-wizard-phase-b.md`)
 > Author: Brad (with Claude)
 > Date: 2026-10-02
 > Research: `.ai/research/subscription-recurring-invoicing.md` (SAP, NetSuite, Business Central, D365 F&O, Acumatica, Odoo, Xero, QuickBooks, Stripe, Chargebee, Maxio; Rillet and Stripe API data models; Rillet's Contract screens)
@@ -139,7 +139,7 @@ A contract with a **term** (months; presets 6 months / 1, 2, 3 years / custom; o
 | 1 | The document | A generalized AR **Contract** (`customerContract*`), replacing the Subscription draft | G2; Rillet Contract; contract = billing + revenue on the same lines |
 | 2 | Rentals | Stay a separate document; share the recurring-invoicing layer; read-only upcoming-invoices preview; no schedule editing | G2, G4b — custody events re-cut the schedule, sales-type units must bill their valued schedule, rent automation needs determinism |
 | 3 | AP side | Nothing; prepaid expenses and repeating supplier bills are a documented gap | G1; Rillet has none |
-| 4 | Line kinds | One-time + Recurring, Service items only; goods on sales orders; usage later | G3, Q1 |
+| 4 | Revenue types | One-time + Recurring, Service items only; goods on sales orders; usage later | G3, Q1 |
 | 5 | Rate unit vs frequency | Separate (Day…Year vs Week…Year) | Q2, Q2b |
 | 6 | Alignment / timing | Anniversary (default) or Calendar; Advance or Arrears; first invoice date | Q3, G4, Rillet invoicing |
 | 7 | Proration | By day, exact | NetSuite / BC / Stripe convention |
@@ -175,7 +175,7 @@ Migrations: enums first (ADD VALUE rule), then tables; `pnpm db:migrate`, `pnpm 
 ```sql
 CREATE TYPE "customerContractStatus"        AS ENUM ('Draft', 'Active', 'Ended');
 CREATE TYPE "customerContractType"          AS ENUM ('New Sales', 'Existing', 'Expansion', 'Reactivation', 'Contraction');
-CREATE TYPE "customerContractLineKind"      AS ENUM ('One-time', 'Recurring');
+CREATE TYPE "contractRevenueType"           AS ENUM ('One-time', 'Recurring');
 CREATE TYPE "contractRateUnit"              AS ENUM ('Day', 'Week', 'Month', 'Quarter', 'Year');
 CREATE TYPE "contractBillingFrequency"      AS ENUM ('Week', 'Month', 'Quarter', 'Year');
 CREATE TYPE "contractBillingAlignment"      AS ENUM ('Anniversary', 'Calendar');
@@ -252,7 +252,7 @@ CREATE TABLE "customerContractLine" (
   "id" TEXT NOT NULL DEFAULT id('conl'),
   "companyId" TEXT NOT NULL,
   "customerContractId" TEXT NOT NULL,
-  "kind" "customerContractLineKind" NOT NULL,
+  "revenueType" "contractRevenueType" NOT NULL,
   "itemId" TEXT NOT NULL REFERENCES "item"("id"),         -- a Service item (service-layer check)
   "description" TEXT,                                     -- customer-facing
   "quantity" NUMERIC NOT NULL DEFAULT 1 CHECK ("quantity" > 0),
@@ -280,7 +280,7 @@ CREATE TABLE "customerContractLine" (
   CONSTRAINT "customerContractLine_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
     REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE,
   CONSTRAINT "customerContractLine_project_fkey" FOREIGN KEY ("projectId", "companyId") REFERENCES "project"("id", "companyId"),
-  CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("kind" = 'Recurring') = ("rateUnit" IS NOT NULL)),
+  CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("revenueType" = 'Recurring') = ("rateUnit" IS NOT NULL)),
   CONSTRAINT "customerContractLine_amends_check" CHECK ("amendsLineId" IS NULL OR "amendmentId" IS NOT NULL)
 );
 CREATE UNIQUE INDEX "customerContractLine_salesOrderLine_key"
@@ -356,16 +356,16 @@ RLS: each new table `company("sales", { read: "sales_view" })`. Backups: tenant 
 
 ## UI Changes
 
-Built with the `carbon-design` skill, following the rental agreement page (explorer + center + properties) rather than Rillet's wizard; the five Rillet steps become sections of one page:
+Built with the `carbon-design` skill. Creation is a five-step setup wizard (Details, Products, Invoicing, Revenue, Review — the five Rillet steps), at `/x/contract/:id/setup/<step>`. Brad chose the wizard on 2026-10-04; it replaces the original "one page, not a wizard" decision. After Confirm, a person works on the contract from the contract page (explorer + center + properties), like the rental agreement page:
 
 - **Sales → Contracts** list: ID, name, customer, type, status, recurring per period, contract value, next invoice, invoiced / recognized / deferred, ends on.
 - **Contract page** — header (status, *Confirm*, *Invoice Now*, *Amend*, *Cancel*, *Delete* while Draft); explorer of lines (*Add Line*: product picker, multi-select like Rillet's "Add to contract"); center sections:
   - **Summary** — lines as line items ("Implementation · one-time · $60,000", "Platform access · 10 × $40 per month · 20 % off until 31 Oct 2027"), contract value, recurring per period, next invoice.
-  - **Invoices** — the invoice schedule (date, total, lines, status, sales-invoice link); while Draft: move date, split, merge, move a line, with the per-line residual shown until it balances.
-  - **Revenue** — per line method, project and dates, the monthly schedule, and the **invoiced / recognized / deferred** table per month.
+  - **Invoices** — the invoice schedule (date, total, lines, status, sales-invoice link). While the contract is a Draft, this is the editable grid of the wizard's Invoicing step. It has one row per invoice, one column per line and a footer row of residuals.
+  - **Revenue** — per line method, project and dates, the monthly schedule, and the **invoiced / recognized / deferred** table per month. While the contract is a Draft, this is the editable grid of the wizard's Revenue step. It has one row per month and one column per line.
   - **Amendments** — history with date, type, reason and changes.
 - **Properties** panel — name, customer, bill-to, contact, sales person, project, close date, start + **duration** (6 months / 1, 2, 3 years / open-ended / custom) → end date, renewal + uplift, frequency, alignment, timing, first invoice date, billed through, recognize revenue from, invoicing (company default / Draft Only / Post / Post and Email / Post and Send via Stripe), payment term, currency, PO number, contract type, notes, custom fields.
-- **Line form** — Service item, kind, description (customer-facing), quantity, rate (+ per rate unit when Recurring), discount % + ends on, tax %, start / end, go-live, revenue method + revenue dates, project (defaults from the contract).
+- **Line form** — Service item, revenue type, description (customer-facing), quantity, rate (+ per rate unit when Recurring), discount % + ends on, tax %, start / end, go-live, revenue method + revenue dates, project (defaults from the contract).
 - **Amend / Cancel modals** with previews (as specified above); **Create Contract** on sales orders; "From contract CON000012" links on invoices, lines and memos.
 - **Settings → Invoicing** (rental automation plan) mode list gains *Post and Send via Stripe*.
 - **Docs** — `docs/content/docs/reference/contracts.mdx` (`carbon-docs`), agent KB regenerated, glossary: *Contract*, *Contract type*, *Invoice schedule*, *Revenue method*, *Billed through*, *Amendment*.
@@ -412,11 +412,11 @@ Worked example (Acme, accounting enabled):
 Two plans, in order, each shippable (decided 2026-10-02; the rental invoice automation plan, which builds the shared layer, executes first):
 
 - **Phase A — contracts, invoice schedule, invoicing.** *Implemented 2026-10-04* (`.ai/plans/2026-10-03-contracts-phase-a.md`; see the 2026-10-04 Changelog entry for the decisions that refine this spec). Everything except the line-level revenue engine: tables, contract page, lines, editable invoice schedule, amendments, cancellation + credit memo, renewal, contract types, discounts, migration *Billed through*, Create Contract from sales orders, the contract source in `recurring-billing`, contract holds, and the *Post and Send via Stripe* mode. Interim revenue: contract invoice lines post through the existing **Service-line deferral** — each line's service dates are its billing period, and a one-time line's service dates are its revenue dates — so revenue is right whenever billing is at or ahead of delivery (the common case). The revenue section shows the preview and summary computed from the schedule; *Recognize revenue from* and Even Period are accepted but only take effect in Phase B.
-- **Phase B — revenue follows the line.** `customerContractRevenue`, the contract branch of `post-sales-invoice` / `post-memo` (relieve Contract Assets, defer the rest), `synthesizeContractRevenue` in the recognition run, Even Period, migrated deferred-balance release, the contract position view. Contract lines switch from the Service deferral branch to the contract branch; invoices already posted in Phase A keep their Service deferral rows (no restatement).
+- **Phase B — revenue follows the line.** *Implemented 2026-10-04* (`.ai/plans/2026-10-04-contracts-wizard-phase-b.md`; see the second 2026-10-04 Changelog entry). Phase B leaves out the contract position view: the Revenue section of a confirmed contract still shows the preview. `customerContractRevenue`, the contract branch of `post-sales-invoice` / `post-memo` (relieve Contract Assets, defer the rest), `synthesizeContractRevenue` in the recognition run, Even Period, migrated deferred-balance release, the contract position view. Contract lines switch from the Service deferral branch to the contract branch; invoices already posted in Phase A keep their Service deferral rows (no restatement).
 
 ## Out of scope (v1)
 
-Usage-based / metered lines; physical goods on contracts; SSP allocation across lines; hand-edited revenue schedules; ARR / MRR waterfall reports (contract type and position are captured for them); per-customer invoice consolidation; customer rate cards for contracts; trials, pausing and coupons; per-line manual dimensions; FX remeasurement of contract balances; Rillet recurring-revenue sync; anything on the AP side (prepaid expenses, repeating supplier bills); merging rental agreements into contracts.
+Usage-based / metered lines; physical goods on contracts; SSP allocation across lines; ARR / MRR waterfall reports (contract type and position are captured for them); per-customer invoice consolidation; customer rate cards for contracts; trials, pausing and coupons; per-line manual dimensions; FX remeasurement of contract balances; Rillet recurring-revenue sync; anything on the AP side (prepaid expenses, repeating supplier bills); merging rental agreements into contracts.
 
 ## Open Questions
 
@@ -474,3 +474,35 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
   | Edge functions `post-sales-invoice` / `post-memo` / `convert` | `packages/server-functions/src/<name>/` |
   | `automateSalesInvoice` | `postSalesInvoiceUnattended` + `emailPostedInvoice` + `sendPostedInvoiceViaStripe` (`packages/jobs/src/invoicing/automate-invoice.ts`) |
   | `releaseRecurringInvoiceStamps` | `releaseRecurringInvoiceStamps` in `apps/erp/app/modules/sales/sales.server.ts` (generalized from `releaseRentalInvoiceStamps`) |
+- 2026-10-04: **Phase B implemented + setup wizard** (`.ai/plans/2026-10-04-contracts-wizard-phase-b.md`). Brad made 5 decisions on 2026-10-04. They override parts of this spec, and they supersede Phase A decisions 1 and 4.
+  1. **Creation is a wizard.** It has five steps: Details, Products, Invoicing, Revenue and Review. This overrides "one page, not Rillet's wizard" in UI Changes. After Confirm, the contract page stays the place to work on a contract.
+  2. **Next on Details saves the Draft.** Each later step edits that Draft through the real endpoints. Each step is a route: `/x/contract/:id/setup/<step>`.
+  3. **The conservation rule stays.** The invoice grid and the revenue grid only move money. The invoices of each line must add up to its total, and its revenue must equal what it bills. Confirm waits until both residuals are zero.
+  4. **The contract has a ship-to address** (`customerContract.shipToCustomerLocationId`). The decision was to copy it onto drafted invoices. The code does not copy it, because `salesInvoice` has no column for a customer ship-to address. This is an open follow-up.
+  5. **Phase B ships now.** Carbon stores the revenue schedule of each line as the **revenue plan**, one amount per month. A person can edit it while the contract is a Draft. This overrides "read-only" and the out-of-scope item "hand-edited revenue schedules". The GL engine posts from the revenue plan.
+
+  The plan refined the design with 13 decisions. The code implements them as follows:
+
+  | # | Decision | As built |
+  |---|---|---|
+  | D1 | Revenue plan table | `customerContractRevenue`: one row per line per calendar month, amount in contract currency, `status` Planned / Recognized / Recognized Externally. An unedited Draft has no rows, and the loader plans them live. The first revenue edit, or Confirm, writes them. |
+  | D2 | Revenue plan math | `@carbon/database/contract-revenue-schedule` (`planRevenueSchedule`, `reconcileRevenueSchedule`, `validateRevenueEdit`). The revenue total of a line is the sum of its invoice-schedule rows, adjustments and memo credits included. `@carbon/utils` re-exports it. |
+  | D3 | Position = invoiced − recognized | `applyContractMovement` (`@carbon/database/contract-position`) applies every movement. Deferred Revenue holds the positive part and Contract Assets the negative part, in contract currency and in base. Each pool carries base at a weighted-average rate. Against a receivable, the base difference goes to realized exchange gain or loss, never to revenue. |
+  | D4 | Movement ledger | `customerContractLedgerEntry`, entry types Opening / Invoice / Recognition / Credit Memo / Void. A Recognition entry cascades with its schedule row. |
+  | D5 | Recognition reuses the run | `synthesizeContractRevenue` is the second synthesizer of the run. It writes a Deferral row for the part that the deferred pool covers and an Accrual row for the rest. Run posting writes `documentType 'Contract'` and the Customer, Item and Project dimensions, and marks the month Recognized. |
+  | D6 | Invoice posting branch | A contract line credits Contract Assets up to the asset pool and Deferred Revenue for the rest. It writes no schedule rows. A VOID negates the Invoice entry exactly. If a pool then goes below zero, a reclass on the VOID journal moves it to the other pool. |
+  | D7 | Credit memo branch | `post-memo` applies the credit per line: Deferred Revenue up to the pool, Contract Assets for the rest. It no longer changes recognition schedule rows. Cancel writes no catch-up rows itself; the revenue reconciliation from the new end date makes them (D9). |
+  | D8 | Opening balance at Confirm | The server function writes it at Confirm, not a migration. Per line, it is the Billed Externally rows minus the Recognized Externally revenue, at the contract's exchange rate. It has no journal. |
+  | D9 | Reconcile, never rewrite | `reconcileRevenue` runs after amend, cancel, revert, renewal, the horizon roll and a discount end at Confirm. It keeps Recognized months, and also Planned months that a Draft run holds. |
+  | D10 | Invoice grid operations | `edit-schedule` gains `setAmount`, `addInvoice` and `delete`. The grid replaces the move, split and merge menus on a Draft. Those intents stay in the server function, with no UI. |
+  | D11 | Revenue grid operations | The new action `edit-revenue` has `setAmount`, `addMonth`, `deleteMonth` and `reset`. Confirm refuses a line whose revenue total is not its billed total. |
+  | D12 | Grid | The shared `Table` with `editableComponents`, plus a new `EditableDate` cell in `~/components/Editable`. |
+  | D13 | Wizard shell | `ContractSetupFrame` (heading and stepper) and `ContractSetupFooter` (contract total, Back, Next). |
+
+  The implementers reported 5 differences from the plan:
+  1. **The run recognizes Ended contracts too.** The synthesizer and the close check read every contract that is not a Draft. So the catch-up months of a cancelled contract still post.
+  2. **One lock serializes every writer.** Invoice posting, its VOID, `post-memo` and the synthesizer all take the advisory lock `contract-position:<companyId>`.
+  3. **Run posting refuses an incomplete run.** `postRevenueRecognitionRun` refuses a run while a due contract month has no schedule row. The user must recalculate the run first.
+  4. **Drafted invoices do not get the ship-to address.** See decision 4.
+  5. **The position view is missing.** The loader does not send the ledger position. The Revenue section of a confirmed contract still shows the preview.
+- 2026-10-04: **The contract line field `kind` is now `revenueType`** (enum `contractRevenueType`, migration `20261004202351_contract-line-revenue-type.sql`). The UI label is "Revenue Type". The new name says what the field decides (`.claude/rules/conventions-database.md`). The Data Model above uses the new names.

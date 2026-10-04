@@ -979,7 +979,7 @@ export const CONTRACTS: ContractSpec[] = [
     billingTiming: "Advance",
     lines: [
       {
-        kind: "One-time",
+        revenueType: "One-time",
         item: "Robot Cell Commissioning",
         description: "Commissioning of three welding cells",
         quantity: 3,
@@ -989,7 +989,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Daily"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Fleet Uptime Support",
         description: "Fleet uptime support per cell",
         quantity: 3,
@@ -999,7 +999,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Even Period"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Robot Calibration & Certification",
         description: "Quarterly calibration and certification visit",
         quantity: 1,

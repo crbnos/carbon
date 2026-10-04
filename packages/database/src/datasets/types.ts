@@ -888,7 +888,7 @@ export type ContractSpec = {
   billingAlignment: "Anniversary" | "Calendar";
   billingTiming: "Advance" | "Arrears";
   lines: {
-    kind: "One-time" | "Recurring";
+    revenueType: "One-time" | "Recurring";
     /** A Service item of this dataset. */
     item: string;
     description: string;

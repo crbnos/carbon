@@ -1645,10 +1645,10 @@ export const customerContractTypes = [
   "Contraction"
 ] as const satisfies readonly Enums["customerContractType"][];
 
-export const customerContractLineKinds = [
+export const contractRevenueTypes = [
   "One-time",
   "Recurring"
-] as const satisfies readonly Enums["customerContractLineKind"][];
+] as const satisfies readonly Enums["contractRevenueType"][];
 
 export const contractRateUnits = [
   "Day",
@@ -1775,6 +1775,9 @@ export const customerContractValidator = z
     invoiceCustomerId: zfd.text(z.string().optional()),
     invoiceCustomerContactId: zfd.text(z.string().optional()),
     invoiceCustomerLocationId: zfd.text(z.string().optional()),
+    /** The customer's location the service is delivered to. Stored on the
+     *  contract only — a sales invoice has no customer ship-to to copy it to. */
+    shipToCustomerLocationId: zfd.text(z.string().optional()),
     salesPersonId: zfd.text(z.string().optional()),
     projectId: zfd.text(z.string().optional()),
     customerReference: zfd.text(z.string().optional()),
@@ -1833,7 +1836,9 @@ function percentPoints(label: string) {
 /** The fields of one contract line, shared by the line form and an
  *  amendment's added line. */
 const contractLineFields = {
-  kind: z.enum(customerContractLineKinds, { error: "Kind is required" }),
+  revenueType: z.enum(contractRevenueTypes, {
+    error: "Revenue type is required"
+  }),
   itemId: z.string().min(1, { message: "Item is required" }),
   description: zfd.text(z.string().optional()),
   quantity: zfd.numeric(
@@ -1858,7 +1863,7 @@ const contractLineFields = {
 
 function checkContractLine(
   line: {
-    kind: (typeof customerContractLineKinds)[number];
+    revenueType: (typeof contractRevenueTypes)[number];
     rateUnit?: string;
     startDate: string;
     endDate?: string;
@@ -1866,14 +1871,14 @@ function checkContractLine(
   },
   ctx: z.RefinementCtx
 ) {
-  if (line.kind === "Recurring" && !line.rateUnit) {
+  if (line.revenueType === "Recurring" && !line.rateUnit) {
     ctx.addIssue({
       code: "custom",
       message: "Rate unit is required for a recurring line",
       path: ["rateUnit"]
     });
   }
-  if (line.kind === "One-time" && line.rateUnit) {
+  if (line.revenueType === "One-time" && line.rateUnit) {
     ctx.addIssue({
       code: "custom",
       message: "A one-time line has no rate unit",
@@ -1910,6 +1915,22 @@ export const customerContractLineValidator = z
     ...contractLineFields
   })
   .superRefine(checkContractLine);
+
+/** One amount per contract line, JSON-encoded: an added invoice or month.
+ *  At least one must be above zero. */
+const contractLineAmounts = jsonField(
+  z
+    .array(
+      z.object({
+        customerContractLineId: z.string().min(1),
+        amount: z.number().min(0, { message: "Amount cannot be negative" })
+      })
+    )
+    .refine((amounts) => amounts.some((entry) => entry.amount > 0), {
+      message: "Enter an amount for at least one line"
+    }),
+  "Invalid amounts"
+);
 
 /** One edit to a Draft contract's invoice schedule. The first edit
  *  materializes the computed schedule; `reset` throws the edits away. */
@@ -1950,9 +1971,63 @@ export const customerContractScheduleEditValidator = z.discriminatedUnion(
       customerContractInvoiceLineId: z.string().min(1),
       invoiceDate: z.string().min(1, { message: "Invoice date is required" })
     }),
+    // The invoice grid (plan D10): one cell, one invoice, one deletion. Money
+    // only moves — the footer shows what each line has left to invoice.
+    z.object({
+      intent: z.literal("setAmount"),
+      customerContractInvoiceId: z.string().min(1),
+      customerContractLineId: z.string().min(1),
+      amount: zfd.numeric(
+        z.number().min(0, { message: "Amount cannot be negative" })
+      )
+    }),
+    z.object({
+      intent: z.literal("addInvoice"),
+      invoiceDate: z.string().min(1, { message: "Invoice date is required" }),
+      amounts: contractLineAmounts
+    }),
+    z.object({
+      intent: z.literal("delete"),
+      customerContractInvoiceId: z.string().min(1)
+    }),
     z.object({ intent: z.literal("reset") })
   ]
 );
+
+/** One edit to a Draft contract's revenue plan (plan D11): one cell (line ×
+ *  month), a month added or deleted, or the edits thrown away. The first
+ *  edit stores the live plan. */
+export const customerContractRevenueEditValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("setAmount"),
+      customerContractLineId: z.string().min(1),
+      periodStart: z.string().min(1, { message: "Month is required" }),
+      amount: zfd.numeric(
+        z.number().min(0, { message: "Amount cannot be negative" })
+      )
+    }),
+    z.object({
+      intent: z.literal("addMonth"),
+      periodStart: z.string().min(1, { message: "Month is required" }),
+      amounts: contractLineAmounts
+    }),
+    z.object({
+      intent: z.literal("deleteMonth"),
+      periodStart: z.string().min(1, { message: "Month is required" })
+    }),
+    z.object({ intent: z.literal("reset") })
+  ]
+);
+
+/** Service items added to a Draft contract at once, each as a line with the
+ *  defaults a new line gets. */
+export const customerContractLinesAddValidator = z.object({
+  itemIds: z
+    .array(z.string().min(1))
+    .min(1, { message: "Choose at least one service" })
+});
 
 /** What an amendment does to the lines: change one in place (from the
  *  amendment date), add one, or end one. Percentages in percent points. */
@@ -2021,14 +2096,17 @@ export const createContractFromSalesOrderValidator = z
           z
             .object({
               salesOrderLineId: z.string().min(1),
-              kind: z.enum(customerContractLineKinds),
+              revenueType: z.enum(contractRevenueTypes),
               rateUnit: z.enum(contractRateUnits).optional()
             })
-            .refine((line) => (line.kind === "Recurring") === !!line.rateUnit, {
-              message:
-                "A recurring line needs a rate unit; a one-time line has none",
-              path: ["rateUnit"]
-            })
+            .refine(
+              (line) => (line.revenueType === "Recurring") === !!line.rateUnit,
+              {
+                message:
+                  "A recurring line needs a rate unit; a one-time line has none",
+                path: ["rateUnit"]
+              }
+            )
         )
         .min(1, { message: "Choose at least one line" }),
       "Invalid lines"

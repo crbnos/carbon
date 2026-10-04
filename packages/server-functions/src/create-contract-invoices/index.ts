@@ -38,6 +38,12 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import {
+  billedTotals,
+  changedRevenueLines,
+  ensureRevenue,
+  reconcileRevenue
+} from "../post-customer-contract/revenue-writes";
+import {
   applyDiscountEnds,
   applyReconciliation,
   type ContractLineRow,
@@ -245,6 +251,10 @@ async function renewDueTerms(
     }
     const oldEnd = contract.endDate;
     const newStart = addDays(oldEnd, 1);
+    // A contract confirmed before revenue was stored gets its plan written
+    // from the term it had, so the reconciliation below keeps its past.
+    await ensureRevenue(trx, scope, contract, lines);
+    const billedBefore = await billedTotals(trx, scope, contract.id);
     const newEnd = renewedEndDate(oldEnd, contract.termMonths);
     const uplift = Number(contract.renewalUplift);
 
@@ -265,7 +275,7 @@ async function renewDueTerms(
 
     const renewing = lines.filter(
       (line) =>
-        line.kind === "Recurring" &&
+        line.revenueType === "Recurring" &&
         line.startDate <= oldEnd &&
         (line.endDate === null || line.endDate === oldEnd)
     );
@@ -346,6 +356,21 @@ async function renewDueTerms(
         )
       })
     );
+    // Revenue follows the renewed term from its first day (D9).
+    await reconcileRevenue(
+      trx,
+      scope,
+      next.contract,
+      next.lines,
+      changedRevenueLines(
+        { lines, billed: billedBefore },
+        {
+          lines: next.lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }
+      ),
+      newStart
+    );
     loaded = await loadContractForUpdate(trx, companyId, contract.id);
   }
 }
@@ -398,6 +423,8 @@ async function rollHorizon(
     .filter((invoice) => invoice.rows.length > 0);
   if (create.length === 0) return loaded;
 
+  await ensureRevenue(trx, scope, contract, lines);
+  const billedBefore = await billedTotals(trx, scope, contract.id);
   await applyReconciliation(trx, scope, contract.id, {
     deleteInvoiceIds: [],
     deleteRowIds: [],
@@ -405,6 +432,22 @@ async function rollHorizon(
     create,
     adjustments: []
   });
+  // The appended periods extend each open-ended line's revenue: re-plan it
+  // from the first appended period (D9).
+  const firstAppended = create
+    .flatMap((invoice) => invoice.rows.map((row) => row.periodStart))
+    .reduce((earliest, date) => (date < earliest ? date : earliest));
+  await reconcileRevenue(
+    trx,
+    scope,
+    contract,
+    lines,
+    changedRevenueLines(
+      { lines, billed: billedBefore },
+      { lines, billed: await billedTotals(trx, scope, contract.id) }
+    ),
+    firstAppended
+  );
   return loadContractForUpdate(trx, scope.companyId, contract.id);
 }
 
@@ -655,7 +698,7 @@ function invoiceLineValues(
 
   let serviceStartDate: string | null = row.periodStart;
   let serviceEndDate: string | null = row.periodEnd;
-  if (line.kind === "One-time") {
+  if (line.revenueType === "One-time") {
     const revenue = lineRevenueDates(line);
     serviceStartDate = revenue.end === null ? null : revenue.start;
     serviceEndDate = revenue.end;

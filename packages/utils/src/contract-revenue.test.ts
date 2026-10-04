@@ -16,7 +16,7 @@ const sum = (rows: { amount: number }[]) =>
 
 const line = (overrides: Partial<RevenueLine> = {}): RevenueLine => ({
   id: "implementation",
-  kind: "One-time",
+  revenueType: "One-time",
   method: "Even Period",
   revenueStart: "2026-11-01",
   revenueEnd: "2027-04-30",
@@ -119,7 +119,7 @@ describe("contractPositionPreview", () => {
       ...revenuePreview(
         line({
           id: "platform",
-          kind: "Recurring",
+          revenueType: "Recurring",
           revenueEnd: "2027-10-31",
           netAmount: 3840
         })
@@ -127,7 +127,7 @@ describe("contractPositionPreview", () => {
       ...revenuePreview(
         line({
           id: "support",
-          kind: "Recurring",
+          revenueType: "Recurring",
           revenueEnd: "2027-10-31",
           netAmount: 1200
         })

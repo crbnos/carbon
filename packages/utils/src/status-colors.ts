@@ -181,6 +181,14 @@ export const CUSTOMER_CONTRACT_STATUS_COLOR_MAP = {
   Ended: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A contract revenue month (contractRevenueStatus). Recognized externally is
+// blue like a contract invoice that was Billed Externally.
+export const CUSTOMER_CONTRACT_REVENUE_STATUS_COLOR_MAP = {
+  Planned: "gray",
+  Recognized: "green",
+  "Recognized Externally": "blue"
+} as const satisfies Record<string, StatusColor>;
+
 // Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
   Draft: "gray",

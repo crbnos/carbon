@@ -2,31 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Badge,
-  Button,
   Card,
-  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   HStack,
   IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
   Status,
   Table,
   Tbody,
@@ -39,33 +22,13 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { equals } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, useState } from "react";
-import {
-  LuCalendarArrowUp,
-  LuCalendarDays,
-  LuChevronDown,
-  LuChevronRight,
-  LuEllipsisVertical,
-  LuMerge,
-  LuRotateCcw,
-  LuSplit,
-  LuTriangleAlert
-} from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { DateTime, Hyperlink } from "~/components";
-import { DatePicker, Hidden, Select, Submit } from "~/components/Form";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import { customerContractScheduleEditValidator } from "../../sales.models";
-import ContractInvoiceSplitModal from "./ContractInvoiceSplitModal";
+import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
 import type {
   ContractInvoiceStatusType,
@@ -75,69 +38,24 @@ import type {
 
 type ContractInvoicesProps = Pick<
   ContractRouteData,
-  | "contract"
-  | "lines"
-  | "schedule"
-  | "credits"
-  | "computedSchedule"
-  | "residuals"
+  "contract" | "lines" | "schedule" | "credits" | "computedSchedule"
 >;
-
-/** A schedule row as the table shows it, persisted or computed. */
-type ScheduleRowView = {
-  /** The row's id, or its planned ref while the schedule is computed. */
-  ref: string;
-  lineId: string;
-  periodStart: string;
-  periodEnd: string;
-  amount: number;
-  isAdjustment: boolean;
-};
-
-type InvoiceView = {
-  /** The invoice's id, or its planned ref while the schedule is computed. */
-  ref: string;
-  invoiceDate: string;
-  status: ContractInvoiceStatusType;
-  isEdited: boolean;
-  salesInvoiceId: string | null;
-  rows: ScheduleRowView[];
-  total: number;
-};
-
-type Editing =
-  | { intent: "move"; invoice: InvoiceView }
-  | { intent: "merge"; invoice: InvoiceView }
-  | { intent: "moveLine"; row: ScheduleRowView; invoice: InvoiceView }
-  | { intent: "split"; row: ScheduleRowView; invoice: InvoiceView };
-
-// An unedited Draft's schedule is computed, not stored (plan decision 2), so
-// its invoices and rows have no ids yet. They are addressed by what makes
-// them unique within the plan; the first edit materializes the schedule.
-const plannedInvoiceRef = (invoiceDate: string) => `planned:${invoiceDate}`;
-const plannedRowRef = (
-  invoiceDate: string,
-  row: Pick<ScheduleRowView, "lineId" | "periodStart" | "isAdjustment">
-) =>
-  `planned:${invoiceDate}:${row.lineId}:${row.periodStart}${row.isAdjustment ? ":adjustment" : ""}`;
 
 const lineName = (line: ContractLine | undefined, fallback: string) =>
   line ? line.description || line.item?.name || line.itemId : fallback;
 
-/** The invoice schedule: every planned invoice with its lines, editable while
- *  the contract is a Draft — move or merge an invoice, split or move a line. */
+/** The invoice schedule: a Draft's is worked on as a grid; a confirmed
+ *  contract's is read here — every planned invoice with its lines, the sales
+ *  invoice it was drafted as, and any cancellation credit. */
 const ContractInvoices = ({
   contract,
   lines,
   schedule,
   credits,
-  computedSchedule,
-  residuals
+  computedSchedule
 }: ContractInvoicesProps) => {
   const { t } = useLingui();
-  const permissions = usePermissions();
   const { company } = useUser();
-  const resetFetcher = useFetcher<{}>();
 
   const contractId = contract.id ?? "";
   const routeData = useRouteData<ContractRouteData>(
@@ -147,69 +65,55 @@ const ContractInvoices = ({
   const creditMemoLinks = routeData?.creditMemoLinks ?? {};
 
   const currencyCode = contract.currencyCode ?? company.baseCurrencyCode;
-  const isDraft = contract.status === "Draft";
-  const canEdit = permissions.can("update", "sales");
-  const action = path.to.contractSchedule(contractId);
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [editing, setEditing] = useState<Editing | null>(null);
+
+  // A Draft's schedule is worked on as a grid (the setup wizard's Invoicing
+  // step uses the same one); a confirmed contract's is read here.
+  if (contract.status === "Draft") {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Invoices</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContractInvoiceGrid
+            contract={contract}
+            lines={lines}
+            schedule={schedule}
+            computedSchedule={computedSchedule}
+            lineTotals={routeData?.lineTotals ?? {}}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const lineById = new Map(lines.map((line) => [line.id, line]));
   const nameOf = (lineId: string) =>
     lineName(lineById.get(lineId), t`Removed line`);
 
-  const invoices: InvoiceView[] = computedSchedule
-    ? computedSchedule.map((invoice) => {
-        const rows = invoice.rows.map((row) => ({
-          ref: plannedRowRef(invoice.invoiceDate, row),
-          lineId: row.lineId,
-          periodStart: row.periodStart,
-          periodEnd: row.periodEnd,
-          amount: row.amount,
-          isAdjustment: row.isAdjustment
-        }));
-        return {
-          ref:
-            invoice.status === "Planned"
-              ? plannedInvoiceRef(invoice.invoiceDate)
-              : `${invoice.status}:${invoice.invoiceDate}`,
-          invoiceDate: invoice.invoiceDate,
-          status: invoice.status,
-          isEdited: false,
-          salesInvoiceId: null,
-          rows,
-          total: rows.reduce((sum, row) => sum + row.amount, 0)
-        };
-      })
-    : schedule.map((invoice) => {
-        const rows = invoice.customerContractInvoiceLine.map((row) => ({
-          ref: row.id,
-          lineId: row.customerContractLineId,
-          periodStart: row.periodStart,
-          periodEnd: row.periodEnd,
-          amount: Number(row.amount),
-          isAdjustment: row.isAdjustment
-        }));
-        return {
-          ref: invoice.id,
-          invoiceDate: invoice.invoiceDate,
-          status: invoice.status,
-          isEdited: invoice.isEdited,
-          salesInvoiceId: invoice.salesInvoiceId,
-          rows,
-          total: rows.reduce((sum, row) => sum + row.amount, 0)
-        };
-      });
-
-  const plannedInvoices = invoices.filter((i) => i.status === "Planned");
-  const isEditable = (invoice: InvoiceView) =>
-    isDraft && invoice.status === "Planned";
-
-  const residualEntries = Object.entries(residuals).filter(
-    ([, residual]) => !equals(residual, 0)
-  );
-  const hasPersistedSchedule =
-    isDraft && !computedSchedule && invoices.length > 0;
+  const invoices = schedule.map((invoice) => {
+    const rows = invoice.customerContractInvoiceLine.map((row) => ({
+      id: row.id,
+      lineId: row.customerContractLineId,
+      periodStart: row.periodStart,
+      periodEnd: row.periodEnd,
+      amount: Number(row.amount),
+      isAdjustment: row.isAdjustment
+    }));
+    return {
+      id: invoice.id,
+      invoiceDate: invoice.invoiceDate,
+      status: invoice.status,
+      isEdited: invoice.isEdited,
+      salesInvoiceId: invoice.salesInvoiceId,
+      rows,
+      total: rows.reduce((sum, row) => sum + row.amount, 0)
+    };
+  });
 
   const creditsByMemo = new Map<string, typeof credits>();
   for (const row of credits) {
@@ -217,28 +121,13 @@ const ContractInvoices = ({
     creditsByMemo.set(key, [...(creditsByMemo.get(key) ?? []), row]);
   }
 
-  const toggle = (ref: string) =>
+  const toggle = (id: string) =>
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(ref)) next.delete(ref);
-      else next.add(ref);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
-
-  const reset = () =>
-    resetFetcher.submit({ intent: "reset" }, { method: "post", action });
-
-  const resetButton = (
-    <Button
-      variant="secondary"
-      leftIcon={<LuRotateCcw />}
-      isDisabled={!canEdit || resetFetcher.state !== "idle"}
-      isLoading={resetFetcher.state !== "idle"}
-      onClick={reset}
-    >
-      <Trans>Reset Schedule</Trans>
-    </Button>
-  );
 
   return (
     <Card>
@@ -246,68 +135,12 @@ const ContractInvoices = ({
         <CardTitle>
           <Trans>Invoices</Trans>
         </CardTitle>
-        {hasPersistedSchedule && residualEntries.length === 0 ? (
-          <CardAction>{resetButton}</CardAction>
-        ) : null}
       </CardHeader>
       <CardContent>
         <VStack spacing={4}>
-          {isDraft && residualEntries.length > 0 && (
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>The schedule no longer matches the lines</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <VStack spacing={2}>
-                  <ul className="list-disc pl-4">
-                    {residualEntries.map(([lineId, residual]) => (
-                      <li key={lineId}>
-                        {residual > 0 ? (
-                          <Trans>
-                            {nameOf(lineId)}:{" "}
-                            <ContractMoney
-                              value={residual}
-                              currencyCode={currencyCode}
-                            />{" "}
-                            not on any invoice
-                          </Trans>
-                        ) : (
-                          <Trans>
-                            {nameOf(lineId)}:{" "}
-                            <ContractMoney
-                              value={-residual}
-                              currencyCode={currencyCode}
-                            />{" "}
-                            more than the line now totals
-                          </Trans>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  <span>
-                    <Trans>
-                      A line changed after the schedule was edited. Reset the
-                      schedule to plan it again from the lines.
-                    </Trans>
-                  </span>
-                  {resetButton}
-                </VStack>
-              </AlertDescription>
-            </Alert>
-          )}
-
           {invoices.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {isDraft && !contract.startDate ? (
-                <Trans>
-                  Set a start date and add lines to plan the invoices.
-                </Trans>
-              ) : isDraft ? (
-                <Trans>Add lines to plan the invoices.</Trans>
-              ) : (
-                <Trans>No invoices planned.</Trans>
-              )}
+              <Trans>No invoices planned.</Trans>
             </p>
           ) : (
             <Table>
@@ -329,18 +162,16 @@ const ContractInvoices = ({
                   <Th>
                     <Trans>Invoice</Trans>
                   </Th>
-                  {isDraft && <Th className="w-10" />}
                 </Tr>
               </Thead>
               <Tbody>
                 {invoices.map((invoice) => {
-                  const isOpen = expanded.has(invoice.ref);
+                  const isOpen = expanded.has(invoice.id);
                   const link = invoice.salesInvoiceId
                     ? invoiceLinks[invoice.salesInvoiceId]
                     : undefined;
-                  const canMerge = plannedInvoices.length > 1;
                   return (
-                    <Fragment key={invoice.ref}>
+                    <Fragment key={invoice.id}>
                       <Tr>
                         <Td>
                           <IconButton
@@ -350,7 +181,7 @@ const ContractInvoices = ({
                             }
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggle(invoice.ref)}
+                            onClick={() => toggle(invoice.id)}
                           />
                         </Td>
                         <Td>
@@ -410,48 +241,10 @@ const ContractInvoices = ({
                             "—"
                           )}
                         </Td>
-                        {isDraft && (
-                          <Td>
-                            {isEditable(invoice) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <IconButton
-                                    aria-label={t`Invoice actions`}
-                                    icon={<LuEllipsisVertical />}
-                                    variant="ghost"
-                                    size="sm"
-                                  />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    disabled={!canEdit}
-                                    onClick={() =>
-                                      setEditing({ intent: "move", invoice })
-                                    }
-                                  >
-                                    <DropdownMenuIcon
-                                      icon={<LuCalendarDays />}
-                                    />
-                                    <Trans>Move Date</Trans>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    disabled={!canEdit || !canMerge}
-                                    onClick={() =>
-                                      setEditing({ intent: "merge", invoice })
-                                    }
-                                  >
-                                    <DropdownMenuIcon icon={<LuMerge />} />
-                                    <Trans>Merge Into…</Trans>
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </Td>
-                        )}
                       </Tr>
                       {isOpen &&
                         invoice.rows.map((row) => (
-                          <Tr key={row.ref} className="bg-muted/30">
+                          <Tr key={row.id} className="bg-muted/30">
                             <Td />
                             <Td className="text-muted-foreground">
                               <span className="whitespace-nowrap">
@@ -486,52 +279,6 @@ const ContractInvoices = ({
                             </Td>
                             <Td />
                             <Td />
-                            {isDraft && (
-                              <Td>
-                                {isEditable(invoice) && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <IconButton
-                                        aria-label={t`Line actions`}
-                                        icon={<LuEllipsisVertical />}
-                                        variant="ghost"
-                                        size="sm"
-                                      />
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        disabled={!canEdit}
-                                        onClick={() =>
-                                          setEditing({
-                                            intent: "split",
-                                            row,
-                                            invoice
-                                          })
-                                        }
-                                      >
-                                        <DropdownMenuIcon icon={<LuSplit />} />
-                                        <Trans>Split</Trans>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        disabled={!canEdit}
-                                        onClick={() =>
-                                          setEditing({
-                                            intent: "moveLine",
-                                            row,
-                                            invoice
-                                          })
-                                        }
-                                      >
-                                        <DropdownMenuIcon
-                                          icon={<LuCalendarArrowUp />}
-                                        />
-                                        <Trans>Move To…</Trans>
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
-                              </Td>
-                            )}
                           </Tr>
                         ))}
                     </Fragment>
@@ -539,14 +286,6 @@ const ContractInvoices = ({
                 })}
               </Tbody>
             </Table>
-          )}
-
-          {computedSchedule && invoices.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              <Trans>
-                Planned from the lines. Editing an invoice saves the schedule.
-              </Trans>
-            </p>
           )}
 
           {creditsByMemo.size > 0 && (
@@ -594,34 +333,6 @@ const ContractInvoices = ({
           )}
         </VStack>
       </CardContent>
-
-      {editing?.intent === "split" && (
-        <ContractInvoiceSplitModal
-          action={action}
-          currencyCode={currencyCode}
-          row={{
-            ref: editing.row.ref,
-            lineName: nameOf(editing.row.lineId),
-            periodStart: editing.row.periodStart,
-            periodEnd: editing.row.periodEnd,
-            invoiceDate: editing.invoice.invoiceDate,
-            amount: editing.row.amount
-          }}
-          onClose={() => setEditing(null)}
-        />
-      )}
-      {editing && editing.intent !== "split" && (
-        <ScheduleEditModal
-          action={action}
-          editing={editing}
-          plannedInvoices={plannedInvoices}
-          currencyCode={currencyCode}
-          lineName={
-            editing.intent === "moveLine" ? nameOf(editing.row.lineId) : ""
-          }
-          onClose={() => setEditing(null)}
-        />
-      )}
     </Card>
   );
 };
@@ -654,141 +365,6 @@ const ContractInvoiceStatus = ({
     default:
       return null;
   }
-};
-
-/** Move an invoice's date, merge it into another, or move one row to a date. */
-const ScheduleEditModal = ({
-  action,
-  editing,
-  plannedInvoices,
-  currencyCode,
-  lineName,
-  onClose
-}: {
-  action: string;
-  editing: Exclude<Editing, { intent: "split" }>;
-  plannedInvoices: InvoiceView[];
-  currencyCode: string;
-  lineName: string;
-  onClose: () => void;
-}) => {
-  const { t } = useLingui();
-  const permissions = usePermissions();
-  const fetcher = useFetcher<{}>();
-  const { formatDate } = useDateFormatter();
-  const formatter = useCurrencyFormatter({ currency: currencyCode });
-
-  const { invoice } = editing;
-  const defaultValues =
-    editing.intent === "move"
-      ? {
-          intent: "move" as const,
-          customerContractInvoiceId: invoice.ref,
-          invoiceDate: invoice.invoiceDate
-        }
-      : editing.intent === "merge"
-        ? {
-            intent: "merge" as const,
-            sourceInvoiceId: invoice.ref,
-            targetInvoiceId: ""
-          }
-        : {
-            intent: "moveLine" as const,
-            customerContractInvoiceLineId: editing.row.ref,
-            invoiceDate: invoice.invoiceDate
-          };
-
-  const mergeOptions = plannedInvoices
-    .filter((other) => other.ref !== invoice.ref)
-    .map((other) => ({
-      value: other.ref,
-      label: `${formatDate(other.invoiceDate)} · ${formatter.format(other.total)}`
-    }));
-
-  const invoiceLabel = formatDate(invoice.invoiceDate);
-
-  return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ValidatedForm
-          validator={customerContractScheduleEditValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={defaultValues}
-          onSubmit={onClose}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {editing.intent === "move" ? (
-                <Trans>Move the {invoiceLabel} invoice</Trans>
-              ) : editing.intent === "merge" ? (
-                <Trans>Merge the {invoiceLabel} invoice</Trans>
-              ) : (
-                <Trans>Move {lineName}</Trans>
-              )}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value={editing.intent} />
-            <VStack spacing={4}>
-              {editing.intent === "move" && (
-                <>
-                  <Hidden name="customerContractInvoiceId" />
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      Moving onto the date of another planned invoice merges the
-                      two.
-                    </Trans>
-                  </p>
-                  <DatePicker name="invoiceDate" label={t`Invoice Date`} />
-                </>
-              )}
-              {editing.intent === "merge" && (
-                <>
-                  <Hidden name="sourceInvoiceId" />
-                  <Select
-                    name="targetInvoiceId"
-                    label={t`Merge Into`}
-                    options={mergeOptions}
-                  />
-                </>
-              )}
-              {editing.intent === "moveLine" && (
-                <>
-                  <Hidden name="customerContractInvoiceLineId" />
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      The line joins the planned invoice on that date, or a new
-                      one if there is none.
-                    </Trans>
-                  </p>
-                  <DatePicker name="invoiceDate" label={t`Invoice Date`} />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit isDisabled={!permissions.can("update", "sales")}>
-              {editing.intent === "merge" ? (
-                <Trans>Merge</Trans>
-              ) : (
-                <Trans>Move</Trans>
-              )}
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
-  );
 };
 
 export default ContractInvoices;

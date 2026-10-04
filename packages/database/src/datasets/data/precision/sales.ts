@@ -980,7 +980,7 @@ export const CONTRACTS: ContractSpec[] = [
     billingTiming: "Advance",
     lines: [
       {
-        kind: "One-time",
+        revenueType: "One-time",
         item: "CMM Program Development",
         description: "CMM programs for the valve body family",
         quantity: 1,
@@ -990,7 +990,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Daily"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Inspection Data Portal",
         description: "Inspection data portal, plant licence",
         quantity: 1,
@@ -1000,7 +1000,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Even Period"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Gauge Management Service",
         description: "Gauge management, up to 200 gauges",
         quantity: 1,

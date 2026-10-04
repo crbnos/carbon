@@ -4,6 +4,15 @@
 
 import { parseDate } from "@internationalized/date";
 import {
+  applyContractMovement,
+  EMPTY_POSITION
+} from "../../contract-position.ts";
+import {
+  monthStart,
+  planRevenueSchedule,
+  revenueTotals
+} from "../../contract-revenue-schedule.ts";
+import {
   type ContractLineTerms,
   type ContractTerms,
   horizon,
@@ -583,7 +592,10 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // Contracts: Active and confirmed, as Confirm leaves one. The schedule comes
   // from the shared planner through its horizon; every invoice dated on or
   // before today is Billed Externally and billedThrough is the last such row's
-  // period end, so no drafted invoice exists for tier 09 to journal.
+  // period end, so no drafted invoice exists for tier 09 to journal. Like a
+  // migrated contract, revenue is recognized externally before this month
+  // (recognizeRevenueFrom) and each line opens with the billed-but-unrecognized
+  // difference, as Confirm writes it.
   if (data.contracts.length > 0) {
     ctx.log("customer contracts");
     const today = ctx.anchor.toString();
@@ -602,7 +614,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         spec: line,
         terms: {
           id: `line-${index}`,
-          kind: line.kind,
+          revenueType: line.revenueType,
           quantity: line.quantity,
           rate: line.rate,
           rateUnit: line.rateUnit ?? null,
@@ -654,6 +666,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         billingAlignment: spec.billingAlignment,
         billingTiming: spec.billingTiming,
         billedThrough,
+        recognizeRevenueFrom: monthStart(today),
         paymentTermId,
         currencyCode: "USD",
         exchangeRate: 1,
@@ -669,7 +682,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           "customerContractLine",
           {
             customerContractId: contractId,
-            kind: line.spec.kind,
+            revenueType: line.spec.revenueType,
             itemId: need(ctx.refs.items, line.spec.item).id,
             description: line.spec.description,
             quantity: line.terms.quantity,
@@ -705,6 +718,71 @@ export async function runTier4(ctx: Ctx): Promise<void> {
             isAdjustment: row.isAdjustment
           });
         }
+      }
+
+      const scheduleRows = invoices.flatMap((invoice) => invoice.rows);
+      const lastPeriodEnds = new Map<string, string>();
+      for (const row of scheduleRows) {
+        const last = lastPeriodEnds.get(row.lineId);
+        if (!last || row.periodEnd > last) {
+          lastPeriodEnds.set(row.lineId, row.periodEnd);
+        }
+      }
+      const billed = revenueTotals(scheduleRows);
+      const revenue = planRevenueSchedule({
+        lines: lines.map((line) => ({
+          id: line.terms.id,
+          revenueType: line.spec.revenueType,
+          revenueMethod: line.spec.revenueMethod,
+          startDate: line.terms.startDate,
+          endDate: line.terms.endDate,
+          goLiveDate: null,
+          revenueStartDate: null,
+          revenueEndDate: null
+        })),
+        totals: billed,
+        fallbackEnds: lastPeriodEnds,
+        recognizeRevenueFrom: monthStart(today)
+      });
+      for (const row of revenue) {
+        await insertRow(ctx, "customerContractRevenue", {
+          customerContractId: contractId,
+          customerContractLineId: need(lineIdByKey, row.lineId),
+          periodStart: row.periodStart,
+          periodEnd: row.periodEnd,
+          amount: row.amount,
+          status: row.status
+        });
+      }
+
+      const billedExternally = revenueTotals(
+        invoices
+          .filter((invoice) => invoice.invoiceDate <= today)
+          .flatMap((invoice) => invoice.rows)
+      );
+      const recognizedExternally = revenueTotals(
+        revenue.filter((row) => row.status === "Recognized Externally")
+      );
+      for (const line of lines) {
+        const opening = applyContractMovement({
+          position: EMPTY_POSITION,
+          amount:
+            (billedExternally.get(line.terms.id) ?? 0) -
+            (recognizedExternally.get(line.terms.id) ?? 0),
+          rate: 1,
+          counterpart: "receivable"
+        });
+        if (opening.deferredAmount === 0 && opening.assetAmount === 0) continue;
+        await insertRow(ctx, "customerContractLedgerEntry", {
+          customerContractId: contractId,
+          customerContractLineId: need(lineIdByKey, line.terms.id),
+          entryType: "Opening",
+          postingDate: startDate,
+          deferredAmount: opening.deferredAmount,
+          deferredBase: opening.deferredBase,
+          assetAmount: opening.assetAmount,
+          assetBase: opening.assetBase
+        });
       }
       ctx.refs.documents[`con:${spec.key}`] = contractId;
     }

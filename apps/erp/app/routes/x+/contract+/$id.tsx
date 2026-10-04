@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import type { ContractRevenueRow } from "@carbon/utils";
 import {
   contractPositionPreview,
   datetime,
@@ -14,9 +15,11 @@ import {
   lineRevenueDates,
   lineTotals,
   planInvoiceSchedule,
+  planRevenueSchedule,
   redirect,
   revenuePreview,
   round,
+  validateRevenueEdit,
   validateScheduleEdit
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -24,7 +27,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, useLoaderData, useParams } from "react-router";
+import { Outlet, useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getContract,
@@ -77,13 +80,22 @@ export async function loader({
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [contract, lines, schedule, amendments, timeZone] = await Promise.all([
-    getContract(client, id),
-    getContractLines(client, id),
-    getContractInvoiceSchedule(client, id),
-    getContractAmendments(client, id),
-    getCompanyTimeZone(client, companyId)
-  ]);
+  const [contract, lines, schedule, amendments, storedRevenue, timeZone] =
+    await Promise.all([
+      getContract(client, id),
+      getContractLines(client, id),
+      getContractInvoiceSchedule(client, id),
+      getContractAmendments(client, id),
+      client
+        .from("customerContractRevenue")
+        .select(
+          "customerContractLineId, periodStart, periodEnd, amount, status"
+        )
+        .eq("customerContractId", id)
+        .eq("companyId", companyId)
+        .order("periodStart", { ascending: true }),
+      getCompanyTimeZone(client, companyId)
+    ]);
 
   if (contract.error || !contract.data) {
     throw redirect(
@@ -94,13 +106,21 @@ export async function loader({
   if (contract.data.companyId !== companyId) {
     throw redirect(path.to.contracts);
   }
-  if (lines.error || schedule.error || amendments.error) {
+  if (
+    lines.error ||
+    schedule.error ||
+    amendments.error ||
+    storedRevenue.error
+  ) {
     throw redirect(
       path.to.contracts,
       await flash(
         request,
         error(
-          lines.error ?? schedule.error ?? amendments.error,
+          lines.error ??
+            schedule.error ??
+            amendments.error ??
+            storedRevenue.error,
           "Failed to load contract"
         )
       )
@@ -125,6 +145,15 @@ export async function loader({
       ? planInvoiceSchedule(terms, lineTerms, horizon(terms, today))
       : null;
   const computedSchedule = isDraft && invoices.length === 0 ? planned : null;
+
+  // What each line computes to across the live plan — the total the invoice
+  // grid's columns must add up to, and the setup wizard's contract total.
+  const plannedTotals: Record<string, number> = {};
+  if (planned) {
+    for (const [lineId, total] of lineTotals(planned)) {
+      plannedTotals[lineId] = total;
+    }
+  }
 
   // An edited Draft whose lines changed since: what each line is short (or
   // over) against what the lines now compute. Non-zero offers Reset schedule.
@@ -201,12 +230,12 @@ export async function loader({
     // which is what a missing end means for a One-time line.
     const revenueEnd =
       dates.end ??
-      (line.kind === "Recurring"
+      (line.revenueType === "Recurring"
         ? (lastPeriodEndByLine.get(line.id) ?? null)
         : null);
     return revenuePreview({
       id: line.id,
-      kind: line.kind,
+      revenueType: line.revenueType,
       method: line.revenueMethod,
       revenueStart: dates.start,
       revenueEnd,
@@ -218,6 +247,45 @@ export async function loader({
     revenueLines
   );
 
+  // The revenue plan (plan D1): the stored rows once a revenue edit or
+  // Confirm has written them, else planned live from what each line bills —
+  // the same way the server function would store it.
+  const billedTotals = new Map(
+    [...netByLine].map(([lineId, net]) => [lineId, round(net)])
+  );
+  const revenueIsStored = (storedRevenue.data ?? []).length > 0;
+  const revenueRows: ContractRevenueRow[] = revenueIsStored
+    ? (storedRevenue.data ?? []).map((row) => ({
+        lineId: row.customerContractLineId,
+        periodStart: row.periodStart,
+        periodEnd: row.periodEnd,
+        amount: Number(row.amount),
+        status: row.status
+      }))
+    : planRevenueSchedule({
+        lines: contractLines.map((line) => ({
+          id: line.id,
+          revenueType: line.revenueType,
+          revenueMethod: line.revenueMethod,
+          startDate: line.startDate,
+          endDate: line.endDate,
+          goLiveDate: line.goLiveDate,
+          revenueStartDate: line.revenueStartDate,
+          revenueEndDate: line.revenueEndDate
+        })),
+        totals: billedTotals,
+        fallbackEnds: lastPeriodEndByLine,
+        recognizeRevenueFrom: contract.data.recognizeRevenueFrom
+      });
+  // Per line: billed − Σ revenue. Non-zero blocks Confirm.
+  const revenueResiduals: Record<string, number> = {};
+  for (const [lineId, residual] of validateRevenueEdit(
+    billedTotals,
+    revenueRows
+  ).residuals) {
+    revenueResiduals[lineId] = residual;
+  }
+
   return {
     contract: contract.data,
     lines: contractLines,
@@ -228,14 +296,25 @@ export async function loader({
     residuals,
     invoiceLinks,
     creditMemoLinks,
-    revenue: { lines: revenueLines, position }
+    revenue: { lines: revenueLines, position },
+    lineTotals: plannedTotals,
+    revenueRows,
+    revenueIsStored,
+    revenueResiduals
   };
 }
 
 export default function ContractRoute() {
   const { contract, lines } = useLoaderData<typeof loader>();
   const { id } = useParams();
+  const matches = useMatches();
   if (!id) throw new Error("Could not find id");
+
+  // The setup wizard (`$id.setup`) is a child of this route so it reads the
+  // same loader, but it takes the whole page rather than the workspace.
+  if (matches.some((match) => match.id.endsWith("$id.setup"))) {
+    return <Outlet />;
+  }
 
   return (
     <PanelProvider>

@@ -130,7 +130,7 @@ async function contractFixture() {
         {
           id: oneTimeLineId,
           customerContractId: contractId,
-          kind: "One-time",
+          revenueType: "One-time",
           itemId,
           description: "Implementation",
           quantity: 1,
@@ -144,7 +144,7 @@ async function contractFixture() {
         {
           id: seatsLineId,
           customerContractId: contractId,
-          kind: "Recurring",
+          revenueType: "Recurring",
           itemId,
           description: "Platform seats",
           quantity: 10,
@@ -207,7 +207,7 @@ async function contractFixture() {
           .values({
             id: `${id}-line`,
             customerContractId: id,
-            kind: "Recurring",
+            revenueType: "Recurring",
             itemId,
             quantity: 1,
             rate: 100,
@@ -746,7 +746,7 @@ async function contractLines(
     .selectFrom("customerContractLine")
     .select([
       "id",
-      "kind",
+      "revenueType",
       "rate",
       "discountPercent",
       sql<string>`"startDate"::text`.as("startDate"),
@@ -778,7 +778,7 @@ async function addOneTimeLine(
     .values({
       id,
       customerContractId: input.contractId,
-      kind: "One-time",
+      revenueType: "One-time",
       itemId: input.itemId,
       quantity: 1,
       rate: input.rate,
@@ -996,7 +996,7 @@ databaseTest(
           {
             op: "add",
             line: {
-              kind: "Recurring",
+              revenueType: "Recurring",
               itemId: await contractItemId(db, companyId, added.lineId),
               quantity: 1,
               rate: 100,
@@ -1186,7 +1186,7 @@ databaseTest(
         {
           op: "add",
           line: {
-            kind: "Recurring",
+            revenueType: "Recurring",
             itemId,
             quantity: 1,
             rate: 10,
@@ -1209,6 +1209,523 @@ databaseTest(
         await contractLines(db, companyId, active.contractId)
       ).find((line) => line.amendsLineId === active.lineId)!;
       expect(Number(replacement.discountPercent)).toBe(0.143);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Phase B: invoice-grid and revenue-grid edits, revenue at confirm and on
+// lifecycle changes (.ai/plans/2026-10-04-contracts-wizard-phase-b.md T3).
+
+/** The contract's stored revenue rows, in line and month order. */
+async function revenueRows(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  contractId: string
+) {
+  const rows = await db
+    .selectFrom("customerContractRevenue")
+    .select([
+      "customerContractLineId",
+      sql<string>`"periodStart"::text`.as("periodStart"),
+      sql<string>`"periodEnd"::text`.as("periodEnd"),
+      "amount",
+      "status"
+    ])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", companyId)
+    .orderBy("customerContractLineId")
+    .orderBy("periodStart")
+    .execute();
+  return rows.map((row) => ({ ...row, amount: Number(row.amount) }));
+}
+
+async function setEvenPeriodRevenue(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  lineId: string
+) {
+  await db
+    .updateTable("customerContractLine")
+    .set({ revenueMethod: "Even Period" })
+    .where("id", "=", lineId)
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
+/** The structured body of a refused call. */
+const errorBody = (result: { error: unknown }) =>
+  (result.error as { body?: Record<string, unknown> } | null)?.body ?? {};
+
+databaseTest(
+  "an invoice-grid amount set from the computed state leaves a residual that an added invoice restores",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "grid-set",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      expect(await plannedInvoices(db, companyId, contractId)).toEqual([]);
+
+      // The page names the February invoice by position.
+      const set = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "setAmount",
+          customerContractInvoiceId: "planned:2026-02-01",
+          customerContractLineId: lineId,
+          amount: 60
+        }
+      });
+      expect(set.error).toBeNull();
+      let schedule = await plannedInvoices(db, companyId, contractId);
+      expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 60],
+        ["2026-03-01", 100]
+      ]);
+      const february = await db
+        .selectFrom("customerContractInvoiceLine as r")
+        .innerJoin(
+          "customerContractInvoice as i",
+          "i.id",
+          "r.customerContractInvoiceId"
+        )
+        .select(["r.units", "r.unitPrice", "i.isEdited"])
+        .where("r.customerContractId", "=", contractId)
+        .where("i.invoiceDate", "=", "2026-02-01")
+        .executeTakeFirstOrThrow();
+      // Rescaled like a split: 60 of a 100 month is 0.6 of its unit.
+      expect(Number(february.units)).toBeCloseTo(0.6, 5);
+      expect(Number(february.unitPrice)).toBe(100);
+      expect(february.isEdited).toBe(true);
+
+      // 40 is on no invoice: Confirm refuses.
+      const refused = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(refused.error).not.toBeNull();
+      expect(errorBody(refused).residuals).toEqual({ [lineId]: 40 });
+
+      // An invoice prefilled with the residual restores the balance.
+      const added = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "addInvoice",
+          invoiceDate: "2026-02-15",
+          amounts: [{ customerContractLineId: lineId, amount: 40 }]
+        }
+      });
+      expect(added.error).toBeNull();
+      schedule = await plannedInvoices(db, companyId, contractId);
+      const mid = schedule.find((i) => i.invoiceDate === "2026-02-15")!;
+      expect(mid.total).toBe(40);
+      // The nearest planned period of the line (1 Feb and 1 Mar are both two
+      // weeks away; the earlier wins).
+      expect([mid.rows[0]!.periodStart, mid.rows[0]!.periodEnd]).toEqual([
+        "2026-02-01",
+        "2026-02-28"
+      ]);
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "deleting a planned invoice leaves a residual; an invoice added on a taken date adds to its cell",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "grid-delete",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      const deleted = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "delete",
+          customerContractInvoiceId: "planned:2026-03-01"
+        }
+      });
+      expect(deleted.error).toBeNull();
+      let schedule = await plannedInvoices(db, companyId, contractId);
+      expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 100]
+      ]);
+      const refused = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(errorBody(refused).residuals).toEqual({ [lineId]: 100 });
+
+      const added = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "addInvoice",
+          invoiceDate: "2026-02-01",
+          amounts: [{ customerContractLineId: lineId, amount: 100 }]
+        }
+      });
+      expect(added.error).toBeNull();
+      schedule = await plannedInvoices(db, companyId, contractId);
+      expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 200]
+      ]);
+      // One row per cell.
+      expect(schedule[1]!.rows).toHaveLength(1);
+
+      // An amount of 0 removes the cell; the invoice left empty goes too.
+      const cleared = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "setAmount",
+          customerContractInvoiceId: schedule[1]!.id,
+          customerContractLineId: lineId,
+          amount: 0
+        }
+      });
+      expect(cleared.error).toBeNull();
+      schedule = await plannedInvoices(db, companyId, contractId);
+      expect(schedule.map((i) => i.invoiceDate)).toEqual(["2026-01-01"]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a revenue edit from the computed state writes the plan, and confirm refuses a revenue residual",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "revenue-edit",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      await setEvenPeriodRevenue(db, companyId, lineId);
+      const editRevenue = (
+        edit: Extract<
+          Parameters<typeof postCustomerContract>[1],
+          { type: "edit-revenue" }
+        >["edit"]
+      ) =>
+        postCustomerContract(ctx, {
+          type: "edit-revenue",
+          customerContractId: contractId,
+          asOf: "2026-01-01",
+          edit
+        });
+
+      const set = await editRevenue({
+        intent: "setAmount",
+        customerContractLineId: lineId,
+        periodStart: "2026-02-01",
+        amount: 50
+      });
+      expect(set.error).toBeNull();
+      expect(
+        (await revenueRows(db, companyId, contractId)).map((row) => [
+          row.periodStart,
+          row.periodEnd,
+          row.amount,
+          row.status
+        ])
+      ).toEqual([
+        ["2026-01-01", "2026-01-31", 100, "Planned"],
+        ["2026-02-01", "2026-02-28", 50, "Planned"],
+        ["2026-03-01", "2026-03-31", 100, "Planned"]
+      ]);
+      // Only the revenue plan was written; the invoice schedule stays live.
+      expect(await plannedInvoices(db, companyId, contractId)).toEqual([]);
+
+      // A month that is not the 1st, or a line of another contract, is refused.
+      expect(
+        (
+          await editRevenue({
+            intent: "setAmount",
+            customerContractLineId: f.seatsLineId,
+            periodStart: "2026-02-01",
+            amount: 1
+          })
+        ).error
+      ).not.toBeNull();
+
+      const refused = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(refused.error).not.toBeNull();
+      expect(errorBody(refused).revenueResiduals).toEqual({ [lineId]: 50 });
+
+      // Reset goes back to the live plan; delete a month, then add it back.
+      expect((await editRevenue({ intent: "reset" })).error).toBeNull();
+      expect(await revenueRows(db, companyId, contractId)).toEqual([]);
+      expect(
+        (
+          await editRevenue({
+            intent: "deleteMonth",
+            periodStart: "2026-03-01"
+          })
+        ).error
+      ).toBeNull();
+      expect(
+        (await revenueRows(db, companyId, contractId)).map((r) => r.periodStart)
+      ).toEqual(["2026-01-01", "2026-02-01"]);
+      expect(
+        (
+          await editRevenue({
+            intent: "addMonth",
+            periodStart: "2026-04-01",
+            amounts: [{ customerContractLineId: lineId, amount: 100 }]
+          })
+        ).error
+      ).toBeNull();
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      expect(
+        (await revenueRows(db, companyId, contractId)).map((r) => [
+          r.periodStart,
+          r.amount
+        ])
+      ).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 100],
+        ["2026-04-01", 100]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "confirm writes the revenue plan and an Opening entry for a migrated contract",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "migrated",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      await setEvenPeriodRevenue(db, companyId, lineId);
+      // Billed elsewhere through March; recognized elsewhere through February.
+      await db
+        .updateTable("customerContract")
+        .set({
+          billedThrough: "2026-03-31",
+          recognizeRevenueFrom: "2026-03-01",
+          exchangeRate: 0.8
+        })
+        .where("id", "=", contractId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-04-01"
+      });
+      expect(confirmed.error).toBeNull();
+
+      const rows = await revenueRows(db, companyId, contractId);
+      expect(rows).toHaveLength(12);
+      expect(rows.every((row) => row.amount === 100)).toBe(true);
+      expect(rows.slice(0, 3).map((row) => row.status)).toEqual([
+        "Recognized Externally",
+        "Recognized Externally",
+        "Planned"
+      ]);
+
+      const entries = await db
+        .selectFrom("customerContractLedgerEntry")
+        .select([
+          "customerContractLineId",
+          "entryType",
+          sql<string>`"postingDate"::text`.as("postingDate"),
+          "journalId",
+          "deferredAmount",
+          "deferredBase",
+          "assetAmount",
+          "assetBase"
+        ])
+        .where("customerContractId", "=", contractId)
+        .where("companyId", "=", companyId)
+        .execute();
+      // 300 billed − 200 recognized = 100 deferred, at 0.8 per base unit.
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        customerContractLineId: lineId,
+        entryType: "Opening",
+        postingDate: "2026-01-01",
+        journalId: null
+      });
+      expect(Number(entries[0]!.deferredAmount)).toBe(100);
+      expect(Number(entries[0]!.deferredBase)).toBe(125);
+      expect(Number(entries[0]!.assetAmount)).toBe(0);
+      expect(Number(entries[0]!.assetBase)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a cancellation reconciles revenue: later months go, the end month is re-cut, a recognized month is caught up",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "cancel-revenue",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      await setEvenPeriodRevenue(db, companyId, lineId);
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      expect(await revenueRows(db, companyId, contractId)).toHaveLength(12);
+
+      // March was already recognized (a run posted it early).
+      await db
+        .updateTable("customerContractRevenue")
+        .set({ status: "Recognized" })
+        .where("customerContractId", "=", contractId)
+        .where("companyId", "=", companyId)
+        .where("periodStart", "=", "2026-03-01")
+        .execute();
+
+      // A preview changes nothing.
+      const preview = await postCustomerContract(ctx, {
+        type: "cancel",
+        customerContractId: contractId,
+        asOf: "2026-02-01",
+        endDate: "2026-02-14",
+        reason: "Preview",
+        creditUnusedTime: false,
+        preview: true
+      });
+      expect(preview.error).toBeNull();
+      expect(await revenueRows(db, companyId, contractId)).toHaveLength(12);
+
+      const cancelled = await postCustomerContract(ctx, {
+        type: "cancel",
+        customerContractId: contractId,
+        asOf: "2026-02-01",
+        endDate: "2026-02-14",
+        reason: "Closing the account",
+        creditUnusedTime: false
+      });
+      expect(cancelled.error).toBeNull();
+
+      // Billed: January 100 + 1–14 Feb (100 × 14/28 = 50) = 150. The new
+      // plan is January 100 and February 50; March stays Recognized at 100,
+      // so February carries the −100 catch-up.
+      const rows = await revenueRows(db, companyId, contractId);
+      expect(rows.map((row) => [row.periodStart, row.status])).toEqual([
+        ["2026-01-01", "Planned"],
+        ["2026-02-01", "Planned"],
+        ["2026-03-01", "Recognized"]
+      ]);
+      expect(rows[0]!.amount).toBe(100);
+      expect(rows[1]!.amount).toBeCloseTo(-50, 5);
+      expect(rows[2]!.amount).toBe(100);
+      const total = rows.reduce((sum, row) => sum + row.amount, 0);
+      expect(total).toBeCloseTo(150, 5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "rolling an open-ended schedule forward extends its revenue plan",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "roll-revenue",
+        startDate: "2026-01-01",
+        endDate: null
+      });
+      await setEvenPeriodRevenue(db, companyId, lineId);
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      expect(
+        (await revenueRows(db, companyId, contractId)).map((r) => [
+          r.periodStart,
+          r.amount
+        ])
+      ).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 100]
+      ]);
+
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-03-01",
+        customerContractId: contractId
+      });
+      expect(run.error).toBeNull();
+      expect(run.data!.failures).toEqual([]);
+      expect(
+        (await revenueRows(db, companyId, contractId)).map((r) => [
+          r.periodStart,
+          r.amount
+        ])
+      ).toEqual([
+        ["2026-01-01", 100],
+        ["2026-02-01", 100],
+        ["2026-03-01", 100],
+        ["2026-04-01", 100]
+      ]);
     } finally {
       await f.cleanup();
     }

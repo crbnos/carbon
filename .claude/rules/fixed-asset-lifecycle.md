@@ -177,6 +177,16 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   × (1 − residual %) / usefulLifeMonths)`), `setFixedAssetOutOfService`,
   `returnFixedAssetToService`, `invokeAssetTransfer`
   (`client.functions.invoke("post-asset-transfer", { body })`).
+- What a run should hold: `buildDepreciationRunLines()` (`accounting.server.ts`)
+  — every Active asset no OTHER run of the period covers, depreciated from the
+  last run posted before the period, Units of Production summing the usage
+  logged since. New, Repeat, **Recalculate** (`replaceDepreciationRunLines`,
+  keeps the run's id and number, deletes a run left empty) and Post all use it.
+  Post refuses a Draft whose lines no longer match it
+  (`depreciationRunLinesMatch`, `accounting.utils.ts` — an asset disposed,
+  added or re-valued since), and any run when a LATER period is already posted
+  (`laterPostedRunId`: those months are in it, so posting would count them
+  twice).
 - Server transactions (Kysely): `accounting.server.ts` — `postDisposal()`,
   `postDepreciationRun()` and `postAssetRegistration()` build journals and
   update asset rows. `postAssetRegistration` takes an optional `status`
@@ -203,7 +213,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `Work Center` / `Out of Service Since` detail rows.
 - Routes: `routes/x+/fixed-asset+/$fixedAssetId.{tsx,register,dispose,sell,purchase,details,delete,capitalize,return-to-inventory,attach-job,out-of-service}`,
   `routes/x+/fixed-asset+/capitalize.tsx` (no id: capitalize a stock unit);
-  `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,delete}`;
+  `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,recalculate,delete}`;
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`;
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
   Fixed Assets → Assets / Fleet / Depreciation, `useAccountingSubmodules`).

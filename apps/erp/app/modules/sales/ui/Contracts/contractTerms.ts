@@ -33,7 +33,7 @@ export function toContractTerms(contract: Contract): ContractTerms {
 export function toContractLineTerms(line: ContractLine): ContractLineTerms {
   return {
     id: line.id,
-    kind: line.kind,
+    revenueType: line.revenueType,
     quantity: Number(line.quantity),
     rate: Number(line.rate),
     rateUnit: line.rateUnit,

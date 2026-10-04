@@ -33,6 +33,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction (inside a server function when apps, the API or jobs share the write), or an RPC when it must also be callable through PostgREST.
 - Never construct a DB connection/pool/Kysely client inside a `{module}.service.ts` — service files are re-exported through the module barrel that client components import, so they are bundled for the browser. Build the client in a `.server` file (`getDatabaseClient()` from `~/services/database.server`) and pass it into the service as a `db: Kysely<KyselyDatabase>` argument from the route action. Enforced by the `no-db-client-in-service` check (`@carbon/checks`).
 - Never hand-edit generated DB types (`@carbon/database` types).
+- Never name a field, column, enum or form label "Kind" (or `*Kind`). Name what the choice decides — `revenueType` (One-time / Recurring), `billingFrequency`, `entryType`. "Kind" tells the reader nothing (see `.claude/rules/conventions-database.md`).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
 - Never rebuild the database to test changes — wait for the user.
 - Never commit credentials, tokens, or private keys.

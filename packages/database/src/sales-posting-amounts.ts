@@ -47,9 +47,13 @@ export type SalesPostingMetadata = {
   projectId?: string | null;
 };
 
-/** A rental revenue leg references the agreement it earns under; every other
- *  line (AR, tax, shipping, disposal) references the invoice. */
-export type SalesPostingDocumentType = "Invoice" | "Rental Agreement";
+/** A rental revenue leg references the agreement it earns under, a contract
+ *  line's revenue legs the contract; every other line (AR, tax, shipping,
+ *  disposal) references the invoice. */
+export type SalesPostingDocumentType =
+  | "Invoice"
+  | "Rental Agreement"
+  | "Contract";
 
 export type SalesPostingJournalLine = {
   accountId: string;

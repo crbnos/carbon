@@ -11,13 +11,10 @@ import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import {
   depreciationRunValidator,
-  getBaseCurrencyDecimalPlaces,
   insertDepreciationRun
 } from "~/modules/accounting";
-import {
-  buildDepreciationLines,
-  getNextPeriodEnd
-} from "~/modules/accounting/accounting.utils";
+import { buildDepreciationRunLines } from "~/modules/accounting/accounting.server";
+import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -76,81 +73,21 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const companySettings = await client
-    .from("companySettings")
-    .select("assetTaxDepreciationEnabled")
-    .eq("id", companyId)
-    .single();
-
-  const taxEnabled =
-    (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false;
-
-  const assets = await client
-    .from("fixedAsset")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("status", "Active");
-
-  if (assets.error) {
+  const proposal = await buildDepreciationRunLines(client, {
+    companyId,
+    companyGroupId,
+    periodEnd
+  });
+  if (!proposal.data) {
     throw redirect(
       path.to.depreciationRuns,
-      await flash(request, error(assets.error, "Failed to fetch assets"))
+      await flash(
+        request,
+        error(proposal.error, "Failed to calculate depreciation")
+      )
     );
   }
-
-  // For depreciation calculation, use last *posted* run
-  const lastPostedRun = await client
-    .from("depreciationRun")
-    .select("periodEnd")
-    .eq("companyId", companyId)
-    .eq("status", "Posted")
-    .order("periodEnd", { ascending: false })
-    .limit(1);
-
-  const lastPostedPeriodEnd =
-    lastPostedRun.data && lastPostedRun.data.length > 0
-      ? lastPostedRun.data[0].periodEnd
-      : null;
-
-  // A run can cover several months (a picked later period), so units of
-  // production sums every usage log since the last posted run.
-  let usageQuery = client
-    .from("fixedAssetUsageLog")
-    .select("fixedAssetId, unitsProduced")
-    .eq("companyId", companyId)
-    .lte("periodEnd", periodEnd);
-  if (lastPostedPeriodEnd) {
-    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
-  }
-  const usageLogs = await usageQuery;
-
-  const usageMap = new Map<string, { unitsProduced: number }>();
-  for (const u of usageLogs.data ?? []) {
-    const current = usageMap.get(u.fixedAssetId)?.unitsProduced ?? 0;
-    usageMap.set(u.fixedAssetId, {
-      unitsProduced: current + Number(u.unitsProduced)
-    });
-  }
-
-  const lines = buildDepreciationLines(
-    (assets.data ?? []).map((a) => ({
-      ...a,
-      accumulatedTaxDepreciation: Number(
-        (a as any).accumulatedTaxDepreciation ?? 0
-      ),
-      taxDepreciationMethod: (a as any).taxDepreciationMethod ?? null,
-      taxUsefulLifeMonths: (a as any).taxUsefulLifeMonths ?? null,
-      taxResidualValuePercent: (a as any).taxResidualValuePercent ?? null,
-      macrsPropertyClass: (a as any).macrsPropertyClass ?? null,
-      macrsConvention: (a as any).macrsConvention ?? null,
-      bonusDepreciationPercent: (a as any).bonusDepreciationPercent ?? null
-    })),
-    periodEnd,
-    lastPostedPeriodEnd,
-    taxEnabled,
-    usageMap,
-    await getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
-  );
+  const { lines } = proposal.data;
 
   const result = await insertDepreciationRun(client, {
     periodEnd,

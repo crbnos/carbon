@@ -8,15 +8,21 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect, suggestContractType } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
+import { useLoaderData } from "react-router";
+import { useCompanyToday, useUser } from "~/hooks";
 import { getExchangeRate } from "~/modules/accounting";
 import {
   customerContractValidator,
   getCustomerContractStatuses,
   insertContract
 } from "~/modules/sales";
-import { ContractForm } from "~/modules/sales/ui/Contracts";
+import { contractInvoicingDefaults } from "~/modules/sales/sales.server";
+import {
+  ContractDetailsForm,
+  ContractSetupFrame
+} from "~/modules/sales/ui/Contracts";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -27,11 +33,34 @@ export const handle: Handle = {
   to: path.to.contracts
 };
 
+/** A contract started from a customer (`?customerId=`) opens with that
+ *  customer's currency and suggested type already filled in. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "sales"
   });
-  return null;
+
+  const customerId = new URL(request.url).searchParams.get("customerId");
+  if (!customerId) return { customerId: null, currencyCode: null, type: null };
+
+  const [customer, previous] = await Promise.all([
+    client
+      .from("customer")
+      .select("currencyCode")
+      .eq("id", customerId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getCustomerContractStatuses(client, companyId, customerId)
+  ]);
+  if (!customer.data) {
+    return { customerId: null, currencyCode: null, type: null };
+  }
+
+  return {
+    customerId,
+    currencyCode: customer.data.currencyCode,
+    type: previous.data ? suggestContractType(previous.data) : null
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -76,6 +105,14 @@ export async function action({ request }: ActionFunctionArgs) {
     contractType = suggestContractType(previous.data ?? []);
   }
 
+  // Who the invoices go to, where and on what terms: the customer's own
+  // invoicing and shipping defaults, for whatever the form left empty.
+  const defaults = await contractInvoicingDefaults(
+    client,
+    companyId,
+    data.customerId
+  );
+
   const sequence = await getNextSequence(client, "customerContract", companyId);
   if (sequence.error || !sequence.data) {
     throw redirect(
@@ -106,6 +143,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const contract = await insertContract(client, {
     ...data,
+    invoiceCustomerId: data.invoiceCustomerId ?? defaults.invoiceCustomerId,
+    invoiceCustomerContactId:
+      data.invoiceCustomerContactId ?? defaults.invoiceCustomerContactId,
+    invoiceCustomerLocationId:
+      data.invoiceCustomerLocationId ?? defaults.invoiceCustomerLocationId,
+    shipToCustomerLocationId:
+      data.shipToCustomerLocationId ?? defaults.shipToCustomerLocationId,
+    paymentTermId: data.paymentTermId ?? defaults.paymentTermId,
     exchangeRate: Number(exchangeRate.data),
     contractType,
     customerContractId: sequence.data,
@@ -121,33 +166,42 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.contractDetails(contract.data.id));
+  throw redirect(path.to.contractSetup(contract.data.id, "products"));
 }
 
+/** Step 1 of the contract setup: creating the Draft. Every later step edits
+ *  the Draft this saves (`$id.setup.*`). */
 export default function NewContractRoute() {
-  const [params] = useUrlParams();
-  const { company } = useUser();
+  const prefill = useLoaderData<typeof loader>();
+  const { company, id: userId } = useUser();
   const companyToday = useCompanyToday();
 
   const initialValues = {
     id: undefined,
     customerContractId: undefined,
     name: "",
-    customerId: params.get("customerId") ?? "",
+    contractType: prefill.type ?? undefined,
+    customerId: prefill.customerId ?? "",
+    // The person setting the contract up is usually the one who sold it.
+    salesPersonId: userId,
     closeDate: companyToday,
     startDate: companyToday,
     duration: "12" as const,
     renewal: "Renew" as const,
     renewalUplift: 0,
+    // What a new contract bills on until the Invoicing step says otherwise.
     billingFrequency: "Month" as const,
     billingAlignment: "Anniversary" as const,
     billingTiming: "Advance" as const,
-    currencyCode: company?.baseCurrencyCode ?? "USD"
+    currencyCode: prefill.currencyCode ?? company?.baseCurrencyCode ?? "USD"
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <ContractForm initialValues={initialValues} />
-    </div>
+    <ContractSetupFrame title={<Trans>New Contract</Trans>} step="details">
+      <ContractDetailsForm
+        initialValues={initialValues}
+        action={path.to.newContract}
+      />
+    </ContractSetupFrame>
   );
 }

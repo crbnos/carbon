@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type {
   ContractPlannedInvoice,
   ContractPositionMonth,
+  ContractRevenueRow,
   RevenueMonth
 } from "@carbon/utils";
 import type {
@@ -18,7 +19,7 @@ type Enums = Database["public"]["Enums"];
 
 export type ContractStatusType = Enums["customerContractStatus"];
 export type ContractType = Enums["customerContractType"];
-export type ContractLineKind = Enums["customerContractLineKind"];
+export type ContractRevenueType = Enums["contractRevenueType"];
 export type ContractInvoiceStatusType = Enums["contractInvoiceStatus"];
 
 export type Contract = Database["public"]["Views"]["customerContracts"]["Row"];
@@ -88,4 +89,14 @@ export type ContractRouteData = {
   /** The memos of `credits`, for "Credited on {memoId}". */
   creditMemoLinks: ContractCreditMemoLinks;
   revenue: ContractRevenue;
+  /** Per line: its total across the live plan of a Draft — what its billed
+   *  rows must add up to. Empty once the contract is not a Draft. */
+  lineTotals: Record<string, number>;
+  /** The revenue plan, one row per (line, month): the stored rows, or the
+   *  live plan while none is stored. */
+  revenueRows: ContractRevenueRow[];
+  /** Whether `revenueRows` are stored (a revenue edit or Confirm wrote them). */
+  revenueIsStored: boolean;
+  /** Per line: what it bills − Σ its revenue rows. Non-zero blocks Confirm. */
+  revenueResiduals: Record<string, number>;
 };

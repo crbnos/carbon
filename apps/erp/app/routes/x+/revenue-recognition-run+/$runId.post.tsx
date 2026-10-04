@@ -9,7 +9,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 import { getOrCreateAccountingPeriod } from "~/modules/accounting";
-import { postRevenueRecognitionRun } from "~/modules/accounting/accounting.server";
+import {
+  postRevenueRecognitionRun,
+  RunOutOfDateError
+} from "~/modules/accounting/accounting.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -67,7 +70,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const dimensionIds = {
     customer: dimensions.find((d) => d.entityType === "Customer")?.id,
     item: dimensions.find((d) => d.entityType === "Item")?.id,
-    location: dimensions.find((d) => d.entityType === "Location")?.id
+    location: dimensions.find((d) => d.entityType === "Location")?.id,
+    project: dimensions.find((d) => d.entityType === "Project")?.id
   };
 
   try {
@@ -82,7 +86,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (err) {
     throw redirect(
       path.to.revenueRecognitionRun(runId),
-      await flash(request, error(err, "Failed to post revenue recognition run"))
+      await flash(
+        request,
+        error(
+          err,
+          err instanceof RunOutOfDateError
+            ? err.message
+            : "Failed to post revenue recognition run"
+        )
+      )
     );
   }
 

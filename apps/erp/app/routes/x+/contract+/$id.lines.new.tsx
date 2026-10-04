@@ -87,7 +87,7 @@ export default function NewContractLineRoute() {
       key={id}
       initialValues={{
         customerContractId: id,
-        kind: "Recurring",
+        revenueType: "Recurring",
         itemId: "",
         description: "",
         quantity: 1,

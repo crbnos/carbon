@@ -377,68 +377,43 @@ databaseTest("draft memo reservation does not prevent memo void", async () => {
 });
 
 /**
- * A contract cancellation credit for September, against an invoiced September
- * period whose Service deferral is still one Planned row.
+ * A contract cancellation credit for September against a contract line whose
+ * position holds `deferred` of Deferred Revenue (an invoice already posted).
  */
 async function contractMemoFixture(
   f: Fixture,
-  {
-    memoAmount,
-    deferred,
-    split = false
-  }: {
-    memoAmount: number;
-    deferred: number;
-    /** Billed in two installments of 210, each on its own invoice line with
-     *  its own Planned deferral of `deferred`. */
-    split?: boolean;
-  }
+  { memoAmount, deferred }: { memoAmount: number; deferred: number }
 ) {
   const contractId = `${f.companyId}-contract`;
   const contractLineId = `${f.companyId}-contract-line`;
-  const plannedInvoiceId = `${f.companyId}-contract-invoice`;
   const memoId = `${f.companyId}-contract-memo`;
-  const scheduleId = `${f.companyId}-deferral`;
-  const salesInvoiceLine = await f.db
-    .selectFrom("salesInvoiceLine")
-    .select("id")
-    .where("invoiceId", "=", f.invoiceId)
-    .executeTakeFirstOrThrow();
-  const secondScheduleId = `${f.companyId}-deferral-2`;
-  const secondInvoiceLine = split
-    ? await f.db
-        .insertInto("salesInvoiceLine")
-        .values({
-          invoiceId: f.invoiceId,
-          invoiceLineType: "Service",
-          quantity: 1,
-          unitPrice: 0,
-          unitOfMeasureCode: "EA",
-          companyId: f.companyId,
-          createdBy: "system"
-        })
-        .returning("id")
-        .executeTakeFirstOrThrow()
-    : null;
   await f.db.transaction().execute(async (trx) => {
     await trx
       .insertInto("account")
-      .values({
-        id: f.account("deferred"),
-        name: "deferred",
-        class: "Liability",
-        incomeBalance: "Balance Sheet",
-        companyGroupId: f.groupId,
-        createdBy: "system"
-      })
+      .values(
+        [
+          { name: "deferred", class: "Liability" as const },
+          { name: "contract-asset", class: "Asset" as const }
+        ].map((row) => ({
+          id: f.account(row.name),
+          name: row.name,
+          class: row.class,
+          incomeBalance: "Balance Sheet" as const,
+          companyGroupId: f.groupId,
+          createdBy: "system"
+        }))
+      )
       .execute();
     await trx
       .updateTable("accountDefault")
-      .set({ deferredRevenueAccount: f.account("deferred") })
+      .set({
+        deferredRevenueAccount: f.account("deferred"),
+        contractAssetAccount: f.account("contract-asset")
+      })
       .where("companyId", "=", f.companyId)
       .execute();
     // The contract line names an item this fixture has no reason to build;
-    // only the schedule rows matter here.
+    // only the position and the credited rows matter here.
     await sql`SET LOCAL session_replication_role = replica`.execute(trx);
     await trx
       .insertInto("customerContract")
@@ -460,7 +435,7 @@ async function contractMemoFixture(
       .values({
         id: contractLineId,
         customerContractId: contractId,
-        kind: "Recurring",
+        revenueType: "Recurring",
         rateUnit: "Month",
         itemId: `${f.companyId}-item`,
         rate: 420,
@@ -469,51 +444,16 @@ async function contractMemoFixture(
         createdBy: "system"
       })
       .execute();
-    await trx
-      .insertInto("revenueRecognitionSchedule")
-      .values({
-        id: scheduleId,
-        type: "Deferral",
-        status: "Planned",
-        salesInvoiceLineId: salesInvoiceLine.id,
-        periodStart: "2026-09-01",
-        periodEnd: "2026-09-30",
-        scheduledDate: "2026-09-30",
-        amount: deferred,
-        debitAccountId: f.account("deferred"),
-        creditAccountId: f.account("sales"),
-        companyId: f.companyId,
-        createdBy: "system"
-      })
-      .execute();
-    if (secondInvoiceLine) {
-      await trx
-        .insertInto("revenueRecognitionSchedule")
-        .values({
-          id: secondScheduleId,
-          type: "Deferral",
-          status: "Planned",
-          salesInvoiceLineId: secondInvoiceLine.id,
-          periodStart: "2026-09-01",
-          periodEnd: "2026-09-30",
-          scheduledDate: "2026-09-30",
-          amount: deferred,
-          debitAccountId: f.account("deferred"),
-          creditAccountId: f.account("sales"),
-          companyId: f.companyId,
-          createdBy: "system"
-        })
-        .execute();
-    }
     await sql`SET LOCAL session_replication_role = origin`.execute(trx);
     await trx
-      .insertInto("customerContractInvoice")
+      .insertInto("customerContractLedgerEntry")
       .values({
-        id: plannedInvoiceId,
         customerContractId: contractId,
-        invoiceDate: "2026-09-01",
-        status: "Invoiced",
-        salesInvoiceId: f.invoiceId,
+        customerContractLineId: contractLineId,
+        entryType: "Invoice",
+        postingDate: "2026-09-01",
+        deferredAmount: deferred,
+        deferredBase: deferred,
         companyId: f.companyId,
         createdBy: "system"
       })
@@ -534,57 +474,32 @@ async function contractMemoFixture(
         createdBy: "system"
       })
       .execute();
-    const period = {
-      customerContractId: contractId,
-      customerContractLineId: contractLineId,
-      periodStart: "2026-09-01",
-      periodEnd: "2026-09-30",
-      units: 1,
-      companyId: f.companyId,
-      createdBy: "system"
-    };
     await trx
       .insertInto("customerContractInvoiceLine")
-      .values([
-        ...(secondInvoiceLine
-          ? [salesInvoiceLine.id, secondInvoiceLine.id].map(
-              (salesInvoiceLineId) => ({
-                ...period,
-                units: 0.5,
-                customerContractInvoiceId: plannedInvoiceId,
-                unitPrice: 420,
-                amount: 210,
-                salesInvoiceLineId
-              })
-            )
-          : [
-              {
-                ...period,
-                customerContractInvoiceId: plannedInvoiceId,
-                unitPrice: 420,
-                amount: 420,
-                salesInvoiceLineId: salesInvoiceLine.id
-              }
-            ]),
-        {
-          ...period,
-          isAdjustment: true,
-          unitPrice: -memoAmount,
-          amount: -memoAmount,
-          memoId
-        }
-      ])
+      .values({
+        customerContractId: contractId,
+        customerContractLineId: contractLineId,
+        periodStart: "2026-09-01",
+        periodEnd: "2026-09-30",
+        units: 1,
+        isAdjustment: true,
+        unitPrice: -memoAmount,
+        amount: -memoAmount,
+        memoId,
+        companyId: f.companyId,
+        createdBy: "system"
+      })
       .execute();
   });
-  return { memoId, scheduleId, secondScheduleId };
+  return { memoId, contractLineId };
 }
 
 databaseTest(
-  "contract credit memo releases the Planned deferral into Deferred Revenue",
+  "contract credit memo debits Deferred Revenue within the line's deferred pool",
   async () => {
     const f = await paymentFixture();
     try {
-      const { memoId, scheduleId } = await contractMemoFixture(f, {
+      const { memoId } = await contractMemoFixture(f, {
         memoAmount: 140,
         deferred: 420
       });
@@ -592,12 +507,6 @@ databaseTest(
         ...f.args,
         memoId
       });
-      const schedule = await f.db
-        .selectFrom("revenueRecognitionSchedule")
-        .select(["amount", "status"])
-        .where("id", "=", scheduleId)
-        .executeTakeFirstOrThrow();
-      expect(schedule).toEqual({ amount: 280, status: "Planned" });
       const lines = await f.db
         .selectFrom("journalLine")
         .select(["accountId", "amount", "description"])
@@ -625,6 +534,25 @@ databaseTest(
         status: "Posted",
         reasonAccount: f.account("deferred")
       });
+      const entry = await f.db
+        .selectFrom("customerContractLedgerEntry")
+        .select([
+          "entryType",
+          "deferredAmount",
+          "assetAmount",
+          "memoId",
+          "journalId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .where("entryType", "=", "Credit Memo")
+        .executeTakeFirstOrThrow();
+      expect(entry).toEqual({
+        entryType: "Credit Memo",
+        deferredAmount: -140,
+        assetAmount: 0,
+        memoId,
+        journalId
+      });
     } finally {
       await f.cleanup();
     }
@@ -632,11 +560,11 @@ databaseTest(
 );
 
 databaseTest(
-  "contract credit memo beyond the Planned deferral reverses Sales for the rest",
+  "contract credit memo beyond the deferred pool debits Contract Assets for the rest",
   async () => {
     const f = await paymentFixture();
     try {
-      const { memoId, scheduleId } = await contractMemoFixture(f, {
+      const { memoId } = await contractMemoFixture(f, {
         memoAmount: 500,
         deferred: 420
       });
@@ -644,13 +572,6 @@ databaseTest(
         ...f.args,
         memoId
       });
-      expect(
-        await f.db
-          .selectFrom("revenueRecognitionSchedule")
-          .select("id")
-          .where("id", "=", scheduleId)
-          .executeTakeFirst()
-      ).toBeUndefined();
       const lines = await f.db
         .selectFrom("journalLine")
         .select(["accountId", "amount"])
@@ -659,43 +580,13 @@ databaseTest(
       const byAccount = Object.fromEntries(
         lines.map((l) => [l.accountId, l.amount])
       );
-      // AR credited 500; Deferred Revenue (liability) and Sales (revenue)
-      // debited 420 + 80, each stored at its natural-balance sign.
+      // AR credited 500; Deferred Revenue (liability) debited 420 and
+      // Contract Assets (asset) debited 80, each at its natural-balance sign.
       expect(byAccount).toEqual({
         [f.account("control")]: -500,
         [f.account("deferred")]: -420,
-        [f.account("sales")]: -80
+        [f.account("contract-asset")]: 80
       });
-    } finally {
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "contract credit memo on a split period releases every installment's deferral",
-  async () => {
-    const f = await paymentFixture();
-    try {
-      const { memoId, scheduleId, secondScheduleId } =
-        await contractMemoFixture(f, {
-          memoAmount: 210,
-          deferred: 210,
-          split: true
-        });
-      await postMemoTransaction(f.db, { ...f.args, memoId });
-      const schedule = await f.db
-        .selectFrom("revenueRecognitionSchedule")
-        .select(["id", "amount"])
-        .where("id", "in", [scheduleId, secondScheduleId])
-        .orderBy("id")
-        .execute();
-      // Each installment billed half the period, so each gives back half
-      // of the credit.
-      expect(schedule).toEqual([
-        { id: scheduleId, amount: 105 },
-        { id: secondScheduleId, amount: 105 }
-      ]);
     } finally {
       await f.cleanup();
     }

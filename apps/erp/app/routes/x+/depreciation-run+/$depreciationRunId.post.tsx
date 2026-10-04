@@ -8,7 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getOrCreateAccountingPeriod } from "~/modules/accounting";
-import { postDepreciationRun } from "~/modules/accounting/accounting.server";
+import {
+  buildDepreciationRunLines,
+  postDepreciationRun
+} from "~/modules/accounting/accounting.server";
+import { depreciationRunLinesMatch } from "~/modules/accounting/accounting.utils";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -84,6 +88,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(linesResult.error, "Failed to fetch run lines")
+      )
+    );
+  }
+
+  // A Draft is computed once. An asset disposed, added or re-valued since —
+  // or a later period posted first — makes it post the wrong depreciation.
+  const proposal = await buildDepreciationRunLines(client, {
+    companyId,
+    companyGroupId,
+    periodEnd: run.data.periodEnd,
+    runId: depreciationRunId
+  });
+  if (!proposal.data) {
+    throw redirect(
+      path.to.depreciationRun(depreciationRunId),
+      await flash(
+        request,
+        error(proposal.error, "Failed to calculate depreciation")
+      )
+    );
+  }
+  if (proposal.data.laterPostedRunId) {
+    throw redirect(
+      path.to.depreciationRun(depreciationRunId),
+      await flash(
+        request,
+        error(
+          null,
+          `${proposal.data.laterPostedRunId} is already posted for a later period and includes these months; delete ${run.data.depreciationRunId}`
+        )
+      )
+    );
+  }
+  if (!depreciationRunLinesMatch(linesResult.data, proposal.data.lines)) {
+    throw redirect(
+      path.to.depreciationRun(depreciationRunId),
+      await flash(
+        request,
+        error(
+          null,
+          `Depreciation run ${run.data.depreciationRunId} is out of date with the fixed assets; recalculate it before posting`
+        )
       )
     );
   }

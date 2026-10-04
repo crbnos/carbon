@@ -11,7 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { getContractLine } from "~/modules/sales";
 import { deleteContractLineReleasingSalesOrderLine } from "~/modules/sales/sales.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -57,8 +57,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Back to where the delete was asked for — unless that was the line's own
+  // page, which no longer exists.
+  const referrer = requestReferrer(request);
+  const back =
+    referrer && !referrer.includes(`/${lineId}/`)
+      ? referrer
+      : path.to.contractDetails(id);
   throw redirect(
-    path.to.contractDetails(id),
+    back,
     await flash(request, success("Removed line from the contract"))
   );
 }

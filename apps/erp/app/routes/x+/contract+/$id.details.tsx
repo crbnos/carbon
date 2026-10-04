@@ -30,8 +30,10 @@ export default function ContractDetailsRoute() {
     credits,
     amendments,
     computedSchedule,
-    residuals,
-    revenue
+    revenue,
+    revenueRows,
+    revenueIsStored,
+    revenueResiduals
   } = routeData;
 
   return (
@@ -48,9 +50,17 @@ export default function ContractDetailsRoute() {
         schedule={schedule}
         credits={credits}
         computedSchedule={computedSchedule}
-        residuals={residuals}
       />
-      <ContractRevenue contract={contract} lines={lines} revenue={revenue} />
+      <ContractRevenue
+        contract={contract}
+        lines={lines}
+        schedule={schedule}
+        credits={credits}
+        revenue={revenue}
+        revenueRows={revenueRows}
+        revenueIsStored={revenueIsStored}
+        revenueResiduals={revenueResiduals}
+      />
       <ContractAmendments
         contract={contract}
         lines={lines}

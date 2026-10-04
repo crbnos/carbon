@@ -46,12 +46,12 @@ export default function ContractExplorer() {
     {
       key: "One-time",
       label: t`One-time`,
-      lines: lines.filter((line) => line.kind === "One-time")
+      lines: lines.filter((line) => line.revenueType === "One-time")
     },
     {
       key: "Recurring",
       label: t`Recurring`,
-      lines: lines.filter((line) => line.kind === "Recurring")
+      lines: lines.filter((line) => line.revenueType === "Recurring")
     }
   ].filter((group) => group.lines.length > 0);
 
@@ -168,7 +168,7 @@ function ExplorerLine({
             <span className="tabular-nums">{Number(line.quantity)}</span>
             {" × "}
             <ContractMoney value={line.rate} currencyCode={currencyCode} rate />
-            {line.kind === "Recurring" && line.rateUnit
+            {line.revenueType === "Recurring" && line.rateUnit
               ? ` ${rateUnitLabels[line.rateUnit]}`
               : ""}
           </span>

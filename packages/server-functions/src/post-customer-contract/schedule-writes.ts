@@ -80,7 +80,7 @@ export function copyLineValues(
   const merged = { ...line, ...overrides };
   return {
     customerContractId: merged.customerContractId,
-    kind: merged.kind,
+    revenueType: merged.revenueType,
     itemId: merged.itemId,
     description: merged.description,
     quantity: merged.quantity,
@@ -268,7 +268,7 @@ export function toLineTerms(
   lines: Pick<
     ContractLineRow,
     | "id"
-    | "kind"
+    | "revenueType"
     | "quantity"
     | "rate"
     | "rateUnit"
@@ -279,7 +279,7 @@ export function toLineTerms(
 ): ContractLineTerms[] {
   return lines.map((line) => ({
     id: line.id,
-    kind: line.kind,
+    revenueType: line.revenueType,
     quantity: Number(line.quantity),
     rate: Number(line.rate),
     rateUnit: line.rateUnit,
@@ -298,7 +298,7 @@ export function toLineTerms(
 export function reconcileThrough(
   horizonDate: string,
   existing: Pick<ExistingRow, "lineId" | "periodEnd" | "isAdjustment">[],
-  lines: Pick<ContractLineRow, "id" | "kind">[]
+  lines: Pick<ContractLineRow, "id" | "revenueType">[]
 ): string {
   const planned = lastRecurringPeriodEnd(existing, lines);
   return planned !== null && planned > horizonDate ? planned : horizonDate;

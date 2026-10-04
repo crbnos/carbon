@@ -18,7 +18,7 @@ import {
 } from "~/modules/sales";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -82,9 +82,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updatedBy: userId
   });
 
+  // Back to where the form was opened: the line's page, or the setup grid
+  // that opened it as a modal.
+  const back = requestReferrer(request) ?? path.to.contractLine(id, lineId);
   if (update.error) {
     throw redirect(
-      path.to.contractLine(id, lineId),
+      back,
       await flash(
         request,
         error(update.error, update.error.message || "Failed to update line")
@@ -92,10 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(
-    path.to.contractLine(id, lineId),
-    await flash(request, success("Updated line"))
-  );
+  throw redirect(back, await flash(request, success("Updated line")));
 }
 
 /** One line of the contract. Editable while the contract is a Draft; an
@@ -117,7 +117,7 @@ export default function ContractLineRoute() {
       initialValues={{
         id: line.id,
         customerContractId: line.customerContractId,
-        kind: line.kind,
+        revenueType: line.revenueType,
         itemId: line.itemId,
         description: line.description ?? undefined,
         quantity: Number(line.quantity),

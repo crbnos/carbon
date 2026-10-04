@@ -10,7 +10,11 @@
 //                         Stripe link checked, discount ends turned into
 //                         amendments.
 //   edit-schedule         Draft only: move / split / merge an invoice, move a
-//                         row. The first edit materializes the schedule.
+//                         row, set a cell's amount, add or delete an invoice.
+//                         The first edit materializes the schedule.
+//   edit-revenue          Draft only: set a (line, month) revenue amount, add
+//                         or delete a month, reset. The first edit
+//                         materializes the revenue plan.
 //   reset-schedule        Draft only: drop the persisted schedule; the page
 //                         goes back to the live preview.
 //   amend                 Active: change, add or end lines from an effective
@@ -19,11 +23,16 @@
 //                         unused billed time on a Draft credit memo.
 //   revert-cancellation   Undo a cancellation while its memo is still Draft.
 //
-// Spec: .ai/specs/2026-10-02-contracts.md; plan:
-// .ai/plans/2026-10-03-contracts-phase-a.md Tasks 9–11.
+// Spec: .ai/specs/2026-10-02-contracts.md; plans:
+// .ai/plans/2026-10-03-contracts-phase-a.md Tasks 9–11,
+// .ai/plans/2026-10-04-contracts-wizard-phase-b.md T3 (revenue, D8–D11).
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  monthStart,
+  validateRevenueEdit
+} from "@carbon/database/contract-revenue-schedule";
 import {
   amendmentEffectiveDate,
   horizon,
@@ -38,12 +47,24 @@ import {
 } from "@carbon/database/contract-schedule";
 import { toJson } from "@carbon/database/json";
 import { equals, round } from "@carbon/database/precision";
+import { monthEnd } from "@carbon/database/revenue-schedule";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, effectiveInvoiceAutomation } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
+import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import {
+  billedTotals,
+  changedRevenueLines,
+  ensureRevenue,
+  hasStoredRevenue,
+  loadRevenue,
+  materializeRevenue,
+  reconcileRevenue,
+  writeOpeningEntries
+} from "./revenue-writes";
 import {
   applyDiscountEnds,
   applyReconciliation,
@@ -90,10 +111,10 @@ const contractRateUnits = [
   "Quarter",
   "Year"
 ] as const satisfies readonly Enums["contractRateUnit"][];
-const contractLineKinds = [
+const contractRevenueTypes = [
   "One-time",
   "Recurring"
-] as const satisfies readonly Enums["customerContractLineKind"][];
+] as const satisfies readonly Enums["contractRevenueType"][];
 const contractRevenueMethods = [
   "Daily",
   "Even Period"
@@ -111,7 +132,8 @@ const customerContractTypes = [
 ] as const satisfies readonly Enums["customerContractType"][];
 
 /** One edit to a Draft schedule — the ERP's
- *  `customerContractScheduleEditValidator` minus `reset`. */
+ *  `customerContractScheduleEditValidator` minus `reset`. Refs are a stored
+ *  id or a `planned:` position ref (see `editSchedule`). */
 const scheduleEdit = z.discriminatedUnion("intent", [
   z.object({
     intent: z.literal("move"),
@@ -139,7 +161,69 @@ const scheduleEdit = z.discriminatedUnion("intent", [
     intent: z.literal("moveLine"),
     customerContractInvoiceLineId: z.string().min(1),
     invoiceDate: isoDate
+  }),
+  // The invoice grid (plan D10): one cell is one (invoice, line).
+  z.object({
+    intent: z.literal("setAmount"),
+    customerContractInvoiceId: z.string().min(1),
+    customerContractLineId: z.string().min(1),
+    amount: z.number().min(0)
+  }),
+  z.object({
+    intent: z.literal("addInvoice"),
+    invoiceDate: isoDate,
+    amounts: z
+      .array(
+        z.object({
+          customerContractLineId: z.string().min(1),
+          amount: z.number().min(0)
+        })
+      )
+      .refine((amounts) => amounts.some((a) => a.amount > 0), {
+        message: "Enter an amount for at least one line"
+      })
+  }),
+  z.object({
+    intent: z.literal("delete"),
+    customerContractInvoiceId: z.string().min(1)
   })
+]);
+
+/** `YYYY-MM-01`: a revenue row is one calendar month. */
+const firstOfMonth = z
+  .string()
+  .regex(
+    /^\d{4}-(0[1-9]|1[0-2])-01$/,
+    "Use the first day of a month (YYYY-MM-01)"
+  );
+
+/** One edit to a Draft revenue plan (plan D11). Rows are keyed by
+ *  (line, month), so no position refs are needed. */
+const revenueEdit = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("setAmount"),
+    customerContractLineId: z.string().min(1),
+    periodStart: firstOfMonth,
+    // A hand edit moves revenue between months; only reconciliation writes a
+    // negative (catch-up) month.
+    amount: z.number().finite().min(0)
+  }),
+  z.object({
+    intent: z.literal("addMonth"),
+    periodStart: firstOfMonth,
+    amounts: z
+      .array(
+        z.object({
+          customerContractLineId: z.string().min(1),
+          amount: z.number().finite().min(0)
+        })
+      )
+      .refine((amounts) => amounts.some((a) => a.amount !== 0), {
+        message: "Enter an amount for at least one line"
+      })
+  }),
+  z.object({ intent: z.literal("deleteMonth"), periodStart: firstOfMonth }),
+  z.object({ intent: z.literal("reset") })
 ]);
 
 /** Percentages are percent points (0–100), as the ERP's
@@ -154,7 +238,7 @@ const fraction = (points: number) => round(points / 100);
 
 const amendmentLine = z
   .object({
-    kind: z.enum(contractLineKinds),
+    revenueType: z.enum(contractRevenueTypes),
     itemId: z.string().min(1),
     description: z.string().optional(),
     quantity: z.number().positive(),
@@ -171,7 +255,7 @@ const amendmentLine = z
     revenueEndDate: isoDate.optional(),
     projectId: z.string().optional()
   })
-  .refine((line) => (line.kind === "Recurring") === !!line.rateUnit, {
+  .refine((line) => (line.revenueType === "Recurring") === !!line.rateUnit, {
     message: "A recurring line needs a rate unit; a one-time line has none",
     path: ["rateUnit"]
   });
@@ -197,6 +281,7 @@ export const postCustomerContractInput = z.discriminatedUnion("type", [
   z.object({ type: z.literal("confirm"), ...base }),
   z.object({ type: z.literal("edit-schedule"), ...base, edit: scheduleEdit }),
   z.object({ type: z.literal("reset-schedule"), ...base }),
+  z.object({ type: z.literal("edit-revenue"), ...base, edit: revenueEdit }),
   z.object({
     type: z.literal("amend"),
     ...base,
@@ -282,7 +367,7 @@ async function confirm(
       else if (item.type !== "Service") {
         problems.push(`${label}: only Service items can be on a contract`);
       }
-      if (line.kind === "Recurring" && !line.rateUnit) {
+      if (line.revenueType === "Recurring" && !line.rateUnit) {
         problems.push(`${label}: a recurring line needs a rate unit`);
       }
     }
@@ -313,6 +398,14 @@ async function confirm(
     // was planned to an earlier horizon, so it is compared over the
     // Recurring periods it covers (a One-time row's service window can run
     // far past them).
+    const lineLabel = (lineId: string) => {
+      const line = lines.find((l) => l.id === lineId);
+      return (
+        line?.description ??
+        (line ? itemById.get(line.itemId)?.readableIdWithRevision : null) ??
+        lineId
+      );
+    };
     if (existing.length === 0) {
       await materializeSchedule(trx, scope, contract, lines, through);
     } else {
@@ -326,14 +419,6 @@ async function confirm(
         existing
       );
       if (!ok) {
-        const lineLabel = (lineId: string) => {
-          const line = lines.find((l) => l.id === lineId);
-          return (
-            line?.description ??
-            (line ? itemById.get(line.itemId)?.readableIdWithRevision : null) ??
-            lineId
-          );
-        };
         const detail = [...residuals]
           .filter(([, residual]) => !equals(residual, 0))
           .map(([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`);
@@ -347,6 +432,17 @@ async function confirm(
         );
       }
     }
+
+    // 2b. A revenue plan edited while Draft must still recognize what each
+    // line bills (D11). Checked before the discount ends below re-plan any
+    // line, so an edit is never hidden by a reconciliation.
+    const revenueStored = await hasStoredRevenue(trx, scope, contract.id);
+    if (revenueStored) {
+      await refuseRevenueResiduals(trx, scope, contract.id, lineLabel);
+    }
+    const revenueBefore = revenueStored
+      ? { lines, billed: await billedTotals(trx, scope, contract.id) }
+      : null;
 
     // 3. Post and Send via Stripe needs the billing customer linked.
     const settings = await trx
@@ -402,6 +498,29 @@ async function confirm(
       );
     }
 
+    // 4b. The revenue plan: written now when none is stored, else re-planned
+    // for the lines a discount end split (D9). Then checked again — a plan
+    // written from lines whose revenue dates bill nothing cannot conserve.
+    if (!revenueBefore) {
+      await materializeRevenue(trx, scope, contract, lines);
+    } else if (discountFrom !== null) {
+      await reconcileRevenue(
+        trx,
+        scope,
+        contract,
+        lines,
+        changedRevenueLines(revenueBefore, {
+          lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }),
+        discountFrom
+      );
+    }
+    await refuseRevenueResiduals(trx, scope, contract.id, lineLabel);
+
+    // 4c. A migrated contract's opening position (D8).
+    await writeOpeningEntries(trx, scope, contract);
+
     // 5. Active.
     const now = datetime.timestamp();
     await trx
@@ -419,6 +538,30 @@ async function confirm(
 
     return { customerContractId: contract.id };
   });
+}
+
+/** Refuses when a line's stored revenue no longer totals what its invoice
+ *  schedule bills — the same shape as the invoice residual refusal, with
+ *  `revenueResiduals` (billed − Σ revenue, per line). */
+async function refuseRevenueResiduals(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  lineLabel: (lineId: string) => string
+): Promise<void> {
+  const billed = await billedTotals(trx, scope, contractId);
+  const rows = await loadRevenue(trx, scope, contractId);
+  const { ok, residuals } = validateRevenueEdit(billed.totals, rows);
+  if (ok) return;
+  const detail = [...residuals].map(
+    ([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`
+  );
+  throw new InvalidInputError(
+    `The revenue plan no longer recognizes each line's billed total (${detail.join(
+      "; "
+    )} not in any month). Fix the edits or reset the revenue plan.`,
+    { revenueResiduals: Object.fromEntries(residuals) }
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -535,6 +678,133 @@ async function editSchedule(
     };
 
     const touched = new Set<string>();
+    const lineById = new Map(loaded.lines.map((line) => [line.id, line]));
+    const contractLine = (lineId: string) => {
+      const line = lineById.get(lineId);
+      if (!line) throw new NotFoundError("Contract line not found");
+      return line;
+    };
+    /** The line's row on another invoice nearest to `invoiceDate` (an
+     *  earlier one wins a tie): where a new cell takes its period and price. */
+    const nearestRow = (
+      lineId: string,
+      invoiceId: string,
+      invoiceDate: string
+    ) => {
+      let best: { row: (typeof existing)[number]; distance: number } | null =
+        null;
+      for (const row of existing) {
+        if (
+          row.lineId !== lineId ||
+          row.isAdjustment ||
+          row.invoiceId === invoiceId ||
+          row.invoiceDate === null
+        ) {
+          continue;
+        }
+        const distance = Math.abs(
+          parseDate(row.invoiceDate).compare(parseDate(invoiceDate))
+        );
+        if (
+          !best ||
+          distance < best.distance ||
+          (distance === best.distance &&
+            row.invoiceDate < best.row.invoiceDate!)
+        ) {
+          best = { row, distance };
+        }
+      }
+      return best?.row ?? null;
+    };
+    /** Σ the non-adjustment rows of one cell (invoice × line). */
+    const cellRows = (invoiceId: string, lineId: string) =>
+      existing.filter(
+        (row) =>
+          row.invoiceId === invoiceId &&
+          row.lineId === lineId &&
+          !row.isAdjustment
+      );
+    /**
+     * Each cell becomes ONE non-adjustment row of its amount; 0 removes the
+     * cell's rows (an invoice left empty is deleted below). The row keeps the
+     * cell's period, else takes the line's nearest planned period, else the
+     * invoice date. Units are rescaled like a split: units = source units ×
+     * amount ÷ (quantity × source unit price × (1 − discount)); with no
+     * source to price from it is 1 unit at the amount. One delete and one
+     * insert for every cell.
+     */
+    const setCells = async (
+      cells: {
+        invoiceId: string;
+        invoiceDate: string;
+        lineId: string;
+        amount: number;
+      }[]
+    ) => {
+      const deleteIds: string[] = [];
+      const inserts: ReturnType<typeof scheduleRowValues>[] = [];
+      for (const cell of cells) {
+        const line = contractLine(cell.lineId);
+        const own = cellRows(cell.invoiceId, cell.lineId);
+        deleteIds.push(...own.map((row) => row.id));
+        touched.add(cell.invoiceId);
+        const amount = round(cell.amount);
+        if (equals(amount, 0)) continue;
+
+        const nearest =
+          own.length > 0
+            ? null
+            : nearestRow(cell.lineId, cell.invoiceId, cell.invoiceDate);
+        const source = own.length > 0 ? own : nearest ? [nearest] : [];
+        const periodStart =
+          source.length > 0
+            ? source.map((row) => row.periodStart).sort()[0]!
+            : cell.invoiceDate;
+        const periodEnd =
+          source.length > 0
+            ? source
+                .map((row) => row.periodEnd)
+                .sort()
+                .at(-1)!
+            : cell.invoiceDate;
+        const sourceUnits = source.reduce((sum, row) => sum + row.units, 0);
+        const sourceUnitPrice = source.reduce(
+          (sum, row) => sum + row.unitPrice,
+          0
+        );
+        const fullAmount =
+          Number(line.quantity) *
+          sourceUnitPrice *
+          (1 - Number(line.discountPercent));
+        const priced = source.length > 0 && !equals(fullAmount, 0);
+        inserts.push(
+          scheduleRowValues(
+            scope,
+            contract.id,
+            {
+              lineId: cell.lineId,
+              periodStart,
+              periodEnd,
+              units: priced ? (sourceUnits * amount) / fullAmount : 1,
+              unitPrice: priced ? sourceUnitPrice : amount,
+              amount,
+              isAdjustment: false
+            },
+            { invoiceId: cell.invoiceId, memoId: null }
+          )
+        );
+      }
+      if (deleteIds.length > 0) {
+        await trx
+          .deleteFrom("customerContractInvoiceLine")
+          .where("id", "in", deleteIds)
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      await insertScheduleRows(trx, inserts);
+    };
+
     const { edit } = payload;
     switch (edit.intent) {
       case "move": {
@@ -637,6 +907,61 @@ async function editSchedule(
         touched.add(row.invoiceId!);
         break;
       }
+      case "setAmount": {
+        const invoice = plannedInvoice(edit.customerContractInvoiceId);
+        await setCells([
+          {
+            invoiceId: invoice.id,
+            invoiceDate: invoice.invoiceDate,
+            lineId: edit.customerContractLineId,
+            amount: edit.amount
+          }
+        ]);
+        break;
+      }
+      case "addInvoice": {
+        // One amount per line; every line must be on the contract before an
+        // invoice is created for it.
+        const amounts = new Map<string, number>();
+        for (const { customerContractLineId, amount } of edit.amounts) {
+          contractLine(customerContractLineId);
+          amounts.set(
+            customerContractLineId,
+            (amounts.get(customerContractLineId) ?? 0) + amount
+          );
+        }
+        // A Planned invoice already on the date takes the amounts: each adds
+        // to what its cell already bills.
+        const ids = await plannedInvoicesOn([edit.invoiceDate]);
+        const invoiceId = ids.get(invoiceKey(edit.invoiceDate, "Planned"))!;
+        await setCells(
+          [...amounts]
+            .filter(([, amount]) => amount > 0)
+            .map(([lineId, amount]) => ({
+              invoiceId,
+              invoiceDate: edit.invoiceDate,
+              lineId,
+              amount:
+                cellRows(invoiceId, lineId).reduce(
+                  (sum, row) => sum + row.amount,
+                  0
+                ) + amount
+            }))
+        );
+        break;
+      }
+      case "delete": {
+        // The invoice goes with its rows (`deleteEmptyPlannedInvoices`
+        // below); each line it billed shows a residual.
+        const invoice = plannedInvoice(edit.customerContractInvoiceId);
+        await trx
+          .deleteFrom("customerContractInvoiceLine")
+          .where("customerContractInvoiceId", "=", invoice.id)
+          .where("customerContractId", "=", contract.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        break;
+      }
     }
 
     if (touched.size > 0) {
@@ -682,6 +1007,153 @@ async function resetSchedule(
       .where("customerContractId", "=", contract.id)
       .where("companyId", "=", companyId)
       .execute();
+    return { customerContractId: contract.id };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// edit-revenue (plan D11)
+
+/** Edits a Draft's revenue plan. Rows are keyed by (line, month). The first
+ *  edit writes the live plan (D1), then applies the edit; `reset` deletes
+ *  every row, so the page plans live again. */
+async function editRevenue(
+  db: Db,
+  scope: Scope,
+  payload: Payload<"edit-revenue">
+): Promise<{ customerContractId: string }> {
+  const { companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const { contract, lines } = await loadContractForUpdate(
+      trx,
+      companyId,
+      payload.customerContractId
+    );
+    refuseUnless(contract, "Draft", "edited");
+    const { edit } = payload;
+
+    const deleteRevenue = () =>
+      trx
+        .deleteFrom("customerContractRevenue")
+        .where("customerContractId", "=", contract.id)
+        .where("companyId", "=", companyId);
+
+    if (edit.intent === "reset") {
+      await deleteRevenue().execute();
+      return { customerContractId: contract.id };
+    }
+
+    const lineIds = new Set(lines.map((line) => line.id));
+    const named =
+      edit.intent === "setAmount"
+        ? [edit.customerContractLineId]
+        : edit.intent === "addMonth"
+          ? edit.amounts.map((a) => a.customerContractLineId)
+          : [];
+    if (named.some((lineId) => !lineIds.has(lineId))) {
+      throw new NotFoundError("Contract line not found");
+    }
+    const { periodStart } = edit;
+    let periodEnd: string;
+    try {
+      periodEnd = monthEnd(periodStart);
+    } catch {
+      throw new InvalidInputError(`${periodStart} is not a date`);
+    }
+    if (monthStart(periodStart) !== periodStart) {
+      throw new InvalidInputError(
+        `${periodStart} is not the first day of a month`
+      );
+    }
+
+    // The first edit writes the live plan.
+    if (!(await hasStoredRevenue(trx, scope, contract.id))) {
+      await materializeRevenue(trx, scope, contract, lines, {
+        through: horizon(toTerms(contract), payload.asOf)
+      });
+    }
+
+    // A month before "Recognize revenue from" was recognized elsewhere.
+    const status: Enums["contractRevenueStatus"] =
+      contract.recognizeRevenueFrom !== null &&
+      periodStart < monthStart(contract.recognizeRevenueFrom)
+        ? "Recognized Externally"
+        : "Planned";
+    const rowValues = (lineId: string, amount: number) => ({
+      customerContractId: contract.id,
+      customerContractLineId: lineId,
+      periodStart,
+      periodEnd,
+      amount: round(amount),
+      status,
+      companyId,
+      createdBy: userId
+    });
+    const conflictKey = [
+      "companyId",
+      "customerContractLineId",
+      "periodStart"
+    ] as const;
+
+    switch (edit.intent) {
+      case "setAmount": {
+        if (equals(round(edit.amount), 0)) {
+          await deleteRevenue()
+            .where("customerContractLineId", "=", edit.customerContractLineId)
+            .where("periodStart", "=", periodStart)
+            .execute();
+          break;
+        }
+        await trx
+          .insertInto("customerContractRevenue")
+          .values(rowValues(edit.customerContractLineId, edit.amount))
+          .onConflict((oc) =>
+            oc.columns([...conflictKey]).doUpdateSet({
+              amount: round(edit.amount),
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+          )
+          .execute();
+        break;
+      }
+      case "addMonth": {
+        // Each amount adds to what the line already recognizes that month.
+        const amounts = new Map<string, number>();
+        for (const { customerContractLineId, amount } of edit.amounts) {
+          amounts.set(
+            customerContractLineId,
+            (amounts.get(customerContractLineId) ?? 0) + amount
+          );
+        }
+        const values = [...amounts]
+          .filter(([, amount]) => !equals(round(amount), 0))
+          .map(([lineId, amount]) => rowValues(lineId, amount));
+        if (values.length === 0) break;
+        await trx
+          .insertInto("customerContractRevenue")
+          .values(values)
+          .onConflict((oc) =>
+            oc.columns([...conflictKey]).doUpdateSet({
+              amount: sql`"customerContractRevenue"."amount" + excluded."amount"`,
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+          )
+          .execute();
+        // A month the amounts brought to 0 has nothing left to recognize.
+        await deleteRevenue()
+          .where("periodStart", "=", periodStart)
+          .where("amount", "=", 0)
+          .execute();
+        break;
+      }
+      case "deleteMonth": {
+        await deleteRevenue().where("periodStart", "=", periodStart).execute();
+        break;
+      }
+    }
+
     return { customerContractId: contract.id };
   });
 }
@@ -750,7 +1222,7 @@ const rowView = (row: ScheduleRowView): ScheduleRowView => ({
  *  line has no time to split: the replacement takes over the whole line, so
  *  the old one ends the day before it starts and plans nothing. */
 function lineCutover(line: ContractLineRow, effective: string) {
-  if (line.kind === "One-time") {
+  if (line.revenueType === "One-time") {
     return { oldEnd: addDays(line.startDate, -1), newStart: line.startDate };
   }
   const newStart = maxDate(effective, line.startDate);
@@ -773,6 +1245,10 @@ async function amend(
       );
       const { contract, lines, existing, invoices } = loaded;
       refuseUnless(contract, "Active", "amended");
+      // A contract confirmed before revenue was stored gets its plan written
+      // from the terms it had, so the reconciliation below keeps its past.
+      await ensureRevenue(trx, scope, contract, lines);
+      const billedBefore = await billedTotals(trx, scope, contract.id);
 
       const terms = toTerms(contract);
       const through = reconcileThrough(
@@ -810,7 +1286,7 @@ async function amend(
             `${label(line)} already ended on ${line.endDate}`
           );
         }
-        if (line.kind === "One-time" && invoicedLineIds.has(line.id)) {
+        if (line.revenueType === "One-time" && invoicedLineIds.has(line.id)) {
           throw new InvalidInputError(
             `${label(line)} is a one-time line that has been invoiced; it cannot be changed`
           );
@@ -848,7 +1324,10 @@ async function amend(
       for (const change of payload.changes) {
         if (change.op === "change") {
           const line = openLine(change.lineId);
-          if (line.kind === "One-time" && change.rateUnit !== undefined) {
+          if (
+            line.revenueType === "One-time" &&
+            change.rateUnit !== undefined
+          ) {
             throw new InvalidInputError(
               `${label(line)} is a one-time line; it has no rate unit`
             );
@@ -914,7 +1393,7 @@ async function amend(
           inserts.push({
             fields: {
               customerContractId: contract.id,
-              kind: line.kind,
+              revenueType: line.revenueType,
               itemId: line.itemId,
               description: line.description || null,
               quantity: line.quantity,
@@ -1019,6 +1498,22 @@ async function amend(
         editedIds.has(id)
       ).length;
       await applyReconciliation(trx, scope, contract.id, result);
+
+      // Reconcile the revenue of every line the amendment changed (D9).
+      await reconcileRevenue(
+        trx,
+        scope,
+        next.contract,
+        next.lines,
+        changedRevenueLines(
+          { lines, billed: billedBefore },
+          {
+            lines: next.lines,
+            billed: await billedTotals(trx, scope, contract.id)
+          }
+        ),
+        effective
+      );
 
       if (payload.preview) {
         const after = await loadSchedule(trx, companyId, contract.id);
@@ -1128,6 +1623,10 @@ async function cancel(
           );
         }
       }
+
+      // A contract confirmed before revenue was stored gets its plan first.
+      await ensureRevenue(trx, scope, contract, lines);
+      const billedBefore = await billedTotals(trx, scope, contract.id);
 
       // 2. End every line that runs past the new end, remembering its end.
       const previousState: PreviousState = {
@@ -1249,6 +1748,24 @@ async function cancel(
         { adjustmentMemoId: memoId }
       );
 
+      // 7. Reconcile revenue from the new end (D9): months after it are
+      // removed, the month it falls in is re-cut, and a month already
+      // recognized past it is caught up in the next Planned month (D7).
+      await reconcileRevenue(
+        trx,
+        scope,
+        next.contract,
+        next.lines,
+        changedRevenueLines(
+          { lines, billed: billedBefore },
+          {
+            lines: next.lines,
+            billed: await billedTotals(trx, scope, contract.id)
+          }
+        ),
+        endDate
+      );
+
       return {
         customerContractId: contract.id,
         memoId,
@@ -1355,6 +1872,10 @@ async function revertCancellation(
       );
     }
 
+    // A contract confirmed before revenue was stored gets its plan first.
+    await ensureRevenue(trx, scope, contract, lines);
+    const billedBefore = await billedTotals(trx, scope, contract.id);
+
     // 1. Restore the line end dates, the contract's end and renewal.
     await setLineEndDates(
       trx,
@@ -1421,6 +1942,22 @@ async function revertCancellation(
       })
     );
 
+    // 5. Re-plan revenue from the cancelled end date (D9).
+    await reconcileRevenue(
+      trx,
+      scope,
+      next.contract,
+      next.lines,
+      changedRevenueLines(
+        { lines, billed: billedBefore },
+        {
+          lines: next.lines,
+          billed: await billedTotals(trx, scope, contract.id)
+        }
+      ),
+      cancelledEndDate
+    );
+
     return { customerContractId: contract.id };
   });
 }
@@ -1445,6 +1982,8 @@ const postCustomerContract = defineServerFn({
         return editSchedule(db, scope, payload);
       case "reset-schedule":
         return resetSchedule(db, scope, payload);
+      case "edit-revenue":
+        return editRevenue(db, scope, payload);
       case "amend":
         return amend(db, scope, payload);
       case "cancel":

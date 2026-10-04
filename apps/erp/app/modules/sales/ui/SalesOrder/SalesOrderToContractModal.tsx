@@ -41,17 +41,17 @@ import {
   contractBillingTimings,
   contractDurations,
   contractRateUnits,
-  createContractFromSalesOrderValidator,
-  type customerContractLineKinds
+  type contractRevenueTypes,
+  createContractFromSalesOrderValidator
 } from "../../sales.models";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 import ContractMoney from "../Contracts/ContractMoney";
 import { useContractLabels } from "../Contracts/useContractLabels";
 
-type Kind = (typeof customerContractLineKinds)[number];
+type RevenueType = (typeof contractRevenueTypes)[number];
 type RateUnit = (typeof contractRateUnits)[number];
 
-type LineChoice = { kind: Kind; rateUnit: RateUnit };
+type LineChoice = { revenueType: RevenueType; rateUnit: RateUnit };
 
 type SalesOrderToContractModalProps = {
   orderId: string;
@@ -84,7 +84,7 @@ const SalesOrderToContractModal = ({
   );
   const currencyCode = routeData?.salesOrder?.currencyCode;
 
-  const kindLabels: Record<Kind, string> = {
+  const revenueTypeLabels: Record<RevenueType, string> = {
     "One-time": t`One-time`,
     Recurring: t`Recurring`
   };
@@ -101,7 +101,9 @@ const SalesOrderToContractModal = ({
   const [selected, setSelected] = useState<Record<string, LineChoice>>(() =>
     Object.fromEntries(
       lines.flatMap((line) =>
-        line.id ? [[line.id, { kind: "One-time", rateUnit: "Month" }]] : []
+        line.id
+          ? [[line.id, { revenueType: "One-time", rateUnit: "Month" }]]
+          : []
       )
     )
   );
@@ -122,7 +124,7 @@ const SalesOrderToContractModal = ({
                     [
                       line.id,
                       selected[line.id] ?? {
-                        kind: "One-time",
+                        revenueType: "One-time",
                         rateUnit: "Month"
                       }
                     ]
@@ -139,7 +141,10 @@ const SalesOrderToContractModal = ({
         const { [lineId]: _removed, ...rest } = prev;
         return rest;
       }
-      return { ...prev, [lineId]: { kind: "One-time", rateUnit: "Month" } };
+      return {
+        ...prev,
+        [lineId]: { revenueType: "One-time", rateUnit: "Month" }
+      };
     });
   };
 
@@ -154,8 +159,10 @@ const SalesOrderToContractModal = ({
   const linesValue = JSON.stringify(
     Object.entries(selected).map(([salesOrderLineId, choice]) => ({
       salesOrderLineId,
-      kind: choice.kind,
-      ...(choice.kind === "Recurring" ? { rateUnit: choice.rateUnit } : {})
+      revenueType: choice.revenueType,
+      ...(choice.revenueType === "Recurring"
+        ? { rateUnit: choice.rateUnit }
+        : {})
     }))
   );
 
@@ -313,29 +320,34 @@ const SalesOrderToContractModal = ({
                           {choice && (
                             <HStack spacing={2} className="shrink-0">
                               <Select
-                                value={choice.kind}
+                                value={choice.revenueType}
                                 onValueChange={(value) =>
-                                  update(lineId, { kind: value as Kind })
+                                  update(lineId, {
+                                    revenueType: value as RevenueType
+                                  })
                                 }
                               >
                                 <SelectTrigger
                                   size="sm"
                                   className="w-[120px]"
-                                  aria-label={t`Kind`}
+                                  aria-label={t`Revenue Type`}
                                 >
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {(["One-time", "Recurring"] as const).map(
-                                    (kind) => (
-                                      <SelectItem key={kind} value={kind}>
-                                        {kindLabels[kind]}
+                                    (revenueType) => (
+                                      <SelectItem
+                                        key={revenueType}
+                                        value={revenueType}
+                                      >
+                                        {revenueTypeLabels[revenueType]}
                                       </SelectItem>
                                     )
                                   )}
                                 </SelectContent>
                               </Select>
-                              {choice.kind === "Recurring" && (
+                              {choice.revenueType === "Recurring" && (
                                 <Select
                                   value={choice.rateUnit}
                                   onValueChange={(value) =>

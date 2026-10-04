@@ -9580,7 +9580,7 @@ export async function getContractAmendments(
   return client
     .from("customerContractAmendment")
     .select(
-      "*, customerContractLine(id, kind, itemId, description, quantity, rate, rateUnit, startDate, endDate, amendsLineId)"
+      "*, customerContractLine(id, revenueType, itemId, description, quantity, rate, rateUnit, startDate, endDate, amendsLineId)"
     )
     .eq("customerContractId", customerContractId)
     .order("amendmentDate", { ascending: true })
@@ -9642,6 +9642,7 @@ function customerContractTerms(
     invoiceCustomerId: terms.invoiceCustomerId,
     invoiceCustomerContactId: terms.invoiceCustomerContactId,
     invoiceCustomerLocationId: terms.invoiceCustomerLocationId,
+    shipToCustomerLocationId: terms.shipToCustomerLocationId,
     salesPersonId: terms.salesPersonId,
     projectId: terms.projectId,
     customerReference: terms.customerReference,
@@ -9943,12 +9944,12 @@ export async function upsertContractLine(
   // order belong to the server functions.
   const values = {
     customerContractId: line.customerContractId,
-    kind: line.kind,
+    revenueType: line.revenueType,
     itemId: line.itemId,
     description: line.description ?? null,
     quantity: line.quantity,
     rate: line.rate,
-    rateUnit: line.kind === "Recurring" ? (line.rateUnit ?? null) : null,
+    rateUnit: line.revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
     discountEndsOn: line.discountEndsOn || null,
     taxPercent: percentToFraction(line.taxPercent),
@@ -9980,6 +9981,78 @@ export async function upsertContractLine(
     .insert([{ ...values, companyId, createdBy: line.createdBy }])
     .select("id")
     .single();
+}
+
+/** Adds several Service items to a Draft contract at once, each as a line
+ *  with the defaults a new line gets (the setup wizard's Add Products).
+ *  One read of the contract, one of the items, one insert. Not an MCP tool:
+ *  `upsertContractLine` covers a single line. */
+export async function insertContractLines(
+  client: SupabaseClient<Database>,
+  args: {
+    customerContractId: string;
+    companyId: string;
+    createdBy: string;
+    itemIds: string[];
+    revenueType: Database["public"]["Enums"]["contractRevenueType"];
+    rateUnit: Database["public"]["Enums"]["contractRateUnit"] | null;
+    startDate: string;
+    projectId: string | null;
+  }
+) {
+  const contract = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", args.customerContractId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (contract.error) return contract;
+  if (contract.data.status !== "Draft") {
+    return contractRefusal(
+      "CONTRACT_NOT_DRAFT",
+      "Lines can only be added or changed on a Draft contract — use Amend"
+    );
+  }
+
+  const itemIds = [...new Set(args.itemIds)];
+  const items = await client
+    .from("item")
+    .select("id, type")
+    .eq("companyId", args.companyId)
+    .in("id", itemIds);
+  if (items.error) return items;
+  if (
+    items.data.length !== itemIds.length ||
+    items.data.some((item) => item.type !== "Service")
+  ) {
+    return contractRefusal(
+      "CONTRACT_LINE_NOT_SERVICE",
+      "A contract line must be a Service item"
+    );
+  }
+
+  const order = new Map(itemIds.map((id, index) => [id, index]));
+  const rows = [...items.data]
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    .map((item) => ({
+      customerContractId: args.customerContractId,
+      companyId: args.companyId,
+      createdBy: args.createdBy,
+      revenueType: args.revenueType,
+      itemId: item.id,
+      quantity: 1,
+      // As a line added one at a time: the rate is the user's to set (an
+      // item's sale price is in the company currency, not the contract's).
+      rate: 0,
+      rateUnit: args.revenueType === "Recurring" ? args.rateUnit : null,
+      discountPercent: 0,
+      taxPercent: 0,
+      startDate: args.startDate,
+      revenueMethod: "Daily" as const,
+      projectId: args.projectId
+    }));
+
+  return client.from("customerContractLine").insert(rows).select("id");
 }
 
 /** Removes a line from a Draft contract. Not an MCP tool: the route uses

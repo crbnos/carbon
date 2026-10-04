@@ -19,7 +19,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -38,7 +38,7 @@ import { path } from "~/utils/path";
 import {
   contractRateUnits,
   contractRevenueMethods,
-  customerContractLineKinds,
+  contractRevenueTypes,
   customerContractLineValidator
 } from "../../sales.models";
 import ContractProject from "./ContractProject";
@@ -75,7 +75,7 @@ const ContractLineForm = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const isEditing = initialValues.id !== undefined;
-  const [kind, setKind] = useState(initialValues.kind);
+  const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
   const [showRevenue, setShowRevenue] = useState(
     initialValues.revenueMethod !== "Daily" ||
@@ -83,12 +83,23 @@ const ContractLineForm = ({
       !!initialValues.revenueEndDate
   );
   const [showDelete, setShowDelete] = useState(false);
+  // As a modal the form closes once its save has settled (the action
+  // redirects back with a flash).
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (type === "modal" && fetcher.state === "idle" && submitted.current) {
+      submitted.current = false;
+      onClose?.();
+    }
+  }, [type, fetcher.state, onClose]);
 
-  const kindLabels: Record<(typeof customerContractLineKinds)[number], string> =
-    {
-      "One-time": t`One-time`,
-      Recurring: t`Recurring`
-    };
+  const revenueTypeLabels: Record<
+    (typeof contractRevenueTypes)[number],
+    string
+  > = {
+    "One-time": t`One-time`,
+    Recurring: t`Recurring`
+  };
   const rateUnitLabels: Record<(typeof contractRateUnits)[number], string> = {
     Day: t`Day`,
     Week: t`Week`,
@@ -134,6 +145,9 @@ const ContractLineForm = ({
             fetcher={fetcher}
             className="w-full"
             isDisabled={isLocked}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
           >
             <ModalCardHeader>
               <ModalCardTitle>
@@ -157,17 +171,17 @@ const ContractLineForm = ({
                     isReadOnly={isLocked}
                   />
                   <Select
-                    name="kind"
-                    label={t`Kind`}
-                    options={customerContractLineKinds.map((value) => ({
+                    name="revenueType"
+                    label={t`Revenue Type`}
+                    options={contractRevenueTypes.map((value) => ({
                       value,
-                      label: kindLabels[value]
+                      label: revenueTypeLabels[value]
                     }))}
                     onChange={(option) => {
-                      const next = customerContractLineKinds.find(
+                      const next = contractRevenueTypes.find(
                         (value) => value === option?.value
                       );
-                      if (next) setKind(next);
+                      if (next) setRevenueType(next);
                     }}
                   />
                   <Input
@@ -197,7 +211,7 @@ const ContractLineForm = ({
                   />
                   {/* Unmounted for a one-time line: the validator refuses a
                       rate unit on one. */}
-                  {kind === "Recurring" && (
+                  {revenueType === "Recurring" && (
                     <Select
                       name="rateUnit"
                       label={t`Per`}

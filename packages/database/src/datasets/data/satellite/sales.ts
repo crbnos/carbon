@@ -978,7 +978,7 @@ export const CONTRACTS: ContractSpec[] = [
     billingTiming: "Advance",
     lines: [
       {
-        kind: "One-time",
+        revenueType: "One-time",
         item: "Ground Segment Integration",
         description: "Ground station integration and pass testing",
         quantity: 1,
@@ -988,7 +988,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Daily"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Mission Operations Support",
         description: "Mission operations, two buses",
         quantity: 2,
@@ -998,7 +998,7 @@ export const CONTRACTS: ContractSpec[] = [
         revenueMethod: "Even Period"
       },
       {
-        kind: "Recurring",
+        revenueType: "Recurring",
         item: "Thermal Vacuum Test",
         description:
           "Quarterly thermal vacuum requalification of flight spares",

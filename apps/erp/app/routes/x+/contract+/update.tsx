@@ -35,6 +35,7 @@ const TERM_FIELDS = [
   "invoiceCustomerId",
   "invoiceCustomerContactId",
   "invoiceCustomerLocationId",
+  "shipToCustomerLocationId",
   "salesPersonId",
   "projectId",
   "customerReference",
@@ -236,6 +237,7 @@ export async function action({ request }: ActionFunctionArgs) {
     invoiceCustomerId: contract.invoiceCustomerId,
     invoiceCustomerContactId: contract.invoiceCustomerContactId,
     invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
+    shipToCustomerLocationId: contract.shipToCustomerLocationId,
     salesPersonId: contract.salesPersonId,
     projectId: contract.projectId,
     customerReference: contract.customerReference,
@@ -276,6 +278,10 @@ export async function action({ request }: ActionFunctionArgs) {
   ) {
     terms.invoiceCustomerContactId = null;
     terms.invoiceCustomerLocationId = null;
+  }
+  // The ship-to address is one of the customer's own locations.
+  if (field === "customerId" && value !== contract.customerId) {
+    terms.shipToCustomerLocationId = null;
   }
 
   // The same FormData the new contract form posts, so the same zfd coercion

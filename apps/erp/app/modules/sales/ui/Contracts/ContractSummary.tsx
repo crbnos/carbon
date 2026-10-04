@@ -58,7 +58,7 @@ const ContractSummary = ({
   // A contract that has not started yet is valued on its start date, when
   // its lines first bill.
   const startDate = contract.startDate ?? today;
-  const recurring = lines.some((line) => line.kind === "Recurring")
+  const recurring = lines.some((line) => line.revenueType === "Recurring")
     ? recurringValuePerPeriod(
         lines.map(toContractLineTerms),
         frequency,
@@ -217,7 +217,7 @@ function SummaryLine({
   };
 
   const segments: string[] = [];
-  if (line.kind === "One-time") {
+  if (line.revenueType === "One-time") {
     segments.push(t`one-time`);
     segments.push(
       quantity === 1 ? rate : `${formatQuantity(quantity)} × ${rate}`

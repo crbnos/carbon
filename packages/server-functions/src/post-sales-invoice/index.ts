@@ -8,6 +8,13 @@ import {
   journalReference
 } from "@carbon/database";
 import {
+  addMovement,
+  type ContractPosition,
+  EMPTY_POSITION,
+  negatePosition,
+  normalizePosition
+} from "@carbon/database/contract-position";
+import {
   inOrder,
   isNull,
   many,
@@ -41,12 +48,23 @@ import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
+import {
+  loadContractPositions,
+  lockContractPositions,
+  samePosition,
+  signedCreditAmount
+} from "../lib/contract-ledger";
+import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import {
   getDefaultPostingGroup,
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { assertPostable } from "../lib/postable";
+import {
+  type ContractPostingAccounts,
+  planContractInvoiceLine
+} from "./contract-posting";
 import {
   leaseSettlementJournalLines,
   planRentalLine,
@@ -307,9 +325,11 @@ const postSalesInvoice = defineServerFn({
           // Service line is deferred: every other item type is a physical good,
           // earned when it ships, so dates left on one (a line whose type changed,
           // an API write) must not move its revenue. Rental lines defer through
-          // their own path below.
+          // their own path below, and so do contract lines: they move their
+          // contract line's position instead (plan D6).
           const deferredServicePeriod = (line: InvoiceLineRecord) =>
             line.invoiceLineType === "Service" &&
+            !line.customerContractLineId &&
             line.serviceStartDate &&
             line.serviceEndDate
               ? {
@@ -615,6 +635,26 @@ const postSalesInvoice = defineServerFn({
               }
             }
           }
+          // Contract lines post to Deferred Revenue / Contract Assets (and
+          // realized FX when a pool carried at another rate is cleared); the
+          // run later recognizes into Sales.
+          const contractInvoiceLines = accountingEnabled
+            ? salesInvoiceLines.data.filter(
+                (line: InvoiceLineRecord) =>
+                  !!line.customerContractLineId &&
+                  line.invoiceLineType !== "Comment"
+              )
+            : [];
+          if (contractInvoiceLines.length > 0) {
+            for (const id of [
+              accountDefaults?.data?.deferredRevenueAccount,
+              accountDefaults?.data?.contractAssetAccount,
+              accountDefaults?.data?.realizedExchangeGainAccount,
+              accountDefaults?.data?.realizedExchangeLossAccount
+            ]) {
+              if (id) accountIds.add(id);
+            }
+          }
           for (const asset of assetRecords.data ?? []) {
             const assetClass = asset.fixedAssetClass;
             for (const id of [
@@ -713,6 +753,90 @@ const postSalesInvoice = defineServerFn({
               SalesPostingAccount
             >;
           }
+
+          // Validated here, not only when a leg is pushed: the run later
+          // recognizes from both pools into Sales.
+          let contractAccounts: ContractPostingAccounts | null = null;
+          if (contractInvoiceLines.length > 0) {
+            const leaf = (
+              id: string | null | undefined,
+              accountClass: string,
+              label: string,
+              required: boolean
+            ) => {
+              const candidate = account(id);
+              if (!id && !required) return null;
+              // The FX accounts are only needed when a line clears a pool
+              // carried at another rate; the planner refuses then.
+              if (
+                !required &&
+                (!candidate ||
+                  candidate.class !== accountClass ||
+                  !candidate.active ||
+                  candidate.isGroup)
+              )
+                return null;
+              if (
+                !candidate ||
+                candidate.class !== accountClass ||
+                !candidate.active ||
+                candidate.isGroup
+              ) {
+                throw new Error(
+                  id
+                    ? `${label} account is invalid; expected an active ${accountClass} leaf in this company group`
+                    : `Contract invoices need the ${label} account mapped in the accounting defaults`
+                );
+              }
+              return candidate;
+            };
+            contractAccounts = {
+              deferredRevenue: leaf(
+                accountDefaults?.data?.deferredRevenueAccount,
+                "Liability",
+                "Deferred Revenue",
+                true
+              )!,
+              contractAsset: leaf(
+                accountDefaults?.data?.contractAssetAccount,
+                "Asset",
+                "Contract Assets",
+                true
+              )!,
+              fxGain: leaf(
+                accountDefaults?.data?.realizedExchangeGainAccount,
+                "Revenue",
+                "Realized Exchange Gain",
+                false
+              ),
+              fxLoss: leaf(
+                accountDefaults?.data?.realizedExchangeLossAccount,
+                "Expense",
+                "Realized Exchange Loss",
+                false
+              )
+            };
+            leaf(accountDefaults?.data?.salesAccount, "Revenue", "Sales", true);
+          }
+          // Each involved contract line's position, read once; the line loop
+          // keeps it running, so two lines of one contract line on this
+          // invoice see each other. Re-read under the position lock inside
+          // the posting transaction, which refuses if it moved meanwhile.
+          const contractPositionsRead =
+            contractInvoiceLines.length > 0
+              ? await loadContractPositions(
+                  db,
+                  companyId,
+                  contractInvoiceLines.map(
+                    (line: InvoiceLineRecord) => line.customerContractLineId!
+                  )
+                )
+              : new Map<string, ContractPosition>();
+          const contractPositions = new Map(contractPositionsRead);
+          const contractLedgerInserts: Omit<
+            Tables["customerContractLedgerEntry"]["Insert"],
+            "journalId"
+          >[] = [];
 
           // Rental facts, read once for every Rental line: the agreement lines,
           // the billing periods the lines bill, and each agreement line's
@@ -1008,7 +1132,102 @@ const postSalesInvoice = defineServerFn({
                   const itemTrackingType =
                     invoiceLineItem?.itemTrackingType ?? "Inventory";
 
-                  if (accountingEnabled && accountDefaults?.data) {
+                  const lineMetadata: SalesPostingMetadata = {
+                    customerTypeId: customer.data.customerTypeId ?? null,
+                    itemPostingGroupId:
+                      itemCosts.data.find(
+                        (
+                          cost: Pick<
+                            Database["public"]["Tables"]["itemCost"]["Row"],
+                            "itemId" | "itemPostingGroupId"
+                          >
+                        ) => cost.itemId === invoiceLine.itemId
+                      )?.itemPostingGroupId ?? null,
+                    itemId: invoiceLine.itemId ?? null,
+                    locationId: invoiceLine.locationId ?? null,
+                    costCenterId: null,
+                    fixedAssetClassId: null,
+                    projectId: invoiceLine.projectId ?? null
+                  };
+                  const contractLineId = invoiceLine.customerContractLineId;
+                  if (
+                    accountingEnabled &&
+                    accountDefaults?.data &&
+                    contractLineId &&
+                    contractAccounts
+                  ) {
+                    // A contract line moves its position: Cr Contract Assets
+                    // for what the run accrued ahead of billing, the rest Cr
+                    // Deferred Revenue (a negative line the reverse), and the
+                    // run recognizes from there. No schedule rows (plan D6).
+                    const position =
+                      contractPositions.get(contractLineId) ?? EMPTY_POSITION;
+                    const plan = planContractInvoiceLine({
+                      position,
+                      revenueBase:
+                        roundSalesPostingAmounts(postingLine).salesRevenueBase,
+                      rate: invoiceExchangeRate,
+                      accounts: contractAccounts,
+                      customerContractId:
+                        invoiceLine.customerContractId ?? invoiceHeader.id
+                    });
+                    const charges = buildSalesPostingLines({
+                      line: postingLine,
+                      context: postingContext,
+                      accounts: chargeAccounts,
+                      revenueLegs: plan.revenueLegs,
+                      metadata: lineMetadata
+                    });
+                    journalLineInserts.push(...charges.lines);
+                    journalLineDimensionsMeta.push(...charges.metadata);
+                    // Same journal line reference, so a VOID reverses them
+                    // with the line.
+                    for (const reclass of plan.reclass) {
+                      journalLineInserts.push({
+                        accountId: reclass.account.id,
+                        description: reclass.description,
+                        amount: signedCreditAmount(
+                          reclass.accountClass,
+                          reclass.credit
+                        ),
+                        quantity: round(invoiceLine.quantity),
+                        documentType: "Contract",
+                        documentId:
+                          invoiceLine.customerContractId ?? invoiceHeader.id,
+                        externalDocumentId: postingContext.externalDocumentId,
+                        documentLineReference:
+                          postingContext.documentLineReference,
+                        journalLineReference:
+                          postingContext.journalLineReference,
+                        companyId
+                      });
+                      journalLineDimensionsMeta.push(lineMetadata);
+                    }
+                    contractPositions.set(
+                      contractLineId,
+                      addMovement(position, plan.movement)
+                    );
+                    if (
+                      plan.movement.deferredAmount !== 0 ||
+                      plan.movement.assetAmount !== 0 ||
+                      plan.movement.deferredBase !== 0 ||
+                      plan.movement.assetBase !== 0
+                    ) {
+                      contractLedgerInserts.push({
+                        customerContractId: invoiceLine.customerContractId!,
+                        customerContractLineId: contractLineId,
+                        entryType: "Invoice",
+                        postingDate: today,
+                        salesInvoiceLineId: invoiceLine.id,
+                        deferredAmount: plan.movement.deferredAmount,
+                        deferredBase: plan.movement.deferredBase,
+                        assetAmount: plan.movement.assetAmount,
+                        assetBase: plan.movement.assetBase,
+                        companyId,
+                        createdBy: userId
+                      });
+                    }
+                  } else if (accountingEnabled && accountDefaults?.data) {
                     // A dated service range defers this line's revenue: the sales
                     // leg is credited to Deferred Revenue now and a straight-line
                     // schedule recognizes it into Sales later.
@@ -1022,23 +1241,7 @@ const postSalesInvoice = defineServerFn({
                       context: postingContext,
                       accounts: chargeAccounts,
                       deferredRevenueAccount: deferral?.account,
-                      metadata: {
-                        customerTypeId: customer.data.customerTypeId ?? null,
-                        itemPostingGroupId:
-                          itemCosts.data.find(
-                            (
-                              cost: Pick<
-                                Database["public"]["Tables"]["itemCost"]["Row"],
-                                "itemId" | "itemPostingGroupId"
-                              >
-                            ) => cost.itemId === invoiceLine.itemId
-                          )?.itemPostingGroupId ?? null,
-                        itemId: invoiceLine.itemId ?? null,
-                        locationId: invoiceLine.locationId ?? null,
-                        costCenterId: null,
-                        fixedAssetClassId: null,
-                        projectId: invoiceLine.projectId ?? null
-                      }
+                      metadata: lineMetadata
                     });
                     journalLineInserts.push(...charges.lines);
                     journalLineDimensionsMeta.push(...charges.metadata);
@@ -1455,6 +1658,24 @@ const postSalesInvoice = defineServerFn({
             : null;
 
           await db.transaction().execute(async (trx) => {
+            // The movements above were computed from positions read before
+            // this transaction; refuse if another writer moved one since.
+            if (contractPositionsRead.size > 0) {
+              await lockContractPositions(trx, companyId);
+              const current = await loadContractPositions(trx, companyId, [
+                ...contractPositionsRead.keys()
+              ]);
+              for (const [lineId, read] of contractPositionsRead) {
+                if (
+                  !samePosition(read, current.get(lineId) ?? EMPTY_POSITION)
+                ) {
+                  throw new Error(
+                    "A contract line's revenue position changed while this invoice was posting; post it again"
+                  );
+                }
+              }
+            }
+
             if (shipmentLineInserts.length > 0) {
               const shipmentLinesGroupedByLocationId =
                 shipmentLineInserts.reduce<
@@ -1814,6 +2035,19 @@ const postSalesInvoice = defineServerFn({
                   .execute();
               }
 
+              // One movement per contract invoice line, on this journal.
+              if (contractLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("customerContractLedgerEntry")
+                  .values(
+                    contractLedgerInserts.map((entry) => ({
+                      ...entry,
+                      journalId: journalResult.id
+                    }))
+                  )
+                  .execute();
+              }
+
               // Rental rent: the unearned part as Planned Deferral rows (an
               // early-return credit as negative rows shrinking its period).
               if (rentalScheduleInserts.length > 0) {
@@ -2145,15 +2379,22 @@ const postSalesInvoice = defineServerFn({
           }
 
           // A Rental line's revenue legs reference the rental agreement, not the
-          // invoice, so the query above misses them. They share the posting
-          // journal and the journal line reference of their invoice line's AR
-          // leg, which is how they are found.
+          // invoice, so the query above misses them; a contract line's
+          // revenue legs (and FX reclass) reference the contract. They share
+          // the posting journal and the journal line reference of their
+          // invoice line's AR leg, which is how they are found.
           const rentalLineIds = salesInvoiceLines.data
             .filter((line) => line.invoiceLineType === "Rental")
             .map((line) => line.id);
+          const contractInvoiceLines = salesInvoiceLines.data.filter(
+            (line) => !!line.customerContractLineId
+          );
           type JournalLineRecord = Tables["journalLine"]["Row"];
           let rentalJournalEntries: JournalLineRecord[] = [];
-          if (rentalLineIds.length > 0 && journalEntries.length > 0) {
+          if (
+            (rentalLineIds.length > 0 || contractInvoiceLines.length > 0) &&
+            journalEntries.length > 0
+          ) {
             const journalIds = [
               ...new Set(
                 journalEntries.map(
@@ -2175,7 +2416,7 @@ const postSalesInvoice = defineServerFn({
               references.length > 0
                 ? await many(db, "journalLine", {
                     companyId,
-                    documentType: "Rental Agreement",
+                    documentType: ["Rental Agreement", "Contract"],
                     journalId: journalIds,
                     journalLineReference: references
                   })
@@ -2248,6 +2489,8 @@ const postSalesInvoice = defineServerFn({
           // Deferred revenue already recognized cannot be voided by flipping the
           // invoice journal alone — the recognition journal must be reversed
           // first. Planned rows are dropped inside the void transaction below.
+          // A contract line has no Deferral rows (it posts to its position),
+          // so this never refuses one: its VOID reclasses instead.
           const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
           if (invoiceLineIds.length > 0) {
             const recognized = await db
@@ -2273,9 +2516,10 @@ const postSalesInvoice = defineServerFn({
                 // exact — no rounding to do.
                 amount: -entry.amount,
                 quantity: -entry.quantity,
-                ...(entry.documentType === "Rental Agreement"
+                ...(entry.documentType === "Rental Agreement" ||
+                entry.documentType === "Contract"
                   ? {
-                      documentType: "Rental Agreement" as const,
+                      documentType: entry.documentType,
                       documentId: entry.documentId
                     }
                   : {
@@ -2326,6 +2570,20 @@ const postSalesInvoice = defineServerFn({
 
           await db.transaction().execute(async (trx) => {
             if (invoiceLineIds.length > 0) {
+              // Every row left is Planned (Posted refused above); a Draft
+              // recognition run may hold some, and its lines go with them.
+              const held = await trx
+                .selectFrom("revenueRecognitionSchedule")
+                .select("id")
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .where("runLineId", "is not", null)
+                .execute();
+              await syncDraftRecognitionRuns(trx, {
+                companyId,
+                userId,
+                deletedScheduleIds: held.map((row) => row.id)
+              });
               await trx
                 .deleteFrom("revenueRecognitionSchedule")
                 .where("companyId", "=", companyId)
@@ -2503,6 +2761,130 @@ const postSalesInvoice = defineServerFn({
                 .execute();
             }
 
+            // A contract line's VOID is the negation of its Invoice entry —
+            // the journal above reverses its legs exactly — then any pool the
+            // negation drove below zero (the run already recognized part of
+            // what this invoice deferred) is reclassed to the other pool, on
+            // this VOID journal, so Deferred Revenue and Contract Assets stay
+            // max(N, 0) / max(−N, 0) (plan D6).
+            const contractVoidEntries: Omit<
+              Tables["customerContractLedgerEntry"]["Insert"],
+              "journalId"
+            >[] = [];
+            if (accountingEnabled && contractInvoiceLines.length > 0) {
+              await lockContractPositions(trx, companyId);
+              const invoiceEntries = await trx
+                .selectFrom("customerContractLedgerEntry")
+                .select([
+                  "customerContractId",
+                  "customerContractLineId",
+                  "salesInvoiceLineId",
+                  "deferredAmount",
+                  "deferredBase",
+                  "assetAmount",
+                  "assetBase"
+                ])
+                .where("companyId", "=", companyId)
+                .where("entryType", "=", "Invoice")
+                .where(
+                  "salesInvoiceLineId",
+                  "in",
+                  contractInvoiceLines.map((line) => line.id)
+                )
+                .orderBy("createdAt")
+                .orderBy("id")
+                .execute();
+              if (invoiceEntries.length > 0) {
+                const positions = await loadContractPositions(
+                  trx,
+                  companyId,
+                  invoiceEntries.map((entry) => entry.customerContractLineId)
+                );
+                const defaults = await trx
+                  .selectFrom("accountDefault")
+                  .select(["deferredRevenueAccount", "contractAssetAccount"])
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst();
+                for (const entry of invoiceEntries) {
+                  const negation = negatePosition({
+                    deferredAmount: Number(entry.deferredAmount),
+                    deferredBase: Number(entry.deferredBase),
+                    assetAmount: Number(entry.assetAmount),
+                    assetBase: Number(entry.assetBase)
+                  });
+                  const before = addMovement(
+                    positions.get(entry.customerContractLineId) ??
+                      EMPTY_POSITION,
+                    negation
+                  );
+                  const reclass = normalizePosition(before);
+                  const movement = addMovement(negation, reclass);
+                  positions.set(
+                    entry.customerContractLineId,
+                    addMovement(before, reclass)
+                  );
+                  contractVoidEntries.push({
+                    customerContractId: entry.customerContractId,
+                    customerContractLineId: entry.customerContractLineId,
+                    entryType: "Void",
+                    postingDate: today,
+                    salesInvoiceLineId: entry.salesInvoiceLineId,
+                    ...movement,
+                    companyId,
+                    createdBy: userId
+                  });
+                  // Equal base on both pools: one Contract Assets / Deferred
+                  // Revenue pair.
+                  if (reclass.deferredBase !== 0) {
+                    if (
+                      !defaults?.deferredRevenueAccount ||
+                      !defaults.contractAssetAccount
+                    ) {
+                      throw new Error(
+                        "Voiding a contract invoice needs the Deferred Revenue and Contract Assets accounts mapped in the accounting defaults"
+                      );
+                    }
+                    const invoiceLine = contractInvoiceLines.find(
+                      (line) => line.id === entry.salesInvoiceLineId
+                    );
+                    const reference = nanoid();
+                    for (const [
+                      accountId,
+                      accountClass,
+                      description,
+                      value
+                    ] of [
+                      [
+                        defaults.deferredRevenueAccount,
+                        "Liability",
+                        "VOID: Deferred Revenue reclass",
+                        reclass.deferredBase
+                      ],
+                      [
+                        defaults.contractAssetAccount,
+                        "Asset",
+                        "VOID: Contract Assets reclass",
+                        -reclass.assetBase
+                      ]
+                    ] as const) {
+                      reversingJournalEntries.push({
+                        accountId,
+                        description,
+                        amount: signedCreditAmount(accountClass, value),
+                        quantity: invoiceLine?.quantity ?? 0,
+                        documentType: "Contract",
+                        documentId: entry.customerContractId,
+                        externalDocumentId: invoiceHeader.customerReference,
+                        documentLineReference: null,
+                        journalLineReference: reference,
+                        companyId
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
             // Nothing to reverse for a zero-value invoice — no empty VOID header.
             if (accountingEnabled && reversingJournalEntries.length > 0) {
               const voidJournalEntryId = await getNextSequence(
@@ -2538,6 +2920,18 @@ const postSalesInvoice = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+
+              if (contractVoidEntries.length > 0) {
+                await trx
+                  .insertInto("customerContractLedgerEntry")
+                  .values(
+                    contractVoidEntries.map((entry) => ({
+                      ...entry,
+                      journalId: voidJournalResult.id
+                    }))
+                  )
+                  .execute();
+              }
             }
 
             // Insert reversing item ledger entries

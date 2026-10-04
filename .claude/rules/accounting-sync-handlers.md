@@ -357,7 +357,13 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   discount is applied to each before they are reconciled, and a discounted converted price is
   rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
   Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
-  `Service` lines with a `discountPercent`, so they need nothing else here.
+  `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
+  posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
+  / `documentId` = the contract (`post-sales-invoice/contract-posting.ts`), never to Sales, so
+  the selection caveat of rental lines below applies to them too: a reader of an invoice's
+  `documentType = 'Invoice'` journal lines never sees a contract revenue leg.
+  <!-- UNVERIFIED: which account each provider books a contract invoice line to remotely -->
+
 - **Rental invoice lines — provider behavior is a spike pending, not a
   decision.** A rental agreement drafts sales invoices whose lines are
   `invoiceLineType 'Rental'` with **no item** (`itemId` null;

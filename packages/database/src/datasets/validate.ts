@@ -2288,7 +2288,10 @@ export function sales(ctx: ValidationCtx): void {
       if (!serviceItems.has(line.item)) {
         fail(`${where} line "${line.item}": not a Service item`);
       }
-      if ((line.kind === "Recurring") !== (line.rateUnit !== undefined)) {
+      if (
+        (line.revenueType === "Recurring") !==
+        (line.rateUnit !== undefined)
+      ) {
         fail(
           `${where} line "${line.item}": a Recurring line needs a rateUnit and a One-time line has none`
         );

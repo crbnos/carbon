@@ -641,6 +641,63 @@ export async function generateContractInvoicesNow(
   return { invoices, invoiceIds };
 }
 
+/** A new contract's invoicing terms from its customer: the bill-to
+ *  customer, invoice contact and address and payment terms (Customer →
+ *  Payment), and the ship-to address (Customer → Shipping) when it is one of
+ *  the customer's own locations. Each is undefined when the customer has
+ *  none, or a read fails — a default left empty is filled on the Invoicing
+ *  step. */
+export async function contractInvoicingDefaults(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string
+): Promise<{
+  invoiceCustomerId: string | undefined;
+  invoiceCustomerContactId: string | undefined;
+  invoiceCustomerLocationId: string | undefined;
+  paymentTermId: string | undefined;
+  shipToCustomerLocationId: string | undefined;
+}> {
+  const [payment, shipping] = await Promise.all([
+    client
+      .from("customerPayment")
+      .select(
+        "invoiceCustomerId, invoiceCustomerContactId, invoiceCustomerLocationId, paymentTermId"
+      )
+      .eq("customerId", customerId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("customerShipping")
+      .select("shippingCustomerId, shippingCustomerLocationId")
+      .eq("customerId", customerId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (payment.error || shipping.error) {
+    logger.error("Failed to read the customer's invoicing defaults", {
+      companyId,
+      customerId,
+      error: payment.error ?? shipping.error
+    });
+  }
+
+  const shipsToItself =
+    !shipping.data?.shippingCustomerId ||
+    shipping.data.shippingCustomerId === customerId;
+  return {
+    invoiceCustomerId: payment.data?.invoiceCustomerId ?? undefined,
+    invoiceCustomerContactId:
+      payment.data?.invoiceCustomerContactId ?? undefined,
+    invoiceCustomerLocationId:
+      payment.data?.invoiceCustomerLocationId ?? undefined,
+    paymentTermId: payment.data?.paymentTermId ?? undefined,
+    shipToCustomerLocationId: shipsToItself
+      ? (shipping.data?.shippingCustomerLocationId ?? undefined)
+      : undefined
+  };
+}
+
 /** Confirm, schedule edits, amend, cancel and revert — the
  *  `post-customer-contract` server function, run as the signed-in user so
  *  its permission check applies. Never throws: `{ data, error }`. */
@@ -868,13 +925,15 @@ export async function createContractFromSalesOrder(
         chosen.map(({ choice, line, itemId, quantity, rate }) => ({
           companyId,
           customerContractId: contract.id,
-          kind: choice.kind,
+          revenueType: choice.revenueType,
           itemId,
           description: line.description,
           quantity,
           rate,
           rateUnit:
-            choice.kind === "Recurring" ? (choice.rateUnit ?? null) : null,
+            choice.revenueType === "Recurring"
+              ? (choice.rateUnit ?? null)
+              : null,
           taxPercent: line.taxPercent,
           startDate: input.startDate,
           salesOrderLineId: line.id,

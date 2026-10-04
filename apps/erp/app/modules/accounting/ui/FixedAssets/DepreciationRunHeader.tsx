@@ -12,7 +12,7 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuRepeat, LuTrash } from "react-icons/lu";
+import { LuCheckCheck, LuRefreshCw, LuRepeat, LuTrash } from "react-icons/lu";
 import { useFetcher, useNavigate, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -37,6 +37,7 @@ const DepreciationRunHeader = () => {
   const fetcher = useFetcher();
   const deleteModal = useDisclosure();
   const repeatModal = useDisclosure();
+  const recalculateModal = useDisclosure();
 
   const run = routeData?.run;
   if (!run) throw new Error("Could not find run in routeData");
@@ -95,16 +96,25 @@ const DepreciationRunHeader = () => {
         }
         actions={
           isDraft && permissions.can("update", "accounting") ? (
-            <fetcher.Form method="post" action="post">
+            <>
               <Button
-                variant="primary"
-                type="submit"
-                leftIcon={<LuCheckCheck />}
-                isLoading={fetcher.state !== "idle"}
+                variant="secondary"
+                leftIcon={<LuRefreshCw />}
+                onClick={recalculateModal.onOpen}
               >
-                <Trans>Post</Trans>
+                <Trans>Recalculate</Trans>
               </Button>
-            </fetcher.Form>
+              <fetcher.Form method="post" action="post">
+                <Button
+                  variant="primary"
+                  type="submit"
+                  leftIcon={<LuCheckCheck />}
+                  isLoading={fetcher.state !== "idle"}
+                >
+                  <Trans>Post</Trans>
+                </Button>
+              </fetcher.Form>
+            </>
           ) : undefined
         }
       />
@@ -120,6 +130,18 @@ const DepreciationRunHeader = () => {
             deleteModal.onClose();
             navigate(path.to.depreciationRuns);
           }}
+        />
+      )}
+
+      {recalculateModal.isOpen && (
+        <Confirm
+          action={path.to.recalculateDepreciationRun(depreciationRunId)}
+          isOpen={recalculateModal.isOpen}
+          title={t`Recalculate Run`}
+          text={t`This will rebuild ${run.depreciationRunId} from the fixed assets as they are now: every active asset not covered by another run for the period ending ${formatDate(run.periodEnd)}.`}
+          confirmText={t`Recalculate`}
+          onCancel={recalculateModal.onClose}
+          onSubmit={recalculateModal.onClose}
         />
       )}
 

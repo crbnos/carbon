@@ -602,13 +602,23 @@ export const path = {
       generatePath(`${x}/contract/${id}/invoice`),
     contractLine: (id: string, lineId: string) =>
       generatePath(`${x}/contract/${id}/${lineId}/details`),
+    contractLinesAdd: (id: string) =>
+      generatePath(`${x}/contract/${id}/lines/add`),
+    contractLineUpdate: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/update`),
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
+    contractRevenue: (id: string) =>
+      generatePath(`${x}/contract/${id}/revenue`),
     contractRevertCancellation: (id: string) =>
       generatePath(`${x}/contract/${id}/revert-cancellation`),
     contractSchedule: (id: string) =>
       generatePath(`${x}/contract/${id}/schedule`),
+    contractSetup: (
+      id: string,
+      step: "details" | "products" | "invoicing" | "revenue" | "review"
+    ) => generatePath(`${x}/contract/${id}/setup/${step}`),
     contracts: `${x}/sales/contracts`,
     contractUpdate: `${x}/contract/update`,
     convertQuoteToOrder: (id: string) =>
@@ -2104,6 +2114,10 @@ export const path = {
     quoteShipment: (id: string) => generatePath(`${x}/quote/${id}/shipment`),
     quoteStatus: (id: string) => generatePath(`${x}/quote/${id}/status`),
     quotes: `${x}/sales/quotes`,
+    recalculateDepreciationRun: (id: string) =>
+      generatePath(`${x}/depreciation-run/${id}/recalculate`),
+    recalculateRevenueRecognitionRun: (id: string) =>
+      generatePath(`${x}/revenue-recognition-run/${id}/recalculate`),
     receipt: (id: string) => generatePath(`${x}/receipt/${id}`),
     receiptDetails: (id: string) => generatePath(`${x}/receipt/${id}/details`),
     receiptFixedAssetLineUpdate: `${x}/receipt/fixed-asset-lines/update`,

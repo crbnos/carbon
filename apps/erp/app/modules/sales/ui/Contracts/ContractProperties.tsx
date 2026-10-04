@@ -59,6 +59,7 @@ type Term =
   | "invoiceCustomerId"
   | "invoiceCustomerContactId"
   | "invoiceCustomerLocationId"
+  | "shipToCustomerLocationId"
   | "salesPersonId"
   | "projectId"
   | "customerReference"
@@ -318,6 +319,21 @@ const ContractProperties = () => {
           }}
         />
       </PropertyForm>
+      <PropertyForm
+        name="shipToCustomerLocationId"
+        value={contract.shipToCustomerLocationId}
+      >
+        <CustomerLocation
+          name="shipToCustomerLocationId"
+          label={t`Ship To`}
+          customer={contract.customerId ?? ""}
+          inline
+          isReadOnly={isDisabled}
+          onChange={(location) => {
+            if (location?.id) onUpdate("shipToCustomerLocationId", location.id);
+          }}
+        />
+      </PropertyForm>
       <PropertyForm name="salesPersonId" value={contract.salesPersonId}>
         <Employee
           name="salesPersonId"
@@ -384,7 +400,7 @@ const ContractProperties = () => {
         <PropertyForm name="closeDate" value={contract.closeDate}>
           <DatePicker
             name="closeDate"
-            label={t`Close Date`}
+            label={t`Contract Close Date`}
             inline
             isDisabled={isDisabled}
             onChange={(date) => {
@@ -440,7 +456,7 @@ const ContractProperties = () => {
         <PropertyForm name="renewal" value={contract.renewal}>
           <Select
             name="renewal"
-            label={t`At the End`}
+            label={t`Action on Completion`}
             inline={(value) => (
               <span>
                 {labels.renewal[value as (typeof contractRenewals)[number]] ??

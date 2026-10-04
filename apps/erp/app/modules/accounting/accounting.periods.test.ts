@@ -78,6 +78,7 @@ function makeClient(responses: Scripted[]) {
     order: () => builder,
     limit: () => builder,
     not: () => builder,
+    is: () => builder,
     range: () => builder,
     single: () => Promise.resolve(next()),
     maybeSingle: () => Promise.resolve(next()),
@@ -114,6 +115,7 @@ function makeRecordingClient(responses: Scripted[]) {
       order: () => builder,
       limit: () => builder,
       not: () => builder,
+      is: () => builder,
       range: () => builder,
       single: () => Promise.resolve(next()),
       maybeSingle: () => Promise.resolve(next()),
@@ -1091,6 +1093,22 @@ describe("getPeriodCloseReadiness — unaccrued operating rent", () => {
         (c) => c.autoCheckKey === "unposted-revenue-schedules"
       )
     ).toMatchObject({ failing: false, count: 0 });
+  });
+
+  it("adds contract revenue months no run has synthesized to the count", async () => {
+    const client = makeClient([
+      ...baseline(1),
+      { data: [] }, // no rental lines
+      { count: 2 } // Planned contract months due with no schedule row
+    ]);
+
+    const result = await getPeriodCloseReadiness(client, "C1", "P10");
+
+    expect(
+      result.data?.checks.find(
+        (c) => c.autoCheckKey === "unposted-revenue-schedules"
+      )
+    ).toMatchObject({ failing: true, count: 3 });
   });
 
   it("passes trivially for a company with no rental lines", async () => {

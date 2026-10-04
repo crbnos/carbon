@@ -23,6 +23,7 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
+  LuListChecks,
   LuPanelLeft,
   LuPencilLine,
   LuTrash,
@@ -185,6 +186,18 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
                   <Trans>Invoice</Trans>
                 </Button>
               </>
+            )}
+            {isDraft && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuListChecks />}
+                isDisabled={!canUpdate}
+                asChild
+              >
+                <Link to={path.to.contractSetup(id, "products")}>
+                  <Trans>Continue Setup</Trans>
+                </Link>
+              </Button>
             )}
             {isDraft && (
               <Button

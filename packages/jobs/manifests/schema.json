@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261004015235",
+  "schemaVersion": "20261004202441",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-04T01:56:36.559Z",
+  "exportedAt": "2026-10-04T21:09:17.019Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4337,48 +4337,6 @@
       ]
     },
     {
-      "name": "revenueRecognitionSchedule",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "type",
-        "status",
-        "salesInvoiceLineId",
-        "rentalAgreementLineId",
-        "rentalLeaseScheduleLineId",
-        "periodStart",
-        "periodEnd",
-        "scheduledDate",
-        "accountingPeriodId",
-        "amount",
-        "debitAccountId",
-        "creditAccountId",
-        "runLineId",
-        "journalId",
-        "billedBySalesInvoiceLineId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "revenueRecognitionRunLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "runId",
-        "scheduleId",
-        "amount",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
       "name": "salesOrder",
       "rows": 0,
       "columns": [
@@ -4457,7 +4415,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "shipToCustomerLocationId"
       ]
     },
     {
@@ -4554,7 +4513,7 @@
         "id",
         "companyId",
         "customerContractId",
-        "kind",
+        "revenueType",
         "itemId",
         "description",
         "quantity",
@@ -4606,6 +4565,24 @@
       ]
     },
     {
+      "name": "customerContractRevenue",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "periodStart",
+        "periodEnd",
+        "amount",
+        "status",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "nonConformanceSalesOrderLine",
       "rows": 0,
       "columns": [
@@ -4619,6 +4596,74 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "revenueRecognitionSchedule",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "status",
+        "salesInvoiceLineId",
+        "rentalAgreementLineId",
+        "rentalLeaseScheduleLineId",
+        "periodStart",
+        "periodEnd",
+        "scheduledDate",
+        "accountingPeriodId",
+        "amount",
+        "debitAccountId",
+        "creditAccountId",
+        "runLineId",
+        "journalId",
+        "billedBySalesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customerContractLineId",
+        "customerContractRevenueId",
+        "contractAmount"
+      ]
+    },
+    {
+      "name": "customerContractLedgerEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "entryType",
+        "postingDate",
+        "salesInvoiceLineId",
+        "memoId",
+        "revenueRecognitionScheduleId",
+        "customerContractRevenueId",
+        "journalId",
+        "deferredAmount",
+        "deferredBase",
+        "assetAmount",
+        "assetBase",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "revenueRecognitionRunLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "scheduleId",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

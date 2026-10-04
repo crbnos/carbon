@@ -84,6 +84,7 @@ ALTER TABLE "entityName" ADD CONSTRAINT "entityName_companyId_name_key"
 | `updatedAt` | Set by the **app** on write, not a DB trigger. Don't add a generic timestamp trigger. |
 | Indexes | Index `companyId` and **every** FK (e.g. `createdBy`) |
 | Never | An `itemReadableId` column; decimal places in a `NUMERIC` (use bare `NUMERIC`) |
+| Naming | Never name a column, enum or field `kind` / `*Kind`, and never label a form field "Kind". Name what the value decides: `revenueType` (One-time / Recurring), `entryType`, `billingFrequency`. The enum takes the same name as the concept (`contractRevenueType`). "Kind" forces every reader to open the enum to learn what it means. |
 
 <!-- UNVERIFIED: the prefix→entity mapping (e.g. which short prefix a given new table
      should use) is by convention, not enforced; pick a short prefix or use bare id(). -->

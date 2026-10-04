@@ -13,6 +13,7 @@ import {
   calculateTaxDepreciation,
   computeDisposalGainLoss,
   depreciationRunLineDisplay,
+  depreciationRunLinesMatch,
   diffJournalLines,
   getLastDayOfMonth,
   getMacrsPercentage,
@@ -197,6 +198,61 @@ describe("depreciationRunLineDisplay", () => {
 // ---------------------------------------------------------------------------
 // Date helpers
 // ---------------------------------------------------------------------------
+
+describe("depreciationRunLinesMatch", () => {
+  const computed = [
+    { fixedAssetId: "fa1", amount: 100, taxAmount: null },
+    { fixedAssetId: "fa2", amount: 50.5, taxAmount: null }
+  ];
+
+  it("matches the same assets and amounts in any order, numeric strings included", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [
+          { fixedAssetId: "fa2", amount: "50.50", taxAmount: null },
+          { fixedAssetId: "fa1", amount: 100, taxAmount: null }
+        ],
+        computed
+      )
+    ).toBe(true);
+  });
+
+  it("is stale when an asset was disposed since the draft", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [...computed, { fixedAssetId: "fa3", amount: 10, taxAmount: null }],
+        computed
+      )
+    ).toBe(false);
+  });
+
+  it("is stale when an asset was added since the draft", () => {
+    expect(depreciationRunLinesMatch(computed.slice(0, 1), computed)).toBe(
+      false
+    );
+  });
+
+  it("is stale when an amount changed", () => {
+    expect(
+      depreciationRunLinesMatch(
+        [computed[0], { ...computed[1], amount: 40 }],
+        computed
+      )
+    ).toBe(false);
+  });
+
+  it("is stale when tax depreciation was switched on or the tax amount moved", () => {
+    const taxed = computed.map((line) => ({ ...line, taxAmount: 80 }));
+    expect(depreciationRunLinesMatch(computed, taxed)).toBe(false);
+    expect(
+      depreciationRunLinesMatch(
+        taxed.map((line) => ({ ...line, taxAmount: 70 })),
+        taxed
+      )
+    ).toBe(false);
+    expect(depreciationRunLinesMatch(taxed, taxed)).toBe(true);
+  });
+});
 
 describe("getMonthsBetween", () => {
   it("returns 1 for same month when end day >= start day", () => {
