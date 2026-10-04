@@ -67,3 +67,8 @@
 ## Task 12
 - `create-contract-invoices` + live-DB test `post-customer-contract/contract-lifecycle.test.ts` (confirm → draft → amend → cancel → end; renewal with uplift; open-ended horizon roll). Both run (not skipped) and pass.
 - Choices: a no-uplift renewal still copies a line ending on the old contract end (else it drops out of the new term); location = the origin sales order's shipping location, else the company's oldest location; the horizon roll only appends rows after the last persisted period.
+
+## Tasks 17 + 18
+- `sendPostedInvoiceViaStripe({ client, db, companyId, invoiceId })` (needs `db` for the mapping write); guards a double send by checking for an existing Stripe invoice link before sending.
+- Owner lookup failure no longer fails the email (logged, returns null). A failed rental step no longer skips the company's contract step.
+- FOLLOW-UP for Task 34: `packages/jobs/AGENTS.md` still describes `recurring-billing` / `invoice-automate` as rentals-only.

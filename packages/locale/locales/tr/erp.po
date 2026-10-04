@@ -159,6 +159,10 @@ msgstr "{0} stokta; kalan {1} {2} olarak toplanacak"
 msgid "{0} jobs created"
 msgstr "{0} İş emirleri oluşturuldu"
 
+#. placeholder {0}: invoice.rows.length
+msgid "{0} lines"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} satır eşlenecek"
@@ -277,6 +281,14 @@ msgstr "{0}, {name} olarak kaydedilecek"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Yıl"
+
+#. placeholder {0}: nameOf(lineId)
+msgid "{0}: <0/> more than the line now totals"
+msgstr ""
+
+#. placeholder {0}: nameOf(lineId)
+msgid "{0}: <0/> not on any invoice"
+msgstr ""
 
 #. placeholder {0}: item.days
 msgid "{0}d"
@@ -409,6 +421,13 @@ msgstr "{name} geri döndü!"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
 
+msgid "{off} off"
+msgstr ""
+
+#. placeholder {0}: formatDate(line.discountEndsOn)
+msgid "{off} off until {0}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
@@ -499,6 +518,12 @@ msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}s"
+
+msgid "<0/> left to place"
+msgstr ""
+
+msgid "<0/> over the row's amount"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
@@ -810,6 +835,9 @@ msgstr "İş emrinin başlangıç tarihi değişiyor"
 
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
+
+msgid "A line changed after the schedule was edited. Reset the schedule to plan it again from the lines."
+msgstr ""
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
@@ -1644,6 +1672,9 @@ msgstr "Grup Ekle"
 msgid "Add header"
 msgstr "Başlık ekle"
 
+msgid "Add Installment"
+msgstr ""
+
 msgid "Add Item"
 msgstr "Öğe Ekle"
 
@@ -1661,6 +1692,9 @@ msgstr "Satır Ekle"
 
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
+
+msgid "Add lines to plan the invoices."
+msgstr ""
 
 msgid "Add manually"
 msgstr "Manuel olarak ekle"
@@ -2026,6 +2060,10 @@ msgstr ""
 
 msgid "Amount"
 msgstr "Tutar"
+
+#. placeholder {0}: index + 1
+msgid "Amount {0}"
+msgstr ""
 
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Bu satırda varlıkları/giderleri artıran veya yükümlülükleri/özkaynağı/hasılatı azaltan tutar."
@@ -3425,6 +3463,9 @@ msgstr "Operasyon listesi"
 msgid "Bill To"
 msgstr "Fatura Adresi"
 
+msgid "Billed Externally"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4802,6 +4843,9 @@ msgstr ""
 msgid "Contract Value"
 msgstr ""
 
+msgid "Contract Value:"
+msgstr ""
+
 msgid "Contraction"
 msgstr ""
 
@@ -5624,6 +5668,10 @@ msgstr "Alacak toplamı"
 msgid "Credited"
 msgstr "Alacaklandırılmış"
 
+#. placeholder {0}: memo.memoId
+msgid "Credited on <0>{0}</0>"
+msgstr ""
+
 msgid "Credits"
 msgstr "Krediler"
 
@@ -6205,6 +6253,9 @@ msgstr "Erteleme"
 
 msgid "Deferrals"
 msgstr "Ertelemeler"
+
+msgid "Deferred"
+msgstr ""
 
 msgid "Deferred revenue"
 msgstr "Ertelenmiş hasılat"
@@ -7269,6 +7320,9 @@ msgstr "Her, lb, ft…"
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
 
+msgid "Earned, not billed"
+msgstr ""
+
 msgid "Easier to extend"
 msgstr "Genişletmesi daha kolay"
 
@@ -7626,6 +7680,9 @@ msgstr "Webhook Düzenle"
 
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
+
+msgid "Edited"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
@@ -8058,6 +8115,9 @@ msgstr "Olay Türü"
 
 msgid "Events"
 msgstr "Etkinlikler"
+
+msgid "Every amount placed"
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
@@ -9487,6 +9547,12 @@ msgstr "Hesaplamayı Gizle"
 msgid "Hide documents and activity"
 msgstr "Belgeler ve aktiviteyi gizle"
 
+msgid "Hide lines"
+msgstr ""
+
+msgid "Hide monthly revenue"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Ham verileri gizle"
 
@@ -10239,6 +10305,9 @@ msgstr "Fatura"
 msgid "Invoice {readableId} now"
 msgstr "Fatura {readableId} şimdi"
 
+msgid "Invoice actions"
+msgstr ""
+
 msgid "Invoice Address"
 msgstr "Fatura Adresi"
 
@@ -10271,6 +10340,13 @@ msgstr "Fatura müşteri konumu"
 
 msgid "Invoice Customer Location"
 msgstr "Fatura Müşteri Konumu"
+
+msgid "Invoice Date"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Invoice date {0}"
+msgstr ""
 
 msgid "Invoice ID"
 msgstr "Fatura Kimlik Numarası"
@@ -10329,7 +10405,16 @@ msgstr "Faturalar her gün vadesini gelen her şey için otomatik olarak oluştu
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Faturalar anlaşma Aktif olduğunda otomatik olarak oluşturulur."
 
+msgid "Invoices are drafted and posted automatically."
+msgstr ""
+
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
+
+msgid "Invoices are drafted, posted and emailed automatically."
+msgstr ""
+
+msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -10931,6 +11016,9 @@ msgstr "Satır"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Satır {0}"
+
+msgid "Line actions"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
@@ -11667,12 +11755,24 @@ msgstr "Muhasebe Belgesi Kimliği"
 msgid "Merchant"
 msgstr "Satıcı"
 
+msgid "Merge"
+msgstr ""
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr "{0} lot birleştir"
 
+msgid "Merge Into"
+msgstr ""
+
+msgid "Merge Into…"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
+
+msgid "Merge the {invoiceLabel} invoice"
+msgstr ""
 
 msgid "MES"
 msgstr "MES"
@@ -11901,8 +12001,14 @@ msgstr "Taşış"
 msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
+msgid "Move {lineName}"
+msgstr ""
+
 msgid "Move batch"
 msgstr "Partiyi taşı"
+
+msgid "Move Date"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Varlıkları taşı"
@@ -11922,6 +12028,9 @@ msgstr "Alt-Montajdan Taşı"
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Miktarın bir kısmını yeni bir karar satırına taşıyın, böylece MRB her bölümü ayrı ayrı karar verebilir (örneğin, bazılarını fire edin, bazılarını yeniden işleyin)."
 
+msgid "Move the {invoiceLabel} invoice"
+msgstr ""
+
 msgid "Move to"
 msgstr "Taşış"
 
@@ -11930,6 +12039,9 @@ msgstr "Gruba Taşı"
 
 msgid "Move to Trash"
 msgstr "Çöp Sepetine Taşı"
+
+msgid "Move To…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -11947,6 +12059,9 @@ msgstr "Taşınan hesap"
 
 msgid "Movements"
 msgstr "Hareketler"
+
+msgid "Moving onto the date of another planned invoice merges the two."
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
@@ -12453,6 +12568,9 @@ msgstr "Sonraki fatura {date} otomatik olarak oluşturulur, muhasebeleştirilir 
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Sonraki fatura {date} otomatik olarak oluşturulur, ardından muhasebeleştirilir."
 
+msgid "Next Invoice:"
+msgstr ""
+
 msgid "Next page"
 msgstr "Sonraki sayfa"
 
@@ -12670,6 +12788,9 @@ msgstr "Henüz çalışan atanmadı. Durumu görmek için gruplar ekleyin."
 msgid "No employees found"
 msgstr "Hiç çalışan bulunamadı"
 
+msgid "No end"
+msgstr ""
+
 msgid "No events found."
 msgstr "Olay bulunamadı."
 
@@ -12724,6 +12845,9 @@ msgstr "Resim yok"
 msgid "No inspection plans"
 msgstr "Kontrol planı yok"
 
+msgid "No invoices planned."
+msgstr ""
+
 msgid "No issue types configured"
 msgstr "Hiçbir sorun türü yapılandırılmamış"
 
@@ -12756,6 +12880,9 @@ msgstr "Eşlenecek satır yok"
 
 msgid "No lines yet"
 msgstr "Henüz satır yok"
+
+msgid "No lines yet. Add a service line before confirming the contract."
+msgstr ""
 
 msgid "No list variables available upstream."
 msgstr "Yukarı akışta kullanılabilir liste değişkeni yok."
@@ -13413,6 +13540,9 @@ msgstr "İş emri rotasında bir adım, bir proses ve iş merkezini adlandıran,
 msgid "One system from quote to cash"
 msgstr "Teklif'ten nakite kadar tek bir sistem"
 
+msgid "one-time"
+msgstr ""
+
 msgid "One-time"
 msgstr ""
 
@@ -13598,6 +13728,9 @@ msgstr "İş Akışını Aç"
 
 msgid "Open-ended"
 msgstr "Açık Uçlu"
+
+msgid "Open-ended: the value of the invoices planned so far."
+msgstr ""
 
 msgid "Opened"
 msgstr "Açık"
@@ -14446,6 +14579,9 @@ msgstr "Planlanan Bitiş"
 msgid "Planned End Time"
 msgstr "Planlan Bitiş Zamanı"
 
+msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
 msgid "Planned job"
 msgstr "Planlanan iş"
 
@@ -14670,6 +14806,9 @@ msgstr "Önizleme başarısız oldu: {error}"
 
 msgid "Preview Quantity"
 msgstr "Önizleme Miktarı"
+
+msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
+msgstr ""
 
 msgid "Previous"
 msgstr "Önceki"
@@ -15688,6 +15827,9 @@ msgstr "Her (Gün) Yeniden Sertifikalandır"
 msgid "Recognize Revenue From"
 msgstr ""
 
+msgid "Recognized"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Muhasebeleştirilen Gelir"
 
@@ -15753,6 +15895,18 @@ msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Tekrarlanan Faturalar"
+
+msgid "Recurring per month:"
+msgstr ""
+
+msgid "Recurring per quarter:"
+msgstr ""
+
+msgid "Recurring per week:"
+msgstr ""
+
+msgid "Recurring per year:"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Kırmızı yetersiz personeli gösterir, yeşil yeterli personeli gösterir, sarı işin ihtiyaç duyduğundan daha fazla personeli gösterir."
@@ -15970,6 +16124,9 @@ msgstr "Panodan kaldır"
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
 
+msgid "Remove installment"
+msgstr ""
+
 msgid "Remove line"
 msgstr "Satırı Kaldır"
 
@@ -16017,6 +16174,9 @@ msgstr "Adet'i Kaldır"
 
 msgid "Removed"
 msgstr "Kaldırıldı"
+
+msgid "Removed line"
+msgstr ""
 
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
@@ -16295,6 +16455,9 @@ msgstr "PIN'i Sıfırla"
 msgid "Reset PIN for {0} {1}"
 msgstr "PIN'i sıfırla {0} {1}"
 
+msgid "Reset Schedule"
+msgstr ""
+
 msgid "Reset to market rate"
 msgstr "Piyasa kuruna sıfırla"
 
@@ -16508,6 +16671,9 @@ msgstr "Müşterilere yansıtılan kargo için hasılat hesabı"
 msgid "Revenue and expenses over a period"
 msgstr "Bir dönem içinde hasılat ve giderler"
 
+msgid "Revenue Dates"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Kazanılmış ancak henüz faturalandırılmamış hasılat, örneğin bir birimin zaten kirada olduğu günler için kiralama; muhasebeleştirme çalıştırması bunu tahakkuk ettirir ve o dönemin faturası bunu kapatır."
 
@@ -16525,6 +16691,9 @@ msgstr "Kira döneminde doğrusal olarak muhasebeleştirilen işletme kira gelir
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
+
+msgid "Revenue is previewed once the contract has lines."
+msgstr ""
 
 msgid "Revenue Method"
 msgstr ""
@@ -17743,6 +17912,9 @@ msgstr "Oturum Kilitli"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Sevkiyat'dan eklemek için bu iade'de bir müşteri ayarlayın."
 
+msgid "Set a start date and add lines to plan the invoices."
+msgstr ""
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Mal kabulünden eklemek için bu iade kaydında bir tedarikçi belirleyin."
 
@@ -18105,6 +18277,12 @@ msgstr "Süreleri Göster"
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
 
+msgid "Show lines"
+msgstr ""
+
+msgid "Show monthly revenue"
+msgstr ""
+
 msgid "Show more"
 msgstr "Daha fazla göster"
 
@@ -18396,6 +18574,10 @@ msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet 
 msgid "Split"
 msgstr "Bölünmüş"
 
+#. placeholder {0}: row.lineName
+msgid "Split {0}"
+msgstr ""
+
 msgid "Split line"
 msgstr "Satırı böl"
 
@@ -18407,6 +18589,9 @@ msgstr "Fiş hattını böl"
 
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
+
+msgid "Spread Evenly"
+msgstr ""
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -18843,9 +19028,6 @@ msgstr "Öneri Bildirimleri"
 
 msgid "Suggestions"
 msgstr "Öneriler"
-
-msgid "Summary"
-msgstr ""
 
 msgid "Sunday"
 msgstr "Pazar"
@@ -19751,6 +19933,9 @@ msgstr "Bu Müşterinin yaşam döngüsü durumu — Aktif, Potansiyel müşteri
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Bu Tedarikçinin yaşam döngüsü durumu — Aktif, Pasif, Onay Beklemede vb.; sadece Aktif Tedarikçiler Satın alma siparişi / Teklif seçicilerinde görünür."
 
+msgid "The line joins the planned invoice on that date, or a new one if there is none."
+msgstr ""
+
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Bu Lokasyonda raporlanan yerel saat dilimi; bu Lokasyondaki Çizelgeler, Puantajlar ve Vardiya saatleri kullanıcının tarayıcı yerinden bağımsız olarak bu dilimde yorumlanır."
 
@@ -20023,6 +20208,9 @@ msgstr "Aynı kişi denetim yapabilir"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Kimlik sağlayıcınız tarafından yayınlanan SAML meta veri URL'si"
+
+msgid "The schedule no longer matches the lines"
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Bu varlığın Maliyetini Faydalı ömrü boyunca yaymak için kullanılan amortisman yöntemi (doğrusal, Azalan bakiye, üretim birimleri)."

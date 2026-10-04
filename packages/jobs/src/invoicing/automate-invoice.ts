@@ -3,14 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Invoice automation: post a drafted recurring invoice unattended, then email
-// it. Source-agnostic — rental agreements today, AR contracts later — so a
-// source only drafts invoices and declares its holds; posting, sending and
-// the sent stamps happen here.
-// Spec: .ai/specs/2026-10-02-rental-invoice-automation.md
+// it or send it through Stripe. Source-agnostic — rental agreements and AR
+// contracts — so a source only drafts invoices and declares its holds;
+// posting, sending and the sent stamps happen here.
+// Spec: .ai/specs/2026-10-02-rental-invoice-automation.md,
+// .ai/specs/2026-10-02-contracts.md
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
+import { createMappingService } from "@carbon/ee/accounting";
 import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument
@@ -26,6 +28,12 @@ import {
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
+import {
+  getLinkedStripeCustomerId,
+  getStripeConnectAccountId,
+  STRIPE_CONNECT_INTEGRATION,
+  sendPostedSalesInvoiceViaStripe
+} from "@carbon/stripe/send-sales-invoice.server";
 import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
@@ -38,6 +46,8 @@ type SalesInvoiceStatus = Database["public"]["Enums"]["salesInvoiceStatus"];
 
 export const INVOICE_SEND_NO_EMAIL = "The invoice contact has no email";
 export const INVOICE_SEND_NOT_CONFIGURED = "Email sending is not configured";
+export const INVOICE_SEND_NO_STRIPE = "No Stripe customer is linked";
+export const INVOICE_SEND_STRIPE_NOT_CONNECTED = "Stripe is not connected";
 
 /** A posted invoice: anything past Draft/Pending that was not voided. */
 export function isPostedSalesInvoice(status: SalesInvoiceStatus | null) {
@@ -58,15 +68,28 @@ export type EmailOutcome =
   | { emailed: true; sentTo: string }
   | { emailed: false; sendError?: string };
 
-/**
- * The automation mode for an invoice: its recurring source's effective mode.
- * Null when the invoice has no recurring source (nothing to automate).
- */
-export async function resolveInvoiceAutomation(
+/** The contract an invoice was drafted from, or null. */
+async function getInvoiceContractId(
   client: Client,
   companyId: string,
   invoiceId: string
-): Promise<InvoiceAutomation | null> {
+): Promise<string | null> {
+  const invoice = await client
+    .from("salesInvoice")
+    .select("customerContractId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (invoice.error) throw new Error(invoice.error.message);
+  return invoice.data?.customerContractId ?? null;
+}
+
+/** The rental agreement an invoice bills, or null. */
+async function getInvoiceRentalAgreementId(
+  client: Client,
+  companyId: string,
+  invoiceId: string
+): Promise<string | null> {
   const line = await client
     .from("salesInvoiceLine")
     .select("rentalAgreementId")
@@ -76,12 +99,46 @@ export async function resolveInvoiceAutomation(
     .limit(1)
     .maybeSingle();
   if (line.error) throw new Error(line.error.message);
-  if (!line.data?.rentalAgreementId) return null;
+  return line.data?.rentalAgreementId ?? null;
+}
+
+/**
+ * The automation mode for an invoice: its recurring source's effective mode —
+ * the contract's when it was drafted from one, else its rental agreement's.
+ * Null when the invoice has no recurring source (nothing to automate).
+ */
+export async function resolveInvoiceAutomation(
+  client: Client,
+  companyId: string,
+  invoiceId: string
+): Promise<InvoiceAutomation | null> {
+  const customerContractId = await getInvoiceContractId(
+    client,
+    companyId,
+    invoiceId
+  );
+  if (customerContractId) {
+    const contract = await client
+      .from("customerContracts")
+      .select("effectiveInvoiceAutomation")
+      .eq("id", customerContractId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (contract.error) throw new Error(contract.error.message);
+    return contract.data?.effectiveInvoiceAutomation ?? null;
+  }
+
+  const rentalAgreementId = await getInvoiceRentalAgreementId(
+    client,
+    companyId,
+    invoiceId
+  );
+  if (!rentalAgreementId) return null;
 
   const agreement = await client
     .from("rentalAgreements")
     .select("effectiveInvoiceAutomation")
-    .eq("id", line.data.rentalAgreementId)
+    .eq("id", rentalAgreementId)
     .eq("companyId", companyId)
     .maybeSingle();
   if (agreement.error) throw new Error(agreement.error.message);
@@ -301,28 +358,61 @@ async function stampSendError(
   return { emailed: false, sendError };
 }
 
-/** The recurring source's owner: the agreement's salesperson, else its creator. */
+/** The recurring source's owner — the contract's or agreement's salesperson,
+ *  else its creator. Best-effort: only a Reply-To fallback, so a failed read
+ *  is null rather than a failed send. */
 async function getInvoiceOwnerEmail(
   client: Client,
   companyId: string,
   invoiceId: string
 ): Promise<string | null> {
-  const line = await client
-    .from("salesInvoiceLine")
-    .select("rentalAgreementId")
-    .eq("invoiceId", invoiceId)
-    .eq("companyId", companyId)
-    .not("rentalAgreementId", "is", null)
-    .limit(1)
-    .maybeSingle();
-  if (!line.data?.rentalAgreementId) return null;
-  const agreement = await client
-    .from("rentalAgreement")
-    .select("salesPersonId, createdBy")
-    .eq("id", line.data.rentalAgreementId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const ownerId = agreement.data?.salesPersonId ?? agreement.data?.createdBy;
+  try {
+    return await readInvoiceOwnerEmail(client, companyId, invoiceId);
+  } catch (error) {
+    logger.error("Failed to read the invoice owner", {
+      companyId,
+      invoiceId,
+      error
+    });
+    return null;
+  }
+}
+
+async function readInvoiceOwnerEmail(
+  client: Client,
+  companyId: string,
+  invoiceId: string
+): Promise<string | null> {
+  const customerContractId = await getInvoiceContractId(
+    client,
+    companyId,
+    invoiceId
+  );
+  let source: { salesPersonId: string | null; createdBy: string } | null = null;
+  if (customerContractId) {
+    const contract = await client
+      .from("customerContract")
+      .select("salesPersonId, createdBy")
+      .eq("id", customerContractId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    source = contract.data;
+  } else {
+    const rentalAgreementId = await getInvoiceRentalAgreementId(
+      client,
+      companyId,
+      invoiceId
+    );
+    if (!rentalAgreementId) return null;
+    const agreement = await client
+      .from("rentalAgreement")
+      .select("salesPersonId, createdBy")
+      .eq("id", rentalAgreementId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    source = agreement.data;
+  }
+  const ownerId = source?.salesPersonId ?? source?.createdBy;
   if (!ownerId || ownerId === "system") return null;
   const user = await client
     .from("user")
@@ -524,6 +614,122 @@ export async function emailPostedInvoice(args: {
     return { emailed: true, sentTo };
   } catch (error) {
     logger.error("Emailing a posted invoice failed", {
+      companyId,
+      invoiceId,
+      error
+    });
+    return stampSendError(
+      client,
+      companyId,
+      invoiceId,
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+/**
+ * Sends a posted invoice through the company's connected Stripe account to
+ * the billing customer's linked Stripe customer, which emails it with a
+ * payment link. Stamps `sentAt`/`sentTo: "Stripe"` on success and
+ * `sendError` on any failure, so a failed send shows in Needs Review.
+ * Idempotent: an invoice with `sentAt`, or already linked to a Stripe
+ * invoice, is never sent twice.
+ */
+export async function sendPostedInvoiceViaStripe(args: {
+  client: Client;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  invoiceId: string;
+}): Promise<EmailOutcome> {
+  const { client, db, companyId, invoiceId } = args;
+
+  const invoice = await client
+    .from("salesInvoice")
+    .select("sentAt, status, customerId, invoiceCustomerId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (invoice.error) throw new Error(invoice.error.message);
+  if (!invoice.data || invoice.data.sentAt) return { emailed: false };
+  if (!isPostedSalesInvoice(invoice.data.status)) return { emailed: false };
+
+  const stampSent = async () => {
+    const stamped = await client
+      .from("salesInvoice")
+      .update({
+        sentAt: datetime.timestamp(),
+        sentTo: "Stripe",
+        sendError: null
+      })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Invoice sent via Stripe but the sent stamp failed", {
+        companyId,
+        invoiceId,
+        error: stamped.error
+      });
+    }
+    return { emailed: true, sentTo: "Stripe" } as const;
+  };
+
+  try {
+    // A Stripe invoice already linked means an earlier attempt sent it and
+    // only the stamp was lost: a second send would bill the customer twice.
+    const linked = await client
+      .from("externalIntegrationMapping")
+      .select("externalId")
+      .eq("entityType", "salesInvoice")
+      .eq("entityId", invoiceId)
+      .eq("integration", STRIPE_CONNECT_INTEGRATION)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (linked.error) throw new Error(linked.error.message);
+    if (linked.data?.externalId) return stampSent();
+
+    const stripeAccountId = await getStripeConnectAccountId(client, companyId);
+    if (!stripeAccountId) {
+      return stampSendError(
+        client,
+        companyId,
+        invoiceId,
+        INVOICE_SEND_STRIPE_NOT_CONNECTED
+      );
+    }
+
+    const stripeCustomerId = await getLinkedStripeCustomerId(
+      client,
+      companyId,
+      invoice.data.invoiceCustomerId ?? invoice.data.customerId
+    );
+    if (!stripeCustomerId) {
+      return stampSendError(
+        client,
+        companyId,
+        invoiceId,
+        INVOICE_SEND_NO_STRIPE
+      );
+    }
+
+    await sendPostedSalesInvoiceViaStripe({
+      serviceRole: client,
+      companyId,
+      userId: "system",
+      invoiceId,
+      stripeAccountId,
+      stripeCustomerId,
+      linkStripeInvoice: (stripeInvoiceId, metadata) =>
+        createMappingService(db, companyId).link(
+          "salesInvoice",
+          invoiceId,
+          STRIPE_CONNECT_INTEGRATION,
+          stripeInvoiceId,
+          { metadata }
+        )
+    });
+    return stampSent();
+  } catch (error) {
+    logger.error("Sending a posted invoice via Stripe failed", {
       companyId,
       invoiceId,
       error

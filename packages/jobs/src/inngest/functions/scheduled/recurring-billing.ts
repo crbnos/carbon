@@ -6,12 +6,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
-import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
+import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
   emailPostedInvoice,
-  postSalesInvoiceUnattended
+  postSalesInvoiceUnattended,
+  sendPostedInvoiceViaStripe
 } from "../../../invoicing/automate-invoice";
 import {
   buildRecurringInvoicingDigests,
@@ -19,10 +20,19 @@ import {
 } from "../../../invoicing/digest";
 import { inngest } from "../../client";
 
+/** A drafted invoice from either source, keyed by its source document. */
+type DraftedInvoice = {
+  invoiceId: string;
+  /** The rental agreement or customer contract it was drafted from. */
+  sourceId: string;
+  mode: InvoiceAutomation;
+  holdReason: string | null;
+};
+
 /**
  * The one daily job for every recurring-invoice source — rental agreements
- * today, AR contracts later (.ai/specs/2026-10-02-contracts.md): draft what is
- * due, run invoice automation over the drafts, and send each owner one digest.
+ * and AR contracts (.ai/specs/2026-10-02-contracts.md): draft what is due,
+ * run invoice automation over the drafts, and send each owner one digest.
  */
 export const recurringBillingFunction = inngest.createFunction(
   { id: "recurring-billing", retries: 2 },
@@ -39,20 +49,47 @@ export const recurringBillingFunction = inngest.createFunction(
         `Scheduled recurring billing started: ${datetime.timestamp()}`
       );
 
-      // One query for every company with an Active agreement, rather than a
-      // step per company that then finds nothing to bill. Kysely is not
-      // subject to PostgREST's max_rows, so the list is never truncated.
-      const companies = await getJobDatabaseClient()
-        .selectFrom("rentalAgreement as ra")
-        .innerJoin("company as c", "c.id", "ra.companyId")
-        .select(["c.id", "c.name"])
-        .where("ra.status", "=", "Active")
-        .distinct()
-        .orderBy("c.id")
-        .execute();
+      // One query for every company with an Active agreement or contract,
+      // rather than a step per company that then finds nothing to bill.
+      // Kysely is not subject to PostgREST's max_rows, so the list is never
+      // truncated.
+      const db = getJobDatabaseClient();
+      const [rentalCompanies, contractCompanies] = await Promise.all([
+        db
+          .selectFrom("rentalAgreement as ra")
+          .innerJoin("company as c", "c.id", "ra.companyId")
+          .select(["c.id", "c.name"])
+          .where("ra.status", "=", "Active")
+          .distinct()
+          .execute(),
+        db
+          .selectFrom("customerContract as cc")
+          .innerJoin("company as c", "c.id", "cc.companyId")
+          .select(["c.id", "c.name"])
+          .where("cc.status", "=", "Active")
+          .distinct()
+          .execute()
+      ]);
+
+      // The union, noting which sources each company has to bill.
+      const byId = new Map<
+        string,
+        { id: string; name: string; hasRentals: boolean; hasContracts: boolean }
+      >();
+      for (const c of rentalCompanies) {
+        byId.set(c.id, { ...c, hasRentals: true, hasContracts: false });
+      }
+      for (const c of contractCompanies) {
+        const known = byId.get(c.id);
+        if (known) known.hasContracts = true;
+        else byId.set(c.id, { ...c, hasRentals: false, hasContracts: true });
+      }
+      const companies = [...byId.values()].sort((a, b) =>
+        a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+      );
 
       if (companies.length === 0) {
-        logger.info("No companies with Active rental agreements");
+        logger.info("No companies with Active rental agreements or contracts");
       }
 
       return companies;
@@ -64,71 +101,150 @@ export const recurringBillingFunction = inngest.createFunction(
     // their invoice line, so a second pass for the same day drafts nothing new.
     const failed: string[] = [];
     for (const company of scheduled) {
-      let invoices: DraftedRentalInvoice[];
-      let failures: unknown[];
-      try {
-        ({ invoices, failures } = await step.run(
-          `rental-billing-${company.id}`,
-          async () => {
-            // The cron is UTC; "due" is judged on the company's own calendar.
-            const tz = await getCompanyTimeZone(serviceRole, company.id);
-            const asOf = datetime.today(tz).toString();
+      const invoices: DraftedInvoice[] = [];
+      let companyFailed = false;
+      // The day the rental step billed as of, so contracts bill the same day.
+      let billedAsOf: string | undefined;
 
-            const drafted = await serverFns
-              .system({
-                db: getJobDatabaseClient(),
-                companyId: company.id,
-                userId: "system"
-              })
-              .invokeOrThrow("create-rental-invoices", { asOf });
+      if (company.hasRentals) {
+        try {
+          const rentals = await step.run(
+            `rental-billing-${company.id}`,
+            async () => {
+              // The cron is UTC; "due" is judged on the company's own calendar.
+              const tz = await getCompanyTimeZone(serviceRole, company.id);
+              const asOf = datetime.today(tz).toString();
 
-            for (const failure of drafted.failures) {
-              logger.error(
-                "Failed to bill rental agreement {rentalAgreementId} for {company}",
-                {
-                  rentalAgreementId: failure.rentalAgreementId,
-                  company: company.name,
+              const drafted = await serverFns
+                .system({
+                  db: getJobDatabaseClient(),
                   companyId: company.id,
-                  error: failure.error
-                }
+                  userId: "system"
+                })
+                .invokeOrThrow("create-rental-invoices", { asOf });
+
+              for (const failure of drafted.failures) {
+                logger.error(
+                  "Failed to bill rental agreement {rentalAgreementId} for {company}",
+                  {
+                    rentalAgreementId: failure.rentalAgreementId,
+                    company: company.name,
+                    companyId: company.id,
+                    error: failure.error
+                  }
+                );
+              }
+              logger.info(
+                drafted.invoices.length > 0
+                  ? `Drafted ${drafted.invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
+                  : `Nothing due for ${company.name} as of ${asOf}`
               );
+
+              return {
+                asOf,
+                invoices: drafted.invoices,
+                failures: drafted.failures
+              };
             }
-            logger.info(
-              drafted.invoices.length > 0
-                ? `Drafted ${drafted.invoices.length} rental invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
-                : `Nothing due for ${company.name} as of ${asOf}`
-            );
-
-            return {
-              asOf,
-              invoices: drafted.invoices,
-              failures: drafted.failures
-            };
+          );
+          billedAsOf = rentals.asOf;
+          for (const invoice of rentals.invoices) {
+            invoices.push({
+              invoiceId: invoice.invoiceId,
+              sourceId: invoice.rentalAgreementId,
+              mode: invoice.mode,
+              holdReason: invoice.holdReason
+            });
           }
-        ));
-      } catch (error) {
-        logger.error("Failed to bill rentals for company {company}", {
-          company: company.name,
-          companyId: company.id,
-          error
-        });
-        failed.push(company.id);
-        continue;
+          // Agreements that failed stay unbilled until tomorrow's run; the
+          // rest were drafted and are automated below.
+          if (rentals.failures.length > 0) companyFailed = true;
+        } catch (error) {
+          logger.error("Failed to bill rentals for company {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
       }
-      // Agreements that failed stay unbilled until tomorrow's run; the rest
-      // were drafted and are automated below.
-      if (failures.length > 0) failed.push(company.id);
 
-      // Drafts, then posts and emails per the agreement's invoice automation
-      // (spec 2026-10-02-rental-invoice-automation). Draft Only drafts wait
-      // for a person and are not reported; a draft the planner held is.
+      if (company.hasContracts) {
+        try {
+          const contracts = await step.run(
+            `contract-billing-${company.id}`,
+            async () => {
+              const asOf =
+                billedAsOf ??
+                datetime
+                  .today(await getCompanyTimeZone(serviceRole, company.id))
+                  .toString();
+
+              const drafted = await serverFns
+                .system({
+                  db: getJobDatabaseClient(),
+                  companyId: company.id,
+                  userId: "system"
+                })
+                .invokeOrThrow("create-contract-invoices", { asOf });
+
+              for (const failure of drafted.failures) {
+                logger.error(
+                  "Failed to bill contract {customerContractId} for {company}",
+                  {
+                    customerContractId: failure.customerContractId,
+                    company: company.name,
+                    companyId: company.id,
+                    error: failure.error
+                  }
+                );
+              }
+              logger.info(
+                drafted.invoices.length > 0
+                  ? `Drafted ${drafted.invoices.length} contract invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
+                  : `No contract invoices due for ${company.name} as of ${asOf}`
+              );
+
+              return {
+                invoices: drafted.invoices,
+                failures: drafted.failures
+              };
+            }
+          );
+          for (const invoice of contracts.invoices) {
+            invoices.push({
+              invoiceId: invoice.invoiceId,
+              sourceId: invoice.customerContractId,
+              mode: invoice.mode,
+              holdReason: invoice.holdReason
+            });
+          }
+          // Contracts that failed rolled back and stay Planned until
+          // tomorrow's run.
+          if (contracts.failures.length > 0) companyFailed = true;
+        } catch (error) {
+          logger.error("Failed to bill contracts for company {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+      }
+
+      if (companyFailed) failed.push(company.id);
+
+      // Drafts, then posts and emails (or sends via Stripe) per the source's
+      // invoice automation (spec 2026-10-02-rental-invoice-automation). Draft
+      // Only drafts wait for a person and are not reported; a draft the
+      // planner held is.
       const results: InvoiceRunResult[] = [];
       for (const invoice of invoices) {
         if (invoice.mode === "Draft Only") continue;
         const result = (outcome: InvoiceRunResult["outcome"]) =>
           results.push({
             invoiceId: invoice.invoiceId,
-            sourceId: invoice.rentalAgreementId,
+            sourceId: invoice.sourceId,
             outcome
           });
         if (invoice.holdReason) {
@@ -150,18 +266,32 @@ export const recurringBillingFunction = inngest.createFunction(
             result("held");
             continue;
           }
-          if (invoice.mode !== "Post and Email") {
+          if (
+            invoice.mode !== "Post and Email" &&
+            invoice.mode !== "Post and Send via Stripe"
+          ) {
             result("posted");
             continue;
           }
 
-          const emailed = await step.run(`email-${invoice.invoiceId}`, () =>
-            emailPostedInvoice({
-              client: serviceRole,
-              companyId: company.id,
-              invoiceId: invoice.invoiceId
-            })
-          );
+          // A Stripe send counts as sent in the digest, like an email.
+          const emailed =
+            invoice.mode === "Post and Send via Stripe"
+              ? await step.run(`stripe-${invoice.invoiceId}`, () =>
+                  sendPostedInvoiceViaStripe({
+                    client: serviceRole,
+                    db: getJobDatabaseClient(),
+                    companyId: company.id,
+                    invoiceId: invoice.invoiceId
+                  })
+                )
+              : await step.run(`email-${invoice.invoiceId}`, () =>
+                  emailPostedInvoice({
+                    client: serviceRole,
+                    companyId: company.id,
+                    invoiceId: invoice.invoiceId
+                  })
+                );
           result(
             emailed.emailed
               ? "emailed"
@@ -187,13 +317,19 @@ export const recurringBillingFunction = inngest.createFunction(
           `digest-recipients-${company.id}`,
           async () => {
             const db = getJobDatabaseClient();
-            const agreementIds = [...new Set(results.map((r) => r.sourceId))];
-            const [agreements, settings] = await Promise.all([
+            const sourceIds = [...new Set(results.map((r) => r.sourceId))];
+            const [agreements, contracts, settings] = await Promise.all([
               db
                 .selectFrom("rentalAgreement")
                 .select(["id", "salesPersonId", "createdBy"])
                 .where("companyId", "=", company.id)
-                .where("id", "in", agreementIds)
+                .where("id", "in", sourceIds)
+                .execute(),
+              db
+                .selectFrom("customerContract")
+                .select(["id", "salesPersonId", "createdBy"])
+                .where("companyId", "=", company.id)
+                .where("id", "in", sourceIds)
                 .execute(),
               db
                 .selectFrom("companySettings")
@@ -204,7 +340,7 @@ export const recurringBillingFunction = inngest.createFunction(
 
             // The owner is the salesperson, else the creator — when they can
             // still be notified in this company.
-            const ownerOf = agreements
+            const ownerOf = [...agreements, ...contracts]
               .map((a) => ({ id: a.id, owner: a.salesPersonId ?? a.createdBy }))
               .filter((a) => a.owner && a.owner !== "system");
             const ownerIds = [...new Set(ownerOf.map((a) => a.owner))];

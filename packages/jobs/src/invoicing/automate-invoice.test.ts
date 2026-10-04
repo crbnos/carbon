@@ -4,9 +4,11 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// External boundaries only: SMTP, the PDF renderer, the rule engine and the
-// party-contact policy (each reads its own tables), Inngest, storage, env.
+// External boundaries only: SMTP, Stripe, the PDF renderer, the rule engine
+// and the party-contact policy (each reads its own tables), the Kysely mapping
+// write, Inngest, storage, env.
 const sendEmail = vi.fn();
+const stripeSend = vi.fn();
 const evaluateSalesRules = vi.fn();
 const contactRequirement = vi.fn();
 const raiseMoment = vi.fn();
@@ -27,6 +29,23 @@ vi.mock("@carbon/ee/rules.server", () => ({
   evaluateSalesRulesForSalesDocument: (...args: unknown[]) =>
     evaluateSalesRules(...args),
   dedupeViolations: (violations: unknown[]) => violations
+}));
+// The Stripe API call only: the connected-account and customer-link reads run
+// for real against the fake client. The Stripe SDK module is replaced so
+// loading the real reads does not construct a Stripe or Supabase client.
+vi.mock("../../../stripe/src/connect.server", () => ({
+  createAndSendConnectInvoice: () => {
+    throw new Error("The Stripe API is not reachable in tests");
+  }
+}));
+vi.mock("@carbon/stripe/send-sales-invoice.server", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("@carbon/stripe/send-sales-invoice.server")
+  >()),
+  sendPostedSalesInvoiceViaStripe: (...args: unknown[]) => stripeSend(...args)
+}));
+vi.mock("@carbon/ee/accounting", () => ({
+  createMappingService: () => ({ link: async () => undefined })
 }));
 vi.mock("@carbon/lib/party-contact.server", () => ({
   checkPartyContactRequirement: (...args: unknown[]) =>
@@ -68,8 +87,11 @@ import {
   companyFromAddress,
   emailPostedInvoice,
   INVOICE_SEND_NO_EMAIL,
+  INVOICE_SEND_NO_STRIPE,
   invoiceEmailCc,
-  postSalesInvoiceUnattended
+  postSalesInvoiceUnattended,
+  resolveInvoiceAutomation,
+  sendPostedInvoiceViaStripe
 } from "./automate-invoice";
 
 type Row = Record<string, unknown>;
@@ -162,6 +184,54 @@ beforeEach(() => {
   evaluateSalesRules.mockResolvedValue({ violations: [] });
   contactRequirement.mockResolvedValue(null);
   sendEmail.mockResolvedValue({ data: { id: "msg-1" }, error: null });
+  stripeSend.mockResolvedValue({
+    stripeInvoiceId: "in_1",
+    hostedInvoiceUrl: "https://invoice.stripe.com/i/1",
+    invoicePdf: null
+  });
+});
+
+describe("resolveInvoiceAutomation", () => {
+  it("uses the contract's mode for an invoice drafted from a contract", async () => {
+    const { client } = fakeClient({
+      salesInvoice: [draftInvoice({ customerContractId: "cc-9" })],
+      customerContracts: [
+        {
+          id: "cc-9",
+          companyId: "co-1",
+          effectiveInvoiceAutomation: "Post and Send via Stripe"
+        }
+      ],
+      salesInvoiceLine: [
+        { invoiceId: "inv-1", companyId: "co-1", rentalAgreementId: "ra-1" }
+      ],
+      rentalAgreements: [
+        { id: "ra-1", companyId: "co-1", effectiveInvoiceAutomation: "Post" }
+      ]
+    });
+    expect(await resolveInvoiceAutomation(client, "co-1", "inv-1")).toBe(
+      "Post and Send via Stripe"
+    );
+  });
+
+  it("falls back to the rental agreement's mode", async () => {
+    const { client } = fakeClient({
+      salesInvoice: [draftInvoice()],
+      salesInvoiceLine: [
+        { invoiceId: "inv-1", companyId: "co-1", rentalAgreementId: "ra-1" }
+      ],
+      rentalAgreements: [
+        {
+          id: "ra-1",
+          companyId: "co-1",
+          effectiveInvoiceAutomation: "Post and Email"
+        }
+      ]
+    });
+    expect(await resolveInvoiceAutomation(client, "co-1", "inv-1")).toBe(
+      "Post and Email"
+    );
+  });
 });
 
 describe("postSalesInvoiceUnattended", () => {
@@ -361,6 +431,107 @@ describe("emailPostedInvoice", () => {
     expect(tables.salesInvoice![0]).toMatchObject({
       sentAt: null,
       sendError: "550 mailbox unavailable"
+    });
+  });
+});
+
+describe("sendPostedInvoiceViaStripe", () => {
+  const posted = (overrides: Row = {}) =>
+    draftInvoice({
+      status: "Submitted",
+      invoiceCustomerId: null,
+      ...overrides
+    });
+  const stripeTables = (invoice: Row, links: Row[] = []) => ({
+    salesInvoice: [invoice],
+    companyIntegration: [
+      {
+        id: "stripe-connect",
+        companyId: "co-1",
+        active: true,
+        metadata: { chargesEnabled: true, stripeAccountId: "acct_1" }
+      }
+    ],
+    externalIntegrationMapping: links
+  });
+  const customerLink = (entityId: string): Row => ({
+    entityType: "customer",
+    entityId,
+    integration: "stripe-connect",
+    companyId: "co-1",
+    externalId: `cus_${entityId}`
+  });
+
+  it("holds the send when the billing customer has no Stripe customer", async () => {
+    // Linked as the sold-to customer, but the bill-to customer is not.
+    const { client, tables } = fakeClient(
+      stripeTables(posted({ invoiceCustomerId: "cust-2" }), [
+        customerLink("cust-1")
+      ])
+    );
+    expect(await sendPostedInvoiceViaStripe({ client, db, ...args })).toEqual({
+      emailed: false,
+      sendError: INVOICE_SEND_NO_STRIPE
+    });
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentAt: null,
+      sendError: INVOICE_SEND_NO_STRIPE
+    });
+    expect(stripeSend).not.toHaveBeenCalled();
+  });
+
+  it("sends to the linked Stripe customer and stamps it sent via Stripe", async () => {
+    const { client, tables } = fakeClient(
+      stripeTables(posted(), [customerLink("cust-1")])
+    );
+    expect(await sendPostedInvoiceViaStripe({ client, db, ...args })).toEqual({
+      emailed: true,
+      sentTo: "Stripe"
+    });
+    expect(stripeSend.mock.calls[0]![0]).toMatchObject({
+      stripeAccountId: "acct_1",
+      stripeCustomerId: "cus_cust-1"
+    });
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentTo: "Stripe",
+      sendError: null
+    });
+    expect(tables.salesInvoice![0]!.sentAt).toEqual(expect.any(String));
+  });
+
+  it("never sends an invoice already linked to a Stripe invoice", async () => {
+    const { client, tables } = fakeClient(
+      stripeTables(posted(), [
+        customerLink("cust-1"),
+        {
+          entityType: "salesInvoice",
+          entityId: "inv-1",
+          integration: "stripe-connect",
+          companyId: "co-1",
+          externalId: "in_0"
+        }
+      ])
+    );
+    expect(await sendPostedInvoiceViaStripe({ client, db, ...args })).toEqual({
+      emailed: true,
+      sentTo: "Stripe"
+    });
+    expect(stripeSend).not.toHaveBeenCalled();
+    expect(tables.salesInvoice![0]!.sentTo).toBe("Stripe");
+  });
+
+  it("stamps the Stripe error and leaves it unsent when the send fails", async () => {
+    stripeSend.mockRejectedValue(new Error("No such customer: cus_cust-1"));
+    const { client, tables } = fakeClient(
+      stripeTables(posted(), [customerLink("cust-1")])
+    );
+    expect(await sendPostedInvoiceViaStripe({ client, db, ...args })).toEqual({
+      emailed: false,
+      sendError: "No such customer: cus_cust-1"
+    });
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentAt: null,
+      sendError: "No such customer: cus_cust-1"
     });
   });
 });

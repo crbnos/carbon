@@ -7,13 +7,14 @@ import { getJobDatabaseClient } from "../../../db";
 import {
   emailPostedInvoice,
   postSalesInvoiceUnattended,
-  resolveInvoiceAutomation
+  resolveInvoiceAutomation,
+  sendPostedInvoiceViaStripe
 } from "../../../invoicing/automate-invoice";
 import { inngest } from "../../client";
 
 /**
- * Posts (and emails) one drafted recurring invoice per its source's invoice
- * automation. Fired by Invoice Now / Sell to Customer for the invoices they
+ * Posts (and emails, or sends via Stripe) one drafted recurring invoice per
+ * its source's invoice automation. Fired by Invoice Now / Sell to Customer for the invoices they
  * drafted, and by the invoice's Send action with `mode: "Post and Email"` to
  * retry a failed email. The daily recurring-billing job runs the same two
  * steps inline. One run per invoice at a time; both steps are idempotent.
@@ -44,6 +45,17 @@ export const invoiceAutomateFunction = inngest.createFunction(
         invoiceId
       })
     );
+    if (posted.outcome === "posted" && mode === "Post and Send via Stripe") {
+      const sent = await step.run("stripe", () =>
+        sendPostedInvoiceViaStripe({
+          client,
+          db: getJobDatabaseClient(),
+          companyId,
+          invoiceId
+        })
+      );
+      return { mode, posted, sent };
+    }
     if (posted.outcome !== "posted" || mode !== "Post and Email") {
       logger.info("Invoice automation finished", { invoiceId, ...posted });
       return { mode, posted };

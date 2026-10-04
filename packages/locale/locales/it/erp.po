@@ -159,6 +159,10 @@ msgstr "{0} in giacenza; il rimanente {1} sarà prelevato come {2}"
 msgid "{0} jobs created"
 msgstr "{0} ordini di produzione creati"
 
+#. placeholder {0}: invoice.rows.length
+msgid "{0} lines"
+msgstr ""
+
 #. placeholder {0}: mappings.length
 msgid "{0} lines to map"
 msgstr "{0} righe da mappare"
@@ -277,6 +281,14 @@ msgstr "{0} verrà salvato come {name}"
 #. placeholder {0}: (asset as any).macrsPropertyClass
 msgid "{0}-Year"
 msgstr "{0}-Anno"
+
+#. placeholder {0}: nameOf(lineId)
+msgid "{0}: <0/> more than the line now totals"
+msgstr ""
+
+#. placeholder {0}: nameOf(lineId)
+msgid "{0}: <0/> not on any invoice"
+msgstr ""
 
 #. placeholder {0}: item.days
 msgid "{0}d"
@@ -409,6 +421,13 @@ msgstr "{names} devono corrispondere — carico separato"
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} componenti saltati — nulla da produrre"
 
+msgid "{off} off"
+msgstr ""
+
+#. placeholder {0}: formatDate(line.discountEndsOn)
+msgid "{off} off until {0}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} verrà riaperto per la modifica come revisione {0}. Il documento già inviato al fornitore rimane invariato fino a quando non si finalizza e si rinvia l'ordine."
@@ -499,6 +518,12 @@ msgstr "↩ {0} reindirizzato da {1} obsoleto"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}h"
+
+msgid "<0/> left to place"
+msgstr ""
+
+msgid "<0/> over the row's amount"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Aggiungi un componente fornitore</0> per questo articolo per impostare un fornitore preferenziale."
@@ -810,6 +835,9 @@ msgstr "La data di inizio del lavoro cambia"
 
 msgid "A job's status changes"
 msgstr "Lo stato del lavoro cambia"
+
+msgid "A line changed after the schedule was edited. Reset the schedule to plan it again from the lines."
+msgstr ""
 
 msgid "A line settles more than its invoice's open balance"
 msgstr "Una riga salda più del saldo aperto della sua fattura"
@@ -1644,6 +1672,9 @@ msgstr "Aggiungi Gruppo"
 msgid "Add header"
 msgstr "Aggiungi intestazione"
 
+msgid "Add Installment"
+msgstr ""
+
 msgid "Add Item"
 msgstr "Aggiungi Articolo"
 
@@ -1661,6 +1692,9 @@ msgstr "Aggiungi Righe"
 
 msgid "Add lines from document"
 msgstr "Aggiungi righe dal documento"
+
+msgid "Add lines to plan the invoices."
+msgstr ""
 
 msgid "Add manually"
 msgstr "Aggiungi manualmente"
@@ -2026,6 +2060,10 @@ msgstr ""
 
 msgid "Amount"
 msgstr "Importo"
+
+#. placeholder {0}: index + 1
+msgid "Amount {0}"
+msgstr ""
 
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Importo che aumenta i cespiti/spese o diminuisce i debiti/patrimonio netto/ricavi su questa riga."
@@ -3425,6 +3463,9 @@ msgstr "Lista delle operazioni"
 msgid "Bill To"
 msgstr "Fattura a"
 
+msgid "Billed Externally"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4802,6 +4843,9 @@ msgstr ""
 msgid "Contract Value"
 msgstr ""
 
+msgid "Contract Value:"
+msgstr ""
+
 msgid "Contraction"
 msgstr ""
 
@@ -5624,6 +5668,10 @@ msgstr "Totale credito"
 msgid "Credited"
 msgstr "Accreditato"
 
+#. placeholder {0}: memo.memoId
+msgid "Credited on <0>{0}</0>"
+msgstr ""
+
 msgid "Credits"
 msgstr "Crediti"
 
@@ -6205,6 +6253,9 @@ msgstr "Differimento"
 
 msgid "Deferrals"
 msgstr "Differimenti"
+
+msgid "Deferred"
+msgstr ""
 
 msgid "Deferred revenue"
 msgstr "Ricavi differiti"
@@ -7269,6 +7320,9 @@ msgstr "Ogni, lb, ft…"
 msgid "Earliest operation start"
 msgstr "Inizio operazione anticipato"
 
+msgid "Earned, not billed"
+msgstr ""
+
 msgid "Easier to extend"
 msgstr "Più facile da estendere"
 
@@ -7626,6 +7680,9 @@ msgstr "Modifica Webhook"
 
 msgid "Edit Work Center"
 msgstr "Modifica Centro di Lavoro"
+
+msgid "Edited"
+msgstr ""
 
 msgid "Eliminated"
 msgstr "Eliminato"
@@ -8058,6 +8115,9 @@ msgstr "Tipo di Evento"
 
 msgid "Events"
 msgstr "Eventi"
+
+msgid "Every amount placed"
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Tutti i record dell'azienda. Credenziali, token di integrazione e webhook non sono mai inclusi."
@@ -9487,6 +9547,12 @@ msgstr "Nascondi calcolo"
 msgid "Hide documents and activity"
 msgstr "Nascondi documenti e attività"
 
+msgid "Hide lines"
+msgstr ""
+
+msgid "Hide monthly revenue"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Nascondi raw"
 
@@ -10239,6 +10305,9 @@ msgstr "Fattura"
 msgid "Invoice {readableId} now"
 msgstr "Fattura {readableId} ora"
 
+msgid "Invoice actions"
+msgstr ""
+
 msgid "Invoice Address"
 msgstr "Indirizzo Fatturazione"
 
@@ -10271,6 +10340,13 @@ msgstr "Ubicazione cliente fatturazione"
 
 msgid "Invoice Customer Location"
 msgstr "Ubicazione Cliente Fattura"
+
+msgid "Invoice Date"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Invoice date {0}"
+msgstr ""
 
 msgid "Invoice ID"
 msgstr "ID Fattura"
@@ -10329,7 +10405,16 @@ msgstr "Le fatture vengono create automaticamente ogni giorno per quanto è dovu
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Le fatture vengono create automaticamente quando l'accordo è attivo."
 
+msgid "Invoices are drafted and posted automatically."
+msgstr ""
+
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
+
+msgid "Invoices are drafted, posted and emailed automatically."
+msgstr ""
+
+msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -10931,6 +11016,9 @@ msgstr "Linea"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Linea {0}"
+
+msgid "Line actions"
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Descrizione riga (facoltativa)"
@@ -11667,12 +11755,24 @@ msgstr "ID Memo"
 msgid "Merchant"
 msgstr "Esercente"
 
+msgid "Merge"
+msgstr ""
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr "Unisci {0} lotti"
 
+msgid "Merge Into"
+msgstr ""
+
+msgid "Merge Into…"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Unisci i lotti"
+
+msgid "Merge the {invoiceLabel} invoice"
+msgstr ""
 
 msgid "MES"
 msgstr "MES"
@@ -11901,8 +12001,14 @@ msgstr "Sposta"
 msgid "Move {accountName}"
 msgstr "Sposta {accountName}"
 
+msgid "Move {lineName}"
+msgstr ""
+
 msgid "Move batch"
 msgstr "Sposta lotto"
+
+msgid "Move Date"
+msgstr ""
 
 msgid "Move entities"
 msgstr "Sposta entità"
@@ -11922,6 +12028,9 @@ msgstr "Sposta fuori dal sotto-assieme"
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Sposta parte della quantità in una nuova riga di disposizione in modo che il MRB possa decidere ciascuna porzione separatamente (ad es. scartare alcuni, rilavorare altri)."
 
+msgid "Move the {invoiceLabel} invoice"
+msgstr ""
+
 msgid "Move to"
 msgstr "Sposta in"
 
@@ -11930,6 +12039,9 @@ msgstr "Sposta in Gruppo"
 
 msgid "Move to Trash"
 msgstr "Sposta nel Cestino"
+
+msgid "Move To…"
+msgstr ""
 
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
@@ -11947,6 +12059,9 @@ msgstr "Account spostato"
 
 msgid "Movements"
 msgstr "Movimenti"
+
+msgid "Moving onto the date of another planned invoice merges the two."
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
@@ -12453,6 +12568,9 @@ msgstr "La prossima fattura {date} viene creata automaticamente, quindi registra
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "La prossima fattura {date} viene creata automaticamente, quindi registrata."
 
+msgid "Next Invoice:"
+msgstr ""
+
 msgid "Next page"
 msgstr "Pagina successiva"
 
@@ -12670,6 +12788,9 @@ msgstr "Nessun dipendente assegnato ancora. Aggiungi gruppi per visualizzare lo 
 msgid "No employees found"
 msgstr "Nessun dipendente trovato"
 
+msgid "No end"
+msgstr ""
+
 msgid "No events found."
 msgstr "Nessun evento trovato."
 
@@ -12724,6 +12845,9 @@ msgstr "Nessuna immagine"
 msgid "No inspection plans"
 msgstr "Nessun piano di controllo"
 
+msgid "No invoices planned."
+msgstr ""
+
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
 
@@ -12756,6 +12880,9 @@ msgstr "Nessuna riga da mappare"
 
 msgid "No lines yet"
 msgstr "Nessuna riga ancora"
+
+msgid "No lines yet. Add a service line before confirming the contract."
+msgstr ""
 
 msgid "No list variables available upstream."
 msgstr "Nessuna variabile di elenco disponibile a monte."
@@ -13413,6 +13540,9 @@ msgstr "Un passo nel ciclo di lavorazione di un ordine di produzione, che design
 msgid "One system from quote to cash"
 msgstr "Un sistema unico da offerta a incasso"
 
+msgid "one-time"
+msgstr ""
+
 msgid "One-time"
 msgstr ""
 
@@ -13598,6 +13728,9 @@ msgstr "Apri Workflow"
 
 msgid "Open-ended"
 msgstr "A tempo indeterminato"
+
+msgid "Open-ended: the value of the invoices planned so far."
+msgstr ""
 
 msgid "Opened"
 msgstr "Aperto"
@@ -14446,6 +14579,9 @@ msgstr "Fine pianificata"
 msgid "Planned End Time"
 msgstr "Ora di fine pianificata"
 
+msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
 msgid "Planned job"
 msgstr "Lavoro pianificato"
 
@@ -14670,6 +14806,9 @@ msgstr "Anteprima non riuscita: {error}"
 
 msgid "Preview Quantity"
 msgstr "Quantità Anteprima"
+
+msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
+msgstr ""
 
 msgid "Previous"
 msgstr "Precedente"
@@ -15688,6 +15827,9 @@ msgstr "Ricertifica ogni (giorni)"
 msgid "Recognize Revenue From"
 msgstr ""
 
+msgid "Recognized"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Ricavi riconosciuti"
 
@@ -15753,6 +15895,18 @@ msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Fatture Ricorrenti"
+
+msgid "Recurring per month:"
+msgstr ""
+
+msgid "Recurring per quarter:"
+msgstr ""
+
+msgid "Recurring per week:"
+msgstr ""
+
+msgid "Recurring per year:"
+msgstr ""
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Il rosso è insufficiente di personale, il verde è coperto, l'ambra è più persone del necessario."
@@ -15970,6 +16124,9 @@ msgstr "Rimuovi dalla plancia"
 msgid "Remove from Price List"
 msgstr "Rimuovi da Listino Prezzi"
 
+msgid "Remove installment"
+msgstr ""
+
 msgid "Remove line"
 msgstr "Rimuovi riga"
 
@@ -16017,6 +16174,9 @@ msgstr "Rimuovi unità"
 
 msgid "Removed"
 msgstr "Rimosso"
+
+msgid "Removed line"
+msgstr ""
 
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
@@ -16295,6 +16455,9 @@ msgstr "Ripristina PIN"
 msgid "Reset PIN for {0} {1}"
 msgstr "Reimposta PIN per {0} {1}"
 
+msgid "Reset Schedule"
+msgstr ""
+
 msgid "Reset to market rate"
 msgstr "Ripristina al tasso di mercato"
 
@@ -16508,6 +16671,9 @@ msgstr "Conto ricavi per la spedizione addebitata ai clienti"
 msgid "Revenue and expenses over a period"
 msgstr "Ricavi e spese in un periodo"
 
+msgid "Revenue Dates"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Ricavi guadagnati ma non ancora Fatturati, come il noleggio per i giorni in cui un'unità è già stata in noleggio; il run di riconoscimento li accantona e la Fattura per quel periodo li estingue."
 
@@ -16525,6 +16691,9 @@ msgstr "Conto contabile «Ricavi» per il reddito da noleggio operativo riconosc
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività e rilasciati ai Ricavi dal run di riconoscimento al passare del periodo di servizio."
+
+msgid "Revenue is previewed once the contract has lines."
+msgstr ""
 
 msgid "Revenue Method"
 msgstr ""
@@ -17743,6 +17912,9 @@ msgstr "Sessione bloccata"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Imposta un cliente su questo reso per aggiungere da una spedizione."
 
+msgid "Set a start date and add lines to plan the invoices."
+msgstr ""
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Imposta un fornitore su questo reso per aggiungere da un'entrata merci."
 
@@ -18105,6 +18277,12 @@ msgstr "Mostra durate"
 msgid "Show keyboard shortcuts"
 msgstr "Mostra i tasti di scelta rapida"
 
+msgid "Show lines"
+msgstr ""
+
+msgid "Show monthly revenue"
+msgstr ""
+
 msgid "Show more"
 msgstr "Mostra di più"
 
@@ -18396,6 +18574,10 @@ msgstr "Spesa per fornitore, articolo o categoria — i tuoi principali driver d
 msgid "Split"
 msgstr "Dividi"
 
+#. placeholder {0}: row.lineName
+msgid "Split {0}"
+msgstr ""
+
 msgid "Split line"
 msgstr "Dividi riga"
 
@@ -18407,6 +18589,9 @@ msgstr "Dividi riga ricevuta"
 
 msgid "Split shipment line"
 msgstr "Dividi riga spedizione"
+
+msgid "Spread Evenly"
+msgstr ""
 
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
@@ -18843,9 +19028,6 @@ msgstr "Notifiche proposte"
 
 msgid "Suggestions"
 msgstr "Proposte"
-
-msgid "Summary"
-msgstr ""
 
 msgid "Sunday"
 msgstr "Domenica"
@@ -19751,6 +19933,9 @@ msgstr "Lo stato del ciclo di vita di questo cliente - Attivo, Prospect, Inattiv
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Lo stato del ciclo di vita di questo fornitore — Attivo, Inattivo, In attesa di approvazione, ecc.; solo i fornitori attivi compaiono nei selettori di ordine di acquisto / offerta."
 
+msgid "The line joins the planned invoice on that date, or a new one if there is none."
+msgstr ""
+
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Il fuso orario locale in cui questa ubicazione riporta l'ora; i programmi, la rilevazione tempi e gli orari di turno in questa ubicazione vengono interpretati in questo fuso orario indipendentemente dalla locale del browser dell'utente."
 
@@ -20023,6 +20208,9 @@ msgstr "La stessa persona potrebbe ispezionare"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "L'URL dei metadati SAML pubblicati dal tuo provider di identità"
+
+msgid "The schedule no longer matches the lines"
+msgstr ""
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Il programma utilizzato per distribuire il costo di questo asset nel corso della sua vita utile (lineare, quote decrescenti, unità di produzione)."

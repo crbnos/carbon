@@ -780,7 +780,11 @@ export type Events = {
       companyId: string;
       invoiceId: string;
       /** Absent = the agreement's effective mode. The Send route passes "Post and Email". */
-      mode?: "Draft Only" | "Post" | "Post and Email";
+      mode?:
+        | "Draft Only"
+        | "Post"
+        | "Post and Email"
+        | "Post and Send via Stripe";
     };
   };
 };
