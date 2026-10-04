@@ -2109,6 +2109,9 @@ msgstr "{0}に適用する金額"
 msgid "Amount Type"
 msgstr "金額タイプ"
 
+msgid "Amounts are before tax."
+msgstr ""
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "金額は通貨の小数点以下の桁数までパディングされます。"
 
@@ -4191,6 +4194,9 @@ msgstr "この得意先の Stripe を確認中…"
 msgid "Checking the batch's jobs..."
 msgstr "バッチの製造指図を確認しています..."
 
+msgid "Checking the Stripe customer link…"
+msgstr ""
+
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
 
@@ -4671,14 +4677,11 @@ msgstr "構成済み部品"
 msgid "Confirm"
 msgstr "確認"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "{0}を確認"
-
-msgid "Confirm {readableId}"
-msgstr ""
 
 msgid "Confirm & release"
 msgstr "確認してリリース"
@@ -9002,6 +9005,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
 
+msgid "First invoice"
+msgstr ""
+
 msgid "First Invoice"
 msgstr ""
 
@@ -10488,10 +10494,16 @@ msgstr ""
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr ""
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr ""
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr ""
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
+msgstr ""
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "今後48週間に欠品は予測されていません"
 msgid "No storage unit"
 msgstr "保管ユニットがありません"
 
+msgid "No Stripe customer is linked"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
 
@@ -14687,6 +14702,12 @@ msgid "Planned End Time"
 msgstr "計画終了時刻"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
+msgid "Planned invoices"
+msgstr ""
+
+msgid "Planned invoices so far"
 msgstr ""
 
 msgid "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
 msgstr "この担当者はメールアドレスを持っていません。"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr ""
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"

@@ -2109,6 +2109,9 @@ msgstr "{0} için uygulanacak tutar"
 msgid "Amount Type"
 msgstr "Tutar Türü"
 
+msgid "Amounts are before tax."
+msgstr ""
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "Tutarlar para biriminin ondalık basamaklarına göre doldurulur."
 
@@ -4191,6 +4194,9 @@ msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 msgid "Checking the batch's jobs..."
 msgstr "Partinin iş emirleri kontrol ediliyor..."
 
+msgid "Checking the Stripe customer link…"
+msgstr ""
+
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
 
@@ -4671,14 +4677,11 @@ msgstr "Yapılandırılmış Parça"
 msgid "Confirm"
 msgstr "Onayla"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "Onayla {0}"
-
-msgid "Confirm {readableId}"
-msgstr ""
 
 msgid "Confirm & release"
 msgstr "Teyit et ve Serbest bırak"
@@ -9002,6 +9005,9 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırlarında, satış siparişi satırlarında ve satış faturası satırlarında etkinleşir."
 
+msgid "First invoice"
+msgstr ""
+
 msgid "First Invoice"
 msgstr ""
 
@@ -10488,10 +10494,16 @@ msgstr ""
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr ""
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr ""
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr ""
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
+msgstr ""
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "Sonraki 48 hafta içinde stoksuzluk öngörülmedi"
 msgid "No storage unit"
 msgstr "Depolama birimi yok"
 
+msgid "No Stripe customer is linked"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Henüz tedarikçi yok"
 
@@ -14687,6 +14702,12 @@ msgid "Planned End Time"
 msgstr "Planlan Bitiş Zamanı"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
+msgid "Planned invoices"
+msgstr ""
+
+msgid "Planned invoices so far"
 msgstr ""
 
 msgid "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "Bu, Keşif adımını tamamlar."
 
 msgid "This contact has no email address"
 msgstr "Bu ilgili kişinin e-posta adresi yok"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr ""
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."

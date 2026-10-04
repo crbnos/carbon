@@ -92,3 +92,6 @@
 
 ## Task 31
 - Contract links: invoice line form ("Generated from contract CON…"), invoice header and memo header (secondary button, `LuFileText`), readable ids read client-side scoped by `companyId`.
+
+## Task 27
+- ESCAPE HATCH TRIGGERED: `path.to.api.stripeConnectCustomer` (`api+/stripe-connect.customer.$invoiceId.ts`) and `resolveStripeCustomer` resolve the billed customer from an invoice; there is no by-customer variant. The contract confirm modal does NOT link a Stripe customer. In Stripe mode it shows whether the billing customer is linked (`$id.confirm.tsx` loader, `getLinkedStripeCustomerId`); unlinked → warning + Confirm disabled; the server function refuses too. OPEN DECISION for Brad: build a by-customer Stripe link step.

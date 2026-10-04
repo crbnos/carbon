@@ -2109,6 +2109,9 @@ msgstr "应用于 {0} 的金额"
 msgid "Amount Type"
 msgstr "金额类型"
 
+msgid "Amounts are before tax."
+msgstr ""
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "金额按其货币的小数位数进行填充。"
 
@@ -4191,6 +4194,9 @@ msgstr "正在为此客户检查Stripe…"
 msgid "Checking the batch's jobs..."
 msgstr "正在检查生产批次的工单..."
 
+msgid "Checking the Stripe customer link…"
+msgstr ""
+
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
 
@@ -4671,14 +4677,11 @@ msgstr "配置零件"
 msgid "Confirm"
 msgstr "确认"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "确认 {0}"
-
-msgid "Confirm {readableId}"
-msgstr ""
 
 msgid "Confirm & release"
 msgstr "确认并下达"
@@ -9002,6 +9005,9 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "在报价行、销售订单行和销售发票行上触发。"
 
+msgid "First invoice"
+msgstr ""
+
 msgid "First Invoice"
 msgstr ""
 
@@ -10488,10 +10494,16 @@ msgstr ""
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr ""
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr ""
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr ""
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
+msgstr ""
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "未来 48 周内没有预计缺货"
 msgid "No storage unit"
 msgstr "无存储单元"
 
+msgid "No Stripe customer is linked"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "还没有供应商"
 
@@ -14687,6 +14702,12 @@ msgid "Planned End Time"
 msgstr "计划结束时间"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
+msgid "Planned invoices"
+msgstr ""
+
+msgid "Planned invoices so far"
 msgstr ""
 
 msgid "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "这完成了发现步骤。"
 
 msgid "This contact has no email address"
 msgstr "此联系人没有电子邮件地址"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr ""
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"

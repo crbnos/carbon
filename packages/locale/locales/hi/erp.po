@@ -2109,6 +2109,9 @@ msgstr "{0} के लिए लागू करने की राशि"
 msgid "Amount Type"
 msgstr "राशि प्रकार"
 
+msgid "Amounts are before tax."
+msgstr ""
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "राशियों को उनकी मुद्रा के दशमलव स्थानों तक पैड किया जाता है।"
 
@@ -4191,6 +4194,9 @@ msgstr "इस ग्राहक के लिए Stripe की जांच �
 msgid "Checking the batch's jobs..."
 msgstr "बैच की जॉब्स को जाँच रहे हैं..."
 
+msgid "Checking the Stripe customer link…"
+msgstr ""
+
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
 
@@ -4671,14 +4677,11 @@ msgstr "कॉन्फ़िगर की गई पार्ट"
 msgid "Confirm"
 msgstr "पुष्टि करें"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "की पुष्टि करें {0}"
-
-msgid "Confirm {readableId}"
-msgstr ""
 
 msgid "Confirm & release"
 msgstr "पुष्टि करें और जारी करें"
@@ -9002,6 +9005,9 @@ msgstr "जब तक हर पंक्ति को चुना नहीं
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "कोटेशन पंक्तियों, विक्रय आदेश पंक्तियों और विक्रय चालान पंक्तियों पर सक्रिय होता है।"
 
+msgid "First invoice"
+msgstr ""
+
 msgid "First Invoice"
 msgstr ""
 
@@ -10488,10 +10494,16 @@ msgstr ""
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr ""
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr ""
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr ""
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
+msgstr ""
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "अगले 48 सप्ताह में कोई स्टॉक�
 msgid "No storage unit"
 msgstr "कोई भंडारण इकाई नहीं"
 
+msgid "No Stripe customer is linked"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "अभी तक कोई आपूर्तिकर्ता नहीं"
 
@@ -14687,6 +14702,12 @@ msgid "Planned End Time"
 msgstr "नियोजित समाप्ति समय"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
+msgid "Planned invoices"
+msgstr ""
+
+msgid "Planned invoices so far"
 msgstr ""
 
 msgid "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "यह Discovery चरण को पूरा करता है।"
 
 msgid "This contact has no email address"
 msgstr "इस संपर्क के पास कोई ईमेल पता नहीं है"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr ""
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"

@@ -2109,6 +2109,9 @@ msgstr "Valor a aplicar para {0}"
 msgid "Amount Type"
 msgstr "Tipo de Valor"
 
+msgid "Amounts are before tax."
+msgstr ""
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "Os valores são preenchidos até as casas decimais de sua moeda."
 
@@ -4191,6 +4194,9 @@ msgstr "Verificando Stripe para este cliente…"
 msgid "Checking the batch's jobs..."
 msgstr "Verificando as ordens de produção do lote de produção..."
 
+msgid "Checking the Stripe customer link…"
+msgstr ""
+
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
 
@@ -4671,14 +4677,11 @@ msgstr "Peça Configurada"
 msgid "Confirm"
 msgstr "Confirmar"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "Confirmar {0}"
-
-msgid "Confirm {readableId}"
-msgstr ""
 
 msgid "Confirm & release"
 msgstr "Confirmar e liberar"
@@ -9002,6 +9005,9 @@ msgstr "A conclusão é recusada até que cada linha seja colhida ou marcada com
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Dispara em linhas do orçamento, linhas do pedido de venda e linhas de fatura de venda."
 
+msgid "First invoice"
+msgstr ""
+
 msgid "First Invoice"
 msgstr ""
 
@@ -10488,10 +10494,16 @@ msgstr ""
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr ""
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr ""
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr ""
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
+msgstr ""
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
 msgstr ""
 
 msgid "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "Sem ruptura de estoque projetada nas próximas 48 semanas"
 msgid "No storage unit"
 msgstr "Sem unidade de armazenamento"
 
+msgid "No Stripe customer is linked"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Nenhum fornecedor ainda"
 
@@ -14687,6 +14702,12 @@ msgid "Planned End Time"
 msgstr "Hora de Término Planejada"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
+msgstr ""
+
+msgid "Planned invoices"
+msgstr ""
+
+msgid "Planned invoices so far"
 msgstr ""
 
 msgid "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "Isto completa a etapa de Descoberta."
 
 msgid "This contact has no email address"
 msgstr "Este contato não possui endereço de e-mail"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr ""
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este terceiro não tem nada pendente — o pagamento será registrado em conta."

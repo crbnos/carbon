@@ -35,12 +35,13 @@ import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import ContractAmendModal from "./ContractAmendModal";
 import ContractCancelModal from "./ContractCancelModal";
+import ContractConfirmModal from "./ContractConfirmModal";
 import ContractStatus from "./ContractStatus";
 import type { ContractRouteData } from "./types";
 
 type ContractHeaderProps = Pick<ContractRouteData, "contract" | "lines">;
 
-type PendingAction = "confirm" | "invoice" | "revert";
+type PendingAction = "invoice" | "revert";
 
 const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const { t } = useLingui();
@@ -50,6 +51,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const today = useCompanyToday();
 
   const confirm = useDisclosure();
+  const confirmContract = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const amendDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
@@ -77,12 +79,6 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
     PendingAction,
     { action: string; title: string; text: string; confirmText: string }
   > = {
-    confirm: {
-      action: path.to.contractConfirm(id),
-      title: t`Confirm ${readableId}`,
-      text: t`Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend.`,
-      confirmText: t`Confirm`
-    },
     invoice: {
       action: path.to.contractInvoice(id),
       title: t`Invoice ${readableId} now?`,
@@ -193,7 +189,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
                 variant="primary"
                 leftIcon={<LuCircleCheck />}
                 isDisabled={!canUpdate || !hasLines}
-                onClick={() => open("confirm")}
+                onClick={confirmContract.onOpen}
               >
                 <Trans>Confirm</Trans>
               </Button>
@@ -210,6 +206,13 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
           confirmText={current.confirmText}
           onCancel={confirm.onClose}
           onSubmit={confirm.onClose}
+        />
+      )}
+
+      {confirmContract.isOpen && (
+        <ContractConfirmModal
+          contract={contract}
+          onClose={confirmContract.onClose}
         />
       )}
 

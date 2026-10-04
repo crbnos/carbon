@@ -5,6 +5,7 @@
 import ContractAmendModal from "./ContractAmendModal";
 import ContractAmendments from "./ContractAmendments";
 import ContractCancelModal from "./ContractCancelModal";
+import ContractConfirmModal from "./ContractConfirmModal";
 import ContractExplorer from "./ContractExplorer";
 import ContractForm from "./ContractForm";
 import ContractHeader from "./ContractHeader";
@@ -33,6 +34,7 @@ export {
   ContractAmendModal,
   ContractAmendments,
   ContractCancelModal,
+  ContractConfirmModal,
   ContractExplorer,
   ContractForm,
   ContractHeader,

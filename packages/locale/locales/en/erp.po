@@ -2109,6 +2109,9 @@ msgstr "Amount to apply for {0}"
 msgid "Amount Type"
 msgstr "Amount Type"
 
+msgid "Amounts are before tax."
+msgstr "Amounts are before tax."
+
 msgid "Amounts are padded to their currency's decimal places."
 msgstr "Amounts are padded to their currency's decimal places."
 
@@ -4191,6 +4194,9 @@ msgstr "Checking Stripe for this customer…"
 msgid "Checking the batch's jobs..."
 msgstr "Checking the batch's jobs..."
 
+msgid "Checking the Stripe customer link…"
+msgstr "Checking the Stripe customer link…"
+
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
 
@@ -4671,14 +4677,11 @@ msgstr "Configured Part"
 msgid "Confirm"
 msgstr "Confirm"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "Confirm {0}"
-
-msgid "Confirm {readableId}"
-msgstr "Confirm {readableId}"
 
 msgid "Confirm & release"
 msgstr "Confirm & release"
@@ -9002,6 +9005,9 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Fire on quote lines, sales order lines and sales invoice lines."
 
+msgid "First invoice"
+msgstr "First invoice"
+
 msgid "First Invoice"
 msgstr "First Invoice"
 
@@ -10488,11 +10494,17 @@ msgstr "Invoices are drafted and posted automatically."
 msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 msgstr "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 
+msgid "Invoices are drafted for review and posted by hand."
+msgstr "Invoices are drafted for review and posted by hand."
+
 msgid "Invoices are drafted, posted and emailed automatically."
 msgstr "Invoices are drafted, posted and emailed automatically."
 
 msgid "Invoices are drafted, posted and sent via Stripe automatically."
 msgstr "Invoices are drafted, posted and sent via Stripe automatically."
+
+msgid "Invoices are sent to the Stripe customer already linked to the billing customer."
+msgstr "Invoices are sent to the Stripe customer already linked to the billing customer."
 
 msgid "Invoices could not be loaded"
 msgstr "Invoices could not be loaded"
@@ -13229,6 +13241,9 @@ msgstr "No stockout projected in the next 48 weeks"
 msgid "No storage unit"
 msgstr "No storage unit"
 
+msgid "No Stripe customer is linked"
+msgstr "No Stripe customer is linked"
+
 msgid "No suppliers yet"
 msgstr "No suppliers yet"
 
@@ -14688,6 +14703,12 @@ msgstr "Planned End Time"
 
 msgid "Planned from the lines. Editing an invoice saves the schedule."
 msgstr "Planned from the lines. Editing an invoice saves the schedule."
+
+msgid "Planned invoices"
+msgstr "Planned invoices"
+
+msgid "Planned invoices so far"
+msgstr "Planned invoices so far"
 
 msgid "Planned job"
 msgstr "Planned job"
@@ -20699,6 +20720,12 @@ msgstr "This completes the Discovery step."
 
 msgid "This contact has no email address"
 msgstr "This contact has no email address"
+
+msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+msgstr "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
+
+msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+msgstr "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."
