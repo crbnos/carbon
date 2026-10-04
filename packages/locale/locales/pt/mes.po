@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "Todo refugo"
 
 msgid "All steps"
-msgstr ""
+msgstr "Todas as etapas"
 
 msgid "Allocate failed units"
 msgstr "Alocar unidades com falha"
@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Alocar unidades"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Aparência"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "Apontar início"
 
 msgid "Clock out"
-msgstr ""
+msgstr "Apontar fim"
 
 msgid "Clock Out"
 msgstr "Apontar fim"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "Apontado"
 
 msgid "Clocked in since <0/>"
 msgstr "Registrado desde <0/>"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Cliente"
 
 msgid "Dark"
-msgstr ""
+msgstr "Escuro"
 
 msgid "Date"
 msgstr "Data"
@@ -529,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Número de lote duplicado"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Duplicar ou copiar"
 
 msgid "Duplicate serial number"
 msgstr "Número de série duplicado"
@@ -728,7 +728,7 @@ msgid "in {0}"
 msgstr "em {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "Em um menu aberto"
 
 msgid "In Progress"
 msgstr "Em Andamento"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "Vamos construir algo"
 
 msgid "Light"
-msgstr ""
+msgstr "Claro"
 
 msgid "lines"
 msgstr "linhas"
@@ -1162,7 +1162,7 @@ msgstr "Ordens de produção abertas"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Abrir sub-montagem {0}: {1}"
 
 msgid "Operations"
 msgstr "Operações"
@@ -1253,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "separação em lugar de {substitutedFrom}, o item da ordem de produção, para {substitutedAssemblies} conjuntos"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Fixar ou desafixar"
 
 msgid "Pin Out"
 msgstr "Desconectar"
@@ -1383,7 +1383,7 @@ msgid "Remove part"
 msgstr "Remover peça"
 
 msgid "Rename"
-msgstr ""
+msgstr "Renomear"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "Definir apontar fim"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "Defina a hora em que parou de trabalhar ou confirme que ainda está trabalhando."
 
 msgid "Set up in Carbon"
 msgstr "Configurar no Carbon"
@@ -1673,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Sub-montagem"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Sub-montagem {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Sub-montagem {0} · {1} — mostrada separadamente"
 
 msgid "Submit anonymously"
 msgstr "Enviar anonimamente"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "Trocar Operador"
 
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 msgid "Tag"
 msgstr "Etiqueta"
@@ -1882,7 +1882,7 @@ msgstr "Usado automaticamente na conclusão"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Usa {0} · {1}"
 
 msgid "Value"
 msgstr "Valor"
@@ -1894,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "Visualizar ordem de manutenção"
 
 msgid "View or open"
-msgstr ""
+msgstr "Visualizar ou abrir"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Enviamos um link mágico para você entrar na sua conta."

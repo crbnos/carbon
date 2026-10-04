@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "모든 스크랩"
 
 msgid "All steps"
-msgstr ""
+msgstr "모든 단계"
 
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "단위 할당"
 
 msgid "Appearance"
-msgstr ""
+msgstr "모양"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "작업 시작"
 
 msgid "Clock out"
-msgstr ""
+msgstr "작업 종료"
 
 msgid "Clock Out"
 msgstr "작업 종료"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "작업 중"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "고객"
 
 msgid "Dark"
-msgstr ""
+msgstr "다크"
 
 msgid "Date"
 msgstr "날짜"
@@ -529,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "복제 또는 복사"
 
 msgid "Duplicate serial number"
 msgstr "중복된 시리얼 번호"
@@ -728,7 +728,7 @@ msgid "in {0}"
 msgstr "{0} 후"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "열린 메뉴에서"
 
 msgid "In Progress"
 msgstr "진행 중"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
 msgid "Light"
-msgstr ""
+msgstr "라이트"
 
 msgid "lines"
 msgstr "라인"
@@ -1162,7 +1162,7 @@ msgstr "작업 지시 열기"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "하위 조립체 {0} 열기: {1}"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -1253,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "고정 또는 고정 해제"
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
@@ -1383,7 +1383,7 @@ msgid "Remove part"
 msgstr "품목 제거"
 
 msgid "Rename"
-msgstr ""
+msgstr "이름 바꾸기"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "작업 종료 설정"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "작업을 중단한 시간을 설정하거나 계속 작업 중임을 확인하세요."
 
 msgid "Set up in Carbon"
 msgstr "Carbon에서 설정하기"
@@ -1673,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "보관 단위"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "하위 조립체"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "하위 조립체 {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "작업자 전환"
 
 msgid "System"
-msgstr ""
+msgstr "시스템"
 
 msgid "Tag"
 msgstr "태그"
@@ -1882,7 +1882,7 @@ msgstr "완료 시 자동으로 사용됨"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "사용 {0} · {1}"
 
 msgid "Value"
 msgstr "값"
@@ -1894,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "유지보수 지시 보기"
 
 msgid "View or open"
-msgstr ""
+msgstr "보기 또는 열기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."

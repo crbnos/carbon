@@ -168,7 +168,7 @@ msgid "All scrap"
 msgstr "Tout rebut"
 
 msgid "All steps"
-msgstr ""
+msgstr "Toutes les étapes"
 
 msgid "Allocate failed units"
 msgstr "Allouer les unités défaillantes"
@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Allouer les unités"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Apparence"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Êtes-vous sûr de vouloir supprimer cette étape ?"
@@ -314,13 +314,13 @@ msgid "Clock In"
 msgstr "Pointage début"
 
 msgid "Clock out"
-msgstr ""
+msgstr "Pointage fin"
 
 msgid "Clock Out"
 msgstr "Pointage fin"
 
 msgid "Clocked in"
-msgstr ""
+msgstr "Pointé"
 
 msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
@@ -427,7 +427,7 @@ msgid "Customer"
 msgstr "Client"
 
 msgid "Dark"
-msgstr ""
+msgstr "Sombre"
 
 msgid "Date"
 msgstr "Date"
@@ -529,7 +529,7 @@ msgid "Duplicate batch number"
 msgstr "Numéro de lot de production en doublon"
 
 msgid "Duplicate or copy"
-msgstr ""
+msgstr "Dupliquer ou copier"
 
 msgid "Duplicate serial number"
 msgstr "Numéro de série en doublon"
@@ -728,7 +728,7 @@ msgid "in {0}"
 msgstr "dans {0}"
 
 msgid "In an open menu"
-msgstr ""
+msgstr "Dans un menu déroulant"
 
 msgid "In Progress"
 msgstr "En cours"
@@ -821,7 +821,7 @@ msgid "Let's build something"
 msgstr "Construisons quelque chose"
 
 msgid "Light"
-msgstr ""
+msgstr "Clair"
 
 msgid "lines"
 msgstr "lignes"
@@ -1162,7 +1162,7 @@ msgstr "Ordres de fabrication ouverts"
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
-msgstr ""
+msgstr "Ouvrir le sous-ensemble {0} : {1}"
 
 msgid "Operations"
 msgstr "Opérations"
@@ -1253,7 +1253,7 @@ msgid "picking in place of {substitutedFrom}, the item on the job, for {substitu
 msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication, pour {substitutedAssemblies} assemblages"
 
 msgid "Pin or unpin"
-msgstr ""
+msgstr "Épingler ou dépingler"
 
 msgid "Pin Out"
 msgstr "Déconnecter"
@@ -1383,7 +1383,7 @@ msgid "Remove part"
 msgstr "Retirer la pièce"
 
 msgid "Rename"
-msgstr ""
+msgstr "Renommer"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
@@ -1575,7 +1575,7 @@ msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
 
 msgid "Set the time you stopped working, or acknowledge that you're still working."
-msgstr ""
+msgstr "Enregistrez l'heure à laquelle vous avez cessé de travailler, ou confirmez que vous continuez à travailler."
 
 msgid "Set up in Carbon"
 msgstr "Configurer dans Carbon"
@@ -1673,19 +1673,19 @@ msgid "Storage Unit"
 msgstr "Unité de stockage"
 
 msgid "Sub-Assembly"
-msgstr ""
+msgstr "Sous-ensemble"
 
 #. placeholder {0}: subAssemblyNumber(item.headerId)
 #. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 #. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
 msgid "Sub-Assembly {0} · {1}"
-msgstr ""
+msgstr "Sous-ensemble {0} · {1}"
 
 #. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
-msgstr ""
+msgstr "Sous-ensemble {0} · {1} — affiché seul"
 
 msgid "Submit anonymously"
 msgstr "Soumettre anonymement"
@@ -1700,7 +1700,7 @@ msgid "Switch Operator"
 msgstr "Changer d'opérateur"
 
 msgid "System"
-msgstr ""
+msgstr "Système"
 
 msgid "Tag"
 msgstr "Étiquette"
@@ -1882,7 +1882,7 @@ msgstr "Utilisé automatiquement à l'achèvement"
 #. placeholder {0}: subAssemblyNumber(headerId)
 #. placeholder {1}: subAssemblyTitle(headerId)
 msgid "Uses {0} · {1}"
-msgstr ""
+msgstr "Utilise {0} · {1}"
 
 msgid "Value"
 msgstr "Valeur"
@@ -1894,7 +1894,7 @@ msgid "View maintenance dispatch"
 msgstr "Voir l'intervention de maintenance"
 
 msgid "View or open"
-msgstr ""
+msgstr "Afficher ou ouvrir"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."
