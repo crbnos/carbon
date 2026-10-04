@@ -57,6 +57,14 @@ CREATE POLICY "x" ON "storage"."objects" FOR INSERT WITH CHECK (true);`;
     expect(check.scan(NEW, sql)).toHaveLength(1);
   });
 
+  it("flags a call that attaches event triggers (they are declared in attachments.ts)", () => {
+    const sql = `SELECT attach_event_trigger('widget', ARRAY['sync_widget']::TEXT[]);
+SELECT attach_statement_handler('widget', ARRAY['broadcast_table_changes']);
+SELECT set_event_triggers('widget');`;
+    expect(check.scan("20261101120000_widget.sql", sql)).toHaveLength(3);
+    expect(check.scan("20261004194526_before.sql", sql)).toEqual([]);
+  });
+
   it("allows DROP POLICY (needed before dropping a column a policy uses)", () => {
     expect(
       check.scan(NEW, `DROP POLICY "SELECT" ON "public"."widget";`)

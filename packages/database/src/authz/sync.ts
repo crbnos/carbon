@@ -4,6 +4,8 @@
 
 import { parse } from "libpg-query";
 import type { Client } from "pg";
+import type { Attachments } from "../event-system/attachments";
+import { syncAttachments } from "../event-system/attachments-sync";
 import { type Helper, loadHelpers, syncHelpers } from "./helpers";
 import { type AnyRule, locate, type Manifest, render } from "./rules";
 
@@ -146,6 +148,8 @@ export type SyncResult = {
   changed: string[];
   /** Public tables the manifest does not cover. */
   unmanaged: string[];
+  /** Tables whose event triggers differed from attachments.ts. */
+  attachments: string[];
 };
 
 /**
@@ -156,7 +160,11 @@ export type SyncResult = {
 export async function syncAuthz(
   db: Client,
   manifest: Manifest,
-  { dryRun = false, helpers }: { dryRun?: boolean; helpers?: Helper[] } = {}
+  {
+    dryRun = false,
+    helpers,
+    attachments
+  }: { dryRun?: boolean; helpers?: Helper[]; attachments?: Attachments } = {}
 ): Promise<SyncResult> {
   const managedHelpers = helpers ?? (await loadHelpers());
   return inAuthzTransaction(
@@ -224,7 +232,17 @@ export async function syncAuthz(
         )
       ).rows.map((r) => r.table);
 
-      return { helpers: changedHelpers, changed, unmanaged };
+      // Last: the triggers call the functions synced above.
+      const changedAttachments = attachments
+        ? await syncAttachments(db, attachments, { dryRun })
+        : [];
+
+      return {
+        helpers: changedHelpers,
+        changed,
+        unmanaged,
+        attachments: changedAttachments
+      };
     },
     { commit: !dryRun }
   );

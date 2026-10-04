@@ -7,6 +7,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "libpg-query";
+import type { Attachments } from "../event-system/attachments";
+import { renderFor } from "../event-system/attachments-sync";
 import { type Helper, helperKey, RETIRED_HELPERS } from "./helpers";
 import { type AnyRule, locate, type Manifest, render } from "./rules";
 import { assertOnlyPolicies } from "./sync";
@@ -68,7 +70,11 @@ const dropAllPolicies = (table: string, schema = "public") =>
 export async function renderMigration(
   manifest: Manifest,
   helpers: Helper[],
-  tables: string[]
+  tables: string[],
+  attached: { attachments: Attachments; tables: string[] } = {
+    attachments: {},
+    tables: []
+  }
 ): Promise<string> {
   const parts = [
     GENERATED_HEADER,
@@ -98,6 +104,18 @@ export async function renderMigration(
     );
   }
 
+  // After the functions and policies: the triggers call the functions above.
+  if (attached.tables.length) {
+    parts.push(
+      [
+        "-- event triggers (packages/database/src/event-system/attachments.ts)",
+        ...attached.tables.map((table) =>
+          renderFor(attached.attachments, table)
+        )
+      ].join("\n")
+    );
+  }
+
   return `${parts.join("\n\n")}\n`;
 }
 
@@ -123,8 +141,12 @@ async function statements(sql: string): Promise<{ node: Ast; text: string }[]> {
 type Shipped = {
   tables: Map<string, { file: string; policies: string[] }>;
   helpers: Map<string, { file: string; text: string }>;
+  /** Each table's last shipped `set_event_triggers` statement. */
+  attachments: Map<string, string>;
   problems: string[];
 };
+
+const SET_EVENT_TRIGGERS = /^SELECT set_event_triggers\('((?:[^']|'')+)'[,)]/;
 
 /**
  * What the generated migrations ship, latest file winning. A generated file may contain
@@ -135,6 +157,7 @@ async function readShipped(dir: string, managed: Set<string>) {
   const shipped: Shipped = {
     tables: new Map(),
     helpers: new Map(),
+    attachments: new Map(),
     problems: []
   };
   const files = readdirSync(dir)
@@ -147,6 +170,14 @@ async function readShipped(dir: string, managed: Set<string>) {
     let table: string | undefined;
     let at = { schema: "public", table: "" };
     for (const { node, text } of await statements(sql)) {
+      const attached = node.SelectStmt && SET_EVENT_TRIGGERS.exec(text);
+      if (attached) {
+        shipped.attachments.set(
+          (attached[1] as string).replaceAll("''", "'"),
+          `${text};`
+        );
+        continue;
+      }
       const fn = node.CreateFunctionStmt;
       const alter = node.AlterTableStmt;
       const policy = node.CreatePolicyStmt?.table;
@@ -216,6 +247,8 @@ async function readShipped(dir: string, managed: Set<string>) {
 export type Unshipped = {
   tables: string[];
   helpers: string[];
+  /** Tables whose event triggers production does not have as attachments.ts declares them. */
+  attachments: string[];
   problems: string[];
 };
 
@@ -223,7 +256,8 @@ export type Unshipped = {
 export async function unshipped(
   manifest: Manifest,
   helpers: Helper[],
-  dir = MIGRATIONS_DIR
+  dir = MIGRATIONS_DIR,
+  attachments: Attachments = {}
 ): Promise<Unshipped> {
   const baseline: {
     tables: Record<string, string>;
@@ -233,8 +267,23 @@ export async function unshipped(
   const result: Unshipped = {
     tables: [],
     helpers: [],
+    attachments: [],
     problems: shipped.problems
   };
+
+  // A declared table must be shipped as declared; a table shipped once and no
+  // longer declared must be shipped again, detached.
+  const attachedTables = new Set([
+    ...Object.keys(attachments),
+    ...shipped.attachments.keys()
+  ]);
+  for (const table of [...attachedTables].sort()) {
+    if (shipped.attachments.get(table) !== renderFor(attachments, table)) {
+      // Never declared and never shipped attached: nothing to detach.
+      if (!(table in attachments) && !shipped.attachments.has(table)) continue;
+      result.attachments.push(table);
+    }
+  }
 
   for (const [table, rule] of Object.entries(manifest) as [string, AnyRule][]) {
     const at = locate(table);

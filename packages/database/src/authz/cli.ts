@@ -29,7 +29,8 @@ async function main() {
     }
     const { manifest } = await import("./manifest");
     const helpers = await loadHelpers();
-    const todo = await unshipped(manifest, helpers);
+    const { attachments } = await import("../event-system/attachments");
+    const todo = await unshipped(manifest, helpers, undefined, attachments);
     if (todo.problems.length)
       throw new Error(
         `authz migration: fix these first:\n${todo.problems.join("\n")}`
@@ -46,14 +47,19 @@ async function main() {
     for (const table of again ?? []) {
       if (!todo.tables.includes(table)) todo.tables.push(table);
     }
-    if (!todo.tables.length && !todo.helpers.length) {
+    if (
+      !todo.tables.length &&
+      !todo.helpers.length &&
+      !todo.attachments.length
+    ) {
       console.log("authz: production already has every rule and helper");
       return;
     }
     const sql = await renderMigration(
       manifest,
       helpers.filter((h) => todo.helpers.includes(helperKey(h))),
-      todo.tables
+      todo.tables,
+      { attachments, tables: todo.attachments }
     );
     const root = path.resolve(
       path.dirname(fileURLToPath(import.meta.url)),
@@ -72,7 +78,11 @@ async function main() {
       );
     writeFileSync(path.join(root, file), sql);
     console.log(
-      `authz: wrote ${file} (${[...todo.helpers, ...todo.tables].join(", ")})`
+      `authz: wrote ${file} (${[...todo.helpers, ...todo.tables].join(", ")}${
+        todo.attachments.length
+          ? `, event triggers of ${todo.attachments.length} table(s)`
+          : ""
+      })`
     );
     return;
   }
@@ -93,14 +103,20 @@ async function main() {
   await db.connect();
   try {
     const { manifest } = await import("./manifest");
+    const { attachments } = await import("../event-system/attachments");
     const result = await syncAuthz(db, manifest, {
-      dryRun: command === "check"
+      dryRun: command === "check",
+      attachments
     });
     const verb = command === "check" ? "would change" : "changed";
     console.log(`authz: ${verb} ${result.helpers.length} helper(s)`);
     for (const name of result.helpers) console.log(`  ${name}`);
     console.log(`authz: ${verb} ${result.changed.length} table(s)`);
     for (const table of result.changed) console.log(`  ${table}`);
+    console.log(
+      `authz: ${verb} the event triggers of ${result.attachments.length} table(s)`
+    );
+    for (const table of result.attachments) console.log(`  ${table}`);
     if (result.unmanaged.length) {
       console.error(
         `authz: tables with no rule in manifest.ts (left as they are):\n${result.unmanaged
@@ -112,7 +128,9 @@ async function main() {
     // 3, not 1: CI tells "the database differs from the manifest" apart from a failure.
     if (
       command === "check" &&
-      (result.changed.length || result.helpers.length)
+      (result.changed.length ||
+        result.helpers.length ||
+        result.attachments.length)
     ) {
       process.exit(3);
     }

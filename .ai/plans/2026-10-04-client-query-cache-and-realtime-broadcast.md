@@ -11,6 +11,7 @@
 - [x] Task 4: Write the attach migration
 - [x] Task 5: Apply the migrations and regenerate types
 - [x] Task 6: Add the database tests
+- [x] Task 6b: Move event triggers and interceptor bodies out of migrations (user, 2026-10-05)
 - [ ] Task 7: Add the `realtime-table-has-trigger` check
 - [x] Task 8: Add the private option to `useRealtimeChannel`
 - [x] Task 9: Add `cachedClientLoader` and the company id value
@@ -172,6 +173,39 @@ pnpm --filter @carbon/checks exec vitest run src/conformance/no-authz-ddl-in-mig
 ```
 
 **Out of scope:** any `CREATE POLICY`. The check rejects a policy on `public` or `realtime` in a hand-written migration.
+
+---
+
+## Task 6b: Move event triggers and interceptor bodies out of migrations
+
+**Depends on:** Task 5
+**Files:**
+- Create: `packages/database/src/event-system/attachments.ts` — the triggers of 141 tables
+- Create: `packages/database/src/event-system/attachments-sync.ts`, `attachments-sync.test.ts`
+- Create: `packages/database/src/event-system/handlers/*.sql` — 64 functions, read from the database with `pg_get_functiondef`
+- Create: `packages/database/src/event-system/functions/set_event_triggers.sql`
+- Create: `packages/database/supabase/migrations/20261004193811_drop-stale-interceptor-overload.sql`
+- Create: `packages/database/supabase/migrations/20261004194527_event-attachments.sql` (generated)
+- Modify: `packages/database/src/authz/sync.ts`, `migration.ts`, `cli.ts`, `helpers.ts`
+- Modify: `packages/database/src/realtime-tables.ts` — the 3 lists derive from `attachments.ts`
+- Modify: `packages/database/supabase/migrations/20261004192633_realtime-broadcast-attach.sql` — no attach call stays
+- Modify: `packages/checks/src/conformance/no-authz-ddl-in-migrations.ts` — reject attach calls
+
+**Steps:**
+1. Read the live triggers of each table from the local database. Write them to `attachments.ts`.
+2. Read each attached function with `pg_get_functiondef`. Write each one to `handlers/<name>.sql`.
+3. Make `authz sync` compare the live triggers with `attachments.ts`.
+4. Make `authz migration` write one `SELECT set_event_triggers(...)` for each changed table.
+5. Run `pnpm --filter @carbon/database authz migration event-attachments`.
+6. Ask the user to run `pnpm db:migrate`.
+
+**Verify:**
+```bash
+SUPABASE_DB_URL=<local url> pnpm --filter @carbon/database exec vitest run src/authz src/event-system
+# Expected: all passed; `authz check` reports 0 helpers, 0 tables, 0 event triggers
+```
+
+**Out of scope:** a change to what a trigger does. The takeover ships the triggers and the bodies as the database has them.
 
 ---
 

@@ -25,7 +25,7 @@ owns that table and its RLS switch, so sync and the generated migration never ru
 `ENABLE ROW LEVEL SECURITY` on it — sync fails instead if the switch is off. To add another
 external table, extend `ExternalTable` in `rules.ts` and `MANIFEST_SCHEMAS` in the check.
 
-The same machinery owns the event system's 40 functions — see
+The same machinery owns the event system's 41 functions, its 64 table handlers and the event triggers — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -86,7 +86,7 @@ or `baseline.json` by hand.
 
 `packages/database/src/event-system/functions/` holds one file per function for dispatch,
 subscriptions, the queue wake-up, the audit log, the search index, embeddings and the
-realtime broadcast triggers (40: 34 in `public`, 6 in `util`). They are loaded, synced, shipped and guarded exactly like the
+realtime broadcast triggers (41: 35 in `public`, 6 in `util`). They are loaded, synced, shipped and guarded exactly like the
 RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries its `schema`.
 
 - **File name is the function**: `dispatch_event_batch.sql` defines
@@ -106,12 +106,56 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
 - **Signature changes and new functions** still need a hand-written migration for the
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
-- **Not managed**: the per-table interceptors (`sync_*`) stay in their table's migration,
-  as do `util.send_inngest_event` and `public.set_inngest_event_url`
+- **Table handlers are managed too**: `../event-system/handlers/<name>.sql` holds every
+  function a table attaches — the 63 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
+  `storage_unit_*`) and the statement handler `apply_item_stock_quantities`. Same format,
+  same sync, same shipping; checked from `20261004194527` (`ATTACHMENTS_SINCE`). A new
+  interceptor is a new file there, never a function in a migration.
+- **Not managed**: `util.send_inngest_event` and `public.set_inngest_event_url`
   (`20261002170250`).
 - **Retired**: `util.anon_key`, `util.invoke_edge_function` and `util.process_embeddings`
   (`RETIRED_HELPERS`, dropped by `20261002170619`) — Postgres no longer calls an edge
   function; `util.sweep_embedding_queue` replaced the last.
+
+## Event triggers (attachments)
+
+Which functions run on which table is declared in ONE place,
+`packages/database/src/event-system/attachments.ts`, typed by table name:
+
+```ts
+customer: {
+  before: ["sync_update_customer_type_group"],
+  after: ["sync_create_customer_entries", "sync_create_customer_org_group"],
+  events: true,
+  statement: ["broadcast_table_changes"]
+},
+```
+
+- `before` / `after` — interceptors, in order, run per row inside the writing transaction.
+- `events` — changes are queued for the event system (`dispatch_event_batch`).
+- `statement` — handlers run once per statement (`attach_statement_handler`).
+
+A migration never calls `attach_event_trigger`, `attach_statement_handler` or
+`set_event_triggers` (`no-authz-ddl-in-migrations` rejects it from `20261004194527`). Each of
+those replaces a table's WHOLE list, so a call that left a function out silently detached
+it — the reason the `clobbers` check existed.
+
+- **Sync**: `authz sync` compares each table's live triggers with its entry and calls
+  `set_event_triggers(table, before, after, events, statement)` where they differ. A table
+  with event triggers and no entry is detached.
+- **Shipping**: `authz migration <name>` writes one `SELECT set_event_triggers(...)` per
+  changed table, after the functions and policies. `unshipped()` compares each table's last
+  shipped statement with what the manifest renders, and reports a table that was shipped
+  and later removed (it is shipped again, detached). There is no baseline: the takeover
+  migration `20261004194527_event-attachments.sql` ships all 141 tables.
+- **Adding a table's triggers**: add its entry, `pnpm db:migrate` (syncs locally), then
+  `authz migration <name>`.
+- **Realtime lists are derived**: `REALTIME_TABLES`, `REALTIME_REFERENCE_TABLES` and
+  `REALTIME_USER_TABLES` (`packages/database/src/realtime-tables.ts`) are the tables whose
+  entry attaches `broadcast_table_changes`, `broadcast_reference_changes` or
+  `broadcast_user_changes`. Making a table realtime is adding that handler to its entry.
+- Pinned by `event-system/attachments-sync.test.ts`: against a database, the live triggers
+  equal the manifest, and re-applying every entry recreates each trigger byte for byte.
 
 ## Commands
 

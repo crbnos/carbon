@@ -23,14 +23,30 @@ const SINCE = "20260927000000";
 /** The migration that took over the event-system functions. */
 const EVENT_SYSTEM_SINCE = "20261002114954";
 
+/**
+ * The migration that took over the table handlers (interceptors and statement
+ * handlers) and the event triggers that attach them.
+ */
+const ATTACHMENTS_SINCE = "20261004194527";
+
 /** The directories of managed function files, and the migration each set is checked from. */
 export const MANAGED_FUNCTION_SETS = [
   { dir: "packages/database/src/authz/helpers", since: SINCE },
   {
     dir: "packages/database/src/event-system/functions",
     since: EVENT_SYSTEM_SINCE
+  },
+  {
+    dir: "packages/database/src/event-system/handlers",
+    since: ATTACHMENTS_SINCE
   }
 ];
+
+// Each of these replaces a table's whole list of handlers, so a call that
+// leaves one out detaches it. The lists live in one place instead:
+// packages/database/src/event-system/attachments.ts.
+const ATTACH_CALL =
+  /\b(attach_event_trigger|attach_statement_handler|set_event_triggers)\s*\(/gi;
 
 /** `file` is `<name>.sql` for public, `<schema>.<name>.sql` otherwise. */
 export type ManagedFunction = {
@@ -75,7 +91,7 @@ export const noAuthzDdlInMigrations = (
 ): ConformanceCheck => ({
   id: "no-authz-ddl-in-migrations",
   description:
-    "Policies, RLS helpers and event-system functions are authored as files, not migrations.",
+    "Policies, RLS helpers, event-system functions and event triggers are authored as files, not migrations.",
   provenance: {
     deprecates: "CREATE/ALTER POLICY and managed function DDL in migrations",
     replacedBy:
@@ -106,6 +122,17 @@ export const noAuthzDdlInMigrations = (
         message:
           "Author policies in packages/database/src/authz/manifest.ts, then run `pnpm --filter @carbon/database authz migration <name>`."
       });
+    }
+    if (timestamp >= ATTACHMENTS_SINCE) {
+      for (const m of sql.matchAll(ATTACH_CALL)) {
+        violations.push({
+          file,
+          line: line(m.index),
+          snippet: m[0],
+          message:
+            "Declare event triggers in packages/database/src/event-system/attachments.ts, then run `pnpm --filter @carbon/database authz migration <name>`."
+        });
+      }
     }
     for (const m of sql.matchAll(FUNCTION_DDL)) {
       const fn = managed.get(`${m[2] ?? "public"}.${m[3]}`.toLowerCase());

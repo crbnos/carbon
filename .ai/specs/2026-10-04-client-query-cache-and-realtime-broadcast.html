@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md" />
-<meta name="explain-source-hash" content="ff81b21730ea7dac33cde274a3edc045374ea518" />
+<meta name="explain-source-hash" content="2bc2a2b1c3912b98227710c808eb966a98aaab62" />
 <title>Client cache and realtime</title>
 <style>
   :root {
@@ -222,6 +222,8 @@
 <details><summary>Which tables get a trigger? <span class="choice">Only tables that a route or a live list declares.</span><span class="tag human">human</span></summary><div><p>Why: A table that no page watches gets no write overhead and stores no messages.</p></div></details>
 <details><summary>Which pages update live? <span class="choice">Operational pages in the ERP, all of the MES, and the cached reference lists.</span><span class="tag human">human</span></summary><div><p>Why: Settings and admin pages change rarely. They reload on navigation as today.</p></div></details>
 <details><summary>How do reference lists hear a change? <span class="choice">One shared topic, <code>company:&lt;companyId&gt;:reference</code>.</span></summary><div><p>Why: One channel for each client covers every reference table. A topic for each table would hold about 30 channels open.</p></div></details>
+<details><summary>Where does a trigger attach to a table? <span class="choice">In <code>event-system/attachments.ts</code>, applied by <code>set_event_triggers</code>.</span><span class="tag human">human</span></summary><div><p>Why: Each attach call replaces the whole list of a table. One typed manifest removes the clobber risk. No migration attaches a trigger.</p></div></details>
+<details><summary>Where do the interceptor bodies live? <span class="choice">In managed files under <code>event-system/handlers/</code>.</span><span class="tag human">human</span></summary><div><p>Why: The 63 interceptors and <code>apply_item_stock_quantities</code> leave the migrations. <code>authz sync</code> and <code>authz migration</code> own them.</p></div></details>
 <details><summary>How does a missed declaration show? <span class="choice">The new <code>realtime-table-has-trigger</code> check fails the build.</span></summary><div><p>Why: <code>postgres_changes</code> fails silently for an unpublished table.</p></div></details>
 <details><summary>When do tables leave the publication? <span class="choice">In this PR.</span><span class="tag human">human</span></summary><div><p>Why: A tab on the old build goes quiet until a reload. It shows no error.</p></div></details>
 <details><summary>What stays on <code>postgres_changes</code>? <span class="choice">Nothing.</span><span class="tag human">human</span></summary><div><p>Why: The publication ends empty. No second realtime system stays in the code.</p></div></details>

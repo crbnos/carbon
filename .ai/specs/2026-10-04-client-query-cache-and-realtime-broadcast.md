@@ -201,14 +201,15 @@ to a route action. A `fetcher.load` of a page route stays on `useFetcher`.
 | Page data | Not cached | A route with a `clientLoader` leaves the combined `.data` request. `dataStrategy` is closed in framework mode. |
 | `gcTime` for loader entries | 30 minutes | The client default is `Infinity`. URL keys create one entry for each distinct search string. |
 | Realtime transport | Broadcast from the database | Realtime checks permission one time at join. `postgres_changes` checks each change for each subscriber on one thread. |
-| Trigger attachment | `attach_statement_handler` | It already creates statement-level triggers with `batched_new` and `batched_old`. `itemLedger` uses it. |
+| Trigger attachment (user, 2026-10-05) | Declared in `event-system/attachments.ts`, applied by `set_event_triggers` | Each attach call replaces the whole list of a table. One typed manifest removes the clobber risk. No migration attaches a trigger. |
+| Interceptor bodies (user, 2026-10-05) | Managed files in `event-system/handlers/` | The 63 interceptors and `apply_item_stock_quantities` leave the migrations. `authz sync` and `authz migration` own them. |
 | Message payload | `{ table, op, ids }`, ids null above 100 rows | The client reads rows through PostgREST, so table RLS still decides what a user sees. |
 | Topic grain (user, 2026-10-04) | One topic for each company for each table | A caller with a parent-column filter wakes on any change to the table. The debounce bounds the cost. |
 | Tables with a trigger (user, 2026-10-04) | Only tables that a route or a live list declares | A table that no page watches gets no write overhead and stores no messages. |
 | Page coverage (user, 2026-10-04) | Operational pages in the ERP, all of the MES, and the cached reference lists | Settings and admin pages change rarely. They reload on navigation as today. |
 | Reference lists | One shared topic, `company:<companyId>:reference` | One channel for each client covers every reference table. A topic for each table would hold about 30 channels open for the whole session. |
 | Policies on `realtime.messages` (user, 2026-10-04) | The authz manifest, entry `"realtime.messages"` | One system owns every policy. A hand-written migration would bypass `authz sync` and the migration check. |
-| Source of truth for the table list | `REALTIME_TABLES` constant in `@carbon/database` | The migration, the route declarations and the check all read one list. |
+| Source of truth for the table list | `REALTIME_TABLES`, derived from `attachments.ts` | A table is realtime when its entry attaches `broadcast_table_changes`. No second list exists. |
 | Missed-declaration guard | New `realtime-table-has-trigger` check in `@carbon/checks` | `postgres_changes` fails silently for an unpublished table. The check makes that a build failure. |
 | Publication (user, 2026-10-04) | Drop the moved tables from `supabase_realtime` in this PR | A tab on the old build goes quiet until a reload. It shows no error. |
 | Tables that stay on `postgres_changes` (user, 2026-10-04) | None | The publication ends empty. No second realtime system stays in the code. |
@@ -450,3 +451,4 @@ existing subscriptions only.
 - 2026-10-04: Notifications and the implementation hub move to broadcast. The publication ends empty.
 - 2026-10-04: Planning found that the broadcast functions are managed event-system files. `@carbon/react` gains `@tanstack/react-query`.
 - 2026-10-04: The authz manifest owns the `realtime.messages` policies (user decision). The authz system now handles one table outside `public`.
+- 2026-10-05: The user moved all event triggers and interceptor bodies out of migrations. `attachments.ts` declares the triggers of 141 tables. `event-system/handlers/` holds 64 functions. The takeover migration is `20261004194527_event-attachments.sql`.
