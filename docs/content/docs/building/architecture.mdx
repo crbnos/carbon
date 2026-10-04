@@ -495,11 +495,13 @@ await trigger("notify", {
 Event names are always `carbon/<something>`.
 
 **Scheduled work** has two sources. Inngest cron schedules run application jobs: MRP every
-three hours, notification digests every fifteen minutes, exchange rates and audit
-archiving nightly, workflow-run cleanup at 04:00. All of them are UTC, and any job that
+three hours, exchange rates and audit archiving nightly. All of them are UTC, and any job that
 needs a company's local day computes it inside the run. Database-level maintenance uses
-pg_cron [[14]](#g14) instead, for refreshing cached aggregate tables and sweeping the event
-queue.
+pg_cron [[14]](#g14) instead, for refreshing cached aggregate tables, sweeping the event
+queue and purging old notifications. pg_cron also decides when two application jobs run:
+every fifteen minutes it checks whether any notifications are due to be rolled into a
+digest, and at 04:00 whether any workflow run history is due for cleanup, and it wakes the
+Inngest function only when there is work.
 
 **Notifications** originate in `packages/jobs/.../notifications/notify.ts` and target in-app records, Resend email,
 and Slack. The top bar receives in-app records through Realtime. `packages/notifications` defines event types but does not send messages.

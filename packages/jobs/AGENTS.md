@@ -59,6 +59,8 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `notification-digest` | `carbon/notification-digest.process` (sent by the `notification-digest-sweeper` pg_cron job every 15 min, only when `util.notification_digest_has_work()`) | Roll unread notifications into one digest per user, company and topic |
+| `workflow-run-retention` | `carbon/workflow-run-retention.process` (sent by the `workflow-run-retention-sweeper` pg_cron job at 04:00 UTC, only when `util.workflow_run_retention_has_work()`) | Reap stale runs, compact and drop step detail, purge old run headers |
 | `embedding-queue` | `carbon/embedding-queue.process` (sent by the 10 s `process-embeddings` pg_cron doorbell while visible messages wait) | Drain the pgmq `embedding_jobs` queue and write embeddings |
 
 ## Safety Notes

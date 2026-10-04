@@ -558,6 +558,15 @@ export type Events = {
     };
   };
 
+  // Sent by pg_cron when there is work (`util.sweep_notification_digest`,
+  // `util.sweep_workflow_run_retention`), never by app code.
+  "carbon/notification-digest.process": {
+    data: Record<string, never>;
+  };
+  "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
+  };
+
   // Weekly tasks
   "carbon/weekly": {
     data: Record<string, never>;

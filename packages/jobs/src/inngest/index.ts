@@ -72,7 +72,6 @@ import {
   mrpFunction,
   nightlyReplanFunction,
   notificationDigestFunction,
-  notificationPurgeFunction,
   purgeInactiveCompaniesFunction,
   scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
@@ -163,7 +162,6 @@ export const functions = [
   weeklyFunction,
   updateExchangeRatesFunction,
   notificationDigestFunction,
-  notificationPurgeFunction,
   // Not registered off Cloud, so a self-hosted Inngest has nothing to invoke.
   ...(process.env.CARBON_EDITION === Edition.Cloud
     ? [purgeInactiveCompaniesFunction]
