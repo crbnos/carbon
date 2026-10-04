@@ -68,6 +68,8 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `carbon-docs` | Author reader-facing docs in the docs app | `docs/content/**` |
 | `translate` | Fill missing i18n .po translations via cheap Haiku subagents | `packages/locale/locales/*/*.po` |
 | `test-driven-development` | Red→green→refactor discipline (vitest) | tests-first code |
+| `tdd` | External (mattpocock/skills, MIT, `d81f3a1`): what a good test is, seams agreed before testing, anti-patterns, rules of the loop. Pairs with `test-driven-development`, which holds the Carbon/vitest specifics | tests-first code |
+| `resolving-merge-conflicts` | External (mattpocock/skills, MIT, `3216582`; since removed upstream): THE default for any in-progress merge or rebase conflict — find each side's intent, resolve every hunk, run the checks, finish | a finished merge/rebase |
 | `writing-skills` | House guide for authoring skills | skills |
 | `explain` | HTML explainer (STE-80 prose + one diagram) for a spec, plan or research file | `{source}.html` beside the `.md` |
 | `pr-explainer` | Self-contained HTML review aid for a PR | `.pr-review/*.html` |

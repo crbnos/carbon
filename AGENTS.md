@@ -15,6 +15,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Use subagents liberally to keep the main context window clean.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
 - Start every new source file with its SPDX license header — AGPL, or the commercial one under `packages/ee/` and in `.ee.` files. Run the fixer (`pnpm --filter @carbon/checks license-headers`) rather than hand-typing it. Moving a file into or out of `packages/ee/`, or adding/removing `.ee.` in its name, changes its license and so its header.
+- Resolve every merge or rebase conflict with the `resolving-merge-conflicts` skill (`.claude/skills/resolving-merge-conflicts/SKILL.md`): load it before touching a conflicted file. Its checks here are the scoped typecheck and tests, Biome, and `pnpm --filter @carbon/checks clobbers` when migrations are involved.
 - Never claim work is complete without running verification commands. Evidence before assertions — run the command, read the output, then state the result.
 
 ## Ask First
@@ -163,6 +164,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Browser-verify a feature | `.claude/skills/test/SKILL.md` |
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
+| Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
+| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
 
 ## Core Principles
 
