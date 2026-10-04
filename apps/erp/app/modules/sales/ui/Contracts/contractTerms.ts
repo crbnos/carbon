@@ -49,6 +49,7 @@ export function toContractLineTerms(line: ContractLine): ContractLineTerms {
 export type ContractScheduleRow = {
   lineId: string;
   invoiceDate: string;
+  periodEnd: string;
   amount: number;
   isAdjustment: boolean;
 };
@@ -67,6 +68,7 @@ export function scheduleRows({
       invoice.rows.map((row) => ({
         lineId: row.lineId,
         invoiceDate: invoice.invoiceDate,
+        periodEnd: row.periodEnd,
         amount: row.amount,
         isAdjustment: row.isAdjustment
       }))
@@ -77,6 +79,7 @@ export function scheduleRows({
       invoice.customerContractInvoiceLine.map((row) => ({
         lineId: row.customerContractLineId,
         invoiceDate: invoice.invoiceDate,
+        periodEnd: row.periodEnd,
         amount: Number(row.amount),
         isAdjustment: row.isAdjustment
       }))
@@ -84,6 +87,7 @@ export function scheduleRows({
     ...credits.map((row) => ({
       lineId: row.customerContractLineId,
       invoiceDate: row.periodStart,
+      periodEnd: row.periodEnd,
       amount: Number(row.amount),
       isAdjustment: row.isAdjustment
     }))

@@ -186,17 +186,30 @@ export async function loader({
   // over its revenue dates, and the month-by-month position that follows.
   const rows = scheduleRows({ computedSchedule, schedule: invoices, credits });
   const netByLine = new Map<string, number>();
+  const lastPeriodEndByLine = new Map<string, string>();
   for (const row of rows) {
     netByLine.set(row.lineId, (netByLine.get(row.lineId) ?? 0) + row.amount);
+    const last = lastPeriodEndByLine.get(row.lineId);
+    if (!last || row.periodEnd > last) {
+      lastPeriodEndByLine.set(row.lineId, row.periodEnd);
+    }
   }
   const revenueLines = contractLines.flatMap((line) => {
     const dates = lineRevenueDates(line);
+    // A Recurring line with no end (open-ended, or running to the contract's
+    // end) earns over the periods the schedule bills it for — not all at once,
+    // which is what a missing end means for a One-time line.
+    const revenueEnd =
+      dates.end ??
+      (line.kind === "Recurring"
+        ? (lastPeriodEndByLine.get(line.id) ?? null)
+        : null);
     return revenuePreview({
       id: line.id,
       kind: line.kind,
       method: line.revenueMethod,
       revenueStart: dates.start,
-      revenueEnd: dates.end,
+      revenueEnd,
       netAmount: round(netByLine.get(line.id) ?? 0)
     });
   });
