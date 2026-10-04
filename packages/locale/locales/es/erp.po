@@ -10354,9 +10354,6 @@ msgstr "ID de Factura"
 msgid "Invoice Location"
 msgstr "Ubicación de Factura"
 
-msgid "Invoice Now"
-msgstr "Facturar ahora"
-
 msgid "Invoice Number"
 msgstr "Número de Factura"
 

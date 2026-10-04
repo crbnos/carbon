@@ -10354,9 +10354,6 @@ msgstr "चालान आईडी"
 msgid "Invoice Location"
 msgstr "चालान स्थान"
 
-msgid "Invoice Now"
-msgstr "अभी चालान करें"
-
 msgid "Invoice Number"
 msgstr "चालान संख्या"
 

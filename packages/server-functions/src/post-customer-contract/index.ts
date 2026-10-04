@@ -521,7 +521,39 @@ async function editSchedule(
       ));
     }
 
-    const plannedInvoice = (id: string) => {
+    // An unedited Draft's schedule is computed live, so the page can only name
+    // its invoices and rows by position: `planned:<invoiceDate>` and
+    // `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]`. Resolve
+    // those against the rows materialized above.
+    const PLANNED_REF = "planned:";
+    const resolveInvoiceId = (ref: string) => {
+      if (!ref.startsWith(PLANNED_REF)) return ref;
+      const invoiceDate = ref.slice(PLANNED_REF.length);
+      return (
+        invoices.find(
+          (i) => i.status === "Planned" && i.invoiceDate === invoiceDate
+        )?.id ?? ref
+      );
+    };
+    const resolveRowId = (ref: string) => {
+      if (!ref.startsWith(PLANNED_REF)) return ref;
+      const [invoiceDate, lineId, periodStart, adjustment] = ref
+        .slice(PLANNED_REF.length)
+        .split(":");
+      const invoiceId = resolveInvoiceId(`${PLANNED_REF}${invoiceDate}`);
+      return (
+        existing.find(
+          (r) =>
+            r.invoiceId === invoiceId &&
+            r.lineId === lineId &&
+            r.periodStart === periodStart &&
+            r.isAdjustment === (adjustment === "adjustment")
+        )?.id ?? ref
+      );
+    };
+
+    const plannedInvoice = (ref: string) => {
+      const id = resolveInvoiceId(ref);
       const invoice = invoices.find((i) => i.id === id);
       if (!invoice) throw new NotFoundError("Planned invoice not found");
       if (invoice.status !== "Planned") {
@@ -531,7 +563,8 @@ async function editSchedule(
       }
       return invoice;
     };
-    const plannedRow = (id: string) => {
+    const plannedRow = (ref: string) => {
+      const id = resolveRowId(ref);
       const row = existing.find((r) => r.id === id);
       if (!row) throw new NotFoundError("Invoice line not found");
       if (!row.invoiceId) {

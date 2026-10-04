@@ -644,3 +644,45 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "the first schedule edit of an unedited Draft names its row by position and materializes the schedule",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "split",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // Nothing is persisted yet: the page names the January row by position.
+      expect(await plannedInvoices(db, companyId, contractId)).toEqual([]);
+
+      const split = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "split",
+          customerContractInvoiceLineId: `planned:2026-01-01:${lineId}:2026-01-01`,
+          installments: [
+            { invoiceDate: "2026-01-01", amount: 60 },
+            { invoiceDate: "2026-01-15", amount: 40 }
+          ]
+        }
+      });
+      expect(split.error).toBeNull();
+
+      const schedule = await plannedInvoices(db, companyId, contractId);
+      expect(schedule.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 60],
+        ["2026-01-15", 40],
+        ["2026-02-01", 100],
+        ["2026-03-01", 100]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

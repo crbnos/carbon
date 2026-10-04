@@ -10354,9 +10354,6 @@ msgstr "发票ID"
 msgid "Invoice Location"
 msgstr "发票地点"
 
-msgid "Invoice Now"
-msgstr "立即开票"
-
 msgid "Invoice Number"
 msgstr "发票号码"
 

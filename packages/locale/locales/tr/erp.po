@@ -10354,9 +10354,6 @@ msgstr "Fatura Kimlik Numarası"
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
 
-msgid "Invoice Now"
-msgstr "Şimdi Faturala"
-
 msgid "Invoice Number"
 msgstr "Fatura Numarası"
 

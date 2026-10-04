@@ -10354,9 +10354,6 @@ msgstr "請求書ID"
 msgid "Invoice Location"
 msgstr "請求書の場所"
 
-msgid "Invoice Now"
-msgstr "請求書を作成"
-
 msgid "Invoice Number"
 msgstr "請求書番号"
 

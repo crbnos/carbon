@@ -10354,9 +10354,6 @@ msgstr "Счет-фактура ID"
 msgid "Invoice Location"
 msgstr "Площадка счета-фактуры"
 
-msgid "Invoice Now"
-msgstr "Выставить счет-фактуру сейчас"
-
 msgid "Invoice Number"
 msgstr "Номер счета-фактуры"
 

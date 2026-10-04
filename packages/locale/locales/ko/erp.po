@@ -10354,9 +10354,6 @@ msgstr "송장 ID"
 msgid "Invoice Location"
 msgstr "송장 사업장"
 
-msgid "Invoice Now"
-msgstr "지금 송장"
-
 msgid "Invoice Number"
 msgstr "송장 번호"
 
