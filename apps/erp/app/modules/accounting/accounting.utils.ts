@@ -438,6 +438,42 @@ export function getNextRevenueRecognitionPeriodEnd(
   return endOfMonth(base).toString();
 }
 
+/**
+ * Whether a period run ends after the company's current month. A run may
+ * cover the current month (a close can start before the month ends) or an
+ * earlier one, never a month that has not started — that recognizes revenue
+ * or depreciation early.
+ */
+export function isFutureRunPeriod(
+  periodEnd: string,
+  companyToday: string
+): boolean {
+  return periodEnd > endOfMonth(parseDate(companyToday)).toString();
+}
+
+/** The last day of the month a `YYYY-MM-DD` (or ISO timestamp) falls in. */
+export function monthEndOf(date: string): string {
+  return endOfMonth(parseDate(date.slice(0, 10))).toString();
+}
+
+/**
+ * The posting date for each month a run covers: the month's own end, so a
+ * catch-up run puts each month in its own period — or the run's `periodEnd`
+ * when the month's period is Closed and can no longer take a posting.
+ */
+export function runPostingTargets(args: {
+  months: string[];
+  runPeriodEnd: string;
+  closedMonths: Set<string>;
+}): Map<string, string> {
+  return new Map(
+    args.months.map((month) => [
+      month,
+      args.closedMonths.has(month) ? args.runPeriodEnd : month
+    ])
+  );
+}
+
 export function calculateDepreciation(
   asset: {
     acquisitionCost: number;

@@ -20,7 +20,10 @@ import {
   getMonthsBetween,
   getMonthsElapsed,
   getNextPeriodEnd,
-  getNextRevenueRecognitionPeriodEnd
+  getNextRevenueRecognitionPeriodEnd,
+  isFutureRunPeriod,
+  monthEndOf,
+  runPostingTargets
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -251,6 +254,42 @@ describe("depreciationRunLinesMatch", () => {
       )
     ).toBe(false);
     expect(depreciationRunLinesMatch(taxed, taxed)).toBe(true);
+  });
+});
+
+describe("isFutureRunPeriod", () => {
+  it("allows the current month and earlier ones", () => {
+    expect(isFutureRunPeriod("2026-10-31", "2026-10-04")).toBe(false);
+    expect(isFutureRunPeriod("2026-09-30", "2026-10-04")).toBe(false);
+  });
+
+  it("refuses a month that has not started", () => {
+    expect(isFutureRunPeriod("2026-11-30", "2026-10-04")).toBe(true);
+  });
+});
+
+describe("monthEndOf", () => {
+  it("returns the last day of the date's month, leap years included", () => {
+    expect(monthEndOf("2026-10-04")).toBe("2026-10-31");
+    expect(monthEndOf("2024-02-10T12:00:00Z")).toBe("2024-02-29");
+  });
+});
+
+describe("runPostingTargets", () => {
+  it("posts each month in its own period, and a Closed month in the run's", () => {
+    expect(
+      runPostingTargets({
+        months: ["2026-08-31", "2026-09-30", "2026-10-31"],
+        runPeriodEnd: "2026-10-31",
+        closedMonths: new Set(["2026-08-31"])
+      })
+    ).toEqual(
+      new Map([
+        ["2026-08-31", "2026-10-31"],
+        ["2026-09-30", "2026-09-30"],
+        ["2026-10-31", "2026-10-31"]
+      ])
+    );
   });
 });
 
