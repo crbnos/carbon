@@ -23,7 +23,7 @@
 - [x] Task 15: Move the MES lists and remove nanostores
 - [x] Task 16: Move notifications and the implementation hub
 - [x] Task 17: Declare `handle.realtime` on the routes and convert the subscribers
-- [ ] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites
+- [x] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites (13 event-driven sites stay on `useFetcher`: Linear and Jira issue search, the Onshape sync steps, the Stripe customer lookup, the 2 report drill-downs, the MES issue-material modal)
 - [ ] Task 19: Add `useAction` and migrate the submit call sites
 - [ ] Task 20: Update the rules, the lessons and the `AGENTS.md` files
 - [ ] Task 21: Run the full verification and the browser tests
