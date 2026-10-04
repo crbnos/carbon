@@ -148,7 +148,7 @@ Phase-7 write) and throws on failure.
      `getItemDemand` returns). Regenerative: nothing to
      un-consume — cancelled orders/edited forecasts re-net on the next run.
      Unit tests: `forecast-consumption.test.ts`. Spec:
-     `.ai/specs/2026-09-11-demand-forecast-consumption.md`.
+     `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`.
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
    - **Inputs (on-hand)**: the `itemStockQuantities` table (trigger-maintained,
      `20260812002454`) — an indexed per-company read, replacing the old full

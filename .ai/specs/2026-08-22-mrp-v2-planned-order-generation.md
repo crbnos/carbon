@@ -1,6 +1,6 @@
 # MRP v2: Live Planned-Order MRP — Generation, Cascade, Capacity & Simulation
 
-> Status: draft (phased — **Phase 1 active**)
+> Status: phased — **Phase 1 implemented** (PR #1601); Phases 2+ designed, not started
 > Author: Brad Barbin (with Claude)
 > Date: 2026-08-22 (re-scoped into phases 2026-09-08)
 > Scope: **now phased.** Originally written as a single "game-changer v1" that shipped
@@ -1715,4 +1715,10 @@ except `api+/planning.what-if.ts`.
   (forecast consumption, migration `20261003203301`), superseding this spec's
   "demandProjection gains no columns" scope note (§ suggested projections, ~line
   1230; that section's own scope is unchanged — suggestions still write ordinary
-  rows). Design + rationale: `.ai/specs/2026-09-11-demand-forecast-consumption.md`.
+  rows). Design + rationale: `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`.
+- **2026-10-04**: Phase 1 (§P1, planning action messages + responsible-employee
+  assignment) implemented on `mrp-action-suggestions` (PR #1601; plan
+  `.ai/plans/2026-09-08-mrp-planning-actions.md` 12/12). The same branch also ships the
+  planning horizon / time fence (`.ai/plans/2026-10-01-planning-horizon.md`) and a
+  company-chosen daily MRP run time. Phases 2+ are unchanged and not started, so this
+  spec stays out of `implemented/`.

@@ -4,7 +4,7 @@
 -- backward N -> forward M, company settings below) and persists it as
 -- demandProjection.consumedQuantity; every read path subtracts
 -- GREATEST(forecastQuantity - consumedQuantity, 0).
--- Spec: .ai/specs/2026-09-11-demand-forecast-consumption.md
+-- Spec: .ai/specs/implemented/2026-09-11-demand-forecast-consumption.md
 
 -- ============================================================
 -- 1. Consumption state (MRP-written, derived — never user-authored)

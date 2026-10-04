@@ -1,6 +1,6 @@
 # Demand Forecast Consumption — implementation plan
 
-**Spec:** .ai/specs/2026-09-11-demand-forecast-consumption.md
+**Spec:** .ai/specs/implemented/2026-09-11-demand-forecast-consumption.md
 **Research:** .ai/research/demand-forecast-consumption.md
 **Audit:** .ai/runs/2026-09-11-demand-forecast-consumption-audit.md
 **Branch:** mrp-action-suggestions (worktree kelowna)
@@ -469,12 +469,12 @@ grep -n "consumedValues" apps/erp/app/modules/production/ui/DemandProjection/Dem
 - Modify: `docs/content/docs/reference/forecast.mdx` — the additive-demand paragraph + stale paths. (CORRECTED during execution: the plan originally named `apps/erp/app/modules/agent/kb/docs/reference/forecast.md`, but that file is GENERATED from `docs/content/**` per `.claude/rules/agent-knowledge-base.md` — edit the source and run `pnpm run generate:agent-kb`, committing the regenerated kb/ alongside.)
 - Modify: `.claude/rules/mrp-system.md` — run-flow inputs + new settings
 - Modify: `.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md` — changelog note
-- Modify: `.ai/specs/2026-09-11-demand-forecast-consumption.md` — changelog + status
+- Modify: `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md` — changelog + status
 
 **Steps:**
 1. `forecast.md`: replace the paragraph stating projections and actuals are "added in full alongside" with the consumption model (own week → backward N → forward M, company settings, `consumedQuantity`, remainder drives MRP; actuals always count in full). Fix the stale component/route paths it cites (`ui/Projection/…` → `ui/DemandProjection/…`, `projections.new.tsx` → `demand-forecasts.new.tsx`).
 2. `mrp-system.md`: in the run-flow "Inputs (demand)" bullet, describe consumption (what consumes, window settings, `consumedQuantity` persisted in Phase 7, `GREATEST` netting at the read sites) and remove/replace the `<!-- UNVERIFIED -->` week-count note if Task 4 confirmed the horizon. Keep it factual to committed code only.
-3. MRP v2 spec: append changelog line — "2026-09-11: `demandProjection` gains `consumedQuantity` (forecast consumption, see `.ai/specs/2026-09-11-demand-forecast-consumption.md`), superseding this spec's 'demandProjection gains no columns' scope note."
+3. MRP v2 spec: append changelog line — "2026-09-11: `demandProjection` gains `consumedQuantity` (forecast consumption, see `.ai/specs/implemented/2026-09-11-demand-forecast-consumption.md`), superseding this spec's 'demandProjection gains no columns' scope note."
 4. This feature's spec: set `Status: in-progress`, append changelog line for implementation start.
 
 **Verify:**

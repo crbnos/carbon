@@ -1,6 +1,6 @@
 # Demand Forecast Consumption
 
-> Status: in-progress (approved by Brad 2026-09-11; executing .ai/plans/2026-09-11-demand-forecast-consumption.md)
+> Status: implemented (PR #1601; plan `.ai/plans/2026-09-11-demand-forecast-consumption.md` complete, 10/10 tasks)
 > Author: Claude (feature run `.ai/runs/2026-09-11-demand-forecast-consumption.md`)
 > Date: 2026-09-11
 > Research: `.ai/research/demand-forecast-consumption.md`
@@ -229,6 +229,32 @@ No RLS changes (existing table policies cover the new columns). No new enums.
 - MRP v2 spec (`.ai/specs/2026-08-22-mrp-v2-planned-order-generation.md`) — changelog
   note that `demandProjection` now gains `consumedQuantity`, superseding its §scope line.
 
+## As Built
+
+Where the shipped code differs from the design below:
+
+- **One migration, every read path.** `20261003203301_demand-forecast-consumption.sql`
+  holds all of it: the two columns, `openSalesOrderLines.quantityToConsume`, and the
+  netted `get_production_planning`, `get_purchasing_planning` and
+  `get_inventory_quantities`. The last two are forked from the guarded
+  `20260925121735_rpc-function-guards.sql` bodies (they open with
+  `assert_company_access`), not from the defs named in Data Model Changes.
+- **`consumeForecast` lives in `@carbon/planning`** (`packages/planning/src/mrp/forecast-consumption.ts`);
+  its tests run with `pnpm --filter @carbon/planning test`, not `@carbon/ee`.
+- **The item planning chart nets in the route, not the service.** `getItemDemand`
+  returns raw projections; `api+/items.$id.$locationId.forecast.ts` subtracts
+  `consumedQuantity` before merging them into the chart.
+- **Settings.** The window is the "Forecast Consumption" card on Settings → Planning,
+  fields "Look back (weeks)" and "Look ahead (weeks)" (defaults 4 and 1).
+
+Verification (`.ai/runs/2026-09-11-demand-forecast-consumption.md`, Phase 5): unit tests,
+plus a real MRP run on a seeded company proving same-week netting (forecast 30 + SO 30
+→ 30), a partial forecast (20 + SO 30 → 30), the gap case (an SO reaching back into the
+previous week's forecast, no double count), a 0/0 window turning reach-back off, the
+settings card and the grid annotation. The run record does not show the MTO-covered
+line, the re-saved cell, or the four-surface agreement criteria below exercised one by
+one, so their boxes are left unticked.
+
 ## Acceptance Criteria
 
 - [ ] Unit (`forecast-consumption.test.ts`): same-bucket 10F/10A→10, 10F/5A→10,
@@ -286,3 +312,4 @@ No RLS changes (existing table policies cover the new columns). No new enums.
 - 2026-09-11: Created after Phase-0 audit (refuted existing-netting belief) and 4-vendor research; all open questions autonomously resolved for veto at the plan gate.
 - 2026-09-11 (plan phase): corrected `get_inventory_quantities` fork source to the true newest def (`20260716142907`); dropped the `upsertDemandProjections` reset — PostgREST upserts preserve absent columns, so consumption state survives re-authoring (deliberately kept until next run).
 - 2026-09-11 (execute): approved by Brad; implementation started. Docs correction: the agent-KB forecast doc is generated from `docs/content/docs/reference/forecast.mdx` (edit source + `generate:agent-kb`, per `.claude/rules/agent-knowledge-base.md`), not the kb/ copy directly.
+- 2026-10-04: implemented on `mrp-action-suggestions` (PR #1601); moved to `implemented/`. Added As Built: the read paths ship in one migration, `consumeForecast` is in `@carbon/planning`, and the chart nets in its route.
