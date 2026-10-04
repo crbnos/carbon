@@ -63,36 +63,36 @@ Every acceptance criterion in the spec is covered except these, which belong to 
 - [x] Task 6: Pure revenue preview + contract invoice holds (`@carbon/utils`) + tests
 - [x] Task 7: Contract validators (`sales.models.ts`)
 - [x] Task 8: Contract services (`sales.service.ts`) with Draft guards and MCP tags
-- [ ] Task 9: Server function `post-customer-contract` — confirm, schedule edits, reset
-- [ ] Task 10: `post-customer-contract` — amend
-- [ ] Task 11: `post-customer-contract` — cancel and revert cancellation
-- [ ] Task 12: Server function `create-contract-invoices`
+- [x] Task 9: Server function `post-customer-contract` — confirm, schedule edits, reset
+- [x] Task 10: `post-customer-contract` — amend
+- [x] Task 11: `post-customer-contract` — cancel and revert cancellation
+- [x] Task 12: Server function `create-contract-invoices`
 - [x] Task 13: `post-sales-invoice` — VOID releases contract rows; Project dimension
 - [x] Task 13b: Line discount — posting amounts
 - [x] Task 13c: Line discount — documents (PDF, email)
-- [ ] Task 13d: Line discount — ERP invoice UI and rental utilization
+- [x] Task 13d: Line discount — ERP invoice UI and rental utilization
 - [x] Task 13e: Line discount — Stripe and accounting providers
 - [x] Task 14: `post-memo` — contract credit memo releases deferral
-- [ ] Task 15: `sales.server.ts` — release stamps on delete, create from sales order, wrappers
+- [x] Task 15: `sales.server.ts` — release stamps on delete, create from sales order, wrappers
 - [x] Task 16: `@carbon/stripe` — shared send of a posted invoice; the post route uses it
-- [ ] Task 17: Automation — contract source, Stripe mode
-- [ ] Task 18: `recurring-billing` — the contract source
+- [x] Task 17: Automation — contract source, Stripe mode
+- [x] Task 18: `recurring-billing` — the contract source
 - [x] Task 19: Settings and rental override offer *Post and Send via Stripe*
 - [x] Task 20: Paths, navigation, status colors, route types
-- [ ] Task 21: Contracts list
-- [ ] Task 22: Contract page shell — new, header, explorer, properties, update, delete
-- [ ] Task 23: Line form and line routes
-- [ ] Task 24: Summary section
-- [ ] Task 25: Invoices section and schedule editing
-- [ ] Task 26: Revenue section (preview)
-- [ ] Task 27: Confirm and Invoice Now
-- [ ] Task 28: Amend modal, preview, amendment history
-- [ ] Task 29: Cancel modal and revert
-- [ ] Task 30: Create Contract from a sales order
-- [ ] Task 31: "From contract" links on invoices, invoice lines and memos
-- [ ] Task 32: Demo datasets
-- [ ] Task 33: MCP digest, lint, i18n, scoped typechecks, tests
-- [ ] Task 34: Docs — reference page, glossary, AGENTS.md, rules, spec changelog
+- [x] Task 21: Contracts list
+- [x] Task 22: Contract page shell — new, header, explorer, properties, update, delete
+- [x] Task 23: Line form and line routes
+- [x] Task 24: Summary section
+- [x] Task 25: Invoices section and schedule editing
+- [x] Task 26: Revenue section (preview)
+- [x] Task 27: Confirm and Invoice Now
+- [x] Task 28: Amend modal, preview, amendment history
+- [x] Task 29: Cancel modal and revert
+- [x] Task 30: Create Contract from a sales order
+- [x] Task 31: "From contract" links on invoices, invoice lines and memos
+- [x] Task 32: Demo datasets
+- [x] Task 33: MCP digest, lint, i18n, scoped typechecks, tests
+- [x] Task 34: Docs — reference page, glossary, AGENTS.md, rules, spec changelog
 - [ ] Task 35: Browser verification (`/test`)
 
 ## Dependencies
