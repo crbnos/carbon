@@ -173,7 +173,6 @@ export const FIXED_ASSET_STATUS_COLOR_MAP = {
   Disposed: "red"
 } as const satisfies Record<string, StatusColor>;
 
-// Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 // Customer contract badges. The palette has no muted token; an Ended
 // contract is gray like a Draft, matching the people table's Inactive.
 export const CUSTOMER_CONTRACT_STATUS_COLOR_MAP = {
@@ -182,6 +181,7 @@ export const CUSTOMER_CONTRACT_STATUS_COLOR_MAP = {
   Ended: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
 export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
   Draft: "gray",
   Active: "blue",

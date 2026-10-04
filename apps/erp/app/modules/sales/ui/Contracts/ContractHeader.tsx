@@ -61,6 +61,8 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const readableId = contract.customerContractId ?? "";
   const status = contract.status;
   const canUpdate = permissions.can("update", "sales");
+  // Invoicing now drafts sales invoices, as the route requires.
+  const canInvoice = canUpdate && permissions.can("create", "invoicing");
 
   const isDraft = status === "Draft";
   const isActive = status === "Active";
@@ -177,7 +179,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
                 <Button
                   variant="primary"
                   leftIcon={<LuCreditCard />}
-                  isDisabled={!canUpdate}
+                  isDisabled={!canInvoice}
                   onClick={() => open("invoice")}
                 >
                   <Trans>Invoice</Trans>

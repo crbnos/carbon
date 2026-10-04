@@ -25,6 +25,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
+  // Reverting deletes the cancellation's Draft credit memo, so it needs the
+  // invoicing permission too — but only when there is a memo: a cancellation
+  // without credit touches sales data alone. The server function deletes
+  // exactly the memos on the contract's invoice-line rows; a failed read
+  // asks for the permission rather than skip the check.
+  const memoRows = await client
+    .from("customerContractInvoiceLine")
+    .select("id")
+    .eq("customerContractId", id)
+    .eq("companyId", companyId)
+    .not("memoId", "is", null)
+    .limit(1);
+  if (memoRows.error || (memoRows.data?.length ?? 0) > 0) {
+    await requirePermissions(request, {
+      update: "sales",
+      delete: "invoicing"
+    });
+  }
+
   const asOf = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();

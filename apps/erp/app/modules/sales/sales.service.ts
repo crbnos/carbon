@@ -9803,7 +9803,10 @@ export async function updateContractNotes(
  * Sending needs an email to send to, so `Post and Email` is refused when the
  * invoice contact has none. `Post and Send via Stripe` is accepted here;
  * Confirm and the job check the customer's Stripe link.
- * @mcp update
+ *
+ * Not an MCP tool: switching a live contract to a posting mode needs
+ * `create: invoicing`, and Stripe mode needs Stripe connected — checks the
+ * route (`contract+/update.tsx`) makes and an MCP `update` tool would skip.
  */
 export async function updateContractInvoiceAutomation(
   client: SupabaseClient<Database>,
@@ -9979,10 +9982,9 @@ export async function upsertContractLine(
     .single();
 }
 
-/**
- * Removes a line from a Draft contract.
- * @mcp delete
- */
+/** Removes a line from a Draft contract. Not an MCP tool: the route uses
+ *  `deleteContractLineReleasingSalesOrderLine` (`sales.server.ts`), which
+ *  also releases the sales-order line the contract line took. */
 export async function deleteContractLine(
   client: SupabaseClient<Database>,
   customerContractLineId: string

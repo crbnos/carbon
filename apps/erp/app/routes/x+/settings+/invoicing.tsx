@@ -106,8 +106,9 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: "Invalid form data" };
       }
 
-      // The option is disabled in the form while Stripe Connect is not
-      // connected; refuse it here too, or every recurring invoice would be held.
+      // The form only warns (the option's helper text) while Stripe Connect
+      // is not connected; refuse it here, or every recurring invoice would be
+      // held.
       if (
         validation.data.invoiceAutomation === "Post and Send via Stripe" &&
         !(await getStripeConnectAccountId(getCarbonServiceRole(), companyId))

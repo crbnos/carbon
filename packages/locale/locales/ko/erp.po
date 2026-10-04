@@ -5749,6 +5749,9 @@ msgstr "크레딧됨"
 msgid "Credited on <0>{0}</0>"
 msgstr "크레딧으로 적용됨 <0>{0}</0>"
 
+msgid "Crediting needs permission to create invoices."
+msgstr ""
+
 msgid "Credits"
 msgstr "대변"
 
@@ -12907,6 +12910,9 @@ msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 msgid "No eligible operations"
 msgstr "적격 공정이 없습니다"
 
+msgid "No email address for this customer"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "이번 주에 배치된 직원이 없습니다"
 
@@ -13273,9 +13279,6 @@ msgstr "향후 48주 내에 재고 부족이 예상되지 않습니다."
 
 msgid "No storage unit"
 msgstr "보관 단위가 없습니다."
-
-msgid "No Stripe customer is linked"
-msgstr "연결된 Stripe 고객이 없습니다"
 
 msgid "No suppliers yet"
 msgstr "아직 공급업체가 없습니다"
@@ -19074,6 +19077,12 @@ msgstr "스트라이프 마감일"
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe가 고객에게 송장을 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 연락처에 저장됩니다."
 
+msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
+msgstr ""
+
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
 
@@ -19870,6 +19879,9 @@ msgstr "그때는 계약을 취소할 수 없습니다."
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이후의 계획된 송장은 제거됩니다."
+
+msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동안의 공정에 할당할 때 스케줄링이 이를 상한선으로 사용합니다."
@@ -20768,9 +20780,6 @@ msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
 msgid "This contact has no email address"
 msgstr "이 담당자는 이메일 주소가 없습니다."
-
-msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
-msgstr "이 계약은 Stripe을 통해 송장을 보내므로, 청구 고객이 먼저 Stripe 고객에 연결되어야 합니다. 이 고객의 송장을 'Stripe을 통해 전송'으로 전기하여 연결하거나 계약의 송장 관리 설정을 변경하세요."
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 송장을 생성할 권한이 필요합니다."
@@ -22787,8 +22796,8 @@ msgstr "Carbon이 재화 도착을 약속한 시점으로, 배송 방법의 운�
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
 
-msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
-msgstr "각 렌탈 청구 기간의 청구 기한: 단위 사용 전 첫 날에 선불, 또는 임차료 발생 후 마지막 날에 후불."
+msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"

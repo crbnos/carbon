@@ -5749,6 +5749,9 @@ msgstr "クレジット済み"
 msgid "Credited on <0>{0}</0>"
 msgstr "<0>{0}</0>で適用されました"
 
+msgid "Crediting needs permission to create invoices."
+msgstr ""
+
 msgid "Credits"
 msgstr "クレジット"
 
@@ -12907,6 +12910,9 @@ msgstr "このアイテムの編集可能なプロパティはありません。
 msgid "No eligible operations"
 msgstr "対象の工程がありません"
 
+msgid "No email address for this customer"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "今週割り当てられた従業員がいません"
 
@@ -13273,9 +13279,6 @@ msgstr "今後48週間に欠品は予測されていません"
 
 msgid "No storage unit"
 msgstr "保管ユニットがありません"
-
-msgid "No Stripe customer is linked"
-msgstr "Stripe得意先がリンクされていません"
 
 msgid "No suppliers yet"
 msgstr "仕入先がまだありません"
@@ -19074,6 +19077,12 @@ msgstr "Stripe支払期日"
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripeは請求書を得意先にメール送信するため、住所が必要です。これはCarbon内の担当者にも保存されます。"
 
+msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
+msgstr ""
+
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
 
@@ -19870,6 +19879,9 @@ msgstr "その場合、契約をキャンセルすることはできません。
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "契約は終了日に終了し、更新されません。その後の計画済請求書は削除されます。"
+
+msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "外部作業者の期待される毎週の利用可能性。スケジューリングはこれを、週間を通じてこの外部作業者を工程に割り当てる際の上限として使用します。"
@@ -20768,9 +20780,6 @@ msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
 msgstr "この担当者はメールアドレスを持っていません。"
-
-msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
-msgstr "この契約は請求書をStripeで送信するため、請求顧客をあらかじめStripe顧客にリンクする必要があります。このお客様用の請求書を「Stripe送信」で転記することでStripe顧客をリンクするか、契約の請求設定を変更してください。"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "この契約の請求書は自動的に転記されるため、確認には請求書を作成する権限が必要です。"
@@ -22787,8 +22796,8 @@ msgstr "Carbonが商品の到着を約束した日付。出荷方法の輸送日
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "繰延収益、見越収益およびリース利息収益が認識される場合"
 
-msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
-msgstr "各レンタル請求期間が請求対象になるとき：最初の日に前払い（ユニットが使用される前）、または最後の日に後払い（レンタル料が発生した後）。"
+msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"

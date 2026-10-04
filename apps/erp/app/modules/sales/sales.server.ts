@@ -13,7 +13,7 @@ import { serverFns } from "@carbon/server-functions";
 import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
 import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
-import { suggestContractType } from "@carbon/utils";
+import { round, suggestContractType } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -774,6 +774,7 @@ export async function createContractFromSalesOrder(
         "description",
         "saleQuantity",
         "unitPrice",
+        "convertedUnitPrice",
         "taxPercent",
         "invoicedComplete",
         "quantityInvoiced",
@@ -805,7 +806,12 @@ export async function createContractFromSalesOrder(
       if (quantity <= 0) {
         throw new Error("A line with no quantity cannot move to a contract");
       }
-      const rate = Number(line.unitPrice ?? 0);
+      // A contract line's rate is in the contract's currency, which is the
+      // order's: `unitPrice` is base, `convertedUnitPrice` (unitPrice ×
+      // exchangeRate) is what the customer was quoted.
+      const rate = round(
+        Number(line.convertedUnitPrice ?? line.unitPrice ?? 0)
+      );
       if (rate < 0) {
         throw new Error(
           "A line with a negative price cannot move to a contract"

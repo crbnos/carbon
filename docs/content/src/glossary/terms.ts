@@ -526,8 +526,8 @@ export const terms = {
   },
   "billing-timing": {
     term: msg`Billing timing`,
-    definition: msg`When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned.`,
-    href: "/docs/reference/rental-agreements#billing"
+    definition: msg`When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
   },
   "customer-deposit": {
     term: msg`Customer deposit`,

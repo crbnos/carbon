@@ -5749,6 +5749,9 @@ msgstr "Crédité"
 msgid "Credited on <0>{0}</0>"
 msgstr "Crédité le <0>{0}</0>"
 
+msgid "Crediting needs permission to create invoices."
+msgstr ""
+
 msgid "Credits"
 msgstr "Crédits"
 
@@ -12907,6 +12910,9 @@ msgstr "Aucune propriété modifiable pour cet article."
 msgid "No eligible operations"
 msgstr "Aucune opération admissible"
 
+msgid "No email address for this customer"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "Aucun employé affecté cette semaine"
 
@@ -13273,9 +13279,6 @@ msgstr "Aucune rupture de stock prévue au cours des 48 prochaines semaines"
 
 msgid "No storage unit"
 msgstr "Aucune unité de stockage"
-
-msgid "No Stripe customer is linked"
-msgstr "Aucun client Stripe n'est lié"
 
 msgid "No suppliers yet"
 msgstr "Aucun fournisseur pour le moment"
@@ -19074,6 +19077,12 @@ msgstr "Date d'échéance Stripe"
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envoie la facture par email au client, donc une adresse est requise. Cela sera également enregistré dans le contact dans Carbon."
 
+msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
+msgstr ""
+
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
 
@@ -19870,6 +19879,9 @@ msgstr "Le contrat ne peut pas être annulé à ce moment"
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "Le contrat se termine à la date de fin et ne se renouvelle pas. Les factures prévues après celle-ci sont supprimées."
+
+msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "La disponibilité hebdomadaire attendue du prestataire ; la planification l'utilise comme limite supérieure lors de l'attribution de ce prestataire aux opérations de la semaine."
@@ -20768,9 +20780,6 @@ msgstr "Cela complète l'étape de découverte."
 
 msgid "This contact has no email address"
 msgstr "Ce contact n'a pas d'adresse e-mail"
-
-msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
-msgstr "Ce contrat envoie ses factures via Stripe, donc le client doit d'abord être lié à un client Stripe. Créez le lien en comptabilisant une facture pour ce client avec Envoyer via Stripe, ou modifiez le paramètre de facturation du contrat."
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Les factures de ce contrat se comptabilisent automatiquement, donc confirmer le contrat nécessite l'autorisation de créer des factures."
@@ -22787,8 +22796,8 @@ msgstr "Quand Carbon s'est engagé à ce que les marchandises arrivent ; combin�
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Quand reportés, les revenus engagés et les revenus d'intérêts de location seront constatés"
 
-msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
-msgstr "Quand chaque période de facturation de location est exigible pour la facturation : Avance le premier jour, avant l'utilisation de l'unité, ou Arriéré le dernier jour, après que le loyer soit acquis."
+msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Lorsque du stock expiré est utilisé"

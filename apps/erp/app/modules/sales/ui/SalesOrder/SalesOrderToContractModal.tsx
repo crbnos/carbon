@@ -32,7 +32,7 @@ import {
   Input,
   Submit
 } from "~/components/Form";
-import { useCompanyToday, usePermissions } from "~/hooks";
+import { useCompanyToday, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   type ContractDuration,
@@ -44,7 +44,7 @@ import {
   createContractFromSalesOrderValidator,
   type customerContractLineKinds
 } from "../../sales.models";
-import type { SalesOrderLine } from "../../types";
+import type { SalesOrder, SalesOrderLine } from "../../types";
 import ContractMoney from "../Contracts/ContractMoney";
 import { useContractLabels } from "../Contracts/useContractLabels";
 
@@ -78,6 +78,11 @@ const SalesOrderToContractModal = ({
   const fetcher = useFetcher<{}>();
   const companyToday = useCompanyToday();
   const labels = useContractLabels();
+  // The contract keeps the order's currency, so its lines are priced in it.
+  const routeData = useRouteData<{ salesOrder: SalesOrder }>(
+    path.to.salesOrder(orderId)
+  );
+  const currencyCode = routeData?.salesOrder?.currencyCode;
 
   const kindLabels: Record<Kind, string> = {
     "One-time": t`One-time`,
@@ -295,7 +300,13 @@ const SalesOrderToContractModal = ({
                               )}
                               <span className="text-xs text-muted-foreground tabular-nums">
                                 {line.saleQuantity} ×{" "}
-                                <ContractMoney value={line.unitPrice} rate />
+                                <ContractMoney
+                                  value={
+                                    line.convertedUnitPrice ?? line.unitPrice
+                                  }
+                                  currencyCode={currencyCode}
+                                  rate
+                                />
                               </span>
                             </VStack>
                           </HStack>

@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import { round, textToTiptap } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -20,6 +22,7 @@ import {
   updateContractType
 } from "~/modules/sales";
 import { contractDurationOf } from "~/modules/sales/ui/Contracts";
+import { getCompanySettings } from "~/modules/settings";
 
 const logger = getLogger("erp", "contract-update");
 
@@ -96,10 +99,47 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!parsed.success) {
       return { error: { message: "Invalid invoicing setting" }, data: null };
     }
+    const { invoiceAutomation } = parsed.data;
+
+    // As the company setting: with no Stripe account connected every invoice
+    // would be held.
+    if (
+      invoiceAutomation === "Post and Send via Stripe" &&
+      !(await getStripeConnectAccountId(getCarbonServiceRole(), companyId))
+    ) {
+      return {
+        error: { message: "Connect Stripe in Integrations first" },
+        data: null
+      };
+    }
+
+    // A confirmed contract's invoices post on their own in any mode but
+    // Draft Only, so choosing one needs the invoicing permission, as
+    // confirming does. A Draft is checked when it is confirmed.
+    if (invoiceAutomation !== "Draft Only") {
+      const current = await getContract(client, id);
+      if (current.error || current.data?.companyId !== companyId) {
+        return { error: { message: "Contract not found" }, data: null };
+      }
+      if (current.data.status !== "Draft") {
+        // Null is the company's setting; an unreadable one is treated as
+        // posting.
+        const effective =
+          invoiceAutomation ??
+          (await getCompanySettings(client, companyId)).data?.invoiceAutomation;
+        if (effective !== "Draft Only") {
+          await requirePermissions(request, {
+            update: "sales",
+            create: "invoicing"
+          });
+        }
+      }
+    }
+
     const update = await updateContractInvoiceAutomation(client, {
       id,
       companyId,
-      invoiceAutomation: parsed.data.invoiceAutomation,
+      invoiceAutomation,
       updatedBy: userId
     });
     if (update.error) {

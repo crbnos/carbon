@@ -1,5 +1,5 @@
 {
-  "totalTools": 1544,
+  "totalTools": 1542,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1171,7 +1171,6 @@
     {"name":"sales_createPricingRule","classification":"WRITE","paramCount":17,"schema":"8a6a210cb492","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create","paginates":false,"defaults":"always"},
     {"name":"sales_createReplacementSalesOrder","classification":"WRITE","paramCount":1,"schema":"f41daa12b05a","response":"3797626bd17e","injectAuth":"companyGroupId+companyId+createdBy+updatedBy+userId","permission":"sales:create","paginates":false},
     {"name":"sales_createSalesReturnOrderCredit","classification":"WRITE","paramCount":3,"schema":"b73e7908d9de","response":"00404e686415","injectAuth":"companyGroupId+companyId+createdBy+updatedBy+userId","permission":"sales:create","paginates":false},
-    {"name":"sales_deleteContractLine","classification":"DESTRUCTIVE","paramCount":1,"schema":"3d08011d330a","response":"bcde375ebd4c","injectAuth":"companyId","permission":"sales:delete","paginates":false},
     {"name":"sales_deleteCustomer","classification":"DESTRUCTIVE","paramCount":1,"schema":"09e48c79fb16","response":"bcde375ebd4c","injectAuth":"companyId","permission":"sales:delete","paginates":false},
     {"name":"sales_deleteCustomerBankAccount","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"sales:delete","paginates":false},
     {"name":"sales_deleteCustomerContact","classification":"DESTRUCTIVE","paramCount":2,"schema":"3fd22b0165d4","response":"700b93baa3ef","injectAuth":"companyId","permission":"sales:delete","paginates":false},
@@ -1342,7 +1341,6 @@
     {"name":"sales_setSalesReturnOrderLineDisposition","classification":"WRITE","paramCount":2,"schema":"a8526e566c94","response":"3797626bd17e","injectAuth":"companyId+updatedBy+userId","permission":"sales:update","paginates":false},
     {"name":"sales_shortCloseSalesReturnOrderLine","classification":"WRITE","paramCount":3,"schema":"a3098b18fc68","response":"none","injectAuth":"companyId+userId","permission":"sales:update","paginates":false},
     {"name":"sales_updateContract","classification":"WRITE","paramCount":28,"schema":"7557d2f66389","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
-    {"name":"sales_updateContractInvoiceAutomation","classification":"WRITE","paramCount":2,"schema":"321dd5c5e689","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateContractNotes","classification":"WRITE","paramCount":2,"schema":"2ab51d0b91d5","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateContractType","classification":"WRITE","paramCount":2,"schema":"9a1390515c73","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerContact","classification":"WRITE","paramCount":4,"schema":"f0fc7be0eef2","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},

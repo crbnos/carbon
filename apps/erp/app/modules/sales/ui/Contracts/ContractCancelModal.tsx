@@ -91,6 +91,8 @@ const ContractCancelModal = ({
   const isRefused = !isPreviewing && !!previewError;
   const credit = preview ? currencyFormatter.format(preview.credit) : "";
   const removed = preview?.removedInvoices ?? 0;
+  // The credit is a credit memo, which needs the invoicing permission.
+  const canCredit = permissions.can("create", "invoicing");
 
   return (
     <Modal
@@ -156,7 +158,12 @@ const ContractCancelModal = ({
                         <Boolean
                           name="creditUnusedTime"
                           label={t`Credit unused time (${credit})`}
-                          description={t`Drafts a credit memo for the time already invoiced after the end date.`}
+                          description={
+                            canCredit
+                              ? t`Drafts a credit memo for the time already invoiced after the end date.`
+                              : t`Crediting needs permission to create invoices.`
+                          }
+                          isDisabled={!canCredit}
                           bordered
                         />
                       )}

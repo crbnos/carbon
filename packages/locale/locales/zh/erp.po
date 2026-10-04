@@ -5749,6 +5749,9 @@ msgstr "已贷项"
 msgid "Credited on <0>{0}</0>"
 msgstr "于 <0>{0}</0> 贷记"
 
+msgid "Crediting needs permission to create invoices."
+msgstr ""
+
 msgid "Credits"
 msgstr "贷方"
 
@@ -12907,6 +12910,9 @@ msgstr "此项目没有可编辑的属性。"
 msgid "No eligible operations"
 msgstr "没有符合条件的操作"
 
+msgid "No email address for this customer"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
 
@@ -13273,9 +13279,6 @@ msgstr "未来 48 周内没有预计缺货"
 
 msgid "No storage unit"
 msgstr "无存储单元"
-
-msgid "No Stripe customer is linked"
-msgstr "未链接Stripe客户"
 
 msgid "No suppliers yet"
 msgstr "还没有供应商"
@@ -19074,6 +19077,12 @@ msgstr "Stripe 到期日期"
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe 将发票通过电子邮件发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
+msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
+msgstr ""
+
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
 
@@ -19870,6 +19879,9 @@ msgstr "该合同不能被取消。"
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "合同在期末日期结束，不会续期。之后的已计划发票将被移除。"
+
+msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "外协人员的预期每周可用性；排程在整周将此外协人员分配给工序时使用此作为上限。"
@@ -20768,9 +20780,6 @@ msgstr "这完成了发现步骤。"
 
 msgid "This contact has no email address"
 msgstr "此联系人没有电子邮件地址"
-
-msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
-msgstr "此合同通过Stripe发送其发票，所以其计费客户必须首先链接到一个Stripe客户。通过为该客户过账发票并选择通过Stripe发送来建立链接，或更改合同的开票设置。"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "此合同的发票自动过账，所以确认它需要创建发票的权限。"
@@ -22787,8 +22796,8 @@ msgstr "货物的承诺到达日期；结合发货方式的运输天数，这驱
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "当递延收入、应计收入和租赁利息收入被确认时"
 
-msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
-msgstr "每个租赁计费期的发票时间：预先在期首（单位使用之前）或延后在期末（租金产生之后）。"
+msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"

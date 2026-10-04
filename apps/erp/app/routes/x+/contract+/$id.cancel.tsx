@@ -100,6 +100,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { endDate, reason, creditUnusedTime } = validation.data;
+  // Crediting the unused time drafts a credit memo, so it needs the
+  // invoicing permission too. The preview writes nothing and stays open.
+  if (creditUnusedTime) {
+    await requirePermissions(request, {
+      update: "sales",
+      create: "invoicing"
+    });
+  }
+
   const result = await contracts.invoke("post-customer-contract", {
     type: "cancel",
     customerContractId: id,

@@ -5749,6 +5749,9 @@ msgstr "Скредитовано"
 msgid "Credited on <0>{0}</0>"
 msgstr "Зачислено {0}"
 
+msgid "Crediting needs permission to create invoices."
+msgstr ""
+
 msgid "Credits"
 msgstr "Кредиты"
 
@@ -12907,6 +12910,9 @@ msgstr "Нет редактируемых свойств для этого эл�
 msgid "No eligible operations"
 msgstr "Нет подходящих операций"
 
+msgid "No email address for this customer"
+msgstr ""
+
 msgid "No employees assigned this week"
 msgstr "На эту неделю не назначены сотрудники"
 
@@ -13273,9 +13279,6 @@ msgstr "Отсутствие дефицита запасов не прогноз
 
 msgid "No storage unit"
 msgstr "Нет единицы хранения"
-
-msgid "No Stripe customer is linked"
-msgstr "Покупатель Stripe не привязан"
 
 msgid "No suppliers yet"
 msgstr "Поставщиков еще нет"
@@ -19074,6 +19077,12 @@ msgstr "Срок выполнения Stripe"
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe отправляет счет-фактуру клиенту по электронной почте, поэтому требуется адрес. Это также будет сохранено в контактное лицо в Carbon."
 
+msgid "Stripe emails the invoices to the customer, so an address is required. It is also saved to the contract's invoice contact in Carbon, if it has one."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Confirming will create one on your connected account."
+msgstr ""
+
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
 
@@ -19870,6 +19879,9 @@ msgstr "Контракт не может быть отменен тогда"
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "Контракт завершается в дату окончания и не продлевается. Запланированные счета-фактуры после него удаляются."
+
+msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "Ожидаемая еженедельная доступность подрядчика; планирование использует это как верхний предел при назначении подрядчика операциям в течение недели."
@@ -20768,9 +20780,6 @@ msgstr "Это завершает Шаг обнаружения."
 
 msgid "This contact has no email address"
 msgstr "Это контактное лицо не имеет адреса электронной почты"
-
-msgid "This contract sends its invoices via Stripe, so its billing customer must be linked to a Stripe customer first. Link one by posting an invoice for this customer with Send via Stripe, or change the contract's invoicing setting."
-msgstr "Этот контракт отправляет свои счета-фактуры через Stripe, поэтому его клиент выставления счетов должен быть сначала привязан к клиенту Stripe. Привяжите его, проведя счет-фактуру для этого клиента с Send via Stripe, или измените параметр выставления счетов контракта."
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Счета-фактуры этого контракта проводятся автоматически, поэтому его подтверждение требует права доступа для создания счетов-фактур."
@@ -22787,8 +22796,8 @@ msgstr "Когда Carbon обязалась доставить товары; в
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Отложенная выручка, накопленная выручка и доход от процентов по аренде будут признаны"
 
-msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
-msgstr "Когда каждый период выставления счетов за аренду подлежит выставлению счетов: Авансом в его первый день, до того как единица была использована, или Постфактум в его последний день, после получения ренты."
+msgid "When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Когда используется Запас с истекшим сроком"
