@@ -359,7 +359,7 @@ export default function SalesDashboard() {
           ? item.date
           : "month" in item
             ? item.month
-            : // @ts-ignore
+            : // @ts-expect-error
               item.monthKey,
         item.value
       ])

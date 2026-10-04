@@ -2248,6 +2248,9 @@ msgstr "Klucze API do programowego dostępu do danych Carbon."
 msgid "API, webhooks, and integrations"
 msgstr "API, webhooks i integracje"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Zastosowano"
 
@@ -4173,8 +4176,14 @@ msgstr "Kliknij, aby przesłać plik rysunku PDF"
 msgid "Clock In"
 msgstr "Rozpoczęcie pracy"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Zakończenie pracy"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Zalogowany od <0/>"
@@ -5818,9 +5827,6 @@ msgstr "Codzienne zużycie"
 
 msgid "Dark"
 msgstr "Ciemny"
-
-msgid "Dark Mode"
-msgstr "Tryb ciemny"
 
 msgid "Dashboard"
 msgstr "Panel glowny"
@@ -10785,12 +10791,6 @@ msgstr "Użycie Całożycia (Jednostki)"
 
 msgid "Light"
 msgstr "Jasne"
-
-msgid "Light Mode"
-msgstr "Tryb jasny"
-
-msgid "Light or dark mode"
-msgstr "Tryb jasny lub ciemny"
 
 msgid "Lights Out (24×7)"
 msgstr "Bez oświetlenia (24×7)"
@@ -17568,9 +17568,6 @@ msgstr "Skonfiguruj Carbon zgodnie z tym, jak działa twoja firma: lokalizacje, 
 msgid "Set Clock Out"
 msgstr "Ustaw zakończenie pracy"
 
-msgid "Set clock-out time"
-msgstr "Ustaw czas wylogowania"
-
 msgid "Set Console PIN"
 msgstr "Ustaw PIN konsoli"
 
@@ -17591,6 +17588,8 @@ msgstr "Ustaw ilość"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Ustaw datę rozpoczęcia umowy, aby zobaczyć traktowanie księgowe."
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Skonfiguruj aplikację authenticator"
@@ -22585,9 +22584,6 @@ msgstr "Możesz zmienić styl interfejsu użytkownika w dowolnym momencie za po�
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Możesz zobaczyć ten klucz tylko raz. Przechowuj go bezpiecznie."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Rozpocząłeś pracę o <0/>. Możesz edytować czas zakończenia pracy poniżej lub potwierdzić, że nadal pracujesz."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

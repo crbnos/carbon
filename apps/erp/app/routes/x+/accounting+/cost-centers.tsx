@@ -14,7 +14,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
@@ -22,7 +22,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import { Outlet, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { getCostCentersTree } from "~/modules/accounting";
 import {

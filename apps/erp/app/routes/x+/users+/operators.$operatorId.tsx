@@ -15,12 +15,14 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   useMount,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { Input, Select, Submit } from "~/components/Form";
 import { convertOperatorValidator } from "~/modules/users/users.models";
 import { convertConsoleOperatorToUser } from "~/modules/users/users.server";
@@ -96,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ConvertOperatorRoute() {
   const { t } = useLingui();
   const { operator } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
@@ -117,7 +119,7 @@ export default function ConvertOperatorRoute() {
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />

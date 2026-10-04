@@ -38,17 +38,15 @@ const RichText = ({ documentId, notes }: RichTextProps) => {
               throw new Error("Invalid user");
             return (
               <Fragment key={note.id}>
-                {/* @ts-ignore */}
+                {/* @ts-expect-error */}
                 <Avatar path={note.user.avatarUrl} name={note.user?.fullName} />
                 <VStack spacing={1}>
-                  {/* @ts-ignore */}
                   <p className="font-bold">{note.user?.fullName!}</p>
                   <HTML text={note.note} />
                   <HStack spacing={4}>
                     <span className="text-sm text-muted-foreground">
                       <DateTime value={note.createdAt} variant="relative" />
                     </span>
-                    {/* @ts-ignore */}
                     {user.id === note.user.id && (
                       <Form method="post" action={path.to.deleteNote(note.id)}>
                         <Button type="submit" variant="link" size="md">

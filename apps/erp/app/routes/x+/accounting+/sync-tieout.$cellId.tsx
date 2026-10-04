@@ -21,12 +21,12 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";

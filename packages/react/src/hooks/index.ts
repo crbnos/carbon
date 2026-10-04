@@ -2,18 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCloseRoute } from "./useCloseRoute";
 import useDebounce from "./useDebounce";
 import useDisclosure from "./useDisclosure";
 import { useEdition } from "./useEdition";
 import useEscape from "./useEscape";
 import useHydrated from "./useHydrated";
+import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import useIsMobile from "./useIsMobile";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import { useKeyboardWedge } from "./useKeyboardWedge";
 import useLocalStorage from "./useLocalStorage";
-import { useMode, useOptimisticMode } from "./useMode";
+import {
+  getSystemMode,
+  useMode,
+  useModePreference,
+  useOptimisticMode
+} from "./useMode";
 import useMount from "./useMount";
 import { useNanoStore } from "./useNanoStore";
 import { useNProgress } from "./useNProgress";
@@ -29,6 +36,7 @@ import useThrottle from "./useThrottle";
 import { useUrlParams } from "./useUrlParams";
 
 export {
+  getSystemMode,
   useDebounce,
   useDisclosure,
   useEdition,
@@ -41,6 +49,9 @@ export {
   useKeyboardWedge,
   useLocalStorage,
   useMode,
+  useCloseRoute,
+  useIdle,
+  useModePreference,
   useMount,
   useNanoStore,
   useNProgress,

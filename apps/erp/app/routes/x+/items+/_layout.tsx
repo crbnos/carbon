@@ -11,6 +11,8 @@ import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Items" }];
 };

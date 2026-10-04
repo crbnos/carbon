@@ -3,9 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { redirectBeforeLoaders } from "@carbon/utils";
+import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 

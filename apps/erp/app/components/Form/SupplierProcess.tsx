@@ -57,7 +57,6 @@ const SupplierProcess = ({
         ref={triggerRef}
         options={options}
         {...props}
-        // @ts-ignore
         label={props?.label ?? "Work Center"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {

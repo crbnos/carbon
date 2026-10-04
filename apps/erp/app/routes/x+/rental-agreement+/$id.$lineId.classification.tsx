@@ -9,9 +9,9 @@ import { flash } from "@carbon/auth/session.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+
 import { rentalAgreementLineClassificationValidator } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
 

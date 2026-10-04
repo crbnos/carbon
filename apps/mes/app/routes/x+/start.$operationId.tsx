@@ -10,9 +10,8 @@ import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getNextIncompleteSerialEntity,

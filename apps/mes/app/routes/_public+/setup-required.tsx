@@ -5,9 +5,9 @@
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { getAuthSession } from "@carbon/auth/session.server";
 import { Button, Heading, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {

@@ -6,8 +6,8 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { createQualityIssue } from "~/services/quality.server";
 import { path, requestReferrer } from "~/utils/path";
 

@@ -201,6 +201,23 @@ whom it deleted.
   - Each warn or delete batch that still fails after its retries is logged and skipped.
     It never ends the run, so the training reminders after it still go out.
 
+- **One exception to "warned first": the manual purge.** `purge-inactive-companies`
+  (`scheduled/purge-inactive-companies.ts`) runs only when someone presses Invoke on it
+  in the Inngest dashboard, on Carbon Cloud. `purgeRefusal` (tested) is the first thing
+  the run checks: any edition but Cloud is refused, and so is any run whose event is not
+  `inngest/function.invoked`, so sending `carbon/purge-inactive-companies` with the event
+  key does nothing. Off Cloud the function is not registered at all
+  (`packages/jobs/src/inngest/index.ts`). It deletes inactive
+  companies immediately, with no email and no waiting period, including ones the weekly
+  job warned for a later date. The inactivity rule is the weekly job's, unchanged
+  (`loadInactiveCompanies` and the in-transaction `inactiveCompanyOwner`, both in
+  `scheduled/company-cleanup.ts`, shared by the two). It is a DRY RUN unless the payload
+  says `{ "dryRun": false }` (`resolvePurgeOptions`, tested): an Invoke with an empty
+  payload returns the companies it would delete and deletes none. `limit` caps a run, 500
+  at most. An ownerless company is still never deleted.
+- **Caps.** Both paths handle at most 500 companies a run, ten per Inngest step
+  (`MAX_COMPANY_DELETIONS_PER_RUN`, `MAX_COMPANIES_PER_RUN`).
+
 - **The group is the unit** (`selectInactiveCompanies`, `inactive-companies.ts`, tested).
   A company goes when it has no `companyPlan` row, no company in its group has one, it is
   over 7 days old, and it is not protected. `companyPlan` rows are written only by Stripe
@@ -226,9 +243,11 @@ whom it deleted.
     rolls the delete back, so the company row stays as the retry target and nothing is
     orphaned once a delete commits. A company whose cleanup failed part-way may have
     lost some files; it is still warned and due, so the next run finishes it. The search
-    index is dropped after the commit, and a failure there is only logged. Provider
+    index and audit log tables (`searchIndex_<id>`, `auditLog_<id>`: named after the
+    company, so outside the catalog) are dropped after the commit by `deleteCompanies`
+    (`company-cleanup.ts`), and a failure there is only logged. Provider
     tokens are not revoked at the provider.
-- At most 100 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
+- At most 500 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
 - A company with live intercompany history (`intercompanyTransaction` is NO ACTION) fails
   its delete, is logged, and is retried every week.
 

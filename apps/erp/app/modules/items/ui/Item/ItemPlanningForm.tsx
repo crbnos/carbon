@@ -95,7 +95,7 @@ const ItemPlanningForm = ({
                 value: policy
               }))}
               onChange={(selected) => {
-                // @ts-ignore
+                // @ts-expect-error
                 setPolicy(selected?.value || "Manual Reorder");
               }}
             />

@@ -1961,12 +1961,6 @@ export type TimecardSpec = {
   note?: string;
 };
 
-export type OpenTimecardSpec = {
-  /** UTC "HH:MM:SS" today; no later than the earliest running production event. */
-  clockIn: string;
-  note?: string;
-};
-
 /** Never today: a today row pre-filters the MES schedule to that one work center. */
 export type PeopleAssignmentSpec = {
   dayOffset: DayOffset;
@@ -2083,7 +2077,6 @@ export type OpsData = {
   replacementParts: ReplacementPartSpec[];
   trainings: TrainingSpec[];
   timecards: TimecardSpec[];
-  openTimecard: OpenTimecardSpec;
   peopleAssignments: PeopleAssignmentSpec[];
   peopleAbsences: PeopleAbsenceSpec[];
   suggestions: SuggestionSpec[];

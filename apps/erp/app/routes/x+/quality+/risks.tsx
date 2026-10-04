@@ -6,13 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { data, Outlet, redirect, useLoaderData } from "react-router";
+import { data, Outlet, useLoaderData } from "react-router";
 import { getRisks } from "~/modules/quality/quality.service";
 import type { Risk } from "~/modules/quality/types";
 import RiskRegistersTable from "~/modules/quality/ui/RiskRegister/RiskRegistersTable";

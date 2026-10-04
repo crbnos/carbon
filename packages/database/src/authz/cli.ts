@@ -18,6 +18,7 @@ import { syncAuthz } from "./sync";
 //   sync              make the database match manifest.ts and helpers/
 //   migration <name>  write a migration shipping every rule and helper production does
 //                     not have yet (see migration.ts; migration.test.ts fails until it does)
+//     --tables=a,b    also re-ship these tables' rules, shipped or not
 async function main() {
   const command = process.argv[2];
   if (command === "migration") {
@@ -33,6 +34,18 @@ async function main() {
       throw new Error(
         `authz migration: fix these first:\n${todo.problems.join("\n")}`
       );
+    // A baselined table keeps the policy text production had at takeover: the
+    // meaning matches its rule, the wording may not (an unwrapped auth.uid()
+    // that Postgres then re-evaluates per row). --tables re-lands the named
+    // rules as the manifest renders them.
+    const again = process.argv
+      .find((arg) => arg.startsWith("--tables="))
+      ?.slice("--tables=".length)
+      .split(",")
+      .filter(Boolean);
+    for (const table of again ?? []) {
+      if (!todo.tables.includes(table)) todo.tables.push(table);
+    }
     if (!todo.tables.length && !todo.helpers.length) {
       console.log("authz: production already has every rule and helper");
       return;

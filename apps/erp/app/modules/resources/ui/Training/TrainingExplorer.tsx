@@ -42,8 +42,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { Reorder, useDragControls } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -209,7 +209,6 @@ export default function TrainingExplorer() {
               values={sortOrder}
               onReorder={onReorder}
               className="w-full"
-              disabled={isDisabled}
             >
               {sortOrder.map((sortId) => (
                 <DraggableStepItem
@@ -286,7 +285,6 @@ export default function TrainingExplorer() {
       </VStack>
       {questionDisclosure.isOpen && (
         <TrainingQuestionForm
-          // @ts-ignore
           initialValues={trainingQuestionInitialValues}
           isDisabled={isDisabled}
           onClose={questionDisclosure.onClose}

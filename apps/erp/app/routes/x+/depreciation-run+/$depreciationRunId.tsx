@@ -6,14 +6,14 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useSettings, useUser } from "~/hooks";

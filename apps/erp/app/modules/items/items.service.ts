@@ -1870,7 +1870,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     const parentId = item.parentMaterialId;
 
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
-      // @ts-ignore
+      // @ts-expect-error
       lookup[itemId] = { id: itemId, children: [] };
     }
 
@@ -1883,7 +1883,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       rootItems.push(treeItem);
     } else {
       if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
-        // @ts-ignore
+        // @ts-expect-error
         lookup[parentId] = { id: parentId, children: [] };
       }
 
@@ -4377,15 +4377,12 @@ export async function upsertItemPostingGroup(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("itemPostingGroup")
-      .update(sanitize(itemPostingGroup))
-      // @ts-ignore
-      .eq("id", itemPostingGroup.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("itemPostingGroup")
+    .update(sanitize(itemPostingGroup))
+    .eq("id", itemPostingGroup.id)
+    .select("id")
+    .single();
 }
 
 /** @mcp upsert */
@@ -5996,15 +5993,12 @@ export async function upsertMaterialForm(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("materialForm")
-      .update(sanitize(materialForm))
-      // @ts-ignore
-      .eq("id", materialForm.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("materialForm")
+    .update(sanitize(materialForm))
+    .eq("id", materialForm.id)
+    .select("id")
+    .single();
 }
 
 /**
@@ -6152,15 +6146,12 @@ export async function upsertMaterialSubstance(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("materialSubstance")
-      .update(sanitize(materialSubstance))
-      // @ts-ignore
-      .eq("id", materialSubstance.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("materialSubstance")
+    .update(sanitize(materialSubstance))
+    .eq("id", materialSubstance.id)
+    .select("id")
+    .single();
 }
 
 /**

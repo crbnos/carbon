@@ -44,7 +44,6 @@ const Radios = ({
       )}
       <RadioGroup
         {...getInputProps({
-          // @ts-ignore
           id: name
         })}
         name={name}

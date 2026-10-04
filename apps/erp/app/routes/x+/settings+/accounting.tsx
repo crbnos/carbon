@@ -21,12 +21,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {

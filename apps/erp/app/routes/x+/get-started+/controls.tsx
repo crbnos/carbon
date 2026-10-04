@@ -4,8 +4,8 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { SetupControls } from "@carbon/onboarding/ui";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 const INTERNAL_DOMAINS = ["@carbon.us.org", "@carbon.ms"];

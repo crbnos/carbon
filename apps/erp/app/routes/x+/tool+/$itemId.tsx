@@ -17,7 +17,7 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
@@ -26,13 +26,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, Outlet, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ToolSummary } from "~/modules/items";
@@ -258,7 +252,6 @@ export default function ToolRoute() {
                                   <BoMExplorer
                                     itemType="Tool"
                                     makeMethod={resolved.makeMethod}
-                                    // @ts-ignore
                                     methods={resolved.methods}
                                     methodId={resolved.makeMethod.id}
                                     filterText={filterText}

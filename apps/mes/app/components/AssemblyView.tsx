@@ -1660,7 +1660,7 @@ export function AssemblyView({
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
 
   return (
-    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
       <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border">
         {/* Full-height segment matching the Flag issue / Complete / timer buttons. */}

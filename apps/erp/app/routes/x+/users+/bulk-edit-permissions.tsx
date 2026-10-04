@@ -10,9 +10,8 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   bulkPermissionsValidator,
   userPermissionsValidator

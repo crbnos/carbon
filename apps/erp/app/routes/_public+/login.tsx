@@ -8,6 +8,7 @@ import {
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
+  getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
   RATE_LIMIT
@@ -52,7 +53,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition, getClientIp } from "@carbon/utils";
+import { Edition, getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -65,13 +66,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useSearchParams
-} from "react-router";
+import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -88,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (authSession) {
     if (await verifyAuthSession(authSession)) {
-      throw redirect(path.to.authenticatedRoot);
+      throw redirect(getRedirectTo(request));
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
@@ -138,7 +133,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, botToken } = validation.data;
+  const { email, botToken, redirectTo } = validation.data;
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
   // above. Keyed by the normalized email so an attacker rotating IPs, or
@@ -206,7 +201,7 @@ export async function action({ request }: ActionFunctionArgs) {
       await lockout.reset(email);
       logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
       const sessionCookie = await setAuthSession(request, { authSession });
-      return redirect(path.to.authenticatedRoot, {
+      return redirect(redirectTo || path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
       });
     }
@@ -231,7 +226,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email);
+    const magicLink = await sendMagicLink(email, undefined, redirectTo);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {

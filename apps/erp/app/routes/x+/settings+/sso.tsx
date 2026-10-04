@@ -16,8 +16,9 @@ import {
   verifySsoDomain
 } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

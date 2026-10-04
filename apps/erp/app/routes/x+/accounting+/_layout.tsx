@@ -7,14 +7,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getIntegrationIdsByRole } from "@carbon/ee";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
   MetaFunction,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect } from "react-router";
+import { Outlet } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import {
   getAccountsList,
@@ -25,6 +25,8 @@ import AccountingBetaGate from "~/modules/accounting/ui/AccountingBetaGate";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Accounting" }];

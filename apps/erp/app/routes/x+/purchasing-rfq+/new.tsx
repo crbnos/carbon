@@ -6,9 +6,9 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { useCompanyToday, useUser } from "~/hooks";
 import type { PurchasingRFQStatusType } from "~/modules/purchasing";
 import {

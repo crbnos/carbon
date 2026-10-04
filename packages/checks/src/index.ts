@@ -24,6 +24,7 @@ export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
 export { noNumericPrecision } from "./conformance/no-numeric-precision";
 export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+export { noRawRedirect } from "./conformance/no-raw-redirect";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";

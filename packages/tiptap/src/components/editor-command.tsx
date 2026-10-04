@@ -4,12 +4,14 @@
 
 import type { Range } from "@tiptap/core";
 import { Command } from "cmdk";
-import { useAtom, useSetAtom } from "jotai";
 import type { ComponentPropsWithoutRef, FC } from "react";
 import { createContext, forwardRef, useEffect } from "react";
 import type tunnel from "tunnel-rat";
-import { queryAtom, rangeAtom } from "../utils/atoms";
-import { novelStore } from "../utils/store";
+import {
+  setCommandQuery,
+  setCommandRange,
+  useCommandStore
+} from "../utils/store";
 
 export const EditorCommandTunnelContext = createContext(
   {} as ReturnType<typeof tunnel>
@@ -24,8 +26,8 @@ export const EditorCommandOut: FC<EditorCommandOutProps> = ({
   query,
   range
 }) => {
-  const setQuery = useSetAtom(queryAtom, { store: novelStore });
-  const setRange = useSetAtom(rangeAtom, { store: novelStore });
+  const setQuery = setCommandQuery;
+  const setRange = setCommandRange;
 
   useEffect(() => {
     setQuery(query);
@@ -71,7 +73,8 @@ export const EditorCommand = forwardRef<
   HTMLDivElement,
   ComponentPropsWithoutRef<typeof Command>
 >(({ children, className, ...rest }, ref) => {
-  const [query, setQuery] = useAtom(queryAtom);
+  const query = useCommandStore((state) => state.query);
+  const setQuery = setCommandQuery;
 
   return (
     <EditorCommandTunnelContext.Consumer>

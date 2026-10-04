@@ -12,6 +12,7 @@ export { mrpFunction } from "./mrp";
 export { nightlyReplanFunction } from "./nightly-replan";
 export { notificationDigestFunction } from "./notification-digest";
 export { notificationPurgeFunction } from "./notification-purge";
+export { purgeInactiveCompaniesFunction } from "./purge-inactive-companies";
 export { recurringBillingFunction } from "./recurring-billing";
 export { revenueRecognitionProposalFunction } from "./revenue-recognition-proposal";
 export {

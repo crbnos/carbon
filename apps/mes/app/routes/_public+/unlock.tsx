@@ -6,8 +6,7 @@ import {
   assertIsPost,
   error,
   isAuthProviderEnabled,
-  RATE_LIMIT,
-  safeRedirect
+  RATE_LIMIT
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -40,7 +39,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -56,7 +55,6 @@ import type {
 import {
   data,
   Form,
-  redirect,
   useFetcher,
   useLoaderData,
   useSearchParams
@@ -109,7 +107,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request);
   }
   if (!isSessionIdleLocked(authSession)) {
-    throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
+    throw redirect(redirectTo || path.to.authenticatedRoot);
   }
 
   // Unlock credentials: a verified TOTP factor and/or a registered passkey.
@@ -257,7 +255,7 @@ async function unlockWithPasskey(request: Request) {
       );
     }
 
-    return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", setCompanyId(resumed.companyId)]
@@ -345,7 +343,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return redirect(
-    safeRedirect(result.redirectTo ?? redirectTo, path.to.authenticatedRoot),
+    (result.redirectTo ?? redirectTo) || path.to.authenticatedRoot,
     {
       headers: [
         ["Set-Cookie", result.sessionCookie],

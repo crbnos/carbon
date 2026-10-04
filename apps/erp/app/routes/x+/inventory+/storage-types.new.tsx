@@ -6,8 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data } from "react-router";
 import { storageTypeValidator, upsertStorageType } from "~/modules/inventory";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { setCustomFields } from "~/utils/form";
@@ -61,12 +63,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewStorageTypeRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = { name: "" };
 
   return (
     <StorageTypeForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

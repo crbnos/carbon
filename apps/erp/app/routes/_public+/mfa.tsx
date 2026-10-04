@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, RATE_LIMIT, safeRedirect } from "@carbon/auth";
+import { assertIsPost, error, RATE_LIMIT } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
@@ -29,7 +29,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuCircleAlert } from "react-icons/lu";
@@ -38,13 +38,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  Form,
-  redirect,
-  useFetcher,
-  useSearchParams
-} from "react-router";
+import { data, Form, useFetcher, useSearchParams } from "react-router";
 import { z } from "zod";
 
 import { getEmployeeCompanies } from "~/modules/settings";
@@ -138,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return redirect(
-    safeRedirect(result.redirectTo ?? redirectTo, path.to.authenticatedRoot),
+    (result.redirectTo ?? redirectTo) || path.to.authenticatedRoot,
     { headers }
   );
 }

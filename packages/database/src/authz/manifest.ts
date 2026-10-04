@@ -139,15 +139,15 @@ export const manifest = {
     CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((("companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[])) AND (EXISTS ( SELECT 1
    FROM ("agentMessage" m
      JOIN "agentThread" t ON (((t.id = m."threadId") AND (t."companyId" = m."companyId"))))
-  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (auth.uid())::text))))));
+  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (( SELECT auth.uid() AS uid))::text))))));
     CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[])) AND (EXISTS ( SELECT 1
    FROM ("agentMessage" m
      JOIN "agentThread" t ON (((t.id = m."threadId") AND (t."companyId" = m."companyId"))))
-  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (auth.uid())::text))))));
+  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (( SELECT auth.uid() AS uid))::text))))));
     CREATE POLICY "UPDATE" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_role() AS get_companies_with_employee_role)::text[])) AND (EXISTS ( SELECT 1
    FROM ("agentMessage" m
      JOIN "agentThread" t ON (((t.id = m."threadId") AND (t."companyId" = m."companyId"))))
-  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (auth.uid())::text))))));
+  WHERE ((m.id = "agentMessagePart"."messageId") AND (m."companyId" = "agentMessagePart"."companyId") AND (t."userId" = (( SELECT auth.uid() AS uid))::text))))));
   `
   ),
   agentThread: policies({

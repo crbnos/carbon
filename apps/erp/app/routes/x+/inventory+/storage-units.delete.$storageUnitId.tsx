@@ -16,6 +16,7 @@ import {
   ModalOverlay,
   ModalTitle
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import type {
@@ -24,7 +25,6 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import {
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigate,

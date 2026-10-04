@@ -5,19 +5,13 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";

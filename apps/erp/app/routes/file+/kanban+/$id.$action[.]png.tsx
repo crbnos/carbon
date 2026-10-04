@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const buffer = await generateQRCodeBuffer(kanbanUrl, 36, qrColor);
 
-  // @ts-ignore
+  // @ts-expect-error
   return new Response(buffer, {
     headers: {
       "Content-Type": "image/png",

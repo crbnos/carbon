@@ -56,7 +56,7 @@ const Row = <T extends object>({
             key={cell.id}
             cell={cell}
             columnIndex={columnIndex}
-            // @ts-ignore
+            // @ts-expect-error
             editableComponents={editableComponents}
             editedCells={editedCells}
             isSelected={isSelected}

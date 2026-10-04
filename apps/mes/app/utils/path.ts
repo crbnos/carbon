@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { requestReferrer } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 export const ERP_URL = getAppUrl();
@@ -238,12 +239,10 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-export const requestReferrer = (request: Request) => {
-  return request.headers.get("referer");
-};
+export { requestReferrer };
 
 export const getParams = (request: Request) => {
-  const url = new URL(requestReferrer(request) ?? "");
+  const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };

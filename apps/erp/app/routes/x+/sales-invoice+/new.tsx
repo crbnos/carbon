@@ -8,10 +8,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import {
   createSalesInvoiceFromSalesOrder,
@@ -23,7 +22,7 @@ import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceFo
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
@@ -59,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (result.error || !result?.data) {
         throw redirect(
-          request.headers.get("Referer") ?? path.to.salesOrders,
+          requestReferrer(request) ?? path.to.salesOrders,
           await flash(
             request,
             error(
@@ -84,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (result.error || !result?.data) {
         throw redirect(
-          request.headers.get("Referer") ?? path.to.shipment(sourceDocumentId),
+          requestReferrer(request) ?? path.to.shipment(sourceDocumentId),
           await flash(
             request,
             error(

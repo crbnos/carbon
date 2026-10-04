@@ -6,9 +6,9 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+
 import { getRentalAgreement, getRentalAgreementLine } from "~/modules/sales";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path, requestReferrer } from "~/utils/path";

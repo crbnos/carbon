@@ -7,13 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { SupplierPart } from "~/modules/items";
 import {

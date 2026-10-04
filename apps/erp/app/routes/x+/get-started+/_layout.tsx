@@ -14,7 +14,6 @@ import {
   stateMap
 } from "@carbon/onboarding";
 import {
-  detectImplementationSignals,
   getImplementationCheckStates,
   getImplementationFieldValues,
   getImplementationHub,
@@ -27,7 +26,7 @@ import {
   HubProvider,
   toFormFields
 } from "@carbon/onboarding/ui";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type {
@@ -37,7 +36,6 @@ import type {
 } from "react-router";
 import {
   Outlet,
-  redirect,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -46,15 +44,19 @@ import {
 import { GroupedContentSidebar } from "~/components/Layout";
 import { useSettings, useUser } from "~/hooks";
 import {
+  isCustomerPreview,
   setCustomerPreview,
   useCustomerPreview
 } from "~/hooks/useCustomerPreview";
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
+import { getImplementationSignals } from "~/services/implementation-signals.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
+
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Get Started" }];
@@ -160,11 +162,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getImplementationCheckStates(client, companyId),
     getImplementationFieldValues(client, companyId),
     getImplementationRows(client, companyId),
-    detectImplementationSignals(client, companyId)
+    getImplementationSignals(client, companyId)
   ]);
 
   return {
     hub: hub.data,
+    previewAsCustomer: isCustomerPreview(request.headers.get("cookie")),
     checkStates: checkStates.data ?? [],
     fieldValues: fieldValues.data ?? [],
     rows: rows.data ?? [],
@@ -281,8 +284,8 @@ export default function GetStartedLayout() {
   );
 }
 
-// Internal-only bar: enter or exit the customer preview. State lives in
-// sessionStorage (useCustomerPreview), so toggling is a button, not navigation —
+// Internal-only bar: enter or exit the customer preview. State lives in a
+// session cookie (useCustomerPreview), so toggling is a button, not navigation —
 // it persists across pages + reloads without a URL param.
 function PreviewBar({ previewing }: { previewing: boolean }) {
   if (previewing) {

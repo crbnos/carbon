@@ -120,7 +120,7 @@ const DemandProjectionsTable = memo(
                 <ItemThumbnail
                   size="sm"
                   thumbnailPath={row.original.thumbnailPath}
-                  // @ts-ignore
+                  // @ts-expect-error
                   type={row.original.type}
                 />
 

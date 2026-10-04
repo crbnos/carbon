@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- FILL: source path and `git hash-object <source>` — the staleness check reads these two -->
+<meta name="explain-source" content=".ai/plans/YYYY-MM-DD-slug.md" />
+<meta name="explain-source-hash" content="0000000000000000000000000000000000000000" />
+<!-- FILL: the feature name + "plan" -->
+<title>Feature name plan</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #ffffff; --ink: #262323; --faint: #6b6764;
+    --hairline: #e3e2de; --accent: #1e84b0; --accent-soft: #dff5ff;
+    --warn: #a3520f; --warn-soft: #fff1e0; --ok: #2c7a14; --ok-soft: #e4f8da;
+    --code-bg: #efefeb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141416; --panel: #1c1c1f; --ink: #ececea; --faint: #a3a19c;
+      --hairline: #2e2e33; --accent: #5cc2ee; --accent-soft: #10303f;
+      --warn: #f0a35e; --warn-soft: #3a2614; --ok: #8fd672; --ok-soft: #1b3112;
+      --code-bg: #26262a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 16px 96px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 8px 0 12px; }
+  h2 { font-size: 20px; margin: 56px 0 12px; padding-top: 24px; border-top: 1px solid var(--hairline); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  p, li { max-width: 72ch; }
+  a { color: var(--accent); }
+  code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+         background: var(--code-bg); border-radius: 4px; padding: 1px 5px; }
+  .kicker { color: var(--faint); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .tldr { font-size: 18px; border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 0; }
+  .callout { border-radius: 10px; padding: 12px 16px; margin: 16px 0; border: 1px solid var(--hairline); }
+  .callout.example { background: var(--accent-soft); }
+  .callout.warn { background: var(--warn-soft); }
+  .callout .label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+                    text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 8px 0 8px 44px; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 8px; width: 28px; height: 28px;
+                        border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+                        font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+  figure { margin: 20px 0; background: var(--panel); border: 1px solid var(--hairline);
+           border-radius: 12px; padding: 16px; overflow-x: auto; }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+  /* SVG diagram primitives — use these classes, never inline colors */
+  svg.diagram { display: block; width: 100%; height: auto; min-width: 560px; }
+  svg .box { fill: var(--panel); stroke: var(--hairline); stroke-width: 1.5; }
+  svg .box.hot { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+  svg .box.new { stroke: var(--ok); stroke-width: 2; fill: var(--ok-soft); }
+  svg .box.risk { stroke: var(--warn); stroke-width: 2; fill: var(--warn-soft); }
+  svg .lane { fill: none; stroke: var(--hairline); stroke-dasharray: 4 4; }
+  svg .edge { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+  svg .edge.hot { stroke: var(--accent); stroke-width: 2.5; }
+  svg text { fill: var(--ink); font: 14px ui-sans-serif, system-ui, sans-serif; }
+  svg text.small { fill: var(--faint); font-size: 12px; }
+  svg text.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  svg marker path { fill: var(--faint); }
+  svg marker.hot path { fill: var(--accent); }
+  /* Tabs (before / after) */
+  .tabs { border: 1px solid var(--hairline); border-radius: 12px; background: var(--panel); margin: 16px 0; }
+  .tabs [role=tablist] { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--hairline); }
+  .tabs button { font: inherit; font-size: 14px; border: 0; background: none; color: var(--faint);
+                 padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  .tabs button[aria-selected=true] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tabs [role=tabpanel] { padding: 12px 16px; }
+  .tabs [role=tabpanel][hidden] { display: none; }
+  /* Decisions */
+  details { border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel); margin: 8px 0; }
+  details > summary { cursor: pointer; padding: 10px 14px; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; color: var(--faint); margin-right: 8px; display: inline-block; transition: transform .15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details > div { padding: 0 14px 12px 34px; }
+  .choice { font-weight: 600; }
+  .rejected { color: var(--faint); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+         border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
+  .tag.human { background: var(--ok-soft); color: var(--ok); }
+  .tag.assumed { background: var(--warn-soft); color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; border-bottom: 1px solid var(--hairline); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--faint); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  ul.checks { list-style: none; padding-left: 0; }
+  ul.checks li { padding: 6px 0 6px 28px; position: relative; }
+  ul.checks li::before { content: "☐"; position: absolute; left: 0; color: var(--accent); }
+  dl.terms dt { font-weight: 600; margin-top: 12px; }
+  dl.terms dd { margin: 2px 0 0 0; color: var(--faint); max-width: 72ch; }
+  footer { margin-top: 64px; color: var(--faint); font-size: 13px; border-top: 1px solid var(--hairline); padding-top: 16px; }
+  /* Plan-only */
+  .progress { height: 8px; background: var(--hairline); border-radius: 999px; overflow: hidden; margin: 12px 0 4px; }
+  .progress > span { display: block; height: 100%; background: var(--ok); }
+  .task .meta { color: var(--faint); font-size: 14px; }
+  .task.done > summary { color: var(--faint); text-decoration: line-through; }
+  .task pre { font: 13px/1.6 ui-monospace, Menlo, monospace; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <!-- FILL: Plan · the plan's **Branch:** value (delete the segment if it has none) · date · source path -->
+    <p class="kicker">Plan · BRANCH-OR-none · 2026-01-01 · <code>.ai/plans/YYYY-MM-DD-slug.md</code></p>
+    <!-- FILL: the feature name -->
+    <h1>Feature name — implementation plan</h1>
+    <!-- FILL: goal — 2 STE-80 sentences: what exists when the plan is done, and how we prove it -->
+    <p class="tldr">Sentence one. Sentence two.</p>
+    <!-- FILL: done / total from the plan's Progress checklist (else its Steps checklist); width = done/total as a percent.
+         Spec: the plan's **Spec:** path, or the word "none". -->
+    <div class="progress"><span style="width: 0%"></span></div>
+    <p class="kicker">0 of 0 tasks done · spec: <code>SPEC-PATH-OR-none</code></p>
+  </header>
+
+  <section>
+    <h2>Task graph</h2>
+    <!-- FILL: one column per dependency layer (layer 0 = tasks with no dependencies).
+         Column x positions: 40, 240, 440, 640, then +200 per extra column (widen the viewBox
+         by 200 each time; the figure scrolls). Box 160×48, rows 70px apart.
+         No "Depends on:" lines in the plan → draw the tasks in list order, 4 per row, no
+         "Layer" labels, and say in the caption that the arrows show list order only.
+         Edges go from a task to the tasks that depend on it.
+         class "new" = done, "hot" = next task to run, "risk" = task with a STOP condition. -->
+    <figure>
+      <svg class="diagram" viewBox="0 0 800 200" role="img" aria-label="FILL: task dependency graph">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" /></marker>
+        </defs>
+        <text class="small" x="40" y="24">Layer 0</text>
+        <text class="small" x="240" y="24">Layer 1</text>
+        <rect class="box new" x="40" y="40" width="160" height="48" rx="8" />
+        <text x="120" y="69" text-anchor="middle">1 · Migration</text>
+        <path class="edge" d="M200,64 L238,64" marker-end="url(#arrow)" />
+        <rect class="box hot" x="240" y="40" width="160" height="48" rx="8" />
+        <text x="320" y="69" text-anchor="middle">2 · Types</text>
+      </svg>
+      <!-- FILL: one sentence on which tasks can run in parallel -->
+      <figcaption>Tasks in the same column can run in parallel.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Tasks</h2>
+    <!-- FILL: one <details class="task"> per plan task, in order. Add class "done" when its
+         Progress box is checked. Summary = number + imperative title. Body = what it does
+         (1–2 STE-80 sentences), files, verify command + expected output, STOP condition.
+         Delete each sub-part (Files / Verify / Stop if) the source does not give — never
+         fill one in from the code. -->
+    <details class="task">
+      <summary><b>1.</b> Imperative title</summary>
+      <div>
+        <p class="meta">Depends on: none</p>
+        <p></p>
+        <p class="meta">Files</p>
+        <ul><li><code>path/to/file.ts</code> — what changes</li></ul>
+        <p class="meta">Verify</p>
+        <pre>command
+# Expected: output</pre>
+        <div class="callout warn"><span class="label">Stop if</span><p>The assumption that, if false, ends the task.</p></div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Decisions</h2>
+    <!-- FILL: the plan's decisions, if it lists any (a Decisions / Notes section). Same shape
+         as the spec page: summary = question + choice, body = why. Delete if there are none. -->
+    <details>
+      <summary>Question? <span class="choice">Choice.</span></summary>
+      <div><p>Why: </p></div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Risks and stop points</h2>
+    <!-- FILL: every STOP / escape-hatch line in the plan, as a table. Delete if there are none. -->
+    <div class="table-wrap">
+      <table>
+        <tr><th>Task</th><th>Stop if</th><th>Then</th></tr>
+        <tr><td></td><td></td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Out of scope</h2>
+    <!-- FILL: the union of every task's "Out of scope" line, deduplicated. Delete if there are none. -->
+    <ul><li></li></ul>
+  </section>
+
+  <footer>
+    <!-- FILL: source path -->
+    Generated by <code>/explain</code> from <code>.ai/plans/YYYY-MM-DD-slug.md</code>.
+    If this page and the source disagree, the source is correct.
+  </footer>
+
+</main>
+<script>
+  // Tabs: no dependencies. Works for every [data-tabs] block on the page.
+  document.querySelectorAll("[data-tabs]").forEach(function (root) {
+    var tabs = root.querySelectorAll("[role=tab]");
+    var panels = root.querySelectorAll("[role=tabpanel]");
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener("click", function () {
+        tabs.forEach(function (t, j) { t.setAttribute("aria-selected", String(i === j)); });
+        panels.forEach(function (p, j) { p.hidden = i !== j; });
+      });
+    });
+  });
+</script>
+</body>
+</html>

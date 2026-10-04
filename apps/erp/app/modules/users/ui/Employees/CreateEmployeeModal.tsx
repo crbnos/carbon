@@ -12,11 +12,12 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import {
   Boolean,
   Hidden,
@@ -44,7 +45,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   // plan. When gated (Community / Starter), every invite defaults to the seeded
   // Admin type — "everyone is an admin".
   const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
@@ -70,7 +71,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />

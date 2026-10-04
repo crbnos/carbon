@@ -36,6 +36,7 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
+  DrawerTitle,
   Heading,
   HStack,
   ScrollArea,
@@ -885,9 +886,11 @@ export function IntegrationForm({
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-center gap-2">
-            <Heading size="h3" className="truncate">
-              {integration.name}
-            </Heading>
+            <DrawerTitle asChild>
+              <Heading size="h3" className="truncate">
+                {integration.name}
+              </Heading>
+            </DrawerTitle>
             {installed && <Badge variant="green">Installed</Badge>}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

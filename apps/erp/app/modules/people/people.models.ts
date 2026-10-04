@@ -82,6 +82,12 @@ export const clockOutValidator = z.object({
   note: zfd.text(z.string().optional())
 });
 
+// The "Forgot to Clock Out?" prompt: the clock-out is the time being set.
+export const setClockOutValidator = z.object({
+  intent: z.literal("clockOut"),
+  clockOut: z.string().min(1, { message: "Clock out is required" })
+});
+
 export const timecardValidator = z.object({
   id: zfd.text(z.string().optional()),
   employeeId: z.string().min(1, { message: "Employee is required" }),

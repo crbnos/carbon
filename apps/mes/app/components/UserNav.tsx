@@ -24,14 +24,17 @@ import {
   Switch,
   useDisclosure,
   useMode,
+  useModePreference,
   useRouteData,
   useSidebar
 } from "@carbon/react";
+import { modeValidator } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useRef } from "react";
 import {
   LuBuilding,
   LuChevronDown,
+  LuLaptop,
   LuLogOut,
   LuMapPin,
   LuMonitor,
@@ -70,11 +73,20 @@ export function UserNav({
   const { isMobile } = useSidebar();
 
   const mode = useMode();
+  const modePreference = useModePreference();
 
-  const modeSubmitRef = useRef<HTMLButtonElement>(null);
   const consoleSubmitRef = useRef<HTMLButtonElement>(null);
 
   const fetcher = useFetcher<typeof action>();
+
+  const onModeChange = (value: string) => {
+    const parsed = modeValidator.shape.mode.safeParse(value);
+    if (!parsed.success || parsed.data === modePreference) return;
+    document.body.removeAttribute("style");
+    const formData = new FormData();
+    formData.append("mode", parsed.data);
+    fetcher.submit(formData, { method: "post", action: path.to.root });
+  };
 
   const updateLocation = (value: string) => {
     const formData = new FormData();
@@ -226,41 +238,42 @@ export function UserNav({
               ) : null}
             </>
           )}
-          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center justify-start">
-                <DropdownMenuIcon
-                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
-                />
-                <Trans>Dark Mode</Trans>
-              </div>
-              <div>
-                <Switch
-                  checked={mode === "dark"}
-                  onCheckedChange={() => modeSubmitRef.current?.click()}
-                />
-                <fetcher.Form
-                  action={path.to.root}
-                  method="post"
-                  onSubmit={() => {
-                    document.body.removeAttribute("style");
-                  }}
-                  className="sr-only"
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <DropdownMenuIcon
+                icon={mode === "dark" ? <LuMoon /> : <LuSun />}
+              />
+              <Trans>Appearance</Trans>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={modePreference}
+                onValueChange={onModeChange}
+              >
+                <DropdownMenuRadioItem
+                  value="light"
+                  onSelect={(e) => e.preventDefault()}
                 >
-                  <input
-                    type="hidden"
-                    name="mode"
-                    value={mode === "dark" ? "light" : "dark"}
-                  />
-                  <button
-                    ref={modeSubmitRef}
-                    className="sr-only"
-                    type="submit"
-                  />
-                </fetcher.Form>
-              </div>
-            </div>
-          </DropdownMenuItem>
+                  <DropdownMenuIcon icon={<LuSun />} />
+                  <Trans>Light</Trans>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="dark"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <DropdownMenuIcon icon={<LuMoon />} />
+                  <Trans>Dark</Trans>
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="system"
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  <DropdownMenuIcon icon={<LuLaptop />} />
+                  <Trans>System</Trans>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
           {!isOperatorPinnedIn && (
             <>
               {consoleEnabled && (

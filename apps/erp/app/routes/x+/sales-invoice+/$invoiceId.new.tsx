@@ -13,8 +13,9 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useUser } from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import {

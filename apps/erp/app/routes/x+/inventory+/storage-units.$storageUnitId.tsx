@@ -6,18 +6,14 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import {
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { data, Outlet, useLoaderData } from "react-router";
 import {
   getEffectiveWorkCenterId,
   getStorageUnit,
@@ -130,7 +126,7 @@ export async function clientAction({
 
 export default function EditStorageUnitRoute() {
   const { storageUnit, inheritedWorkCenter } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: storageUnit?.id ?? undefined,
@@ -150,7 +146,7 @@ export default function EditStorageUnitRoute() {
         initialValues={initialValues}
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
-        onClose={() => navigate(-1)}
+        onClose={() => closeRoute()}
       />
       <Outlet />
     </>

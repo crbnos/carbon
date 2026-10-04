@@ -30,7 +30,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
-import { getClientIp } from "@carbon/utils";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
@@ -38,13 +38,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import {
-  data,
-  Link,
-  redirect,
-  useFetcher,
-  useSearchParams
-} from "react-router";
+import { data, Link, useFetcher, useSearchParams } from "react-router";
 import { z } from "zod";
 
 import type { Result } from "~/types";

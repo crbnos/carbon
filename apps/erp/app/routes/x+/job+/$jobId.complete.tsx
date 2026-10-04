@@ -8,9 +8,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   jobCompleteValidator,
   returnPickedRemaindersForJob

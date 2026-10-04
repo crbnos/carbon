@@ -2248,6 +2248,9 @@ msgstr "Clés API pour un accès programmatique à vos données Carbon."
 msgid "API, webhooks, and integrations"
 msgstr "API, Webhooks et Intégrations"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Appliqué"
 
@@ -4173,8 +4176,14 @@ msgstr "Cliquer pour téléverser un dessin PDF"
 msgid "Clock In"
 msgstr "Pointage début"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Pointage fin"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
@@ -5818,9 +5827,6 @@ msgstr "Utilisation quotidienne"
 
 msgid "Dark"
 msgstr "Sombre"
-
-msgid "Dark Mode"
-msgstr "Mode sombre"
 
 msgid "Dashboard"
 msgstr "Tableau de bord"
@@ -10785,12 +10791,6 @@ msgstr "Utilisation de Durée de Vie (Unités)"
 
 msgid "Light"
 msgstr "Clair"
-
-msgid "Light Mode"
-msgstr "Mode Clair"
-
-msgid "Light or dark mode"
-msgstr "Mode clair ou sombre"
 
 msgid "Lights Out (24×7)"
 msgstr "Lumières éteintes (24×7)"
@@ -17568,9 +17568,6 @@ msgstr "Configurez Carbon en fonction du fonctionnement de votre société : sit
 msgid "Set Clock Out"
 msgstr "Définir le pointage fin"
 
-msgid "Set clock-out time"
-msgstr "Définir l'heure de départ"
-
 msgid "Set Console PIN"
 msgstr "Définir le PIN Console"
 
@@ -17591,6 +17588,8 @@ msgstr "Définir la quantité"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Définir la date de début de l'accord pour voir le traitement comptable."
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Configurer l'application d'authentification"
@@ -22585,9 +22584,6 @@ msgstr "Vous pouvez modifier le style de l'interface utilisateur à tout moment 
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Vous ne pouvez voir cette clé qu'une seule fois. Conservez-la en sécurité."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Vous êtes connecté à <0/>. Vous pouvez modifier votre heure de déconnexion ci-dessous ou confirmer que vous travaillez toujours."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

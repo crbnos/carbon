@@ -41,7 +41,13 @@ rules — this file does not repeat them:
   `@carbon/notifications`, `@carbon/stripe`, `@carbon/tiptap`, `@carbon/kv`,
   `@carbon/lib`, `@carbon/locale`, `@carbon/ee`, `@carbon/env`, `@carbon/config`.
 - `react-router` is the framework import for `LoaderFunctionArgs`,
-  `ActionFunctionArgs`, `redirect`, `data`, `useNavigate`, etc.
+  `ActionFunctionArgs`, `data`, `useNavigate`, etc. — but NOT `redirect`.
+- `redirect` comes from `@carbon/utils`. It only goes to a path on this origin;
+  anything else (an absolute URL, `//host`, an empty value) lands on the home
+  page, so a destination read from a query string or a form needs no validation
+  at the call site. Leaving the origin on purpose (OAuth provider, Stripe, ERP ↔
+  MES) is `redirectExternal`, with a URL the server built. Enforced by the
+  `no-raw-redirect` check (`@carbon/checks`).
 - Server-only auth helpers come from subpaths:
   `@carbon/auth/auth.server` (`requirePermissions`), `@carbon/auth/session.server`
   (`flash`), and `@carbon/auth` (`error`, `success`, `assertIsPost`).
@@ -104,11 +110,14 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   re-runs every matched loader on every navigation otherwise. Use
   `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`, naming the
   route params the loader reads and either the search params it reads or `search: "all"`
-  for a list loader. Shell data that does not gate rendering is returned as a promise.
-  Render it through `Await` when it is visible on first paint, so it streams in the
-  server HTML (`ImplementationData` in `~/hooks/useImplementationNavItem` is the
-  pattern); read it with `useResolved` (`~/hooks/useResolved`) when a late value is
-  harmless. `useResolved` keeps the last value while a revalidation is pending, so a
+  for a list loader. Shell data that does not gate rendering is returned as a promise
+  and read with `useResolved` (`~/hooks/useResolved`) when a late value is harmless.
+  Data that adds or removes something on first paint (a nav item, a card) is awaited
+  instead: streamed in, it arrives after the page is drawn and pushes it around — the
+  Implementation Hub's nav item and home card did exactly that. Await only the part
+  that decides whether the thing exists (the hub row) and stream what fills it in
+  (its progress), holding the layout until it lands.
+  `useResolved` keeps the last value while a revalidation is pending, so a
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
@@ -140,6 +149,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `bg-*`/`text-*` classes.
 - App-level shared components live in `apps/erp/app/components/` and are
   re-exported from its `index.ts`.
+- A component or hook both ERP and MES need lives in a package (`@carbon/react`,
+  `@carbon/auth`, `@carbon/utils`), not as a copy in each app. An app file of the
+  same name may only re-export it. Enforced by the `no-duplicated-app-file` check
+  (`@carbon/checks`); the copies that predate it are baselined.
 - Functional components, props typed inline or via `type`/`z.infer<typeof validator>`.
 - Styling is Tailwind. Theme colors are CSS variables — use `hsl(var(--primary))`
   for theme-aware fills (e.g. Recharts), not hard-coded colors.
@@ -157,8 +170,10 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 - **Client read-through cache**: TanStack React Query (`window.clientCache`);
   query keys are company-scoped, e.g. `["things", companyId]`
   (`apps/erp/app/utils/react-query.ts`).
-- **Global UI state**: nanostores atoms + `@nanostores/react`
-  (e.g. `apps/erp/app/stores/items.ts`).
+- **Global UI state**: zustand (`apps/erp/app/stores/ui.ts`). nanostores is
+  legacy: it now only holds the realtime lists (`stores/items.ts`, `customers.ts`,
+  `suppliers.ts`, `people.ts`) and goes when that provider is rebuilt — do not add
+  new atoms.
 
 ## Path Helpers
 

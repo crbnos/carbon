@@ -6,9 +6,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { insertNote, noteValidator } from "~/modules/shared";
+import { requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -31,12 +32,10 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (createNote.error) {
     throw redirect(
-      request.headers.get("Referer") ?? new URL(request.url).pathname,
+      requestReferrer(request) ?? new URL(request.url).pathname,
       await flash(request, error(createNote.error, "Error creating note"))
     );
   }
 
-  throw redirect(
-    request.headers.get("Referer") ?? new URL(request.url).pathname
-  );
+  throw redirect(requestReferrer(request) ?? new URL(request.url).pathname);
 }

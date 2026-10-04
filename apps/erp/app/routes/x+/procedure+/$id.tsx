@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -18,13 +18,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Outlet, useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import { getProcedure, getProcedureVersions } from "~/modules/production";

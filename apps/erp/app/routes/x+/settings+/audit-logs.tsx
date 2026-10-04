@@ -17,7 +17,11 @@ import {
 import { requireFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import {
+  isUnaffectedByNavigation,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
@@ -26,7 +30,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { Link, Outlet, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -177,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId
         );
         // Redirect to the signed URL for download
-        return redirect(downloadUrl);
+        return redirectExternal(downloadUrl);
       } catch (err) {
         logger.error("Failed to generate audit archive download URL", {
           companyId,

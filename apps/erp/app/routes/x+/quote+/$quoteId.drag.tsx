@@ -11,10 +11,11 @@ import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import { generateText, Output } from "ai";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import {
@@ -83,7 +84,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     let revision = "0";
     try {
       const { output: parsedFilename } = await generateText({
-        // @ts-ignore
         model: openai("gpt-4o-mini"),
         output: Output.object({
           schema: z.object({
@@ -264,7 +264,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (partId && modelId) {
       updates.push(
-        // @ts-ignore
+        // @ts-expect-error
         client
           .from("item")
           .update({ modelUploadId: modelId })

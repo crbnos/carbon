@@ -2425,12 +2425,12 @@ export async function getInspections(
   }
 
   if (args?.status) {
-    // @ts-ignore - status is a valid enum value
+    // @ts-expect-error - status is a valid enum value
     query = query.eq("status", args.status);
   }
 
   if (args?.source) {
-    // @ts-ignore - source is a valid enum value
+    // @ts-expect-error - source is a valid enum value
     query = query.eq("sourceDocument", args.source);
   }
 

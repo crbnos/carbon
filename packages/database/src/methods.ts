@@ -67,7 +67,7 @@ export function getJobMethodTreeArray(
   });
 }
 
-function getJobMethodTreeArrayToTree(
+export function getJobMethodTreeArrayToTree(
   items: JobMethod[],
   parentMaterialId: string | null = null
 ): JobMethodTreeItem[] {

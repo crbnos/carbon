@@ -11,12 +11,12 @@ import {
   ScrollArea,
   VStack
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getItem, getPickMethod, upsertPickMethod } from "~/modules/items";
 import { resolveLocationId } from "~/modules/shared/location.server";
@@ -105,7 +105,7 @@ export default function ItemInventoryRoute() {
         <ScrollArea className="h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
           <InventoryItemHeader
             itemReadableId={item.readableIdWithRevision ?? item.readableId}
-            // @ts-ignore
+            // @ts-expect-error
             itemType={item.type}
           />
           <VStack className="p-2">

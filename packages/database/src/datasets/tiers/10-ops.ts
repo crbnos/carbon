@@ -70,20 +70,13 @@ export async function runTier10(ctx: Ctx): Promise<void> {
 
   // companySettings has no companyId, so the wipe keeps it; without the flag
   // both apps hide the time clock and redirect away from the timecard pages.
-  ctx.log("time clock — enabled, clocked in today");
+  ctx.log("time clock — enabled");
   await insertRow(
     ctx,
     "companySettings",
     { id: ctx.companyId, timeCardEnabled: true },
     { onConflict: '("id") DO UPDATE SET "timeCardEnabled" = true' }
   );
-  // The MES reads the open entry with maybeSingle, so there is exactly one.
-  await insertRow(ctx, "timeCardEntry", {
-    employeeId: ctx.userId,
-    clockIn: resolveTimestamp(ctx.anchor, 0, data.openTimecard.clockIn),
-    clockOut: null,
-    note: data.openTimecard.note
-  });
 
   ctx.log(
     `people assignments — ${data.peopleAssignments.length}, absences — ${data.peopleAbsences.length}`

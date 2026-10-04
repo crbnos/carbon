@@ -197,7 +197,7 @@ export async function upsertDocument(
     return (
       client
         .from("document")
-        // @ts-ignore
+        // @ts-expect-error
         .insert({ ...document, type })
         .select("*")
         .single()
@@ -386,7 +386,7 @@ export async function updateDocumentLabels(
     .eq("userId", document.userId)
     .then(() => {
       return client.from("documentLabel").insert(
-        // @ts-ignore
+        // @ts-expect-error
         document.labels.map((label) => ({
           documentId: document.documentId,
           label,

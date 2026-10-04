@@ -107,9 +107,8 @@ const CustomerAccountsTable = memo(
             <HStack>
               <Avatar
                 size="sm"
-                // @ts-ignore
+                // @ts-expect-error
                 name={row.original.user?.fullName}
-                // @ts-ignore
                 path={row.original.user?.avatarUrl}
               />
 
@@ -168,7 +167,7 @@ const CustomerAccountsTable = memo(
           accessorKey: "customer.customerTypeId",
           header: t`Customer Type`,
           cell: ({ row }) => (
-            // @ts-ignore
+            // @ts-expect-error
             <Enumerable value={row.original.customer?.customerType?.name} />
           ),
           meta: {

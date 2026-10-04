@@ -2,19 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
-import { requestReferrer } from "./path";
-
-vi.mock("@carbon/auth", () => ({
-  CARBON_API_URL: "https://api.example.com",
-  getAppUrl: () => "https://app.example.com",
-  getMESUrl: () => "https://mes.example.com",
-  SUPABASE_URL: "https://supabase.example.com"
-}));
-vi.mock("@carbon/files/media", () => ({
-  getPrivateUrl: vi.fn(),
-  getRawModelUrl: vi.fn()
-}));
+import { describe, expect, it } from "vitest";
+import { requestReferrer } from "./headers";
 
 const request = (url: string, headers: Record<string, string>) =>
   new Request(url, { headers });

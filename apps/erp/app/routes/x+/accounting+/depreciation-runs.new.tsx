@@ -6,9 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   depreciationRunValidator,
   getBaseCurrencyDecimalPlaces,

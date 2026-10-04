@@ -56,7 +56,7 @@ const EditableNumber = <T extends object>(
 
       onUpdate({ [accessorKey]: next });
 
-      // @ts-ignore
+      // @ts-expect-error
       mutation(accessorKey, isEmpty ? "" : next, row)
         .then(({ error }) => {
           if (error) {

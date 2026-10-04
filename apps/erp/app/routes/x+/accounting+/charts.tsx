@@ -7,10 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Outlet, redirect, useLoaderData } from "react-router";
+import { data, Outlet, useLoaderData } from "react-router";
 import { usePermissions, useSettings } from "~/hooks";
 import type { Chart } from "~/modules/accounting";
 import {

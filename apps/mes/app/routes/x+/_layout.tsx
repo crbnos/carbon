@@ -42,6 +42,8 @@ import {
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
+  redirect,
+  redirectExternal,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
 } from "@carbon/utils";
@@ -59,7 +61,6 @@ import {
   data,
   Form,
   Outlet,
-  redirect,
   useLoaderData,
   useNavigate
 } from "react-router";
@@ -247,7 +248,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     : { entityCertified: true, userCertified: true, entityRequired: false };
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
-    throw redirect(path.to.onboarding);
+    // Onboarding lives in the ERP: another origin.
+    throw redirectExternal(path.to.onboarding);
   }
 
   if (!locations.data || locations.data.length === 0) {
@@ -480,7 +482,7 @@ export default function AuthenticatedRoute() {
   }
 
   return (
-    <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
+    <div className="h-dvh w-full overflow-y-auto lg:overflow-hidden">
       {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
       {isIdle && !itarScreen && !mfaScreen && (
         <SessionLockOverlay
@@ -521,7 +523,10 @@ export default function AuthenticatedRoute() {
                     timeCardEnabled={timeCardEnabled}
                   />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
-                    <Outlet />
+                    {/* A company switch stays on the same page. Without the key the page
+                        keeps its state, so a form still held the previous company's
+                        values and saving wrote them to the new one. */}
+                    <Outlet key={companyId} />
                   </div>
                   <ShortcutHelp />
                   {timeCardEnabled && (

@@ -6,12 +6,13 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data, useNavigate } from "react-router";
 import { procedureValidator } from "~/modules/production/production.models";
 import { upsertProcedure } from "~/modules/production/production.service";
 import ProcedureForm from "~/modules/production/ui/Procedures/ProcedureForm";

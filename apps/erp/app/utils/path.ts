@@ -8,7 +8,7 @@ import {
   getMESUrl,
   SUPABASE_URL
 } from "@carbon/auth";
-import { getRequestOrigin } from "@carbon/utils";
+import { requestReferrer } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -2505,29 +2505,7 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-/**
- * The Referer header, reduced to a SAME-ORIGIN relative path (or null). Many
- * actions redirect back here — returning the raw header would let a crafted
- * request bounce the user to an attacker origin (CWE-601 open redirect), so a
- * cross-origin or unparsable referer yields null and callers fall back to
- * their fixed route.
- *
- * Compared with the origin the client addressed (`getRequestOrigin`), not
- * `request.url`'s: behind the proxy that is the internal scheme and host, which
- * never matches a real Referer.
- */
-export const requestReferrer = (request: Request, withParams = true) => {
-  const referer = request.headers.get("referer");
-  if (!referer) return null;
-  try {
-    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
-    const url = new URL(referer, origin);
-    if (url.origin !== origin) return null;
-    return url.pathname + url.search + url.hash;
-  } catch {
-    return null;
-  }
-};
+export { requestReferrer };
 
 export const getParams = (request: Request) => {
   const url = new URL(requestReferrer(request) ?? "/", "http://relative.local");

@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -47,7 +47,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
   Link,
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigate

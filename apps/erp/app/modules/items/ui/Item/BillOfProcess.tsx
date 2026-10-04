@@ -47,8 +47,8 @@ import { Editor } from "@carbon/react/Editor";
 import { getItemById, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -901,7 +901,6 @@ const BillOfProcess = ({
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
-          // @ts-ignore
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
         />
@@ -1836,7 +1835,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">

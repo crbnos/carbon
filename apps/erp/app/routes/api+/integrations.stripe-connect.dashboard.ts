@@ -8,8 +8,8 @@ import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.serv
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { createExpressDashboardLoginLink } from "@carbon/stripe/connect.server";
+import { redirect, redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 const logger = getLogger("stripe-connect");
@@ -57,7 +57,7 @@ async function handle({ request }: { request: Request }) {
       return Response.json({ redirectUrl: loginLinkUrl });
     }
 
-    return redirect(loginLinkUrl);
+    return redirectExternal(loginLinkUrl);
   } catch (err: any) {
     logger.error("Failed to open Stripe Express Dashboard", { error: err });
 

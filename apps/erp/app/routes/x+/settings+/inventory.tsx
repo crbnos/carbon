@@ -27,6 +27,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
@@ -40,7 +41,7 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
   getCompanySettings,
@@ -54,7 +55,6 @@ import {
   updateReturnPickedMaterialTimingSetting,
   updateShelfLifeSettings
 } from "~/modules/settings";
-
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

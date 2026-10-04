@@ -7,9 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   fixedAssetOutOfServiceValidator,
   getFixedAsset,

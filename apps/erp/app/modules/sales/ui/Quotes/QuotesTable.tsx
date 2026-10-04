@@ -79,7 +79,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
             <ItemThumbnail
               size="md"
               thumbnailPath={row.original.thumbnailPath}
-              // @ts-ignore
+              // @ts-expect-error
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>

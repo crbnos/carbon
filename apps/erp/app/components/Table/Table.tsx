@@ -1239,6 +1239,13 @@ const Table = <T extends object>({
                           key={header.id}
                           colSpan={header.colSpan}
                           id={`header-${header.id}`}
+                          aria-sort={
+                            sorted === 1
+                              ? "ascending"
+                              : sorted === -1
+                                ? "descending"
+                                : undefined
+                          }
                           className={cn(
                             "py-3 whitespace-nowrap bg-card",
                             header.column.id === "Select" ? "px-2" : "px-4",

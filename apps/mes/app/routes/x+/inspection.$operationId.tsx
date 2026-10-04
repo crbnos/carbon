@@ -12,8 +12,9 @@ import {
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {

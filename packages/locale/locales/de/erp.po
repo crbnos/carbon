@@ -2248,6 +2248,9 @@ msgstr "API-Schlüssel für programmgesteuerten Zugriff auf Ihre Carbon-Daten."
 msgid "API, webhooks, and integrations"
 msgstr "API, Webhooks und Integrationen"
 
+msgid "Appearance"
+msgstr ""
+
 msgid "Applied"
 msgstr "Angewendet"
 
@@ -4173,8 +4176,14 @@ msgstr "Klicken Sie hier, um eine PDF-Zeichnung hochzuladen."
 msgid "Clock In"
 msgstr "Einstempeln"
 
+msgid "Clock out"
+msgstr ""
+
 msgid "Clock Out"
 msgstr "Ausstempeln"
+
+msgid "Clocked in"
+msgstr ""
 
 msgid "Clocked in since <0/>"
 msgstr "Angemeldet seit <0/>"
@@ -5818,9 +5827,6 @@ msgstr "Tägliche Nutzung"
 
 msgid "Dark"
 msgstr "Dunkel"
-
-msgid "Dark Mode"
-msgstr "Dunkler Modus"
 
 msgid "Dashboard"
 msgstr "Instrumententafel"
@@ -10785,12 +10791,6 @@ msgstr "Gesamtnutzung (Einheiten)"
 
 msgid "Light"
 msgstr "Hell"
-
-msgid "Light Mode"
-msgstr "Hellmodus"
-
-msgid "Light or dark mode"
-msgstr "Helles oder dunkles Design"
 
 msgid "Lights Out (24×7)"
 msgstr "Lichter aus (24×7)"
@@ -17568,9 +17568,6 @@ msgstr "Richten Sie Carbon um die Betriebsweise Ihres Unternehmens ein: Betriebs
 msgid "Set Clock Out"
 msgstr "Ausstempeln festlegen"
 
-msgid "Set clock-out time"
-msgstr "Abmeldungszeit festlegen"
-
 msgid "Set Console PIN"
 msgstr "Console-PIN festlegen"
 
@@ -17591,6 +17588,8 @@ msgstr "Menge festlegen"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Legen Sie das Startdatum der Vereinbarung fest, um die Buchhaltungsbehandlung anzuzeigen."
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Authentifizierungs-App einrichten"
@@ -22585,9 +22584,6 @@ msgstr "Sie können den UI-Stil jederzeit über die Design-Einstellung ändern"
 
 msgid "You can only see this key once. Store it safely."
 msgstr "Du kannst diesen Schlüssel nur einmal sehen. Speichere ihn sicher."
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Sie sind um <0/> eingestempelt. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity

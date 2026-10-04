@@ -5,13 +5,14 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { deleteProcess, getProcess } from "~/modules/resources";
 import { path } from "~/utils/path";

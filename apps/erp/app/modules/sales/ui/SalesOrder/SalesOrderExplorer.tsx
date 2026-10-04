@@ -520,7 +520,7 @@ function RelatedItems({
       <Await resolve={salesOrderData?.relatedItems}>
         {(relatedItemsData) => {
           // Process the related items for this specific line
-          // @ts-ignore
+          // @ts-expect-error
           const relatedItems = getRelatedItems(relatedItemsData, lineId);
 
           return (

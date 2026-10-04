@@ -13,9 +13,10 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   getRentalAgreement,

@@ -122,7 +122,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-                  {/* @ts-ignore */}
+                  {/* @ts-expect-error */}
                   <Link to={getLinkToItemDetails(type, initialValues.id)}>
                     <Trans>View Item Master</Trans>
                   </Link>

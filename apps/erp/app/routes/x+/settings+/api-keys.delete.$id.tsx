@@ -7,9 +7,11 @@ import { bustApiKeyCache, requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteApiKey } from "@carbon/ee/api-keys.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
@@ -62,13 +64,13 @@ export default function DeleteApiKeyRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const routeData = useRouteData<{ apiKeys: ApiKey[] }>(path.to.apiKeys);
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
 
   const apiKey = routeData?.apiKeys.find((apiKey) => apiKey.id === id);
   if (!apiKey) return null;
 
-  const onCancel = () => navigate(-1);
+  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete

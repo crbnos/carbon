@@ -6,12 +6,12 @@ import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { TooltipProvider } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, redirect } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect } from "react-router";
+import { Outlet } from "react-router";
 import { MeshGradientBackground } from "~/components/MeshGradientBackground";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";

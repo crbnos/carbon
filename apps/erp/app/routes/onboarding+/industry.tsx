@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -21,7 +21,7 @@ import {
   HStack,
   PrefetchLink
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { type ReactNode, useState } from "react";
 import {
   LuBot,
@@ -36,7 +36,6 @@ import {
 import {
   type ActionFunctionArgs,
   Form,
-  redirect,
   useLoaderData,
   useNavigation
 } from "react-router";
@@ -212,7 +211,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyIdCookie = setCompanyId(companyId);
   const clearDraftCookie = await clearOnboardingDraft(request);
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: [
       ["Set-Cookie", sessionCookie],
       ["Set-Cookie", companyIdCookie],

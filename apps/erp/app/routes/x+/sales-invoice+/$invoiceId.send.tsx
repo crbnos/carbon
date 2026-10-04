@@ -7,8 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "sales-invoice-send");

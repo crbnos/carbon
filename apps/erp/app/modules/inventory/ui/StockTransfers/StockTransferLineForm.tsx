@@ -169,7 +169,6 @@ const StockTransferLineForm = ({
                             ? t`Consumable`
                             : t`Item`
                   }
-                  // @ts-ignore
                   type={itemType}
                   // Only stockable types can be transferred — Services are
                   // Non-Inventory and must not be selectable here.

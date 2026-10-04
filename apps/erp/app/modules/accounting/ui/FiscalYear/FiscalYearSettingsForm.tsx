@@ -4,10 +4,15 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import { ValidatedForm } from "@carbon/form";
-import { Button, Heading, HStack, LabelWithHelp } from "@carbon/react";
+import {
+  Button,
+  Heading,
+  HStack,
+  LabelWithHelp,
+  useCloseRoute
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -34,8 +39,8 @@ const FiscalYearSettingsForm = ({
 }: FiscalYearSettingsFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const isDisabled =
     !permissions.can("update", "accounting") || !permissions.is("employee");
@@ -93,7 +98,7 @@ const FiscalYearSettingsForm = ({
           {fields.map((field) => (
             <div
               key={field.name}
-              className="group rounded-lg border border-border p-4 transition-all hover:border-muted-foreground/30"
+              className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">

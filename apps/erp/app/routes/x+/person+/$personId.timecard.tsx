@@ -34,7 +34,12 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import {
+  datetime,
+  fromLocalDateTime,
+  redirect,
+  toLocalDateTime
+} from "@carbon/utils";
 import type { CalendarDateTime } from "@internationalized/date";
 import {
   getDayOfWeek,
@@ -55,14 +60,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  Link,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { data, Link, useFetcher, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";

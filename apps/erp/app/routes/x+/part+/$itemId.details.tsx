@@ -9,6 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { Menubar, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense } from "react";
@@ -17,7 +18,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
@@ -75,12 +76,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
-    getMakeMethodsOnce(client, itemId, companyId),
-    getRevisionLock(client, { itemId, companyId }),
-    // Part → CO traceability (4b): CO history for this part + type labels.
-    getItemChangeNoticeDataOnce(client, itemId, companyId)
-  ]);
+  // Two waves, not four: everything that needs only the item id goes here, and
+  // everything that needs only the chosen method's id goes in the next. Read
+  // one after another, this loader took the sum of its queries (about half a
+  // second) instead of the slowest of them.
+  const [makeMethods, revisionLock, changeNoticeData, tags, partManufacturing] =
+    await Promise.all([
+      getMakeMethodsOnce(client, itemId, companyId),
+      getRevisionLock(client, { itemId, companyId }),
+      // Part → CO traceability (4b): CO history for this part + type labels.
+      getItemChangeNoticeDataOnce(client, itemId, companyId),
+      getTagsList(client, companyId, "operation"),
+      getItemManufacturing(client, itemId, companyId)
+    ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
 
@@ -105,11 +113,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const fullMethod = await getMakeMethodByIdOnce(
-    client,
-    makeMethod.id,
-    companyId
-  );
+  const [fullMethod, methodMaterials, methodOperations, configData] =
+    await Promise.all([
+      getMakeMethodByIdOnce(client, makeMethod.id, companyId),
+      getMethodMaterialsByMakeMethod(client, makeMethod.id),
+      getMethodOperationsByMakeMethodId(client, makeMethod.id),
+      partManufacturing.data?.requiresConfiguration
+        ? Promise.all([
+            getConfigurationParameters(client, itemId, companyId),
+            getConfigurationRules(client, itemId, companyId)
+          ]).then(([configurationParametersAndGroups, configurationRules]) => ({
+            configurationParametersAndGroups,
+            configurationRules
+          }))
+        : {
+            configurationParametersAndGroups: { groups: [], parameters: [] },
+            configurationRules: []
+          }
+    ]);
   if (fullMethod.error || !fullMethod.data) {
     return {
       methodData: null,
@@ -119,27 +140,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ...changeNoticeData
     };
   }
-
-  const [methodMaterials, methodOperations, tags, partManufacturing] =
-    await Promise.all([
-      getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-      getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
-    ]);
-
-  const configData = partManufacturing.data?.requiresConfiguration
-    ? await Promise.all([
-        getConfigurationParameters(client, itemId, companyId),
-        getConfigurationRules(client, itemId, companyId)
-      ]).then(([configurationParametersAndGroups, configurationRules]) => ({
-        configurationParametersAndGroups,
-        configurationRules
-      }))
-    : {
-        configurationParametersAndGroups: { groups: [], parameters: [] },
-        configurationRules: []
-      };
 
   return {
     methodData: {
@@ -323,7 +323,6 @@ export default function PartDetailsRoute() {
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}
-                  // @ts-ignore
                   initialValues={manufacturingInitialValues}
                 />
               )}
@@ -351,12 +350,11 @@ export default function PartDetailsRoute() {
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations ?? []}
                 configurable={
                   methodData.partManufacturing?.requiresConfiguration
                 }
-                // @ts-ignore
                 materials={methodData.methodMaterials ?? []}
                 configurationRules={methodData.configurationRules}
                 parameters={
@@ -371,9 +369,9 @@ export default function PartDetailsRoute() {
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
-                // @ts-ignore
+                // @ts-expect-error
                 materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
+                // @ts-expect-error
                 operations={methodData.methodOperations}
                 configurable={
                   methodData.partManufacturing?.requiresConfiguration

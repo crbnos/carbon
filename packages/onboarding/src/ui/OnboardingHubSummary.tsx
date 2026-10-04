@@ -11,6 +11,8 @@ type OnboardingHubSummaryProps = {
   label: string;
   done: number;
   total: number;
+  // Progress is still loading: hold the layout, leave the numbers out.
+  pending?: boolean;
   // The single next thing to do (drives the home-screen hand-holding).
   nextLabel?: string;
   // The CTA (app supplies a react-router <Link> wrapped in a Button for SPA nav).
@@ -25,6 +27,7 @@ export function OnboardingHubSummary({
   label,
   done,
   total,
+  pending = false,
   nextLabel,
   action,
   onDismiss
@@ -48,9 +51,11 @@ export function OnboardingHubSummary({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold tracking-tight">{label}</h3>
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {done}/{total} <Trans>steps</Trans>
-          </span>
+          {pending ? null : (
+            <span className="text-sm text-muted-foreground tabular-nums">
+              {done}/{total} <Trans>steps</Trans>
+            </span>
+          )}
         </div>
         <div className="mt-2 h-2 w-full max-w-md rounded-full bg-muted overflow-hidden">
           <div
@@ -61,7 +66,12 @@ export function OnboardingHubSummary({
             style={{ width: `${pct}%` }}
           />
         </div>
-        {nextLabel ? (
+        {pending ? (
+          // Same line box as the "Next:" line that replaces it.
+          <p className="mt-2 text-sm" aria-hidden>
+            &nbsp;
+          </p>
+        ) : nextLabel ? (
           <p className="mt-2 text-sm text-muted-foreground truncate">
             <Trans>Next:</Trans>{" "}
             <span className="text-foreground font-medium">{nextLabel}</span>

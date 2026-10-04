@@ -32,7 +32,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -256,7 +256,7 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  // @ts-ignore
+  // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   description: "",
@@ -1022,7 +1022,7 @@ function MaterialForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div

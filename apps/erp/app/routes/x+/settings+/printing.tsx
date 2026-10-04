@@ -17,7 +17,7 @@ import {
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
-import { isUnaffectedByNavigation, labelSizes } from "@carbon/utils";
+import { isUnaffectedByNavigation, labelSizes, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuPrinter } from "react-icons/lu";
@@ -26,7 +26,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { Link, Outlet, useLoaderData } from "react-router";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
 import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
 import { AssignmentsCard, PrintersCard } from "~/modules/settings/ui/Printing";

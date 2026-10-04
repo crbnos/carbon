@@ -63,7 +63,7 @@
     "class-variance-authority": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "framer-motion": "catalog:",
+    "motion": "catalog:",
     "isbot": "catalog:",
     "konva": "^9.3.22",
     "kysely": "catalog:",

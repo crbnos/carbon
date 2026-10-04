@@ -8,9 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { useCloseRoute } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
@@ -140,13 +141,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function EditProjectionRoute() {
   const { initialValues } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <DemandProjectionsForm
       initialValues={initialValues}
       isEditing
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

@@ -11,13 +11,13 @@ import {
 } from "@carbon/ee/rules";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
 import {

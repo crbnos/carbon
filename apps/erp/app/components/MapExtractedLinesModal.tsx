@@ -16,6 +16,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  ModalTitle,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -135,7 +136,7 @@ export default function MapExtractedLinesModal({
       <ModalContent size="xlarge">
         <ValidatedForm validator={dummyValidator} onSubmit={handleSubmit}>
           <ModalHeader>
-            {title}
+            <ModalTitle>{title}</ModalTitle>
             <ModalClose />
           </ModalHeader>
           <ModalBody>

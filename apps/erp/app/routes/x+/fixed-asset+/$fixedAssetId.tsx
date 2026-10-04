@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -22,7 +22,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Link, Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { Link, Outlet, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";

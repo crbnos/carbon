@@ -110,12 +110,19 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
 pnpm --filter @carbon/database authz check            # what sync would change (exit 3 = drift)
 pnpm --filter @carbon/database authz sync             # make the local database match
 pnpm --filter @carbon/database authz migration <name> # ship unshipped rules/helpers
+pnpm --filter @carbon/database authz migration <name> --tables=a,b  # also re-ship these tables
 pnpm --filter @carbon/database exec vitest run src/authz
 ```
 
 Behaviour tests (run against a local database, each rolls back):
 `supabase/tests/authz-pieces.test.sql` (one case per piece),
 `authz-fixes.test.sql`, `journal-update-tenant-check.test.sql`.
+
+A table still on its `baseline.json` hash keeps the policy TEXT production had at takeover.
+The meaning equals its rule; the wording may not — production's `agentThread` policies called
+`auth.uid()` bare, which Postgres re-evaluates per row, while the manifest renders
+`(SELECT auth.uid())`. `--tables` re-lands a named table's rule as rendered
+(`20261003223948_rls-caller-lookup-once.sql`).
 
 ## Gotchas
 

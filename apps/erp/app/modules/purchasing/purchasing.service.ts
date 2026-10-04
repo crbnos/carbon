@@ -2739,7 +2739,6 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
   // tsgo's limit; the cliff shifts as unrelated modules join the program.
   // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
   return client
@@ -3006,7 +3005,6 @@ export async function getLinkedSupplierQuotes(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<LinkedSupplierQuote>> {
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqToSupplierQuote")
     .select(
@@ -3085,7 +3083,6 @@ export async function getSiblingQuotesForQuote(
   const rfqIds = linkedRfqs.map((r) => r.purchasingRfqId);
 
   // Get all quotes linked to any of these RFQs (excluding current quote)
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqToSupplierQuote")
     .select(
@@ -3121,7 +3118,6 @@ export async function getSupplierQuotesForComparison(
   purchasingRfqId: string
 ) {
   // 1. Get all supplier quote IDs linked to this RFQ with supplier info
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   const linksResult: PostgrestResponse<LinkedSupplierQuote> = await client
     .from("purchasingRfqToSupplierQuote")
     .select(
@@ -3186,7 +3182,6 @@ export async function getPurchasingRFQSuppliersWithLinks(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // @ts-ignore - nested select instantiation exceeds tsgo depth limit
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")

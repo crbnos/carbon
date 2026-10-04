@@ -7,13 +7,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getEmployeeType } from "~/modules/users";
 import { path } from "~/utils/path";
