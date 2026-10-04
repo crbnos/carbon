@@ -2345,7 +2345,12 @@ type AccountingPeriodCloseColumns = {
   periodNumber?: number | null;
 };
 
-/** @mcp action */
+/**
+ * Only a posting in the company's current month changes the Active period: a
+ * catch-up run or a back-dated document resolves its own period and leaves the
+ * Active one alone.
+ * @mcp action
+ */
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2353,6 +2358,14 @@ export async function getOrCreateAccountingPeriod(
   source: PeriodPostingSource = "operational"
 ): Promise<{ data: string | null; error: { message: string } | null }> {
   const existing = await getCurrentAccountingPeriod(client, companyId, date);
+  // Read lazily: an Active or refused period never needs the company's today.
+  const isCurrentMonth = async () => {
+    const today = datetime.today(await getCompanyTimeZone(client, companyId));
+    return (
+      startOfMonth(parseDate(date.slice(0, 10))).toString() ===
+      startOfMonth(today).toString()
+    );
+  };
 
   if (existing.data) {
     const closeStatus =
@@ -2378,7 +2391,7 @@ export async function getOrCreateAccountingPeriod(
       };
     }
 
-    if (existing.data.status === "Inactive") {
+    if (existing.data.status === "Inactive" && (await isCurrentMonth())) {
       await client
         .from("accountingPeriod")
         .update({ status: "Inactive" as const })
@@ -2410,18 +2423,21 @@ export async function getOrCreateAccountingPeriod(
     startMonth
   );
 
-  await client
-    .from("accountingPeriod")
-    .update({ status: "Inactive" as const })
-    .eq("companyId", companyId)
-    .eq("status", "Active");
+  const isCurrent = await isCurrentMonth();
+  if (isCurrent) {
+    await client
+      .from("accountingPeriod")
+      .update({ status: "Inactive" as const })
+      .eq("companyId", companyId)
+      .eq("status", "Active");
+  }
 
   const result = await (client.from("accountingPeriod") as any)
     .insert({
       startDate,
       endDate,
       companyId,
-      status: "Active" as const,
+      status: isCurrent ? ("Active" as const) : ("Inactive" as const),
       closeStatus: "Open",
       fiscalYear,
       periodNumber,
