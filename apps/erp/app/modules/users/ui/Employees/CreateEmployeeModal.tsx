@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   HStack,
   Modal,
@@ -13,7 +14,6 @@ import {
   ModalOverlay,
   ModalTitle,
   useCloseRoute,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -47,12 +47,9 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
   const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
-
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
+  const employeeTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getEmployeeTypes>>
+  >(path.to.api.employeeTypes);
 
   const employeeTypes = employeeTypeFetcher.data?.data ?? [];
   const employeeTypeOptions = employeeTypes.map((et) => ({

@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   HStack,
   Modal,
@@ -16,7 +17,6 @@ import {
   ModalOverlay,
   ModalTitle,
   useCloseRoute,
-  useMount,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -100,12 +100,9 @@ export default function ConvertOperatorRoute() {
   const { operator } = useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
-
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
+  const employeeTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getEmployeeTypes>>
+  >(path.to.api.employeeTypes);
 
   const employeeTypeOptions =
     employeeTypeFetcher.data?.data

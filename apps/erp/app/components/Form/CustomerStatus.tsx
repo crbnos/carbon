@@ -4,10 +4,10 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import { useRouteData } from "~/hooks";
 import type {
@@ -72,19 +72,15 @@ CustomerStatus.displayName = "CustomerStatus";
 export default CustomerStatus;
 
 export const useCustomerStatuses = (enabled = true) => {
-  const customerStatusFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerStatusesList>>>();
-
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatusStatus[];
   }>(path.to.customerRoot);
 
   const hasCustomerData = sharedCustomerData?.customerStatuses;
 
-  useMount(() => {
-    if (enabled && !hasCustomerData)
-      customerStatusFetcher.load(path.to.api.customerStatuses);
-  });
+  const customerStatusFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerStatusesList>>
+  >(enabled && !hasCustomerData ? path.to.api.customerStatuses : null);
 
   const options = useMemo(() => {
     const dataSource =
