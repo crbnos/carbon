@@ -112,8 +112,7 @@ vi.mock("@carbon/query", () => ({
 }));
 vi.mock("react-router", () => ({
   Link: ({ children }: { children?: ReactNode }) =>
-    createElement("a", null, children),
-  useFetcher: () => ({ state: "idle", data: { data: harness.currencies } })
+    createElement("a", null, children)
 }));
 vi.mock("~/utils/path", () => ({
   path: {

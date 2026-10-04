@@ -41,15 +41,17 @@ const url = process.env.SUPABASE_DB_URL;
 describe.skipIf(!url)("attachments against a migrated database", () => {
   const db = new Client({ connectionString: url });
 
-  const definitions = async () =>
+  // Each event trigger with its oid: a trigger that was dropped and created
+  // again has the same definition and a new oid.
+  const triggers = async () =>
     (
-      await db.query<{ definition: string }>(
-        `SELECT pg_get_triggerdef(t.oid) AS definition
+      await db.query<{ oid: number; definition: string }>(
+        `SELECT t.oid::int AS oid, pg_get_triggerdef(t.oid) AS definition
            FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
           WHERE NOT t.tgisinternal AND t.tgname LIKE 'trg\\_event\\_%'
           ORDER BY c.relname, t.tgname`
       )
-    ).rows.map((row) => row.definition);
+    ).rows;
 
   beforeAll(async () => {
     await db.connect();
@@ -67,12 +69,14 @@ describe.skipIf(!url)("attachments against a migrated database", () => {
     );
   });
 
-  test("re-applying every entry recreates each trigger with the same definition", async () => {
-    const before = await definitions();
+  test("re-applying every entry touches no trigger", async () => {
+    // Creating a trigger locks its table, so a migration that restates every
+    // table must leave the ones that have not changed alone.
+    const before = await triggers();
     for (const table of Object.keys(attachments)) {
       await db.query(renderFor(attachments, table));
     }
-    expect(await definitions()).toEqual(before);
+    expect(await triggers()).toEqual(before);
   });
 
   test("sync detaches a table that has no entry, and heals a missing trigger", async () => {
@@ -88,11 +92,17 @@ describe.skipIf(!url)("attachments against a migrated database", () => {
     await db.query(
       `DROP TRIGGER "trg_event_statement_broadcast_table_changes_upd" ON "customer"`
     );
-    // A handler with one of its three triggers missing is still listed, so
-    // the full definitions are what prove the heal.
+    const broken = await triggers();
     await db.query(renderFor(attachments, "customer"));
-    expect(await syncAttachments(db, attachments, { dryRun: true })).toEqual(
-      []
-    );
+    const healed = (await triggers()).map((trigger) => trigger.definition);
+    expect(healed).toHaveLength(broken.length + 1);
+    expect(
+      healed.some(
+        (definition) =>
+          definition.includes(
+            "trg_event_statement_broadcast_table_changes_upd"
+          ) && definition.includes("ON public.customer")
+      )
+    ).toBe(true);
   });
 });

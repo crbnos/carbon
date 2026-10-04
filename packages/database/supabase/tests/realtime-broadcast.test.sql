@@ -282,29 +282,4 @@ $$;
 RESET ROLE;
 
 \echo realtime-broadcast: all checks passed
--- set_event_triggers leaves a table alone when its triggers are already as
--- declared (a migration restates every table; re-creating a trigger locks it),
--- and still applies a changed declaration.
-DO $$
-DECLARE
-  before_oids oid[];
-  after_oids oid[];
-BEGIN
-  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
-  SELECT array_agg(oid ORDER BY oid) INTO before_oids FROM pg_trigger
-  WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_%';
-  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
-  SELECT array_agg(oid ORDER BY oid) INTO after_oids FROM pg_trigger
-  WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_%';
-  IF before_oids IS DISTINCT FROM after_oids THEN
-    RAISE EXCEPTION 'FAIL: set_event_triggers re-created triggers that were already as declared';
-  END IF;
-
-  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY[]::text[]);
-  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_statement\_%') THEN
-    RAISE EXCEPTION 'FAIL: set_event_triggers did not apply a changed declaration';
-  END IF;
-END;
-$$;
-
 ROLLBACK;

@@ -14,7 +14,7 @@ type CurrencyList = NonNullable<
 >;
 
 /** Set by a route that loaded the list itself. The currencies API is
- *  `requirePermissions`-gated, so the fetcher below returns nothing on a public
+ *  `requirePermissions`-gated, so the query below returns nothing on a public
  *  page and every amount silently falls back to CLDR — which is the one thing
  *  the standard says is NOT authoritative. */
 const CurrenciesContext = createContext<CurrencyList | undefined>(undefined);
