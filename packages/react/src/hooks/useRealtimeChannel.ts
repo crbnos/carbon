@@ -36,6 +36,16 @@ interface UseRealtimeChannelOptions<TDeps extends any[]> {
   ) => RealtimeChannel;
   enabled?: boolean;
   dependencies?: TDeps;
+  /**
+   * Join a private channel: Realtime checks the `realtime.messages` policies
+   * for this topic once, at join. Every broadcast topic is private.
+   */
+  private?: boolean;
+  /**
+   * Called on each successful join. `isReconnect` is true after the first: no
+   * message is replayed, so the caller catches up on what it missed.
+   */
+  onSubscribed?: (isReconnect: boolean) => void;
   /** When true, CHANNEL_ERROR / TIMED_OUT open a toast. Defaults to true in dev, false in prod. */
   notifyOnSubscribeError?: boolean;
 }
@@ -48,6 +58,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
     setup,
     enabled = true,
     dependencies = [],
+    private: isPrivate = false,
+    onSubscribed,
     notifyOnSubscribeError = NODE_ENV === "development"
   } = options;
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -59,6 +71,9 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   const isSilentReconnectRef = useRef(false);
   // Updated each effect run so the retry timer always calls the latest subscribe closure.
   const doSubscribeRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const hasSubscribedRef = useRef(false);
+  const onSubscribedRef = useRef(onSubscribed);
+  onSubscribedRef.current = onSubscribed;
   const { carbon, isRealtimeAuthSet } = useCarbon();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -109,7 +124,9 @@ export const useRealtimeChannel = <TDeps extends any[]>(
       }
 
       try {
-        const channel = carbon.channel(topic);
+        const channel = isPrivate
+          ? carbon.channel(topic, { config: { private: true } })
+          : carbon.channel(topic);
         const configuredChannel = memoSetup(
           channel,
           carbon,
@@ -120,6 +137,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
         configuredChannel.subscribe(async (status, err) => {
           if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
             retryCountRef.current = 0;
+            onSubscribedRef.current?.(hasSubscribedRef.current);
+            hasSubscribedRef.current = true;
             // Dismiss any lingering disconnect toast — reconnect succeeded.
             if (lastErrorToastIdRef.current != null) {
               toast.dismiss(lastErrorToastIdRef.current);
@@ -193,6 +212,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
 
     // Keep ref up-to-date so retry timers always call the latest closure.
     doSubscribeRef.current = doSubscribe;
+    hasSubscribedRef.current = false;
     void doSubscribe();
 
     const forceReconnect = (silent: boolean) => {
@@ -235,6 +255,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
     isRealtimeAuthSet,
     enabled,
     topic,
+    isPrivate,
     memoSetup,
     notifyOnSubscribeError
     // teardown/doSubscribe are NOT in dependencies - defined inline

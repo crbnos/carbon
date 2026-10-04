@@ -12,7 +12,7 @@
 - [ ] Task 5: Apply the migrations and regenerate types
 - [ ] Task 6: Add the database tests
 - [ ] Task 7: Add the `realtime-table-has-trigger` check
-- [ ] Task 8: Add the private option to `useRealtimeChannel`
+- [x] Task 8: Add the private option to `useRealtimeChannel`
 - [x] Task 9: Add `cachedClientLoader` and the company id value
 - [x] Task 10: Add the invalidation middleware to both roots
 - [x] Task 11: Convert the 27 cached `clientLoader` exports
