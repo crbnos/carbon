@@ -34680,72 +34680,6 @@ export default {
         tags: ["intercompanyTransaction"]
       }
     },
-    "/itemLedgerSnapshot": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.locationId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.quantity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed30"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.consumed90"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.storageUnitIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedgerSnapshot.snapshotCutoff"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemLedgerSnapshot"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["itemLedgerSnapshot"]
-      }
-    },
     "/job": {
       get: {
         parameters: [
@@ -47545,141 +47479,6 @@ export default {
           }
         },
         tags: ["storageUnit"]
-      }
-    },
-    "/employeePin": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.employeePin.employeeId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.pinHash"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/employeePin"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["employeePin"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.employeePin"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["employeePin"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.employeePin.employeeId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.pinHash"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["employeePin"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.employeePin.employeeId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.pinHash"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.employeePin.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.employeePin"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["employeePin"]
       }
     },
     "/implementationCheckState": {
@@ -104865,6 +104664,74 @@ export default {
         tags: ["(rpc) sync_create_supplier_type_group"]
       }
     },
+    "/rpc/get_app_shell": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "user_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_app_shell"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "user_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_app_shell"]
+      }
+    },
     "/rpc/get_returnable_receipt_lines": {
       post: {
         parameters: [
@@ -123742,50 +123609,6 @@ export default {
       },
       type: "object"
     },
-    itemLedgerSnapshot: {
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        locationId: {
-          format: "text",
-          type: "string"
-        },
-        quantity: {
-          format: "numeric",
-          type: "number"
-        },
-        consumed30: {
-          format: "numeric",
-          type: "number"
-        },
-        consumed90: {
-          format: "numeric",
-          type: "number"
-        },
-        storageUnitIds: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        snapshotCutoff: {
-          format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     job: {
       required: [
         "id",
@@ -129782,38 +129605,6 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
-        }
-      },
-      type: "object"
-    },
-    employeePin: {
-      required: ["employeeId", "companyId", "pinHash", "updatedAt"],
-      properties: {
-        employeeId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        pinHash: {
-          format: "text",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
         }
       },
       type: "object"
@@ -170680,63 +170471,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.itemLedgerSnapshot": {
-      name: "itemLedgerSnapshot",
-      description: "itemLedgerSnapshot",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemLedgerSnapshot"
-      }
-    },
-    "rowFilter.itemLedgerSnapshot.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.locationId": {
-      name: "locationId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.quantity": {
-      name: "quantity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.consumed30": {
-      name: "consumed30",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.consumed90": {
-      name: "consumed90",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.storageUnitIds": {
-      name: "storageUnitIds",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemLedgerSnapshot.snapshotCutoff": {
-      name: "snapshotCutoff",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.job": {
       name: "job",
       description: "job",
@@ -177245,45 +176979,6 @@ export default {
     },
     "rowFilter.storageUnit.isWorkCenterDefault": {
       name: "isWorkCenterDefault",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.employeePin": {
-      name: "employeePin",
-      description: "employeePin",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/employeePin"
-      }
-    },
-    "rowFilter.employeePin.employeeId": {
-      name: "employeeId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.employeePin.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.employeePin.pinHash": {
-      name: "pinHash",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.employeePin.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.employeePin.updatedAt": {
-      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
