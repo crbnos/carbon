@@ -10,6 +10,11 @@ const projectRoot = __dirname;
 const repoRoot = path.resolve(projectRoot, "../..");
 const mesCoreSrc = path.resolve(repoRoot, "packages/mes-core/src");
 const utilsSrc = path.resolve(repoRoot, "packages/utils/src");
+// Only the PURE geometry modules of the viewer are reachable from here —
+// `fallback`, `graph` and `types` import nothing but each other's types. The
+// package barrel and `motion.ts` pull in three.js and react-three-fiber, so
+// they must never be imported: the alias is deliberately deep-path only.
+const viewerSrc = path.resolve(repoRoot, "packages/viewer/src");
 // @carbon/utils/precision re-exports this path by design (the edge runtime only
 // mounts supabase/functions/), so Metro has to be able to reach it.
 const precisionSrc = path.resolve(
@@ -35,7 +40,7 @@ const config = getDefaultConfig(projectRoot);
  *     node_modules, or Metro would pull React 18 in beside the app's React 19.
  *     nodeModulesPaths therefore lists ONLY this app's own node_modules.
  */
-config.watchFolders = [mesCoreSrc, utilsSrc, precisionSrc];
+config.watchFolders = [mesCoreSrc, utilsSrc, precisionSrc, viewerSrc];
 config.resolver.nodeModulesPaths = [path.resolve(projectRoot, "node_modules")];
 config.resolver.disableHierarchicalLookup = true;
 config.resolver.extraNodeModules = {
@@ -44,7 +49,8 @@ config.resolver.extraNodeModules = {
   // Only the import-light subpaths are used (status-colors, format, date,
   // datetime). NEVER the @carbon/utils barrel: it pulls in tiptap, dompurify
   // and cookie helpers, none of which belong in a React Native bundle.
-  "@carbon/utils": utilsSrc
+  "@carbon/utils": utilsSrc,
+  "@carbon/viewer": viewerSrc
 };
 
 module.exports = withUniwindConfig(config, {

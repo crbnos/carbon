@@ -19,7 +19,8 @@
       "~/assets/*": ["./assets/*"],
       "@carbon/mes-core": ["../../packages/mes-core/src/index.ts"],
       "@carbon/mes-core/*": ["../../packages/mes-core/src/*"],
-      "@carbon/utils/*": ["../../packages/utils/src/*"]
+      "@carbon/utils/*": ["../../packages/utils/src/*"],
+      "@carbon/viewer/*": ["../../packages/viewer/src/*"]
     }
   },
   "include": [

@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AssemblyPlaybackStep } from "@carbon/mes-core";
+import { indexAssemblyGraph } from "@carbon/viewer/graph";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
-import type { Entity, Float3 } from "react-native-filament";
+import type { Entity, Float3, Mat4 } from "react-native-filament";
 import {
   Camera,
   DefaultLight,
@@ -25,6 +26,14 @@ import {
   mentionedNodeIds,
   visibleNodeIds
 } from "./modelVisibility";
+import {
+  displayMotionFor,
+  easeInOut,
+  expandToLeaves,
+  motionDurationMs,
+  motionOffsetAt,
+  presentNodeIdsBefore
+} from "./stepMotion";
 
 /**
  * The assembly instruction in 3D, rendered natively.
@@ -91,7 +100,7 @@ function Scene({
 }) {
   const { t } = useLingui();
   const model = useModel({ uri: glbUri });
-  const { scene } = useFilamentContext();
+  const { scene, transformManager } = useFilamentContext();
 
   // Framed from the model's own bounding box, never a fixed distance. CAD
   // arrives in whatever units it was drawn in — the radial engine and a
@@ -121,6 +130,50 @@ function Scene({
   );
   const mentioned = useMemo(() => mentionedNodeIds(steps), [steps]);
   const subtrees = useMemo(() => buildSubtreeIndex(graphRoot), [graphRoot]);
+  // The viewer's own graph index, for the fallback motion synthesis. Built
+  // from the same graph.json the subtree index uses.
+  const graphIndex = useMemo(
+    () =>
+      graphRoot
+        ? indexAssemblyGraph({ root: graphRoot } as Parameters<
+            typeof indexAssemblyGraph
+          >[0])
+        : null,
+    [graphRoot]
+  );
+
+  // The graph's leaves are the only nodes carrying geometry, and the
+  // fallback synthesis reasons about their boxes.
+  const leafIds = useMemo(
+    () => new Set((graphIndex?.leaves ?? []).map((leaf) => leaf.nodeId)),
+    [graphIndex]
+  );
+
+  const step = steps[activeStepIndex];
+  const motion = useMemo(
+    () =>
+      step
+        ? displayMotionFor({
+            motion: step.motion as Parameters<
+              typeof displayMotionFor
+            >[0]["motion"],
+            componentNodeIds: [
+              ...expandToLeaves(step.componentNodeIds, subtrees, leafIds)
+            ],
+            flagged: Boolean(
+              (step.warnings as { flagged?: boolean } | null)?.flagged
+            ),
+            index: activeStepIndex,
+            graphIndex,
+            presentNodeIds: expandToLeaves(
+              presentNodeIdsBefore(steps, activeStepIndex),
+              subtrees,
+              leafIds
+            )
+          })
+        : { type: "none" as const },
+    [step, steps, activeStepIndex, graphIndex, subtrees, leafIds]
+  );
 
   const asset = model.state === "loaded" ? model.asset : null;
 
@@ -155,6 +208,67 @@ function Scene({
       for (const entity of hidden) scene.addEntity(entity);
     };
   }, [asset, scene, visible, mentioned, subtrees]);
+
+  // The insertion: the step's components start back along the motion and
+  // travel to the pose the model already has them in.
+  //
+  // Driven from JS rather than a render-callback worklet. The clip is under
+  // two seconds and only re-runs when the step changes, so the simpler loop
+  // buys nothing worth a worklet's sharp edges — and because the seated pose
+  // is read from the model and written back on the last frame, a dropped
+  // frame or an unmount mid-flight leaves the part exactly where it belongs
+  // rather than drifting.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the step
+  useEffect(() => {
+    const duration = motionDurationMs(motion);
+    if (!asset || !step || duration === 0) return;
+
+    const moving: { entity: Entity; seated: Mat4 }[] = [];
+    for (const nodeId of step.componentNodeIds) {
+      // The assembly node itself, NOT its subtree: a transform IS inherited
+      // (unlike scene membership), so moving the parent carries its children.
+      for (const name of instanceNamesFor(nodeId)) {
+        const entity = asset.getFirstEntityByName(name);
+        if (entity == null) break;
+        moving.push({
+          entity,
+          seated: transformManager.getTransform(entity)
+        });
+      }
+    }
+    if (moving.length === 0) return;
+
+    let frame: number | null = null;
+    let cancelled = false;
+    const startedAt = Date.now();
+
+    const apply = (t: number) => {
+      const offset = motionOffsetAt(motion, easeInOut(t));
+      transformManager.openLocalTransformTransaction();
+      for (const { entity, seated } of moving) {
+        transformManager.setTransform(
+          entity,
+          t >= 1 ? seated : seated.translate(offset)
+        );
+      }
+      transformManager.commitLocalTransformTransaction();
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      const t = Math.min(1, (Date.now() - startedAt) / duration);
+      apply(t);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelled = true;
+      if (frame != null) cancelAnimationFrame(frame);
+      // Whatever happened, the part ends up seated.
+      apply(1);
+    };
+  }, [asset, motion, step, transformManager]);
 
   if (model.state !== "loaded") {
     return (

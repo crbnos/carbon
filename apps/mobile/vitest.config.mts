@@ -22,6 +22,10 @@ export default defineConfig({
         import.meta.url
       ).pathname,
       "@carbon/utils": new URL("../../packages/utils/src", import.meta.url)
+        .pathname,
+      // Deep paths only — the viewer's barrel and its motion module pull in
+      // three.js, which has no place in this app. Mirrors the Metro alias.
+      "@carbon/viewer": new URL("../../packages/viewer/src", import.meta.url)
         .pathname
     }
   }
