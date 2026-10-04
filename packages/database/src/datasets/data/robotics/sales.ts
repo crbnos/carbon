@@ -7,6 +7,7 @@
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
@@ -961,11 +962,63 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   }
 ];
 
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "cascade-uptime",
+    name: "Cascade fleet uptime program",
+    customer: "Cascade Integration Group",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        kind: "One-time",
+        item: "Robot Cell Commissioning",
+        description: "Commissioning of three welding cells",
+        quantity: 3,
+        rate: 9800,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        kind: "Recurring",
+        item: "Fleet Uptime Support",
+        description: "Fleet uptime support per cell",
+        quantity: 3,
+        rate: 2100,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        kind: "Recurring",
+        item: "Robot Calibration & Certification",
+        description: "Quarterly calibration and certification visit",
+        quantity: 1,
+        rate: 2650,
+        rateUnit: "Quarter",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
 export const roboticsSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["Cascade Integration Group", "Lakeshore Automotive"],
   customerBankAccounts: [
     {

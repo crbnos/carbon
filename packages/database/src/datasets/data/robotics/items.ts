@@ -259,6 +259,26 @@ export const SERVICES: ItemSpec[] = [
     replenishment: "Buy",
     standardCost: 1850,
     leadTime: 21
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Robot Cell Commissioning",
+    name: "Robot Cell Commissioning",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "On-site installation, teach-in and acceptance of a delivered robot cell.",
+    standardCost: 6800
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Fleet Uptime Support",
+    name: "Fleet Uptime Support",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Remote monitoring and next-day field service for an installed robot fleet.",
+    standardCost: 1400
   }
 ];
 

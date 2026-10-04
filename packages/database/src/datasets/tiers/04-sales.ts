@@ -2,6 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
+import {
+  type ContractLineTerms,
+  type ContractTerms,
+  horizon,
+  planInvoiceSchedule
+} from "../../contract-schedule.ts";
 import { resolveDate, resolveTimestamp } from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { copyMethodToQuoteLine } from "../helpers/method-copy.ts";
@@ -570,6 +577,136 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       }
 
       ctx.refs.documents[`rma:${spec.key}`] = rmaId;
+    }
+  }
+
+  // Contracts: Active and confirmed, as Confirm leaves one. The schedule comes
+  // from the shared planner through its horizon; every invoice dated on or
+  // before today is Billed Externally and billedThrough is the last such row's
+  // period end, so no drafted invoice exists for tier 09 to journal.
+  if (data.contracts.length > 0) {
+    ctx.log("customer contracts");
+    const today = ctx.anchor.toString();
+    for (const spec of data.contracts) {
+      ctx.log(`  contract ${spec.key}`);
+      const customerId = need(ctx.refs.customers, spec.customer);
+      const startDate = resolveDate(ctx.anchor, spec.startOffset);
+      const endDate =
+        spec.termMonths === null
+          ? null
+          : parseDate(startDate)
+              .add({ months: spec.termMonths })
+              .subtract({ days: 1 })
+              .toString();
+      const lines = spec.lines.map((line, index) => ({
+        spec: line,
+        terms: {
+          id: `line-${index}`,
+          kind: line.kind,
+          quantity: line.quantity,
+          rate: line.rate,
+          rateUnit: line.rateUnit ?? null,
+          discountPercent: (line.discountPercent ?? 0) / 100,
+          startDate: resolveDate(ctx.anchor, line.startOffset),
+          endDate:
+            line.endOffset === undefined
+              ? null
+              : resolveDate(ctx.anchor, line.endOffset)
+        } satisfies ContractLineTerms
+      }));
+      const terms: ContractTerms = {
+        startDate,
+        endDate,
+        billingFrequency: spec.billingFrequency,
+        billingAlignment: spec.billingAlignment,
+        billingTiming: spec.billingTiming,
+        firstInvoiceDate: null,
+        billedThrough: null
+      };
+      const invoices = planInvoiceSchedule(
+        terms,
+        lines.map((line) => line.terms),
+        horizon(terms, today)
+      );
+      let billedThrough: string | null = null;
+      for (const invoice of invoices) {
+        if (invoice.invoiceDate > today) continue;
+        for (const row of invoice.rows) {
+          if (billedThrough === null || row.periodEnd > billedThrough) {
+            billedThrough = row.periodEnd;
+          }
+        }
+      }
+
+      const contractId = await insertId(ctx, "customerContract", {
+        customerContractId: await nextSequence(ctx, "customerContract"),
+        name: spec.name,
+        status: "Active",
+        customerId,
+        salesPersonId: userId,
+        closeDate: startDate,
+        startDate,
+        endDate,
+        termMonths: spec.termMonths,
+        renewal: spec.renewal,
+        renewalUplift: spec.renewalUpliftPercent / 100,
+        billingFrequency: spec.billingFrequency,
+        billingAlignment: spec.billingAlignment,
+        billingTiming: spec.billingTiming,
+        billedThrough,
+        paymentTermId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        confirmedAt: resolveTimestamp(ctx.anchor, spec.startOffset, "10:00:00"),
+        confirmedBy: userId,
+        createdAt: resolveTimestamp(ctx.anchor, spec.startOffset, "09:00:00")
+      });
+
+      const lineIdByKey: Record<string, string> = {};
+      for (const [index, line] of lines.entries()) {
+        lineIdByKey[line.terms.id] = await insertId(
+          ctx,
+          "customerContractLine",
+          {
+            customerContractId: contractId,
+            kind: line.spec.kind,
+            itemId: need(ctx.refs.items, line.spec.item).id,
+            description: line.spec.description,
+            quantity: line.terms.quantity,
+            rate: line.terms.rate,
+            rateUnit: line.terms.rateUnit ?? undefined,
+            discountPercent: line.terms.discountPercent,
+            startDate: line.terms.startDate,
+            endDate: line.terms.endDate ?? undefined,
+            revenueMethod: line.spec.revenueMethod,
+            sortOrder: index + 1
+          }
+        );
+      }
+
+      for (const invoice of invoices) {
+        const status =
+          invoice.invoiceDate <= today ? "Billed Externally" : "Planned";
+        const invoiceId = await insertId(ctx, "customerContractInvoice", {
+          customerContractId: contractId,
+          invoiceDate: invoice.invoiceDate,
+          status
+        });
+        for (const row of invoice.rows) {
+          await insertRow(ctx, "customerContractInvoiceLine", {
+            customerContractId: contractId,
+            customerContractInvoiceId: invoiceId,
+            customerContractLineId: need(lineIdByKey, row.lineId),
+            periodStart: row.periodStart,
+            periodEnd: row.periodEnd,
+            units: row.units,
+            unitPrice: row.unitPrice,
+            amount: row.amount,
+            isAdjustment: row.isAdjustment
+          });
+        }
+      }
+      ctx.refs.documents[`con:${spec.key}`] = contractId;
     }
   }
 

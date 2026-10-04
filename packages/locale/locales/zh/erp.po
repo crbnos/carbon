@@ -2003,6 +2003,9 @@ msgstr "始终发送 — 每个通知都显示在铃声菜单中。"
 msgid "Always taken"
 msgstr "始终采取"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "金额"
 
@@ -4550,6 +4553,9 @@ msgstr "确认"
 msgid "Confirm {0}"
 msgstr "确认 {0}"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "确认并下达"
 
@@ -4597,6 +4603,9 @@ msgstr "已确认进货 — 采购单和生产订单（上方条形）"
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "已确认发货 — 销售订单和工单物料（下方条形）"
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "确认该期间每项已过账分录的借方和贷方相等。如果任何分录不平衡，试算平衡表将无法平衡，必须在期间关闭前进行更正。"
@@ -4733,6 +4742,9 @@ msgstr "销售折扣的反向收入账户"
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "客户发票上的折扣的反向收入GL账户。"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "合同资产"
 
@@ -4741,6 +4753,12 @@ msgstr "合同资产"
 
 msgid "Contract Assets (default)"
 msgstr "合同资产（默认）"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "外协人员"
@@ -6231,6 +6249,9 @@ msgstr "删除耗材"
 
 msgid "Delete Contact"
 msgstr "删除联系人"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "删除外协人员"
@@ -7723,6 +7744,9 @@ msgstr "队列末尾"
 msgid "End Time"
 msgstr "结束时间"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "结束"
 
@@ -7735,6 +7759,13 @@ msgstr "提前结束租赁并作为销售处理是一份手动凭证。"
 
 msgid "Ends"
 msgstr "结束"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "强制执行—编辑被阻止"
@@ -8040,6 +8071,9 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项进行重新映射。"
 
@@ -8084,6 +8118,9 @@ msgstr "展开 换型"
 
 msgid "Expand subtree"
 msgstr "展开子树"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "预期的制造零件未来需求，在任何销售订单存在之前逐周输入；计划根据供应进行净额计算并爆炸方法以提前订购组件。"
@@ -10211,6 +10248,9 @@ msgstr "已开票金额："
 msgid "Invoiced Statuses"
 msgstr "已开票状态"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "发票"
 
@@ -10219,6 +10259,9 @@ msgstr "每天自动为到期的项目创建发票。使用此功能立即对应
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "一旦协议启用，就会自动创建发票。"
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "无法加载发票"
@@ -12197,6 +12240,9 @@ msgstr "新规则"
 msgid "New Run"
 msgstr "新运行"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "新销售发票"
 
@@ -12322,6 +12368,9 @@ msgstr "下次到期："
 
 msgid "Next Interest"
 msgstr "下一期利息"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "下一份发票 {date} 将自动创建，并保留为草稿供评审。"
@@ -13292,6 +13341,9 @@ msgstr "工单工艺路线中的一个步骤，命名一个工艺和工作中心
 msgid "One system from quote to cash"
 msgstr "从报价单到现金的一个系统"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归档程序文件。"
 
@@ -14088,6 +14140,9 @@ msgstr "每天"
 msgid "per month"
 msgstr "每月"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "每件"
 
@@ -14096,6 +14151,9 @@ msgstr "每单位"
 
 msgid "per week"
 msgstr "每周"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "对订单标题的发货地点的按行覆盖；用于分批发货和直发。"
@@ -15371,6 +15429,9 @@ msgstr "重新发送"
 msgid "Reactivate"
 msgstr "重新激活"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "仔细阅读此内容——Carbon将为您的设置做什么和不做什么。当看起来正确时，在下面标记同意。"
 
@@ -15605,6 +15666,9 @@ msgstr "记录和已过账凭证正在与此提供商之间进行发送和接收
 
 msgid "Recovery Period"
 msgstr "注册"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "循环发票"
@@ -16427,8 +16491,17 @@ msgstr "冲销凭证"
 msgid "Revert"
 msgstr "还原"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "正在还原"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "还原中…"
@@ -21220,6 +21293,10 @@ msgstr "在工作中心的可组批工艺上，分组在一起运行的未开始
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "未命名"

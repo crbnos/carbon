@@ -7,6 +7,7 @@
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
@@ -960,11 +961,64 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   }
 ];
 
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "novasat-ops",
+    name: "NovaSat constellation operations",
+    customer: "NovaSat Networks",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        kind: "One-time",
+        item: "Ground Segment Integration",
+        description: "Ground station integration and pass testing",
+        quantity: 1,
+        rate: 48000,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        kind: "Recurring",
+        item: "Mission Operations Support",
+        description: "Mission operations, two buses",
+        quantity: 2,
+        rate: 14500,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        kind: "Recurring",
+        item: "Thermal Vacuum Test",
+        description:
+          "Quarterly thermal vacuum requalification of flight spares",
+        quantity: 1,
+        rate: 12750,
+        rateUnit: "Quarter",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
 export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["NovaSat Networks", "ORBSEC Defense"],
   customerBankAccounts: [
     {

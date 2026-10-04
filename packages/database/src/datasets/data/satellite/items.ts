@@ -256,6 +256,26 @@ export const SERVICES: ItemSpec[] = [
     replenishment: "Buy",
     standardCost: 8500,
     leadTime: 30
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Ground Segment Integration",
+    name: "Ground Segment Integration",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Commissioning of a customer ground station against the bus telemetry and command interface.",
+    standardCost: 32000
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Mission Operations Support",
+    name: "Mission Operations Support",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Flight dynamics, anomaly response and pass planning for a flying bus.",
+    standardCost: 9500
   }
 ];
 

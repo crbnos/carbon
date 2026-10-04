@@ -2003,6 +2003,9 @@ msgstr "Her zaman gönderilir — her bildirim çan menüsünde gösterilir."
 msgid "Always taken"
 msgstr "Her zaman alındı"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "Tutar"
 
@@ -4550,6 +4553,9 @@ msgstr "Onayla"
 msgid "Confirm {0}"
 msgstr "Onayla {0}"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "Teyit et ve Serbest bırak"
 
@@ -4597,6 +4603,9 @@ msgstr "Teyit edildi gelen stok — Satın alma ve Üretim siparişleri (sıfır
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Teyit edildi giden stok — Satış siparişleri ve İş emri malzemeleri (sıfırın altındaki çubuklar)."
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Dönem içinde muhasebeleştirilmiş her yevmiye kaydının eşit borç ve alacak tutarına sahip olduğunu doğrular. Herhangi bir giriş dengesiz kalırsa deneme bilançosu tutarlarıyla uyuşmayacak, bu nedenle dönem kapatılmadan önce düzeltilmesi gerekir."
@@ -4733,6 +4742,9 @@ msgstr "Satışlarda verilen iskontolar için kontra-gelir hesabı"
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "Müşteri faturalarında verilen iskontolar için kontra-gelir muhasebe hesabı."
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Kontrat varlığı"
 
@@ -4741,6 +4753,12 @@ msgstr "Sözleşme Varlıkları"
 
 msgid "Contract Assets (default)"
 msgstr "Sözleşme Varlıkları (varsayılan)"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "Taşeron"
@@ -6231,6 +6249,9 @@ msgstr "Sarf malzemesini sil"
 
 msgid "Delete Contact"
 msgstr "İlgili kişiyi sil"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "Taşeronu sil"
@@ -7723,6 +7744,9 @@ msgstr "Kuyruğun sonu"
 msgid "End Time"
 msgstr "Bitiş Saati"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "Son"
 
@@ -7735,6 +7759,13 @@ msgstr "Kiralamayı erken satış olarak sonlandırmak, manuel bir muhasebe fiş
 
 msgid "Ends"
 msgstr "Bitiş"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "Zorunlu — düzenlemeler engellendi"
@@ -8040,6 +8071,9 @@ msgstr "İstisnai Sertifika"
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
 
@@ -8084,6 +8118,9 @@ msgstr "Kurulumu Genişlet"
 
 msgid "Expand subtree"
 msgstr "Alt ağacı genişlet"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "İmalat yapılan bir parça için herhangi bir satış siparişi oluşturulmadan önceden hafta hafta girilen beklenen gelecek talep; planlama bunu arz karşısında hesaplar ve yöntem açıklarını bileşenleri önceden sipariş etmek için açar."
@@ -10211,6 +10248,9 @@ msgstr "Faturalandı Tutarı:"
 msgid "Invoiced Statuses"
 msgstr "Faturalandı Durumları"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "Faturalar"
 
@@ -10219,6 +10259,9 @@ msgstr "Faturalar her gün vadesini gelen her şey için otomatik olarak oluştu
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Faturalar anlaşma Aktif olduğunda otomatik olarak oluşturulur."
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "Faturalar yüklenemedi"
@@ -12197,6 +12240,9 @@ msgstr "Yeni Kural"
 msgid "New Run"
 msgstr "Yeni Çalıştırma"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "Yeni Satış Faturası"
 
@@ -12322,6 +12368,9 @@ msgstr "Sonraki Vade:"
 
 msgid "Next Interest"
 msgstr "Sonraki Faiz"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "Sonraki fatura {date} otomatik olarak oluşturulur ve inceleme için Taslak olarak bırakılır."
@@ -13292,6 +13341,9 @@ msgstr "İş emri rotasında bir adım, bir proses ve iş merkezini adlandıran,
 msgid "One system from quote to cash"
 msgstr "Teklif'ten nakite kadar tek bir sistem"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş bir prosedürü değiştirmek için yeni bir sürüm oluşturun."
 
@@ -14088,6 +14140,9 @@ msgstr "günde"
 msgid "per month"
 msgstr "ayda"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "Birim başına"
 
@@ -14096,6 +14151,9 @@ msgstr "Birim Başı"
 
 msgid "per week"
 msgstr "haftada"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Sipariş başlığındaki sevkiyat lokasyonunun satır başına geçersiz kılınması; bölünmüş sevkiyatlar ve doğrudan sevkiyatlar için kullanılır."
@@ -15371,6 +15429,9 @@ msgstr "Yeniden gönder"
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Bunu okuyun — Carbon'un kurulumunuz için neler yapacağını ve yapmayacağını öğrenin. Doğru görünüyorsa, aşağıda kabul ettiğinizi işaretleyin."
 
@@ -15605,6 +15666,9 @@ msgstr "Kayıtlar ve muhasebeleştirilmiş muhasebe fişleri bu sağlayıcıyla 
 
 msgid "Recovery Period"
 msgstr "Kayıt Yap"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Tekrarlanan Faturalar"
@@ -16427,8 +16491,17 @@ msgstr "Ters kayıt yapılıyor"
 msgid "Revert"
 msgstr "Geri Al"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Geri alınıyor"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "geri alınıyor…"
@@ -21220,6 +21293,10 @@ msgstr "Bir batchable proses üzerindeki başlanmamış iş emri operasyonları,
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Desteklenmeyen kaynak belge türü: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "Başlıksız"

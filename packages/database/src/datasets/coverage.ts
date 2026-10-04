@@ -37,6 +37,11 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   customer: 4,
   customerBankAccount: 4,
   customerContact: 4,
+  customerContract: 1,
+  // 12–13 depending on the anchor's day of month; floored at 80% per the task.
+  customerContractInvoice: 10, // min 13
+  customerContractInvoiceLine: 21, // min 27
+  customerContractLine: 3,
   customerItemPriceOverride: 1,
   customerItemPriceOverrideBreak: 2,
   customerLocation: 4,

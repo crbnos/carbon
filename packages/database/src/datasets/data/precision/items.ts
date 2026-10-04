@@ -260,6 +260,26 @@ export const SERVICES: ItemSpec[] = [
     replenishment: "Buy",
     standardCost: 1250,
     leadTime: 14
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Inspection Data Portal",
+    name: "Inspection Data Portal",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Hosted access to CMM reports and certificates for every shipped lot.",
+    standardCost: 300
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Gauge Management Service",
+    name: "Gauge Management Service",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Calibration scheduling and recall tracking for customer-owned gauges.",
+    standardCost: 650
   }
 ];
 

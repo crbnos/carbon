@@ -2003,6 +2003,9 @@ msgstr "Всегда отправляется — каждое уведомле�
 msgid "Always taken"
 msgstr "Всегда выбирается"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "Сумма"
 
@@ -4550,6 +4553,9 @@ msgstr "Подтвердить"
 msgid "Confirm {0}"
 msgstr "Подтвердить {0}"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "Подтвердить и запустить в работу"
 
@@ -4597,6 +4603,9 @@ msgstr "Подтвержденный входящий запас — заказ�
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Подтвержденный исходящий запас — заказы покупателей и материалы заказа (столбцы ниже нуля)."
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Подтверждает, что каждая проводка, проведенная в периоде, имеет равные дебет и кредит. Если какая-либо запись неуравновешена, сверка дебета и кредита не совпадет, поэтому она должна быть исправлена до закрытия периода."
@@ -4733,6 +4742,9 @@ msgstr "Счет-контра доходов для предоставленны
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "Счет учета противоположной выручки для скидок, предоставленных в счетах-фактурах выданных."
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Активы договора"
 
@@ -4741,6 +4753,12 @@ msgstr "Активы по контрактам"
 
 msgid "Contract Assets (default)"
 msgstr "Активы по контрактам (по умолчанию)"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "Подрядчик"
@@ -6231,6 +6249,9 @@ msgstr "Удалить расходный материал"
 
 msgid "Delete Contact"
 msgstr "Удалить контактное лицо"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "Удалить подрядчика"
@@ -7723,6 +7744,9 @@ msgstr "Конец очереди"
 msgid "End Time"
 msgstr "Время окончания"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "Конец"
 
@@ -7735,6 +7759,13 @@ msgstr "Завершение аренды, обработанной как ра�
 
 msgid "Ends"
 msgstr "Заканчивается"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "Принудительно — редактирование заблокировано"
@@ -8040,6 +8071,9 @@ msgstr "Сертификат освобождения"
 msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
@@ -8084,6 +8118,9 @@ msgstr "Развернуть Setup"
 
 msgid "Expand subtree"
 msgstr "Развернуть поддерево"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Ожидаемая будущая потребность для производимой номенклатуры, вводимая еженедельно до создания заказа покупателя; планирование согласует её с обеспечением и разворачивает метод для заказа компонентов заранее."
@@ -10211,6 +10248,9 @@ msgstr "Выставленная сумма счета-фактуры:"
 msgid "Invoiced Statuses"
 msgstr "Статусы выставленного счета"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "Счета-фактуры"
 
@@ -10219,6 +10259,9 @@ msgstr "Счет-фактуры создаются автоматически к
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Счет-фактуры создаются автоматически после активации соглашения."
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "Не удалось загрузить счет-фактуры"
@@ -12197,6 +12240,9 @@ msgstr "Новое правило"
 msgid "New Run"
 msgstr "Новый запуск"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "Новая счет-фактура выданная"
 
@@ -12322,6 +12368,9 @@ msgstr "Следующий срок:"
 
 msgid "Next Interest"
 msgstr "Следующие проценты"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "Следующий счет-фактура {date} создается автоматически и оставляется в виде черновика для рассмотрения."
@@ -13292,6 +13341,9 @@ msgstr "Один шаг в маршрутизации задания, опред
 msgid "One system from quote to cash"
 msgstr "Единая система от коммерческого предложения до денежных средств"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Редактировать можно только процедуры в статусе «Черновик». Создайте новую версию, чтобы изменить активную или архивную процедуру."
 
@@ -14088,6 +14140,9 @@ msgstr "в день"
 msgid "per month"
 msgstr "в месяц"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "За единицу"
 
@@ -14096,6 +14151,9 @@ msgstr "За единицу"
 
 msgid "per week"
 msgstr "в неделю"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Переопределение на уровне строки площадки отгрузки из заголовка заказа; используется для разделённых отгрузок и прямых поставок."
@@ -15371,6 +15429,9 @@ msgstr "Отправить снова"
 msgid "Reactivate"
 msgstr "Переактивировать"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Прочитайте это внимательно — что Carbon будет и не будет делать для вашей настройки. Когда это будет выглядеть правильно, отметьте согласие ниже."
 
@@ -15605,6 +15666,9 @@ msgstr "Записи и проведенные операции отправля
 
 msgid "Recovery Period"
 msgstr "Зарегистрировать"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Повторяющиеся счета-фактуры"
@@ -16427,8 +16491,17 @@ msgstr "Сторнирующая запись"
 msgid "Revert"
 msgstr "Восстановить"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Восстановление"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "откат…"
@@ -21220,6 +21293,10 @@ msgstr "Неначатые операции заказа по одному гр�
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Неподдерживаемый тип документа-основания: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "Без названия"

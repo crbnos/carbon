@@ -2003,6 +2003,9 @@ msgstr "हमेशा भेजा जाता है — हर सूचन
 msgid "Always taken"
 msgstr "हमेशा लिया जाता है"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "रकम"
 
@@ -4550,6 +4553,9 @@ msgstr "पुष्टि करें"
 msgid "Confirm {0}"
 msgstr "की पुष्टि करें {0}"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "पुष्टि करें और जारी करें"
 
@@ -4597,6 +4603,9 @@ msgstr "पुष्टि की गई आने वाली स्टॉक 
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "पुष्टि की गई बाहरी स्टॉक — विक्रय आदेश और जॉब सामग्री (शून्य से नीचे की पट्टियां)।"
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "पुष्टि करता है कि अवधि में प्रत्येक पोस्ट किए गए जर्नल प्रविष्टि में समान नामे और जमा हैं। यदि कोई प्रविष्टि असंतुलित है तो ट्रायल बैलेंस संतुलित नहीं होगा, इसलिए अवधि को बंद करने से पहले इसे सुधारा जाना चाहिए।"
@@ -4733,6 +4742,9 @@ msgstr "बिक्री पर दी गई छूट के लिए व�
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "ग्राहक चालान पर दी गई छूट के लिए विरोधी राजस्व GL खाता।"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "अनुबंध संपत्ति"
 
@@ -4741,6 +4753,12 @@ msgstr "अनुबंध संपत्तियाँ"
 
 msgid "Contract Assets (default)"
 msgstr "अनुबंध संपत्तियाँ (डिफ़ॉल्ट)"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "ठेकेदार"
@@ -6231,6 +6249,9 @@ msgstr "उपभोग्य सामग्री हटाएँ"
 
 msgid "Delete Contact"
 msgstr "संपर्क हटाएं"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "ठेकेदार हटाएं"
@@ -7723,6 +7744,9 @@ msgstr "कतार का अंत"
 msgid "End Time"
 msgstr "समाप्ति समय"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "समाप्त"
 
@@ -7735,6 +7759,13 @@ msgstr "एक किराए को जल्दी बिक्रय के 
 
 msgid "Ends"
 msgstr "समाप्त होता है"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "लागू करें — संपादन अवरुद्ध हैं"
@@ -8040,6 +8071,9 @@ msgstr "छूट प्रमाणपत्र"
 msgid "Exemption Reason"
 msgstr "छूट कारण"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
 
@@ -8084,6 +8118,9 @@ msgstr "सेटअप विस्तृत करें"
 
 msgid "Expand subtree"
 msgstr "सबट्री को विस्तृत करें"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "एक निर्माण पार्ट के लिए अपेक्षित भविष्य मांग को किसी भी विक्रय आदेश के मौजूद होने से पहले सप्ताह दर सप्ताह दर्ज किया जाता है; योजना इसे आपूर्ति के विरुद्ध नेट करती है और घटकों को आगे के लिए आदेश देने के लिए विधि को विस्तृत करती है।"
@@ -10211,6 +10248,9 @@ msgstr "चालान की गई राशि:"
 msgid "Invoiced Statuses"
 msgstr "चालान की गई स्थितियां"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "चालान"
 
@@ -10219,6 +10259,9 @@ msgstr "चालान हर दिन स्वचालित रूप स�
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "समझौता सक्रिय हो जाने पर चालान स्वचालित रूप से बनाए जाते हैं।"
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "चालान लोड नहीं किए जा सके"
@@ -12197,6 +12240,9 @@ msgstr "नया नियम"
 msgid "New Run"
 msgstr "नया रन"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "नया विक्रय चालान"
 
@@ -12322,6 +12368,9 @@ msgstr "अगला देय:"
 
 msgid "Next Interest"
 msgstr "अगला ब्याज"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "अगला चालान {date} स्वचालित रूप से बनाया जाता है और समीक्षा के लिए ड्राफ्ट के रूप में छोड़ दिया जाता है।"
@@ -13292,6 +13341,9 @@ msgstr "एक जॉब की रूटिंग में एक चरण, �
 msgid "One system from quote to cash"
 msgstr "उद्धरण से नकद तक एक प्रणाली"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "केवल ड्राफ्ट कार्यविधियाँ संपादन योग्य हैं। सक्रिय या संग्रहीत कार्यविधि को बदलने के लिए एक नया संस्करण बनाएँ।"
 
@@ -14088,6 +14140,9 @@ msgstr "प्रति दिन"
 msgid "per month"
 msgstr "प्रति माह"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "प्रति इकाई"
 
@@ -14096,6 +14151,9 @@ msgstr "प्रति यूनिट"
 
 msgid "per week"
 msgstr "प्रति सप्ताह"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "ऑर्डर हेडर के पूर्ति स्थान का प्रति-पंक्ति ओवरराइड; विभाजित शिपमेंट और ड्रॉप-शिप के लिए उपयोग किया जाता है।"
@@ -15371,6 +15429,9 @@ msgstr "फिर से भेजें"
 msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "इसे पूरी तरह पढ़ें — Carbon आपके सेटअप के लिए क्या करेगा और क्या नहीं करेगा। जब यह सही लगे, तो नीचे सहमत के रूप में चिह्नित करें।"
 
@@ -15605,6 +15666,9 @@ msgstr "रिकॉर्ड और पोस्ट किए गए जर्�
 
 msgid "Recovery Period"
 msgstr "पंजीकृत करें"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "पुनरावृत्ति चालान"
@@ -16427,8 +16491,17 @@ msgstr "प्रतिवर्तन प्रविष्टि"
 msgid "Revert"
 msgstr "पूर्ववत् करें"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "पूर्ववत् कर रहे हैं"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "वापस किया जा रहा है…"
@@ -21220,6 +21293,10 @@ msgstr "एक बैच-योग्य प्रक्रिया पर श�
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "असमर्थित स्रोत दस्तावेज़ प्रकार: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "अनामित"

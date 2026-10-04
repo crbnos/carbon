@@ -867,12 +867,49 @@ export type BankAccountSpec = {
   isPrimary: boolean;
 };
 
+/**
+ * A customer contract, seeded Active and confirmed. Tier 04 plans its invoice
+ * schedule with `planInvoiceSchedule` through `horizon`; every planned invoice
+ * dated on or before the anchor is `Billed Externally` (so tier 09 has nothing
+ * to journal) and `billedThrough` is the last such row's period end.
+ * Percentages are written as people write them (5 = 5%); the tier divides by 100.
+ */
+export type ContractSpec = {
+  /** Registered in ctx.refs.documents as `con:<key>`. */
+  key: string;
+  name: string;
+  customer: string;
+  startOffset: DayOffset;
+  /** null = open-ended. */
+  termMonths: number | null;
+  renewal: "Renew" | "End";
+  renewalUpliftPercent: number;
+  billingFrequency: "Week" | "Month" | "Quarter" | "Year";
+  billingAlignment: "Anniversary" | "Calendar";
+  billingTiming: "Advance" | "Arrears";
+  lines: {
+    kind: "One-time" | "Recurring";
+    /** A Service item of this dataset. */
+    item: string;
+    description: string;
+    quantity: number;
+    rate: number;
+    /** Required for Recurring, omitted for One-time. */
+    rateUnit?: "Day" | "Week" | "Month" | "Quarter" | "Year";
+    discountPercent?: number;
+    startOffset: DayOffset;
+    endOffset?: DayOffset;
+    revenueMethod: "Daily" | "Even Period";
+  }[];
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
   // Written AFTER the status orders — salesOrder readable ids depend on it.
   releasedOrders: SalesOpportunitySpec[];
   salesReturns: SalesReturnSpec[];
+  contracts: ContractSpec[];
   /** Customers with a portal (externalLink documentType Customer), as the portal form writes it. */
   customerPortals: string[];
   customerBankAccounts: (BankAccountSpec & { customer: string })[];

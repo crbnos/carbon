@@ -2003,6 +2003,9 @@ msgstr "항상 전송됨 — 모든 알림이 벨 메뉴에 표시됩니다."
 msgid "Always taken"
 msgstr "항상 사용됨"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "금액"
 
@@ -4550,6 +4553,9 @@ msgstr "확인"
 msgid "Confirm {0}"
 msgstr "{0} 확인"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "확인 및 릴리스"
 
@@ -4597,6 +4603,9 @@ msgstr "확정된 입고 재고 — 구매 및 생산 주문 (0 이상의 막대
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "확정된 출고 재고 — 수주 및 작업 지시 자재 (0 이하의 막대)"
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "기간 내 전기된 모든 분개가 차변과 대변이 일치하는지 확인합니다. 불균형인 분개가 있으면 시산표가 맞지 않으므로 기간을 마감하기 전에 정정해야 합니다."
@@ -4733,6 +4742,9 @@ msgstr "판매 할인용 대수익계정"
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "고객 송장 할인용 대수익 계정과목."
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "계약 자산"
 
@@ -4741,6 +4753,12 @@ msgstr "계약 자산"
 
 msgid "Contract Assets (default)"
 msgstr "계약 자산 (기본값)"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "외주 인력"
@@ -6231,6 +6249,9 @@ msgstr "소모품 삭제"
 
 msgid "Delete Contact"
 msgstr "담당자 삭제"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "외주 인력 삭제"
@@ -7723,6 +7744,9 @@ msgstr "대기열 끝"
 msgid "End Time"
 msgstr "종료 시간"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "종료"
 
@@ -7735,6 +7759,13 @@ msgstr "렌탈을 판매로 조기에 종료하는 것은 수동 전표입니다
 
 msgid "Ends"
 msgstr "끝남"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "강제 — 편집이 차단되었습니다."
@@ -8040,6 +8071,9 @@ msgstr "면세 증명서"
 msgid "Exemption Reason"
 msgstr "면세 사유"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
 
@@ -8084,6 +8118,9 @@ msgstr "셋업 펼치기"
 
 msgid "Expand subtree"
 msgstr "하위 트리 펼치기"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "수주가 존재하기 전에 주별로 입력되는 사내 생산 부품의 예상 향후 소요량; 계획이 이를 공급과 상계하고 방법을 전개하여 구성 요소를 미리 주문합니다."
@@ -10211,6 +10248,9 @@ msgstr "송장 발행 금액:"
 msgid "Invoiced Statuses"
 msgstr "송장 발행됨 상태"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "송장"
 
@@ -10219,6 +10259,9 @@ msgstr "송장은 매일 자동으로 생성됩니다. 현재 청구해야 할 �
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "계약이 활성화되면 송장이 자동으로 생성됩니다."
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "송장을 불러올 수 없습니다."
@@ -12197,6 +12240,9 @@ msgstr "새 규칙"
 msgid "New Run"
 msgstr "새 실행"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "신규 매출 송장"
 
@@ -12322,6 +12368,9 @@ msgstr "다음 납기일:"
 
 msgid "Next Interest"
 msgstr "다음 이자"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "다음 송장 {date}는 자동으로 생성되며 검토를 위해 초안으로 남겨집니다."
@@ -13292,6 +13341,9 @@ msgstr "작업 지시의 라우팅에서 한 단계로, 공법과 작업장을 �
 msgid "One system from quote to cash"
 msgstr "견적에서 현금까지 통합 시스템"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절차서를 변경하려면 새로운 버전을 생성하세요."
 
@@ -14088,6 +14140,9 @@ msgstr "일당"
 msgid "per month"
 msgstr "월당"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "개당"
 
@@ -14096,6 +14151,9 @@ msgstr "단위당"
 
 msgid "per week"
 msgstr "주당"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "주문 헤더의 출하 사업장에 대한 라인별 재정의; 분할 출하 및 직송에 사용됨."
@@ -15371,6 +15429,9 @@ msgstr "다시 보내기"
 msgid "Reactivate"
 msgstr "재활성화"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Carbon이 귀사의 설정에서 무엇을 하고 무엇을 하지 않을지 내용을 확인하세요. 내용이 맞다면 아래에서 동의로 표시하세요."
 
@@ -15605,6 +15666,9 @@ msgstr "기록 및 전기된 전표가 이 공급자로부터 전송 및 수신�
 
 msgid "Recovery Period"
 msgstr "회수 기간"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "정기 송장"
@@ -16427,8 +16491,17 @@ msgstr "역분개 항목"
 msgid "Revert"
 msgstr "복원"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "복원 중"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "되돌리는 중…"
@@ -21220,6 +21293,10 @@ msgstr "한 작업장의 배치 가능 공법에서 함께 실행하도록 그�
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "지원되지 않는 원본 문서 유형: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "제목 없음"

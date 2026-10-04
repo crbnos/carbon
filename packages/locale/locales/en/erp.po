@@ -2003,6 +2003,9 @@ msgstr "Always sent — every notification shows in the bell menu."
 msgid "Always taken"
 msgstr "Always taken"
 
+msgid "Amend"
+msgstr "Amend"
+
 msgid "Amount"
 msgstr "Amount"
 
@@ -4550,6 +4553,9 @@ msgstr "Confirm"
 msgid "Confirm {0}"
 msgstr "Confirm {0}"
 
+msgid "Confirm {readableId}"
+msgstr "Confirm {readableId}"
+
 msgid "Confirm & release"
 msgstr "Confirm & release"
 
@@ -4597,6 +4603,9 @@ msgstr "Confirmed incoming stock — purchase & production orders (bars above ze
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
@@ -4733,6 +4742,9 @@ msgstr "Contra-revenue account for discounts given on sales"
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "Contra-revenue GL account for discounts given on customer invoices."
 
+msgid "Contract"
+msgstr "Contract"
+
 msgid "Contract asset"
 msgstr "Contract asset"
 
@@ -4741,6 +4753,12 @@ msgstr "Contract Assets"
 
 msgid "Contract Assets (default)"
 msgstr "Contract Assets (default)"
+
+msgid "Contract Value"
+msgstr "Contract Value"
+
+msgid "Contraction"
+msgstr "Contraction"
 
 msgid "Contractor"
 msgstr "Contractor"
@@ -6231,6 +6249,9 @@ msgstr "Delete Consumable"
 
 msgid "Delete Contact"
 msgstr "Delete Contact"
+
+msgid "Delete Contract"
+msgstr "Delete Contract"
 
 msgid "Delete Contractor"
 msgstr "Delete Contractor"
@@ -7723,6 +7744,9 @@ msgstr "End of queue"
 msgid "End Time"
 msgstr "End Time"
 
+msgid "Ended"
+msgstr "Ended"
+
 msgid "Ending"
 msgstr "Ending"
 
@@ -7735,6 +7759,13 @@ msgstr "Ending a rental treated as a sale early is a manual journal."
 
 msgid "Ends"
 msgstr "Ends"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr "Ends {0}"
+
+msgid "Ends On"
+msgstr "Ends On"
 
 msgid "Enforce — edits are blocked"
 msgstr "Enforce — edits are blocked"
@@ -8040,6 +8071,9 @@ msgstr "Exemption Certificate"
 msgid "Exemption Reason"
 msgstr "Exemption Reason"
 
+msgid "Existing"
+msgstr "Existing"
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Existing mappings. Pick a different provider option to re-map."
 
@@ -8084,6 +8118,9 @@ msgstr "Expand Setup"
 
 msgid "Expand subtree"
 msgstr "Expand subtree"
+
+msgid "Expansion"
+msgstr "Expansion"
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
@@ -10211,6 +10248,9 @@ msgstr "Invoiced Amount:"
 msgid "Invoiced Statuses"
 msgstr "Invoiced Statuses"
 
+msgid "Invoiced to Date"
+msgstr "Invoiced to Date"
+
 msgid "Invoices"
 msgstr "Invoices"
 
@@ -10219,6 +10259,9 @@ msgstr "Invoices are created automatically every day for whatever is due. Use th
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Invoices are created automatically once the agreement is active."
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
 
 msgid "Invoices could not be loaded"
 msgstr "Invoices could not be loaded"
@@ -12197,6 +12240,9 @@ msgstr "New Rule"
 msgid "New Run"
 msgstr "New Run"
 
+msgid "New Sales"
+msgstr "New Sales"
+
 msgid "New Sales Invoice"
 msgstr "New Sales Invoice"
 
@@ -12322,6 +12368,9 @@ msgstr "Next Due:"
 
 msgid "Next Interest"
 msgstr "Next Interest"
+
+msgid "Next Invoice"
+msgstr "Next Invoice"
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "Next invoice {date} is created automatically, and left as a draft for review."
@@ -13292,6 +13341,9 @@ msgstr "One step in a job's routing, naming a process and a work center and carr
 msgid "One system from quote to cash"
 msgstr "One system from quote to cash"
 
+msgid "One-time"
+msgstr "One-time"
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 
@@ -14088,6 +14140,9 @@ msgstr "per day"
 msgid "per month"
 msgstr "per month"
 
+msgid "per quarter"
+msgstr "per quarter"
+
 msgid "Per unit"
 msgstr "Per unit"
 
@@ -14096,6 +14151,9 @@ msgstr "Per Unit"
 
 msgid "per week"
 msgstr "per week"
+
+msgid "per year"
+msgstr "per year"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -15371,6 +15429,9 @@ msgstr "Re-send"
 msgid "Reactivate"
 msgstr "Reactivate"
 
+msgid "Reactivation"
+msgstr "Reactivation"
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 
@@ -15605,6 +15666,9 @@ msgstr "Records and posted journals are being sent to and received from this pro
 
 msgid "Recovery Period"
 msgstr "Recovery Period"
+
+msgid "Recurring"
+msgstr "Recurring"
 
 msgid "Recurring Invoices"
 msgstr "Recurring Invoices"
@@ -16427,8 +16491,17 @@ msgstr "Reversing entry"
 msgid "Revert"
 msgstr "Revert"
 
+msgid "Revert Cancellation"
+msgstr "Revert Cancellation"
+
+msgid "Revert cancellation of {readableId}"
+msgstr "Revert cancellation of {readableId}"
+
 msgid "Reverting"
 msgstr "Reverting"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr "Reverting restores the end date, renewal and line end dates the cancellation changed."
 
 msgid "reverting…"
 msgstr "reverting…"
@@ -21220,6 +21293,10 @@ msgstr "Unstarted job operations on one batchable process grouped to run togethe
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Unsupported source document type: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr "until {0}"
 
 msgid "Untitled"
 msgstr "Untitled"

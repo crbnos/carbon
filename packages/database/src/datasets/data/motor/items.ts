@@ -263,6 +263,26 @@ export const SERVICES: ItemSpec[] = [
     replenishment: "Buy",
     standardCost: 1450,
     leadTime: 21
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Motor Test Cell Setup",
+    name: "Motor Test Cell Setup",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Fixture build, instrumentation and correlation runs for a customer motor program.",
+    standardCost: 5200
+  },
+  {
+    // Sold on the demo customer contract (sales.contracts); no bundled thumbnail.
+    readableId: "Predictive Maintenance Monitoring",
+    name: "Predictive Maintenance Monitoring",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Vibration and thermal trend monitoring for installed drive motors.",
+    standardCost: 480
   }
 ];
 

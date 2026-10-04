@@ -2003,6 +2003,9 @@ msgstr "Sempre inviato — ogni notifica appare nel menu campanello."
 msgid "Always taken"
 msgstr "Sempre preso"
 
+msgid "Amend"
+msgstr ""
+
 msgid "Amount"
 msgstr "Importo"
 
@@ -4550,6 +4553,9 @@ msgstr "Conferma"
 msgid "Confirm {0}"
 msgstr "Conferma {0}"
 
+msgid "Confirm {readableId}"
+msgstr ""
+
 msgid "Confirm & release"
 msgstr "Conferma e rilascia"
 
@@ -4597,6 +4603,9 @@ msgstr "Stock in entrata confermato — ordini di acquisto e di produzione (barr
 
 msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
 msgstr "Giacenza in uscita confermata - ordini di vendita e materiali dell'ordine (barre sotto zero)."
+
+msgid "Confirming fixes the invoice schedule and starts invoicing. The terms and lines are then changed with Amend."
+msgstr ""
 
 msgid "Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close."
 msgstr "Conferma che ogni riga di registrazione registrata nel periodo ha uguali dare e avere. Se una riga non è in equilibrio, la bilancia di verifica non si quadrerà, quindi deve essere corretta prima che il periodo possa essere chiuso."
@@ -4733,6 +4742,9 @@ msgstr "Conto di controrivenuta per sconti sulle vendite"
 msgid "Contra-revenue GL account for discounts given on customer invoices."
 msgstr "Conto GL di controrivenuta per sconti accordati su fatture clienti."
 
+msgid "Contract"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Attività da contratto"
 
@@ -4741,6 +4753,12 @@ msgstr "Cespiti contrattuali"
 
 msgid "Contract Assets (default)"
 msgstr "Cespiti contrattuali (predefinito)"
+
+msgid "Contract Value"
+msgstr ""
+
+msgid "Contraction"
+msgstr ""
 
 msgid "Contractor"
 msgstr "Collaboratore esterno"
@@ -6231,6 +6249,9 @@ msgstr "Elimina Materiale di consumo"
 
 msgid "Delete Contact"
 msgstr "Elimina Contatto"
+
+msgid "Delete Contract"
+msgstr ""
 
 msgid "Delete Contractor"
 msgstr "Elimina Collaboratore esterno"
@@ -7723,6 +7744,9 @@ msgstr "Fine della coda"
 msgid "End Time"
 msgstr "Ora di fine"
 
+msgid "Ended"
+msgstr ""
+
 msgid "Ending"
 msgstr "Fine"
 
@@ -7735,6 +7759,13 @@ msgstr "Il termine di un noleggio trattato come una vendita anticipata è una pr
 
 msgid "Ends"
 msgstr "Termina"
+
+#. placeholder {0}: formatDate(contract.endDate)
+msgid "Ends {0}"
+msgstr ""
+
+msgid "Ends On"
+msgstr ""
 
 msgid "Enforce — edits are blocked"
 msgstr "Applica — le modifiche sono bloccate"
@@ -8040,6 +8071,9 @@ msgstr "Certificato di Esenzione"
 msgid "Exemption Reason"
 msgstr "Motivo dell'Esenzione"
 
+msgid "Existing"
+msgstr ""
+
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
 
@@ -8084,6 +8118,9 @@ msgstr "Espandi preparazione"
 
 msgid "Expand subtree"
 msgstr "Espandi sottostruttura"
+
+msgid "Expansion"
+msgstr ""
 
 msgid "Expected future demand for a make part entered week by week before any sales order exists; planning nets it against supply and explodes the method to order components ahead."
 msgstr "Fabbisogno futuro previsto per un Articolo di Produzione inserito settimana per settimana prima di qualsiasi Ordine di vendita; la Pianificazione lo bilancia rispetto alla Copertura ed esplode il Metodo per ordinare i Componenti in anticipo."
@@ -10211,6 +10248,9 @@ msgstr "Importo Fatturato:"
 msgid "Invoiced Statuses"
 msgstr "Stati Fatturati"
 
+msgid "Invoiced to Date"
+msgstr ""
+
 msgid "Invoices"
 msgstr "Fatture"
 
@@ -10219,6 +10259,9 @@ msgstr "Le fatture vengono create automaticamente ogni giorno per quanto è dovu
 
 msgid "Invoices are created automatically once the agreement is active."
 msgstr "Le fatture vengono create automaticamente quando l'accordo è attivo."
+
+msgid "Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting."
+msgstr ""
 
 msgid "Invoices could not be loaded"
 msgstr "Non è stato possibile caricare le fatture"
@@ -12197,6 +12240,9 @@ msgstr "Nuova Regola"
 msgid "New Run"
 msgstr "Nuova esecuzione"
 
+msgid "New Sales"
+msgstr ""
+
 msgid "New Sales Invoice"
 msgstr "Nuovo Fattura di Vendita"
 
@@ -12322,6 +12368,9 @@ msgstr "Prossima scadenza:"
 
 msgid "Next Interest"
 msgstr "Interesse successivo"
+
+msgid "Next Invoice"
+msgstr ""
 
 msgid "Next invoice {date} is created automatically, and left as a draft for review."
 msgstr "La prossima fattura {date} viene creata automaticamente e lasciata come bozza per la revisione."
@@ -13292,6 +13341,9 @@ msgstr "Un passo nel ciclo di lavorazione di un ordine di produzione, che design
 msgid "One system from quote to cash"
 msgstr "Un sistema unico da offerta a incasso"
 
+msgid "One-time"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Solo le procedure in bozza sono modificabili. Crea una nuova versione per modificare una procedura attiva o archiviata."
 
@@ -14088,6 +14140,9 @@ msgstr "al giorno"
 msgid "per month"
 msgstr "al mese"
 
+msgid "per quarter"
+msgstr ""
+
 msgid "Per unit"
 msgstr "Per unità"
 
@@ -14096,6 +14151,9 @@ msgstr "Per unità"
 
 msgid "per week"
 msgstr "a settimana"
+
+msgid "per year"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Forzatura per riga dell'ubicazione di spedizione dell'ordine; utilizzata per spedizioni suddivise e consegne dirette."
@@ -15371,6 +15429,9 @@ msgstr "Rinvia"
 msgid "Reactivate"
 msgstr "Riattiva"
 
+msgid "Reactivation"
+msgstr ""
+
 msgid "Read this through — what Carbon will and won't do for your setup. When it looks right, mark it agreed below."
 msgstr "Leggi tutto — cosa Carbon farà e non farà per la tua configurazione. Quando ti sembra giusto, contrassegnalo come concordato di seguito."
 
@@ -15605,6 +15666,9 @@ msgstr "I record e le prime note registrate vengono inviati e ricevuti da questo
 
 msgid "Recovery Period"
 msgstr "Registrare"
+
+msgid "Recurring"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Fatture Ricorrenti"
@@ -16427,8 +16491,17 @@ msgstr "voce di storno"
 msgid "Revert"
 msgstr "Ripristina"
 
+msgid "Revert Cancellation"
+msgstr ""
+
+msgid "Revert cancellation of {readableId}"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Ripristino in corso"
+
+msgid "Reverting restores the end date, renewal and line end dates the cancellation changed."
+msgstr ""
 
 msgid "reverting…"
 msgstr "annullamento in corso…"
@@ -21220,6 +21293,10 @@ msgstr "Operazioni dell'ordine non avviate in un processo raggruppabile, raggrup
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "Tipo di documento di origine non supportato: {sourceDocument}"
+
+#. placeholder {0}: formatDate(line.endDate)
+msgid "until {0}"
+msgstr ""
 
 msgid "Untitled"
 msgstr "Senza titolo"
