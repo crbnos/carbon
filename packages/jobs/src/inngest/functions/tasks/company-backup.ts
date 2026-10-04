@@ -105,10 +105,6 @@ export const READABLE_ID_TABLES = new Set([
  * per workspace (3D models, etc.), uploaded at deploy from the committed
  * template gz. A template import references these instead of copying the files
  * into every onboarded company's `{companyId}/` prefix.
- *
- * NOTE: `ci/src/upload-backup-templates.ts` (a plain Node script that can't
- * import this Inngest module cheaply) hardcodes the same literal — keep
- * the two in sync.
  */
 export const TEMPLATE_ASSET_PREFIX = "_templates";
 

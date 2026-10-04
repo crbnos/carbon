@@ -52,3 +52,28 @@ export function clientOnlyAlias(specifier, file) {
     },
   };
 }
+
+/**
+ * `@lingui/vite-plugin` 6.9.0 infers the parser from `path.basename(id)`, so a
+ * React Router route module (`route.tsx?__react-router-build-client-route`)
+ * is parsed as plain JS and fails on its first `import type`. Hand the macro
+ * transform the id without its query. Remove once Lingui strips it upstream.
+ *
+ * @param {import("vite").Plugin[]} plugins the array `lingui()` returns
+ * @returns {import("vite").Plugin[]}
+ */
+export function linguiWithoutIdQuery(plugins) {
+  return plugins.map((plugin) => {
+    if (plugin.name !== "vite-plugin-lingui-macro-transform") return plugin;
+    const { handler } = plugin.transform;
+    return {
+      ...plugin,
+      transform: {
+        ...plugin.transform,
+        handler(code, id) {
+          return handler.call(this, code, id.split("?")[0]);
+        },
+      },
+    };
+  });
+}

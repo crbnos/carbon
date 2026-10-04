@@ -39,7 +39,7 @@ catalogSearch, toolMetadata }`.
 > a change a cache hit that restored a STALE manifest, which the build then
 > bundled. `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models
 > file imports something the inputs do not cover; the manifest trigger in
-> `.husky/pre-commit` names the same set. Types reached only through the compiler
+> `scripts/git-hooks/pre-commit` names the same set. Types reached only through the compiler
 > (a return type declared in a package no models file imports) are still not
 > inputs.
 > The committed record of the published contract is its small companion

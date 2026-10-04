@@ -2260,7 +2260,7 @@ msgstr "Bu ölçüm aletini etkinleştirmek istediğinizden emin misiniz?."
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0} öğesini iptal etmek istediğinizden emin misiniz? Yeniden açana kadar kapalı ve salt okunur durumda olacaktır."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
 
@@ -2633,8 +2633,8 @@ msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Bu kontrol noktasını geçmek istediğinizden emin misiniz? {0} aşaması hala tamamlanmamış görevlere sahip."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "{0} öğesini kalıcı olarak silmek istediğinizden emin misiniz?"
 
@@ -21337,8 +21337,7 @@ msgstr "Bu anahtarı yalnızca bir kez görebilirsiniz. Güvenli bir yerde sakla
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

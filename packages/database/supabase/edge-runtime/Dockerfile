@@ -3,7 +3,7 @@
 # "build, push, helm upgrade" rather than a host bind mount kept in sync.
 #
 # Build from the repo root — it reads packages/database/supabase/functions:
-#   docker build -f docker/edge-functions/Dockerfile -t carbon/edge-functions .
+#   docker build -f packages/database/supabase/edge-runtime/Dockerfile -t carbon/edge-functions .
 #
 # In GovCloud, BASE_IMAGE must point at an ECR mirror of
 # supabase/edge-runtime — never Docker Hub.
@@ -18,7 +18,7 @@ ARG DENO_IMAGE=denoland/deno:1.45.2
 # a runtime fetch.
 FROM ${DENO_IMAGE} AS cache
 ENV DENO_DIR=/deno-cache
-COPY docker/edge-functions/main /src/main
+COPY packages/database/supabase/edge-runtime/main /src/main
 COPY packages/database/supabase/functions /src/functions
 RUN for f in /src/main/index.ts /src/functions/*/index.ts; do \
       [ -f "$f" ] && deno cache "$f" || true; \
@@ -36,7 +36,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # The main dispatcher (vendored from crbnos/supabase volumes/functions/main).
-COPY docker/edge-functions/main /home/deno/functions/main
+COPY packages/database/supabase/edge-runtime/main /home/deno/functions/main
 
 # The Carbon functions themselves.
 COPY packages/database/supabase/functions /home/deno/functions

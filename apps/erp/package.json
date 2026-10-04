@@ -141,8 +141,9 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@carbon/dev": "workspace:*",
-    "@lingui/macro": "catalog:",
+    "@lingui/conf": "catalog:",
     "@lingui/vite-plugin": "catalog:",
+    "@react-aria/optimize-locales-plugin": "catalog:",
     "@react-router/dev": "catalog:",
     "@tailwindcss/typography": "catalog:",
     "@tailwindcss/vite": "catalog:",
@@ -165,8 +166,9 @@
     "tailwindcss": "catalog:",
     "tailwindcss-animate": "catalog:",
     "typescript": "catalog:",
+    "@vitejs/devtools": "catalog:",
+    "@vitejs/devtools-rolldown": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-babel-macros": "catalog:",
     "vitest": "catalog:"
   },
   "private": true,

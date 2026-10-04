@@ -1,12 +1,5 @@
 #!/bin/sh
-# Fresh git worktrees / clones lack .husky/_/ until `pnpm install` runs its
-# prepare script. Without this guard the hook crashes with a cryptic
-# ".husky/_/husky.sh: No such file or directory". Skip hooks gracefully instead.
-if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
-    echo "⚠ husky not initialized — run 'pnpm install'. Skipping git hooks."
-    exit 0
-fi
-. "$(dirname "$0")/_/husky.sh"
+set -e
 
 pnpm exec lint-staged
 

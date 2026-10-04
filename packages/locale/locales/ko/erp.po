@@ -2260,7 +2260,7 @@ msgstr "이 계측기를 활성화하시겠습니까?."
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "{0}를 취소하시겠습니까? 다시 열기할 때까지 마감되고 읽기 전용이 됩니다."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}을(를) 취소하시겠습니까? 관련된 모든 공급업체 견적도 함께 취소됩니다."
 
@@ -2633,8 +2633,8 @@ msgstr "이 페이지를 나가시겠습니까?"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "이 체크포인트를 통과하시겠습니까? {0} 단계에 아직 완료되지 않은 작업이 있습니다."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "{0}을(를) 영구적으로 삭제하시겠습니까?"
 
@@ -21337,8 +21337,7 @@ msgstr "이 키는 한 번만 확인할 수 있습니다. 안전하게 보관하
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

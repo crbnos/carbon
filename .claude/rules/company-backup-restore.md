@@ -15,8 +15,6 @@ paths:
   - "apps/erp/app/services/onboarding-draft.server.ts"
   - "packages/jobs/src/scripts/check-backups.ts"
   - "packages/jobs/manifests/**"
-  - "ci/src/upload-backup-templates.ts"
-  - "packages/database/supabase/backups/**"
 ---
 
 # Company Backup / Restore / Onboarding Seed
@@ -322,7 +320,7 @@ A schema-shaped manifest with no rows is exactly as informative as a real custom
 backup, because compatibility is decided entirely by table and column names. That is
 what makes this checkable from a committed file rather than from a database.
 
-It runs from `.husky/pre-commit` when a staged file is under
+It runs from `scripts/git-hooks/pre-commit` when a staged file is under
 `packages/database/supabase/migrations/`, alongside `db:check:datasets`, and skips
 with `CARBON_SKIP_BACKUP_CHECK=1`. Read-only — one connection, `information_schema`
 queries, no writes.
@@ -667,15 +665,7 @@ picker rather than provisioning a clean company.
 
 **Dormant** (built, never wired, do not revive without revisiting
 `.ai/specs/implemented/2026-08-13-onboarding-company-templates.md`): the
-`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`,
-`templateIndustryId` on `carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
-`packages/database/supabase/backups/` (which now holds only a README saying so).
-
-## CI publish (dormant)
-
-`ci/src/upload-backup-templates.ts` is part of the dormant set above and publishes
-nothing today — onboarding templates never go through a storage bucket. It is described
-here only so the next reader knows what the script and the `Publish backup templates`
-workflow (`.github/workflows/publish-templates.yml`, `workflow_dispatch`) were for:
-a manual, idempotent upload of committed `.gz` archives and their sibling
-`<industryId>.assets/` folders into each workspace's `company-templates` bucket.
+`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`, and
+`templateIndustryId` on `carbon/company-import`. The CI publish script
+(`ci/src/upload-backup-templates.ts`), its `Publish backup templates` workflow and
+`packages/database/supabase/backups/` were deleted.

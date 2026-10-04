@@ -63,7 +63,7 @@ outside that set. A package whose task reads other paths declares them in its ow
 artifact depends on the task that makes it (`apps/erp/turbo.json`).
 
 Both `db:check:*` commands read your live local schema. They run from
-`.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
+`scripts/git-hooks/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
 the dataset check fail for the wrong reason and makes the backup check refuse to give
 a verdict at all. Run by hand, both write nothing; from the hook, `db:check:backups`
 additionally regenerates and stages `packages/jobs/manifests/schema.json` on success.

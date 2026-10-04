@@ -2260,7 +2260,7 @@ msgstr "确定要启用此量具吗？"
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "您确定要取消{0}吗？在您重新打开之前，它将被已关闭且只读。"
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
 
@@ -2633,8 +2633,8 @@ msgstr "您确定要离开此页面吗？"
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "您确定要通过此检查点吗？{0}阶段仍有未完成的任务。"
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "您确定要永久删除 {0} 吗？"
 
@@ -21337,13 +21337,11 @@ msgstr "您只能看到此密钥一次。请妥善保管。"
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr ""
-"您完成了 {leftoverQuantity} 个以上 \n"
+msgstr "您完成了 {leftoverQuantity} 个以上 \n"
 "                        {0}，比 \n"
 "                        订购数量 {1} 多。您想 \n"
 "                        用多余的零件怎么办？"

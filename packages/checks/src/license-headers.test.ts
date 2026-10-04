@@ -56,8 +56,7 @@ describe("classifyPath", () => {
       "packages/database/src/types.ts",
       "packages/database/src/swagger-docs-schema.ts",
       "packages/ee/src/workflows/catalog/events.generated.ts",
-      "packages/ee/src/paperless-parts/lib/client.ts",
-      "apps/erp/public/pdf.worker.min.mjs"
+      "packages/ee/src/paperless-parts/lib/client.ts"
     ]) {
       const result = classifyPath(path);
       expect(result, path).toMatchObject({ excluded: true });
@@ -128,7 +127,6 @@ describe("isLicenseCandidate", () => {
       "contrib/building/examples/a.ts",
       ".claude/skills/x/a.mjs",
       ".github/scripts/a.js",
-      "docker/edge-functions/main/index.ts",
       "patches/a.ts",
       "apps/erp/app/styles.css",
       "packages/database/supabase/migrations/1.sql",

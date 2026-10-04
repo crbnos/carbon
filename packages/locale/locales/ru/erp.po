@@ -2260,7 +2260,7 @@ msgstr "Вы уверены, что хотите активировать это
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "Вы уверены, что хотите отменить {0}? Он будет закрыт и доступен только для чтения, пока вы его не откроете заново."
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 
@@ -2633,8 +2633,8 @@ msgstr "Вы уверены, что хотите покинуть эту стр�
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "Вы уверены, что хотите пройти эту контрольную точку? На этапе {0} остались незавершённые задачи."
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "Вы уверены, что хотите окончательно удалить {0}?"
 
@@ -21337,8 +21337,7 @@ msgstr "Вы можете увидеть этот ключ только один
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"

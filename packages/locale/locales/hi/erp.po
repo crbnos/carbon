@@ -2260,7 +2260,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
 msgstr "क्या आप {0} को रद्द करना चाहते हैं? यह बंद हो जाएगी और पढ़ने के लिए केवल तब तक होगी जब तक आप इसे फिर से खोलेंगे।"
 
-#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "क्या आप {0} को रद्द करना चाहते हैं? यह सभी संबंधित आपूर्तिकर्ता कोटेशन को भी रद्द कर देगा।"
 
@@ -2633,8 +2633,8 @@ msgstr "क्या आप वाकई इस पृष्ठ को छोड
 msgid "Are you sure you want to pass this checkpoint? The {0} phase still has unfinished tasks."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस चेकपॉइंट को पास करना चाहते हैं? {0} चरण में अभी भी अधूरे कार्य हैं।"
 
-#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
-#. placeholder {0}: selectedSalesInvoice.invoiceId!
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId
+#. placeholder {0}: selectedSalesInvoice.invoiceId
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "क्या आप {0} को स्थायी रूप से हटाना चाहते हैं?"
 
@@ -21337,13 +21337,11 @@ msgstr "आप इस कुंजी को केवल एक बार द�
 
 #. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
 #. placeholder {1}: job.quantity
-msgid ""
-"You completed {leftoverQuantity} more \n"
+msgid "You completed {leftoverQuantity} more \n"
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr ""
-"आप {leftoverQuantity} अधिक \n"
+msgstr "आप {leftoverQuantity} अधिक \n"
 "                        {0} को {1} की ऑर्डर की गई \n"
 "                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
 "                        क्या करना चाहेंगे?"

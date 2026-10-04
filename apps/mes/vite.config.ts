@@ -2,16 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { applyDotenvToProcessEnv, clientOnlyAlias } from "@carbon/dev/vite";
+import {
+  applyDotenvToProcessEnv,
+  clientOnlyAlias,
+  linguiWithoutIdQuery,
+} from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
+import { getConfig } from "@lingui/conf";
 import { lingui } from "@lingui/vite-plugin";
+import optimizeLocales from "@react-aria/optimize-locales-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
-import babelMacros from "vite-plugin-babel-macros";
 
 export default defineConfig(({ command, mode, isSsrBuild }) => {
-  applyDotenvToProcessEnv(mode, __dirname);
+  applyDotenvToProcessEnv(mode, import.meta.dirname);
 
   /**
    * SSR dependencies that must be bundled into the server output rather than
@@ -59,6 +64,10 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       command === "build" && process.env.ASSETS_URL
         ? process.env.ASSETS_URL.replace(/\/*$/, "/")
         : undefined,
+    // Build analysis (plugin hook cost, chunks, duplicate packages). Opt-in,
+    // because each build writes gigabytes to node_modules/.rolldown:
+    // `VITE_DEVTOOLS=1 pnpm build`, then `pnpm exec vite-devtools`.
+    devtools: Boolean(process.env.VITE_DEVTOOLS),
     /**
      * Label logos (`@carbon/documents/labels` → `@carbon/files/media/node`)
      * import the jSquash wasm codecs as `?inline` data URIs. Vite only honours
@@ -99,15 +108,16 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
     },
     plugins: [
       tailwindcss(),
-      babelMacros(),
-      lingui(),
+      linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
+      // react-aria ships strings for ~34 locales; keep the ones the app translates.
+      optimizeLocales.vite({ locales: getConfig().locales }),
       // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser, which
       // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out there
       // only: on the server it is the one engine PDF reading has.
       clientOnlyAlias(
         "unpdf/pdfjs",
-        path.resolve(__dirname, "app/ssr-shims/unpdf-pdfjs-stub.mjs")
+        path.resolve(import.meta.dirname, "app/ssr-shims/unpdf-pdfjs-stub.mjs")
       ),
     ] as PluginOption[],
     resolve: {
@@ -118,7 +128,7 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
          * can still load that graph; alias `canvas` to a stub (do not alias the
          * konva entry itself — the drawing pane needs the real browser build).
          */
-        canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        canvas: path.resolve(import.meta.dirname, "app/ssr-shims/canvas-stub.cjs"),
         /**
          * `rhino3dm` (via @carbon/viewer) has a Node-only branch that
          * `require("ws")`, but declares no dependencies, so `ws` is not
@@ -126,12 +136,12 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
          * bundling the viewer's worker entry and fails the build; esbuild did
          * not. Nothing here uses `ws` — stub it like `canvas` above.
          */
-        ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
+        ws: path.resolve(import.meta.dirname, "app/ssr-shims/ws-stub.cjs"),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
-        "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
+        "@carbon/utils": path.resolve(import.meta.dirname, "../../packages/utils/src"),
         "@carbon/form": path.resolve(
-          __dirname,
+          import.meta.dirname,
           "../../packages/form/src/index.tsx"
         ),
       },

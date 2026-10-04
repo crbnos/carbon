@@ -81,7 +81,7 @@ describe("the manifest cache inputs", () => {
     }
     expect(
       missing,
-      "add these to the //#generate:mcp inputs in turbo.json (and to the manifest trigger in .husky/pre-commit)"
+      "add these to the //#generate:mcp inputs in turbo.json (and to the manifest trigger in scripts/git-hooks/pre-commit)"
     ).toEqual([]);
   });
 });

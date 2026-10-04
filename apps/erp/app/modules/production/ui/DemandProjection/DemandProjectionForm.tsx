@@ -21,6 +21,7 @@ import {
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
+import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -95,11 +96,11 @@ const DemandProjectionsForm = ({
   const timeZone = getLocalTimeZone();
   const startDate = startOfWeek(today(timeZone), "en-US");
   const weekLabels = Array.from({ length: WEEK_COUNT }, (_, i) => {
-    const weekDate = startDate.add({ weeks: i }).toDate(timeZone);
-    const formattedDate = i18n.date(weekDate, {
-      month: "numeric",
-      day: "numeric"
-    });
+    const formattedDate = formatDate(
+      startDate.add({ weeks: i }).toString(),
+      { month: "numeric", day: "numeric" },
+      i18n.locale
+    );
     return t`Week ${i + 1} (${formattedDate})`;
   });
 
