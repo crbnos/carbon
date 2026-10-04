@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   Combobox,
@@ -94,7 +95,14 @@ const PlanningTable = memo(
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
 
-    const mrpFetcher = useFetcher<typeof mrpAction>();
+    const mrpFetcher = useAction<typeof mrpAction>({
+      onSettled: (data) => {
+        if (data) {
+          clearOrdersCache();
+          setOrdersMap({}); // Reset local state to force recalculation
+        }
+      }
+    });
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -206,14 +214,6 @@ const PlanningTable = memo(
     const [ordersByItemId, setOrdersByItemId] = useState<
       Map<string, PlannedOrder[]>
     >(new Map());
-
-    // Clear cache when MRP completes
-    useEffect(() => {
-      if (mrpFetcher.state === "idle" && mrpFetcher.data) {
-        clearOrdersCache();
-        setOrdersMap({}); // Reset local state to force recalculation
-      }
-    }, [mrpFetcher.state, mrpFetcher.data]);
 
     // Clear local state when data changes (e.g., filters, search)
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

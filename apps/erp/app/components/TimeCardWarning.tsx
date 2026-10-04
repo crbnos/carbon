@@ -5,6 +5,7 @@
 "use client";
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -32,7 +33,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
-import { useFetcher } from "react-router";
 import { setClockOutValidator } from "~/modules/people";
 import { path } from "~/utils/path";
 import { DateTimePicker, Hidden, Submit } from "./Form";
@@ -52,7 +52,16 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { t } = useLingui();
   const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSettled: (data) => {
+      if (data) {
+        if ((data as { success?: boolean }).success) {
+          toast.success(t`Updated successfully`);
+          setShowClockWarning(false);
+        }
+      }
+    }
+  });
 
   useEffect(() => {
     if (!openClockEntry) {
@@ -80,15 +89,6 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
     const interval = setInterval(checkStale, CHECK_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [openClockEntry]);
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.state === "idle") {
-      if ((fetcher.data as { success?: boolean }).success) {
-        toast.success(t`Updated successfully`);
-        setShowClockWarning(false);
-      }
-    }
-  }, [fetcher.data, fetcher.state, t]);
 
   const handleClockAcknowledge = () => {
     if (openClockEntry) {

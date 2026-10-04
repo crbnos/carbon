@@ -5,6 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -18,14 +19,9 @@ import {
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteStorageUnit,
@@ -156,15 +152,15 @@ function DeleteWithCascadeModal({
   onCancel: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        submitted.current = false;
+      }
+    }
+  });
   const [cascade, setCascade] = useState(false);
   const submitted = useRef(false);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      submitted.current = false;
-    }
-  }, [fetcher.state]);
 
   const disabled = !cascade;
 

@@ -7,6 +7,7 @@ import { useCarbon } from "@carbon/auth";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -2527,16 +2528,15 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationStepAction>();
-  const duplicateFetcher = useFetcher();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const duplicateFetcher = useFetcher();
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -3331,15 +3331,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -3931,15 +3930,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

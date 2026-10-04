@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Input, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -22,9 +23,9 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { IssueReviewer } from "~/modules/quality";
 import { nonConformanceReviewerValidator } from "~/modules/quality";
@@ -43,16 +44,15 @@ export function ReviewersList({
   const disclosure = useDisclosure();
 
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof reviewAction>();
-  const submitted = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.data?.success && submitted.current) {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof reviewAction>({
+    onSuccess: (data) => {
+      if (data?.success && submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.data?.success]);
-
+  });
+  const submitted = useRef(false);
   if (reviewers.length === 0) {
     return <NewApprovalRequirement isDisabled={isDisabled} />;
   }
@@ -150,14 +150,14 @@ function NewApprovalRequirement({ isDisabled }: { isDisabled: boolean }) {
     nonConformance: Issue;
   }>(path.to.issue(id));
 
-  const fetcher = useFetcher();
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data) {
-      setIsOpen(false);
-      setIsMRBChecked(false);
+  const fetcher = useAction({
+    onSettled: (data) => {
+      if (data) {
+        setIsOpen(false);
+        setIsMRBChecked(false);
+      }
     }
-  }, [fetcher.state, fetcher.data]);
+  });
 
   const handleSubmit = useCallback(() => {
     const formData = new FormData();

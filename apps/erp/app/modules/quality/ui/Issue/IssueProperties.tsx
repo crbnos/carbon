@@ -10,6 +10,7 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -22,9 +23,9 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
 import { z } from "zod";
 import {
   Assignee,
@@ -76,13 +77,13 @@ const IssueProperties = () => {
   const isStarted = routeData?.nonConformance?.status !== "Registered";
   const isLocked = isIssueLocked(routeData?.nonConformance?.status);
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (

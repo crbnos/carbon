@@ -5,6 +5,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -1146,15 +1147,14 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationStepAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
 
@@ -1535,15 +1535,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -2555,15 +2554,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editQuoteOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editQuoteOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

@@ -5,6 +5,7 @@
 export * from "./cache";
 export type { Cursor } from "./liveList";
 export { matchesIdFilter } from "./realtimeFilter";
+export { actionOutcome, useAction } from "./useAction";
 export type { ChangedRows } from "./useChangedRows";
 export { useChangedRows } from "./useChangedRows";
 export type { LiveList, LiveListStorage } from "./useLiveList";

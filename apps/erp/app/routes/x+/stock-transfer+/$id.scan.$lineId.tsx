@@ -8,6 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   TrackedEntityPicker,
   type TrackedEntitySelection,
@@ -16,15 +17,9 @@ import {
 import { serverFns } from "@carbon/server-functions";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import {
@@ -284,13 +279,13 @@ export default function StockTransferScan() {
   const onClose = () =>
     navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
 
-  const fetcher = useFetcher<Result>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
+  const fetcher = useAction<Result>({
+    onError: (data) => {
+      if (data?.success === false) {
+        toast.error(data.message);
+      }
     }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  });
 
   const locationId = routeData?.stockTransfer.locationId ?? "";
 

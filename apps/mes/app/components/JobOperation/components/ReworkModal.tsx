@@ -11,6 +11,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -64,7 +65,14 @@ export function ReworkModal({
   parentIsBatch?: boolean;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<Result>();
+  const fetcher = useAction<Result>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        toast.success(t`Rework created successfully`);
+        onClose();
+      }
+    }
+  });
   const targetsFetcher = useFetcher<{
     operations: UpstreamOperation[];
   }>();
@@ -108,13 +116,6 @@ export function ReworkModal({
     trackedEntities,
     targetsFetcher.load
   ]);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      toast.success(t`Rework created successfully`);
-      onClose();
-    }
-  }, [fetcher.state, fetcher.data, onClose, t]);
 
   const filteredEntities = useMemo(() => {
     if (!scanInput) return trackedEntities;

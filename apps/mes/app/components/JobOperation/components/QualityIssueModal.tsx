@@ -4,7 +4,7 @@
 
 import type { Result } from "@carbon/auth";
 import { Hidden, Select, Submit, TextArea, ValidatedForm } from "@carbon/form";
-import { useLoaderQuery } from "@carbon/query";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -19,8 +19,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import { qualityIssuePriority, qualityIssueValidator } from "~/services/models";
 import { path } from "~/utils/path";
 
@@ -36,19 +34,19 @@ export function QualityIssueModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<Result>();
+  const fetcher = useAction<Result>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        toast.success(t`Quality issue created`);
+        onClose();
+      }
+    }
+  });
   const issueTypeFetcher = useLoaderQuery<
     PostgrestResponse<{ id: string; name: string }>
   >(isOpen ? path.to.api.qualityIssueTypes : null);
 
   const issueTypes = issueTypeFetcher.data?.data ?? [];
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      toast.success(t`Quality issue created`);
-      onClose();
-    }
-  }, [fetcher.state, fetcher.data, onClose, t]);
 
   if (!isOpen) return null;
 

@@ -102,6 +102,14 @@ vi.mock("@lingui/react/macro", () => ({
       )
   })
 }));
+// The currency list is read through the query cache (`useCurrencies`).
+vi.mock("@carbon/query", () => ({
+  RefreshRate: { Never: Number.POSITIVE_INFINITY },
+  useLoaderQuery: () => ({
+    data: { data: harness.currencies },
+    isFetching: false
+  })
+}));
 vi.mock("react-router", () => ({
   Link: ({ children }: { children?: ReactNode }) =>
     createElement("a", null, children),
@@ -110,6 +118,7 @@ vi.mock("react-router", () => ({
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
+      api: { currencies: "/api/accounting/currencies" },
       authenticatedRoot: "/x",
       reimbursement: (id: string) => `/x/reimbursements/${id}`
     }

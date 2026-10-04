@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -17,9 +18,9 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigation, useParams } from "react-router";
+import { useNavigation, useParams } from "react-router";
 import { path } from "~/utils/path";
 
 const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
@@ -27,15 +28,14 @@ const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
   if (!receiptId) throw new Error("receiptId not found");
 
   const navigation = useNavigation();
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
     }
-  }, [fetcher.state]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal

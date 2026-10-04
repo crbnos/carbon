@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BottomSheet,
@@ -1157,15 +1158,15 @@ function AcceptLotModal({
   eventIds: ProductionEventIdFields;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
-      submitted.current = false;
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state, onClose]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal

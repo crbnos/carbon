@@ -8,6 +8,7 @@ import {
   Select,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -22,9 +23,9 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { LuKeySquare, LuLink } from "react-icons/lu";
-import { Link, useFetcher, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -110,13 +111,13 @@ const ChangeNoticeProperties = () => {
   const isImplementation = changeNotice?.status === "Implementation";
   const canUpdate = permissions.can("update", "parts");
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<typeof action>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
-
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: id is stable
   const onUpdate = useCallback(
     (field: string, value: string | null) => {

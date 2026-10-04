@@ -9,7 +9,7 @@ import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useChangedRows } from "@carbon/query";
+import { useAction, useChangedRows } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -2071,7 +2071,14 @@ function StepsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationStepAction>();
+  const fetcher = useAction<typeof editJobOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
+    }
+  });
   const duplicateStepFetcher = useFetcher();
   const { t } = useLingui();
   const [description, setDescription] = useState<JSONContent>(() => {
@@ -2087,14 +2094,6 @@ function StepsListItem({
       return {};
     }
   });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
-    }
-  }, [fetcher.state]);
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -2617,16 +2616,15 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationParameterAction>();
-  const { t } = useLingui();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editJobOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const { t } = useLingui();
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -3709,13 +3707,13 @@ function ProcedureSyncModal({
   procedureId: string;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal
       open
@@ -3782,13 +3780,13 @@ function AssemblyStepsSyncModal({
   assemblyInstructionId: string;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal
       open
@@ -3905,16 +3903,15 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationToolAction>();
-  const { t } = useLingui();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editJobOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const { t } = useLingui();
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);

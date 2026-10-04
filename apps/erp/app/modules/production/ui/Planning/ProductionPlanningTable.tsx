@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import {
   Button,
   Combobox,
@@ -89,16 +90,15 @@ const ProductionPlanningTable = ({
   const locations = useLocations();
   const unitOfMeasures = useUnitOfMeasure();
 
-  const mrpFetcher = useFetcher<typeof mrpAction>();
-  const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
-
-  // Clear cache when MRP completes
-  useEffect(() => {
-    if (mrpFetcher.state === "idle" && mrpFetcher.data) {
-      clearOrdersCache();
-      setOrdersMap({}); // Reset local state to force recalculation
+  const mrpFetcher = useAction<typeof mrpAction>({
+    onSettled: (data) => {
+      if (data) {
+        clearOrdersCache();
+        setOrdersMap({}); // Reset local state to force recalculation
+      }
     }
-  }, [mrpFetcher.state, mrpFetcher.data]);
+  });
+  const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
   // Clear local state when data changes (e.g., filters, search)
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

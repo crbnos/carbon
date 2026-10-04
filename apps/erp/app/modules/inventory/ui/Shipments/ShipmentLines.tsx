@@ -4,7 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
-import { useLoaderQuery } from "@carbon/query";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   Card,
@@ -1361,13 +1361,13 @@ function SplitShipmentLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
