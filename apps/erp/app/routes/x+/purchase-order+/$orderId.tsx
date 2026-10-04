@@ -69,7 +69,14 @@ export const handle: Handle = {
     { table: "purchaseOrder", column: "id", param: "orderId" },
     { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },
     "receipt",
-    "purchaseInvoice"
+    {
+      // The invoices of this order's supplier interaction (`getSupplierInteraction`).
+      table: "purchaseInvoice",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    }
   ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },

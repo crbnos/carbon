@@ -81,7 +81,16 @@ BEGIN
   END IF;
 
   -- A real UPDATE, then a DELETE: one message each.
-  UPDATE "customer" SET name = 'Realtime customer 2' WHERE id = customer_id;
+  UPDATE "customer" SET name = 'Realtime customer 2', "readableId" = 'RT-MOVED' WHERE id = customer_id;
+  -- A row moved to another parent names the one it left as well as the one it joined.
+  SELECT payload INTO message FROM realtime.messages
+  WHERE topic = 'company:' || company_a || ':customer' AND payload->>'op' = 'UPDATE'
+    AND payload->'ids' = jsonb_build_array(customer_id)
+  ORDER BY inserted_at DESC LIMIT 1;
+  IF NOT (message->'parents'->'readableId' @> '["RT-0", "RT-MOVED"]'::jsonb) THEN
+    RAISE EXCEPTION 'FAIL: an UPDATE did not name the old and the new parent: %', message;
+  END IF;
+
   DELETE FROM "customer" WHERE id = customer_id;
   SELECT count(*) - base INTO sent FROM realtime.messages WHERE topic = 'company:' || company_a || ':customer';
   IF sent <> 3 THEN

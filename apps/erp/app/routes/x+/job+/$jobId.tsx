@@ -84,9 +84,9 @@ export const handle: Handle = {
     { table: "jobOperation", column: "jobId", param: "jobId" },
     { table: "jobMaterial", column: "jobId", param: "jobId" },
     { table: "jobMakeMethod", column: "jobId", param: "jobId" },
-    "jobOperationStep",
-    "jobOperationStepRecord",
-    "productionEvent",
+    { table: "jobOperationStep", column: "jobId", param: "jobId" },
+    { table: "jobOperationStepRecord", column: "jobId", param: "jobId" },
+    { table: "productionEvent", column: "jobId", param: "jobId" },
     { table: "pickingListLine", column: "jobId", param: "jobId" },
     "modelUpload"
   ]

@@ -49,20 +49,51 @@ export type RealtimeTable = TablesWith<"broadcast_table_changes">;
 
 type Tables = Database["public"]["Tables"];
 
+/**
+ * Columns a broadcast adds for a table whose rows reach a record through
+ * another table (a production event knows its operation, not its job). The
+ * `ancestors` constant in `broadcast_table_changes.sql` is the source;
+ * `realtime-tables.test.ts` keeps this equal to it.
+ */
+export const REALTIME_ANCESTOR_COLUMNS = {
+  productionEvent: ["jobId"],
+  jobOperationStep: ["jobId"],
+  jobOperationStepRecord: ["operationId", "jobId"]
+} as const satisfies Partial<Record<RealtimeTable, readonly string[]>>;
+
+type AncestorColumn<T> = T extends keyof typeof REALTIME_ANCESTOR_COLUMNS
+  ? (typeof REALTIME_ANCESTOR_COLUMNS)[T][number]
+  : never;
+
 type ScopedTo<T extends RealtimeTable> = T extends keyof Tables
   ? {
       table: T;
-      /** `id`, or a `<name>Id` column: the only columns a broadcast names. */
-      column: Extract<keyof Tables[T]["Row"], "id" | `${string}Id`>;
+      /** `id`, a `<name>Id` column, or an ancestor column: all a broadcast names. */
+      column:
+        | Extract<keyof Tables[T]["Row"], "id" | `${string}Id`>
+        | AncestorColumn<T>;
       /** The route param that holds the value. */
       param: string;
     }
   : never;
 
 /**
- * A `handle.realtime` entry: a whole table, or only the rows that belong to the
- * record the route shows (`{ table: "jobOperation", column: "jobId", param: "jobId" }`).
+ * A `handle.realtime` entry:
+ * - a table name: every change to it in the company (a list page);
+ * - `{ table, column, param }`: only the rows of the record the route shows
+ *   (`{ table: "jobOperation", column: "jobId", param: "jobId" }`);
+ * - `{ table, filter }`: the filter is built from the route's params and loader
+ *   data, for a record the URL does not name. Return `undefined` to follow
+ *   every change.
  */
 export type RouteRealtimeTable =
   | RealtimeTable
-  | { [T in RealtimeTable]: ScopedTo<T> }[RealtimeTable];
+  | { [T in RealtimeTable]: ScopedTo<T> }[RealtimeTable]
+  | {
+      table: RealtimeTable;
+      filter: (route: {
+        params: Record<string, string | undefined>;
+        // biome-ignore lint/suspicious/noExplicitAny: each route knows its own loader data
+        data: any;
+      }) => string | undefined;
+    };

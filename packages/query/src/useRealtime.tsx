@@ -251,7 +251,8 @@ function TableSubscription(props: {
  * Keeps the matched routes live: each route names the tables it shows in
  * `handle.realtime`, and this subscribes to them for as long as it is matched.
  * An entry `{ table, column, param }` follows only the rows whose `column` is
- * the route's `param` (a job page: its own operations, not every job's).
+ * the route's `param` (a job page: its own operations, not every job's), and
+ * `{ table, filter }` builds the filter from the route's loader data.
  * It also owns every realtime channel of the page (see "One channel per topic"):
  * nothing is delivered to any listener unless this is mounted.
  * It also follows the company's reference lists, which are read through cached
@@ -273,8 +274,16 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
           followed.set(entry, { table: entry });
           continue;
         }
-        const value = match.params[entry.param];
-        const filter = value ? `${entry.column}=eq.${value}` : undefined;
+        let filter: string | undefined;
+        if ("filter" in entry) {
+          filter = entry.filter({
+            params: match.params,
+            data: match.loaderData ?? match.data
+          });
+        } else {
+          const value = match.params[entry.param];
+          filter = value ? `${entry.column}=eq.${value}` : undefined;
+        }
         followed.set(`${entry.table}:${filter ?? ""}`, {
           table: entry.table,
           filter

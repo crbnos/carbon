@@ -579,8 +579,8 @@ export function AssemblyView({
 
   // Live sync — refresh loader data when this operation's events, step records,
   // job, or tracked entities change (incl. edits from the operation view).
-  useRealtime("productionEvent");
-  useRealtime("jobOperationStepRecord");
+  useRealtime("productionEvent", `jobOperationId=eq.${operationId}`);
+  useRealtime("jobOperationStepRecord", `operationId=eq.${operationId}`);
   useRealtime("trackedActivity");
   useRealtime("jobOperation", `id=eq.${operationId}`);
 

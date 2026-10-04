@@ -29,11 +29,21 @@ table RLS still decides what each user sees.
 A route scopes a table to its own record with
 `{ table: "jobOperation", column: "jobId", param: "jobId" }` in
 `handle.realtime` (`RouteRealtimeTable`; the column is checked against the
-table's row type). A plain table name follows every change in the company:
-right for a list page, wasteful on a detail page. A missing answer always
-means "it may concern me": the filter can cause an extra reload, never a
-missed one — except a row moved to another parent by an UPDATE, which names
-its new parent only.
+table's row type). `{ table, filter: ({ params, data }) => string | undefined }`
+builds the filter from the route's loader data, for a record the URL does not
+name (the MES operation page follows its job, or everything when it runs in a
+batch). A plain table name follows every change in the company: right for a
+list page, wasteful on a detail page. A missing answer always means "it may
+concern me": the filter can cause an extra reload, never a missed one. An
+UPDATE names the values a row had as well as the ones it has, so a row moved
+to another parent reaches both pages.
+
+A table that reaches its record through another table gets that record's id
+added: a production event carries `jobId`, read from its operation. The hops
+are the `ancestors` constant in `broadcast_table_changes.sql`;
+`REALTIME_ANCESTOR_COLUMNS` (`realtime-tables.ts`) types the same columns and
+a test keeps the two equal. Add a hop there when a detail page must follow a
+grandchild table.
 
 The broadcast functions return at once when `realtime.send` does not exist, so
 a database without Supabase Realtime still accepts writes.

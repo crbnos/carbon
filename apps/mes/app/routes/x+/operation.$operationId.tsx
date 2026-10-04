@@ -47,12 +47,43 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: [
-    "job",
-    { table: "jobOperation", column: "id", param: "operationId" },
-    "jobMaterial",
-    { table: "jobOperationStep", column: "operationId", param: "operationId" },
-    "jobOperationStepRecord",
-    "pickingListLine"
+    // One operation of one job, unless it runs in a batch: a batch shows its
+    // members' steps, materials and timers, which belong to other jobs.
+    {
+      table: "job",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `id=eq.${data?.job?.id}`
+    },
+    {
+      // Every operation of the job: the one before this one gates it.
+      table: "jobOperation",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      table: "jobMaterial",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    },
+    {
+      table: "jobOperationStep",
+      filter: ({ data, params }) =>
+        data?.batch || !data?.job?.id
+          ? undefined
+          : `operationId=eq.${params.operationId}`
+    },
+    {
+      table: "jobOperationStepRecord",
+      filter: ({ data, params }) =>
+        data?.batch || !data?.job?.id
+          ? undefined
+          : `operationId=eq.${params.operationId}`
+    },
+    {
+      table: "pickingListLine",
+      filter: ({ data }) =>
+        data?.batch || !data?.job?.id ? undefined : `jobId=eq.${data?.job?.id}`
+    }
   ]
 };
 
