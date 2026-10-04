@@ -4,6 +4,7 @@ The client data layer shared by the ERP and the MES: the TanStack Query cache in
 
 ## Always
 
+- **There is no app-level cache file.** Import from `@carbon/query` (components) or `@carbon/query/cache` (route modules); `~/utils/react-query` is gone.
 - **Cache a loader by URL, never by a hand-written key.** `export const clientLoader = cachedClientLoader<typeof loader>()`. The key is `[LOADER, companyId, pathname, search]`.
 - **Let the root middleware invalidate.** `createInvalidationMiddleware` marks every `LOADER` entry stale after any non-GET request. A route does not name the lists its action changes, and exports no `clientAction` for that.
 - **Declare a route's tables in `handle.realtime`.** `RouteRealtime` (rendered once in each app shell) subscribes to them and reloads the page when one changes. A component that is not a route uses the app's `useRealtime(table, filter?)`.
@@ -34,6 +35,8 @@ pnpm --filter @carbon/query test
 | Export | Use |
 |---|---|
 | `cachedClientLoader`, `loaderQueryKey`, `LOADER`, `RefreshRate` | Cache an `api+` loader; build the same key for a component read |
+| `useLoaderQuery(url)` | Read an `api+` URL in a component: one shared request per URL, refetched when invalidated. Replaces `useFetcher` + `fetcher.load` in a mount effect |
+| `cachedApiQuery(url)` | The same read from an event handler or an effect |
 | `setClientCompanyId` / `getCompanyId` | The shell layout sets the company during render; the `companyId` cookie is httpOnly and unreadable in the browser |
 | `createInvalidationMiddleware({ getCache, skipPaths })` | Root `clientMiddleware`; skip POSTs that change no data (`/refresh-session`) |
 | `RouteRealtime`, `useRealtimeTable`, `useTableChanges`, `useRealtimeRevalidator` | Realtime over private broadcast topics. Revalidation waits for a submitting fetcher |

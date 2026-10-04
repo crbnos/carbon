@@ -75,25 +75,38 @@ export function cachedClientLoader<L>(options?: { staleTime?: number }) {
   return clientLoader;
 }
 
+const fetchJson = async <T>(url: string): Promise<T> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+  return res.json();
+};
+
 /**
- * Read-through fetch against an API route, cached in the page's QueryClient.
- * fetchQuery dedupes concurrent identical calls and honors staleTime.
- * Falls back to a plain fetch when the cache isn't mounted yet.
+ * What a cached read of `url` is: the key, the fetch and the lifetimes. Shared
+ * by the imperative read below and by `useLoaderQuery`, so both land on the
+ * entry a `cachedClientLoader` for the same URL uses.
+ */
+export const loaderQuery = <T>(
+  url: string,
+  options?: { staleTime?: number }
+) => ({
+  queryKey: loaderQueryKey(url),
+  queryFn: () => fetchJson<T>(url),
+  staleTime: options?.staleTime ?? RefreshRate.Low,
+  gcTime: LOADER_GC_TIME
+});
+
+/**
+ * Read-through fetch against an API route, cached by its URL in the page's
+ * QueryClient. fetchQuery dedupes concurrent identical calls and honors
+ * staleTime. Falls back to a plain fetch when the cache isn't mounted yet.
+ * For an event handler or an effect; a component renders with `useLoaderQuery`.
  */
 export async function cachedApiQuery<T>(
-  query: { queryKey: unknown[]; staleTime: number },
-  url: string
+  url: string,
+  options?: { staleTime?: number }
 ): Promise<T> {
-  const queryFn = async (): Promise<T> => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-    return res.json();
-  };
   const cache = getClientCache();
-  if (!cache) return queryFn();
-  return cache.fetchQuery({
-    queryKey: query.queryKey,
-    queryFn,
-    staleTime: query.staleTime
-  });
+  if (!cache) return fetchJson<T>(url);
+  return cache.fetchQuery(loaderQuery<T>(url, options));
 }

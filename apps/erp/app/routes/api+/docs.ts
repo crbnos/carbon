@@ -4,9 +4,9 @@
 
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Ratelimit, redis } from "@carbon/kv";
+import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import { getClientIp } from "@carbon/utils";
 import { data, type LoaderFunctionArgs } from "react-router";
-import { cachedClientLoader, RefreshRate } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";

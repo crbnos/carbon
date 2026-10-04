@@ -7,6 +7,7 @@ export { applyChange } from "./liveList";
 export { matchesIdFilter } from "./realtimeFilter";
 export type { LiveList, LiveListStorage } from "./useLiveList";
 export { LiveLists, liveListKey, useLiveList } from "./useLiveList";
+export { useLoaderQuery } from "./useLoaderQuery";
 export type { BroadcastChange } from "./useRealtime";
 export {
   companyTopic,

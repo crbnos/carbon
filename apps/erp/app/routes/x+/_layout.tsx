@@ -28,6 +28,7 @@ import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import { RouteRealtime } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
@@ -78,7 +79,6 @@ import { getUserClaims } from "~/modules/users/users.server";
 import { getAppShell } from "~/services/app-shell.server";
 import { getImplementationSignals } from "~/services/implementation-signals.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
-import { setClientCompanyId } from "~/utils/react-query";
 
 const log = getLogger("erp", "auth");
 

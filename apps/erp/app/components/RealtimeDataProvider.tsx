@@ -4,16 +4,23 @@
 
 "use client";
 
-import { LiveLists, useTableChanges } from "@carbon/query";
+import {
+  getClientCache,
+  LiveLists,
+  LOADER,
+  useTableChanges
+} from "@carbon/query";
 import { useUser } from "~/hooks";
 import { customersList } from "~/stores/customers";
 import { itemsList } from "~/stores/items";
 import { peopleList } from "~/stores/people";
 import { suppliersList } from "~/stores/suppliers";
-import { ITEM_QUANTITIES_QUERY_KEY } from "~/utils/react-query";
+import { path } from "~/utils/path";
 
 // Module-level so their identity is stable across renders.
 const LISTS = [itemsList, suppliersList, customersList, peopleList];
+// Every location's on-hand entry shares this URL prefix.
+const ITEM_QUANTITIES_PATH = path.to.api.itemQuantities("");
 const storage = async () => (await import("localforage")).default;
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
@@ -29,9 +36,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     companyId,
     table: "itemStockQuantities",
     onChange: () => {
-      window.clientCache?.invalidateQueries({
-        predicate: (query) =>
-          (query.queryKey as unknown[])[0] === ITEM_QUANTITIES_QUERY_KEY
+      getClientCache()?.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          queryKey[0] === LOADER &&
+          String(queryKey[2]).startsWith(ITEM_QUANTITIES_PATH)
       });
     }
   });
