@@ -858,10 +858,17 @@ const convert = defineServerFn({
           throw new NotFoundError("Sales order delivery details not found");
         const orderShipment = salesOrderShipment.data;
 
+        // Lines a contract bills are marked invoicedComplete when the
+        // contract is created; the lines inserted below skip them, so the
+        // subtotal must too.
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
         >((acc, line) => {
-          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+          if (
+            line?.quantityToInvoice &&
+            line.quantityToInvoice > 0 &&
+            !line.invoicedComplete
+          ) {
             acc.push(line);
           }
 
