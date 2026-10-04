@@ -33,6 +33,7 @@ import {
   LuEllipsisVertical,
   LuEye,
   LuFile,
+  LuFileText,
   LuPanelLeft,
   LuPanelRight,
   LuSend,
@@ -182,6 +183,40 @@ const SalesInvoiceHeader = () => {
 
     getRelatedDocuments();
   }, [carbon, salesInvoice.opportunityId, salesInvoice.status]);
+
+  // The salesInvoices view does not carry the contract, so it is read off the
+  // invoice row itself, with the contract's readable id embedded.
+  const [contract, setContract] = useState<{
+    id: string;
+    readableId: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!carbon) return;
+    let cancelled = false;
+    carbon
+      .from("salesInvoice")
+      .select("customerContractId, customerContract(customerContractId)")
+      .eq("id", invoiceId)
+      .eq("companyId", company.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setContract(
+          data?.customerContractId
+            ? {
+                id: data.customerContractId,
+                readableId:
+                  data.customerContract?.customerContractId ??
+                  data.customerContractId
+              }
+            : null
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, invoiceId, company.id]);
+  const contractReadableId = contract?.readableId;
 
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
@@ -384,6 +419,14 @@ const SalesInvoiceHeader = () => {
             )}
           </HStack>
           <HStack>
+            {contract && (
+              <Button variant="secondary" leftIcon={<LuFileText />} asChild>
+                <Link to={path.to.contract(contract.id)}>
+                  <Trans>Contract {contractReadableId}</Trans>
+                </Link>
+              </Button>
+            )}
+
             {relatedDocs.salesOrders.length === 1 && (
               <Button
                 variant="secondary"

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
   Button,
@@ -11,13 +12,14 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { LuCheckCheck, LuFileText, LuTicketX, LuTrash } from "react-icons/lu";
+import { Link, useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import MemoStatus from "./MemoStatus";
 
@@ -34,6 +36,31 @@ const MemoHeader = () => {
   const post = useFetcher();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
+
+  // A credit memo issued from a contract links back to it.
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const customerContractId = routeData?.memo?.customerContractId ?? null;
+  const [contractReadableId, setContractReadableId] = useState<string | null>(
+    null
+  );
+  useEffect(() => {
+    if (!carbon || !customerContractId) return;
+    let cancelled = false;
+    carbon
+      .from("customerContract")
+      .select("customerContractId")
+      .eq("id", customerContractId)
+      .eq("companyId", company.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setContractReadableId(data?.customerContractId ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, customerContractId, company.id]);
+  const contractLabel = contractReadableId ?? customerContractId;
 
   const memo = routeData?.memo;
   if (!memo) throw new Error("Could not find memo in routeData");
@@ -109,21 +136,32 @@ const MemoHeader = () => {
           ) : undefined
         }
         actions={
-          isDraft ? (
-            <Button
-              leftIcon={<LuCheckCheck />}
-              variant="primary"
-              isLoading={post.state !== "idle"}
-              isDisabled={!canMutate}
-              onClick={() =>
-                post.submit(null, {
-                  method: "post",
-                  action: path.to.memoPost(memo.id)
-                })
-              }
-            >
-              <Trans>Post</Trans>
-            </Button>
+          customerContractId || isDraft ? (
+            <>
+              {customerContractId && (
+                <Button variant="secondary" leftIcon={<LuFileText />} asChild>
+                  <Link to={path.to.contract(customerContractId)}>
+                    <Trans>Contract {contractLabel}</Trans>
+                  </Link>
+                </Button>
+              )}
+              {isDraft && (
+                <Button
+                  leftIcon={<LuCheckCheck />}
+                  variant="primary"
+                  isLoading={post.state !== "idle"}
+                  isDisabled={!canMutate}
+                  onClick={() =>
+                    post.submit(null, {
+                      method: "post",
+                      action: path.to.memoPost(memo.id)
+                    })
+                  }
+                >
+                  <Trans>Post</Trans>
+                </Button>
+              )}
+            </>
           ) : undefined
         }
       />
