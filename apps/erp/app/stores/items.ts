@@ -88,7 +88,6 @@ async function withSupersession(
 export const itemsList: LiveList<Item> = {
   name: "items",
   table: "item",
-  also: ["itemSupersession"],
   async fetchAll(carbon, companyId) {
     const items = await fetchAllFromTable<ItemRow>(
       carbon,
@@ -117,6 +116,14 @@ export const itemsList: LiveList<Item> = {
       ids
     );
   },
+  // A supersession rule is logged under its item's id.
+  related: [
+    {
+      table: "itemSupersession",
+      fetch: (carbon, companyId, ids) =>
+        itemsList.fetchByIds(carbon, companyId, ids)
+    }
+  ],
   sort: (a, b) =>
     a.readableIdWithRevision.localeCompare(b.readableIdWithRevision)
 };

@@ -9,38 +9,57 @@ import { useCarbon } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
-import { applyChange } from "./liveList";
+import {
+  type Cursor,
+  type LoggedChanges,
+  oldestCursor,
+  planSync,
+  removeRows,
+  upsertRows
+} from "./liveList";
 import type { BroadcastChange } from "./useRealtime";
 import { useTableChanges } from "./useRealtime";
 
-const logger = getLogger("react", "live-list");
+const logger = getLogger("query", "live-list");
 
 type Carbon = SupabaseClient<Database>;
 
 /**
  * A whole list the app keeps in memory and current: picker options, and labels
- * looked up by id. It is read from IndexedDB at once, fetched only when the
- * server's checksum says it changed, and patched from broadcasts after that.
+ * looked up by id.
+ *
+ * It is read from IndexedDB at once. The server is then asked which rows
+ * changed since the stored copy was taken (`table_changes_since`), and only
+ * those rows are read — the full list is fetched once per device, and again
+ * only when the change log cannot answer (see `planSync`). While the tab is
+ * open, broadcasts patch it row by row.
  */
 export type LiveList<Row extends { id: string }> = {
-  /** The list's name in `list_checksums`, the query key and IndexedDB. */
+  /** The list's name in the query key and IndexedDB. */
   name: string;
-  /** The table whose changes carry this list's row ids. */
+  /** The table whose row ids are this list's row ids. */
   table: RealtimeTable;
-  /** Tables that feed the list without sharing its ids: a change refetches it. */
-  also?: RealtimeTable[];
   fetchAll: (carbon: Carbon, companyId: string) => Promise<Row[]>;
-  /** The changed rows, re-read. Without it every change refetches the list. */
-  fetchByIds?: (
+  /** The rows with these ids, as they are now. A missing one leaves the list. */
+  fetchByIds: (
     carbon: Carbon,
     companyId: string,
     ids: string[]
   ) => Promise<Row[]>;
+  /**
+   * Other tables that feed a list row (an item's supersession, its model's
+   * thumbnail). `fetch` returns the list rows that those changed rows touch.
+   */
+  related?: {
+    table: RealtimeTable;
+    fetch: (carbon: Carbon, companyId: string, ids: string[]) => Promise<Row[]>;
+  }[];
   sort: (a: Row, b: Row) => number;
 };
 
 // A list of some row type, handled generically.
 type AnyLiveList = LiveList<any>;
+type AnyRow = { id: string };
 
 /** Where the lists are kept between sessions (localforage in both apps). */
 export type LiveListStorage = {
@@ -48,7 +67,7 @@ export type LiveListStorage = {
   setItem: (key: string, value: unknown) => Promise<unknown>;
 };
 
-type Stored = { rows: unknown[]; checksum: string | null };
+type Stored = { rows: AnyRow[]; cursor: Cursor | null };
 
 export const liveListKey = (companyId: string, name: string) => [
   "live",
@@ -59,6 +78,16 @@ export const liveListKey = (companyId: string, name: string) => [
 // Every key carries the company: an unkeyed copy once hydrated one company's
 // pickers with another's rows after a company switch.
 const storageKey = (companyId: string, name: string) => `${name}:${companyId}`;
+
+// A copy written before lists had a cursor is a bare array (or carries a
+// checksum instead): its rows are still good to show, with no cursor.
+const readStored = (value: unknown): Stored | null => {
+  if (Array.isArray(value)) return { rows: value, cursor: null };
+  const stored = value as Partial<Stored> | null;
+  return stored?.rows
+    ? { rows: stored.rows, cursor: stored.cursor ?? null }
+    : null;
+};
 
 /** A list's rows and a setter, in the `[value, setValue]` shape its consumers use. */
 export function useLiveList<Row extends { id: string }>(
@@ -105,14 +134,7 @@ function Subscription({
   return null;
 }
 
-/**
- * Loads the lists and keeps them current. Render it once, in the shell.
- *
- * On load each list comes out of IndexedDB, then one `list_checksums` call
- * decides which lists to fetch: a list whose checksum matches the stored one is
- * not fetched at all. A reconnect runs the same comparison, since no broadcast
- * is replayed.
- */
+/** Loads the lists and keeps them current. Render it once, in the shell. */
 export function LiveLists({
   companyId,
   lists,
@@ -124,74 +146,120 @@ export function LiveLists({
 }) {
   const { carbon, accessToken } = useCarbon();
   const queryClient = useQueryClient();
-  // The company the callbacks below are working for. A fetch that finishes
+  // The company the callbacks below are working for. A read that finishes
   // after a company switch belongs to the old company and is dropped.
   const active = useRef(companyId);
   active.current = companyId;
+  // Each list's cursor: where the change log is asked to start next time.
+  const cursors = useRef(new Map<string, Cursor | null>());
   const ready = Boolean(carbon && accessToken);
 
-  const persist = useCallback(
-    async (list: AnyLiveList, rows: unknown[], checksum: string | null) => {
-      const idb = await storage();
-      const stored: Stored = { rows, checksum };
-      await idb.setItem(storageKey(companyId, list.name), stored);
-    },
-    [storage, companyId]
+  const rowsOf = useCallback(
+    (list: AnyLiveList) =>
+      queryClient.getQueryData<AnyRow[]>(liveListKey(companyId, list.name)),
+    [queryClient, companyId]
   );
 
-  /** Fetch the lists whose checksum differs from the stored one. */
+  /** Put rows in the cache and in IndexedDB, with the list's cursor. */
+  const commit = useCallback(
+    async (list: AnyLiveList, rows: AnyRow[]) => {
+      if (active.current !== companyId) return;
+      queryClient.setQueryData(liveListKey(companyId, list.name), rows);
+      const stored: Stored = {
+        rows,
+        cursor: cursors.current.get(list.name) ?? null
+      };
+      await (await storage()).setItem(storageKey(companyId, list.name), stored);
+    },
+    [queryClient, storage, companyId]
+  );
+
+  /** The rows of `table` with these ids changed: bring the list up to date. */
+  const applyIds = useCallback(
+    async (list: AnyLiveList, table: string, ids: string[]) => {
+      if (!carbon || ids.length === 0) return rowsOf(list) ?? [];
+      const current = rowsOf(list) ?? [];
+      if (table === list.table) {
+        // Re-read replaces what came back and drops what did not (deleted, or
+        // no longer visible to this user).
+        const fetched = await list.fetchByIds(carbon, companyId, ids);
+        return upsertRows(removeRows(current, ids), fetched, list.sort);
+      }
+      const feeder = list.related?.find((r) => r.table === table);
+      if (!feeder) return current;
+      return upsertRows(
+        current,
+        await feeder.fetch(carbon, companyId, ids),
+        list.sort
+      );
+    },
+    [carbon, companyId, rowsOf]
+  );
+
+  /** Ask the change log what changed since the lists' cursors, and apply it. */
   const sync = useCallback(
     async (targets: AnyLiveList[]) => {
       if (!carbon) return;
-      const idb = await storage();
-      const { data, error } = await carbon.rpc("list_checksums", {
-        p_company_id: companyId
+      // A list's cursor only counts if the list still has its rows.
+      const cursorOf = (list: AnyLiveList) =>
+        rowsOf(list) ? (cursors.current.get(list.name) ?? null) : null;
+      const since = oldestCursor(targets.map(cursorOf));
+      const { data, error } = await carbon.rpc("table_changes_since", {
+        p_company_id: companyId,
+        p_xid: since?.xid,
+        p_epoch: since?.epoch,
+        p_at: since?.at
       });
       if (error) throw error;
-      const checksums = new Map(
-        (data ?? []).map((row) => [row.list, row.checksum])
-      );
+      if (active.current !== companyId) return;
+      const log = data as unknown as LoggedChanges;
+      const next: Cursor = { xid: log.xid, epoch: log.epoch, at: log.at };
 
       await Promise.all(
         targets.map(async (list) => {
-          const key = liveListKey(companyId, list.name);
-          const stored = (await idb.getItem(
-            storageKey(companyId, list.name)
-          )) as Stored | null;
-          const checksum = checksums.get(list.name) ?? null;
-          if (
-            checksum &&
-            stored?.checksum === checksum &&
-            queryClient.getQueryData(key)
-          ) {
-            return;
+          const tables = [
+            list.table,
+            ...(list.related ?? []).map((r) => r.table)
+          ];
+          const plan = planSync(
+            log,
+            tables,
+            cursorOf(list)?.epoch === since?.epoch && since !== null
+          );
+          let rows: AnyRow[];
+          if (plan === "all") {
+            rows = await list.fetchAll(carbon, companyId);
+          } else {
+            rows = rowsOf(list) ?? [];
+            for (const [table, ids] of plan) {
+              queryClient.setQueryData(liveListKey(companyId, list.name), rows);
+              rows = await applyIds(list, table, ids);
+            }
           }
-          const rows = await list.fetchAll(carbon, companyId);
-          if (active.current !== companyId) return;
-          queryClient.setQueryData(key, rows);
-          await persist(list, rows, checksum);
+          cursors.current.set(list.name, next);
+          await commit(list, rows);
         })
       );
     },
-    [carbon, companyId, queryClient, storage, persist]
+    [carbon, companyId, queryClient, rowsOf, applyIds, commit]
   );
 
-  // Cold load: IndexedDB first so pickers have options at once, then the server.
+  // Cold load: IndexedDB first so pickers have options at once, then the log.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const idb = await storage();
       await Promise.all(
         lists.map(async (list) => {
-          const stored = await idb.getItem(storageKey(companyId, list.name));
-          // A bare array is the copy the previous provider wrote: no checksum.
-          const rows = Array.isArray(stored)
-            ? stored
-            : (stored as Stored | null)?.rows;
-          const key = liveListKey(companyId, list.name);
-          if (rows && !cancelled && !queryClient.getQueryData(key)) {
-            queryClient.setQueryData(key, rows);
-          }
+          const stored = readStored(
+            await idb.getItem(storageKey(companyId, list.name))
+          );
+          if (!stored || cancelled || rowsOf(list)) return;
+          cursors.current.set(list.name, stored.cursor);
+          queryClient.setQueryData(
+            liveListKey(companyId, list.name),
+            stored.rows
+          );
         })
       );
       if (cancelled || !ready) return;
@@ -200,7 +268,7 @@ export function LiveLists({
     return () => {
       cancelled = true;
     };
-  }, [companyId, ready, lists, storage, queryClient, sync]);
+  }, [companyId, ready, lists, storage, queryClient, rowsOf, sync]);
 
   const onChange = useCallback(
     async (
@@ -208,28 +276,20 @@ export function LiveLists({
       table: RealtimeTable,
       change: BroadcastChange | null
     ) => {
-      if (!carbon) return;
-      // A reconnect, a bulk change, or a feeder table: compare and refetch.
-      if (!change?.ids || table !== list.table || !list.fetchByIds) {
+      // A reconnect or a bulk change: the log knows exactly what was missed.
+      if (!change?.ids) {
         await sync([list]);
         return;
       }
-      const fetched =
-        change.op === "DELETE"
-          ? []
-          : await list.fetchByIds(carbon, companyId, change.ids);
-      if (active.current !== companyId) return;
-      const rows = queryClient.setQueryData<{ id: string }[]>(
-        liveListKey(companyId, list.name),
-        (current) => applyChange(current ?? [], change, fetched, list.sort)
-      );
-      // ponytail: no checksum is stored for a patched list, so its next cold
-      // load refetches it once. Storing the server's checksum here would hide a
-      // missed broadcast for good; compute the hash client-side if that one
-      // fetch ever matters.
-      await persist(list, rows ?? [], null);
+      const rows =
+        change.op === "DELETE" && table === list.table
+          ? removeRows(rowsOf(list) ?? [], change.ids)
+          : await applyIds(list, table, change.ids);
+      // The cursor stays where it was: the log will name these rows again on
+      // the next load, and re-reading them is harmless.
+      await commit(list, rows);
     },
-    [carbon, companyId, queryClient, sync, persist]
+    [sync, rowsOf, applyIds, commit]
   );
 
   if (!ready) return null;
@@ -237,21 +297,23 @@ export function LiveLists({
   return (
     <>
       {lists.flatMap((list) =>
-        [list.table, ...(list.also ?? [])].map((table) => (
-          <Subscription
-            key={`${list.name}:${table}`}
-            companyId={companyId}
-            table={table}
-            onChange={(change) => {
-              onChange(list, table, change).catch((error) =>
-                logger.error("live list update failed", {
-                  list: list.name,
-                  error
-                })
-              );
-            }}
-          />
-        ))
+        [list.table, ...(list.related ?? []).map((r) => r.table)].map(
+          (table) => (
+            <Subscription
+              key={`${list.name}:${table}`}
+              companyId={companyId}
+              table={table}
+              onChange={(change) => {
+                onChange(list, table, change).catch((error) =>
+                  logger.error("live list update failed", {
+                    list: list.name,
+                    error
+                  })
+                );
+              }}
+            />
+          )
+        )
       )}
     </>
   );

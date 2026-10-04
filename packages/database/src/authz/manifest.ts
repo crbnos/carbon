@@ -1441,6 +1441,9 @@ export const manifest = {
   supplyForecast: company("inventory", {
     read: "inventory_view"
   }),
+  // Written by the log_*_changes triggers and read through table_changes_since,
+  // which checks the caller's company itself. No API access.
+  tableChange: serviceOnly(),
   tableView: policies({
     select: or(
       owner("createdBy"),

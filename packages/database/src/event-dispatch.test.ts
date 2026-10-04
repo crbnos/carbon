@@ -12,7 +12,9 @@ const files = [
   "dispatch_event_batch",
   "broadcast_table_changes",
   "broadcast_user_changes",
-  "broadcast_reference_changes"
+  "broadcast_reference_changes",
+  "log_table_changes",
+  "log_user_changes"
 ].map((name) => `event-system/functions/${name}.sql`);
 
 describe.each(files)("%s", (file) => {

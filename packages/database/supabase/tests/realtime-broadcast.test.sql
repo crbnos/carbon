@@ -1,5 +1,6 @@
--- Realtime broadcast: what the triggers send, who may join a topic, and what
--- list_checksums sees (20261004191247_realtime-broadcast, 20261004192633_realtime-broadcast-attach).
+-- Realtime broadcast and the change log: what the triggers send and record, who
+-- may join a topic, and what table_changes_since answers
+-- (20261004191247_realtime-broadcast, 20261004200418_table-change-log).
 -- Run from the repository root against an existing local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/realtime-broadcast.test.sql
 -- All fixtures and role changes are confined to the rolled-back transaction.
@@ -165,46 +166,105 @@ BEGIN
 END;
 $$;
 
--- list_checksums hashes only what the caller can read, and follows the data.
+-- The change log: what the list handlers record, and what a reader gets back.
+RESET ROLE;
 DO $$
 DECLARE
   company_a text := current_setting('test.company_a');
   company_b text := current_setting('test.company_b');
-  empty text := md5('');
-  before text;
-  after text;
+  user_a text := current_setting('test.user_a');
+  logged int;
 BEGIN
-  IF (SELECT count(*) FROM list_checksums(company_a)) <> 5 THEN
-    RAISE EXCEPTION 'FAIL: list_checksums did not return the 5 lists';
+  -- The writes above: the single customer (INSERT, a real UPDATE, DELETE — the
+  -- updatedAt-only UPDATE logs nothing) and the 150-row statement, which is one
+  -- "read it again" row.
+  SELECT count(*) INTO logged FROM "tableChange"
+  WHERE "companyId" = company_a AND "table" = 'customer' AND "rowId" LIKE 'cust_%'
+    AND "rowId" NOT IN (SELECT id FROM customer);
+  IF logged <> 3 THEN
+    RAISE EXCEPTION 'FAIL: the deleted customer has % log rows, expected 3 (insert, update, delete)', logged;
   END IF;
-  SELECT checksum INTO before FROM list_checksums(company_a) WHERE list = 'customers';
-  IF before = empty THEN
-    RAISE EXCEPTION 'FAIL: company A''s customers hash as an empty list';
+  SELECT count(*) INTO logged FROM "tableChange"
+  WHERE "companyId" = company_a AND "table" = 'customer' AND "rowId" IS NULL;
+  IF logged <> 1 THEN
+    RAISE EXCEPTION 'FAIL: a 150-row INSERT logged % "read it again" rows, expected 1', logged;
   END IF;
-  -- Company B has customers too, but this user cannot read them.
-  SELECT checksum INTO after FROM list_checksums(company_b) WHERE list = 'customers';
-  IF after <> empty THEN
-    RAISE EXCEPTION 'FAIL: list_checksums hashed rows of a company the caller is not in';
+  SELECT count(*) INTO logged FROM "tableChange" c
+  WHERE c."companyId" = company_b AND c."table" = 'customer'
+    AND c."rowId" IN (SELECT id FROM customer WHERE name LIKE 'Bulk %');
+  IF logged <> 2 THEN
+    RAISE EXCEPTION 'FAIL: company B''s 2 rows of the bulk statement logged % rows', logged;
+  END IF;
+  -- A table with no log handler records nothing.
+  IF EXISTS (SELECT 1 FROM "tableChange" WHERE "table" = 'unitOfMeasure') THEN
+    RAISE EXCEPTION 'FAIL: a table without the log handler was logged';
+  END IF;
+
+  -- A person's name lives on "user": the change is logged for their company's people list.
+  UPDATE "user" SET "firstName" = 'Renamed' WHERE id = user_a;
+  IF NOT EXISTS (
+    SELECT 1 FROM "tableChange"
+    WHERE "companyId" = company_a AND "table" = 'employee' AND "rowId" = user_a
+  ) THEN
+    RAISE EXCEPTION 'FAIL: renaming a user did not log a change to their company''s people';
+  END IF;
+  IF EXISTS (SELECT 1 FROM "tableChange" WHERE "companyId" = company_b AND "rowId" = user_a) THEN
+    RAISE EXCEPTION 'FAIL: a user''s rename was logged for a company they are not in';
   END IF;
 END;
 $$;
-RESET ROLE;
 
+SELECT set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('test.user_a'), 'role', 'authenticated')::text, true);
+SET LOCAL ROLE authenticated;
 DO $$
 DECLARE
   company_a text := current_setting('test.company_a');
-  h0 text; h1 text; h2 text;
+  company_b text := current_setting('test.company_b');
+  first jsonb;
+  next jsonb;
 BEGIN
-  SELECT checksum INTO h0 FROM list_checksums(company_a) WHERE list = 'customers';
-  UPDATE "customer" SET name = 'Renamed' WHERE "companyId" = company_a AND name = 'Bulk 1';
-  SELECT checksum INTO h1 FROM list_checksums(company_a) WHERE list = 'customers';
-  DELETE FROM "customer" WHERE "companyId" = company_a AND name = 'Bulk 2';
-  SELECT checksum INTO h2 FROM list_checksums(company_a) WHERE list = 'customers';
-  IF h0 = h1 OR h1 = h2 THEN
-    RAISE EXCEPTION 'FAIL: the customers checksum did not change after a rename and a delete';
+  -- The table itself is not readable through the API.
+  IF EXISTS (SELECT 1 FROM "tableChange") THEN
+    RAISE EXCEPTION 'FAIL: tableChange is readable as an authenticated user';
   END IF;
+
+  -- No cursor: fetch everything, and here is a cursor.
+  first := table_changes_since(company_a);
+  IF NOT (first->>'reset')::boolean OR first->'changes' <> '{}'::jsonb
+     OR first->>'xid' IS NULL OR first->>'epoch' IS NULL OR first->>'at' IS NULL THEN
+    RAISE EXCEPTION 'FAIL: a first call did not answer reset with a cursor: %', first;
+  END IF;
+
+  -- With the cursor: the changes of this company only. The customer table is
+  -- "read it again" (the bulk statement); people lists the renamed user.
+  next := table_changes_since(company_a, first->>'xid', first->>'epoch', (first->>'at')::timestamptz);
+  IF (next->>'reset')::boolean THEN
+    RAISE EXCEPTION 'FAIL: a fresh cursor was answered with reset';
+  END IF;
+  IF next->'changes'->'customer' <> 'null'::jsonb THEN
+    RAISE EXCEPTION 'FAIL: customer should be "read it again" after a 150-row statement: %', next->'changes'->'customer';
+  END IF;
+  IF NOT (next->'changes'->'employee' ? current_setting('test.user_a')) THEN
+    RAISE EXCEPTION 'FAIL: the renamed user is missing from the changes: %', next->'changes';
+  END IF;
+
+  -- A cursor from before a restart, and one older than the retention, both reset.
+  IF NOT (table_changes_since(company_a, first->>'xid', 'another-epoch', (first->>'at')::timestamptz)->>'reset')::boolean THEN
+    RAISE EXCEPTION 'FAIL: a cursor from another server epoch was not reset';
+  END IF;
+  IF NOT (table_changes_since(company_a, first->>'xid', first->>'epoch', now() - interval '6 days 1 hour')->>'reset')::boolean THEN
+    RAISE EXCEPTION 'FAIL: a cursor older than the retention margin was not reset';
+  END IF;
+
+  -- Another company's log is refused outright.
+  BEGIN
+    PERFORM table_changes_since(company_b);
+    RAISE EXCEPTION 'FAIL: read another company''s change log';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
 END;
 $$;
+RESET ROLE;
 
 \echo realtime-broadcast: all checks passed
 ROLLBACK;

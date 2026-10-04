@@ -9,8 +9,11 @@ import type { ListItem } from "~/types";
 
 export type Person = ListItem & { avatarUrl: string | null };
 
-// Read from the `employees` view, so a changed `employee` row cannot be
-// re-read by its id alone: any change refetches the list.
+// Read from the `employees` view (user + employee + job). An employee's id is
+// their user id, so a changed `employee` row — or a renamed `user`, which the
+// change log records under `employee` — is re-read from the view by that id.
+const COLUMNS = "id, name, email, avatarUrl, active";
+
 export const peopleList: LiveList<Person> = {
   name: "people",
   table: "employee",
@@ -18,11 +21,20 @@ export const peopleList: LiveList<Person> = {
     const rows = await fetchAllFromTable<Person>(
       carbon,
       "employees",
-      "id, name, email, avatarUrl, active",
+      COLUMNS,
       (query) => query.eq("companyId", companyId).order("name")
     );
     if (rows.error) throw new Error("Failed to fetch people");
     return rows.data ?? [];
+  },
+  async fetchByIds(carbon, companyId, ids) {
+    const rows = await carbon
+      .from("employees")
+      .select(COLUMNS)
+      .eq("companyId", companyId)
+      .in("id", ids);
+    if (rows.error) throw new Error("Failed to fetch people");
+    return (rows.data ?? []) as Person[];
   },
   sort: (a, b) => a.name.localeCompare(b.name)
 };

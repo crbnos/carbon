@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export * from "./cache";
-export { applyChange } from "./liveList";
+export type { Cursor } from "./liveList";
 export { matchesIdFilter } from "./realtimeFilter";
 export type { ChangedRows } from "./useChangedRows";
 export { useChangedRows } from "./useChangedRows";

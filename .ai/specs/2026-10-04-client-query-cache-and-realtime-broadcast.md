@@ -11,8 +11,8 @@ The ERP and the MES get one client cache and one realtime system. A
 root middleware marks them stale after every mutation. Postgres sends a small
 broadcast message for each changed table, and a route declares the tables it
 shows, so operational pages update live in both apps. The four realtime lists
-(items, customers, suppliers, people) move into the query cache and load from
-IndexedDB when a checksum matches. `useLoaderQuery` and `useAction` replace
+(items, customers, suppliers, people) move into the query cache. A change log
+tells the client which rows changed since its stored copy. `useLoaderQuery` and `useAction` replace
 hand-written fetcher effects. nanostores leaves the repo.
 
 Research: `.ai/research/2026-10-01-client-cache-on-react-router.md`.
@@ -159,26 +159,30 @@ names and their `[value, setValue]` return shape. About 200 files call them.
 
 Each list becomes a `useLiveList` definition. The definition holds the table,
 the column list, the sort function and the query key
-`["live", companyId, <list>]`. The column list has one copy.
+`["live", companyId, <list>]`. The column list has one copy. A definition can
+name related tables, for example `itemSupersession` for the item list.
 
-Cold load does these steps for each list:
+Cold load does these steps:
 
-1. Read the list and its checksum from IndexedDB (`<list>:<companyId>`).
-2. Put the list in the query cache.
-3. Call the `list_checksums` function.
-4. If the checksum matches, stop. The app fetches nothing.
-5. If the checksum differs, fetch the list in full.
-6. Write the list and the new checksum to IndexedDB.
+1. Read each list and its cursor from IndexedDB (`<list>:<companyId>`).
+2. Put each list in the query cache.
+3. Call `table_changes_since` one time, with the oldest cursor.
+4. If the answer is `reset`, fetch each list in full.
+5. Otherwise, for each list, read only the rows that the answer names.
+6. Remove a named row that the read does not return.
+7. Write each list and the new cursor to IndexedDB.
+
+The answer is `reset` in 4 cases: the client sent no cursor, the server restarted, the cursor is older than 6 days, or a list has more than 500 changed rows.
 
 A broadcast message does these steps:
 
-1. If `ids` is null, do the cold-load steps 3 to 6.
+1. If `ids` is null, do the cold-load steps 3 to 7 for that list.
 2. If `op` is `DELETE`, remove the rows with those ids from the cache.
 3. Otherwise, read the rows with those ids through PostgREST with the list's column list.
 4. Merge the rows into the cache and sort.
-5. Write the list to IndexedDB.
+5. Write the list to IndexedDB. The cursor does not change.
 
-A reconnect does the cold-load steps 3 to 6.
+A reconnect does the cold-load steps 3 to 7.
 
 ### Part 4 — Component hooks
 
@@ -217,8 +221,12 @@ to a route action. A `fetcher.load` of a page route stays on `useFetcher`.
 | `implementationHub` | `broadcast_table_changes` reads the company from `id` for this table | The table has no `companyId` column. Its `id` is the company id. |
 | Ignored updates | Skip an update that changes only `updatedAt`, `updatedBy` or `embedding` | `dispatch_event_batch` has the same rule. `event-dispatch.test.ts` checks that the two lists match. |
 | List storage | Query cache, key `["live", companyId, <list>]` | One store for server data. nanostores has no other user after this change. |
-| Cold-load sync (user, 2026-10-04) | Checksum for each list | No trigger sets `updatedAt`, inserts leave it null, and `employee` has no such column. A hash of the data catches every writer and every delete. |
-| Checksum function security | `SECURITY INVOKER` | The hash must cover the rows that this user can read. The same RLS applies to the list fetch. |
+| Cold-load sync (user, 2026-10-05) | A change log: the `tableChange` table and `table_changes_since(cursor)` | The client reads only the rows that changed since its stored copy. A checksum refetches a whole list when one row changes, and it scans every row on each load. |
+| Change log storage (user, 2026-10-05) | `UNLOGGED` table | The log insert on each write skips WAL. A crash empties the table. The reader detects a server restart by its epoch and answers `reset`. |
+| Change log cursor | The transaction id `pg_snapshot_xmin(pg_current_snapshot())` | A sequence value is taken before commit. A reader that keeps "the highest id" skips a row whose transaction commits late. |
+| Change log retention | 7 days, purged hourly by `pg_cron` | A cursor older than 6 days gets `reset`. The 1-day margin covers a purge that runs between the check and the read. |
+| Reader security | `SECURITY DEFINER` with a company check | The table has no API access. The reader reveals row ids only, as a broadcast does. The client re-reads the rows under table RLS. |
+| A renamed user | `log_user_changes` logs it as an `employee` change for each company of that user | The `user` row has no `companyId`. Each company shows the name in its people list. |
 | IndexedDB | Keep localforage, keys `<list>:<companyId>` | `.ai/lessons.md` line 254: a cache without `companyId` in its key leaks across tenants. |
 | `useAction` scope (user, 2026-10-04) | Pending state and callbacks only | Mutations stay plain router actions. Optimistic cache writes are out of scope. |
 | Shared code | `useRouteRealtime`, `useLiveList`, `useRealtime` live in `@carbon/react` | Both apps need them. The `no-duplicated-app-file` check forbids a copy in each app. `@carbon/react` already depends on `react-router`. |
@@ -306,41 +314,31 @@ SELECT attach_statement_handler('itemLedger',
 -- 4. Leave postgres_changes, one line for each moved table
 ALTER PUBLICATION supabase_realtime DROP TABLE public.item;
 
--- 5. Checksums for the live lists
-CREATE OR REPLACE FUNCTION public.list_checksums(p_company_id TEXT)
-RETURNS TABLE (list TEXT, checksum TEXT)
-LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
-  SELECT 'items', md5(coalesce(string_agg(md5(row(
-      i."id", i."readableId", i."revision", i."readableIdWithRevision",
-      i."unitOfMeasureCode", i."name", i."type", i."replenishmentSystem",
-      i."active", i."itemTrackingType", s."supersessionMode", s."successorItemId"
-    )::text), '' ORDER BY i."id"), ''))
-  FROM "item" i
-  LEFT JOIN "itemSupersession" s ON s."itemId" = i."id"
-  WHERE i."companyId" = p_company_id
-  UNION ALL
-  SELECT 'customers', md5(coalesce(string_agg(md5(row(
-      "id", "name", "website", "readableId")::text), '' ORDER BY "id"), ''))
-  FROM "customer" WHERE "companyId" = p_company_id
-  UNION ALL
-  SELECT 'suppliers', md5(coalesce(string_agg(md5(row(
-      "id", "name", "website", "supplierStatus", "readableId")::text), '' ORDER BY "id"), ''))
-  FROM "supplier" WHERE "companyId" = p_company_id
-  UNION ALL
-  SELECT 'people', md5(coalesce(string_agg(md5(row(
-      "id", "name", "email", "avatarUrl", "active")::text), '' ORDER BY "id"), ''))
-  FROM "employees" WHERE "companyId" = p_company_id;
-$$;
+-- 5. The change log (20261004200418_table-change-log.sql)
+CREATE UNLOGGED TABLE "tableChange" (
+  "id" BIGINT GENERATED ALWAYS AS IDENTITY,
+  "companyId" TEXT NOT NULL,
+  "table" TEXT NOT NULL,
+  "rowId" TEXT,                 -- NULL: more than 100 rows changed in one statement
+  "xid" XID8 NOT NULL DEFAULT pg_current_xact_id(),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT "tableChange_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "tableChange_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- table_changes_since(p_company_id, p_xid, p_epoch, p_at) returns
+-- { reset, changes: { "<table>": ["<rowId>", ...] | null }, xid, epoch, at }
 ```
 
 Rules for the migration:
 
-- The MES item list selects `thumbnailPath` and the model thumbnail. The
-  function returns a fifth row, `mesItems`, that hashes those columns.
-- `itemSupersession` and `itemStockQuantities` have no `id` column. Their
-  messages carry `ids: null`, so the client resyncs or invalidates.
+- The statement handlers `log_table_changes` and `log_user_changes` write the log. `attachments.ts` attaches them to `item`, `itemSupersession`, `customer`, `supplier`, `employee`, `modelUpload` and `user`.
+- The table has no audit columns and no `id('prefix')` default. It is a log that only triggers write.
+- The backup engine skips the table. Its transaction ids mean nothing in another database.
+- `itemSupersession` has no `id` column. Its message and its log row carry the `itemId`.
+- `itemStockQuantities` has no `id` column. Its message carries `ids: null`, so the client invalidates.
 - The people list reads the `employees` view. A change to `user.name` sends no
-  message, as today. The checksum catches it on the next load or reconnect.
+  message, as today. The change log records it, so the next load or reconnect reads that person again.
 - The 3 broadcast functions are managed files under `packages/database/src/event-system/functions/`. They ship through `authz migration`, not a hand-written migration.
 - The authz manifest owns the 2 policies on `realtime.messages`. The manifest key is `"realtime.messages"`, built with `external()`.
 - `authz sync`, `authz migration` and the `no-authz-ddl-in-migrations` check read the schema from the key. A key with no dot is a `public` table.
@@ -396,8 +394,9 @@ existing subscriptions only.
 - [ ] An operator completes an operation in the MES. The ERP job page for that job shows the operation as complete within 3 seconds, with no reload.
 - [ ] A user adds a customer type. The customer type picker on another open form shows the new type after the save, with no reload.
 - [ ] A second user in the same company adds a customer type. The first user's picker shows it within 3 seconds.
-- [ ] A cold load with a matching checksum sends 1 `list_checksums` request and 0 requests to `item`, `supplier`, `customer`, `employees` or `itemSupersession`.
-- [ ] A cold load after another user renames a customer refetches `customer` only.
+- [ ] A cold load with no change sends 1 `table_changes_since` request and 0 requests to `item`, `supplier`, `customer`, `employees` or `itemSupersession`.
+- [ ] A cold load after another user renames 1 customer sends 1 request to `customer`, with `id=in.(<that id>)`.
+- [ ] A cold load after a database restart fetches each list in full.
 - [ ] A user deletes an item while a second user's tab is closed. The second user's item list lacks that item after the next load.
 - [ ] A notification for user A shows in user A's bell within 3 seconds. User B in the same company cannot join `user:<A>:notification`.
 - [ ] `SELECT count(*) FROM pg_publication_tables WHERE pubname = 'supabase_realtime'` returns 0.
@@ -425,7 +424,8 @@ existing subscriptions only.
 | Tabs on the old build go quiet after the publication drop. | Med | The user accepted this. The lists and pages recover on reload. |
 | The broadcast trigger slows writes on `itemLedger`, `jobOperation` and `productionEvent`. | Med | The trigger is statement-level and sends ids only. Measure with `EXPLAIN ANALYZE` on one insert before and after. |
 | `realtime.messages` grows on busy tables. | Low | Realtime keeps messages for about three days. The payload is ids only, capped at 100. |
-| The checksum scans four tables on each load. | Med | Measure it on the largest company before merge. If it exceeds 200 ms, add an index or hash on the server less often. |
+| A crash empties the `UNLOGGED` change log. | Med | The reader compares the server start time with the cursor's epoch and answers `reset`. Each client then fetches its lists one time. |
+| A bug in the change log leaves a list stale with no error. | High | `realtime-broadcast.test.sql` covers the writer and the reader. `liveList.test.ts` covers the plan. A browser check covers a change made while the tab is closed. |
 | Realtime v2.89.0 lacks `realtime.send` or private channels. | Med | Verify on the local stack as the first task of the plan. If it fails, raise the image version in both compose files. |
 | Blunt invalidation refetches every active `useLoaderQuery` after each save. | Low | Each refetch is one small `api+` request. `staleTime` does not stop it, by design. |
 | A realtime revalidation re-runs every loader of the page. | Med | The debounce collapses bursts. Shell loaders already skip through `shouldRevalidate`. |
@@ -435,7 +435,7 @@ existing subscriptions only.
 ## Open Questions
 
 - [x] May the PR add a policy on `realtime.messages` and triggers on core tables? — **Answer:** Yes, both. The user runs `db:migrate`.
-- [x] How do the lists avoid the whole-table fetches on cold load? — **Answer:** A checksum for each list. `updatedAt` is not reliable.
+- [x] How do the lists avoid the whole-table fetches on cold load? — **Answer:** A change log on an `UNLOGGED` table. The user replaced the checksum on 2026-10-05: a checksum refetches a whole list for one changed row.
 - [x] How much goes in the first PR? — **Answer:** Everything: the cache, the component hooks and all realtime callers.
 - [x] How does a caller with a parent-column filter work on broadcast? — **Answer:** One topic for each table. The caller wakes on any change to the table.
 - [x] Does the ERP job-page bug get its own fix? — **Answer:** No. It ships in this rewrite. The goal is live pages in the ERP and the MES.
@@ -452,3 +452,4 @@ existing subscriptions only.
 - 2026-10-04: Planning found that the broadcast functions are managed event-system files. `@carbon/react` gains `@tanstack/react-query`.
 - 2026-10-04: The authz manifest owns the `realtime.messages` policies (user decision). The authz system now handles one table outside `public`.
 - 2026-10-05: The user moved all event triggers and interceptor bodies out of migrations. `attachments.ts` declares the triggers of 141 tables. `event-system/handlers/` holds 64 functions. The takeover migration is `20261004194527_event-attachments.sql`.
+- 2026-10-05: The user replaced the checksum with a change log (`tableChange`, `UNLOGGED`, `table_changes_since`). The shared code moved to the new `@carbon/query` package, and `~/utils/react-query` is gone. All listeners of a topic share one channel.

@@ -14,7 +14,7 @@ type Table = keyof Database["public"]["Tables"];
  * - `events`: every change is queued for the event system (audit log, search
  *   index, webhooks, workflows, embeddings).
  * - `statement`: handlers run once per statement, e.g. the realtime broadcasts
- *   (`functions/broadcast_*.sql`).
+ *   (`functions/broadcast_*.sql`) and the change log (`functions/log_*.sql`).
  */
 export type Attachment = {
   readonly before?: readonly string[];
@@ -46,7 +46,7 @@ export const attachments = {
     before: ["sync_update_customer_type_group"],
     after: ["sync_create_customer_entries", "sync_create_customer_org_group"],
     events: true,
-    statement: ["broadcast_table_changes"]
+    statement: ["broadcast_table_changes", "log_table_changes"]
   },
   customerAccount: {
     after: ["sync_add_customer_account_to_group"],
@@ -77,7 +77,7 @@ export const attachments = {
     before: ["sync_update_employee_type_membership"],
     after: ["sync_add_employee_to_type_group"],
     events: true,
-    statement: ["broadcast_table_changes"]
+    statement: ["broadcast_table_changes", "log_table_changes"]
   },
   employeeJob: { events: true },
   employeeType: {
@@ -104,7 +104,7 @@ export const attachments = {
       "sync_propagate_item_readable_id_to_tracked_entity"
     ],
     events: true,
-    statement: ["broadcast_table_changes"]
+    statement: ["broadcast_table_changes", "log_table_changes"]
   },
   itemCost: { events: true },
   itemLedger: {
@@ -118,7 +118,9 @@ export const attachments = {
   itemReplenishment: { events: true },
   itemShelfLife: { events: true },
   itemStockQuantities: { statement: ["broadcast_table_changes"] },
-  itemSupersession: { statement: ["broadcast_table_changes"] },
+  itemSupersession: {
+    statement: ["broadcast_table_changes", "log_table_changes"]
+  },
   itemUnitSalePrice: { events: true },
   job: {
     before: ["sync_job_complete_or_canceled"],
@@ -182,7 +184,7 @@ export const attachments = {
     before: ["sync_check_method_material_self_reference"],
     events: true
   },
-  modelUpload: { statement: ["broadcast_table_changes"] },
+  modelUpload: { statement: ["broadcast_table_changes", "log_table_changes"] },
   nonConformance: { events: true, statement: ["broadcast_table_changes"] },
   nonConformanceActionTask: {
     events: true,
@@ -303,7 +305,7 @@ export const attachments = {
     before: ["sync_update_supplier_type_group"],
     after: ["sync_create_supplier_entries", "sync_create_supplier_org_group"],
     events: true,
-    statement: ["broadcast_table_changes"]
+    statement: ["broadcast_table_changes", "log_table_changes"]
   },
   supplierAccount: {
     after: ["sync_add_supplier_account_to_group"],
@@ -332,7 +334,8 @@ export const attachments = {
       "sync_create_user_identity_group",
       "sync_update_user_identity_group",
       "sync_delete_user_identity_group"
-    ]
+    ],
+    statement: ["log_user_changes"]
   },
   warehouseTransfer: { events: true, statement: ["broadcast_table_changes"] },
   warehouseTransferLine: { events: true },

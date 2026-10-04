@@ -21,7 +21,7 @@ The client data layer shared by the ERP and the MES: the TanStack Query cache in
 - Name a module here `*.client.ts` or `*.server.ts` if a route calls it at module load: React Router empties `.client` modules on the server, and `root.tsx` calls `createInvalidationMiddleware(...)` while it is evaluated there.
 - Subscribe with `postgres_changes`. The `supabase_realtime` publication is empty; a subscription to it delivers nothing and reports no error.
 - Read `payload.new` / `payload.old`. A broadcast carries `{ table, op, ids }` and no row data; re-read the rows by id through PostgREST, so table RLS still decides what the user sees.
-- Store a server checksum beside a list that was patched from a broadcast (see the note in `useLiveList.tsx`).
+- Use a row count, a sequence value or a timestamp as a live list's cursor. The cursor is the transaction id `table_changes_since` hands back (a snapshot's xmin): a sequence value is taken before commit, so "the highest I saw" skips a row whose transaction commits late.
 
 ## Validation Commands
 
@@ -41,10 +41,11 @@ pnpm --filter @carbon/query test
 | `createInvalidationMiddleware({ getCache, skipPaths })` | Root `clientMiddleware`; skip POSTs that change no data (`/refresh-session`) |
 | `RouteRealtime`, `useRealtimeTable`, `useTableChanges`, `useRealtimeRevalidator` | Realtime over private broadcast topics. Revalidation waits for a submitting fetcher |
 | `useRealtimeChannel` | One channel with retry, reconnect on focus, `private` and `onSubscribed(isReconnect)` |
-| `LiveLists`, `useLiveList`, `LiveList` | Whole lists kept in the cache (items, customers, suppliers, people): IndexedDB first, fetched only when `list_checksums` differs, patched from broadcasts |
+| `LiveLists`, `useLiveList`, `LiveList` | Whole lists kept in the cache (items, customers, suppliers, people). IndexedDB first; then `table_changes_since(cursor)` names the rows that changed since the stored copy and only those are re-read. The full list is fetched once per device, and again only when the log cannot answer (no cursor, a server restart, a cursor older than 7 days, more than 500 changed rows). Broadcasts patch it while the tab is open |
 
 ## Cross-References
 
 - `.claude/rules/authz-manifest.md` — the `realtime.messages` policies and the event-trigger attachments
 - `packages/database/src/event-system/functions/broadcast_*.sql` — what a message contains
+- `packages/database/src/event-system/functions/log_*.sql` and `20261004200418_table-change-log.sql` — the change log (`tableChange`, UNLOGGED) and its reader
 - `.ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md` — the design and its decisions

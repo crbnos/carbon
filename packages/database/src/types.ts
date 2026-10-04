@@ -60800,6 +60800,62 @@ export type Database = {
           }
         ]
       }
+      tableChange: {
+        Row: {
+          companyId: string
+          createdAt: string
+          id: number
+          rowId: string | null
+          table: string
+          xid: unknown
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          id?: never
+          rowId?: string | null
+          table: string
+          xid?: unknown
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          id?: never
+          rowId?: string | null
+          table?: string
+          xid?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tableChange_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableChange_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableChange_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "tableChange_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          }
+        ]
+      }
       tableView: {
         Row: {
           columnOrder: string[] | null
@@ -85033,13 +85089,6 @@ export type Database = {
         }[]
       }
       jsonb_to_text_array: { Args: { "": Json }; Returns: string[] }
-      list_checksums: {
-        Args: { p_company_id: string }
-        Returns: {
-          checksum: string
-          list: string
-        }[]
-      }
       location_today: {
         Args: { p_company_id: string; p_location_id: string }
         Returns: string
@@ -85483,6 +85532,15 @@ export type Database = {
       sync_webhook_subscription: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
+      }
+      table_changes_since: {
+        Args: {
+          p_at?: string
+          p_company_id: string
+          p_epoch?: string
+          p_xid?: string
+        }
+        Returns: Json
       }
       terminal_job_operations: {
         Args: { p_job_id: string }

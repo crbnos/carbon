@@ -33,8 +33,6 @@ const toItem = ({ modelUpload, ...item }: ItemRow): Item => ({
 export const itemsList: LiveList<Item> = {
   name: "mesItems",
   table: "item",
-  // A model's thumbnail is rendered after upload, on its own row.
-  also: ["modelUpload"],
   async fetchAll(carbon, companyId) {
     const items = await fetchAllFromTable<ItemRow>(
       carbon,
@@ -58,6 +56,22 @@ export const itemsList: LiveList<Item> = {
     if (items.error) throw new Error("Failed to fetch items");
     return ((items.data ?? []) as unknown as ItemRow[]).map(toItem);
   },
+  // A model's thumbnail is rendered after upload, on its own row: re-read the
+  // items that show it.
+  related: [
+    {
+      table: "modelUpload",
+      async fetch(carbon, companyId, ids) {
+        const items = await carbon
+          .from("item")
+          .select(ITEM_COLUMNS)
+          .eq("companyId", companyId)
+          .in("modelUploadId", ids);
+        if (items.error) throw new Error("Failed to fetch items");
+        return ((items.data ?? []) as unknown as ItemRow[]).map(toItem);
+      }
+    }
+  ],
   sort: (a, b) =>
     a.readableIdWithRevision.localeCompare(b.readableIdWithRevision)
 };

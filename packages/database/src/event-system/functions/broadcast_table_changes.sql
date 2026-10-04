@@ -30,7 +30,9 @@ BEGIN
     'SELECT coalesce(c->>''companyId'',
                      CASE WHEN $2::text = ''implementationHub'' THEN c->>''id'' END) AS company_id,
             count(*) AS n,
-            jsonb_agg(c->''id'') FILTER (WHERE c ? ''id'') AS ids
+            -- itemSupersession has no id: its row belongs to the item it describes.
+            jsonb_agg(coalesce(c->''id'', c->''itemId''))
+              FILTER (WHERE c ? ''id'' OR c ? ''itemId'') AS ids
        FROM (%s) changed
       GROUP BY 1',
     changed_rows

@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="explain-source" content=".ai/specs/2026-10-04-client-query-cache-and-realtime-broadcast.md" />
-<meta name="explain-source-hash" content="2bc2a2b1c3912b98227710c808eb966a98aaab62" />
+<meta name="explain-source-hash" content="d2e06bf00c04e1d598c01454ac4c6e005c96d3e6" />
 <title>Client cache and realtime</title>
 <style>
   :root {
@@ -228,7 +228,7 @@
 <details><summary>When do tables leave the publication? <span class="choice">In this PR.</span><span class="tag human">human</span></summary><div><p>Why: A tab on the old build goes quiet until a reload. It shows no error.</p></div></details>
 <details><summary>What stays on <code>postgres_changes</code>? <span class="choice">Nothing.</span><span class="tag human">human</span></summary><div><p>Why: The publication ends empty. No second realtime system stays in the code.</p></div></details>
 <details><summary>How do notifications travel? <span class="choice">A private topic for each user: <code>user:&lt;userId&gt;:notification</code>.</span><span class="tag human">human</span></summary><div><p>Why: A company topic would wake every employee for each notification of each other employee.</p></div></details>
-<details><summary>How does a cold load avoid the table fetches? <span class="choice">A checksum for each list.</span><span class="tag human">human</span></summary><div><p>Why: No trigger sets <code>updatedAt</code>, inserts leave it null, and <code>employee</code> has no such column. A hash of the data catches every writer and every delete.</p></div></details>
+<details><summary>How does a cold load avoid the table fetches? <span class="choice">A change log names the rows that changed.</span><span class="tag human">human</span></summary><div><p>Why: The client reads only the rows that changed since its stored copy. A checksum refetches a whole list when one row changes.</p></div></details>
 <details><summary>Who may the checksum function read for? <span class="choice"><code>SECURITY INVOKER</code>: the calling user.</span></summary><div><p>Why: The hash must cover the rows that this user can read. The same RLS applies to the list fetch.</p></div></details>
 <details><summary>Where do the lists live? <span class="choice">The query cache, key <code>["live", companyId, &lt;list&gt;]</code>.</span></summary><div><p>Why: One store holds the server data. nanostores has no other user after this change.</p></div></details>
 <details><summary>How far does <code>useAction</code> go? <span class="choice">Pending state and callbacks only.</span><span class="tag human">human</span></summary><div><p>Why: Mutations stay plain router actions. Optimistic cache writes are out of scope.</p></div></details>

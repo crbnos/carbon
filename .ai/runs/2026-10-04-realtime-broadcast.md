@@ -36,3 +36,15 @@ message that Postgres sent 6 seconds after that first join. In the second run,
 the slot existed and the client received the message. The catch-up on
 `onSubscribed` does not cover this case, because the join itself succeeds.
 The cause is not confirmed. Test it again in Task 21.
+
+## 2026-10-05 — change log replaces the checksum
+
+| Check | Result |
+|-------|--------|
+| `realtime-broadcast.test.sql` with the change-log assertions | Pass. |
+| `authz check` after the sync | Pass. 0 helpers, 0 tables, 0 event triggers. |
+| Reload with no change | Pass. 1 `table_changes_since` request, 0 table requests. |
+| Rename 1 customer while the tab is closed, then open the app | Pass. 1 `table_changes_since` request and 1 `customer` request with `id=in.(<that id>)`. |
+| Rename 1 customer while the tab is open | Pass. The cached list shows the new name within 3 seconds. |
+
+Not measured: the cost of the log insert on a write, and the reader on a large company.
