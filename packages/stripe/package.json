@@ -4,10 +4,12 @@
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@internationalized/date": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "stripe": "22.4.0"
   },
@@ -26,7 +28,8 @@
   "exports": {
     "./stripe.server": "./src/stripe.server.ts",
     "./connect.server": "./src/connect.server.ts",
-    "./connect.constants": "./src/connect.constants.ts"
+    "./connect.constants": "./src/connect.constants.ts",
+    "./send-sales-invoice.server": "./src/send-sales-invoice.server.ts"
   },
   "private": true,
   "scripts": {

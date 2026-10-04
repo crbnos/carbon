@@ -10,6 +10,10 @@ import {
   retrieveConnectCustomer
 } from "@carbon/stripe/connect.server";
 import {
+  getStripeConnectAccountId,
+  STRIPE_CONNECT_INTEGRATION
+} from "@carbon/stripe/send-sales-invoice.server";
+import {
   getCustomer,
   getCustomerLocation,
   getCustomerPayment,
@@ -21,7 +25,9 @@ import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
-export const STRIPE_CONNECT_INTEGRATION = "stripe-connect";
+// The connected-account lookup lives in @carbon/stripe so invoice automation
+// (in @carbon/jobs) reads it the same way the ERP does.
+export { getStripeConnectAccountId, STRIPE_CONNECT_INTEGRATION };
 
 // The pure Carbon → Stripe field mapping lives in its own module so it can be
 // unit tested without this file's database and Stripe imports.
@@ -123,38 +129,6 @@ function toSummary(customer: {
     name: customer.name ?? null,
     email: customer.email ?? null
   };
-}
-
-/**
- * The connected account this company bills through, or null if the
- * integration is not set up or onboarding is not far enough along to accept
- * charges yet.
- *
- * `active` alone is not enough to gate on: the connect callback sets it
- * `true` as soon as a Stripe account exists, before onboarding (and
- * `chargesEnabled`) is complete. Gating only on `active` let mid-onboarding
- * companies see the Stripe send option, get their invoice Posted, and then
- * fail the actual Stripe send.
- */
-export async function getStripeConnectAccountId(
-  serviceRole: ServiceRole,
-  companyId: string
-): Promise<string | null> {
-  const integration = await serviceRole
-    .from("companyIntegration")
-    .select("active, metadata")
-    .eq("id", STRIPE_CONNECT_INTEGRATION)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  if (!integration.data?.active) return null;
-
-  const metadata = integration.data.metadata as
-    | Record<string, unknown>
-    | undefined;
-  if (metadata?.chargesEnabled !== true) return null;
-
-  return (metadata?.stripeAccountId as string | undefined) ?? null;
 }
 
 /**
