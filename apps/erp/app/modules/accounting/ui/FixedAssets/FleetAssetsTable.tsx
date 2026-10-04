@@ -27,7 +27,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
-import { fleetStatuses } from "../../accounting.models";
+import { visibleFleetStatuses } from "../../accounting.models";
 import type { getFleetAssets } from "../../accounting.service";
 import FleetStatus from "./FleetStatus";
 
@@ -113,7 +113,7 @@ const FleetAssetsTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: fleetStatuses.map((v) => ({
+              options: visibleFleetStatuses.map((v) => ({
                 label: <FleetStatus status={v} />,
                 value: v
               }))

@@ -477,14 +477,9 @@ export const terms = {
     definition: msg`The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register.`,
     href: "/docs/reference/fixed-assets#fleet-register"
   },
-  "construction-in-progress": {
-    term: msg`Construction in progress`,
-    definition: msg`A holding class for an asset still being built: it sits Under Construction, collecting cost from receipts, invoices, attached jobs, and registration, and starts depreciating only when capitalized into its in-service class.`,
-    href: "/docs/reference/fixed-assets#construction-in-progress"
-  },
   "make-to-asset": {
     term: msg`Make to Asset`,
-    definition: msg`A job that completes to a fixed asset class, or to one asset under construction, instead of inventory: each finished unit becomes an asset priced at its WIP cost and never enters stock.`,
+    definition: msg`A job that completes to a fixed asset class instead of inventory: each finished unit becomes an asset priced at its WIP cost and never enters stock.`,
     href: "/docs/reference/fixed-assets#acquiring"
   },
   "out-of-service": {

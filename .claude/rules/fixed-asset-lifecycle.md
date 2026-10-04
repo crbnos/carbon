@@ -308,6 +308,16 @@ job goes `Ready`.
   assets for the units received so far. Covered by
   `packages/database/supabase/tests/job-completion-to-asset.test.sql`.
 
+**Construction in progress is hidden.** `CONSTRUCTION_IN_PROGRESS_ENABLED =
+false` (`accounting.models.ts`) keeps it out of the app until it returns with
+projects: `getFixedAssetClasses` / `getFixedAssetClassesList` drop CIP classes
+(so no class list or picker offers one and no asset reaches Under Construction
+from the UI), the asset page's `isCipClass` is false (no Attach Job, Capitalize
+or CIP cost card), the status filters use `visibleFixedAssetStatuses` /
+`visibleFleetStatuses`, and `JobForm` offers Complete To → Asset Under
+Construction only for a saved job that already targets an asset. Everything
+below is built and live server-side; flip the constant to bring it back.
+
 **Construction in progress.** A CIP class (`isConstructionInProgress`) is a
 holding account: its assets sit at `Under Construction`, are skipped by
 depreciation runs (`depreciation-runs.new` selects `status = 'Active'`), and

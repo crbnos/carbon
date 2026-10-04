@@ -44,6 +44,7 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup
@@ -418,7 +419,18 @@ const JobForm = ({
                         options={[
                           { value: "inventory", label: t`Inventory` },
                           { value: "class", label: t`Fixed Asset Class` },
-                          { value: "asset", label: t`Asset Under Construction` }
+                          // Hidden while construction in progress is; a
+                          // saved job that already targets an asset still
+                          // shows it.
+                          ...(CONSTRUCTION_IN_PROGRESS_ENABLED ||
+                          completeTo === "asset"
+                            ? [
+                                {
+                                  value: "asset",
+                                  label: t`Asset Under Construction`
+                                }
+                              ]
+                            : [])
                         ]}
                         isDisabled={!canEditCompleteTo}
                       />

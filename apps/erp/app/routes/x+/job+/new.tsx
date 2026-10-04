@@ -12,7 +12,10 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
-import { getFixedAssets } from "~/modules/accounting";
+import {
+  CONSTRUCTION_IN_PROGRESS_ENABLED,
+  getFixedAssets
+} from "~/modules/accounting";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import {
   insertJob,
@@ -47,14 +50,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .eq("isConstructionInProgress", false)
       .order("name"),
-    getFixedAssets(client, companyId, {
-      search: null,
-      status: "Under Construction",
-      limit: 100,
-      offset: 0,
-      sorts: [],
-      filters: []
-    })
+    // Not offered while construction in progress is hidden.
+    CONSTRUCTION_IN_PROGRESS_ENABLED
+      ? getFixedAssets(client, companyId, {
+          search: null,
+          status: "Under Construction",
+          limit: 100,
+          offset: 0,
+          sorts: [],
+          filters: []
+        })
+      : null
   ]);
 
   return {
@@ -62,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       id: assetClass.id,
       name: assetClass.name
     })),
-    underConstructionAssets: (underConstructionAssets.data ?? []).map(
+    underConstructionAssets: (underConstructionAssets?.data ?? []).map(
       (asset) => ({
         id: asset.id,
         fixedAssetId: asset.fixedAssetId,

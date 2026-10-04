@@ -31,7 +31,10 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
-import { fixedAssetStatuses } from "../../accounting.models";
+import {
+  type fixedAssetStatuses,
+  visibleFixedAssetStatuses
+} from "../../accounting.models";
 import type { FixedAssetListItem } from "../../types";
 import FixedAssetStatus from "./FixedAssetStatus";
 
@@ -97,7 +100,7 @@ const FixedAssetsTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: fixedAssetStatuses.map((v) => ({
+              options: visibleFixedAssetStatuses.map((v) => ({
                 label: <FixedAssetStatus status={v} />,
                 value: v
               }))

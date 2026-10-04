@@ -29,6 +29,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import {
+  CONSTRUCTION_IN_PROGRESS_ENABLED,
   getAssetDepreciationHistory,
   getFixedAsset,
   getFixedAssetCipCosts,
@@ -120,7 +121,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     asset: asset.data,
-    isCipClass: Boolean(assetClass?.isConstructionInProgress),
+    // Drives the CIP cost card and the header's Attach Job / Capitalize; all
+    // hidden while construction in progress is.
+    isCipClass:
+      CONSTRUCTION_IN_PROGRESS_ENABLED &&
+      Boolean(assetClass?.isConstructionInProgress),
     workCenterName: workCenter?.data?.name ?? null,
     depreciationHistory: depreciationHistory.data ?? [],
     disposal: disposal.data,

@@ -906,6 +906,15 @@ export const dimensionValidator = z.object({
 
 // -- Fixed Asset Models --
 
+/**
+ * Construction in progress (a CIP asset class, Attach Job, Capitalize, Complete
+ * To → Asset Under Construction) is built but hidden until it returns with
+ * projects. Off: no CIP class is listed or offered, so no asset can reach
+ * Under Construction from the app, and the actions and filters for it are not
+ * shown. The engines and schema are untouched.
+ */
+export const CONSTRUCTION_IN_PROGRESS_ENABLED = false;
+
 export const fixedAssetStatuses = [
   "Draft",
   "Active",
@@ -913,6 +922,12 @@ export const fixedAssetStatuses = [
   "Disposed",
   "Under Construction"
 ] as const;
+
+/** The statuses a filter offers; Under Construction only with CIP shown. */
+export const visibleFixedAssetStatuses = fixedAssetStatuses.filter(
+  (status) =>
+    CONSTRUCTION_IN_PROGRESS_ENABLED || status !== "Under Construction"
+);
 
 export const fleetStatuses = [
   "Available",
@@ -923,6 +938,12 @@ export const fleetStatuses = [
   "Sold",
   "Returned to Stock"
 ] as const;
+
+/** The fleet statuses a filter offers; Under Construction only with CIP shown. */
+export const visibleFleetStatuses = fleetStatuses.filter(
+  (status) =>
+    CONSTRUCTION_IN_PROGRESS_ENABLED || status !== "Under Construction"
+);
 
 export const depreciationMethods = [
   "Straight Line",

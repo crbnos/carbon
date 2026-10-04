@@ -57,6 +57,7 @@ import type {
   projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "./accounting.models";
 import { diffJournalLines } from "./accounting.utils";
 import type {
   AccountLedgerLine,
@@ -6630,6 +6631,11 @@ export async function getFixedAssetClasses(
     )
     .eq("companyId", companyId);
 
+  // A CIP class is hidden while construction in progress is.
+  if (!CONSTRUCTION_IN_PROGRESS_ENABLED) {
+    query = query.eq("isConstructionInProgress", false);
+  }
+
   if (args.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
@@ -6653,13 +6659,17 @@ export async function getFixedAssetClassesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
+  let query = client
     .from("fixedAssetClass")
     .select(
       "id, name, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, taxResidualValuePercent, macrsPropertyClass, macrsConvention, bonusDepreciationPercent"
     )
-    .eq("companyId", companyId)
-    .order("name");
+    .eq("companyId", companyId);
+  // A CIP class is hidden while construction in progress is.
+  if (!CONSTRUCTION_IN_PROGRESS_ENABLED) {
+    query = query.eq("isConstructionInProgress", false);
+  }
+  return query.order("name");
 }
 
 /** @mcp upsert */

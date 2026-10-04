@@ -9,7 +9,6 @@ A **fixed asset** is a piece of capital equipment you capitalize and depreciate 
 
 <StatusFlow entity="fixedAsset">
   <Status name="Draft">Created, not yet on the books.</Status>
-  <Status name="Under Construction">In a <Term id="construction-in-progress">construction in progress</Term> class, collecting cost. Not depreciating yet.</Status>
   <Status name="Active" accent>Capitalized and depreciating.</Status>
   <Status name="Fully Depreciated">Written down to its residual value; no longer accruing.</Status>
   <Status name="Disposed" terminal>Retired, sold, or returned to stock. Off the books.</Status>
@@ -20,31 +19,16 @@ A **fixed asset** is a piece of capital equipment you capitalize and depreciate 
 An asset comes onto the books four ways. Registering and buying start from a **Draft** asset you created; building and capitalizing create the asset for you.
 
 - **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No cash moves; with accounting enabled the entry offsets equity, since you're recording something you already have.
-- **Buy** one through purchasing: a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**. A purchase invoice with no receipt does the same. The asset page's **"Purchase"** action drafts the purchase order for you, and it is offered while the asset is Draft or Under Construction.
+- **Buy** one through purchasing: a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**. A purchase invoice with no receipt does the same. The asset page's **"Purchase"** action drafts the purchase order for you, and it is offered while the asset is Draft.
 - **Build** one on a job: set the job's **"Complete To"** to **"Fixed Asset Class"** and choose the class. When the job completes, each finished unit becomes its own asset priced at the <Term>WIP</Term> cost it absorbed, and the unit never enters stock. This is <Term id="make-to-asset">Make to Asset</Term>.
 - **Capitalize** a unit already in stock: on the item's inventory page, the storage-unit row action **"Capitalize as Fixed Asset"** moves one <Term id="serial">serialized</Term> unit out of stock at its carrying cost and creates the asset, or fills a Draft one, as **Active**. The serial number travels with it.
 
 <Callout type="note" title="A job that builds assets has two rules">
-A job that completes to a fixed asset class needs a serialized item, so every finished unit maps to one numbered asset that the fleet can rent, return and capitalize. A job attached to an asset under construction may use an unserialized item, but only at a quantity of one. Neither job can be linked to a sales order line, because that job is a sale. Carbon refuses the job when you save it, and again at release.
+A job that completes to a fixed asset class needs a serialized item, so every finished unit maps to one numbered asset that the fleet can rent, return and capitalize. And it cannot be linked to a sales order line, because that job is a sale. Carbon refuses the job when you save it, and again at release.
 </Callout>
 
 <Callout type="note">
 The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft. A job that builds an asset with accounting off still creates it, at a cost of zero.
-</Callout>
-
-## Construction in progress
-
-A long build has an asset before it has a finished machine. Put the asset in a class flagged **Construction in Progress** (Carbon seeds one) and it sits at **"Under Construction"** while cost arrives from four directions:
-
-- **Purchase lines.** A *Fixed Asset* purchase-order or purchase-invoice line pointed at the asset adds its cost when the receipt or invoice posts, and leaves the status at Under Construction instead of flipping it to Active. The line pickers list Draft and Under Construction assets.
-- **Jobs.** **"Attach Job"** on the asset page points an open job at the asset and sweeps the WIP the job has absorbed so far onto it; the job's ordinary completion sweeps the rest. Creating the job with **"Complete To"** set to **"Asset Under Construction"** does the same from the job side.
-- **Registration.** Registering an asset directly into the class records its opening cost as construction cost.
-- **Stock.** Capitalizing a stock unit into the class records its carrying cost as construction cost.
-
-Every arrival is a row in the asset page's **Construction in Progress** ledger. When the build is done, **"Capitalize"** moves the asset into its in-service class at an in-service date: the summed rows become its acquisition cost, depreciation starts on that date, and the status becomes **Active**.
-
-<Callout type="info" title="Cost leaves WIP when you attach the job, not when it finishes">
-Attaching posts the WIP a job has accumulated to the asset immediately, so the balance sheet shows the build in progress instead of a WIP balance that quietly grows for months. A job can be attached while it is open (Completed, Cancelled, and Closed jobs are refused), and no job can sweep cost onto an Active asset: that would restate a depreciating asset's basis.
 </Callout>
 
 ## Fleet register
@@ -57,7 +41,6 @@ Attaching posts the WIP a job has accumulated to the asset immediately, so the b
 | **"Reserved"** | Named on a draft or undelivered line of a [rental agreement](/docs/reference/rental-agreements) |
 | **"On Rent"** | Delivered to a customer on an active rental agreement |
 | **"In Maintenance"** | Taken out of service |
-| **"Under Construction"** | Still collecting cost |
 | **"Sold"** | Disposed by sale or scrapping, including a rental unit [treated as a sale](/docs/reference/rental-agreements#sales-type-leases) |
 | **"Returned to Stock"** | Returned to inventory |
 
@@ -167,5 +150,6 @@ The unit is on a rental agreement. Return it from the agreement with **"Take out
 Asset postings land in an accounting period like everything else. "Accounting period is closed/locked" means the run's period needs reopening — see [Accounting](/docs/reference/accounting).
 
 ## Internals
+Construction in progress (a CIP class, `Under Construction`, Attach Job, Capitalize, Complete To → Asset Under Construction) is built but HIDDEN from the app until it returns with projects: `CONSTRUCTION_IN_PROGRESS_ENABLED = false` (`accounting.models.ts`) keeps CIP classes out of every class list and picker and hides the actions, the CIP cost card and the status filters. The engines, schema and error messages below are live, so treat a CIP asset as unreachable from the UI rather than impossible.
 Tables: `fixedAssetTransfer` (sequence `FAT`; `type` Capitalization / Return to Inventory; `sourceType` Inventory / Job / Construction in Progress), `fixedAssetCipCost` (append-only; `sourceType` Purchase Invoice / Receipt / Job / Manual), view `fleetAssets` (derived `fleetStatus`; since the rental migration it joins the live `rentalAgreementLine` for Reserved / On Rent and exposes `rentalAgreementId`, `customerId`, `customerLocationId`). Serial costing: a layer `bookAdjustment` writes for a serial unit carries `costLedger.trackedEntityId`, and `calculateCOGS` relieves the leaving unit's own layer first (`shared/cost-layer-order.ts`), so Return to Inventory's NBV layer is what that serial later costs under FIFO / LIFO; Standard and Average use the item's current cost. Columns: `fixedAsset.itemId`, `trackedEntityId`, `workCenterId`, `outOfServiceSince`, `outOfServiceReason`; `fixedAssetClass.isConstructionInProgress`; `job.fixedAssetClassId` / `job.fixedAssetId`. Server function `post-asset-transfer` (`capitalize`, `return`, `attachJob`, `capitalizeCip`); journal source type `Asset Transfer`; the job branch lives in `complete_job_to_inventory`. Routes: `/x/accounting/fleet`, `/x/fixed-asset/capitalize`, `/x/fixed-asset/:id/capitalize`, `/x/fixed-asset/:id/return-to-inventory`, `/x/fixed-asset/:id/attach-job`, `/x/fixed-asset/:id/out-of-service`. Seeded accounts 1370 Rental Fleet, 1380 Accumulated Depreciation – Rental Fleet, 1390 Construction in Progress; classes Rental Fleet and Construction in Progress.
 </AgentContext>
