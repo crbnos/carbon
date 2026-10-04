@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
+import {
+  formatCityStatePostalCode,
+  formatDate,
+  formatPercent
+} from "@carbon/utils";
 import {
   Body,
   Column,
@@ -267,6 +271,15 @@ const SalesInvoiceEmail = ({
                       ? "-"
                       : rateFormatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
+                  {line.invoiceLineType !== "Comment" &&
+                  (line.discountPercent ?? 0) > 0 ? (
+                    <Text
+                      className={`text-xs ${themeClasses.mutedText}`}
+                      style={{ color: lightStyles.mutedText.color }}
+                    >
+                      {formatPercent(-(line.discountPercent ?? 0), locale)}
+                    </Text>
+                  ) : null}
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">
                   <Text className="text-xs font-semibold">

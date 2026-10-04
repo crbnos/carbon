@@ -8,8 +8,11 @@ import {
   getTotal as getPurchaseOrderTotal
 } from "./purchase-order";
 import {
+  getLineDiscount as getSalesInvoiceLineDiscount,
   getLineSubtotal as getSalesInvoiceLineSubtotal,
-  getLineTaxableSubtotal as getSalesInvoiceLineTaxableSubtotal
+  getLineTaxableSubtotal as getSalesInvoiceLineTaxableSubtotal,
+  getLineTotal as getSalesInvoiceLineTotal,
+  getTotal as getSalesInvoiceTotal
 } from "./sales-invoice";
 import {
   getLineSubtotal as getSalesOrderLineSubtotal,
@@ -99,5 +102,48 @@ describe("sales invoice line subtotals", () => {
     } as never;
     expect(getSalesInvoiceLineSubtotal(line)).toBe(30);
     expect(getSalesInvoiceLineTaxableSubtotal(line)).toBe(30);
+  });
+
+  it("discounts merchandise only and taxes the discounted amount", () => {
+    const line = {
+      quantity: 10,
+      convertedUnitPrice: 40,
+      discountPercent: 0.2,
+      taxPercent: 0.1
+    } as never;
+    expect(getSalesInvoiceLineDiscount(line)).toBeCloseTo(80);
+    expect(getSalesInvoiceLineSubtotal(line)).toBeCloseTo(320);
+    expect(getSalesInvoiceLineTaxableSubtotal(line)).toBeCloseTo(320);
+    expect(getSalesInvoiceLineTotal(line)).toBeCloseTo(352);
+    expect(
+      getSalesInvoiceTotal(
+        [line],
+        { exchangeRate: 1 } as never,
+        { shippingCost: 0 } as never
+      )
+    ).toBeCloseTo(352);
+  });
+
+  it("never discounts add-ons or shipping", () => {
+    const line = {
+      quantity: 2,
+      convertedUnitPrice: 10,
+      discountPercent: 0.5,
+      convertedAddOnCost: 3,
+      convertedNonTaxableAddOnCost: 2,
+      convertedShippingCost: 5
+    } as never;
+    expect(getSalesInvoiceLineSubtotal(line)).toBe(20);
+    expect(getSalesInvoiceLineTaxableSubtotal(line)).toBe(18);
+  });
+
+  it("leaves an undiscounted line unchanged", () => {
+    const line = {
+      quantity: 3,
+      convertedUnitPrice: 7.25,
+      discountPercent: 0
+    } as never;
+    expect(getSalesInvoiceLineDiscount(line)).toBe(0);
+    expect(getSalesInvoiceLineSubtotal(line)).toBe(3 * 7.25);
   });
 });

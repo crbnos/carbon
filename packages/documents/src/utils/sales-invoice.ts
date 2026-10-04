@@ -35,22 +35,50 @@ export function getLineDescriptionDetails(
   }
 }
 
+/**
+ * The line's list merchandise amount, `quantity × convertedUnitPrice`, before
+ * the line discount. Documents render in the invoice currency.
+ */
+export function getLineGrossMerchandise(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0);
+}
+
+/**
+ * The line discount's amount. `discountPercent` is a fraction from 0 to 1 and
+ * discounts merchandise only — add-ons and shipping are never discounted.
+ */
+export function getLineDiscount(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return getLineGrossMerchandise(line) * (line?.discountPercent ?? 0);
+}
+
+/** The line's merchandise amount after its discount. */
+export function getLineMerchandise(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return getLineGrossMerchandise(line) - getLineDiscount(line);
+}
+
 export function getLineSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
   return (
-    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    getLineMerchandise(line) +
     (line?.convertedAddOnCost ?? 0) +
     (line?.convertedNonTaxableAddOnCost ?? 0) +
     (line?.convertedShippingCost ?? 0)
   );
 }
 
+/** Tax is charged on the discounted merchandise. */
 export function getLineTaxableSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
   return (
-    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    getLineMerchandise(line) +
     (line?.convertedAddOnCost ?? 0) +
     (line?.convertedShippingCost ?? 0)
   );

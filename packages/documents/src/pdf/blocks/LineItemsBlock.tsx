@@ -65,6 +65,7 @@ export function LineItemsBlock({
         const lineNonTaxableAddOnCost = line.convertedNonTaxableAddOnCost ?? 0;
         const lineShippingCost = line.convertedShippingCost ?? 0;
         const lineTaxPercent = line.taxPercent ?? 0;
+        const lineDiscountPercent = line.discountPercent ?? 0;
         const lineTaxAmount = getLineTaxableSubtotal(line) * lineTaxPercent;
         const totalTaxAndFees =
           lineAddOnCost +
@@ -173,11 +174,22 @@ export function LineItemsBlock({
                   ? ""
                   : `${line.quantity} ${line.unitOfMeasureCode ?? "EA"}`}
               </Text>
-              <Text style={tw("w-1/6 text-center text-gray-600")}>
-                {line.invoiceLineType === "Comment"
-                  ? ""
-                  : rateFormatter.format(line.convertedUnitPrice ?? 0)}
-              </Text>
+              {line.invoiceLineType !== "Comment" && lineDiscountPercent > 0 ? (
+                <View style={tw("w-1/6 items-center")}>
+                  <Text style={tw("text-gray-600")}>
+                    {rateFormatter.format(line.convertedUnitPrice ?? 0)}
+                  </Text>
+                  <Text style={tw("text-[9px] text-gray-600 mt-0.5")}>
+                    {formatPercent(-lineDiscountPercent, locale)}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={tw("w-1/6 text-center text-gray-600")}>
+                  {line.invoiceLineType === "Comment"
+                    ? ""
+                    : rateFormatter.format(line.convertedUnitPrice ?? 0)}
+                </Text>
+              )}
               <Text style={tw("w-1/6 text-center text-gray-800 font-medium")}>
                 {line.invoiceLineType === "Comment"
                   ? ""
