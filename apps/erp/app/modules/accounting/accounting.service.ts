@@ -7972,7 +7972,9 @@ export async function getFixedAssetRelatedItems(
     Promise.all([
       client
         .from("salesInvoiceLine")
-        .select("salesInvoice(id, invoiceId, status, customerId)")
+        .select(
+          "salesInvoice!salesInvoiceLine_invoiceId_fkey(id, invoiceId, status, customerId)"
+        )
         .eq("assetId", fixedAssetId)
         .eq("companyId", companyId),
       client

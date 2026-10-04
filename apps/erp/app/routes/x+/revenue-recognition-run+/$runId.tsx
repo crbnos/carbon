@@ -93,7 +93,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     invoiceLineIds.length > 0
       ? client
           .from("salesInvoiceLine")
-          .select("id, salesInvoice(id, invoiceId, status)")
+          .select(
+            "id, salesInvoice!salesInvoiceLine_invoiceId_fkey(id, invoiceId, status)"
+          )
           .eq("companyId", companyId)
           .in("id", invoiceLineIds)
       : null,
