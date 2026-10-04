@@ -39385,6 +39385,12 @@ export default {
             $ref: "#/parameters/rowFilter.depreciationRunLine.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.deferredTaxJournalId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -39465,6 +39471,12 @@ export default {
             $ref: "#/parameters/rowFilter.depreciationRunLine.companyId"
           },
           {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.deferredTaxJournalId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -39497,6 +39509,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.depreciationRunLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.depreciationRunLine.deferredTaxJournalId"
           },
           {
             $ref: "#/parameters/body.depreciationRunLine"
@@ -131945,7 +131963,8 @@ export default {
         "depreciationRunId",
         "fixedAssetId",
         "amount",
-        "companyId"
+        "companyId",
+        "periodEnd"
       ],
       properties: {
         id: {
@@ -131983,6 +132002,16 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        periodEnd: {
+          format: "date",
+          type: "string"
+        },
+        deferredTaxJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -182264,6 +182293,18 @@ export default {
     },
     "rowFilter.depreciationRunLine.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.depreciationRunLine.periodEnd": {
+      name: "periodEnd",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.depreciationRunLine.deferredTaxJournalId": {
+      name: "deferredTaxJournalId",
       required: false,
       in: "query",
       type: "string"

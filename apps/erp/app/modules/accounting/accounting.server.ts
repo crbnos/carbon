@@ -680,7 +680,7 @@ export async function replaceDepreciationRunLines(
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("depreciationRun")
-      .select(["depreciationRunId", "status"])
+      .select(["depreciationRunId", "status", "periodEnd"])
       .where("id", "=", depreciationRunId)
       .where("companyId", "=", companyId)
       .forUpdate()
@@ -719,6 +719,7 @@ export async function replaceDepreciationRunLines(
       .values(
         lines.map((line) => ({
           depreciationRunId,
+          periodEnd: run.periodEnd,
           fixedAssetId: line.fixedAssetId,
           amount: line.amount,
           taxAmount: line.taxAmount,

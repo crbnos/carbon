@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261004213100",
+  "schemaVersion": "20261004224406",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-04T21:40:26.411Z",
+  "exportedAt": "2026-10-04T22:50:29.446Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -3473,7 +3473,9 @@
         "amount",
         "taxAmount",
         "journalId",
-        "companyId"
+        "companyId",
+        "periodEnd",
+        "deferredTaxJournalId"
       ]
     },
     {

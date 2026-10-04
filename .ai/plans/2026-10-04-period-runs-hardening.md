@@ -30,8 +30,8 @@ Terms used in this plan:
 - [x] Task 2: Make the ERP period helper activate only today's period (deviation: the company today is read lazily, only when a period would change, so the mocked period tests need no `company` row)
 - [x] Task 3: Add the pure helpers for future runs and target dates
 - [x] Task 4: Refuse future runs in New, Repeat and Post (the check lives once in `futureRunPeriodError`, `accounting.server.ts`)
-- [ ] Task 5: Add the migration for per-month depreciation lines and one Draft per period
-- [ ] Task 6: Regenerate the database types and fix the dataset tier
+- [x] Task 5: Add the migration for per-month depreciation lines and one Draft per period (deviation: `periodEnd` stays NULLABLE — `db:check:backups` refused NOT NULL with no default; readers fall back to the run's `periodEnd`. Committed with Task 6, because the dataset check fails on the migration alone)
+- [x] Task 6: Regenerate the database types and fix the dataset tier (also: `insertDepreciationRun` / `replaceDepreciationRunLines` write the run's `periodEnd` until Task 7)
 - [ ] Task 7: Build depreciation lines per asset per month
 - [ ] Task 8: Post depreciation one journal per line, dated per month
 - [ ] Task 9: Post revenue recognition one journal per month

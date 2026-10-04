@@ -491,7 +491,9 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       await insertRow(ctx, "depreciationRunLine", {
         depreciationRunId: run,
         fixedAssetId: line.fixedAssetId,
-        amount: line.amount
+        amount: line.amount,
+        // One line per asset per month; the run covers this one month.
+        periodEnd: previousMonthEnd(ctx.anchor)
       });
     }
     ctx.refs.documents["depreciationRun:draft"] = run;

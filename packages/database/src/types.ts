@@ -14845,28 +14845,34 @@ export type Database = {
         Row: {
           amount: number
           companyId: string
+          deferredTaxJournalId: string | null
           depreciationRunId: string
           fixedAssetId: string
           id: string
           journalId: string | null
+          periodEnd: string | null
           taxAmount: number | null
         }
         Insert: {
           amount: number
           companyId: string
+          deferredTaxJournalId?: string | null
           depreciationRunId: string
           fixedAssetId: string
           id?: string
           journalId?: string | null
+          periodEnd?: string | null
           taxAmount?: number | null
         }
         Update: {
           amount?: number
           companyId?: string
+          deferredTaxJournalId?: string | null
           depreciationRunId?: string
           fixedAssetId?: string
           id?: string
           journalId?: string | null
+          periodEnd?: string | null
           taxAmount?: number | null
         }
         Relationships: [
@@ -14897,6 +14903,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "depreciationRunLine_deferredTaxJournalId_fkey"
+            columns: ["deferredTaxJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depreciationRunLine_deferredTaxJournalId_fkey"
+            columns: ["deferredTaxJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "depreciationRunLine_depreciationRunId_fkey"

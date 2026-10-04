@@ -7052,6 +7052,7 @@ export async function insertDepreciationRun(
   if (input.lines.length > 0) {
     const lineInserts = input.lines.map((line) => ({
       depreciationRunId: run.data.id,
+      periodEnd: input.periodEnd,
       fixedAssetId: line.fixedAssetId,
       amount: line.amount,
       taxAmount: line.taxAmount,
