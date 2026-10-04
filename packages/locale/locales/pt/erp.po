@@ -3267,6 +3267,9 @@ msgstr "Liberar automaticamente o trabalho quando o kanban é digitalizado"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Iniciar automaticamente o trabalho quando o kanban é digitalizado"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "disponível"
 
@@ -5841,6 +5844,9 @@ msgstr "Contato do Cliente"
 
 msgid "Customer contacts"
 msgstr "Contactos do cliente"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Depósito do cliente"
@@ -17926,6 +17932,9 @@ msgstr "Lucro de vendas: <0/>"
 msgid "Send"
 msgstr "Enviar"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Enviar Convite"
 
@@ -17947,8 +17956,14 @@ msgstr "Envio de unidades com defeito de volta para uma operação anterior para
 msgid "Sends this document for approval before it can go active."
 msgstr "Envia este documento para aprovação antes de poder ficar ativo."
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "Data de conclusão do envio"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Enviado a cada destinatário que tem notificações por e-mail ativadas."

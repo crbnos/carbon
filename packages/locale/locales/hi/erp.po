@@ -3267,6 +3267,9 @@ msgstr "कानबान स्कैन किए जाने पर जॉ�
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "कानबान स्कैन किए जाने पर जॉब को स्वचालित रूप से शुरू करें"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "उपलब्ध"
 
@@ -5841,6 +5844,9 @@ msgstr "ग्राहक संपर्क"
 
 msgid "Customer contacts"
 msgstr "ग्राहक संपर्क"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "ग्राहक जमा"
@@ -17926,6 +17932,9 @@ msgstr "विक्रय लाभ: <0/>"
 msgid "Send"
 msgstr "भेजें"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "आमंत्रण भेजें"
 
@@ -17947,8 +17956,14 @@ msgstr "दोषपूर्ण इकाइयों को उन्हें
 msgid "Sends this document for approval before it can go active."
 msgstr "यह दस्तावेज़ सक्रिय होने से पहले अनुमोदन के लिए भेजता है।"
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "भेजे गए पूर्ण दिनांक"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "प्रत्येक प्राप्तकर्ता को भेजा जाता है जिसके पास ईमेल सूचनाएं चालू हैं।"

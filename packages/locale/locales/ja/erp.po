@@ -3267,6 +3267,9 @@ msgstr "かんばんがスキャンされたときに自動的に製造指図を
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "かんばんがスキャンされたときに自動的に製造指図を開始"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "利用可能"
 
@@ -5841,6 +5844,9 @@ msgstr "得意先担当者"
 
 msgid "Customer contacts"
 msgstr "得意先担当者"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "得意先デポジット"
@@ -17926,6 +17932,9 @@ msgstr "売却利益: <0/>"
 msgid "Send"
 msgstr "送信"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "招待を送信"
 
@@ -17947,8 +17956,14 @@ msgstr "不良ユニットをスクラップするのではなく、以前の操
 msgid "Sends this document for approval before it can go active."
 msgstr "この文書を有効にする前に承認用に送信します。"
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "送信完了日"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "メール通知がオンになっている各受信者に送信されます。"

@@ -1227,7 +1227,12 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     externalNotes: { kind: "primitive", of: "string" },
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     createdAt: { kind: "primitive", of: "date" },
-    createdBy: { kind: "entity", of: "user" }
+    createdBy: { kind: "entity", of: "user" },
+    automationHoldReason: { kind: "primitive", of: "string" },
+    sentAt: { kind: "primitive", of: "date" },
+    sentTo: { kind: "primitive", of: "string" },
+    sendError: { kind: "primitive", of: "string" },
+    customerContractId: { kind: "primitive", of: "string" }
   },
   salesOrder: {
     id: { kind: "primitive", of: "string" },

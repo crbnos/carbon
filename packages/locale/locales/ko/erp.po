@@ -3267,6 +3267,9 @@ msgstr "칸반이 스캔될 때 작업 지시를 자동으로 릴리스합니다
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "칸반이 스캔되면 작업을 자동으로 시작"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "가용"
 
@@ -5841,6 +5844,9 @@ msgstr "고객 담당자"
 
 msgid "Customer contacts"
 msgstr "고객 담당자"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "고객 선금"
@@ -17926,6 +17932,9 @@ msgstr "판매 이익: <0/>"
 msgid "Send"
 msgstr "전송"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "초대 보내기"
 
@@ -17947,8 +17956,14 @@ msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려
 msgid "Sends this document for approval before it can go active."
 msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "발송 완료 날짜"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."

@@ -3267,6 +3267,9 @@ msgstr "Kanban taranmış olduğunda işi otomatik olarak serbest bırak"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Kanban taranıp iş otomatik olarak başlatılır"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "kullanılabilir"
 
@@ -5841,6 +5844,9 @@ msgstr "Müşteri İlgili Kişi"
 
 msgid "Customer contacts"
 msgstr "Müşteri ilgili kişileri"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Müşteri depozu"
@@ -17926,6 +17932,9 @@ msgstr "Satış karı: <0/>"
 msgid "Send"
 msgstr "Gönder"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Davet Gönder"
 
@@ -17947,8 +17956,14 @@ msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona dü
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "Gönderilen tamamlama tarihi"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."

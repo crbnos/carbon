@@ -3267,6 +3267,9 @@ msgstr "Автоматически запустить в работу произ
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Автоматически запустить задание при сканировании канбана"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "доступно"
 
@@ -5841,6 +5844,9 @@ msgstr "Контактное лицо покупателя"
 
 msgid "Customer contacts"
 msgstr "Контактные лица покупателя"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Депозит Покупателя"
@@ -17926,6 +17932,9 @@ msgstr "Прибыль от продажи: <0/>"
 msgid "Send"
 msgstr "Отправить"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Отправить приглашение"
 
@@ -17947,8 +17956,14 @@ msgstr "Отправка дефектных единиц на более ран�
 msgid "Sends this document for approval before it can go active."
 msgstr "Отправляет этот документ на утверждение перед тем, как он сможет стать активным."
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "Дата отправки выполнена"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Отправляется каждому получателю, у которого включены email-уведомления."

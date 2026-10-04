@@ -3267,6 +3267,9 @@ msgstr "Rilascia automaticamente il lavoro quando il kanban viene scansionato"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Avvia automaticamente il lavoro quando il kanban viene scansionato"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "disponibile"
 
@@ -5841,6 +5844,9 @@ msgstr "Contatto Cliente"
 
 msgid "Customer contacts"
 msgstr "Contatti cliente"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Deposito cliente"
@@ -17926,6 +17932,9 @@ msgstr "Profitto di vendita: <0/>"
 msgid "Send"
 msgstr "Invia"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Invia Invito"
 
@@ -17947,8 +17956,14 @@ msgstr "Invio di unità difettose a un'operazione precedente per la correzione a
 msgid "Sends this document for approval before it can go active."
 msgstr "Invia questo documento per l'approvazione prima che possa diventare attivo."
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "Data di completamento inviata"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Inviato a ogni destinatario che ha le notifiche email attivate."

@@ -3267,6 +3267,9 @@ msgstr "Automatically release the job when the kanban is scanned"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Automatically start the job when the kanban is scanned"
 
+msgid "Automation hold reason"
+msgstr "Automation hold reason"
+
 msgid "available"
 msgstr "available"
 
@@ -5841,6 +5844,9 @@ msgstr "Customer Contact"
 
 msgid "Customer contacts"
 msgstr "Customer contacts"
+
+msgid "Customer contract"
+msgstr "Customer contract"
 
 msgid "Customer deposit"
 msgstr "Customer deposit"
@@ -17926,6 +17932,9 @@ msgstr "Selling profit: <0/>"
 msgid "Send"
 msgstr "Send"
 
+msgid "Send error"
+msgstr "Send error"
+
 msgid "Send Invite"
 msgstr "Send Invite"
 
@@ -17947,8 +17956,14 @@ msgstr "Sending defective units back to an earlier operation to be corrected ins
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
 
+msgid "Sent at"
+msgstr "Sent at"
+
 msgid "Sent complete date"
 msgstr "Sent complete date"
+
+msgid "Sent to"
+msgstr "Sent to"
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Sent to each recipient who has email notifications turned on."

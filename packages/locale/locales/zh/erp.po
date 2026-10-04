@@ -3267,6 +3267,9 @@ msgstr "扫描看板时自动下达工单"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "当扫描看板时自动启动作业"
 
+msgid "Automation hold reason"
+msgstr ""
+
 msgid "available"
 msgstr "可用"
 
@@ -5841,6 +5844,9 @@ msgstr "客户联系人"
 
 msgid "Customer contacts"
 msgstr "客户联系人"
+
+msgid "Customer contract"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "客户押金"
@@ -17926,6 +17932,9 @@ msgstr "销售利润：<0/>"
 msgid "Send"
 msgstr "发送"
 
+msgid "Send error"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "发送邀请"
 
@@ -17947,8 +17956,14 @@ msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"
 
+msgid "Sent at"
+msgstr ""
+
 msgid "Sent complete date"
 msgstr "发送完成日期"
+
+msgid "Sent to"
+msgstr ""
 
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "发送给打开了电子邮件通知的每个收件人。"
