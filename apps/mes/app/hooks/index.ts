@@ -5,7 +5,6 @@
 import { usePrinting } from "@carbon/printing/ui";
 import {
   useIdle,
-  useNanoStore,
   useOptimisticLocation,
   useRouteData,
   useUrlParams
@@ -22,7 +21,6 @@ export {
   useIdle,
   useImageUpload,
   useLocationTimeZone,
-  useNanoStore,
   useOptimisticLocation,
   usePrinting,
   useRealtime,

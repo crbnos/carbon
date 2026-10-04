@@ -60,9 +60,6 @@ catalogs:
     '@marsidev/react-turnstile':
       specifier: 1.5.0
       version: 1.5.0
-    '@nanostores/react':
-      specifier: 0.7.3
-      version: 0.7.3
     '@opentelemetry/api':
       specifier: 1.9.0
       version: 1.9.0
@@ -255,9 +252,6 @@ catalogs:
     nanoid:
       specifier: 5.1.16
       version: 5.1.16
-    nanostores:
-      specifier: 0.9.5
-      version: 0.9.5
     nodemon:
       specifier: 3.1.14
       version: 3.1.14
@@ -780,9 +774,6 @@ importers:
       '@monaco-editor/react':
         specifier: 4.7.0
         version: 4.7.0(monaco-editor@0.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@nanostores/react':
-        specifier: 'catalog:'
-        version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
       '@orpc/openapi':
         specifier: 'catalog:'
         version: 1.15.0(@opentelemetry/api@1.9.0)(crossws@0.4.12(srvx@1.0.5))(ws@8.21.0)
@@ -933,9 +924,6 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
-      nanostores:
-        specifier: 'catalog:'
-        version: 0.9.5
       non.geist:
         specifier: 'catalog:'
         version: 1.0.4
@@ -1252,9 +1240,6 @@ importers:
       '@lingui/vite-plugin':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.0)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.0))(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)(vite@8.3.1)
-      '@nanostores/react':
-        specifier: 'catalog:'
-        version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1366,9 +1351,6 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
-      nanostores:
-        specifier: 'catalog:'
-        version: 0.9.5
       non.geist:
         specifier: 'catalog:'
         version: 1.0.4
@@ -3324,9 +3306,6 @@ importers:
       '@marsidev/react-turnstile':
         specifier: 'catalog:'
         version: 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@nanostores/react':
-        specifier: 'catalog:'
-        version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
       '@radix-ui/react-accordion':
         specifier: 1.2.12
         version: 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3531,9 +3510,6 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
-      nanostores:
-        specifier: 'catalog:'
-        version: 0.9.5
       nprogress:
         specifier: 0.2.0
         version: 0.2.0
@@ -5933,13 +5909,6 @@ packages:
     resolution: {integrity: sha512-2Z0FATFHaoYJ8b+Y4y4Hgfn3FRFwuU5zRrk+9dFWp4uGAdHGqVEdP7HP+gLA3X469KXHmfupJaUbKo1b/aDKIg==}
     peerDependencies:
       three: '>= 0.159.0'
-
-  '@nanostores/react@0.7.3':
-    resolution: {integrity: sha512-/XuLAMENRu/Q71biW4AZ4qmU070vkZgiQ28gaTSNRPm2SZF5zGAR81zPE1MaMB4SeOp6ZTst92NBaG75XSspNg==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    peerDependencies:
-      nanostores: ^0.9.0 || ^0.10.0 || ^0.11.0
-      react: 18.3.1
 
   '@napi-rs/canvas-android-arm64@0.1.97':
     resolution: {integrity: sha512-V1c/WVw+NzH8vk7ZK/O8/nyBSCQimU8sfMsB/9qeSvdkGKNU7+mxy/bIF0gTgeBFmHpj30S4E9WHMSrxXGQuVQ==}
@@ -14477,10 +14446,6 @@ packages:
     engines: {node: ^18 || >=20}
     hasBin: true
 
-  nanostores@0.9.5:
-    resolution: {integrity: sha512-Z+p+g8E7yzaWwOe5gEUB2Ox0rCEeXWYIZWmYvw/ajNYX8DlXdMvMDj8DWfM/subqPAcsf8l8Td4iAwO1DeIIRQ==}
-    engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
-
   negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
@@ -19213,11 +19178,6 @@ snapshots:
     dependencies:
       promise-worker-transferable: 1.0.4
       three: 0.163.0
-
-  '@nanostores/react@0.7.3(nanostores@0.9.5)(react@18.3.1)':
-    dependencies:
-      nanostores: 0.9.5
-      react: 18.3.1
 
   '@napi-rs/canvas-android-arm64@0.1.97':
     optional: true
@@ -29480,8 +29440,6 @@ snapshots:
   nanoid@3.3.18: {}
 
   nanoid@5.1.16: {}
-
-  nanostores@0.9.5: {}
 
   negotiator@0.6.3: {}
 

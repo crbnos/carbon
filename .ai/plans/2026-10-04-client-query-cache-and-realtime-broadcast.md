@@ -20,7 +20,7 @@
 - [x] Task 12: Delete the invalidation-only `clientAction` exports
 - [x] Task 13: Add `useRealtime` and `useRouteRealtime` to `@carbon/react`
 - [x] Task 14: Move the ERP lists to `useLiveList`
-- [ ] Task 15: Move the MES lists and remove nanostores
+- [x] Task 15: Move the MES lists and remove nanostores
 - [ ] Task 16: Move notifications and the implementation hub
 - [ ] Task 17: Declare `handle.realtime` on the routes and convert the subscribers
 - [ ] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites

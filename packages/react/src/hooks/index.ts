@@ -22,7 +22,6 @@ import {
   useOptimisticMode
 } from "./useMode";
 import useMount from "./useMount";
-import { useNanoStore } from "./useNanoStore";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
@@ -52,7 +51,6 @@ export {
   useIdle,
   useModePreference,
   useMount,
-  useNanoStore,
   useNProgress,
   useOptimisticLocation,
   useOptimisticMode,

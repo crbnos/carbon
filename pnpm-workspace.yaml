@@ -72,7 +72,6 @@ catalog:
   '@logtape/logtape': 2.2.3
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3
-  '@nanostores/react': 0.7.3
   '@orpc/client': 1.15.0
   '@orpc/contract': 1.15.0
   '@orpc/openapi': 1.15.0
@@ -142,7 +141,6 @@ catalog:
   match-sorter: 8.1.0
   motion: 12.38.0
   nanoid: 5.1.16
-  nanostores: 0.9.5
   nodemon: 3.1.14
   non.geist: 1.0.4
   npm-run-all: 4.1.5
