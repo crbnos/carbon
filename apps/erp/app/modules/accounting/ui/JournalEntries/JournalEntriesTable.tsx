@@ -277,6 +277,8 @@ const JournalEntriesTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}
+          table="journal"
+          withSavedView
         />
         {selectedEntry && selectedEntry.id && (
           <ConfirmDelete

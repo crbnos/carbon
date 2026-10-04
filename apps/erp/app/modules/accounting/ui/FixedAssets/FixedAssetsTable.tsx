@@ -220,6 +220,8 @@ const FixedAssetsTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Fixed Assets`}
+          table="fixedAsset"
+          withSavedView
         />
         {selectedAsset && (
           <ConfirmDelete

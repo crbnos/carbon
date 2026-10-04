@@ -235,6 +235,8 @@ const FleetAssetsTable = memo(
         primaryAction={primaryAction}
         renderContextMenu={renderContextMenu}
         title={t`Fleet`}
+        table="fleetAssets"
+        withSavedView
       />
     );
   }

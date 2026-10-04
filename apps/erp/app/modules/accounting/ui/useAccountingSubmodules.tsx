@@ -25,6 +25,7 @@ import {
   LuTruck
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
@@ -36,6 +37,7 @@ const integrationRoutes = new Set<string>([path.to.accountingSyncTieOut]);
 
 export default function useAccountingSubmodules() {
   const { t } = useLingui();
+  const { addSavedViewsToRoutes } = useSavedViews();
   const accountingRoutes: AuthenticatedRouteGroup[] = useMemo(
     () => [
       {
@@ -104,13 +106,15 @@ export default function useAccountingSubmodules() {
             name: t`Assets`,
             to: path.to.fixedAssets,
             role: "employee",
-            icon: <LuBuilding2 />
+            icon: <LuBuilding2 />,
+            table: "fixedAsset"
           },
           {
             name: t`Fleet`,
             to: path.to.fleet,
             role: "employee",
-            icon: <LuTruck />
+            icon: <LuTruck />,
+            table: "fleetAssets"
           }
         ]
       },
@@ -199,7 +203,7 @@ export default function useAccountingSubmodules() {
       .filter((group) => group.routes.some(isRouteVisible))
       .map((group) => ({
         ...group,
-        routes: group.routes.filter(isRouteVisible)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
 }
