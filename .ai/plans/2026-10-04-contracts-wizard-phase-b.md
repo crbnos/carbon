@@ -187,7 +187,7 @@ Record<lineId, ContractPosition>` (Active contracts).
 |---|---|
 | `customerContractLine.kind` → `revenueType`, enum `contractRevenueType` (migration `20261004202351`) | Brad: never name a field "Kind". The rule is in root `AGENTS.md` and `conventions-database.md`. |
 | `customerContractLedgerEntry` gains `updatedBy` / `updatedAt` (migration `20261004202441`) | Every table with `createdBy` needs `updatedBy`. |
-| Ship-to is stored on the contract only | `salesInvoice` has no customer ship-to column. Copying it needs a change to a production table. Open follow-up. |
+| Ship-to is copied onto drafted invoices through the new `salesInvoiceShipment.customerLocationId` (migration `20261004211336`) | The column did not exist. Brad approved the change on 2026-10-04. Sales rules and the invoice PDF read it too. |
 | Details step: "Action on Completion", More Details always open, Sales Person = the current user, "Contract Close Date" with glossary term `contract-close-date`, no contract-type helper text | Brad's review of the wizard. |
 | `reconcileRevenue` keeps a Planned month that a Draft run holds | An amendment must not delete a month the run is about to post. |
 | Revenue edits refuse negative amounts in the server too | Only reconciliation writes a negative catch-up month. |
