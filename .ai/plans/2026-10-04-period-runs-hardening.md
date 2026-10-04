@@ -32,6 +32,7 @@ Terms used in this plan:
 - [x] Task 4: Refuse future runs in New, Repeat and Post (the check lives once in `futureRunPeriodError`, `accounting.server.ts`)
 - [x] Task 5: Add the migration for per-month depreciation lines and one Draft per period (deviation: `periodEnd` stays NULLABLE — `db:check:backups` refused NOT NULL with no default; readers fall back to the run's `periodEnd`. Committed with Task 6, because the dataset check fails on the migration alone)
 - [x] Task 6: Regenerate the database types and fix the dataset tier (also: `insertDepreciationRun` / `replaceDepreciationRunLines` write the run's `periodEnd` until Task 7)
+- [x] Task 6b: Move the depreciation month arithmetic to `@internationalized/date` (found in Task 7; also corrected the existing test "uses lastPostedPeriodEnd to narrow the window", which pinned the skipped month)
 - [ ] Task 7: Build depreciation lines per asset per month
 - [ ] Task 8: Post depreciation one journal per line, dated per month
 - [ ] Task 9: Post revenue recognition one journal per month
@@ -304,6 +305,45 @@ pnpm db:check:backups
 ```
 
 **Out of scope:** hand edits to `packages/database/src/types.ts`.
+
+---
+
+## Task 6b: Move the depreciation month arithmetic to `@internationalized/date`
+
+**Depends on:** Task 6
+**Files:**
+- Modify: `apps/erp/app/modules/accounting/accounting.utils.ts` — `addOneMonth`, `getMonthsBetween`, `getMonthsElapsed`, `calculateDepreciation`, `calculateTaxDepreciation`, `calculateMacrsDepreciation`
+- Modify: `apps/erp/app/modules/accounting/accounting.utils.test.ts`
+
+Task 7 found 2 defects that already reach production:
+
+| Defect | Effect |
+|---|---|
+| `addOneMonth` calls `setMonth` before `setDate(1)`, so Aug 31 + 1 month is Oct 1. | After a run for a 31-day month, the next shorter month gets 0 months of depreciation. On a UTC server that is February, April, June, September and November. |
+| The helpers parse `YYYY-MM-DD` with `new Date`, which `.claude/rules/date-handling.md` bans. | West of UTC, Jan 1 reads as Dec 31. MACRS tax years then shift by one year. |
+
+**Steps:**
+1. Write the failing tests first:
+   1. `addOneMonth("2026-08-31")` is the first of September.
+   2. `calculateDepreciation` charges 1 month for `2026-09-30` after `2026-08-31` for a Straight Line asset.
+   3. A MACRS asset in service on Jan 1 takes its year-1 percentage in January.
+2. Run them with `TZ=UTC` and with `TZ=America/New_York`. Expect both to fail.
+3. Make `addOneMonth(date: string)` return `startOfMonth(parseDate(date)).add({ months: 1 })`.
+4. Make `getMonthsBetween` and `getMonthsElapsed` take `CalendarDate` values. Read `year`, `month` and `day` from them.
+5. In the 3 calculate functions, parse every date with `parseDate(value.slice(0, 10))`.
+6. Compare dates with `compare`, not with `>`.
+7. In `calculateMacrsDepreciation`, replace `getMonth()` with `month - 1` and `getFullYear()` with `year`.
+8. Update the existing tests that pass `new Date(...)` to pass `parseDate(...)`.
+
+**Verify:**
+```bash
+cd apps/erp && TZ=UTC pnpm exec vitest run app/modules/accounting/accounting.utils.test.ts
+# Expected: the 3 new tests pass; the Task 7 tests still in the tree are allowed to fail
+cd apps/erp && TZ=America/New_York pnpm exec vitest run app/modules/accounting/accounting.utils.test.ts
+# Expected: the same result as under TZ=UTC
+```
+
+**Out of scope:** posted runs that lost months. A catch-up for them is a separate decision.
 
 ---
 

@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
-import { endOfMonth, parseDate, today } from "@internationalized/date";
+import {
+  type CalendarDate,
+  endOfMonth,
+  parseDate,
+  startOfMonth,
+  today
+} from "@internationalized/date";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -270,10 +276,10 @@ export function calculateMacrsDepreciation(args: {
 
   if (adjustedBasis <= 0) return 0;
 
-  const startDate = new Date(depreciationStartDate);
-  const periodEndDate = new Date(periodEnd);
+  const startDate = toCalendarDate(depreciationStartDate);
+  const periodEndDate = toCalendarDate(periodEnd);
   const fromDate = lastPostedPeriodEnd
-    ? new Date(lastPostedPeriodEnd)
+    ? toCalendarDate(lastPostedPeriodEnd)
     : startDate;
 
   // 27.5 and 39-year property: straight-line with mid-month convention
@@ -281,8 +287,8 @@ export function calculateMacrsDepreciation(args: {
     const lifeMonths = propertyClass === "27.5" ? 27.5 * 12 : 39 * 12;
     const monthlyAmount = adjustedBasis / lifeMonths;
     const monthsElapsed =
-      (periodEndDate.getFullYear() - fromDate.getFullYear()) * 12 +
-      (periodEndDate.getMonth() - fromDate.getMonth());
+      (periodEndDate.year - fromDate.year) * 12 +
+      (periodEndDate.month - fromDate.month);
     const months = lastPostedPeriodEnd ? monthsElapsed : monthsElapsed + 0.5;
     const amount = monthlyAmount * Math.max(0, months);
     const remaining =
@@ -296,11 +302,11 @@ export function calculateMacrsDepreciation(args: {
   // convention (half-year or mid-quarter), so year 1 = the full first calendar year amount.
   // Year 1 is spread across months from placed-in-service through Dec 31.
   // Subsequent years are spread evenly across 12 calendar months.
-  const quarterPlaced = Math.ceil((startDate.getMonth() + 1) / 3);
-  const startYear = startDate.getFullYear();
-  const periodEndYear = periodEndDate.getFullYear();
+  const quarterPlaced = Math.ceil(startDate.month / 3);
+  const startYear = startDate.year;
+  const periodEndYear = periodEndDate.year;
   const lastYearToCalc = periodEndYear - startYear + 1;
-  const startMonth = startDate.getMonth(); // 0-based
+  const startMonth = startDate.month - 1; // 0-based
 
   let cumulativeThrough = 0;
 
@@ -324,9 +330,7 @@ export function calculateMacrsDepreciation(args: {
       const yearStartMonth = year === 1 ? startMonth : 0;
       const calendarYear = startYear + year - 1;
       const periodEndMonth =
-        periodEndDate.getFullYear() === calendarYear
-          ? periodEndDate.getMonth()
-          : 11;
+        periodEndDate.year === calendarYear ? periodEndDate.month - 1 : 11;
 
       const monthsElapsed = periodEndMonth - yearStartMonth + 1;
       cumulativeThrough +=
@@ -375,25 +379,36 @@ export function depreciationRunLinesMatch(
   });
 }
 
-export function getMonthsBetween(start: Date, end: Date): number {
-  const years = end.getFullYear() - start.getFullYear();
-  const months = end.getMonth() - start.getMonth();
+/** A `YYYY-MM-DD` (or ISO timestamp) as a calendar day — no timezone, so
+ *  Jan 1 is Jan 1 on every server. */
+function toCalendarDate(date: string): CalendarDate {
+  return parseDate(date.slice(0, 10));
+}
+
+export function getMonthsBetween(
+  start: CalendarDate,
+  end: CalendarDate
+): number {
+  const years = end.year - start.year;
+  const months = end.month - start.month;
   let total = years * 12 + months;
-  if (end.getDate() >= start.getDate()) total += 1;
+  if (end.day >= start.day) total += 1;
   return Math.max(0, total);
 }
 
-export function getMonthsElapsed(start: Date, end: Date): number {
-  const years = end.getFullYear() - start.getFullYear();
-  const months = end.getMonth() - start.getMonth();
+export function getMonthsElapsed(
+  start: CalendarDate,
+  end: CalendarDate
+): number {
+  const years = end.year - start.year;
+  const months = end.month - start.month;
   return Math.max(0, years * 12 + months);
 }
 
-export function addOneMonth(dateStr: string): Date {
-  const d = new Date(dateStr);
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(1);
-  return d;
+/** The first day of the month after `dateStr`. Taking the month start first
+ *  keeps Aug 31 from overflowing a 30-day September into October. */
+export function addOneMonth(dateStr: string): CalendarDate {
+  return startOfMonth(toCalendarDate(dateStr)).add({ months: 1 });
 }
 
 export function getLastDayOfMonth(year: number, month: number): string {
@@ -499,12 +514,12 @@ export function calculateDepreciation(
 
   if (remainingDepreciable <= 0) return 0;
 
-  const periodEndDate = new Date(periodEnd);
-  const startDate = new Date(
+  const periodEndDate = toCalendarDate(periodEnd);
+  const startDate = toCalendarDate(
     asset.depreciationStartDate ?? asset.acquisitionDate!
   );
 
-  if (startDate > periodEndDate) return 0;
+  if (startDate.compare(periodEndDate) > 0) return 0;
 
   switch (asset.depreciationMethod) {
     case "Straight Line": {
@@ -620,10 +635,10 @@ export function calculateTaxDepreciation(
 
   if (remainingDepreciable <= 0) return 0;
 
-  const periodEndDate = new Date(periodEnd);
-  const depStartDate = new Date(startDate);
+  const periodEndDate = toCalendarDate(periodEnd);
+  const depStartDate = toCalendarDate(startDate);
 
-  if (depStartDate > periodEndDate) return 0;
+  if (depStartDate.compare(periodEndDate) > 0) return 0;
 
   const from = lastPostedPeriodEnd
     ? addOneMonth(lastPostedPeriodEnd)

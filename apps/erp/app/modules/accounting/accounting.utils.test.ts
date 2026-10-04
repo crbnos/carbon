@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
@@ -296,25 +297,25 @@ describe("runPostingTargets", () => {
 describe("getMonthsBetween", () => {
   it("returns 1 for same month when end day >= start day", () => {
     expect(
-      getMonthsBetween(new Date("2025-01-15"), new Date("2025-01-20"))
+      getMonthsBetween(parseDate("2025-01-15"), parseDate("2025-01-20"))
     ).toBe(1);
   });
 
   it("returns 0 when end day < start day in same month", () => {
     expect(
-      getMonthsBetween(new Date("2025-01-20"), new Date("2025-01-15"))
+      getMonthsBetween(parseDate("2025-01-20"), parseDate("2025-01-15"))
     ).toBe(0);
   });
 
   it("counts months across years", () => {
     expect(
-      getMonthsBetween(new Date("2024-11-01"), new Date("2025-02-01"))
+      getMonthsBetween(parseDate("2024-11-01"), parseDate("2025-02-01"))
     ).toBe(4);
   });
 
   it("returns 0 for start after end", () => {
     expect(
-      getMonthsBetween(new Date("2025-06-01"), new Date("2025-01-01"))
+      getMonthsBetween(parseDate("2025-06-01"), parseDate("2025-01-01"))
     ).toBe(0);
   });
 });
@@ -322,35 +323,81 @@ describe("getMonthsBetween", () => {
 describe("getMonthsElapsed", () => {
   it("returns 0 for same month", () => {
     expect(
-      getMonthsElapsed(new Date("2025-01-15"), new Date("2025-01-20"))
+      getMonthsElapsed(parseDate("2025-01-15"), parseDate("2025-01-20"))
     ).toBe(0);
   });
 
   it("counts elapsed months", () => {
     expect(
-      getMonthsElapsed(new Date("2025-01-01"), new Date("2025-04-01"))
+      getMonthsElapsed(parseDate("2025-01-01"), parseDate("2025-04-01"))
     ).toBe(3);
   });
 
   it("returns 0 when start after end", () => {
     expect(
-      getMonthsElapsed(new Date("2025-06-01"), new Date("2025-01-01"))
+      getMonthsElapsed(parseDate("2025-06-01"), parseDate("2025-01-01"))
     ).toBe(0);
   });
 });
 
 describe("addOneMonth", () => {
   it("advances to first of next month", () => {
-    const result = addOneMonth("2025-01-15");
-    expect(result.getFullYear()).toBe(2025);
-    expect(result.getMonth()).toBe(1);
-    expect(result.getDate()).toBe(1);
+    expect(addOneMonth("2025-01-15").toString()).toBe("2025-02-01");
   });
 
   it("rolls over year boundary", () => {
-    const result = addOneMonth("2025-12-15");
-    expect(result.getFullYear()).toBe(2026);
-    expect(result.getMonth()).toBe(0);
+    expect(addOneMonth("2025-12-15").toString()).toBe("2026-01-01");
+  });
+
+  // Aug 31 + 1 month used to overflow "Sep 31" into Oct 1, so September got
+  // no depreciation after an August run.
+  it("advances a 31st into a shorter month without skipping it", () => {
+    expect(addOneMonth("2026-08-31").toString()).toBe("2026-09-01");
+    expect(addOneMonth("2026-01-31").toString()).toBe("2026-02-01");
+  });
+});
+
+describe("month arithmetic after a posted run", () => {
+  const straightLine = {
+    acquisitionCost: 120000,
+    accumulatedDepreciation: 0,
+    residualValuePercent: 10,
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    depreciationStartDate: "2025-01-01",
+    acquisitionDate: "2025-01-01",
+    assetLifetimeUsage: null
+  };
+
+  it("charges every month after a run for a 31-day month", () => {
+    for (const [lastPosted, periodEnd] of [
+      ["2026-01-31", "2026-02-28"],
+      ["2026-03-31", "2026-04-30"],
+      ["2026-05-31", "2026-06-30"],
+      ["2026-08-31", "2026-09-30"],
+      ["2026-10-31", "2026-11-30"]
+    ]) {
+      expect(
+        calculateDepreciation(straightLine, periodEnd, lastPosted, 2)
+      ).toBe(1800);
+    }
+  });
+
+  it("takes a Jan 1 MACRS asset's year-1 percentage in January, whatever the server's timezone", () => {
+    // 5-year half-year property: year 1 is 20%, spread over Jan–Dec.
+    expect(
+      calculateMacrsDepreciation({
+        adjustedBasis: 120000,
+        propertyClass: "5",
+        convention: "Half-Year",
+        depreciationStartDate: "2025-01-01",
+        periodEnd: "2025-01-31",
+        lastPostedPeriodEnd: null,
+        accumulatedTaxDepreciation: 0,
+        bonusAmount: 0,
+        decimalPlaces: 2
+      })
+    ).toBe(2000);
   });
 });
 
@@ -566,14 +613,15 @@ describe("calculateDepreciation", () => {
     });
 
     it("uses lastPostedPeriodEnd to narrow the window", () => {
-      // addOneMonth("2025-01-31") overflows Feb→Mar 1; Mar 1 to Mar 31 = 1 month
+      // After a Jan 31 run, a Mar 31 run covers February and March. This
+      // test used to expect one month: Jan 31 + 1 month overflowed to Mar 1.
       const result = calculateDepreciation(
         baseAsset,
         "2025-03-31",
         "2025-01-31",
         2
       );
-      expect(result).toBeCloseTo(1800, 0);
+      expect(result).toBe(3600);
     });
   });
 
