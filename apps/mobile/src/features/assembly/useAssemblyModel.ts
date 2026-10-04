@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Directory, File, Paths } from "expo-file-system";
 import { useAuth } from "~/lib/auth/AuthProvider";
 import { keys } from "~/lib/query/keys";
+import type { AssemblyGraphNode } from "./modelVisibility";
 
 /**
  * Puts the operation's 3D model on disk and returns a `file://` uri for it.
@@ -60,8 +61,12 @@ async function downloadOnce(
 export type AssemblyModelFiles = {
   /** `file://` uri of the GLB, with nodes named by their nodeId. */
   glbUri: string;
-  /** `file://` uri of the graph JSON. */
-  graphUri: string;
+  /**
+   * The product tree's root. Read here rather than in the viewer because
+   * hiding a component means hiding its whole subtree, and only the graph
+   * knows what is beneath an assembly node.
+   */
+  graphRoot: AssemblyGraphNode | null;
 };
 
 export function useAssemblyModel({
@@ -118,7 +123,19 @@ export function useAssemblyModel({
         graphPath,
         "json"
       );
-      return { glbUri, graphUri };
+
+      // A malformed graph costs the step filter, not the model: without it
+      // every component stays visible, which is a worse view but still a
+      // usable one.
+      let graphRoot: AssemblyGraphNode | null = null;
+      try {
+        const parsed = JSON.parse(await new File(graphUri).text());
+        graphRoot = (parsed?.root ?? null) as AssemblyGraphNode | null;
+      } catch {
+        graphRoot = null;
+      }
+
+      return { glbUri, graphRoot };
     }
   });
 }

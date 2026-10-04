@@ -317,6 +317,9 @@ msgstr "+{overflow} その他"
 msgid "1 work center"
 msgstr ""
 
+msgid "3D"
+msgstr ""
+
 msgid "48pt minimum"
 msgstr ""
 
@@ -1127,6 +1130,9 @@ msgstr "ダウンロード"
 
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
+
+msgid "Downloading the 3D model"
+msgstr ""
 
 msgid "Draft"
 msgstr "下書き"
@@ -2479,6 +2485,9 @@ msgstr "進捗"
 msgid "Proj. {0}"
 msgstr "予定 {0}"
 
+msgid "Pull down on the Build tab to try again."
+msgstr ""
+
 msgid "QR code linking the Carbon MES app to {serverUrl}"
 msgstr ""
 
@@ -3240,6 +3249,9 @@ msgid "That photo could not be read"
 msgstr ""
 
 msgid "That PIN was not accepted"
+msgstr ""
+
+msgid "The 3D model could not be loaded."
 msgstr ""
 
 msgid "The camera is off"

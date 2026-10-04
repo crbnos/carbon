@@ -317,6 +317,9 @@ msgstr "+{overflow} more"
 msgid "1 work center"
 msgstr "1 work center"
 
+msgid "3D"
+msgstr "3D"
+
 msgid "48pt minimum"
 msgstr "48pt minimum"
 
@@ -1127,6 +1130,9 @@ msgstr "Download"
 
 msgid "Download Labels"
 msgstr "Download Labels"
+
+msgid "Downloading the 3D model"
+msgstr "Downloading the 3D model"
 
 msgid "Draft"
 msgstr "Draft"
@@ -2479,6 +2485,9 @@ msgstr "Progress"
 msgid "Proj. {0}"
 msgstr "Proj. {0}"
 
+msgid "Pull down on the Build tab to try again."
+msgstr "Pull down on the Build tab to try again."
+
 msgid "QR code linking the Carbon MES app to {serverUrl}"
 msgstr "QR code linking the Carbon MES app to {serverUrl}"
 
@@ -3241,6 +3250,9 @@ msgstr "That photo could not be read"
 
 msgid "That PIN was not accepted"
 msgstr "That PIN was not accepted"
+
+msgid "The 3D model could not be loaded."
+msgstr "The 3D model could not be loaded."
 
 msgid "The camera is off"
 msgstr "The camera is off"

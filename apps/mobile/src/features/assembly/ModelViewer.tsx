@@ -6,6 +6,7 @@ import type { AssemblyPlaybackStep } from "@carbon/mes-core";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+import type { Entity, Float3 } from "react-native-filament";
 import {
   Camera,
   DefaultLight,
@@ -16,7 +17,10 @@ import {
   useFilamentContext,
   useModel
 } from "react-native-filament";
+import type { AssemblyGraphNode } from "./modelVisibility";
 import {
+  buildSubtreeIndex,
+  hiddenIdsFor,
   instanceNamesFor,
   mentionedNodeIds,
   visibleNodeIds
@@ -48,11 +52,14 @@ import {
  */
 export function ModelViewer({
   glbUri,
+  graphRoot,
   steps,
   activeStepIndex
 }: {
   /** Local `file://` uri from `useAssemblyModel`. */
   glbUri: string;
+  /** The product tree, so a component hides with its descendants. */
+  graphRoot: AssemblyGraphNode | null;
   steps: AssemblyPlaybackStep[];
   activeStepIndex: number;
 }) {
@@ -61,29 +68,50 @@ export function ModelViewer({
   // renders it.
   return (
     <FilamentScene>
-      <Scene glbUri={glbUri} steps={steps} activeStepIndex={activeStepIndex} />
+      <Scene
+        glbUri={glbUri}
+        graphRoot={graphRoot}
+        steps={steps}
+        activeStepIndex={activeStepIndex}
+      />
     </FilamentScene>
   );
 }
 
 function Scene({
   glbUri,
+  graphRoot,
   steps,
   activeStepIndex
 }: {
   glbUri: string;
+  graphRoot: AssemblyGraphNode | null;
   steps: AssemblyPlaybackStep[];
   activeStepIndex: number;
 }) {
   const { t } = useLingui();
-  const model = useModel({ source: { uri: glbUri } });
+  const model = useModel({ uri: glbUri });
   const { scene } = useFilamentContext();
 
-  // Far enough out to hold a whole engine or frame; the operator orbits from
-  // here rather than being dropped inside the model.
+  // Framed from the model's own bounding box, never a fixed distance. CAD
+  // arrives in whatever units it was drawn in — the radial engine and a
+  // bicycle frame differ by orders of magnitude — so a hard-coded camera
+  // either sits inside the geometry or leaves a speck in the middle of the
+  // screen. 2.4 half-extents back is the whole part with room to orbit.
+  const box = model.state === "loaded" ? model.boundingBox : null;
+  const radius = box
+    ? Math.max(box.halfExtent[0], box.halfExtent[1], box.halfExtent[2]) || 1
+    : 1;
+  const target: Float3 = box ? box.center : [0, 0, 0];
   const cameraManipulator = useCameraManipulator({
-    orbitHomePosition: [0, 1.5, 6],
-    targetPosition: [0, 0, 0],
+    orbitHomePosition: [
+      target[0],
+      target[1] + radius * 0.6,
+      target[2] + radius * 2.4
+    ],
+    targetPosition: target,
+    // Scaled with the model so a drag turns the part by the same amount
+    // whatever units it was drawn in.
     orbitSpeed: [0.004, 0.004]
   });
 
@@ -92,6 +120,7 @@ function Scene({
     [steps, activeStepIndex]
   );
   const mentioned = useMemo(() => mentionedNodeIds(steps), [steps]);
+  const subtrees = useMemo(() => buildSubtreeIndex(graphRoot), [graphRoot]);
 
   const asset = model.state === "loaded" ? model.asset : null;
 
@@ -104,16 +133,20 @@ function Scene({
     // An entity is removed from the SCENE rather than scaled away: Filament
     // then skips it entirely, which is what keeps a 300-part engine
     // interactive on a tablet.
-    const hidden = [];
+    const hidden: Entity[] = [];
     for (const nodeId of mentioned) {
       if (visible.has(nodeId)) continue;
       // One id can name several entities — identical geometry placed more
       // than once — so walk the instance names until one is absent. Stopping
       // at the first miss is what makes this bounded in practice.
-      for (const name of instanceNamesFor(nodeId)) {
-        const entity = asset.getFirstEntityByName(name);
-        if (entity == null) break;
-        hidden.push(entity);
+      // The step names an assembly node, whose geometry is in its children,
+      // so the whole subtree goes.
+      for (const id of hiddenIdsFor(nodeId, subtrees)) {
+        for (const name of instanceNamesFor(id)) {
+          const entity = asset.getFirstEntityByName(name);
+          if (entity == null) break;
+          hidden.push(entity);
+        }
       }
     }
     for (const entity of hidden) scene.removeEntity(entity);
@@ -121,7 +154,7 @@ function Scene({
     return () => {
       for (const entity of hidden) scene.addEntity(entity);
     };
-  }, [asset, scene, visible, mentioned]);
+  }, [asset, scene, visible, mentioned, subtrees]);
 
   if (model.state !== "loaded") {
     return (
@@ -136,7 +169,18 @@ function Scene({
 
   return (
     <FilamentView style={{ flex: 1 }}>
-      <Camera cameraManipulator={cameraManipulator} />
+      {/*
+        near and far are derived from the model, not left at Filament's
+        defaults. CAD comes in its own units — this engine's half-extent is
+        464, so the framed camera sits ~1100 out, which is past the default
+        far plane: the scene renders, and nothing is inside the frustum. A
+        black viewport with no error is the symptom.
+      */}
+      <Camera
+        cameraManipulator={cameraManipulator}
+        near={Math.max(radius / 100, 0.01)}
+        far={radius * 20}
+      />
       <DefaultLight />
       <ModelRenderer model={model} />
     </FilamentView>

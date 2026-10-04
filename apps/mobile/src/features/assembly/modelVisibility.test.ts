@@ -4,10 +4,14 @@
 
 import type { AssemblyPlaybackStep } from "@carbon/mes-core";
 import { describe, expect, it } from "vitest";
+import type { AssemblyGraphNode } from "./modelVisibility";
 import {
+  buildSubtreeIndex,
+  hiddenIdsFor,
   instanceNamesFor,
   MAX_INSTANCES,
   mentionedNodeIds,
+  playbackIndexFor,
   visibleNodeIds
 } from "./modelVisibility";
 
@@ -105,5 +109,69 @@ describe("instanceNamesFor", () => {
 
   it("covers the 48 spokes of a real wheel", () => {
     expect([...instanceNamesFor("spoke")].length).toBeGreaterThan(48);
+  });
+});
+
+describe("playbackIndexFor", () => {
+  it("joins on the instruction step id, not the position", () => {
+    expect(playbackIndexFor(STEPS, "s3", 0)).toBe(2);
+  });
+
+  it("falls back to position for a hand-authored step with no id", () => {
+    expect(playbackIndexFor(STEPS, null, 1)).toBe(1);
+  });
+
+  it("clamps a fallback past the end", () => {
+    expect(playbackIndexFor(STEPS, null, 99)).toBe(2);
+  });
+
+  it("shows the first step rather than nothing for an unknown id", () => {
+    expect(playbackIndexFor(STEPS, "not-a-step", 0)).toBe(0);
+  });
+
+  it("is 0 when the instruction has no steps", () => {
+    expect(playbackIndexFor([], "s1", 5)).toBe(0);
+  });
+});
+
+describe("buildSubtreeIndex", () => {
+  const graph = {
+    nodeId: "root",
+    children: [
+      { nodeId: "engine", children: [{ nodeId: "barrel", children: [] }] },
+      { nodeId: "cover", children: [] }
+    ]
+  };
+
+  it("maps an assembly node to itself plus its descendants", () => {
+    expect(buildSubtreeIndex(graph).get("engine")).toEqual([
+      "engine",
+      "barrel"
+    ]);
+  });
+
+  it("maps a leaf to just itself", () => {
+    expect(buildSubtreeIndex(graph).get("cover")).toEqual(["cover"]);
+  });
+
+  it("is empty for a missing graph", () => {
+    expect(buildSubtreeIndex(null).size).toBe(0);
+  });
+
+  it("does not loop on a malformed graph that points back at itself", () => {
+    const bad: AssemblyGraphNode = { nodeId: "a", children: [] };
+    bad.children = [bad];
+    expect(() => buildSubtreeIndex(bad)).not.toThrow();
+  });
+});
+
+describe("hiddenIdsFor", () => {
+  it("hides the whole subtree, because the group has no geometry itself", () => {
+    const subtrees = new Map([["engine", ["engine", "barrel"]]]);
+    expect(hiddenIdsFor("engine", subtrees)).toEqual(["engine", "barrel"]);
+  });
+
+  it("falls back to the id alone when the graph does not know it", () => {
+    expect(hiddenIdsFor("x", new Map())).toEqual(["x"]);
   });
 });

@@ -99,12 +99,13 @@ import {
   unitIsRecorded,
   unitRemainingToIssue
 } from "./logic";
+import { ModelPane } from "./ModelPane";
 import { PartsList, ToolsList } from "./PartsList";
 import { StepCard, StepsBar } from "./StepPanel";
 import { UnitPager, type UnitRow, UnitSheet } from "./UnitPager";
 import { type UnitSelection, useAssemblyQuery } from "./useAssemblyQuery";
 
-type Tab = "build" | "details" | "notes";
+type Tab = "build" | "model" | "details" | "notes";
 
 /**
  * The assembly screen: web MES's assembly view, for a phone and a tablet.
@@ -153,6 +154,7 @@ export function AssemblyView({
   const { refreshing, onRefresh } = usePullToRefresh(query.refetch);
 
   const [tab, setTab] = useState<Tab>("build");
+  const playback = screen?.assemblyPlayback ?? null;
   const [stepIndex, setStepIndex] = useState(0);
   const [workType, setWorkType] = useState<WorkType | null>(null);
   const [finishing, setFinishing] = useState(false);
@@ -641,6 +643,9 @@ export function AssemblyView({
       label: t`Build`,
       badge: steps.length ? `${doneCount}/${steps.length}` : undefined
     },
+    // Only when the instruction actually has a converted model: an empty 3D
+    // tab tells an operator nothing and costs them a tap to find that out.
+    ...(playback ? [{ value: "model" as const, label: t`3D` }] : []),
     { value: "details", label: t`Details` },
     { value: "notes", label: t`Notes` }
   ];
@@ -772,6 +777,17 @@ export function AssemblyView({
                 </>
               )}
             </ScrollView>
+          </TabPanel>
+          <TabPanel active={tab === "model"}>
+            {playback ? (
+              <ModelPane
+                operationId={operationId}
+                playback={playback}
+                instructionStepId={step?.assemblyInstructionStepId}
+                stepIndex={currentStep}
+                active={tab === "model"}
+              />
+            ) : null}
           </TabPanel>
           <TabPanel active={tab === "details"}>
             <AssemblyDetails screen={screen} openEvents={open} />
