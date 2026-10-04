@@ -31,6 +31,7 @@ const RevenueRecognitionRunHeader = () => {
   const routeData = useRouteData<{
     run: RevenueRecognitionRun;
     nextPeriodEnd: string;
+    canRepeat: boolean;
   }>(path.to.revenueRecognitionRun(runId));
 
   const permissions = usePermissions();
@@ -43,6 +44,7 @@ const RevenueRecognitionRunHeader = () => {
   const run = routeData?.run;
   if (!run) throw new Error("Could not find run in routeData");
   const nextPeriodEnd = routeData?.nextPeriodEnd ?? run.periodEnd;
+  const canRepeat = routeData?.canRepeat ?? false;
 
   const isDraft = run.status === "Draft";
   const isPosted = run.status === "Posted";
@@ -71,9 +73,9 @@ const RevenueRecognitionRunHeader = () => {
           ) : null
         ]}
         menuItems={
-          isDraft || isPosted ? (
+          isDraft || (isPosted && canRepeat) ? (
             <>
-              {isPosted && (
+              {isPosted && canRepeat && (
                 <DropdownMenuItem
                   disabled={!permissions.can("create", "accounting")}
                   onClick={repeatModal.onOpen}

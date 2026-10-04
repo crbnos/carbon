@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-
+import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -50,6 +50,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const periodEnd = getNextPeriodEnd(sourceRun.data.periodEnd);
+
+  const futureError = await futureRunPeriodError(client, companyId, periodEnd);
+  if (futureError) {
+    throw redirect(
+      path.to.revenueRecognitionRun(runId),
+      await flash(request, error(null, futureError))
+    );
+  }
 
   // Check for existing run at this period
   const existing = await client

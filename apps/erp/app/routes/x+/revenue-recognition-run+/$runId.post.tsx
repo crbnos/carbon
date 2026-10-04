@@ -10,6 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 
 import { getOrCreateAccountingPeriod } from "~/modules/accounting";
 import {
+  futureRunPeriodError,
   postRevenueRecognitionRun,
   RunOutOfDateError
 } from "~/modules/accounting/accounting.server";
@@ -42,6 +43,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect(
       path.to.revenueRecognitionRun(runId),
       await flash(request, error(run.error, "Run is not in Draft status"))
+    );
+  }
+
+  const futureError = await futureRunPeriodError(
+    client,
+    companyId,
+    run.data.periodEnd
+  );
+  if (futureError) {
+    throw redirect(
+      path.to.revenueRecognitionRun(runId),
+      await flash(request, error(null, futureError))
     );
   }
 

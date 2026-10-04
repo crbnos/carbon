@@ -13,7 +13,10 @@ import {
   depreciationRunValidator,
   insertDepreciationRun
 } from "~/modules/accounting";
-import { buildDepreciationRunLines } from "~/modules/accounting/accounting.server";
+import {
+  buildDepreciationRunLines,
+  futureRunPeriodError
+} from "~/modules/accounting/accounting.server";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { path } from "~/utils/path";
 
@@ -53,6 +56,14 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(null, "The period must end after the last depreciation run")
       )
+    );
+  }
+
+  const futureError = await futureRunPeriodError(client, companyId, periodEnd);
+  if (futureError) {
+    throw redirect(
+      path.to.depreciationRuns,
+      await flash(request, error(null, futureError))
     );
   }
 

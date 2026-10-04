@@ -8,6 +8,7 @@
 // human action under the period matrix.
 // Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1
 
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   addMovement,
@@ -16,14 +17,18 @@ import {
 } from "@carbon/database/contract-position";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
+  datetime,
   daysBetweenInclusive,
+  formatDate,
   formatIsoDate,
   parseIsoDate,
   round
 } from "@carbon/utils";
+import { endOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
+import { InvalidInputError } from "../errors";
 import {
   loadContractPositions,
   lockContractPositions
@@ -594,6 +599,15 @@ const proposeRevenueRecognitionRun = defineServerFn({
   input: proposeRevenueRecognitionRunInput,
   permissions: { create: "accounting" },
   async run({ db, companyId, userId }, { periodEnd }) {
+    // A run may cover the current month or an earlier one, never a month that
+    // has not started (the ERP's isFutureRunPeriod; this package cannot import
+    // it). Guards the monthly job as well as the routes.
+    const today = datetime.today(await getCompanyTimeZone(db, companyId));
+    if (periodEnd > endOfMonth(today).toString()) {
+      throw new InvalidInputError(
+        `${formatDate(periodEnd, { month: "long", year: "numeric" })} has not started yet. A run can cover the current month or an earlier one.`
+      );
+    }
     return createRevenueRecognitionRunProposal(db, {
       companyId,
       periodEnd,

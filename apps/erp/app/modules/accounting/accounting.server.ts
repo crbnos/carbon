@@ -5,10 +5,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { datetime, equals, toStoredAmount } from "@carbon/utils";
+import { datetime, equals, formatDate, toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -23,8 +24,34 @@ import {
   acquisitionLines,
   buildDepreciationLines,
   type DepreciationLine,
-  depreciationRunLinesMatch
+  depreciationRunLinesMatch,
+  isFutureRunPeriod
 } from "./accounting.utils";
+
+/** The company's business day, `YYYY-MM-DD`. */
+export async function getCompanyToday(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<string> {
+  return datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+}
+
+/**
+ * The refusal for a period run (revenue recognition, depreciation) that ends
+ * after the company's current month, or null when the period may run. New,
+ * Repeat and Post all ask, so a run for a month that has not started can
+ * neither be created nor posted.
+ */
+export async function futureRunPeriodError(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodEnd: string
+): Promise<string | null> {
+  if (!isFutureRunPeriod(periodEnd, await getCompanyToday(client, companyId))) {
+    return null;
+  }
+  return `${formatDate(periodEnd, { month: "long", year: "numeric" })} has not started yet. A run can cover the current month or an earlier one.`;
+}
 
 /** A Draft period run (revenue recognition, depreciation) no longer matches
  * what its period should post. Its message is meant for the user — the post

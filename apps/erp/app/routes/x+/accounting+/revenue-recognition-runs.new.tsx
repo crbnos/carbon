@@ -11,6 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 import { revenueRecognitionRunValidator } from "~/modules/accounting";
+import { futureRunPeriodError } from "~/modules/accounting/accounting.server";
 import { getNextRevenueRecognitionPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -49,6 +50,14 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   } else {
     periodEnd = validation.data.periodEnd;
+  }
+
+  const futureError = await futureRunPeriodError(client, companyId, periodEnd);
+  if (futureError) {
+    throw redirect(
+      path.to.revenueRecognitionRuns,
+      await flash(request, error(null, futureError))
+    );
   }
 
   // Check for existing run at this period

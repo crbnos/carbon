@@ -27,7 +27,11 @@ import {
   getRevenueRecognitionRunLines,
   revenueScheduleTypes
 } from "~/modules/accounting";
-import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
+import { getCompanyToday } from "~/modules/accounting/accounting.server";
+import {
+  getNextPeriodEnd,
+  isFutureRunPeriod
+} from "~/modules/accounting/accounting.utils";
 import {
   RevenueRecognitionRunDocuments,
   RevenueRecognitionRunHeader,
@@ -56,9 +60,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { runId } = params;
   if (!runId) throw new Error("Could not find runId");
 
-  const [run, lines] = await Promise.all([
+  const [run, lines, companyToday] = await Promise.all([
     getRevenueRecognitionRun(client, runId),
-    getRevenueRecognitionRunLines(client, runId)
+    getRevenueRecognitionRunLines(client, runId),
+    getCompanyToday(client, companyId)
   ]);
 
   if (run.error) {
@@ -140,6 +145,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesInvoices: [...salesInvoices.values()],
     rentalAgreements: [...rentalAgreements.values()],
     nextPeriodEnd: getNextPeriodEnd(run.data.periodEnd),
+    // Repeat creates the NEXT period's run, which must not be a future month.
+    canRepeat: !isFutureRunPeriod(
+      getNextPeriodEnd(run.data.periodEnd),
+      companyToday
+    ),
     relatedItems: getPeriodRunRelatedItems(
       client,
       companyId,

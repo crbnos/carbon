@@ -29,7 +29,7 @@ Terms used in this plan:
 - [x] Task 1: Make the server period resolver activate only today's period (deviation: `chargeFixture`'s one period spans 2000–2099, so the new test deletes it and inserts a current-month period first)
 - [x] Task 2: Make the ERP period helper activate only today's period (deviation: the company today is read lazily, only when a period would change, so the mocked period tests need no `company` row)
 - [x] Task 3: Add the pure helpers for future runs and target dates
-- [ ] Task 4: Refuse future runs in New, Repeat and Post
+- [x] Task 4: Refuse future runs in New, Repeat and Post (the check lives once in `futureRunPeriodError`, `accounting.server.ts`)
 - [ ] Task 5: Add the migration for per-month depreciation lines and one Draft per period
 - [ ] Task 6: Regenerate the database types and fix the dataset tier
 - [ ] Task 7: Build depreciation lines per asset per month
