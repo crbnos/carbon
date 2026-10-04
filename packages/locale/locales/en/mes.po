@@ -1617,6 +1617,9 @@ msgstr "Loading"
 msgid "Loading item details..."
 msgstr "Loading item details..."
 
+msgid "Loading the 3D model"
+msgstr "Loading the 3D model"
+
 msgid "Loading your hours…"
 msgstr "Loading your hours…"
 

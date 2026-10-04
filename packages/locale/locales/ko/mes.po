@@ -1617,6 +1617,9 @@ msgstr ""
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
 
+msgid "Loading the 3D model"
+msgstr ""
+
 msgid "Loading your hours…"
 msgstr ""
 

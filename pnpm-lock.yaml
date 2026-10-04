@@ -2560,6 +2560,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/mes-core':
+        specifier: workspace:*
+        version: link:../mes-core
       '@jsquash/jpeg':
         specifier: 1.6.0
         version: 1.6.0

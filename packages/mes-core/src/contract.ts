@@ -1701,6 +1701,40 @@ export const assemblyPlayback = z
 export type AssemblyPlayback = z.infer<typeof assemblyPlayback>;
 
 /**
+ * Separates a nodeId from an instance number in the node names of the GLB
+ * that `GET /operations/:id/assembly/model` serves.
+ *
+ * **Why node names carry ids at all.** A step addresses its parts by
+ * `componentNodeIds`, and the assembler writes those ids into each glTF
+ * node's `extras`. three.js surfaces extras as `userData`, so the web player
+ * reads them directly — but Filament, which the native app renders with, can
+ * only find an entity BY NAME. So that endpoint rewrites each node's name to
+ * its id on the way out (`renameGlbNodesToNodeIds` in `@carbon/files/cad`).
+ *
+ * **Why a suffix is needed.** A nodeId is not unique: identical geometry
+ * placed twice is two nodes carrying one id, which the graph calls the
+ * instances of a component. The first keeps the bare id and each later one
+ * gets `#1`, `#2`… so every instance stays individually addressable. `#`
+ * cannot occur inside an id, which is hex.
+ *
+ * This lives here, in the contract both sides import, because the server
+ * writes the names and the app reads them: a separator that drifted would
+ * leave parts silently unaddressable rather than failing.
+ */
+export const MODEL_NODE_INSTANCE_SEPARATOR = "#";
+
+/**
+ * The names one nodeId may have, in instance order. A client resolves them in
+ * turn and stops at the first that is not in the model, which is how it
+ * reaches every instance of a part placed more than once.
+ */
+export function modelNodeInstanceNames(nodeId: string, count: number) {
+  return Array.from({ length: Math.max(count, 0) }, (_, i) =>
+    i === 0 ? nodeId : `${nodeId}${MODEL_NODE_INSTANCE_SEPARATOR}${i}`
+  );
+}
+
+/**
  * `GET /operations/:id/assembly` — the whole assembly screen for one job
  * operation: the unit being built, the steps and what has been recorded on
  * them, the parts and tools each step uses, and the 3D instruction when there

@@ -54,6 +54,14 @@ export const keys = {
    */
   assembly: (s: Scope, operationId: string) =>
     ["assembly", s.instanceId, s.companyId, operationId] as const,
+  /**
+   * Where the operation's 3D artifacts sit on disk. Separate from `assembly`
+   * on purpose: the screen revalidates every 30s and after every write, and
+   * re-resolving a 2–40 MB download on each of those would be wasteful. The
+   * hook appends the storage paths, so a re-converted model is a new key.
+   */
+  assemblyModel: (s: Scope, operationId: string) =>
+    ["assembly-model", s.instanceId, s.companyId, operationId] as const,
   /** The serials or lots of one item that are on the shelf to be issued. */
   availableEntities: (s: Scope, itemId: string) =>
     ["available-entities", s.instanceId, s.companyId, itemId] as const,
