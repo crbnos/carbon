@@ -114,7 +114,7 @@ optional, export/sort-related fields:
   `Map<id, name>` per store; falls back to the raw value if not found.
 - Renders nothing (and does nothing on click) when `data` is empty.
 
-The stores are nanostore-backed hooks consumed as tuples,
+The stores are live-list hooks (`useLiveList`, `@carbon/query`) consumed as tuples,
 e.g. `const [items] = useItems();`; each element exposes at least `{ id, name }`.
 
 ## Opting in (example)

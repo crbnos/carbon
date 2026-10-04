@@ -127,7 +127,8 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   parent loader runs for a request that is about to be redirected. Enforced by the
   `index-redirect-before-loaders` check (`@carbon/checks`).
 - On success an action throws a redirect (`throw redirect(...)`), not `return`.
-  Cached entities add a `clientAction`/`clientLoader` for cache control.
+  A cached `api+` loader exports `clientLoader = cachedClientLoader<typeof loader>()`;
+  no route exports a `clientAction`.
 
 ## Errors: always log before you throw
 
@@ -167,13 +168,17 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 ## State
 
 - **Server state / route data**: React Router loaders.
-- **Client read-through cache**: TanStack React Query (`window.clientCache`);
-  query keys are company-scoped, e.g. `["things", companyId]`
-  (`apps/erp/app/utils/react-query.ts`).
+- **Client cache of server data**: TanStack Query through `@carbon/query`. A
+  cached `api+` loader is `cachedClientLoader<typeof loader>()`, keyed by its
+  URL; components read with `useLoaderQuery(url)`; the root middleware
+  invalidates after every mutation. No hand-written query keys
+  (see `clientAction-patterns.md`).
+- **Realtime**: private broadcast topics through `@carbon/query`. A route
+  declares its tables in `handle.realtime`; the live lists (`useItems`,
+  `useCustomers`, `useSuppliers`, `usePeople`) are queries kept current by
+  `LiveLists` (see `realtime-system.md`).
 - **Global UI state**: zustand (`apps/erp/app/stores/ui.ts`). nanostores is
-  legacy: it now only holds the realtime lists (`stores/items.ts`, `customers.ts`,
-  `suppliers.ts`, `people.ts`) and goes when that provider is rebuilt — do not add
-  new atoms.
+  gone from the repo.
 
 ## Path Helpers
 

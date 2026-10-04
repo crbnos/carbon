@@ -309,4 +309,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
 - New migration: `npm run db:migrate <name>` (avoid `000000` HHMMSS to prevent cross-branch collisions).
 - Follow `workflow-database-migration.md` and `conventions-database.md` when adding tables.
 
-<!-- UNVERIFIED: realtime postgres_changes subscriptions exist in app code (e.g. apps/erp/app/hooks/useRealtime.tsx, RealtimeDataProvider.tsx) but are a UI concern, not a service-layer pattern, so omitted from this rule. -->
+Realtime is not a service-layer pattern and is not covered here: see `realtime-system.md` (broadcast topics, `handle.realtime`, live lists).

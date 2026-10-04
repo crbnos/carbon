@@ -1,6 +1,6 @@
 # Client query cache and realtime broadcast
 
-> Status: draft
+> Status: in-progress
 > Author: Sidwebworks
 > Date: 2026-10-04
 
@@ -459,3 +459,4 @@ existing subscriptions only.
 - 2026-10-04: The authz manifest owns the `realtime.messages` policies (user decision). The authz system now handles one table outside `public`.
 - 2026-10-05: The user moved all event triggers and interceptor bodies out of migrations. `attachments.ts` declares the triggers of 141 tables. `event-system/handlers/` holds 64 functions. The takeover migration is `20261004194527_event-attachments.sql`.
 - 2026-10-05: The user replaced the checksum with a change log (`tableChange`, `UNLOGGED`, `table_changes_since`). The shared code moved to the new `@carbon/query` package, and `~/utils/react-query` is gone. All listeners of a topic share one channel.
+- 2026-10-05: `useAction` moves 98 single-condition effects. The 133 mutation effects with several branches stay for a follow-up PR (user decision). 13 event-driven load sites stay on `useFetcher`.
