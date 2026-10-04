@@ -210,10 +210,36 @@ again.
 - **An untracked issue is `Negative Adjmt.`** (`untrackedIssueBody`). The
   names are inventory's point of view: an issue takes stock OUT. `Positive
   Adjmt.` is the return.
-- **The 3D model is not shown.** The payload carries it as storage paths, but
-  the demo GLBs need a WebAssembly meshopt decoder Hermes does not have, and
-  playing them needs a native module — an Ask First item. Reference images on
-  steps are not shown yet either; the step says so.
+- **The 3D model is shown, by Filament, in its own tab.** Not three.js:
+  `expo-gl` is OpenGL ES, which Apple deprecated and which current
+  react-three-fiber no longer works against, and every GLB the assembler
+  produces is `EXT_meshopt_compression`, whose decoder is WebAssembly — which
+  Hermes does not have. Filament renders through Metal on its own thread and
+  decodes meshopt in C++. It is a native module, so **this app no longer runs
+  in Expo Go**: `npx expo run:ios` (ios/ and android/ are gitignored).
+  Reference images on steps are still not shown; the step says so.
+- **Components are addressed by NAME, which the server arranges.** A step
+  names parts by `componentNodeIds`, the assembler writes those into each
+  glTF node's `extras`, and Filament can only find an entity by name. So
+  `GET /operations/:id/assembly/model` rewrites node names to their nodeId
+  (`renameGlbNodesToNodeIds`, `@carbon/files/cad`) — the authored CAD names
+  repeat, 48 spokes share one in the demo bicycle. Repeated ids get a `#1`
+  suffix; the separator lives in `@carbon/mes-core`, which both sides import.
+- **A step names ASSEMBLY nodes, and that bites twice.** Such a node carries
+  no geometry — its descendants do. Scene membership is per entity, so hiding
+  one hides nothing visible and the subtree must be hidden from the graph;
+  transforms ARE inherited, so animating one moves its children. The fallback
+  motion synthesis scans leaves only, so the ids are expanded to leaves before
+  it is called.
+- **The motion decision is web's code, not a copy.** `@carbon/viewer`'s
+  `fallback`, `graph` and `types` are pure, so Metro, tsc and vitest alias
+  `@carbon/viewer/*` and the app calls `synthesizeFallbackMotion` itself. The
+  alias is deep-path only — the barrel and `motion.ts` pull in three.js. Only
+  the per-frame offset is written here, and `direction` is the way a part
+  travels to SEAT, so the offset is negative.
+- **No step in the demo data animates, and web does not animate it either.**
+  Every authored motion is `none`, and the fallback refuses to fabricate a
+  path through a mate. Motion appears with planner-baked instructions.
 
 ## Ask First
 
