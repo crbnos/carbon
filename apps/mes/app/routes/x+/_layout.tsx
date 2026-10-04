@@ -28,12 +28,12 @@ import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
 import {
   Button,
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
-  RouteRealtime,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,

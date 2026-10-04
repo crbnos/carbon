@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
-import { useCarbon, useRealtimeChannel } from "@carbon/react";
+import { useRealtimeChannel } from "@carbon/query";
+import { useCarbon } from "@carbon/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Notification } from "~/types";
 

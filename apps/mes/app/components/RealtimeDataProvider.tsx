@@ -6,7 +6,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { fetchAllFromTable } from "@carbon/database";
-import { useRealtimeChannel } from "@carbon/react";
+import { useRealtimeChannel } from "@carbon/query";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import idb from "localforage";
 import { useEffect, useRef } from "react";

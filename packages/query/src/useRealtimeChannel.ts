@@ -4,11 +4,10 @@
 
 import { NODE_ENV } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { toast, useCarbon } from "@carbon/react";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef } from "react";
-import { useCarbon } from "../CarbonContext";
-import { toast } from "../Toast";
 
 const log = getLogger("react", "realtime-channel");
 

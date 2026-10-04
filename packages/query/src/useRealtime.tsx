@@ -5,6 +5,7 @@
 import type { RealtimeTable } from "@carbon/database/realtime-tables";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useFetchers, useMatches, useRevalidator } from "react-router";
+import { getClientCache, LOADER } from "./cache";
 import { matchesIdFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
 
@@ -24,14 +25,7 @@ export const companyTopic = (companyId: string, table: string) =>
 
 /** Marks every cached loader entry stale (`cachedClientLoader`, `useLoaderQuery`). */
 const invalidateLoaders = () => {
-  if (typeof window === "undefined") return;
-  (
-    window as {
-      clientCache?: {
-        invalidateQueries(filters: { queryKey: unknown[] }): unknown;
-      };
-    }
-  ).clientCache?.invalidateQueries({ queryKey: ["loader"] });
+  getClientCache()?.invalidateQueries({ queryKey: [LOADER] });
 };
 
 /**

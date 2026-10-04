@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useRealtimeChannel } from "@carbon/query";
 import {
   Button,
   ClientOnly,
@@ -23,7 +24,6 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
 import { isUnaffectedByNavigation } from "@carbon/utils";

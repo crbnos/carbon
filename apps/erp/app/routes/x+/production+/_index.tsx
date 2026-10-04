@@ -5,6 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
+import { useRealtimeChannel } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -30,7 +31,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";

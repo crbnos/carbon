@@ -11,12 +11,12 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
-import { createInvalidationMiddleware } from "@carbon/auth/middleware/invalidation";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestMiddleware } from "@carbon/logger/middleware.server";
 import { timedMiddleware } from "@carbon/logger/tracing.server";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
 import {
   OperatingSystemContextProvider,
   Toaster,

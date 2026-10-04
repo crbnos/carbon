@@ -5,10 +5,10 @@
 import type { Database } from "@carbon/database";
 import type { RealtimeTable } from "@carbon/database/realtime-tables";
 import { getLogger } from "@carbon/logger";
+import { useCarbon } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
-import { useCarbon } from "../CarbonContext";
 import { applyChange } from "./liveList";
 import type { BroadcastChange } from "./useRealtime";
 import { useTableChanges } from "./useRealtime";

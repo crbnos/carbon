@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { PrintButton } from "@carbon/printing/ui";
+import { useRealtimeChannel } from "@carbon/query";
 import {
   Accordion,
   AccordionContent,
@@ -44,7 +45,6 @@ import {
   useDisclosure,
   useKeyboardWedge,
   useMode,
-  useRealtimeChannel,
   useRouteData,
   useShortcutKeys
 } from "@carbon/react";

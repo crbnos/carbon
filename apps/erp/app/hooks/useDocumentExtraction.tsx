@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon, useRealtimeChannel } from "@carbon/react";
+import { useRealtimeChannel } from "@carbon/query";
+import { useCarbon } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   DocumentExtractionType,

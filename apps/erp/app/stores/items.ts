@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
-import { type LiveList, useLiveList } from "@carbon/react";
+import { type LiveList, useLiveList } from "@carbon/query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
 import { useUser } from "~/hooks";

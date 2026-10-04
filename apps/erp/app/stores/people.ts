@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { fetchAllFromTable } from "@carbon/database";
-import { type LiveList, useLiveList } from "@carbon/react";
+import { type LiveList, useLiveList } from "@carbon/query";
 import { useUser } from "~/hooks";
 import type { ListItem } from "~/types";
 

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { RealtimeTable } from "@carbon/database/realtime-tables";
-import { useRealtimeRevalidator, useRealtimeTable } from "@carbon/react";
+import { useRealtimeRevalidator, useRealtimeTable } from "@carbon/query";
 import { useUser } from "./useUser";
 
 export { useRealtimeRevalidator };

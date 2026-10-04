@@ -3,12 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import {
-  toast,
-  useDisclosure,
-  useInterval,
-  useRealtimeChannel
-} from "@carbon/react";
+import { useRealtimeChannel } from "@carbon/query";
+import { toast, useDisclosure, useInterval } from "@carbon/react";
 import {
   getLocalTimeZone,
   now,

@@ -44,7 +44,6 @@
     "@shikijs/types": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "@tailwindcss/typography": "catalog:",
-    "@tanstack/react-query": "5.97.0",
     "@tanstack/react-table": "8.21.3",
     "@tanstack/react-virtual": "3.13.23",
     "@tiptap/core": "catalog:",

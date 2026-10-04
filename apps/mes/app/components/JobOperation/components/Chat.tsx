@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
+import { useRealtimeChannel } from "@carbon/query";
 import {
   Avatar,
   Button,
@@ -12,8 +13,7 @@ import {
   Loading,
   ScrollArea,
   useDebounce,
-  useMount,
-  useRealtimeChannel
+  useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";

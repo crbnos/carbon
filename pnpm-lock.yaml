@@ -153,6 +153,9 @@ catalogs:
     '@tailwindcss/vite':
       specifier: 4.3.0
       version: 4.3.0
+    '@tanstack/react-query':
+      specifier: 5.104.0
+      version: 5.104.0
     '@tiptap/core':
       specifier: 2.27.2
       version: 2.27.2
@@ -723,6 +726,9 @@ importers:
       '@carbon/printing':
         specifier: workspace:*
         version: link:../../packages/printing
+      '@carbon/query':
+        specifier: workspace:*
+        version: link:../../packages/query
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -823,8 +829,8 @@ importers:
         specifier: 'catalog:'
         version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tanstack/react-query':
-        specifier: 5.97.0
-        version: 5.97.0(react@18.3.1)
+        specifier: 'catalog:'
+        version: 5.104.0(react@18.3.1)
       '@tanstack/react-table':
         specifier: 8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1198,6 +1204,9 @@ importers:
       '@carbon/printing':
         specifier: workspace:*
         version: link:../../packages/printing
+      '@carbon/query':
+        specifier: workspace:*
+        version: link:../../packages/query
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -1280,8 +1289,8 @@ importers:
         specifier: 'catalog:'
         version: 4.3.0(vite@8.3.1)
       '@tanstack/react-query':
-        specifier: 5.97.0
-        version: 5.97.0(react@18.3.1)
+        specifier: 'catalog:'
+        version: 5.104.0(react@18.3.1)
       '@tiptap/core':
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/pm@2.27.2)
@@ -3243,6 +3252,46 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
+  packages/query:
+    dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/env':
+        specifier: workspace:*
+        version: link:../env
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@carbon/react':
+        specifier: workspace:*
+        version: link:../react
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.104.0(react@18.3.1)
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-router:
+        specifier: 'catalog:'
+        version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
+
   packages/react:
     dependencies:
       '@base-ui/react':
@@ -3383,9 +3432,6 @@ importers:
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
-      '@tanstack/react-query':
-        specifier: 5.97.0
-        version: 5.97.0(react@18.3.1)
       '@tanstack/react-table':
         specifier: 8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3914,8 +3960,8 @@ importers:
         specifier: 8.18.0
         version: 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)
       '@tanstack/react-query':
-        specifier: 5.97.0
-        version: 5.97.0(react@18.3.1)
+        specifier: 'catalog:'
+        version: 5.104.0(react@18.3.1)
       occt-import-js:
         specifier: 0.0.23
         version: 0.0.23
@@ -9963,11 +10009,11 @@ packages:
     peerDependencies:
       vite: 7.3.5
 
-  '@tanstack/query-core@5.97.0':
-    resolution: {integrity: sha512-QdpLP5VzVMgo4VtaPppRA2W04UFjIqX+bxke/ZJhE5cfd5UPkRzqIAJQt9uXkQJjqE8LBOMbKv7f8HCsZltXlg==}
+  '@tanstack/query-core@5.104.0':
+    resolution: {integrity: sha512-JrC2r/JQlXt7khBSdUpsgxNvybzOg+aITa+ARRMlP2AFo93Y8vIqz077rp+e61mJetSZ0T6AJbwW1JHer1vrPQ==}
 
-  '@tanstack/react-query@5.97.0':
-    resolution: {integrity: sha512-y4So4eGcQoK2WVMAcDNZE9ofB/p5v1OlKvtc1F3uqHwrtifobT7q+ZnXk2mRkc8E84HKYSlAE9z6HXl2V0+ySQ==}
+  '@tanstack/react-query@5.104.0':
+    resolution: {integrity: sha512-e1TZmDCQnWIfiDVryIHeA6Idj+Lfx1hORLOhXS/l5wcgvtVD4yYqbTDl378sGQKIi2cSgb0TEMC9cKK8GGoJEw==}
     peerDependencies:
       react: 18.3.1
 
@@ -24289,11 +24335,11 @@ snapshots:
       tailwindcss: 4.3.0
       vite: 8.3.1(@types/node@26.1.0)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
 
-  '@tanstack/query-core@5.97.0': {}
+  '@tanstack/query-core@5.104.0': {}
 
-  '@tanstack/react-query@5.97.0(react@18.3.1)':
+  '@tanstack/react-query@5.104.0(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.97.0
+      '@tanstack/query-core': 5.104.0
       react: 18.3.1
 
   '@tanstack/react-table@8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':

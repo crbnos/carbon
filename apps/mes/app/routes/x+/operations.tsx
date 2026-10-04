@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
+import { useRealtimeChannel } from "@carbon/query";
 import {
   Button,
   CarbonPulse,
@@ -24,7 +25,6 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";

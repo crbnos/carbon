@@ -12,7 +12,7 @@ import {
   LOADER,
   loaderQueryKey,
   setClientCompanyId
-} from "./react-query";
+} from "./cache";
 
 describe("during server rendering", () => {
   it("has no company and no client cache", () => {

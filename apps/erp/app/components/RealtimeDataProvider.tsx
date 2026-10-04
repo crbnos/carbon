@@ -4,7 +4,7 @@
 
 "use client";
 
-import { LiveLists, useTableChanges } from "@carbon/react";
+import { LiveLists, useTableChanges } from "@carbon/query";
 import { useUser } from "~/hooks";
 import { customersList } from "~/stores/customers";
 import { itemsList } from "~/stores/items";

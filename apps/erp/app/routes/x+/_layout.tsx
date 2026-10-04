@@ -27,11 +27,11 @@ import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
 import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
-  RouteRealtime,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,

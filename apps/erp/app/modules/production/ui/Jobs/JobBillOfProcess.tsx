@@ -9,6 +9,7 @@ import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useRealtimeChannel } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -52,7 +53,6 @@ import {
   useDebounce,
   useDisclosure,
   useMount,
-  useRealtimeChannel,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
