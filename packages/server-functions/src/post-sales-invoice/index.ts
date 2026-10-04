@@ -624,7 +624,7 @@ const postSalesInvoice = defineServerFn({
             if (
               rentalInvoiceLines.some(
                 (line: InvoiceLineRecord) =>
-                  line.rentalInvoiceLineKind === "Purchase Option"
+                  line.rentalLineType === "Purchase Option"
               )
             ) {
               for (const id of [
@@ -879,7 +879,7 @@ const postSalesInvoice = defineServerFn({
               rentalInvoiceLines
                 .filter(
                   (line: InvoiceLineRecord) =>
-                    line.rentalInvoiceLineKind === "Purchase Option"
+                    line.rentalLineType === "Purchase Option"
                 )
                 .map((line: InvoiceLineRecord) => line.rentalAgreementLineId)
                 .filter((id: string | null): id is string => !!id)
@@ -1486,9 +1486,9 @@ const postSalesInvoice = defineServerFn({
                     `Rental invoice line ${invoiceLine.id} has no rental agreement line`
                   );
                 }
-                if (!invoiceLine.rentalInvoiceLineKind) {
+                if (!invoiceLine.rentalLineType) {
                   throw new Error(
-                    `Rental invoice line ${invoiceLine.id} has no rental line kind`
+                    `Rental invoice line ${invoiceLine.id} has no rental line type`
                   );
                 }
                 const billingPeriod = invoiceLine.rentalBillingPeriodId
@@ -1513,7 +1513,7 @@ const postSalesInvoice = defineServerFn({
                       }
                     : null;
                 const plan = planRentalLine({
-                  kind: invoiceLine.rentalInvoiceLineKind,
+                  lineType: invoiceLine.rentalLineType,
                   classification: agreementLine.lessorClassification,
                   revenueBase:
                     roundSalesPostingAmounts(postingLine).salesRevenueBase,
@@ -1553,7 +1553,7 @@ const postSalesInvoice = defineServerFn({
                 // just credited goes to COGS (a shortfall) or Lease Revenue (a
                 // gain), on the same journal line reference so a VOID reverses it.
                 if (
-                  invoiceLine.rentalInvoiceLineKind === "Purchase Option" &&
+                  invoiceLine.rentalLineType === "Purchase Option" &&
                   agreementLine.lessorClassification === "Sale" &&
                   netInvestmentInLeasesAccount
                 ) {
@@ -1646,7 +1646,7 @@ const postSalesInvoice = defineServerFn({
                 .filter(
                   (line: InvoiceLineRecord) =>
                     line.invoiceLineType === "Rental" &&
-                    line.rentalInvoiceLineKind === "Purchase Option"
+                    line.rentalLineType === "Purchase Option"
                 )
                 .map((line: InvoiceLineRecord) => line.rentalAgreementLineId)
                 .filter((id: string | null): id is string => !!id)
@@ -2639,7 +2639,7 @@ const postSalesInvoice = defineServerFn({
                     .filter(
                       (line) =>
                         line.invoiceLineType === "Rental" &&
-                        line.rentalInvoiceLineKind === "Purchase Option"
+                        line.rentalLineType === "Purchase Option"
                     )
                     .map((line) => line.rentalAgreementLineId)
                     .filter((id: string | null): id is string => !!id)

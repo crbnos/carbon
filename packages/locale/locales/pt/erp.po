@@ -10951,9 +10951,6 @@ msgstr "Chave"
 msgid "Keyboard shortcuts"
 msgstr "Atalhos de teclado"
 
-msgid "Kind"
-msgstr "Tipo"
-
 msgid "Kind of record"
 msgstr "Tipo de registro"
 
@@ -11240,6 +11237,9 @@ msgstr "Opções de linha"
 
 msgid "Line Status"
 msgstr "Status da Linha"
+
+msgid "Line Type"
+msgstr "Tipo de Linha"
 
 msgid "Linear Team"
 msgstr "Equipe Linear"

@@ -10951,9 +10951,6 @@ msgstr "Schlüssel"
 msgid "Keyboard shortcuts"
 msgstr "Tastenkombinationen"
 
-msgid "Kind"
-msgstr "Art"
-
 msgid "Kind of record"
 msgstr "Art des Datensatzes"
 
@@ -11240,6 +11237,9 @@ msgstr "Zeilenoptionen"
 
 msgid "Line Status"
 msgstr "Zeilenstatus"
+
+msgid "Line Type"
+msgstr "Positionstyp"
 
 msgid "Linear Team"
 msgstr "Linear Team"

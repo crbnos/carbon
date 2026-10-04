@@ -805,6 +805,9 @@ async function insertContractInvoice(
     .values({
       id: invoice.id,
       locationId,
+      // The contract's customer ship-to; sales rules evaluate the invoice's
+      // lines against it.
+      customerLocationId: contract.shipToCustomerLocationId,
       shippingCost: 0,
       companyId,
       createdBy: userId

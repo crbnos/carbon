@@ -29,7 +29,7 @@ const october = { periodStart: "2026-10-01", periodEnd: "2026-10-31" };
 const input = (
   overrides: Partial<RentalLinePlanInput> = {}
 ): RentalLinePlanInput => ({
-  kind: "Rent",
+  lineType: "Rent",
   classification: "Rental",
   revenueBase: 1500,
   period: october,
@@ -243,7 +243,7 @@ it("an early-return credit on rent already recognized comes off rental income", 
 
 it("a charge is rental income when billed, with no schedule", () => {
   const plan = planRentalLine(
-    input({ kind: "Charge", period: null, revenueBase: 250 })
+    input({ lineType: "Charge", period: null, revenueBase: 250 })
   );
   const posted = post(plan, 250);
   expect(posted.byAccount).toEqual({ "rental-income": 250, ar: 250 });
@@ -289,7 +289,7 @@ it("sales-type rent collects the net investment in full, with no schedule and no
 it("an exercised purchase option collects the net investment and needs no period", () => {
   const plan = planRentalLine(
     salesType({
-      kind: "Purchase Option",
+      lineType: "Purchase Option",
       period: null,
       revenueBase: 5000
     })
@@ -301,7 +301,7 @@ it("an exercised purchase option collects the net investment and needs no period
 
 it("a charge on a sales-type lease is rental income when billed", () => {
   const plan = planRentalLine(
-    salesType({ kind: "Charge", period: null, revenueBase: 250 })
+    salesType({ lineType: "Charge", period: null, revenueBase: 250 })
   );
   const posted = post(plan, 250);
   expect(posted.byAccount).toEqual({ "rental-income": 250, ar: 250 });
@@ -321,11 +321,11 @@ it("sales-type credits, an unmapped net investment account and direct financing 
 });
 
 it("purchase options on operating lines and rent without a period are refused", () => {
-  expect(() => planRentalLine(input({ kind: "Purchase Option" }))).toThrow(
+  expect(() => planRentalLine(input({ lineType: "Purchase Option" }))).toThrow(
     "Purchase option billing requires a line treated as a sale"
   );
   expect(() =>
-    planRentalLine(input({ kind: "Purchase Option", classification: null }))
+    planRentalLine(input({ lineType: "Purchase Option", classification: null }))
   ).toThrow("Purchase option billing requires a line treated as a sale");
   expect(() => planRentalLine(input({ period: null }))).toThrow(
     "billing period"
@@ -345,7 +345,7 @@ const settlementAccounts = {
 const exercise = (closingTarget: number, optionAmount: number) => {
   const plan = planRentalLine(
     salesType({
-      kind: "Purchase Option",
+      lineType: "Purchase Option",
       period: null,
       revenueBase: optionAmount
     })

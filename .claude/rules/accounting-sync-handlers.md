@@ -367,7 +367,7 @@ revenue, so it cannot mirror Carbon's posting. Spec:
 - **Rental invoice lines — provider behavior is a spike pending, not a
   decision.** A rental agreement drafts sales invoices whose lines are
   `invoiceLineType 'Rental'` with **no item** (`itemId` null;
-  `rentalInvoiceLineKind` Rent / Charge / Purchase Option; an early-return credit
+  `rentalLineType` Rent / Charge / Purchase Option; an early-return credit
   is a Rent line with a NEGATIVE unit price). Carbon posts their revenue legs to
   Contract Assets / Deferred Revenue (Rent of a `Rental` line), Rental Income (Charge) or
   Net Investment in Leases, an ASSET (Rent and Purchase Option of a `Sale`

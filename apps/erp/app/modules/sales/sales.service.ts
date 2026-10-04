@@ -9056,11 +9056,11 @@ export async function getRentalAgreementCharges(
 
 /**
  * A variable charge (damage, delivery, overage) on one unit of an open
- * agreement. Always written as kind `Charge`: `Rent` is billed only from the
+ * agreement. Always written as charge type `Charge`: `Rent` is billed only from the
  * schedule and `Purchase Option` only by Sell to Customer
  * (`insertRentalPurchaseOptionCharge`, `sales.server.ts`), whose guards a
- * caller-chosen kind would skip. Fields are listed rather than spread so a
- * payload cannot set the kind or the billing stamp either.
+ * caller-chosen type would skip. Fields are listed rather than spread so a
+ * payload cannot set the charge type or the billing stamp either.
  * @mcp upsert
  */
 export async function upsertRentalAgreementCharge(
@@ -9121,7 +9121,7 @@ export async function upsertRentalAgreementCharge(
     .insert([
       {
         ...fields,
-        kind: "Charge" as const,
+        chargeType: "Charge" as const,
         companyId: charge.companyId,
         createdBy: charge.createdBy
       }

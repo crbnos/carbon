@@ -35,6 +35,7 @@ import {
   dedupeViolations,
   evaluateSalesRuleLines,
   evaluateSalesRulesForSalesDocument,
+  resolveSalesInvoiceShipTo,
   resolveSalesOrderShipTo,
   type SalesDocumentType
 } from "@carbon/ee/rules.server";
@@ -134,10 +135,11 @@ async function checkLineWrite(
       : op.surface === "salesInvoiceLine"
         ? await (async () => {
             // An invoice line converted from a sales order resolves its
-            // ship-to through that order; a standalone line has none and
-            // none may be invented (the bill-to is a different address), so
-            // a null location lets a destination rule fail closed via the
-            // engine's required-field semantics.
+            // ship-to through that order; a standalone line uses the
+            // invoice's own ship-to. None may be invented (the bill-to is a
+            // different address), so with no ship-to set a null location
+            // lets a destination rule fail closed via the engine's
+            // required-field semantics.
             if (lineId !== "new") {
               const existing = await serviceRole
                 .from("salesInvoiceLine")
@@ -153,16 +155,11 @@ async function checkLineWrite(
                 );
               }
             }
-            const { data } = await serviceRole
-              .from("salesInvoice")
-              .select("customerId")
-              .eq("id", documentId)
-              .eq("companyId", context.companyId)
-              .maybeSingle();
-            return {
-              customerId: data?.customerId ?? null,
-              customerLocationId: null
-            };
+            return resolveSalesInvoiceShipTo(
+              serviceRole,
+              documentId,
+              context.companyId
+            );
           })()
         : await (async () => {
             const { data } = await serviceRole

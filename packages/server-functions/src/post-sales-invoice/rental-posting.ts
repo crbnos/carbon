@@ -18,7 +18,7 @@ import type {
 } from "@carbon/database/sales-posting-amounts";
 import { addDays, type ScheduleRow, spreadStraightLine } from "@carbon/utils";
 
-export type RentalLineKind = "Rent" | "Charge" | "Purchase Option";
+export type RentalLineType = "Rent" | "Charge" | "Purchase Option";
 export type RentalClassification = "Rental" | "Sale" | "Financing";
 
 /** A revenueRecognitionSchedule row of the agreement line, dates `YYYY-MM-DD`. */
@@ -31,7 +31,7 @@ export type RentalScheduleFact = {
 };
 
 export type RentalLinePlanInput = {
-  kind: RentalLineKind;
+  lineType: RentalLineType;
   classification: RentalClassification | null;
   /** The line's revenue in base currency (quantity × unit price), signed. */
   revenueBase: number;
@@ -81,7 +81,7 @@ const within = (
 ) => row.periodStart >= period.periodStart && row.periodEnd <= period.periodEnd;
 
 export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
-  const { kind, classification, revenueBase, period, accounts } = input;
+  const { lineType, classification, revenueBase, period, accounts } = input;
   // A line activated before classification existed carries no value and is
   // operating by definition. Financing has no input in v1.
   if (
@@ -102,7 +102,7 @@ export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
     ...document
   };
 
-  if (kind === "Charge") {
+  if (lineType === "Charge") {
     // Variable lease payments are recognized when billed — never deferred,
     // and never part of a sales-type lease's net investment.
     return {
@@ -148,7 +148,7 @@ export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
     };
   }
 
-  if (kind === "Purchase Option") {
+  if (lineType === "Purchase Option") {
     throw new Error(
       "Purchase option billing requires a line treated as a sale"
     );

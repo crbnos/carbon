@@ -109,13 +109,13 @@ type SalesInvoiceLineFormProps = {
   onClose?: () => void;
 };
 
-type RentalInvoiceLineKind =
-  Database["public"]["Enums"]["rentalInvoiceLineKind"];
+type RentalInvoiceLineType =
+  Database["public"]["Enums"]["rentalInvoiceLineType"];
 
-export function useRentalLineKindLabel() {
+export function useRentalLineTypeLabel() {
   const { t } = useLingui();
-  return (kind: RentalInvoiceLineKind | null | undefined) => {
-    switch (kind) {
+  return (lineType: RentalInvoiceLineType | null | undefined) => {
+    switch (lineType) {
       case "Rent":
         return t`Rent`;
       case "Charge":
@@ -171,7 +171,7 @@ function RentalInvoiceLineSummary({
     decimalPlaces: routeData?.currency?.decimalPlaces ?? configuredDecimals
   });
   const percentFormatter = usePercentFormatter();
-  const kindLabel = useRentalLineKindLabel();
+  const lineTypeLabel = useRentalLineTypeLabel();
 
   const rentalAgreementId = line?.rentalAgreementId ?? null;
   const [agreementReadableId, setAgreementReadableId] = useState<string | null>(
@@ -216,7 +216,7 @@ function RentalInvoiceLineSummary({
           <ModalCardHeader>
             <ModalCardTitle className="flex items-center gap-2">
               <LuKeyRound />
-              {kindLabel(line?.rentalInvoiceLineKind)}
+              {lineTypeLabel(line?.rentalLineType)}
             </ModalCardTitle>
             <ModalCardDescription>
               <Trans>
@@ -241,9 +241,9 @@ function RentalInvoiceLineSummary({
               </VStack>
               <VStack spacing={1}>
                 <Label className="text-muted-foreground">
-                  <Trans>Kind</Trans>
+                  <Trans>Line Type</Trans>
                 </Label>
-                <span>{kindLabel(line?.rentalInvoiceLineKind)}</span>
+                <span>{lineTypeLabel(line?.rentalLineType)}</span>
               </VStack>
               <VStack spacing={1}>
                 <Label className="text-muted-foreground">

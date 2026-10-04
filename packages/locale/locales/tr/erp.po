@@ -10951,9 +10951,6 @@ msgstr "Anahtar"
 msgid "Keyboard shortcuts"
 msgstr "Klavye kısayolları"
 
-msgid "Kind"
-msgstr "Tür"
-
 msgid "Kind of record"
 msgstr "Kayıt türü"
 
@@ -11240,6 +11237,9 @@ msgstr "Satır seçenekleri"
 
 msgid "Line Status"
 msgstr "Satır Durumu"
+
+msgid "Line Type"
+msgstr "Satır Türü"
 
 msgid "Linear Team"
 msgstr "Lineer Takım"

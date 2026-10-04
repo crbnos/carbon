@@ -130,14 +130,14 @@ describe("salesOrderLineValidator service dates", () => {
   });
 });
 
-// A charge's kind is never the caller's: `Rent` is billed from the schedule and
-// `Purchase Option` only by Sell to Customer, whose guards a posted kind would
+// A charge's type is never the caller's: `Rent` is billed from the schedule and
+// `Purchase Option` only by Sell to Customer, whose guards a posted type would
 // skip. The form validator must not carry one through.
 describe("rentalAgreementChargeValidator", () => {
-  it("drops a posted kind", () => {
+  it("drops a posted chargeType", () => {
     const result = rentalAgreementChargeValidator.safeParse({
       rentalAgreementLineId: "ral_1",
-      kind: "Purchase Option",
+      chargeType: "Purchase Option",
       chargeDate: "2026-09-23",
       description: "Damage",
       amount: "100",
@@ -145,7 +145,7 @@ describe("rentalAgreementChargeValidator", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.data).not.toHaveProperty("kind");
+    expect(result.data).not.toHaveProperty("chargeType");
   });
 });
 

@@ -131,6 +131,20 @@ function resolveTaxPercent(line: {
   );
 }
 
+/**
+ * Where an order's goods go, for the invoice's customer ship-to: a drop
+ * shipment's own location, else the order header's ship-to. The same rule as
+ * `resolveSalesOrderShipTo` (sales rules) — never the bill-to.
+ */
+function orderShipToCustomerLocationId(
+  order: { customerLocationId: string | null },
+  orderShipment: { dropShipment: boolean; customerLocationId: string | null }
+): string | null {
+  return orderShipment.dropShipment
+    ? orderShipment.customerLocationId
+    : order.customerLocationId;
+}
+
 /** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
 export type ConvertResult = { id?: string; convertedId?: string };
 
@@ -934,6 +948,10 @@ const convert = defineServerFn({
             .values({
               id: salesInvoiceId,
               locationId: orderShipment.locationId,
+              customerLocationId: orderShipToCustomerLocationId(
+                order,
+                orderShipment
+              ),
               shippingCost: orderShipment.shippingCost ?? 0,
               shippingMethodId: orderShipment.shippingMethodId,
               shippingTermId: orderShipment.shippingTermId,
@@ -1552,6 +1570,10 @@ const convert = defineServerFn({
             .values({
               id: salesInvoiceId,
               locationId: orderShipment.locationId,
+              customerLocationId: orderShipToCustomerLocationId(
+                order,
+                orderShipment
+              ),
               shippingCost: orderShipment.shippingCost ?? 0,
               shippingMethodId: orderShipment.shippingMethodId,
               shippingTermId: orderShipment.shippingTermId,

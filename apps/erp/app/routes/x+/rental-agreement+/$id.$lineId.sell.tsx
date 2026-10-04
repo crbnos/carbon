@@ -84,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .select("id")
     .eq("rentalAgreementLineId", lineId)
     .eq("companyId", companyId)
-    .eq("kind", "Purchase Option")
+    .eq("chargeType", "Purchase Option")
     .limit(1);
   if (existing.error) {
     throw redirect(

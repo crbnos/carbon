@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261004202441",
+  "schemaVersion": "20261004213100",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-04T21:09:17.019Z",
+  "exportedAt": "2026-10-04T21:40:26.411Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4279,7 +4279,7 @@
         "id",
         "companyId",
         "rentalAgreementLineId",
-        "kind",
+        "chargeType",
         "chargeDate",
         "description",
         "amount",
@@ -6502,7 +6502,7 @@
         "rentalAgreementLineId",
         "rentalBillingPeriodId",
         "rentalAgreementChargeId",
-        "rentalInvoiceLineKind",
+        "rentalLineType",
         "customerContractId",
         "customerContractLineId",
         "customerContractInvoiceLineId",
@@ -6526,7 +6526,8 @@
         "updatedAt",
         "updatedBy",
         "incoterm",
-        "incotermLocation"
+        "incotermLocation",
+        "customerLocationId"
       ]
     },
     {

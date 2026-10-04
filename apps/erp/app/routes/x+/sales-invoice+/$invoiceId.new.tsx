@@ -9,7 +9,8 @@ import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
-  isBlocked
+  isBlocked,
+  resolveSalesInvoiceShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
@@ -88,23 +89,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Sales-rule enforcement — only for lines that reference an item (Comment
   // and Fixed Asset lines carry no itemId). A manually created invoice line
-  // is standalone: it has no source sales order, so there is no ship-to and
-  // none may be invented — the bill-to is a different address. A null
-  // location flows into the engine's required-field semantics, so a
-  // destination rule blocks rather than passes.
+  // is standalone: it has no source sales order, so it uses the invoice's own
+  // ship-to. None may be invented — the bill-to is a different address — so
+  // with no ship-to set a null location flows into the engine's
+  // required-field semantics and a destination rule blocks rather than passes.
   const serviceRole = getCarbonServiceRole();
   let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
   let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
     const acknowledged = formData.get("acknowledged") === "true";
+    const shipTo = await resolveSalesInvoiceShipTo(
+      serviceRole,
+      invoiceId,
+      companyId
+    );
     const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,
       companyId,
       userId,
       surface: "salesInvoiceLine",
       lines: [{ lineId: "new", itemId: d.itemId, quantity: d.quantity ?? 1 }],
-      customerId: invoice.data?.customerId ?? null,
-      customerLocationId: null
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
     });
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {

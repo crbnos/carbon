@@ -10951,9 +10951,6 @@ msgstr "कुंजी"
 msgid "Keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट"
 
-msgid "Kind"
-msgstr "प्रकार"
-
 msgid "Kind of record"
 msgstr "रिकॉर्ड का प्रकार"
 
@@ -11240,6 +11237,9 @@ msgstr "पंक्ति विकल्प"
 
 msgid "Line Status"
 msgstr "लाइन स्थिति"
+
+msgid "Line Type"
+msgstr "पंक्ति प्रकार"
 
 msgid "Linear Team"
 msgstr "Linear Team"

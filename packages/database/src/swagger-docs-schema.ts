@@ -38086,7 +38086,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.rentalAgreementLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementCharge.kind"
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeType"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeDate"
@@ -38187,7 +38187,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.rentalAgreementLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementCharge.kind"
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeType"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeDate"
@@ -38242,7 +38242,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.rentalAgreementLineId"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementCharge.kind"
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeType"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.chargeDate"
@@ -52807,7 +52807,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.rentalAgreementChargeId"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLines.rentalInvoiceLineKind"
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.rentalLineType"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.customerContractId"
@@ -84757,6 +84757,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customerLocationId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -84855,6 +84858,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customerLocationId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -84905,6 +84911,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customerLocationId"
           },
           {
             $ref: "#/parameters/body.salesInvoiceShipment"
@@ -97132,7 +97141,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalAgreementChargeId"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalInvoiceLineKind"
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalLineType"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customerContractId"
@@ -97344,7 +97353,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalAgreementChargeId"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalInvoiceLineKind"
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalLineType"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customerContractId"
@@ -97510,7 +97519,7 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalAgreementChargeId"
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalInvoiceLineKind"
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.rentalLineType"
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customerContractId"
@@ -131306,7 +131315,7 @@ export default {
         "id",
         "companyId",
         "rentalAgreementLineId",
-        "kind",
+        "chargeType",
         "chargeDate",
         "description",
         "amount",
@@ -131331,10 +131340,10 @@ export default {
           format: "text",
           type: "string"
         },
-        kind: {
+        chargeType: {
           default: "Charge",
           enum: ["Rent", "Charge", "Purchase Option"],
-          format: 'public."rentalInvoiceLineKind"',
+          format: 'public."rentalInvoiceLineType"',
           type: "string"
         },
         chargeDate: {
@@ -138314,9 +138323,9 @@ export default {
           format: "text",
           type: "string"
         },
-        rentalInvoiceLineKind: {
+        rentalLineType: {
           enum: ["Rent", "Charge", "Purchase Option"],
-          format: 'public."rentalInvoiceLineKind"',
+          format: 'public."rentalInvoiceLineType"',
           type: "string"
         },
         customerContractId: {
@@ -153472,6 +153481,12 @@ export default {
         incotermLocation: {
           format: "text",
           type: "string"
+        },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -159782,9 +159797,9 @@ export default {
           format: "text",
           type: "string"
         },
-        rentalInvoiceLineKind: {
+        rentalLineType: {
           enum: ["Rent", "Charge", "Purchase Option"],
-          format: 'public."rentalInvoiceLineKind"',
+          format: 'public."rentalInvoiceLineType"',
           type: "string"
         },
         customerContractId: {
@@ -181550,8 +181565,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.rentalAgreementCharge.kind": {
-      name: "kind",
+    "rowFilter.rentalAgreementCharge.chargeType": {
+      name: "chargeType",
       required: false,
       in: "query",
       type: "string"
@@ -189216,8 +189231,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesInvoiceLines.rentalInvoiceLineKind": {
-      name: "rentalInvoiceLineKind",
+    "rowFilter.salesInvoiceLines.rentalLineType": {
+      name: "rentalLineType",
       required: false,
       in: "query",
       type: "string"
@@ -206204,6 +206219,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceShipment.customerLocationId": {
+      name: "customerLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierQuoteFavorite": {
       name: "supplierQuoteFavorite",
       description: "supplierQuoteFavorite",
@@ -213240,8 +213261,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.salesInvoiceLine.rentalInvoiceLineKind": {
-      name: "rentalInvoiceLineKind",
+    "rowFilter.salesInvoiceLine.rentalLineType": {
+      name: "rentalLineType",
       required: false,
       in: "query",
       type: "string"

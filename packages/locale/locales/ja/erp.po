@@ -10951,9 +10951,6 @@ msgstr "キー"
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
 
-msgid "Kind"
-msgstr "種類"
-
 msgid "Kind of record"
 msgstr "レコード種別"
 
@@ -11240,6 +11237,9 @@ msgstr "行オプション"
 
 msgid "Line Status"
 msgstr "ラインステータス"
+
+msgid "Line Type"
+msgstr "明細タイプ"
 
 msgid "Linear Team"
 msgstr "Linear Team"

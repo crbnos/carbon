@@ -10951,9 +10951,6 @@ msgstr "钥匙"
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-msgid "Kind"
-msgstr "类型"
-
 msgid "Kind of record"
 msgstr "记录类型"
 
@@ -11240,6 +11237,9 @@ msgstr "行选项"
 
 msgid "Line Status"
 msgstr "行状态"
+
+msgid "Line Type"
+msgstr "行类型"
 
 msgid "Linear Team"
 msgstr "线性班组"

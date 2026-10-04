@@ -273,6 +273,9 @@ export const salesInvoicePostValidator = z
 export const salesInvoiceShipmentValidator = z.object({
   id: z.string(),
   locationId: zfd.text(z.string().optional()),
+  // The customer's ship-to (a `customerLocation` of the invoice's customer).
+  // Never the bill-to: sales rules evaluate standalone lines against it.
+  customerLocationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   shippingTermId: zfd.text(z.string().optional()),
   shippingCost: zfd.numeric(z.number().optional().default(0)),

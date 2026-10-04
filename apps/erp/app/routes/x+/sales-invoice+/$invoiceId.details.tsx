@@ -182,6 +182,7 @@ export default function SalesInvoiceBasicRoute() {
   const shipmentInitialValues = {
     id: salesInvoiceShipment.id,
     locationId: salesInvoiceShipment.locationId ?? "",
+    customerLocationId: salesInvoiceShipment.customerLocationId ?? "",
     shippingCost: salesInvoiceShipment.shippingCost ?? 0,
     shippingMethodId: salesInvoiceShipment.shippingMethodId ?? "",
     shippingTermId: salesInvoiceShipment.shippingTermId ?? "",

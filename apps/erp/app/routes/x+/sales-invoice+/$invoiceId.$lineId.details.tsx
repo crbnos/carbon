@@ -10,6 +10,7 @@ import {
   dedupeViolations,
   evaluateSalesRuleLines,
   isBlocked,
+  resolveSalesInvoiceShipTo,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
@@ -116,10 +117,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Sales-rule enforcement — only for lines that reference an item. A line
   // converted from a sales order resolves its ship-to through that order
-  // (drop-ship included); a standalone line has no ship-to and none may be
-  // invented — the bill-to is a different address, so a null location flows
-  // into the engine's required-field semantics and a destination rule blocks
-  // rather than passes.
+  // (drop-ship included); a standalone line uses the invoice's own ship-to.
+  // None may be invented — the bill-to is a different address — so with no
+  // ship-to set a null location flows into the engine's required-field
+  // semantics and a destination rule blocks rather than passes.
   let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
   let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
@@ -145,10 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           existingLine.data.salesOrderId,
           companyId
         )
-      : {
-          customerId: invoice.data?.customerId ?? null,
-          customerLocationId: null
-        };
+      : await resolveSalesInvoiceShipTo(serviceRole, invoiceId, companyId);
 
     const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,

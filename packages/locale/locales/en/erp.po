@@ -10951,9 +10951,6 @@ msgstr "Key"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-msgid "Kind"
-msgstr "Kind"
-
 msgid "Kind of record"
 msgstr "Kind of record"
 
@@ -11240,6 +11237,9 @@ msgstr "Line options"
 
 msgid "Line Status"
 msgstr "Line Status"
+
+msgid "Line Type"
+msgstr "Line Type"
 
 msgid "Linear Team"
 msgstr "Linear Team"

@@ -10951,9 +10951,6 @@ msgstr "Ключ"
 msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
 
-msgid "Kind"
-msgstr "Вид"
-
 msgid "Kind of record"
 msgstr "Тип записи"
 
@@ -11240,6 +11237,9 @@ msgstr "Параметры строки"
 
 msgid "Line Status"
 msgstr "Статус строки"
+
+msgid "Line Type"
+msgstr "Тип Строки"
 
 msgid "Linear Team"
 msgstr "Команда Linear"

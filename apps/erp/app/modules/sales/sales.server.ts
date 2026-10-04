@@ -367,7 +367,7 @@ export async function recordSalesRuleOutcome(
  * which checks the agreement is Active, the line is a Sale unit On Rent
  * and the option is not already billed). Server-only on purpose: the
  * `sales.service.ts` charge writer is an MCP tool and only ever writes a
- * `Charge`, so no caller can name this kind and skip those checks.
+ * `Charge`, so no caller can name this charge type and skip those checks.
  */
 export async function insertRentalPurchaseOptionCharge(
   client: SupabaseClient<Database>,
@@ -383,7 +383,7 @@ export async function insertRentalPurchaseOptionCharge(
 ) {
   return client
     .from("rentalAgreementCharge")
-    .insert([{ ...charge, kind: "Purchase Option" as const }])
+    .insert([{ ...charge, chargeType: "Purchase Option" as const }])
     .select("id")
     .single();
 }

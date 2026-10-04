@@ -10951,9 +10951,6 @@ msgstr "키"
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
 
-msgid "Kind"
-msgstr "종류"
-
 msgid "Kind of record"
 msgstr "기록 유형"
 
@@ -11240,6 +11237,9 @@ msgstr "라인 옵션"
 
 msgid "Line Status"
 msgstr "라인 상태"
+
+msgid "Line Type"
+msgstr "라인 유형"
 
 msgid "Linear Team"
 msgstr "Linear 팀"

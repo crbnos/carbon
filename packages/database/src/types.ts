@@ -53089,12 +53089,12 @@ export type Database = {
         Row: {
           amount: number
           chargeDate: string
+          chargeType: Database["public"]["Enums"]["rentalInvoiceLineType"]
           companyId: string
           createdAt: string
           createdBy: string
           description: string
           id: string
-          kind: Database["public"]["Enums"]["rentalInvoiceLineKind"]
           rentalAgreementLineId: string
           salesInvoiceLineId: string | null
           taxPercent: number
@@ -53105,12 +53105,12 @@ export type Database = {
         Insert: {
           amount: number
           chargeDate: string
+          chargeType?: Database["public"]["Enums"]["rentalInvoiceLineType"]
           companyId: string
           createdAt?: string
           createdBy: string
           description: string
           id?: string
-          kind?: Database["public"]["Enums"]["rentalInvoiceLineKind"]
           rentalAgreementLineId: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -53121,12 +53121,12 @@ export type Database = {
         Update: {
           amount?: number
           chargeDate?: string
+          chargeType?: Database["public"]["Enums"]["rentalInvoiceLineType"]
           companyId?: string
           createdAt?: string
           createdBy?: string
           description?: string
           id?: string
-          kind?: Database["public"]["Enums"]["rentalInvoiceLineKind"]
           rentalAgreementLineId?: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -55694,8 +55694,8 @@ export type Database = {
           rentalAgreementId: string | null
           rentalAgreementLineId: string | null
           rentalBillingPeriodId: string | null
-          rentalInvoiceLineKind:
-            | Database["public"]["Enums"]["rentalInvoiceLineKind"]
+          rentalLineType:
+            | Database["public"]["Enums"]["rentalInvoiceLineType"]
             | null
           salesOrderId: string | null
           salesOrderLineId: string | null
@@ -55749,8 +55749,8 @@ export type Database = {
           rentalAgreementId?: string | null
           rentalAgreementLineId?: string | null
           rentalBillingPeriodId?: string | null
-          rentalInvoiceLineKind?:
-            | Database["public"]["Enums"]["rentalInvoiceLineKind"]
+          rentalLineType?:
+            | Database["public"]["Enums"]["rentalInvoiceLineType"]
             | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
@@ -55804,8 +55804,8 @@ export type Database = {
           rentalAgreementId?: string | null
           rentalAgreementLineId?: string | null
           rentalBillingPeriodId?: string | null
-          rentalInvoiceLineKind?:
-            | Database["public"]["Enums"]["rentalInvoiceLineKind"]
+          rentalLineType?:
+            | Database["public"]["Enums"]["rentalInvoiceLineType"]
             | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
@@ -56137,6 +56137,7 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
+          customerLocationId: string | null
           customFields: Json
           id: string
           incoterm: Database["public"]["Enums"]["incoterm"] | null
@@ -56152,6 +56153,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
+          customerLocationId?: string | null
           customFields?: Json
           id: string
           incoterm?: Database["public"]["Enums"]["incoterm"] | null
@@ -56167,6 +56169,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
+          customerLocationId?: string | null
           customFields?: Json
           id?: string
           incoterm?: Database["public"]["Enums"]["incoterm"] | null
@@ -56241,6 +56244,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceShipment_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "salesInvoiceShipment_id_fkey"
@@ -83735,8 +83745,8 @@ export type Database = {
           rentalAgreementId: string | null
           rentalAgreementLineId: string | null
           rentalBillingPeriodId: string | null
-          rentalInvoiceLineKind:
-            | Database["public"]["Enums"]["rentalInvoiceLineKind"]
+          rentalLineType:
+            | Database["public"]["Enums"]["rentalInvoiceLineType"]
             | null
           salesOrderId: string | null
           salesOrderLineId: string | null
@@ -91815,7 +91825,7 @@ export type Database = {
       rentalBillingCycle: "Calendar Month" | "28 Days"
       rentalBillingPeriodStatus: "Pending" | "Invoiced"
       rentalBillingTiming: "Advance" | "Arrears"
-      rentalInvoiceLineKind: "Rent" | "Charge" | "Purchase Option"
+      rentalInvoiceLineType: "Rent" | "Charge" | "Purchase Option"
       rentalRateUnit: "Day" | "Week" | "Month"
       reportViewVisibility: "Private" | "Company"
       revenueScheduleStatus: "Planned" | "Posted"
@@ -93333,7 +93343,7 @@ export const Constants = {
       rentalBillingCycle: ["Calendar Month", "28 Days"],
       rentalBillingPeriodStatus: ["Pending", "Invoiced"],
       rentalBillingTiming: ["Advance", "Arrears"],
-      rentalInvoiceLineKind: ["Rent", "Charge", "Purchase Option"],
+      rentalInvoiceLineType: ["Rent", "Charge", "Purchase Option"],
       rentalRateUnit: ["Day", "Week", "Month"],
       reportViewVisibility: ["Private", "Company"],
       revenueScheduleStatus: ["Planned", "Posted"],

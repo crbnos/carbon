@@ -34,6 +34,7 @@ async function contractFixture() {
   const itemId = `${prefix}-item`;
   const locationId = `${prefix}-location`;
   const contractId = `${prefix}-contract`;
+  const shipToId = `${prefix}-ship-to`;
   const oneTimeLineId = `${prefix}-implementation`;
   const seatsLineId = `${prefix}-seats`;
 
@@ -81,6 +82,26 @@ async function contractFixture() {
       .values({ id: customerId, name: prefix, companyId })
       .execute();
     await trx
+      .insertInto("address")
+      .values({
+        id: `${prefix}-ship-to-address`,
+        addressLine1: "9 Dock Rd",
+        city: "Shelbyville",
+        countryCode: "US",
+        companyId
+      })
+      .execute();
+    await trx
+      .insertInto("customerLocation")
+      .values({
+        id: shipToId,
+        name: "Warehouse",
+        customerId,
+        addressId: `${prefix}-ship-to-address`,
+        companyId
+      })
+      .execute();
+    await trx
       .insertInto("location")
       .values({
         id: locationId,
@@ -120,6 +141,7 @@ async function contractFixture() {
         billingAlignment: "Calendar",
         billingTiming: "Advance",
         currencyCode: "USD",
+        shipToCustomerLocationId: shipToId,
         companyId,
         createdBy: USER
       })
@@ -167,6 +189,7 @@ async function contractFixture() {
     ctx,
     companyId,
     contractId,
+    shipToId,
     oneTimeLineId,
     seatsLineId,
     /** A Monthly / Calendar / Advance contract with one Recurring line,
@@ -369,6 +392,14 @@ databaseTest(
       });
       expect(Number(november.subtotal)).toBeCloseTo(60_320, 5);
       expect(Number(november.totalAmount)).toBeCloseTo(60_320, 5);
+
+      // The contract's ship-to is the drafted invoice's customer ship-to.
+      const novemberShipment = await db
+        .selectFrom("salesInvoiceShipment")
+        .select(["customerLocationId"])
+        .where("id", "=", novemberId)
+        .executeTakeFirstOrThrow();
+      expect(novemberShipment.customerLocationId).toEqual(f.shipToId);
 
       const novemberLines = await invoiceLines(db, novemberId);
       expect(novemberLines).toHaveLength(2);

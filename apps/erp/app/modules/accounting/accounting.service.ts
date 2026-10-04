@@ -7487,7 +7487,7 @@ export async function getRentalUtilization(
         query
           .eq("companyId", companyId)
           .eq("invoiceLineType", "Rental")
-          .eq("rentalInvoiceLineKind", "Charge")
+          .eq("rentalLineType", "Charge")
           .not("rentalAgreementLineId", "is", null)
           .not("salesInvoice.status", "in", '("Draft","Pending","Voided")')
           .gte("salesInvoice.postingDate", from)

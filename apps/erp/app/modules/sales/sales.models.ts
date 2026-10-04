@@ -1390,7 +1390,7 @@ export const invoiceAutomations = [
 /** A rental unit's rate frequency: what one unit of its `rate` buys. */
 export const rentalRateUnits = ["Day", "Week", "Month"] as const;
 
-export const rentalInvoiceLineKinds = [
+export const rentalInvoiceLineTypes = [
   "Rent",
   "Charge",
   "Purchase Option"
@@ -1497,7 +1497,7 @@ export const rentalAgreementLineValidator = z.object({
   unguaranteedResidualValue: zfd.numeric(z.number().min(0).optional())
 });
 
-/** No `kind`: the form only ever adds a `Charge`. `Rent` comes from the
+/** No `chargeType`: the form only ever adds a `Charge`. `Rent` comes from the
  *  schedule and `Purchase Option` from Sell to Customer, both server-side. */
 export const rentalAgreementChargeValidator = z.object({
   id: zfd.text(z.string().optional()),

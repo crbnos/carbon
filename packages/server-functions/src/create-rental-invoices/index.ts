@@ -158,7 +158,7 @@ type LineValues = {
   rentalAgreementLineId: string;
   rentalBillingPeriodId: string | null;
   rentalAgreementChargeId: string | null;
-  rentalInvoiceLineKind: Database["public"]["Enums"]["rentalInvoiceLineKind"];
+  rentalLineType: Database["public"]["Enums"]["rentalInvoiceLineType"];
   description: string;
   unitPrice: number;
   taxPercent: number;
@@ -250,7 +250,7 @@ async function draftAgreementInvoices(
     .select([
       "c.id",
       "c.rentalAgreementLineId",
-      "c.kind",
+      "c.chargeType",
       "c.description",
       "c.amount",
       "c.taxPercent",
@@ -300,7 +300,7 @@ async function draftAgreementInvoices(
         rentalAgreementLineId: period.rentalAgreementLineId,
         rentalBillingPeriodId: period.id,
         rentalAgreementChargeId: null,
-        rentalInvoiceLineKind: "Rent" as const,
+        rentalLineType: "Rent" as const,
         description: rentLineDescription({
           ...period,
           cycle: agreement.billingCycle
@@ -318,7 +318,7 @@ async function draftAgreementInvoices(
         rentalAgreementLineId: charge.rentalAgreementLineId,
         rentalBillingPeriodId: null,
         rentalAgreementChargeId: charge.id,
-        rentalInvoiceLineKind: charge.kind,
+        rentalLineType: charge.chargeType,
         description: charge.description,
         unitPrice: Number(charge.amount),
         taxPercent: Number(charge.taxPercent),
@@ -334,7 +334,7 @@ async function draftAgreementInvoices(
     mode,
     lines.map((line) => ({
       item: line.values,
-      kind: line.values.rentalInvoiceLineKind,
+      lineType: line.values.rentalLineType,
       isAdjustment: line.isAdjustment,
       voidedInvoiceReadableId: line.voidedInvoiceReadableId
     }))
@@ -422,6 +422,8 @@ async function insertRentalInvoice(
     .values({
       id: invoice.id,
       locationId: agreement.locationId,
+      // The agreement's Rental Site is where the units go: the ship-to.
+      customerLocationId: agreement.customerLocationId,
       shippingCost: 0,
       companyId,
       createdBy: userId

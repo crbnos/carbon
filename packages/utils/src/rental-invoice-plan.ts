@@ -22,7 +22,7 @@ export const rentalHoldRebill = (readableIds: string[]) =>
 
 export type PlannableLine<T> = {
   item: T;
-  kind: "Rent" | "Charge" | "Purchase Option";
+  lineType: "Rent" | "Charge" | "Purchase Option";
   isAdjustment: boolean;
   /** Readable id of a voided invoice this row was previously billed on, else null. */
   voidedInvoiceReadableId: string | null;
@@ -54,8 +54,8 @@ export function planRentalInvoices<T>(
     ];
   }
 
-  const rent = lines.filter((l) => l.kind === "Rent");
-  const charges = lines.filter((l) => l.kind !== "Rent");
+  const rent = lines.filter((l) => l.lineType === "Rent");
+  const charges = lines.filter((l) => l.lineType !== "Rent");
   const planned: PlannedInvoice<T>[] = [];
 
   if (rent.length > 0) {

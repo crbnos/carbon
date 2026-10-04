@@ -41,7 +41,7 @@ import type {
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
-import { useRentalLineKindLabel } from "./SalesInvoiceLineForm";
+import { useRentalLineTypeLabel } from "./SalesInvoiceLineForm";
 
 const LineItems = ({
   currencyCode,
@@ -63,7 +63,7 @@ const LineItems = ({
 
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
-  const rentalKindLabel = useRentalLineKindLabel();
+  const rentalLineTypeLabel = useRentalLineTypeLabel();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -80,7 +80,7 @@ const LineItems = ({
 
         const itemReadableId =
           line.invoiceLineType === "Rental"
-            ? rentalKindLabel(line.rentalInvoiceLineKind)
+            ? rentalLineTypeLabel(line.rentalLineType)
             : line.invoiceLineType === "Fixed Asset"
               ? (line as any).assetReadableId || "Fixed Asset"
               : getItemReadableId(items, line.itemId);

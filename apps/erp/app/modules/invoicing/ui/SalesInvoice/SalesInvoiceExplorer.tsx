@@ -58,7 +58,7 @@ import { isSalesInvoiceLocked } from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
 import SalesInvoiceLineForm, {
-  useRentalLineKindLabel
+  useRentalLineTypeLabel
 } from "./SalesInvoiceLineForm";
 
 export default function SalesInvoiceExplorer() {
@@ -285,7 +285,7 @@ function SalesInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
-  const rentalKindLabel = useRentalLineKindLabel();
+  const rentalLineTypeLabel = useRentalLineTypeLabel();
   const isRental = line.invoiceLineType === "Rental";
 
   const isSelected =
@@ -322,7 +322,7 @@ function SalesInvoiceLineItem({
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
                 {isRental
-                  ? rentalKindLabel(line.rentalInvoiceLineKind)
+                  ? rentalLineTypeLabel(line.rentalLineType)
                   : line.invoiceLineType === "Fixed Asset"
                     ? (line as any).assetReadableId || "Fixed Asset"
                     : (getItemReadableId(items, line.itemId) ?? "")}

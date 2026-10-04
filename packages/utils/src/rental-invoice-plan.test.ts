@@ -14,11 +14,11 @@ import {
 
 const line = (
   item: string,
-  kind: PlannableLine<string>["kind"],
+  lineType: PlannableLine<string>["lineType"],
   overrides: Partial<PlannableLine<string>> = {}
 ): PlannableLine<string> => ({
   item,
-  kind,
+  lineType,
   isAdjustment: false,
   voidedInvoiceReadableId: null,
   ...overrides

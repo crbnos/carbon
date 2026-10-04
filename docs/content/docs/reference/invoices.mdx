@@ -9,6 +9,8 @@ An **invoice** records an amount owed. A **sales invoice** bills a customer; a *
 
 A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills. A [contract](/docs/reference/contracts) or a [rental agreement](/docs/reference/rental-agreements) also drafts sales invoices as its billing falls due.
 
+A sales invoice's **"Ship To"**, on its **Shipping** card, is one of the customer's locations. An invoice from a sales order takes the order's delivery location (the drop-ship location on a drop shipment), a contract invoice takes the contract's **"Ship To"**, and a rental invoice takes the agreement's **"Rental Site"**. The PDF prints it as the Ship To address, and [sales rules](/docs/reference/sales-rules) check the invoice's own lines against it. It is never the bill-to.
+
 <Callout type="note">
 A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term>. There's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
 </Callout>

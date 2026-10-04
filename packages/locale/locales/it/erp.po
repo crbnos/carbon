@@ -10951,9 +10951,6 @@ msgstr "Chiave"
 msgid "Keyboard shortcuts"
 msgstr "Scorciatoie da tastiera"
 
-msgid "Kind"
-msgstr "Tipo"
-
 msgid "Kind of record"
 msgstr "Tipo di record"
 
@@ -11240,6 +11237,9 @@ msgstr "Opzioni riga"
 
 msgid "Line Status"
 msgstr "Stato Riga"
+
+msgid "Line Type"
+msgstr "Tipo di Riga"
 
 msgid "Linear Team"
 msgstr "Team Linear"
