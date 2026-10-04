@@ -6,7 +6,6 @@ import { useCarbon } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { PrintButton } from "@carbon/printing/ui";
-import { useRealtimeChannel } from "@carbon/query";
 import {
   Accordion,
   AccordionContent,
@@ -100,7 +99,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
-import { useRealtimeRevalidator, useUser } from "~/hooks";
+import { useRealtime, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
   JobMaterial,
@@ -539,7 +538,6 @@ export function AssemblyView({
   const { carbon } = useCarbon();
   const mode = useMode();
   const navigate = useNavigate();
-  const revalidate = useRealtimeRevalidator();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useLingui();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
@@ -581,44 +579,10 @@ export function AssemblyView({
 
   // Live sync — refresh loader data when this operation's events, step records,
   // job, or tracked entities change (incl. edits from the operation view).
-  useRealtimeChannel({
-    topic: `assembly:${operationId}`,
-    dependencies: [operationId],
-    setup(channel) {
-      const refresh = () => revalidate();
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `jobOperationId=eq.${operationId}`
-          },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "jobOperationStepRecord" },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "trackedActivity" },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=eq.${operationId}`
-          },
-          refresh
-        );
-    }
-  });
+  useRealtime("productionEvent");
+  useRealtime("jobOperationStepRecord");
+  useRealtime("trackedActivity");
+  useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).
   // The returned buffer is non-empty while a scan burst is in flight — the

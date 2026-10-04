@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { RealtimeTable } from "@carbon/database/realtime-tables";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore
+} from "react";
 import { useFetchers, useMatches, useRevalidator } from "react-router";
 import { getClientCache, LOADER } from "./cache";
 import { matchesIdFilter } from "./realtimeFilter";
@@ -27,6 +33,98 @@ export const companyTopic = (companyId: string, table: string) =>
 const invalidateLoaders = () => {
   getClientCache()?.invalidateQueries({ queryKey: [LOADER] });
 };
+
+// ─── One channel per topic ───────────────────────────────────────────────────
+//
+// The Realtime client hands back the SAME channel for a topic it already has, so
+// two hooks that each opened `company:<id>:customer` would share one channel and
+// the first to unmount would close it for the other. Instead every interested
+// component registers a listener here, and `RouteRealtime` (rendered once, in
+// the shell) owns exactly one channel per topic that has listeners.
+
+/** `null` after a reconnect: nothing is replayed, so the listener catches up. */
+type Listener = (change: BroadcastChange | null) => void;
+
+const listeners = new Map<string, Set<Listener>>();
+const watchers = new Set<() => void>();
+const NO_TOPICS: string[] = [];
+let topics: string[] = NO_TOPICS;
+
+const publishTopics = () => {
+  topics = [...listeners.keys()].sort();
+  for (const notify of watchers) notify();
+};
+
+const dispatch = (topic: string, change: BroadcastChange | null) => {
+  for (const listener of listeners.get(topic) ?? []) listener(change);
+};
+
+function listen(topic: string, listener: Listener) {
+  const existing = listeners.get(topic);
+  if (existing) {
+    existing.add(listener);
+  } else {
+    listeners.set(topic, new Set([listener]));
+    publishTopics();
+  }
+  return () => {
+    const set = listeners.get(topic);
+    set?.delete(listener);
+    if (set?.size === 0) {
+      listeners.delete(topic);
+      publishTopics();
+    }
+  };
+}
+
+/**
+ * Listen to a private broadcast topic. Any number of components may listen to
+ * one topic; they share its channel. `onMessage(null)` means "reconnected".
+ */
+export function useTopic(topic: string, onMessage: Listener, enabled = true) {
+  const onMessageRef = useRef(onMessage);
+  onMessageRef.current = onMessage;
+
+  useEffect(() => {
+    if (!enabled) return;
+    return listen(topic, (change) => onMessageRef.current(change));
+  }, [topic, enabled]);
+}
+
+function TopicChannel({ topic }: { topic: string }) {
+  useRealtimeChannel({
+    topic,
+    private: true,
+    dependencies: [topic],
+    onSubscribed: (isReconnect) => {
+      if (isReconnect) dispatch(topic, null);
+    },
+    setup(channel) {
+      return channel.on("broadcast", { event: "*" }, ({ payload }) => {
+        dispatch(topic, payload as BroadcastChange);
+      });
+    }
+  });
+  return null;
+}
+
+function TopicChannels() {
+  const active = useSyncExternalStore(
+    (notify) => {
+      watchers.add(notify);
+      return () => watchers.delete(notify);
+    },
+    () => topics,
+    () => NO_TOPICS
+  );
+  return (
+    <>
+      {active.map((topic) => (
+        <TopicChannel key={topic} topic={topic} />
+      ))}
+    </>
+  );
+}
 
 /**
  * `revalidate()` that waits for submitting fetchers. React Router drops a
@@ -71,23 +169,7 @@ export function useTableChanges({
   enabled?: boolean;
   onChange: (change: BroadcastChange | null) => void;
 }) {
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-
-  return useRealtimeChannel({
-    topic: companyTopic(companyId, table),
-    private: true,
-    enabled,
-    dependencies: [companyId, table],
-    onSubscribed: (isReconnect) => {
-      if (isReconnect) onChangeRef.current(null);
-    },
-    setup(channel) {
-      return channel.on("broadcast", { event: "*" }, ({ payload }) => {
-        onChangeRef.current(payload as BroadcastChange);
-      });
-    }
-  });
+  useTopic(companyTopic(companyId, table), onChange, enabled);
 }
 
 /**
@@ -118,7 +200,7 @@ export function useRealtimeTable({
     []
   );
 
-  return useTableChanges({
+  useTableChanges({
     companyId,
     table,
     enabled,
@@ -141,6 +223,8 @@ function TableSubscription(props: { companyId: string; table: RealtimeTable }) {
 /**
  * Keeps the matched routes live: each route names the tables it shows in
  * `handle.realtime`, and this subscribes to them for as long as it is matched.
+ * It also owns every realtime channel of the page (see "One channel per topic"):
+ * nothing is delivered to any listener unless this is mounted.
  * It also follows the company's reference lists, which are read through cached
  * `api+` loaders rather than a matched route. Render it once, in the shell.
  */
@@ -167,19 +251,13 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
     },
     []
   );
-  useRealtimeChannel({
-    topic: `company:${companyId}:reference`,
-    private: true,
-    dependencies: [companyId],
-    onSubscribed: (isReconnect) => {
-      if (isReconnect) invalidateLoaders();
-    },
-    setup(channel) {
-      return channel.on("broadcast", { event: "*" }, () => {
-        if (timeout.current) clearTimeout(timeout.current);
-        timeout.current = setTimeout(invalidateLoaders, DEFAULT_DEBOUNCE_MS);
-      });
+  useTopic(`company:${companyId}:reference`, (change) => {
+    if (!change) {
+      invalidateLoaders();
+      return;
     }
+    if (timeout.current) clearTimeout(timeout.current);
+    timeout.current = setTimeout(invalidateLoaders, DEFAULT_DEBOUNCE_MS);
   });
 
   return (
@@ -187,6 +265,7 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
       {tables.map((table) => (
         <TableSubscription key={table} companyId={companyId} table={table} />
       ))}
+      <TopicChannels />
     </>
   );
 }

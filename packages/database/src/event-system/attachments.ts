@@ -324,6 +324,7 @@ export const attachments = {
     events: true,
     statement: ["broadcast_reference_changes"]
   },
+  trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: { statement: ["broadcast_table_changes"] },
   unitOfMeasure: { statement: ["broadcast_reference_changes"] },
   user: {

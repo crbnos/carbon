@@ -21,7 +21,7 @@
 - [x] Task 13: Add `useRealtime` and `useRouteRealtime` to `@carbon/react`
 - [x] Task 14: Move the ERP lists to `useLiveList`
 - [x] Task 15: Move the MES lists and remove nanostores
-- [ ] Task 16: Move notifications and the implementation hub
+- [x] Task 16: Move notifications and the implementation hub
 - [ ] Task 17: Declare `handle.realtime` on the routes and convert the subscribers
 - [ ] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites
 - [ ] Task 19: Add `useAction` and migrate the submit call sites

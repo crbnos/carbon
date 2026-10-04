@@ -5,6 +5,8 @@
 export * from "./cache";
 export { applyChange } from "./liveList";
 export { matchesIdFilter } from "./realtimeFilter";
+export type { ChangedRows } from "./useChangedRows";
+export { useChangedRows } from "./useChangedRows";
 export type { LiveList, LiveListStorage } from "./useLiveList";
 export { LiveLists, liveListKey, useLiveList } from "./useLiveList";
 export { useLoaderQuery } from "./useLoaderQuery";
@@ -14,6 +16,7 @@ export {
   RouteRealtime,
   useRealtimeRevalidator,
   useRealtimeTable,
-  useTableChanges
+  useTableChanges,
+  useTopic
 } from "./useRealtime";
 export { useRealtimeChannel } from "./useRealtimeChannel";
