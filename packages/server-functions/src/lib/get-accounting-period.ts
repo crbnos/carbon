@@ -42,7 +42,9 @@ function closedPeriodError(mode: PeriodMode, closed: boolean): Error {
 
 /** Resolve a posting date and lock its period on the caller's transaction.
  * Historical card imports may shift to the next open period; corrections keep
- * their original date. Only current-period posting changes the Active period.
+ * their original date. Only current-period posting changes the Active period,
+ * and only when the period contains the company's today: a posting dated in
+ * another month (a catch-up run, a back-dated document) leaves it alone.
  */
 export async function resolveAccountingPeriod(
   db: Kysely<DB>,
@@ -67,6 +69,7 @@ export async function resolveAccountingPeriod(
       // Keep calendar values as ISO text, never passing through a JavaScript
       // Date.
       sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate"),
       "status",
       "closeStatus",
       "closedAt"
@@ -155,18 +158,23 @@ export async function resolveAccountingPeriod(
   }
 
   if (mode === "current" && period.status !== "Active") {
-    await db
-      .updateTable("accountingPeriod")
-      .set({ status: "Inactive" })
-      .where("companyId", "=", companyId)
-      .where("status", "=", "Active")
-      .execute();
-    await db
-      .updateTable("accountingPeriod")
-      .set({ status: "Active" })
-      .where("companyId", "=", companyId)
-      .where("id", "=", period.id)
-      .execute();
+    const today = datetime
+      .today(await getCompanyTimeZone(db, companyId))
+      .toString();
+    if (period.startDate <= today && period.endDate >= today) {
+      await db
+        .updateTable("accountingPeriod")
+        .set({ status: "Inactive" })
+        .where("companyId", "=", companyId)
+        .where("status", "=", "Active")
+        .execute();
+      await db
+        .updateTable("accountingPeriod")
+        .set({ status: "Active" })
+        .where("companyId", "=", companyId)
+        .where("id", "=", period.id)
+        .execute();
+    }
   }
   return {
     id: period.id,

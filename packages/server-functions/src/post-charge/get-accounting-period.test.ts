@@ -2,6 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCompanyTimeZone } from "@carbon/database";
+import { datetime } from "@carbon/utils";
+import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -91,8 +94,60 @@ databaseTest(
         endDate: "2024-02-29",
         fiscalYear: 2024,
         periodNumber: 8,
-        status: "Active"
+        // 2024-02-29 is not today, so the new period is not the Active one.
+        status: "Inactive"
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a posting dated in another month leaves the Active period alone",
+  async () => {
+    const f = await chargeFixture();
+    try {
+      await f.db
+        .deleteFrom("accountingPeriod")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const today = datetime
+        .today(await getCompanyTimeZone(f.db, f.companyId))
+        .toString();
+      const month = parseDate(today);
+      const current = await f.db
+        .insertInto("accountingPeriod")
+        .values({
+          companyId: f.companyId,
+          startDate: startOfMonth(month).toString(),
+          endDate: endOfMonth(month).toString(),
+          fiscalYear: month.year,
+          periodNumber: month.month,
+          status: "Active",
+          closeStatus: "Open",
+          createdBy: "system"
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const backDated = await getCurrentAccountingPeriod(
+        f.companyId,
+        f.db,
+        "2024-02-29"
+      );
+
+      const statuses = await f.db
+        .selectFrom("accountingPeriod")
+        .select(["id", "status"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(new Map(statuses.map((p) => [p.id, p.status]))).toEqual(
+        new Map([
+          [current.id, "Active"],
+          [backDated, "Inactive"]
+        ])
+      );
     } finally {
       await f.cleanup();
     }
