@@ -217,6 +217,12 @@ again.
   Hermes does not have. Filament renders through Metal on its own thread and
   decodes meshopt in C++. It is a native module, so **this app no longer runs
   in Expo Go**: `npx expo run:ios` (ios/ and android/ are gitignored).
+  Opening it in Expo Go fails with
+  `TurboModuleRegistry.getEnforcing('Worklets') could not be found` — Filament
+  and its `react-native-worklets-core` peer are not in Expo Go's binary. Note
+  Expo Go and the development build share ONE Metro, so those failures appear
+  in the same log the dev build writes to and read as the dev build's own:
+  terminate `host.exp.Exponent` before judging an error there.
   Reference images on steps are still not shown; the step says so.
 - **Components are addressed by NAME, which the server arranges.** A step
   names parts by `componentNodeIds`, the assembler writes those into each
