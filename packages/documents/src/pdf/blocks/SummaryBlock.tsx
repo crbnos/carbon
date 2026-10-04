@@ -9,7 +9,7 @@ import {
 } from "../../template";
 import {
   getLineDiscount,
-  getLineMerchandise,
+  getLineGrossMerchandise,
   getLineTaxableSubtotal,
   getTotal
 } from "../../utils/sales-invoice";
@@ -41,7 +41,27 @@ export function SummaryBlock({
   return (
     <View style={tw("mb-4")}>
       <View>
-        {/* Discount - only when a line carries one */}
+        {/* Subtotal - extended list price, before line discounts */}
+        <View
+          style={[
+            tw("flex flex-row py-1.5 px-3 text-[9px]"),
+            { backgroundColor: "rgba(249, 250, 251, 0.6)" }
+          ]}
+        >
+          <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
+            Subtotal ({currencyCode})
+          </Text>
+          <Text style={tw("w-1/6 text-center text-gray-800")}>
+            {numberFormatter.format(
+              salesInvoiceLines.reduce(
+                (sum, line) => sum + getLineGrossMerchandise(line),
+                0
+              )
+            )}
+          </Text>
+        </View>
+
+        {/* Discount - only when a line carries one, taken off the subtotal */}
         {discount !== 0 ? (
           <View
             style={[
@@ -57,26 +77,6 @@ export function SummaryBlock({
             </Text>
           </View>
         ) : null}
-
-        {/* Subtotal - extended price after line discounts */}
-        <View
-          style={[
-            tw("flex flex-row py-1.5 px-3 text-[9px]"),
-            { backgroundColor: "rgba(249, 250, 251, 0.6)" }
-          ]}
-        >
-          <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
-            Subtotal ({currencyCode})
-          </Text>
-          <Text style={tw("w-1/6 text-center text-gray-800")}>
-            {numberFormatter.format(
-              salesInvoiceLines.reduce(
-                (sum, line) => sum + getLineMerchandise(line),
-                0
-              )
-            )}
-          </Text>
-        </View>
 
         {/* Add-Ons */}
         {salesInvoiceLines.some(

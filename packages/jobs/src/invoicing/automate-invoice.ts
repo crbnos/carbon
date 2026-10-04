@@ -633,7 +633,8 @@ export async function emailPostedInvoice(args: {
  * payment link. Stamps `sentAt`/`sentTo: "Stripe"` on success and
  * `sendError` on any failure, so a failed send shows in Needs Review.
  * Idempotent: an invoice with `sentAt`, or already linked to a Stripe
- * invoice, is never sent twice.
+ * invoice, is never sent twice. An invoice totalling zero or less has nothing
+ * to collect: it is left unsent with no send error.
  */
 export async function sendPostedInvoiceViaStripe(args: {
   client: Client;
@@ -643,15 +644,20 @@ export async function sendPostedInvoiceViaStripe(args: {
 }): Promise<EmailOutcome> {
   const { client, db, companyId, invoiceId } = args;
 
+  // The view, for its `totalAmount`; `baseStatus` is the stored status.
   const invoice = await client
-    .from("salesInvoice")
-    .select("sentAt, status, customerId, invoiceCustomerId")
+    .from("salesInvoices")
+    .select("sentAt, baseStatus, customerId, invoiceCustomerId, totalAmount")
     .eq("id", invoiceId)
     .eq("companyId", companyId)
     .maybeSingle();
   if (invoice.error) throw new Error(invoice.error.message);
   if (!invoice.data || invoice.data.sentAt) return { emailed: false };
-  if (!isPostedSalesInvoice(invoice.data.status)) return { emailed: false };
+  if (!isPostedSalesInvoice(invoice.data.baseStatus)) return { emailed: false };
+  // Nothing to collect: Stripe cannot send a zero (or credit) invoice, and
+  // trying would hold a correctly posted invoice in Needs Review. Not sent,
+  // with no send error — the digest counts it as posted.
+  if ((invoice.data.totalAmount ?? 0) <= 0) return { emailed: false };
 
   const stampSent = async () => {
     const stamped = await client
@@ -697,11 +703,12 @@ export async function sendPostedInvoiceViaStripe(args: {
       );
     }
 
-    const stripeCustomerId = await getLinkedStripeCustomerId(
-      client,
-      companyId,
-      invoice.data.invoiceCustomerId ?? invoice.data.customerId
-    );
+    // The view types every column nullable; the table's `customerId` is not.
+    const billingCustomerId =
+      invoice.data.invoiceCustomerId ?? invoice.data.customerId;
+    const stripeCustomerId = billingCustomerId
+      ? await getLinkedStripeCustomerId(client, companyId, billingCustomerId)
+      : null;
     if (!stripeCustomerId) {
       return stampSendError(
         client,

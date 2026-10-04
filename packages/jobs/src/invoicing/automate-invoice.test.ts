@@ -439,11 +439,15 @@ describe("sendPostedInvoiceViaStripe", () => {
   const posted = (overrides: Row = {}) =>
     draftInvoice({
       status: "Submitted",
+      baseStatus: "Submitted",
       invoiceCustomerId: null,
+      totalAmount: 120,
       ...overrides
     });
+  // The view and its table share the row, so a stamp shows in both.
   const stripeTables = (invoice: Row, links: Row[] = []) => ({
     salesInvoice: [invoice],
+    salesInvoices: [invoice],
     companyIntegration: [
       {
         id: "stripe-connect",
@@ -518,6 +522,20 @@ describe("sendPostedInvoiceViaStripe", () => {
     });
     expect(stripeSend).not.toHaveBeenCalled();
     expect(tables.salesInvoice![0]!.sentTo).toBe("Stripe");
+  });
+
+  it("does not send a zero-total invoice and records no send error", async () => {
+    const { client, tables } = fakeClient(
+      stripeTables(posted({ totalAmount: 0 }), [customerLink("cust-1")])
+    );
+    expect(await sendPostedInvoiceViaStripe({ client, db, ...args })).toEqual({
+      emailed: false
+    });
+    expect(stripeSend).not.toHaveBeenCalled();
+    expect(tables.salesInvoice![0]).toMatchObject({
+      sentAt: null,
+      sendError: null
+    });
   });
 
   it("stamps the Stripe error and leaves it unsent when the send fails", async () => {

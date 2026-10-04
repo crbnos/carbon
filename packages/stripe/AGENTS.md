@@ -33,7 +33,10 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 - **Exports**: `@carbon/stripe/stripe.server` (platform billing),
   `@carbon/stripe/connect.server` (Connect accounts, invoicing, Connect webhooks),
   `@carbon/stripe/connect.constants`, `@carbon/stripe/send-sales-invoice.server`
-  (the send of a posted sales invoice, below) — all server-only
+  (the send of a posted sales invoice, below) — all server-only — plus
+  `@carbon/stripe/connect-invoice`, the pure line mapping (`toStripeInvoiceLines`,
+  `expectedConnectInvoiceTotal`, no client or env), tested in
+  `packages/jobs/src/invoicing/stripe-invoice-lines.test.ts`
 - **Send a posted sales invoice**: `sendPostedSalesInvoiceViaStripe`
   (`send-sales-invoice.server.ts`) is the ONE send, shared by the ERP post route
   (`x+/sales-invoice+/$invoiceId.post.tsx`) and invoice automation
@@ -45,7 +48,7 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   link to the notes are best-effort (a retry would create a SECOND Stripe invoice).
   Same file: `getStripeConnectAccountId` (null until onboarding can accept
   charges — `active` alone is not enough), `getLinkedStripeCustomerId`,
-  `toStripeInvoiceLines`, `STRIPE_CONNECT_INTEGRATION`
+  `toStripeInvoiceLines` (re-exported from `connect-invoice`), `STRIPE_CONNECT_INTEGRATION`
 - **Redis cache**: subscription state cached by customer ID; `companyPlan` is the durable mirror
 - **GTM forwarding**: `gtm-events.server.ts` forwards invoice events to Google Tag Manager
 - **User-based pricing**: `updateSubscriptionQuantityForCompany()` syncs active user count (excludes `@carbon.ms`)
@@ -65,11 +68,14 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   are `Decimal`, not `string`), never a rounded minor-unit integer
 - **Sales invoice → Stripe invoice**: `createAndSendConnectInvoice` mirrors the
   `salesInvoices` view's arithmetic, which is the only definition of what a
-  Carbon invoice is worth. One Carbon line becomes up to four Stripe items
+  Carbon invoice is worth, in the INVOICE currency: `toStripeInvoiceLines` reads
+  the line's `converted*` columns (the unprefixed ones are base currency), and
+  the header `salesInvoiceShipment.shippingCost` is converted with
+  `toDocumentAmount` at the currency's `decimalPlaces`. One Carbon line becomes up to four Stripe items
   (`unitPrice × quantity`, `addOnCost`, `shippingCost` — all taxable — plus an
   untaxed `nonTaxableAddOnCost`). The line discount (`discountPercent`, a fraction)
   is applied to the merchandise item only: `toStripeInvoiceLines` sends the NET unit
-  price `unitPrice × (1 − discountPercent)` and says "(20% off)" in the description;
+  price `convertedNetUnitPrice` unrounded and says "(20% off)" in the description;
   add-ons and shipping go at full price, and Stripe coupons are not used (a coupon
   discounts the whole invoice), and `salesInvoiceShipment.shippingCost` is a
   fifth, untaxed, invoice-level item. `setupPrice` is in neither the view's
@@ -78,7 +84,11 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   `percentage`; rates are looked-up-or-created per connected account by
   `resolveConnectTaxRateId`. Before finalizing, the draft's Stripe-computed
   total is reconciled against `expectedConnectInvoiceTotal` and the draft is
-  deleted rather than sent on a mismatch beyond per-item rounding
+  deleted rather than sent on a mismatch beyond per-item rounding. Every Stripe
+  write of the send carries an idempotency key derived from
+  `ConnectInvoiceInput.idempotencyKey` (`carbon-invoice-<account>-<invoiceId>`;
+  `-item-<n>`, `-finalize`, `-send`), so a retry after Stripe succeeded replays
+  the same invoice instead of creating a second one
 - **Connect customers**: `upsertConnectCustomer` (create/update),
   `retrieveConnectCustomer` (null on missing OR `deleted`, so a stale mapping
   degrades instead of throwing), `findConnectCustomersByEmail` (`customers.list`,

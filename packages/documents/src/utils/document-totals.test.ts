@@ -9,6 +9,7 @@ import {
 } from "./purchase-order";
 import {
   getLineDiscount as getSalesInvoiceLineDiscount,
+  getLineGrossMerchandise as getSalesInvoiceLineGrossMerchandise,
   getLineSubtotal as getSalesInvoiceLineSubtotal,
   getLineTaxableSubtotal as getSalesInvoiceLineTaxableSubtotal,
   getLineTotal as getSalesInvoiceLineTotal,
@@ -145,5 +146,47 @@ describe("sales invoice line subtotals", () => {
     } as never;
     expect(getSalesInvoiceLineDiscount(line)).toBe(0);
     expect(getSalesInvoiceLineSubtotal(line)).toBe(3 * 7.25);
+  });
+
+  it("summary rows add up: gross subtotal - discount + add-ons + shipping + tax = total", () => {
+    // The PDF summary prints Subtotal (gross) -> Discount -> Add-Ons ->
+    // Shipping -> Tax -> Total, so those rows must sum to the total.
+    const lines = [
+      {
+        quantity: 10,
+        convertedUnitPrice: 40,
+        discountPercent: 0.2,
+        convertedAddOnCost: 5,
+        convertedShippingCost: 10,
+        taxPercent: 0.1
+      },
+      {
+        quantity: 2,
+        convertedUnitPrice: 15,
+        discountPercent: 0,
+        convertedNonTaxableAddOnCost: 4,
+        taxPercent: 0
+      }
+    ] as never[];
+    const sum = (f: (line: never) => number) =>
+      lines.reduce((total, line) => total + f(line), 0);
+    const gross = sum(getSalesInvoiceLineGrossMerchandise);
+    const discount = sum(getSalesInvoiceLineDiscount);
+    const addOns = 5 + 4;
+    const shipping = 10 + 20 * 1.1;
+    const tax = sum(
+      (line) =>
+        getSalesInvoiceLineTaxableSubtotal(line) *
+        ((line as { taxPercent: number }).taxPercent ?? 0)
+    );
+    expect(gross).toBe(430);
+    expect(discount).toBeCloseTo(80);
+    expect(gross - discount + addOns + shipping + tax).toBeCloseTo(
+      getSalesInvoiceTotal(
+        lines,
+        { exchangeRate: 1.1 } as never,
+        { shippingCost: 20 } as never
+      )
+    );
   });
 });

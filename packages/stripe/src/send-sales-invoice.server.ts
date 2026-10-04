@@ -8,14 +8,13 @@ import { getDocumentType, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
-  formatPercent,
-  round,
-  stripSpecialCharacters
+  stripSpecialCharacters,
+  toDocumentAmount
 } from "@carbon/utils";
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ConnectInvoiceLineInput } from "./connect.server";
 import { createAndSendConnectInvoice } from "./connect.server";
+import { toStripeInvoiceLines } from "./connect-invoice";
 
 const logger = getLogger("stripe-connect");
 
@@ -84,6 +83,46 @@ export async function getLinkedStripeCustomerId(
   }
 
   return mapping.data?.externalId ?? null;
+}
+
+/**
+ * The settlement decimals of a currency, from the company group's own currency
+ * configuration — the authoritative scale for a document-currency amount.
+ */
+async function getCurrencyDecimals(
+  serviceRole: ServiceRole,
+  companyId: string,
+  currencyCode: string
+): Promise<number> {
+  const company = await serviceRole
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data?.companyGroupId) {
+    logger.error("Failed to read the company group for currency precision", {
+      companyId,
+      error: company.error
+    });
+    throw new Error("Failed to read the company's currency configuration");
+  }
+
+  const currency = await serviceRole
+    .from("currency")
+    .select("decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId)
+    .eq("code", currencyCode)
+    .maybeSingle();
+  if (currency.error || currency.data?.decimalPlaces == null) {
+    logger.error("Failed to read the invoice currency's precision", {
+      companyId,
+      currencyCode,
+      error: currency.error
+    });
+    throw new Error(`Currency ${currencyCode} has no precision configured`);
+  }
+
+  return currency.data.decimalPlaces;
 }
 
 async function storeStripeInvoicePdf({
@@ -225,57 +264,8 @@ async function appendStripeLinkToNotes({
   }
 }
 
-export type SalesInvoiceLineRow =
-  Database["public"]["Views"]["salesInvoiceLines"]["Row"];
-
-/**
- * Carbon invoice lines → the Stripe mapping's line input.
- *
- * Comment lines carry no money and exist only to annotate the printed invoice,
- * so they are dropped rather than sent as zero-amount items. Every other field
- * is passed through untouched — in particular `taxPercent` stays the fraction
- * the column stores, and the `converted*` mirrors are ignored because Stripe
- * bills in the invoice's own currency, not the company's base currency.
- *
- * The one exception is the line discount (`discountPercent`, a fraction): the
- * unit price sent is the NET price, `unitPrice × (1 − discountPercent)` at
- * internal scale, and the description says "(20% off)". It discounts the
- * merchandise only, as the `salesInvoices` view does — add-ons and shipping
- * pass through at full price. Stripe coupons are not used: a coupon discounts
- * the whole invoice, and per-line discounts would not round-trip.
- */
-export function toStripeInvoiceLines(
-  lines: SalesInvoiceLineRow[]
-): ConnectInvoiceLineInput[] {
-  return lines
-    .filter((line) => line.invoiceLineType !== "Comment")
-    .map((line) => {
-      const description = line.description ?? line.itemReadableId ?? "Item";
-      const discountPercent = line.discountPercent ?? 0;
-      const unitPrice = line.unitPrice ?? 0;
-      return {
-        description: discountPercent
-          ? `${description} (${formatPercent(discountPercent, "en-US")} off)`
-          : description,
-        quantity: line.quantity ?? 0,
-        unitPrice: discountPercent
-          ? round(unitPrice * (1 - discountPercent))
-          : unitPrice,
-        addOnCost: line.addOnCost ?? 0,
-        shippingCost: line.shippingCost ?? 0,
-        nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-        taxPercent: line.taxPercent ?? 0,
-        unitOfMeasureCode: line.unitOfMeasureCode,
-        metadata: {
-          carbonLineId: line.id ?? "",
-          carbonItemId: line.itemId ?? "",
-          carbonLineType: line.invoiceLineType ?? "",
-          carbonSalesOrderId: line.salesOrderId ?? "",
-          carbonSalesOrderLineId: line.salesOrderLineId ?? ""
-        }
-      };
-    });
-}
+export type { SalesInvoiceLineRow } from "./connect-invoice";
+export { toStripeInvoiceLines } from "./connect-invoice";
 
 /**
  * A Carbon calendar date → the Unix seconds Stripe wants.
@@ -394,6 +384,20 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
   }
 
   const invoice = salesInvoice.data;
+  const currencyCode = invoice.currencyCode ?? "USD";
+
+  // `salesInvoiceShipment.shippingCost` is BASE currency, like every unprefixed
+  // amount; Stripe bills the invoice currency. The lines arrive converted
+  // (`toStripeInvoiceLines`), so only the header freight is converted here —
+  // at the invoice exchange rate, as the printed invoice does.
+  const baseShippingCost = shipment.data?.shippingCost ?? 0;
+  const shippingCost = baseShippingCost
+    ? toDocumentAmount(
+        baseShippingCost,
+        invoice.exchangeRate ?? 1,
+        await getCurrencyDecimals(serviceRole, companyId, currencyCode)
+      )
+    : 0;
 
   // `salesInvoiceLocations` INNER JOINs the invoice's customer, so whenever the
   // row exists `customerName` is set — the trailing fallback is unreachable.
@@ -419,10 +423,10 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
     stripeCustomerId,
     {
       lines: toStripeInvoiceLines(invoiceLines.data ?? []),
-      currencyCode: invoice.currencyCode ?? "USD",
+      currencyCode,
       // Invoice-level freight, which the salesInvoices view adds after
       // tax — it is not one of the taxable per-line components.
-      shippingCost: shipment.data?.shippingCost ?? 0,
+      shippingCost,
       invoiceNumber: invoice.invoiceId ?? undefined,
       // dueDateOverride is the user-chosen override from the post modal,
       // submitted only when the invoice's own dateDue wouldn't survive
@@ -453,7 +457,10 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
         companyId,
         carbonOpportunityId: invoice.opportunityId ?? "",
         carbonShipmentId: invoice.shipmentId ?? ""
-      }
+      },
+      // One Carbon invoice is one Stripe invoice on this account: an Inngest
+      // retry after Stripe already created (or sent) it replays that invoice.
+      idempotencyKey: `carbon-invoice-${stripeAccountId}-${invoiceId}`
     }
   );
 

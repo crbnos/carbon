@@ -29,6 +29,7 @@
     "./stripe.server": "./src/stripe.server.ts",
     "./connect.server": "./src/connect.server.ts",
     "./connect.constants": "./src/connect.constants.ts",
+    "./connect-invoice": "./src/connect-invoice.ts",
     "./send-sales-invoice.server": "./src/send-sales-invoice.server.ts"
   },
   "private": true,
