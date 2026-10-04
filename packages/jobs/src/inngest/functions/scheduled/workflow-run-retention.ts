@@ -14,12 +14,13 @@ import { inngest } from "../../client";
 // for a quarter. Pass order: reap → purge-headers → compact → drop-detail.
 // Compact runs BEFORE deleting their steps so compactedAt is always set first.
 // These ages are repeated in `util.workflow_run_retention_has_work` (the
-// migration that defines it). Change both.
-const STALE_RUN_HOURS = 24;
-const FULL_DETAIL_DAYS = 7;
-const COMPACT_DETAIL_DAYS = 30;
-const RUN_HEADER_DAYS = 90;
-const TERMINAL = ["Succeeded", "Failed", "Blocked", "Skipped"] as const;
+// migration that defines it). Change both;
+// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+export const STALE_RUN_HOURS = 24;
+export const FULL_DETAIL_DAYS = 7;
+export const COMPACT_DETAIL_DAYS = 30;
+export const RUN_HEADER_DAYS = 90;
+export const TERMINAL = ["Succeeded", "Failed", "Blocked", "Skipped"] as const;
 const BATCH = 500;
 const COMPACT_BATCH = 200;
 const STALE_REASON =

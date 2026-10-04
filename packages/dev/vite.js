@@ -63,8 +63,14 @@ export function clientOnlyAlias(specifier, file) {
  * @returns {import("vite").Plugin[]}
  */
 export function linguiWithoutIdQuery(plugins) {
+  const name = "vite-plugin-lingui-macro-transform";
+  if (!plugins.some((plugin) => plugin.name === name)) {
+    throw new Error(
+      `linguiWithoutIdQuery: no "${name}" plugin. Pass lingui({ macroTransform: true }); if Lingui renamed it, update or delete this wrapper.`
+    );
+  }
   return plugins.map((plugin) => {
-    if (plugin.name !== "vite-plugin-lingui-macro-transform") return plugin;
+    if (plugin.name !== name) return plugin;
     const { handler } = plugin.transform;
     return {
       ...plugin,

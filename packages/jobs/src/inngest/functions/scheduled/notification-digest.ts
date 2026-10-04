@@ -23,10 +23,11 @@ import { inngest } from "../../client";
 // The threshold and the age below are repeated in
 // `util.notification_digest_has_work` (the migration that defines it). Change
 // both: a stricter rule there leaves these digests unmade.
-const DIGEST_THRESHOLD = 5;
+// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+export const DIGEST_THRESHOLD = 5;
 // Minutes. Set to 0 for instant testing; production target is ~60 so users
 // get a chance to see live notifications before they roll up.
-const DIGEST_MIN_AGE_MIN = 60;
+export const DIGEST_MIN_AGE_MIN = 60;
 const DIGEST_MAX_CANDIDATES = 5000;
 
 type Candidate = {
