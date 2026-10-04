@@ -4,16 +4,25 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import type { ServerFnInput } from "@carbon/server-functions";
 import { serverFns } from "@carbon/server-functions";
+import type { DraftedContractInvoice } from "@carbon/server-functions/create-contract-invoices";
 import type { DraftedRentalInvoice } from "@carbon/server-functions/create-rental-invoices";
 import type { Violation } from "@carbon/utils";
+import { suggestContractType } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import type { z } from "zod";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+import {
+  contractEndDate,
+  type createContractFromSalesOrderValidator
+} from "./sales.models";
 
 const logger = getLogger("erp", "sales-server");
 
@@ -404,13 +413,19 @@ export async function generateRentalInvoicesNow(
 }
 
 /**
- * Releases the billing periods and charges a Draft invoice (or some of its
- * lines) billed, so the next generation bills them again. Called in the same
- * transaction as the delete: `salesInvoiceLineId` has no foreign key, so a
- * delete alone would leave the rows stamped as billed by a line that no
- * longer exists.
+ * Releases what a Draft invoice (or some of its lines) billed, so the next
+ * generation bills it again: rental billing periods and charges, and contract
+ * schedule rows. Called in the same transaction as the delete:
+ * `salesInvoiceLineId` has no foreign key, so a delete alone would leave the
+ * rows stamped as billed by a line that no longer exists.
+ *
+ * A contract's planned invoice goes back to Planned only once none of its
+ * rows is still stamped — deleting one contract line from a Draft leaves the
+ * planned invoice Invoiced while its other lines are still on that Draft.
+ * `voidedSalesInvoiceId` is left alone, so a re-bill hold stays (rental
+ * decision 8).
  */
-async function releaseRentalInvoiceStamps(
+async function releaseRecurringInvoiceStamps(
   trx: KyselyTx,
   args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
 ): Promise<void> {
@@ -439,14 +454,64 @@ async function releaseRentalInvoiceStamps(
     .where("companyId", "=", companyId)
     .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
     .execute();
+
+  const releasedRows = await trx
+    .updateTable("customerContractInvoiceLine")
+    .set({
+      salesInvoiceLineId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .returning("customerContractInvoiceId")
+    .execute();
+
+  const plannedInvoiceIds = [
+    ...new Set(
+      releasedRows.flatMap((row) =>
+        row.customerContractInvoiceId ? [row.customerContractInvoiceId] : []
+      )
+    )
+  ];
+  if (plannedInvoiceIds.length === 0) return;
+
+  await trx
+    .updateTable("customerContractInvoice")
+    .set({
+      status: "Planned",
+      salesInvoiceId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("id", "in", plannedInvoiceIds)
+    .where("status", "=", "Invoiced")
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("customerContractInvoiceLine as stamped")
+            .select(sql`1`.as("one"))
+            .whereRef(
+              "stamped.customerContractInvoiceId",
+              "=",
+              "customerContractInvoice.id"
+            )
+            .where("stamped.companyId", "=", companyId)
+            .where("stamped.salesInvoiceLineId", "is not", null)
+        )
+      )
+    )
+    .execute();
 }
 
 /**
  * Deletes a Draft sales invoice and, in the same transaction, releases the
- * rental billing periods and charges it billed so the next generation bills
- * them again. `salesInvoiceLineId` on those rows has no foreign key, so a
- * plain delete would leave them stamped as billed forever. Throws on a
- * missing or non-Draft invoice.
+ * rental billing periods and charges and the contract schedule rows it
+ * billed, so the next generation bills them again. `salesInvoiceLineId` on
+ * those rows has no foreign key, so a plain delete would leave them stamped
+ * as billed forever. Throws on a missing or non-Draft invoice.
  */
 export async function deleteSalesInvoiceReleasingRentals(
   db: Kysely<KyselyDatabase>,
@@ -473,9 +538,14 @@ export async function deleteSalesInvoiceReleasingRentals(
       .select("id")
       .where("invoiceId", "=", invoiceId)
       .where("companyId", "=", companyId)
-      .where("invoiceLineType", "=", "Rental")
+      .where((eb) =>
+        eb.or([
+          eb("invoiceLineType", "=", "Rental"),
+          eb("customerContractInvoiceLineId", "is not", null)
+        ])
+      )
       .execute();
-    await releaseRentalInvoiceStamps(trx, {
+    await releaseRecurringInvoiceStamps(trx, {
       companyId,
       salesInvoiceLineIds: lines.map((line) => line.id),
       userId
@@ -489,8 +559,9 @@ export async function deleteSalesInvoiceReleasingRentals(
   });
 }
 
-/** One line of a Draft invoice, releasing the rental period or charge it
- *  billed (see `deleteSalesInvoiceReleasingRentals`). The line must belong
+/** One line of a Draft invoice, releasing the rental period or charge, or
+ *  the contract schedule row, it billed (see
+ *  `deleteSalesInvoiceReleasingRentals`). The line must belong
  *  to `invoiceId` and that invoice must be Draft — checked here, under a row
  *  lock, because releasing a POSTED line's stamps would bill its period
  *  again. Throws otherwise. */
@@ -529,7 +600,7 @@ export async function deleteSalesInvoiceLineReleasingRentals(
       );
     }
 
-    await releaseRentalInvoiceStamps(trx, {
+    await releaseRecurringInvoiceStamps(trx, {
       companyId,
       salesInvoiceLineIds: [salesInvoiceLineId],
       userId
@@ -537,6 +608,479 @@ export async function deleteSalesInvoiceLineReleasingRentals(
     await trx
       .deleteFrom("salesInvoiceLine")
       .where("id", "=", salesInvoiceLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contracts
+// ---------------------------------------------------------------------------
+
+/** The contract page's "Invoice": drafts the invoices the contract has due,
+ *  exactly as the daily job would — the `create-contract-invoices` server
+ *  function. */
+export async function generateContractInvoicesNow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** `YYYY-MM-DD` in the company's timezone. */
+    asOf: string;
+    customerContractId: string;
+  }
+): Promise<{ invoices: DraftedContractInvoice[]; invoiceIds: string[] }> {
+  const { companyId, userId, asOf, customerContractId } = args;
+  const { invoices, invoiceIds, failures } = await serverFns
+    .system({ db, companyId, userId })
+    .invokeOrThrow("create-contract-invoices", { asOf, customerContractId });
+  // One contract is billed here, so its failure is the action's failure.
+  if (failures.length > 0) {
+    throw new Error(failures.map((f) => f.error).join("; "));
+  }
+  return { invoices, invoiceIds };
+}
+
+/** Confirm, schedule edits, amend, cancel and revert — the
+ *  `post-customer-contract` server function, run as the signed-in user so
+ *  its permission check applies. Never throws: `{ data, error }`. */
+export function runContractAction(
+  caller: {
+    client: SupabaseClient<Database>;
+    db: Kysely<KyselyDatabase>;
+    companyId: string;
+    userId: string;
+  },
+  input: ServerFnInput<"post-customer-contract">
+) {
+  return serverFns.as(caller).invoke("post-customer-contract", input);
+}
+
+type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
+
+/** The statuses the invoiced/shipped rollup sets. A Draft or unconfirmed
+ *  order gets its status at Confirm (which derives it from the lines), and a
+ *  Cancelled or Closed one keeps its own. */
+const ROLLUP_ORDER_STATUSES: SalesOrderStatus[] = [
+  "To Ship and Invoice",
+  "To Ship",
+  "To Invoice",
+  "Completed"
+];
+
+/** The order status the lines imply — the rollup in `post-sales-invoice`
+ *  (copied, not imported: that file is a server function). Service lines are
+ *  never shipped, so they never hold shipping open. */
+function salesOrderStatusFromLines(
+  lines: {
+    salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"];
+    invoicedComplete: boolean;
+    sentComplete: boolean;
+  }[]
+): { status: SalesOrderStatus; allInvoiced: boolean } {
+  const allInvoiced = lines.every(
+    (line) => line.salesOrderLineType === "Comment" || line.invoicedComplete
+  );
+  const allShipped = lines.every(
+    (line) =>
+      line.salesOrderLineType === "Comment" ||
+      line.salesOrderLineType === "Service" ||
+      line.sentComplete
+  );
+
+  let status: SalesOrderStatus = "To Ship and Invoice";
+  if (allInvoiced && allShipped) {
+    status = "Completed";
+  } else if (allInvoiced) {
+    status = "To Ship";
+  } else if (allShipped) {
+    status = "To Invoice";
+  }
+  return { status, allInvoiced };
+}
+
+/**
+ * Creates a Draft contract from a sales order's Service lines (decision 7).
+ * The lines taken are marked `invoicedComplete`, so `convert` never invoices
+ * them and the order's rollup counts them as invoiced; when that leaves every
+ * line invoiced, the order's status is recomputed. Deleting the Draft
+ * contract, or one of its lines, releases them
+ * (`deleteContractReleasingSalesOrderLines`). Returns the contract's id.
+ */
+export async function createContractFromSalesOrder(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** `YYYY-MM-DD` in the company's timezone: the close date. */
+    asOf: string;
+    input: z.infer<typeof createContractFromSalesOrderValidator>;
+  }
+): Promise<string> {
+  const { companyId, userId, asOf, input } = args;
+
+  // Drawn before the transaction, as the contract form's route does: a
+  // refusal below costs a number, but the sequence row is not held locked
+  // while the order is.
+  const customerContractId = await db
+    .transaction()
+    .execute((trx) => getNextSequence(trx, "customerContract", companyId));
+
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesOrder")
+      .select([
+        "id",
+        "salesOrderId",
+        "status",
+        "customerId",
+        "customerReference",
+        "salesPersonId",
+        "currencyCode",
+        "exchangeRate"
+      ])
+      .where("id", "=", input.salesOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Sales order not found");
+    if (order.status === "Cancelled" || order.status === "Closed") {
+      throw new Error(
+        `Cannot create a contract from a ${order.status.toLowerCase()} sales order`
+      );
+    }
+
+    // Payment terms and the invoice party live on the order's payment row.
+    const payment = await trx
+      .selectFrom("salesOrderPayment")
+      .select([
+        "paymentTermId",
+        "invoiceCustomerId",
+        "invoiceCustomerContactId",
+        "invoiceCustomerLocationId"
+      ])
+      .where("id", "=", order.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    // Every line is locked, not only the chosen ones: the status rollup
+    // below reads them all.
+    const orderLines = await trx
+      .selectFrom("salesOrderLine")
+      .select([
+        "id",
+        "salesOrderLineType",
+        "itemId",
+        "description",
+        "saleQuantity",
+        "unitPrice",
+        "taxPercent",
+        "invoicedComplete",
+        "quantityInvoiced",
+        "sentComplete"
+      ])
+      .where("salesOrderId", "=", order.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const orderLineById = new Map(orderLines.map((line) => [line.id, line]));
+
+    const chosenIds = new Set(input.lines.map((line) => line.salesOrderLineId));
+    if (chosenIds.size !== input.lines.length) {
+      throw new Error("A sales order line was chosen more than once");
+    }
+
+    const chosen = input.lines.map((choice) => {
+      const line = orderLineById.get(choice.salesOrderLineId);
+      if (!line) throw new Error("A chosen line is not on this sales order");
+      if (line.salesOrderLineType !== "Service" || !line.itemId) {
+        throw new Error("Only Service lines can move to a contract");
+      }
+      if (line.invoicedComplete || Number(line.quantityInvoiced ?? 0) > 0) {
+        throw new Error(
+          "A line that is already invoiced cannot move to a contract"
+        );
+      }
+      const quantity = Number(line.saleQuantity ?? 0);
+      if (quantity <= 0) {
+        throw new Error("A line with no quantity cannot move to a contract");
+      }
+      const rate = Number(line.unitPrice ?? 0);
+      if (rate < 0) {
+        throw new Error(
+          "A line with a negative price cannot move to a contract"
+        );
+      }
+      return { choice, line, itemId: line.itemId, quantity, rate };
+    });
+
+    const previousContracts = await trx
+      .selectFrom("customerContract")
+      .select("status")
+      .where("companyId", "=", companyId)
+      .where("customerId", "=", order.customerId)
+      .execute();
+
+    const { endDate, termMonths } = contractEndDate(
+      input.startDate,
+      input.duration,
+      input.endDate
+    );
+
+    const contract = await trx
+      .insertInto("customerContract")
+      .values({
+        companyId,
+        customerContractId,
+        name: input.name,
+        contractType: suggestContractType(previousContracts),
+        customerId: order.customerId,
+        invoiceCustomerId: payment?.invoiceCustomerId ?? null,
+        invoiceCustomerContactId: payment?.invoiceCustomerContactId ?? null,
+        invoiceCustomerLocationId: payment?.invoiceCustomerLocationId ?? null,
+        salesPersonId: order.salesPersonId,
+        salesOrderId: order.id,
+        customerReference: order.customerReference,
+        closeDate: asOf,
+        startDate: input.startDate,
+        endDate,
+        termMonths,
+        billingFrequency: input.billingFrequency,
+        billingAlignment: input.billingAlignment,
+        billingTiming: input.billingTiming,
+        paymentTermId: payment?.paymentTermId ?? null,
+        currencyCode: order.currencyCode,
+        exchangeRate: order.exchangeRate ?? 1,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("customerContractLine")
+      .values(
+        chosen.map(({ choice, line, itemId, quantity, rate }) => ({
+          companyId,
+          customerContractId: contract.id,
+          kind: choice.kind,
+          itemId,
+          description: line.description,
+          quantity,
+          rate,
+          rateUnit:
+            choice.kind === "Recurring" ? (choice.rateUnit ?? null) : null,
+          taxPercent: line.taxPercent,
+          startDate: input.startDate,
+          salesOrderLineId: line.id,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    await trx
+      .updateTable("salesOrderLine")
+      .set({
+        invoicedComplete: true,
+        updatedBy: userId,
+        updatedAt: sql`now()`
+      })
+      .where("companyId", "=", companyId)
+      .where("id", "in", [...chosenIds])
+      .execute();
+
+    const { status, allInvoiced } = salesOrderStatusFromLines(
+      orderLines.map((line) => ({
+        ...line,
+        invoicedComplete: line.invoicedComplete || chosenIds.has(line.id)
+      }))
+    );
+    if (allInvoiced && ROLLUP_ORDER_STATUSES.includes(order.status)) {
+      await trx
+        .updateTable("salesOrder")
+        .set({ status, updatedBy: userId, updatedAt: sql`now()` })
+        .where("id", "=", order.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    return contract.id;
+  });
+}
+
+/**
+ * Hands sales-order lines back to their order when the Draft contract (or
+ * contract line) that took them is deleted: `invoicedComplete` goes back to
+ * false where the line is not fully invoiced, and an order the rollup had
+ * settled is recomputed from its lines. Runs inside the delete's transaction.
+ */
+async function releaseContractSalesOrderLines(
+  trx: KyselyTx,
+  args: { companyId: string; userId: string; salesOrderLineIds: string[] }
+): Promise<void> {
+  const { companyId, userId, salesOrderLineIds } = args;
+  if (salesOrderLineIds.length === 0) return;
+
+  const released = await trx
+    .updateTable("salesOrderLine")
+    .set({
+      invoicedComplete: false,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("id", "in", salesOrderLineIds)
+    .where("invoicedComplete", "=", true)
+    .where(
+      sql<boolean>`coalesce("quantityInvoiced", 0) < coalesce("saleQuantity", 0)`
+    )
+    .returning("salesOrderId")
+    .execute();
+
+  const salesOrderIds = [...new Set(released.map((line) => line.salesOrderId))];
+  if (salesOrderIds.length === 0) return;
+
+  const orders = await trx
+    .selectFrom("salesOrder")
+    .select(["id", "status"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", salesOrderIds)
+    .forUpdate()
+    .execute();
+  const orderLines = await trx
+    .selectFrom("salesOrderLine")
+    .select([
+      "salesOrderId",
+      "salesOrderLineType",
+      "invoicedComplete",
+      "sentComplete"
+    ])
+    .where("companyId", "=", companyId)
+    .where("salesOrderId", "in", salesOrderIds)
+    .execute();
+
+  // Each order's new status, grouped so one UPDATE per status covers them
+  // (at most one per rollup status, however many orders).
+  const orderIdsByStatus = new Map<SalesOrderStatus, string[]>();
+  for (const order of orders) {
+    if (!ROLLUP_ORDER_STATUSES.includes(order.status)) continue;
+    const { status } = salesOrderStatusFromLines(
+      orderLines.filter((line) => line.salesOrderId === order.id)
+    );
+    if (status === order.status) continue;
+    orderIdsByStatus.set(status, [
+      ...(orderIdsByStatus.get(status) ?? []),
+      order.id
+    ]);
+  }
+
+  for (const [status, ids] of orderIdsByStatus) {
+    await trx
+      .updateTable("salesOrder")
+      .set({ status, updatedBy: userId, updatedAt: sql`now()` })
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute();
+  }
+}
+
+/** Locks a contract and refuses one that is missing or not a Draft. */
+async function lockDraftContract(
+  trx: KyselyTx,
+  args: { companyId: string; customerContractId: string; refusal: string }
+): Promise<void> {
+  const contract = await trx
+    .selectFrom("customerContract")
+    .select("status")
+    .where("id", "=", args.customerContractId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!contract) throw new Error("Contract not found");
+  if (contract.status !== "Draft") throw new Error(args.refusal);
+}
+
+/**
+ * Deletes a Draft contract and, in the same transaction, hands the
+ * sales-order lines it took back to their order (decision 7) so they can be
+ * invoiced again. Throws on a missing or non-Draft contract.
+ */
+export async function deleteContractReleasingSalesOrderLines(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; id: string }
+): Promise<void> {
+  const { companyId, userId, id } = args;
+  await db.transaction().execute(async (trx) => {
+    await lockDraftContract(trx, {
+      companyId,
+      customerContractId: id,
+      refusal: "Only a Draft contract can be deleted. Cancel it instead."
+    });
+
+    const lines = await trx
+      .selectFrom("customerContractLine")
+      .select("salesOrderLineId")
+      .where("customerContractId", "=", id)
+      .where("companyId", "=", companyId)
+      .where("salesOrderLineId", "is not", null)
+      .execute();
+    await releaseContractSalesOrderLines(trx, {
+      companyId,
+      userId,
+      salesOrderLineIds: lines.flatMap((line) =>
+        line.salesOrderLineId ? [line.salesOrderLineId] : []
+      )
+    });
+
+    await trx
+      .deleteFrom("customerContract")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Draft")
+      .execute();
+  });
+}
+
+/** One line of a Draft contract, handing its sales-order line back to the
+ *  order (see `deleteContractReleasingSalesOrderLines`). The line must belong
+ *  to `customerContractId`; throws otherwise. */
+export async function deleteContractLineReleasingSalesOrderLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    customerContractId: string;
+    customerContractLineId: string;
+  }
+): Promise<void> {
+  const { companyId, userId, customerContractId, customerContractLineId } =
+    args;
+  await db.transaction().execute(async (trx) => {
+    await lockDraftContract(trx, {
+      companyId,
+      customerContractId,
+      refusal: "Lines can only be removed from a Draft contract — use Amend"
+    });
+
+    const line = await trx
+      .selectFrom("customerContractLine")
+      .select(["customerContractId", "salesOrderLineId"])
+      .where("id", "=", customerContractLineId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line || line.customerContractId !== customerContractId) {
+      throw new Error("This line does not belong to this contract");
+    }
+
+    await releaseContractSalesOrderLines(trx, {
+      companyId,
+      userId,
+      salesOrderLineIds: line.salesOrderLineId ? [line.salesOrderLineId] : []
+    });
+
+    await trx
+      .deleteFrom("customerContractLine")
+      .where("id", "=", customerContractLineId)
       .where("companyId", "=", companyId)
       .execute();
   });

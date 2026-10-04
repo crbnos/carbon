@@ -406,8 +406,20 @@ msgstr "{missingCount} asientos faltantes y {mismatchCount} meses desajustados"
 msgid "{name} deleted"
 msgstr "{name} eliminado"
 
+msgid "{name} ends {end} (was {was})"
+msgstr ""
+
+msgid "{name} ends {end} (was open-ended)"
+msgstr ""
+
+msgid "{name} replaced"
+msgstr ""
+
 msgid "{name} returns!"
 msgstr "{name} ¡regresa!"
+
+msgid "{name}: {changed}"
+msgstr ""
 
 msgid "{names} differs"
 msgstr "{names} difiere"
@@ -440,6 +452,9 @@ msgstr "{purgeRowCount, plural, one {¿Eliminar permanentemente # fila?} other {
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
+
+msgid "{removed} planned invoices are removed."
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} Recursos · {reservationCount} reservaciones · {jobCount} Órdenes de trabajo"
@@ -570,6 +585,9 @@ msgstr "1 pieza omitida — ya tiene un trabajo abierto"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1 pieza omitida — no hay nada que fabricar"
+
+msgid "1 planned invoice is removed."
+msgstr ""
 
 msgid "1 problem — not published"
 msgstr "1 problema — no publicado"
@@ -762,6 +780,9 @@ msgstr "Se requiere un inspector diferente"
 
 msgid "A draft run must be posted or deleted first."
 msgstr "Una ejecución en borrador debe ser contabilizada o eliminada primero."
+
+msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -1846,6 +1867,9 @@ msgstr "Añadido"
 msgid "Added {0} lines"
 msgstr "Se agregaron {0} líneas"
 
+msgid "Added {name} · {quantity} × {rate}"
+msgstr ""
+
 msgid "Added for this customer"
 msgstr "Añadido para este cliente"
 
@@ -1878,6 +1902,9 @@ msgstr "Ajuste"
 
 msgid "Adjustment Type"
 msgstr "Tipo de Ajuste"
+
+msgid "Adjustments"
+msgstr ""
 
 msgid "Admin"
 msgstr "Administrador"
@@ -2053,6 +2080,10 @@ msgid "Always taken"
 msgstr "Siempre se toma"
 
 msgid "Amend"
+msgstr ""
+
+#. placeholder {0}: contract.customerContractId
+msgid "Amend {0}"
 msgstr ""
 
 msgid "Amendments"
@@ -3775,6 +3806,7 @@ msgstr "No se puede subir un archivo llamado {0}"
 msgid "Cancel"
 msgstr "Cancelar"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
@@ -3791,6 +3823,9 @@ msgstr "Cancelar aviso de cambio"
 
 msgid "Cancel Change Notice"
 msgstr "Cancelar Aviso de Cambio"
+
+msgid "Cancel Contract"
+msgstr ""
 
 msgid "Cancel Job"
 msgstr "Cancelar Trabajo"
@@ -4036,6 +4071,9 @@ msgstr "Campeones"
 msgid "Change"
 msgstr "Cambiar"
 
+msgid "Change Date"
+msgstr ""
+
 msgid "Change Document"
 msgstr "Cambiar Documento"
 
@@ -4077,6 +4115,9 @@ msgstr "Tipo de cambio"
 
 msgid "Change Type"
 msgstr "Cambiar Tipo"
+
+msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
+msgstr ""
 
 msgid "Changed By"
 msgstr "Cambiado por"
@@ -5401,6 +5442,9 @@ msgstr "Crear lote"
 msgid "Create Change Notice"
 msgstr "Crear Aviso de Cambio"
 
+msgid "Create Contract"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "Crear pronóstico"
 
@@ -5664,6 +5708,9 @@ msgstr "Haber preparado"
 
 msgid "Credit total"
 msgstr "Total de Crédito"
+
+msgid "Credit unused time ({credit})"
+msgstr ""
 
 msgid "Credited"
 msgstr "Acreditado"
@@ -6770,6 +6817,9 @@ msgstr "Descripción"
 msgid "Description (optional)"
 msgstr "Descripción (opcional)"
 
+msgid "description changed"
+msgstr ""
+
 msgid "Description of Change"
 msgstr "Descripción del Cambio"
 
@@ -6870,6 +6920,9 @@ msgid "Discount"
 msgstr "Descuento"
 
 msgid "Discount (%)"
+msgstr ""
+
+msgid "discount {was} → {now}"
 msgstr ""
 
 msgid "Discount Days"
@@ -7077,6 +7130,9 @@ msgstr "Asientos de Diario en Borrador"
 
 msgid "Draft only"
 msgstr "Solo borrador"
+
+msgid "Drafts a credit memo for the time already invoiced after the end date."
+msgstr ""
 
 msgid "Drag & drop files, or click to browse"
 msgstr "Arrastra y suelta archivos, o haz clic para examinar"
@@ -7846,6 +7902,9 @@ msgstr "Fin"
 msgid "End Date"
 msgstr "Fecha de Fin"
 
+msgid "End line"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "Fin del Último Ejercicio fiscal"
 
@@ -7862,6 +7921,9 @@ msgid "End Time"
 msgstr "Hora de Finalización"
 
 msgid "Ended"
+msgstr ""
+
+msgid "Ended {name}"
 msgstr ""
 
 msgid "Ending"
@@ -9117,6 +9179,12 @@ msgstr "De la semana anterior"
 msgid "From Storage Unit"
 msgstr "Desde Unidad de Almacenamiento"
 
+msgid "From the change date"
+msgstr ""
+
+msgid "From the next billing period"
+msgstr ""
+
 msgid "From:"
 msgstr "De:"
 
@@ -10301,6 +10369,9 @@ msgstr "Invitado"
 
 msgid "Invoice"
 msgstr "Factura"
+
+msgid "Invoice {invoiceDate}"
+msgstr ""
 
 msgid "Invoice {readableId} now?"
 msgstr "¿Facturar {readableId} ahora?"
@@ -12313,6 +12384,9 @@ msgstr "Nuevo Grupo de Artículos"
 msgid "New Kanban"
 msgstr "Nuevo Kanban"
 
+msgid "New line"
+msgstr ""
+
 msgid "New Line"
 msgstr "Nueva Línea"
 
@@ -12640,6 +12714,9 @@ msgstr "No hay elementos afectados para evaluar."
 msgid "No affected items."
 msgstr "Sin elementos afectados."
 
+msgid "No amendments."
+msgstr ""
+
 msgid "No applications. Payment will be on-account."
 msgstr "Sin aplicaciones. El pago será a cuenta."
 
@@ -12842,6 +12919,9 @@ msgstr "Sin imagen"
 msgid "No inspection plans"
 msgstr "Sin planes de inspección"
 
+msgid "No invoices planned after the change."
+msgstr ""
+
 msgid "No invoices planned."
 msgstr ""
 
@@ -12929,6 +13009,9 @@ msgstr "No hay órdenes de trabajo abiertas de pedidos de venta proyectadas para
 msgid "No open jobs for sales orders at this location."
 msgstr "No hay órdenes de trabajo abiertas de pedidos de venta en esta ubicación."
 
+msgid "No open lines. Add a line to amend."
+msgstr ""
+
 msgid "No open memos"
 msgstr "Sin memorandos abiertos"
 
@@ -12992,6 +13075,9 @@ msgstr "Sin cuentas por pagar"
 
 msgid "No payments yet."
 msgstr "Sin pagos aún."
+
+msgid "No planned invoices are removed."
+msgstr ""
 
 msgid "No planned or recorded time."
 msgstr "Sin tiempo planificado o registrado."
@@ -14342,10 +14428,19 @@ msgstr ""
 msgid "per day"
 msgstr "por día"
 
+msgid "Per day"
+msgstr ""
+
 msgid "per month"
 msgstr "por mes"
 
+msgid "Per month"
+msgstr ""
+
 msgid "per quarter"
+msgstr ""
+
+msgid "Per quarter"
 msgstr ""
 
 msgid "Per unit"
@@ -14357,7 +14452,13 @@ msgstr "Por unidad"
 msgid "per week"
 msgstr "por semana"
 
+msgid "Per week"
+msgstr ""
+
 msgid "per year"
+msgstr ""
+
+msgid "Per year"
 msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -14805,6 +14906,12 @@ msgid "Preview Quantity"
 msgstr "Cantidad de vista previa"
 
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
+msgstr ""
+
+msgid "Previewing the amendment…"
+msgstr ""
+
+msgid "Previewing the cancellation…"
 msgstr ""
 
 msgid "Previous"
@@ -15411,6 +15518,9 @@ msgstr "Cantidad"
 msgid "Quantity {0}"
 msgstr "Cantidad {0}"
 
+msgid "quantity {was} → {now}"
+msgstr ""
+
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Cantidad por llegar: en órdenes de compra abiertas más en órdenes de producción (fabricación)."
 
@@ -15600,6 +15710,9 @@ msgstr "Ramp rechazó la autorización"
 
 msgid "Rate"
 msgstr "Tipo de cambio"
+
+msgid "rate {was} → {now}"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "Frecuencia de tasa"
@@ -16693,6 +16806,9 @@ msgid "Revenue is previewed once the contract has lines."
 msgstr ""
 
 msgid "Revenue Method"
+msgstr ""
+
+msgid "revenue method {was} → {now}"
 msgstr ""
 
 msgid "Revenue Recognition"
@@ -17888,6 +18004,9 @@ msgstr "Fin de Servicio"
 msgid "Service ID"
 msgstr "ID del Servicio"
 
+msgid "Service lines"
+msgstr ""
+
 msgid "Service Period"
 msgstr "Período de Servicio"
 
@@ -19011,6 +19130,9 @@ msgstr "Sugerir Coincidencia"
 msgid "Suggest with AI"
 msgstr "Sugerir con IA"
 
+msgid "Suggested from the change in recurring value"
+msgstr ""
+
 msgid "Suggested from the customer's contracts"
 msgstr ""
 
@@ -19316,6 +19438,12 @@ msgstr "Toma la vida de anaquel más corta restante entre los artículos consumi
 msgid "taken"
 msgstr "tomado"
 
+msgid "Takes Effect"
+msgstr ""
+
+msgid "Takes effect {effectiveDate}."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "Lleva el centro de trabajo fuera de línea"
 
@@ -19386,6 +19514,9 @@ msgid "Tax"
 msgstr "Impuesto"
 
 msgid "Tax (%)"
+msgstr ""
+
+msgid "tax {was} → {now}"
 msgstr ""
 
 msgid "Tax & Additional Costs"
@@ -19650,11 +19781,20 @@ msgstr "La categoría a la que pertenece este cliente (OEM, distribuidor, usuari
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "La categoría a la que pertenece este proveedor (materia prima, servicios, fabricante por contrato); determina cuentas GL predeterminadas y agrupaciones de informes."
 
+msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
+msgstr ""
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "El código impreso en la tarjeta kanban que los operadores escanean para marcar el trabajo como completo; se genera automáticamente si se deja en blanco."
 
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "El código que identifica un banco internacionalmente, con 8 u 11 caracteres. Un pago transfronterizo no será encaminado sin él, mientras que una transferencia doméstica generalmente viaja en el código de ruta local en su lugar."
+
+msgid "The contract cannot be cancelled then"
+msgstr ""
+
+msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "La disponibilidad semanal esperada del contratista; la programación usa esto como límite superior al asignar este contratista a operaciones durante la semana."
@@ -20438,6 +20578,9 @@ msgstr "El contenedor propio del centro de trabajo donde el material recogido se
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Las horas de trabajo y calendarios que impulsan la programación"
 
+msgid "Their dates and splits are planned again from the lines."
+msgstr ""
+
 msgid "Theme"
 msgstr "Tema"
 
@@ -20517,6 +20660,9 @@ msgstr "esta habilidad"
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
 msgstr "Esto también libera {0} órdenes de trabajo ({1}). Se vuelven disponibles para la planta e impulsan las compras y la producción."
+
+msgid "This amendment cannot be made"
+msgstr ""
 
 msgid "This backup could not be completed."
 msgstr "Esta copia de seguridad no se pudo completar."
@@ -20701,6 +20847,12 @@ msgstr "Esto elimina su aplicación autenticadora, por lo que su próximo inicio
 
 msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
 msgstr "Esta renta se trata como una venta. La inversión neta de cierre vuelve al balance general con la unidad, y se elimina el programa de intereses no contabilizado."
+
+msgid "This resets {resets} edited invoices from {effectiveDate}"
+msgstr ""
+
+msgid "This resets 1 edited invoice from {effectiveDate}"
+msgstr ""
 
 msgid "This restore could not be completed."
 msgstr "Esta restauración no se pudo completar."

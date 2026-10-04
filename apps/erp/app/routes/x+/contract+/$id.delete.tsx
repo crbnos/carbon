@@ -5,15 +5,17 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteContract, getContract } from "~/modules/sales";
+import { getContract } from "~/modules/sales";
+import { deleteContractReleasingSalesOrderLines } from "~/modules/sales/sales.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -40,13 +42,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // TODO(Task 15): release sales-order lines — call
-  // deleteContractReleasingSalesOrderLines(getDatabaseClient(), …) instead.
-  const result = await deleteContract(client, id);
-  if (result.error) {
+  // Hands the sales-order lines the contract took back to their order.
+  try {
+    await deleteContractReleasingSalesOrderLines(getDatabaseClient(), {
+      companyId,
+      userId,
+      id
+    });
+  } catch (err) {
     return data(
       {},
-      await flash(request, error(result.error, "Failed to delete contract"))
+      await flash(
+        request,
+        error(err, getErrorMessage(err, "Failed to delete contract"))
+      )
     );
   }
 

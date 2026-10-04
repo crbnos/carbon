@@ -406,8 +406,20 @@ msgstr "{missingCount} 件の不足している仕訳と {mismatchCount} ヶ月�
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
+msgid "{name} ends {end} (was {was})"
+msgstr ""
+
+msgid "{name} ends {end} (was open-ended)"
+msgstr ""
+
+msgid "{name} replaced"
+msgstr ""
+
 msgid "{name} returns!"
 msgstr "{name}が戻ってきました！"
+
+msgid "{name}: {changed}"
+msgstr ""
 
 msgid "{names} differs"
 msgstr "{names}が異なります"
@@ -440,6 +452,9 @@ msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} oth
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
+
+msgid "{removed} planned invoices are removed."
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} リソース · {reservationCount} 予約 · {jobCount} 製造指図"
@@ -570,6 +585,9 @@ msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があ
 
 msgid "1 part skipped — nothing to make"
 msgstr "1個の部品はスキップ済 — 製造する必要がありません"
+
+msgid "1 planned invoice is removed."
+msgstr ""
 
 msgid "1 problem — not published"
 msgstr "1個の問題 — 公開済ではありません"
@@ -762,6 +780,9 @@ msgstr "異なる検査担当者が必須です"
 
 msgid "A draft run must be posted or deleted first."
 msgstr "下書き実行は最初に転記済にするか削除する必要があります。"
+
+msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -1846,6 +1867,9 @@ msgstr "追加済み"
 msgid "Added {0} lines"
 msgstr "{0}行を追加しました"
 
+msgid "Added {name} · {quantity} × {rate}"
+msgstr ""
+
 msgid "Added for this customer"
 msgstr "この得意先に追加済み"
 
@@ -1878,6 +1902,9 @@ msgstr "調整"
 
 msgid "Adjustment Type"
 msgstr "調整タイプ"
+
+msgid "Adjustments"
+msgstr ""
 
 msgid "Admin"
 msgstr "管理者"
@@ -2053,6 +2080,10 @@ msgid "Always taken"
 msgstr "常に取得"
 
 msgid "Amend"
+msgstr ""
+
+#. placeholder {0}: contract.customerContractId
+msgid "Amend {0}"
 msgstr ""
 
 msgid "Amendments"
@@ -3775,6 +3806,7 @@ msgstr "名前が {0} のファイルはアップロードできません"
 msgid "Cancel"
 msgstr "キャンセル"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
@@ -3791,6 +3823,9 @@ msgstr "変更通知をキャンセル"
 
 msgid "Cancel Change Notice"
 msgstr "変更通知をキャンセル"
+
+msgid "Cancel Contract"
+msgstr ""
 
 msgid "Cancel Job"
 msgstr "ジョブをキャンセル"
@@ -4036,6 +4071,9 @@ msgstr "チャンピオン"
 msgid "Change"
 msgstr "変更"
 
+msgid "Change Date"
+msgstr ""
+
 msgid "Change Document"
 msgstr "変更文書"
 
@@ -4077,6 +4115,9 @@ msgstr "種類を変更"
 
 msgid "Change Type"
 msgstr "タイプを変更"
+
+msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
+msgstr ""
 
 msgid "Changed By"
 msgstr "変更者"
@@ -5401,6 +5442,9 @@ msgstr "バッチを作成"
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
 
+msgid "Create Contract"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "予測を作成"
 
@@ -5664,6 +5708,9 @@ msgstr "貸方をステージング"
 
 msgid "Credit total"
 msgstr "クレジット合計"
+
+msgid "Credit unused time ({credit})"
+msgstr ""
 
 msgid "Credited"
 msgstr "クレジット済み"
@@ -6770,6 +6817,9 @@ msgstr "説明"
 msgid "Description (optional)"
 msgstr "説明（オプション）"
 
+msgid "description changed"
+msgstr ""
+
 msgid "Description of Change"
 msgstr "変更の説明"
 
@@ -6870,6 +6920,9 @@ msgid "Discount"
 msgstr "値引"
 
 msgid "Discount (%)"
+msgstr ""
+
+msgid "discount {was} → {now}"
 msgstr ""
 
 msgid "Discount Days"
@@ -7077,6 +7130,9 @@ msgstr "下書き仕訳"
 
 msgid "Draft only"
 msgstr "下書きのみ"
+
+msgid "Drafts a credit memo for the time already invoiced after the end date."
+msgstr ""
 
 msgid "Drag & drop files, or click to browse"
 msgstr "ファイルをドラッグ&ドロップするか、クリックして参照"
@@ -7846,6 +7902,9 @@ msgstr "終了"
 msgid "End Date"
 msgstr "終了日"
 
+msgid "End line"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "前会計年度末"
 
@@ -7862,6 +7921,9 @@ msgid "End Time"
 msgstr "終了時刻"
 
 msgid "Ended"
+msgstr ""
+
+msgid "Ended {name}"
 msgstr ""
 
 msgid "Ending"
@@ -9117,6 +9179,12 @@ msgstr "前の週から"
 msgid "From Storage Unit"
 msgstr "保管ユニットから"
 
+msgid "From the change date"
+msgstr ""
+
+msgid "From the next billing period"
+msgstr ""
+
 msgid "From:"
 msgstr "開始："
 
@@ -10301,6 +10369,9 @@ msgstr "招待済み"
 
 msgid "Invoice"
 msgstr "請求書"
+
+msgid "Invoice {invoiceDate}"
+msgstr ""
 
 msgid "Invoice {readableId} now?"
 msgstr "{readableId} の請求書を今すぐ作成しますか？"
@@ -12313,6 +12384,9 @@ msgstr "新しいアイテムグループ"
 msgid "New Kanban"
 msgstr "新規かんばん"
 
+msgid "New line"
+msgstr ""
+
 msgid "New Line"
 msgstr "新しい行"
 
@@ -12640,6 +12714,9 @@ msgstr "評価する影響を受けるアイテムがありません。"
 msgid "No affected items."
 msgstr "影響を受けるアイテムがありません。"
 
+msgid "No amendments."
+msgstr ""
+
 msgid "No applications. Payment will be on-account."
 msgstr "申請がありません。支払いはオンアカウントになります。"
 
@@ -12842,6 +12919,9 @@ msgstr "画像なし"
 msgid "No inspection plans"
 msgstr "検査計画がありません"
 
+msgid "No invoices planned after the change."
+msgstr ""
+
 msgid "No invoices planned."
 msgstr ""
 
@@ -12929,6 +13009,9 @@ msgstr "この拠点で、次の{horizon}日間に完了予定のオープン受
 msgid "No open jobs for sales orders at this location."
 msgstr "この拠点にはオープン受注用製造指図がありません。"
 
+msgid "No open lines. Add a line to amend."
+msgstr ""
+
 msgid "No open memos"
 msgstr "オープンなメモはありません"
 
@@ -12992,6 +13075,9 @@ msgstr "買掛金がありません"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
+
+msgid "No planned invoices are removed."
+msgstr ""
 
 msgid "No planned or recorded time."
 msgstr "計画時間または記録時間がありません。"
@@ -14342,10 +14428,19 @@ msgstr ""
 msgid "per day"
 msgstr "1日あたり"
 
+msgid "Per day"
+msgstr ""
+
 msgid "per month"
 msgstr "1か月あたり"
 
+msgid "Per month"
+msgstr ""
+
 msgid "per quarter"
+msgstr ""
+
+msgid "Per quarter"
 msgstr ""
 
 msgid "Per unit"
@@ -14357,7 +14452,13 @@ msgstr "単位あたり"
 msgid "per week"
 msgstr "1週間あたり"
 
+msgid "Per week"
+msgstr ""
+
 msgid "per year"
+msgstr ""
+
+msgid "Per year"
 msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -14805,6 +14906,12 @@ msgid "Preview Quantity"
 msgstr "プレビュー数量"
 
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
+msgstr ""
+
+msgid "Previewing the amendment…"
+msgstr ""
+
+msgid "Previewing the cancellation…"
 msgstr ""
 
 msgid "Previous"
@@ -15411,6 +15518,9 @@ msgstr "数量"
 msgid "Quantity {0}"
 msgstr "数量 {0}"
 
+msgid "quantity {was} → {now}"
+msgstr ""
+
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "入荷予定数量 — 未処理の発注書および生産（製造）注文の分。"
 
@@ -15600,6 +15710,9 @@ msgstr "Ramp が認可を拒否しました"
 
 msgid "Rate"
 msgstr "レート"
+
+msgid "rate {was} → {now}"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "レート頻度"
@@ -16693,6 +16806,9 @@ msgid "Revenue is previewed once the contract has lines."
 msgstr ""
 
 msgid "Revenue Method"
+msgstr ""
+
+msgid "revenue method {was} → {now}"
 msgstr ""
 
 msgid "Revenue Recognition"
@@ -17888,6 +18004,9 @@ msgstr "サービス終了日"
 msgid "Service ID"
 msgstr "サービスID"
 
+msgid "Service lines"
+msgstr ""
+
 msgid "Service Period"
 msgstr "サービス期間"
 
@@ -19011,6 +19130,9 @@ msgstr "照合を提案"
 msgid "Suggest with AI"
 msgstr "AIで提案"
 
+msgid "Suggested from the change in recurring value"
+msgstr ""
+
 msgid "Suggested from the customer's contracts"
 msgstr ""
 
@@ -19316,6 +19438,12 @@ msgstr "このアイテムを製造するために消費される材料全体で
 msgid "taken"
 msgstr "実施"
 
+msgid "Takes Effect"
+msgstr ""
+
+msgid "Takes effect {effectiveDate}."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "作業区をオフラインにする"
 
@@ -19386,6 +19514,9 @@ msgid "Tax"
 msgstr "税"
 
 msgid "Tax (%)"
+msgstr ""
+
+msgid "tax {was} → {now}"
 msgstr ""
 
 msgid "Tax & Additional Costs"
@@ -19650,11 +19781,20 @@ msgstr "この得意先が属するカテゴリ（OEM、ディストリビュー
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "この仕入先が属するカテゴリ（原材料、サービス、請負製造業者）。デフォルトの勘定科目とレポートのグループ化を決定します。"
 
+msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
+msgstr ""
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "かんばんカードに印刷されるコード。作業者がスキャンして製造指図を完了するとマークします。空白の場合は自動生成されます。"
 
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "銀行を国際的に識別するコード（8文字または11文字）。国際送金はこれなしではルーティングされません。一方、国内振替は通常、ローカルルーティングコードで行われます。"
+
+msgid "The contract cannot be cancelled then"
+msgstr ""
+
+msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "外部作業者の期待される毎週の利用可能性。スケジューリングはこれを、週間を通じてこの外部作業者を工程に割り当てる際の上限として使用します。"
@@ -20438,6 +20578,9 @@ msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
 
+msgid "Their dates and splits are planned again from the lines."
+msgstr ""
+
 msgid "Theme"
 msgstr "テーマ"
 
@@ -20517,6 +20660,9 @@ msgstr "このスキル"
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
 msgstr "これにより{0}個の製造指図({1})もリリースされます。それらは製造現場で利用可能になり、購買と生産を推進します。"
+
+msgid "This amendment cannot be made"
+msgstr ""
 
 msgid "This backup could not be completed."
 msgstr "このバックアップを完了できませんでした。"
@@ -20701,6 +20847,12 @@ msgstr "これにより認証器アプリが削除されるため、次回のサ
 
 msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
 msgstr "このレンタルは販売として扱われます。期末純投資が単位とともに貸借対照表に戻り、転記されていない利息スケジュールが削除されます。"
+
+msgid "This resets {resets} edited invoices from {effectiveDate}"
+msgstr ""
+
+msgid "This resets 1 edited invoice from {effectiveDate}"
+msgstr ""
 
 msgid "This restore could not be completed."
 msgstr "この復元を完了できませんでした。"

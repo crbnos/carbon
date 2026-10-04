@@ -5,15 +5,17 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
-import { deleteContractLine, getContractLine } from "~/modules/sales";
+import { getContractLine } from "~/modules/sales";
+import { deleteContractLineReleasingSalesOrderLine } from "~/modules/sales/sales.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -36,17 +38,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // `deleteContractLine` refuses a contract that is not a Draft — an Active
-  // contract's lines end through Amend.
-  // TODO(Task 15): release the sales-order line
-  // (`deleteContractLineReleasingSalesOrderLine(getDatabaseClient(), …)`).
-  const result = await deleteContractLine(client, lineId);
-  if (result.error) {
+  // Refuses a contract that is not a Draft — an Active contract's lines end
+  // through Amend — and hands the line's sales-order line back to its order.
+  try {
+    await deleteContractLineReleasingSalesOrderLine(getDatabaseClient(), {
+      companyId,
+      userId,
+      customerContractId: id,
+      customerContractLineId: lineId
+    });
+  } catch (err) {
     throw redirect(
       path.to.contractLine(id, lineId),
       await flash(
         request,
-        error(result.error, result.error.message || "Failed to remove line")
+        error(err, getErrorMessage(err, "Failed to remove line"))
       )
     );
   }

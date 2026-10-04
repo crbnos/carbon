@@ -406,8 +406,20 @@ msgstr "{missingCount}개의 누락된 전표 및 {mismatchCount}개의 불일�
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
+msgid "{name} ends {end} (was {was})"
+msgstr ""
+
+msgid "{name} ends {end} (was open-ended)"
+msgstr ""
+
+msgid "{name} replaced"
+msgstr ""
+
 msgid "{name} returns!"
 msgstr "{name}님 돌아오셨습니다!"
+
+msgid "{name}: {changed}"
+msgstr ""
 
 msgid "{names} differs"
 msgstr "{names} 다릅니다"
@@ -440,6 +452,9 @@ msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} 
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
+
+msgid "{removed} planned invoices are removed."
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}개 작업 지시"
@@ -570,6 +585,9 @@ msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1개 부품이 건너뜀 — 만들 것이 없음"
+
+msgid "1 planned invoice is removed."
+msgstr ""
 
 msgid "1 problem — not published"
 msgstr "1개 문제 — 게시됨 아님"
@@ -762,6 +780,9 @@ msgstr "다른 검사자가 필요합니다"
 
 msgid "A draft run must be posted or deleted first."
 msgstr "초안 실행을 먼저 전기하거나 삭제해야 합니다."
+
+msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -1846,6 +1867,9 @@ msgstr "추가됨"
 msgid "Added {0} lines"
 msgstr "{0}개 라인이 추가되었습니다"
 
+msgid "Added {name} · {quantity} × {rate}"
+msgstr ""
+
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
 
@@ -1878,6 +1902,9 @@ msgstr "조정"
 
 msgid "Adjustment Type"
 msgstr "조정 유형"
+
+msgid "Adjustments"
+msgstr ""
 
 msgid "Admin"
 msgstr "관리자"
@@ -2053,6 +2080,10 @@ msgid "Always taken"
 msgstr "항상 사용됨"
 
 msgid "Amend"
+msgstr ""
+
+#. placeholder {0}: contract.customerContractId
+msgid "Amend {0}"
 msgstr ""
 
 msgid "Amendments"
@@ -3775,6 +3806,7 @@ msgstr "{0}이라는 이름의 파일을 업로드할 수 없습니다"
 msgid "Cancel"
 msgstr "취소"
 
+#. placeholder {0}: contract.customerContractId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
@@ -3791,6 +3823,9 @@ msgstr "변경 통지 취소"
 
 msgid "Cancel Change Notice"
 msgstr "변경 통지 취소"
+
+msgid "Cancel Contract"
+msgstr ""
 
 msgid "Cancel Job"
 msgstr "작업 취소"
@@ -4036,6 +4071,9 @@ msgstr "챔피언"
 msgid "Change"
 msgstr "변경"
 
+msgid "Change Date"
+msgstr ""
+
 msgid "Change Document"
 msgstr "문서 변경"
 
@@ -4077,6 +4115,9 @@ msgstr "변경 유형"
 
 msgid "Change Type"
 msgstr "변경 유형"
+
+msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
+msgstr ""
 
 msgid "Changed By"
 msgstr "변경자"
@@ -5401,6 +5442,9 @@ msgstr "배치 생성"
 msgid "Create Change Notice"
 msgstr "변경 통지 생성"
 
+msgid "Create Contract"
+msgstr ""
+
 msgid "Create Forecast"
 msgstr "예측 생성"
 
@@ -5664,6 +5708,9 @@ msgstr "대변 준비됨"
 
 msgid "Credit total"
 msgstr "크레딧 합계"
+
+msgid "Credit unused time ({credit})"
+msgstr ""
 
 msgid "Credited"
 msgstr "크레딧됨"
@@ -6770,6 +6817,9 @@ msgstr "설명"
 msgid "Description (optional)"
 msgstr "설명(선택 사항)"
 
+msgid "description changed"
+msgstr ""
+
 msgid "Description of Change"
 msgstr "변경 설명"
 
@@ -6870,6 +6920,9 @@ msgid "Discount"
 msgstr "할인"
 
 msgid "Discount (%)"
+msgstr ""
+
+msgid "discount {was} → {now}"
 msgstr ""
 
 msgid "Discount Days"
@@ -7077,6 +7130,9 @@ msgstr "초안 전표"
 
 msgid "Draft only"
 msgstr "초안만"
+
+msgid "Drafts a credit memo for the time already invoiced after the end date."
+msgstr ""
 
 msgid "Drag & drop files, or click to browse"
 msgstr "파일을 드래그 앤 드롭하거나 클릭하여 찾아보세요"
@@ -7846,6 +7902,9 @@ msgstr "종료"
 msgid "End Date"
 msgstr "종료일"
 
+msgid "End line"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "지난 회계연도 말"
 
@@ -7862,6 +7921,9 @@ msgid "End Time"
 msgstr "종료 시간"
 
 msgid "Ended"
+msgstr ""
+
+msgid "Ended {name}"
 msgstr ""
 
 msgid "Ending"
@@ -9117,6 +9179,12 @@ msgstr "이전 주에서"
 msgid "From Storage Unit"
 msgstr "보관 단위에서"
 
+msgid "From the change date"
+msgstr ""
+
+msgid "From the next billing period"
+msgstr ""
+
 msgid "From:"
 msgstr "시작:"
 
@@ -10301,6 +10369,9 @@ msgstr "초대됨"
 
 msgid "Invoice"
 msgstr "송장"
+
+msgid "Invoice {invoiceDate}"
+msgstr ""
 
 msgid "Invoice {readableId} now?"
 msgstr "지금 {readableId} 송장을 발행하시겠습니까?"
@@ -12313,6 +12384,9 @@ msgstr "새 품목 그룹"
 msgid "New Kanban"
 msgstr "새 칸반"
 
+msgid "New line"
+msgstr ""
+
 msgid "New Line"
 msgstr "새 라인"
 
@@ -12640,6 +12714,9 @@ msgstr "평가할 영향받는 항목이 없습니다."
 msgid "No affected items."
 msgstr "영향받는 항목이 없습니다."
 
+msgid "No amendments."
+msgstr ""
+
 msgid "No applications. Payment will be on-account."
 msgstr "적용이 없습니다. 지불은 외상 처리됩니다."
 
@@ -12842,6 +12919,9 @@ msgstr "이미지 없음"
 msgid "No inspection plans"
 msgstr "검사 계획 없음"
 
+msgid "No invoices planned after the change."
+msgstr ""
+
 msgid "No invoices planned."
 msgstr ""
 
@@ -12929,6 +13009,9 @@ msgstr "이 사업장에서 다음 {horizon}일 이내에 완료될 것으로 �
 msgid "No open jobs for sales orders at this location."
 msgstr "이 사업장의 수주 관련 미결 작업 지시가 없습니다."
 
+msgid "No open lines. Add a line to amend."
+msgstr ""
+
 msgid "No open memos"
 msgstr "미결 메모 없음"
 
@@ -12992,6 +13075,9 @@ msgstr "매입채무가 없습니다"
 
 msgid "No payments yet."
 msgstr "아직 지불이 없습니다."
+
+msgid "No planned invoices are removed."
+msgstr ""
 
 msgid "No planned or recorded time."
 msgstr "계획되거나 기록된 시간이 없습니다."
@@ -14342,10 +14428,19 @@ msgstr ""
 msgid "per day"
 msgstr "일당"
 
+msgid "Per day"
+msgstr ""
+
 msgid "per month"
 msgstr "월당"
 
+msgid "Per month"
+msgstr ""
+
 msgid "per quarter"
+msgstr ""
+
+msgid "Per quarter"
 msgstr ""
 
 msgid "Per unit"
@@ -14357,7 +14452,13 @@ msgstr "단위당"
 msgid "per week"
 msgstr "주당"
 
+msgid "Per week"
+msgstr ""
+
 msgid "per year"
+msgstr ""
+
+msgid "Per year"
 msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -14805,6 +14906,12 @@ msgid "Preview Quantity"
 msgstr "미리보기 수량"
 
 msgid "Preview. Until line-level revenue arrives, posted revenue follows each invoice line's service period by day."
+msgstr ""
+
+msgid "Previewing the amendment…"
+msgstr ""
+
+msgid "Previewing the cancellation…"
 msgstr ""
 
 msgid "Previous"
@@ -15411,6 +15518,9 @@ msgstr "수량"
 msgid "Quantity {0}"
 msgstr "수량 {0}"
 
+msgid "quantity {was} → {now}"
+msgstr ""
+
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "도착 예정 수량 — 미결 발주서 및 생산(사내 생산) 작업 지시상의 수량입니다."
 
@@ -15600,6 +15710,9 @@ msgstr "Ramp에서 인증을 거부했습니다"
 
 msgid "Rate"
 msgstr "환율"
+
+msgid "rate {was} → {now}"
+msgstr ""
 
 msgid "Rate frequency"
 msgstr "요금 주기"
@@ -16693,6 +16806,9 @@ msgid "Revenue is previewed once the contract has lines."
 msgstr ""
 
 msgid "Revenue Method"
+msgstr ""
+
+msgid "revenue method {was} → {now}"
 msgstr ""
 
 msgid "Revenue Recognition"
@@ -17888,6 +18004,9 @@ msgstr "서비스 종료일"
 msgid "Service ID"
 msgstr "서비스 ID"
 
+msgid "Service lines"
+msgstr ""
+
 msgid "Service Period"
 msgstr "서비스 기간"
 
@@ -19011,6 +19130,9 @@ msgstr "일치 제안"
 msgid "Suggest with AI"
 msgstr "AI로 제안"
 
+msgid "Suggested from the change in recurring value"
+msgstr ""
+
 msgid "Suggested from the customer's contracts"
 msgstr ""
 
@@ -19316,6 +19438,12 @@ msgstr "이 품목을 만드는 데 소비되는 자재 중 가장 짧은 보존
 msgid "taken"
 msgstr "사용됨"
 
+msgid "Takes Effect"
+msgstr ""
+
+msgid "Takes effect {effectiveDate}."
+msgstr ""
+
 msgid "Takes work center offline"
 msgstr "작업장을 오프라인으로 전환"
 
@@ -19386,6 +19514,9 @@ msgid "Tax"
 msgstr "세금"
 
 msgid "Tax (%)"
+msgstr ""
+
+msgid "tax {was} → {now}"
 msgstr ""
 
 msgid "Tax & Additional Costs"
@@ -19650,11 +19781,20 @@ msgstr "이 고객이 속하는 카테고리(OEM, 유통업체, 최종 사용자
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁제조업체)로, 기본 총계정원장 계정과 보고 그룹을 결정합니다."
 
+msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
+msgstr ""
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "칸반 카드에 인쇄되는 코드로, 작업자가 스캔하여 작업 완료를 표시합니다. 비워두면 자동으로 생성됩니다."
 
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "국제적으로 은행을 식별하는 코드이며 8자리 또는 11자리입니다. 국경간 지불은 이것 없이는 라우팅되지 않으며, 국내 이송은 보통 로컬 라우팅 코드로 전달됩니다."
+
+msgid "The contract cannot be cancelled then"
+msgstr ""
+
+msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동안의 공정에 할당할 때 스케줄링이 이를 상한선으로 사용합니다."
@@ -20438,6 +20578,9 @@ msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 �
 msgid "The working hours and calendars that drive scheduling"
 msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
 
+msgid "Their dates and splits are planned again from the lines."
+msgstr ""
+
 msgid "Theme"
 msgstr "테마"
 
@@ -20517,6 +20660,9 @@ msgstr "이 역량"
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
 msgstr "또한 {0}개의 작업 지시({1})를 릴리스합니다. 현장에 가용하게 되어 구매 및 생산을 추진합니다."
+
+msgid "This amendment cannot be made"
+msgstr ""
 
 msgid "This backup could not be completed."
 msgstr "이 백업을 완료할 수 없습니다."
@@ -20701,6 +20847,12 @@ msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는
 
 msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
 msgstr "이 임차는 판매로 취급됩니다. 종료 순투자가 개와 함께 재무상태표로 돌아오고, 전기되지 않은 이자 일정은 제거됩니다."
+
+msgid "This resets {resets} edited invoices from {effectiveDate}"
+msgstr ""
+
+msgid "This resets 1 edited invoice from {effectiveDate}"
+msgstr ""
 
 msgid "This restore could not be completed."
 msgstr "이 복원을 완료할 수 없습니다."
