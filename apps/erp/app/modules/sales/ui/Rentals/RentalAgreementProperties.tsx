@@ -182,7 +182,8 @@ const RentalAgreementProperties = () => {
   > = {
     "Draft Only": t`Draft only`,
     Post: t`Post`,
-    "Post and Email": t`Post and email`
+    "Post and Email": t`Post and email`,
+    "Post and Send via Stripe": t`Post and send via Stripe`
   };
   const companyLabel =
     invoiceAutomationLabels[companySettings.invoiceAutomation];

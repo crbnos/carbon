@@ -14397,6 +14397,9 @@ msgstr "पोस्ट करें"
 msgid "Post and email"
 msgstr "पोस्ट करें और ईमेल करें"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "टिप्पणी पोस्ट करें"
 

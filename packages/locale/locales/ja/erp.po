@@ -14397,6 +14397,9 @@ msgstr "転記"
 msgid "Post and email"
 msgstr "転記してメール送信"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "コメントを投稿"
 

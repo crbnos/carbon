@@ -14397,6 +14397,9 @@ msgstr "전기"
 msgid "Post and email"
 msgstr "전기 및 이메일"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "댓글 게시"
 

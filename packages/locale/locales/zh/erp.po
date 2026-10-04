@@ -14397,6 +14397,9 @@ msgstr "过账"
 msgid "Post and email"
 msgstr "过账并发送电子邮件"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "发布评论"
 

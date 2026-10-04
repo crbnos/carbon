@@ -14397,6 +14397,9 @@ msgstr "Kaydet"
 msgid "Post and email"
 msgstr "Muhasebeleştir ve e-posta gönder"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "Yorum Yap"
 

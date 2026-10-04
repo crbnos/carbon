@@ -32,3 +32,9 @@
 ## Task 16
 - `@carbon/stripe` gained workspace/catalog deps `@carbon/files` and `@internationalized/date` (both already in the repo; lockfile +6 lines).
 - The ERP `upsertDocument` call became a direct `document` insert with the same fields.
+
+## Tasks 7 + 8 (one commit: same module files)
+- @mcp tags: +13 (the plan's list sums to 13; its "+11" was a miscount).
+- `contractType` optional in `customerContractValidator` (Task 22 suggests it when unset).
+- `getContractInvoiceSchedule` returns `{ invoices, credits }` (credits = memo-borne rows).
+- The rental label map gained the Stripe mode here (Task 19's one-liner) so erp compiles after the enum array grew.

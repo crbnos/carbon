@@ -14397,6 +14397,9 @@ msgstr "Buchen"
 msgid "Post and email"
 msgstr "Buchen und per E-Mail versenden"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "Kommentar posten"
 

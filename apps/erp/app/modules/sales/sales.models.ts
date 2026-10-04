@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
   conditionAstFormField,
@@ -1382,7 +1383,8 @@ export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 export const invoiceAutomations = [
   "Draft Only",
   "Post",
-  "Post and Email"
+  "Post and Email",
+  "Post and Send via Stripe"
 ] as const;
 
 /** A rental unit's rate frequency: what one unit of its `rate` buys. */
@@ -1619,3 +1621,428 @@ export const itemRentalRateValidator = z
       path: ["dayRate"]
     }
   );
+
+// ----------------------------------------------------------------------
+// Customer contracts (.ai/specs/2026-10-02-contracts.md): the header, its
+// lines, edits to the invoice schedule, amendments, cancellation and Create
+// Contract from a sales order. Each enum array mirrors the DB enum of the
+// same name. Percentages on these forms are percent POINTS (10 = 10%); the
+// services divide by 100 before writing the 0–1 fraction the columns hold.
+
+type Enums = Database["public"]["Enums"];
+
+export const customerContractStatuses = [
+  "Draft",
+  "Active",
+  "Ended"
+] as const satisfies readonly Enums["customerContractStatus"][];
+
+export const customerContractTypes = [
+  "New Sales",
+  "Existing",
+  "Expansion",
+  "Reactivation",
+  "Contraction"
+] as const satisfies readonly Enums["customerContractType"][];
+
+export const customerContractLineKinds = [
+  "One-time",
+  "Recurring"
+] as const satisfies readonly Enums["customerContractLineKind"][];
+
+export const contractRateUnits = [
+  "Day",
+  "Week",
+  "Month",
+  "Quarter",
+  "Year"
+] as const satisfies readonly Enums["contractRateUnit"][];
+
+export const contractBillingFrequencies = [
+  "Week",
+  "Month",
+  "Quarter",
+  "Year"
+] as const satisfies readonly Enums["contractBillingFrequency"][];
+
+export const contractBillingAlignments = [
+  "Anniversary",
+  "Calendar"
+] as const satisfies readonly Enums["contractBillingAlignment"][];
+
+export const contractBillingTimings = [
+  "Advance",
+  "Arrears"
+] as const satisfies readonly Enums["contractBillingTiming"][];
+
+export const contractRenewals = [
+  "Renew",
+  "End"
+] as const satisfies readonly Enums["contractRenewal"][];
+
+export const contractRevenueMethods = [
+  "Daily",
+  "Even Period"
+] as const satisfies readonly Enums["contractRevenueMethod"][];
+
+export const contractAmendmentEffects = [
+  "Change Date",
+  "Next Period"
+] as const satisfies readonly Enums["contractAmendmentEffect"][];
+
+export const contractInvoiceStatuses = [
+  "Planned",
+  "Invoiced",
+  "Billed Externally"
+] as const satisfies readonly Enums["contractInvoiceStatus"][];
+
+/** The term a contract is signed for: a number of months, open-ended (no end
+ *  date, bills until cancelled) or a custom end date. */
+export const contractDurations = [
+  "6",
+  "12",
+  "24",
+  "36",
+  "open",
+  "custom"
+] as const;
+
+export type ContractDuration = (typeof contractDurations)[number];
+
+/**
+ * The end date and term a duration gives. N months ends the day before the
+ * same date N months on (`@internationalized/date` clamps to month end), so a
+ * 12-month contract starting 1 Nov 2026 ends 31 Oct 2027.
+ */
+export function contractEndDate(
+  startDate: string,
+  duration: ContractDuration,
+  endDate?: string | null
+): { endDate: string | null; termMonths: number | null } {
+  if (duration === "open") return { endDate: null, termMonths: null };
+  if (duration === "custom")
+    return { endDate: endDate || null, termMonths: null };
+  const termMonths = Number(duration);
+  return {
+    endDate: parseDate(startDate)
+      .add({ months: termMonths })
+      .subtract({ days: 1 })
+      .toString(),
+    termMonths
+  };
+}
+
+/** `date` falls on or after `floor` shifted by `days`. An empty `date` passes
+ *  (`zfd.text` has already turned an empty submission into undefined); a
+ *  malformed one fails the check instead of throwing out of the refine. */
+function isOnOrAfter(
+  date: string | null | undefined,
+  floor: string,
+  days = 0
+): boolean {
+  if (!date) return true;
+  try {
+    return parseDate(date).compare(parseDate(floor).add({ days })) >= 0;
+  } catch {
+    return false;
+  }
+}
+
+/** A JSON-encoded form field (the same encoding as `selectedLines`), parsed
+ *  then checked against `schema`. */
+function jsonField<T extends z.ZodType>(schema: T, message: string) {
+  return z
+    .string()
+    .transform((value, ctx) => {
+      try {
+        return JSON.parse(value) as unknown;
+      } catch {
+        ctx.addIssue({ code: "custom", message });
+        return z.NEVER;
+      }
+    })
+    .pipe(schema);
+}
+
+export const customerContractValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerContractId: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    /** Omitted on create: suggested from the customer's previous contracts. */
+    contractType: zfd.text(z.enum(customerContractTypes).optional()),
+    customerId: z.string().min(1, { message: "Customer is required" }),
+    invoiceCustomerId: zfd.text(z.string().optional()),
+    invoiceCustomerContactId: zfd.text(z.string().optional()),
+    invoiceCustomerLocationId: zfd.text(z.string().optional()),
+    salesPersonId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    customerReference: zfd.text(z.string().optional()),
+    closeDate: z.string().min(1, { message: "Close date is required" }),
+    startDate: z.string().min(1, { message: "Start date is required" }),
+    duration: z.enum(contractDurations, { error: "Duration is required" }),
+    /** Required when `duration` is `custom`; otherwise derived. */
+    endDate: zfd.text(z.string().optional()),
+    renewal: z.enum(contractRenewals, { error: "Renewal is required" }),
+    /** Percent points: 3 = prices rise 3% at each renewal. */
+    renewalUplift: zfd.numeric(
+      z.number().min(0, { message: "Renewal uplift cannot be negative" })
+    ),
+    billingFrequency: z.enum(contractBillingFrequencies, {
+      error: "Billing frequency is required"
+    }),
+    billingAlignment: z.enum(contractBillingAlignments, {
+      error: "Billing alignment is required"
+    }),
+    billingTiming: z.enum(contractBillingTimings, {
+      error: "Billing timing is required"
+    }),
+    firstInvoiceDate: zfd.text(z.string().optional()),
+    billedThrough: zfd.text(z.string().optional()),
+    recognizeRevenueFrom: zfd.text(z.string().optional()),
+    /** Empty means the company's default. */
+    invoiceAutomation: zfd.text(z.enum(invoiceAutomations).optional()),
+    paymentTermId: zfd.text(z.string().optional()),
+    currencyCode: z.string().min(1, { message: "Currency is required" }),
+    exchangeRate: zfd.numeric(z.number().optional()),
+    notes: optionalTiptapDoc
+  })
+  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
+    message: "End date is required",
+    path: ["endDate"]
+  })
+  .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
+    message: "End date cannot be before the start date",
+    path: ["endDate"]
+  })
+  .refine((data) => isOnOrAfter(data.billedThrough, data.startDate, -1), {
+    message: "Billed through cannot be before the start date",
+    path: ["billedThrough"]
+  });
+
+/** A percent-points field (0–100). */
+function percentPoints(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .max(100, { message: `${label} cannot exceed 100%` })
+  );
+}
+
+/** The fields of one contract line, shared by the line form and an
+ *  amendment's added line. */
+const contractLineFields = {
+  kind: z.enum(customerContractLineKinds, { error: "Kind is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  description: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than 0" })
+  ),
+  rate: zfd.numeric(z.number().min(0, { message: "Rate cannot be negative" })),
+  /** Required for a Recurring line, absent for a One-time one. */
+  rateUnit: zfd.text(z.enum(contractRateUnits).optional()),
+  discountPercent: percentPoints("Discount"),
+  discountEndsOn: zfd.text(z.string().optional()),
+  taxPercent: percentPoints("Tax"),
+  startDate: z.string().min(1, { message: "Start date is required" }),
+  endDate: zfd.text(z.string().optional()),
+  goLiveDate: zfd.text(z.string().optional()),
+  revenueMethod: z.enum(contractRevenueMethods, {
+    error: "Revenue method is required"
+  }),
+  revenueStartDate: zfd.text(z.string().optional()),
+  revenueEndDate: zfd.text(z.string().optional()),
+  projectId: zfd.text(z.string().optional())
+};
+
+function checkContractLine(
+  line: {
+    kind: (typeof customerContractLineKinds)[number];
+    rateUnit?: string;
+    startDate: string;
+    endDate?: string;
+    discountEndsOn?: string;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (line.kind === "Recurring" && !line.rateUnit) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Rate unit is required for a recurring line",
+      path: ["rateUnit"]
+    });
+  }
+  if (line.kind === "One-time" && line.rateUnit) {
+    ctx.addIssue({
+      code: "custom",
+      message: "A one-time line has no rate unit",
+      path: ["rateUnit"]
+    });
+  }
+  if (!isOnOrAfter(line.endDate, line.startDate)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "End date cannot be before the start date",
+      path: ["endDate"]
+    });
+  }
+  // Within [startDate, endDate): an end date the day after the discount ends.
+  if (line.discountEndsOn) {
+    const withinLine =
+      isOnOrAfter(line.discountEndsOn, line.startDate) &&
+      isOnOrAfter(line.endDate, line.discountEndsOn, 1);
+    if (!withinLine) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "The discount must end on or after the start date and before the end date",
+        path: ["discountEndsOn"]
+      });
+    }
+  }
+}
+
+export const customerContractLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerContractId: z.string().min(1, { message: "Contract is required" }),
+    ...contractLineFields
+  })
+  .superRefine(checkContractLine);
+
+/** One edit to a Draft contract's invoice schedule. The first edit
+ *  materializes the computed schedule; `reset` throws the edits away. */
+export const customerContractScheduleEditValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("move"),
+      customerContractInvoiceId: z.string().min(1),
+      invoiceDate: z.string().min(1, { message: "Invoice date is required" })
+    }),
+    z.object({
+      intent: z.literal("split"),
+      customerContractInvoiceLineId: z.string().min(1),
+      installments: jsonField(
+        z
+          .array(
+            z.object({
+              invoiceDate: z
+                .string()
+                .min(1, { message: "Invoice date is required" }),
+              amount: z.number()
+            })
+          )
+          .min(2, { message: "Split into at least two installments" }),
+        "Invalid installments"
+      )
+    }),
+    z.object({
+      intent: z.literal("merge"),
+      sourceInvoiceId: z.string().min(1),
+      targetInvoiceId: z
+        .string()
+        .min(1, { message: "Choose the invoice to merge into" })
+    }),
+    z.object({
+      intent: z.literal("moveLine"),
+      customerContractInvoiceLineId: z.string().min(1),
+      invoiceDate: z.string().min(1, { message: "Invoice date is required" })
+    }),
+    z.object({ intent: z.literal("reset") })
+  ]
+);
+
+/** What an amendment does to the lines: change one in place (from the
+ *  amendment date), add one, or end one. Percentages in percent points. */
+export const contractAmendmentChangeValidator = z.discriminatedUnion("op", [
+  z.object({
+    op: z.literal("change"),
+    lineId: z.string().min(1),
+    quantity: z.number().positive().optional(),
+    rate: z.number().min(0).optional(),
+    rateUnit: z.enum(contractRateUnits).optional(),
+    discountPercent: z.number().min(0).max(100).optional(),
+    taxPercent: z.number().min(0).max(100).optional(),
+    description: z.string().optional(),
+    revenueMethod: z.enum(contractRevenueMethods).optional(),
+    projectId: z.string().optional()
+  }),
+  z.object({
+    op: z.literal("add"),
+    line: z.object(contractLineFields).superRefine(checkContractLine)
+  }),
+  z.object({ op: z.literal("end"), lineId: z.string().min(1) })
+]);
+
+export const customerContractAmendmentValidator = z.object({
+  customerContractId: z.string().min(1, { message: "Contract is required" }),
+  amendmentDate: z.string().min(1, { message: "Amendment date is required" }),
+  effect: z.enum(contractAmendmentEffects, { error: "Effect is required" }),
+  contractType: z.enum(customerContractTypes, {
+    error: "Contract type is required"
+  }),
+  reason: z.string().trim().min(1, { message: "A reason is required" }),
+  changes: jsonField(
+    z
+      .array(contractAmendmentChangeValidator)
+      .min(1, { message: "Change at least one line" }),
+    "Invalid changes"
+  )
+});
+
+export const customerContractCancelValidator = z.object({
+  customerContractId: z.string().min(1, { message: "Contract is required" }),
+  endDate: z.string().min(1, { message: "End date is required" }),
+  reason: z.string().trim().min(1, { message: "A reason is required" }),
+  creditUnusedTime: zfd.checkbox()
+});
+
+export const createContractFromSalesOrderValidator = z
+  .object({
+    salesOrderId: z.string().min(1, { message: "Sales order is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    startDate: z.string().min(1, { message: "Start date is required" }),
+    duration: z.enum(contractDurations, { error: "Duration is required" }),
+    endDate: zfd.text(z.string().optional()),
+    billingFrequency: z.enum(contractBillingFrequencies, {
+      error: "Billing frequency is required"
+    }),
+    billingAlignment: z.enum(contractBillingAlignments, {
+      error: "Billing alignment is required"
+    }),
+    billingTiming: z.enum(contractBillingTimings, {
+      error: "Billing timing is required"
+    }),
+    lines: jsonField(
+      z
+        .array(
+          z
+            .object({
+              salesOrderLineId: z.string().min(1),
+              kind: z.enum(customerContractLineKinds),
+              rateUnit: z.enum(contractRateUnits).optional()
+            })
+            .refine((line) => (line.kind === "Recurring") === !!line.rateUnit, {
+              message:
+                "A recurring line needs a rate unit; a one-time line has none",
+              path: ["rateUnit"]
+            })
+        )
+        .min(1, { message: "Choose at least one line" }),
+      "Invalid lines"
+    )
+  })
+  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
+    message: "End date is required",
+    path: ["endDate"]
+  })
+  .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
+    message: "End date cannot be before the start date",
+    path: ["endDate"]
+  });
+
+export const customerContractInvoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations).nullable()
+});

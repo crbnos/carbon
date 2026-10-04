@@ -14397,6 +14397,9 @@ msgstr "Post"
 msgid "Post and email"
 msgstr "Post and email"
 
+msgid "Post and send via Stripe"
+msgstr "Post and send via Stripe"
+
 msgid "Post Comment"
 msgstr "Post Comment"
 

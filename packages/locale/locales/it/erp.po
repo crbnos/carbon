@@ -14397,6 +14397,9 @@ msgstr "Registra"
 msgid "Post and email"
 msgstr "Registra e invia un'email"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "Pubblica Commento"
 

@@ -1205,7 +1205,7 @@
     {"name":"sales_getConfigurationParametersByQuoteLineId","classification":"READ","paramCount":1,"schema":"e0050938a2c8","response":"c36ad21b447b","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContract","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"ce32ad1fd6d6","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractAmendments","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"3108fd021f6e","injectAuth":"companyId","permission":"sales:view","paginates":false},
-    {"name":"sales_getContractInvoiceSchedule","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"4e49c6eae1fb","injectAuth":"companyId","permission":"sales:view","paginates":false},
+    {"name":"sales_getContractInvoiceSchedule","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"194d22065482","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLine","classification":"READ","paramCount":1,"schema":"3d08011d330a","response":"e80e56c00cc2","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContractLines","classification":"READ","paramCount":1,"schema":"a18bd6ac2fe5","response":"a64e4849e2f3","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getContracts","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"76356cf10403","injectAuth":"companyId","permission":"sales:view","paginates":true,"defaults":"always"},

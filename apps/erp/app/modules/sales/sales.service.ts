@@ -54,6 +54,9 @@ import type {
   customerAccountingValidator,
   customerBankAccountValidator,
   customerContactValidator,
+  customerContractInvoiceAutomationValidator,
+  customerContractLineValidator,
+  customerContractValidator,
   customerItemRentalRateValidator,
   customerPaymentValidator,
   customerShippingValidator,
@@ -92,6 +95,7 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import {
+  contractEndDate,
   costCategoryKeys,
   isQuoteLocked,
   OPEN_SALES_ORDER_STATUSES
@@ -9445,4 +9449,532 @@ export async function getRentalAgreementDeposits(
     )
     .eq("rentalAgreementId", rentalAgreementId)
     .order("paymentDate", { ascending: true });
+}
+
+// ----------------------------------------------------------------------
+// Customer contracts (.ai/specs/2026-10-02-contracts.md). Confirm, schedule
+// edits, amend, cancel and revert go through the `post-customer-contract`
+// server function; invoices are drafted by `create-contract-invoices`. These
+// are the plain reads and the Draft-stage writes. They are MCP tools, so they
+// carry their own guards and build every row from an explicit field picker.
+// ----------------------------------------------------------------------
+
+/**
+ * Lists contracts with their customer, value invoiced to date and next invoice date.
+ * @mcp read
+ */
+export async function getContracts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("customerContracts")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `customerContractId.ilike.%${args.search}%,name.ilike.%${args.search}%,customerName.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+
+  return query;
+}
+
+/**
+ * Gets one contract with its customer, value invoiced to date and next invoice date.
+ * @mcp read
+ */
+export async function getContract(
+  client: SupabaseClient<Database>,
+  customerContractId: string
+) {
+  return client
+    .from("customerContracts")
+    .select("*")
+    .eq("id", customerContractId)
+    .single();
+}
+
+/**
+ * Lists a contract's lines with their service items.
+ * @mcp read
+ */
+export async function getContractLines(
+  client: SupabaseClient<Database>,
+  customerContractId: string
+) {
+  return client
+    .from("customerContractLine")
+    .select("*, item(name, readableIdWithRevision, type)")
+    .eq("customerContractId", customerContractId)
+    .order("sortOrder", { ascending: true, nullsFirst: false })
+    .order("startDate", { ascending: true });
+}
+
+/**
+ * Gets one contract line with its service item.
+ * @mcp read
+ */
+export async function getContractLine(
+  client: SupabaseClient<Database>,
+  customerContractLineId: string
+) {
+  return client
+    .from("customerContractLine")
+    .select("*, item(name, readableIdWithRevision, type)")
+    .eq("id", customerContractLineId)
+    .single();
+}
+
+/**
+ * Gets a contract's persisted invoice schedule: planned invoices with their lines, and the cancellation credits that sit on a memo instead of an invoice.
+ * An unedited Draft has none — its schedule is computed from the lines.
+ * @mcp read
+ */
+export async function getContractInvoiceSchedule(
+  client: SupabaseClient<Database>,
+  customerContractId: string
+) {
+  const [invoices, credits] = await Promise.all([
+    client
+      .from("customerContractInvoice")
+      .select("*, customerContractInvoiceLine(*)")
+      .eq("customerContractId", customerContractId)
+      .order("invoiceDate", { ascending: true })
+      .order("periodStart", {
+        ascending: true,
+        referencedTable: "customerContractInvoiceLine"
+      }),
+    client
+      .from("customerContractInvoiceLine")
+      .select("*")
+      .eq("customerContractId", customerContractId)
+      .is("customerContractInvoiceId", null)
+      .order("periodStart", { ascending: true })
+  ]);
+
+  if (invoices.error) return { data: null, error: invoices.error };
+  if (credits.error) return { data: null, error: credits.error };
+  return {
+    data: { invoices: invoices.data, credits: credits.data },
+    error: null
+  };
+}
+
+/**
+ * Lists a contract's amendments, oldest first, with the lines each one added or replaced.
+ * @mcp read
+ */
+export async function getContractAmendments(
+  client: SupabaseClient<Database>,
+  customerContractId: string
+) {
+  return client
+    .from("customerContractAmendment")
+    .select(
+      "*, customerContractLine(id, kind, itemId, description, quantity, rate, rateUnit, startDate, endDate, amendsLineId)"
+    )
+    .eq("customerContractId", customerContractId)
+    .order("amendmentDate", { ascending: true })
+    .order("createdAt", { ascending: true });
+}
+
+/**
+ * Lists the statuses of a customer's contracts, from which a new contract's type is suggested.
+ * @mcp read
+ */
+export async function getCustomerContractStatuses(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string
+) {
+  return client
+    .from("customerContract")
+    .select("status")
+    .eq("companyId", companyId)
+    .eq("customerId", customerId);
+}
+
+/** A refusal shaped like a PostgREST error, so every caller's existing
+ *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
+function contractRefusal(code: string, message: string) {
+  return {
+    data: null,
+    error: { message, details: "", hint: "", code } as PostgrestError
+  };
+}
+
+/** Percent points (10) to the 0–1 fraction the columns hold, at internal
+ *  scale so 14.3 does not store as 0.14300000000000002. */
+function percentToFraction(points: number) {
+  return round(points / 100);
+}
+
+/** The terms a caller may write — never `status`, the confirm / cancel / end
+ *  stamps or `salesOrderId`, which the lifecycle owns. Picked rather than
+ *  spread, since MCP inputs reach these writers unfiltered. `endDate` and
+ *  `termMonths` come from the duration. */
+function customerContractTerms(
+  terms: Omit<
+    z.infer<typeof customerContractValidator>,
+    "id" | "customerContractId"
+  >
+) {
+  const { endDate, termMonths } = contractEndDate(
+    terms.startDate,
+    terms.duration,
+    terms.endDate
+  );
+  return {
+    name: terms.name,
+    // NOT NULL with a default: an omitted type leaves the column alone
+    // rather than writing the null `sanitize` turns undefined into.
+    ...(terms.contractType ? { contractType: terms.contractType } : {}),
+    customerId: terms.customerId,
+    invoiceCustomerId: terms.invoiceCustomerId,
+    invoiceCustomerContactId: terms.invoiceCustomerContactId,
+    invoiceCustomerLocationId: terms.invoiceCustomerLocationId,
+    salesPersonId: terms.salesPersonId,
+    projectId: terms.projectId,
+    customerReference: terms.customerReference,
+    closeDate: terms.closeDate,
+    startDate: terms.startDate,
+    endDate,
+    termMonths,
+    renewal: terms.renewal,
+    renewalUplift: percentToFraction(terms.renewalUplift),
+    billingFrequency: terms.billingFrequency,
+    billingAlignment: terms.billingAlignment,
+    billingTiming: terms.billingTiming,
+    // A cleared DatePicker posts "", which a DATE column rejects.
+    firstInvoiceDate: terms.firstInvoiceDate || null,
+    billedThrough: terms.billedThrough || null,
+    recognizeRevenueFrom: terms.recognizeRevenueFrom || null,
+    // Empty is the company default.
+    invoiceAutomation: terms.invoiceAutomation || null,
+    paymentTermId: terms.paymentTermId,
+    currencyCode: terms.currencyCode,
+    // NOT NULL DEFAULT 1 and not on the form: only a caller that sends a rate
+    // writes one.
+    ...(terms.exchangeRate !== undefined
+      ? { exchangeRate: terms.exchangeRate }
+      : {}),
+    notes: terms.notes
+  };
+}
+
+/**
+ * Creates a Draft contract; its end date and term come from the duration.
+ * `customerContractId` (the readable CON number) comes from the caller — the
+ * route draws it from the sequence.
+ * @mcp create
+ */
+export async function insertContract(
+  client: SupabaseClient<Database>,
+  contract: Omit<z.infer<typeof customerContractValidator>, "id"> & {
+    customerContractId: string;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("customerContract")
+    .insert([
+      {
+        ...sanitize(customerContractTerms(contract)),
+        customerContractId: contract.customerContractId,
+        companyId: contract.companyId,
+        createdBy: contract.createdBy,
+        customFields: contract.customFields
+      }
+    ])
+    .select("id, customerContractId")
+    .single();
+}
+
+/**
+ * Updates a Draft contract's terms; an Active contract is changed with Amend.
+ * @mcp update
+ */
+export async function updateContract(
+  client: SupabaseClient<Database>,
+  contract: Omit<
+    z.infer<typeof customerContractValidator>,
+    "id" | "customerContractId"
+  > & {
+    id: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const current = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", contract.id)
+    .single();
+  if (current.error) return current;
+  if (current.data.status !== "Draft") {
+    return contractRefusal(
+      "CONTRACT_NOT_DRAFT",
+      "Only a Draft contract can be edited — use Amend"
+    );
+  }
+
+  return client
+    .from("customerContract")
+    .update(
+      sanitize({
+        ...customerContractTerms(contract),
+        customFields: contract.customFields,
+        updatedBy: contract.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+    )
+    .eq("id", contract.id)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+/**
+ * Sets a contract's type (New Sales, Expansion, …) in any status — a reporting classification, not a term.
+ * @mcp update
+ */
+export async function updateContractType(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    contractType: Database["public"]["Enums"]["customerContractType"];
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("customerContract")
+    .update({
+      contractType: args.contractType,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Sets how the daily run handles one contract's invoices, in any status; null falls back to the company's setting.
+ * Sending needs an email to send to, so `Post and Email` is refused when the
+ * invoice contact has none. `Post and Send via Stripe` is accepted here;
+ * Confirm and the job check the customer's Stripe link.
+ * @mcp update
+ */
+export async function updateContractInvoiceAutomation(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    invoiceAutomation: z.infer<
+      typeof customerContractInvoiceAutomationValidator
+    >["invoiceAutomation"];
+    updatedBy: string;
+  }
+) {
+  if (args.invoiceAutomation === "Post and Email") {
+    const current = await client
+      .from("customerContract")
+      .select("invoiceCustomerContactId")
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .single();
+    if (current.error) return current;
+
+    const contact = current.data.invoiceCustomerContactId
+      ? await client
+          .from("customerContact")
+          .select("contact(email)")
+          .eq("id", current.data.invoiceCustomerContactId)
+          .eq("companyId", args.companyId)
+          .maybeSingle()
+      : null;
+    if (contact?.error) return contact;
+    if (!contact?.data?.contact?.email) {
+      return contractRefusal(
+        "CONTRACT_INVOICE_EMAIL_NO_CONTACT",
+        "Add an invoice contact with an email to send invoices"
+      );
+    }
+  }
+
+  return client
+    .from("customerContract")
+    .update({
+      invoiceAutomation: args.invoiceAutomation,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+/** Only a Draft contract can be deleted. Not an MCP tool: the route uses
+ *  `deleteContractReleasingSalesOrderLines` (`sales.server.ts`), which also
+ *  releases the sales-order lines the contract took. */
+export async function deleteContract(
+  client: SupabaseClient<Database>,
+  customerContractId: string
+) {
+  return client
+    .from("customerContract")
+    .delete()
+    .eq("id", customerContractId)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
+}
+
+/**
+ * Adds or changes a line on a Draft contract; the item must be a Service item.
+ * Lines on an Active contract change through Amend, and a line never moves
+ * between contracts.
+ * @mcp upsert
+ */
+export async function upsertContractLine(
+  client: SupabaseClient<Database>,
+  line:
+    | (Omit<z.infer<typeof customerContractLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof customerContractLineValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  let companyId: string;
+  if ("id" in line) {
+    const existing = await client
+      .from("customerContractLine")
+      .select("companyId, customerContractId")
+      .eq("id", line.id)
+      .single();
+    if (existing.error) return existing;
+    if (existing.data.customerContractId !== line.customerContractId) {
+      return contractRefusal(
+        "CONTRACT_LINE_WRONG_CONTRACT",
+        "This line does not belong to this contract"
+      );
+    }
+    companyId = existing.data.companyId;
+  } else {
+    companyId = line.companyId;
+  }
+
+  const contract = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", line.customerContractId)
+    .eq("companyId", companyId)
+    .single();
+  if (contract.error) return contract;
+  if (contract.data.status !== "Draft") {
+    return contractRefusal(
+      "CONTRACT_NOT_DRAFT",
+      "Lines can only be added or changed on a Draft contract — use Amend"
+    );
+  }
+
+  const item = await client
+    .from("item")
+    .select("type")
+    .eq("id", line.itemId)
+    .eq("companyId", companyId)
+    .single();
+  if (item.error) return item;
+  if (item.data.type !== "Service") {
+    return contractRefusal(
+      "CONTRACT_LINE_NOT_SERVICE",
+      "A contract line must be a Service item"
+    );
+  }
+
+  // Picked, not spread: amendment and sales-order provenance and the sort
+  // order belong to the server functions.
+  const values = {
+    customerContractId: line.customerContractId,
+    kind: line.kind,
+    itemId: line.itemId,
+    description: line.description ?? null,
+    quantity: line.quantity,
+    rate: line.rate,
+    rateUnit: line.kind === "Recurring" ? (line.rateUnit ?? null) : null,
+    discountPercent: percentToFraction(line.discountPercent),
+    discountEndsOn: line.discountEndsOn || null,
+    taxPercent: percentToFraction(line.taxPercent),
+    startDate: line.startDate,
+    endDate: line.endDate || null,
+    goLiveDate: line.goLiveDate || null,
+    revenueMethod: line.revenueMethod,
+    revenueStartDate: line.revenueStartDate || null,
+    revenueEndDate: line.revenueEndDate || null,
+    projectId: line.projectId || null
+  };
+
+  if ("id" in line) {
+    return client
+      .from("customerContractLine")
+      .update({
+        ...values,
+        updatedBy: line.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", line.id)
+      .eq("companyId", companyId)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("customerContractLine")
+    .insert([{ ...values, companyId, createdBy: line.createdBy }])
+    .select("id")
+    .single();
+}
+
+/**
+ * Removes a line from a Draft contract.
+ * @mcp delete
+ */
+export async function deleteContractLine(
+  client: SupabaseClient<Database>,
+  customerContractLineId: string
+) {
+  const line = await client
+    .from("customerContractLine")
+    .select("id, customerContract!inner(status)")
+    .eq("id", customerContractLineId)
+    .single();
+  if (line.error) return line;
+  if (line.data.customerContract.status !== "Draft") {
+    return contractRefusal(
+      "CONTRACT_NOT_DRAFT",
+      "Lines can only be removed from a Draft contract — use Amend"
+    );
+  }
+
+  return client
+    .from("customerContractLine")
+    .delete()
+    .eq("id", customerContractLineId);
 }

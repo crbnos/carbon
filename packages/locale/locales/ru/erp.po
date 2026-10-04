@@ -14397,6 +14397,9 @@ msgstr "Опубликовать"
 msgid "Post and email"
 msgstr "Провести и отправить по электронной почте"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "Опубликовать комментарий"
 

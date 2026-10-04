@@ -14397,6 +14397,9 @@ msgstr "Publicar"
 msgid "Post and email"
 msgstr "Contabilizar e enviar por email"
 
+msgid "Post and send via Stripe"
+msgstr ""
+
 msgid "Post Comment"
 msgstr "Postar Comentário"
 
