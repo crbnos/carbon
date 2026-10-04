@@ -29,7 +29,10 @@ export function useAccounts(classes?: AccountClass[]): AccountData[] {
   const { queryKey } = accountsQuery(companyId);
 
   const [accounts, setAccounts] = useState<AccountData[]>(() => {
-    return getClientCache()?.getQueryData<AccountData[]>(queryKey) ?? [];
+    const cache = getClientCache();
+    // An invalidated entry is refetched below rather than reused.
+    if (cache?.getQueryState(queryKey)?.isInvalidated) return [];
+    return cache?.getQueryData<AccountData[]>(queryKey) ?? [];
   });
 
   useMount(() => {

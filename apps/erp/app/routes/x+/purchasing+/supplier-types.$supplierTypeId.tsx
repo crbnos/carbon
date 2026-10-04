@@ -8,11 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
   getSupplierType,
@@ -22,7 +18,6 @@ import {
 import { SupplierTypeForm } from "~/modules/purchasing/ui/SupplierTypes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, supplierTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -54,14 +49,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     supplierType: supplierType.data
   };
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    supplierTypesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export async function action({ request }: ActionFunctionArgs) {

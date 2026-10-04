@@ -19,11 +19,7 @@ import {
 import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   useFetcher,
   useLoaderData,
@@ -37,7 +33,6 @@ import {
   getStorageUnit
 } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -112,19 +107,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     )
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  // Nothing to validate — ConfirmDelete-style forms only carry the cascade
-  // flag. Invalidate the cached list so the table refreshes after.
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "storageUnits" && queryKey[1] === companyId;
-    }
-  });
-  return await serverAction();
 }
 
 export default function DeleteStorageUnitRoute() {

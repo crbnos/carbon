@@ -8,17 +8,13 @@ import { flash } from "@carbon/auth/session.server";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
 import { deleteSupplierProcess } from "~/modules/purchasing";
 import { path } from "~/utils/path";
-import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -43,20 +39,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(path.to.supplierProcesses(supplierId));
-}
-
-export async function clientAction({
-  request,
-  serverAction
-}: ClientActionFunctionArgs) {
-  const processId = new URL(request.url).searchParams.get("processId");
-  if (processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(processId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }
 
 export default function DeleteSupplierProcessRoute() {
