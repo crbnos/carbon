@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { RealtimeTable } from "@carbon/database/realtime-tables";
+import type {
+  RealtimeTable,
+  RouteRealtimeTable
+} from "@carbon/database/realtime-tables";
 import {
   useCallback,
   useEffect,
@@ -12,7 +15,7 @@ import {
 } from "react";
 import { useFetchers, useMatches, useRevalidator } from "react-router";
 import { getClientCache, LOADER } from "./cache";
-import { matchesIdFilter } from "./realtimeFilter";
+import { matchesFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
 
 /** What `broadcast_table_changes` sends: no row data, only which rows changed. */
@@ -21,6 +24,11 @@ export type BroadcastChange = {
   op: "INSERT" | "UPDATE" | "DELETE";
   /** Null when more than 100 rows changed, or the table has no `id`: resync. */
   ids: string[] | null;
+  /**
+   * The records the rows belong to: each `<name>Id` column and its values.
+   * Null with `ids`; a column with more than 20 values is left out.
+   */
+  parents?: Record<string, string[]> | null;
 };
 
 const DEFAULT_DEBOUNCE_MS = 300;
@@ -197,7 +205,10 @@ export function useRealtimeTable({
 }: {
   companyId: string;
   table: RealtimeTable;
-  /** `id=eq.<id>` or `id=in.(<ids>)`; any other filter is ignored. */
+  /**
+   * `id=eq.<id>`, `id=in.(<ids>)`, or the same on a `<name>Id` column
+   * (`jobId=eq.<id>`). A filter on any other column is ignored.
+   */
   filter?: string;
   debounceMs?: number;
   enabled?: boolean;
@@ -217,7 +228,7 @@ export function useRealtimeTable({
     table,
     enabled,
     onChange: (change) => {
-      if (change && !matchesIdFilter(filter, change.ids)) return;
+      if (change && !matchesFilter(filter, change)) return;
       if (timeout.current) clearTimeout(timeout.current);
       timeout.current = setTimeout(() => {
         invalidateLoaders();
@@ -227,7 +238,11 @@ export function useRealtimeTable({
   });
 }
 
-function TableSubscription(props: { companyId: string; table: RealtimeTable }) {
+function TableSubscription(props: {
+  companyId: string;
+  table: RealtimeTable;
+  filter?: string;
+}) {
   useRealtimeTable(props);
   return null;
 }
@@ -235,6 +250,8 @@ function TableSubscription(props: { companyId: string; table: RealtimeTable }) {
 /**
  * Keeps the matched routes live: each route names the tables it shows in
  * `handle.realtime`, and this subscribes to them for as long as it is matched.
+ * An entry `{ table, column, param }` follows only the rows whose `column` is
+ * the route's `param` (a job page: its own operations, not every job's).
  * It also owns every realtime channel of the page (see "One channel per topic"):
  * nothing is delivered to any listener unless this is mounted.
  * It also follows the company's reference lists, which are read through cached
@@ -242,19 +259,30 @@ function TableSubscription(props: { companyId: string; table: RealtimeTable }) {
  */
 export function RouteRealtime({ companyId }: { companyId: string }) {
   const matches = useMatches();
-  const tables = useMemo(
-    () =>
-      [
-        ...new Set(
-          matches.flatMap(
-            (match) =>
-              (match.handle as { realtime?: RealtimeTable[] } | undefined)
-                ?.realtime ?? []
-          )
-        )
-      ].sort(),
-    [matches]
-  );
+  const tables = useMemo(() => {
+    const followed = new Map<
+      string,
+      { table: RealtimeTable; filter?: string }
+    >();
+    for (const match of matches) {
+      const entries =
+        (match.handle as { realtime?: RouteRealtimeTable[] } | undefined)
+          ?.realtime ?? [];
+      for (const entry of entries) {
+        if (typeof entry === "string") {
+          followed.set(entry, { table: entry });
+          continue;
+        }
+        const value = match.params[entry.param];
+        const filter = value ? `${entry.column}=eq.${value}` : undefined;
+        followed.set(`${entry.table}:${filter ?? ""}`, {
+          table: entry.table,
+          filter
+        });
+      }
+    }
+    return [...followed.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [matches]);
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -274,8 +302,13 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
 
   return (
     <>
-      {tables.map((table) => (
-        <TableSubscription key={table} companyId={companyId} table={table} />
+      {tables.map(([key, { table, filter }]) => (
+        <TableSubscription
+          key={key}
+          companyId={companyId}
+          table={table}
+          filter={filter}
+        />
       ))}
       <TopicChannels />
     </>

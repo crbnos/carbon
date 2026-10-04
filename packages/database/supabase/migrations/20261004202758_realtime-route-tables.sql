@@ -3,6 +3,7 @@
 -- Ships these rules to databases where `authz sync` does not run after migrations yet.
 
 -- event triggers (packages/database/src/event-system/attachments.ts)
+SET lock_timeout = '5s';
 SELECT set_event_triggers('inspectionSample', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('inventoryCountLine', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('nonConformanceItem', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
@@ -14,3 +15,4 @@ SELECT set_event_triggers('salesReturnOrderLine', ARRAY[]::text[], ARRAY[]::text
 SELECT set_event_triggers('stockTransferLine', ARRAY[]::text[], ARRAY['sync_update_stock_transfer_status']::text[], true, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('supplierQuoteLine', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('warehouseTransferLine', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
+RESET lock_timeout;

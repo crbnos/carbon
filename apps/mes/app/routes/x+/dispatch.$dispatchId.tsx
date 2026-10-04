@@ -58,7 +58,9 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  realtime: ["maintenanceDispatch"]
+  realtime: [
+    { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
+  ]
 };
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>

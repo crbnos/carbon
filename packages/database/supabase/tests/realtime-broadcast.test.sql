@@ -64,6 +64,11 @@ BEGIN
   IF EXISTS (SELECT 1 FROM realtime.messages WHERE topic = 'company:' || company_b || ':customer' AND payload->'ids' ? customer_id) THEN
     RAISE EXCEPTION 'FAIL: a write in company A reached company B''s topic';
   END IF;
+  -- The message names the records the row belongs to: every "<name>Id" column
+  -- that holds a value, so a client can filter on one (`quoteLineId=eq.…`).
+  IF message->'parents'->'readableId' <> jsonb_build_array('RT-0') OR message->'parents' ? 'companyId' THEN
+    RAISE EXCEPTION 'FAIL: customer INSERT did not name its "<name>Id" columns: %', message;
+  END IF;
   IF EXISTS (SELECT 1 FROM realtime.messages WHERE topic LIKE 'company:' || company_a || ':%' AND NOT private) THEN
     RAISE EXCEPTION 'FAIL: a broadcast was sent on a public topic';
   END IF;
@@ -95,9 +100,10 @@ BEGIN
   SELECT 'Bulk ' || n, CASE WHEN n <= 150 THEN company_a ELSE company_b END, 'RT-' || n
   FROM generate_series(1, 152) n;
   SELECT count(*) INTO sent FROM realtime.messages
-  WHERE topic = 'company:' || company_a || ':customer' AND payload->>'op' = 'INSERT' AND payload->'ids' = 'null'::jsonb;
+  WHERE topic = 'company:' || company_a || ':customer' AND payload->>'op' = 'INSERT' AND payload->'ids' = 'null'::jsonb
+    AND payload->'parents' = 'null'::jsonb;
   IF sent <> 1 THEN
-    RAISE EXCEPTION 'FAIL: a 150-row INSERT did not send exactly one "resync" message';
+    RAISE EXCEPTION 'FAIL: a 150-row INSERT did not send exactly one "resync" message without ids or parents';
   END IF;
   SELECT count(*) INTO sent FROM realtime.messages
   WHERE topic = 'company:' || company_b || ':customer' AND jsonb_array_length(payload->'ids') = 2;
@@ -267,4 +273,29 @@ $$;
 RESET ROLE;
 
 \echo realtime-broadcast: all checks passed
+-- set_event_triggers leaves a table alone when its triggers are already as
+-- declared (a migration restates every table; re-creating a trigger locks it),
+-- and still applies a changed declaration.
+DO $$
+DECLARE
+  before_oids oid[];
+  after_oids oid[];
+BEGIN
+  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
+  SELECT array_agg(oid ORDER BY oid) INTO before_oids FROM pg_trigger
+  WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_%';
+  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY['broadcast_table_changes']::text[]);
+  SELECT array_agg(oid ORDER BY oid) INTO after_oids FROM pg_trigger
+  WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_%';
+  IF before_oids IS DISTINCT FROM after_oids THEN
+    RAISE EXCEPTION 'FAIL: set_event_triggers re-created triggers that were already as declared';
+  END IF;
+
+  PERFORM set_event_triggers('customer', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY[]::text[]);
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid = '"customer"'::regclass AND tgname LIKE 'trg\_event\_statement\_%') THEN
+    RAISE EXCEPTION 'FAIL: set_event_triggers did not apply a changed declaration';
+  END IF;
+END;
+$$;
+
 ROLLBACK;

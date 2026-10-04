@@ -9,6 +9,12 @@ DECLARE
   changed_rows TEXT;
   rec RECORD;
 BEGIN
+  -- A database without Supabase Realtime (a self-hosted install that does not
+  -- run it) has nothing to send to: the write must still succeed.
+  IF to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NULL THEN
+    RETURN NULL;
+  END IF;
+
   -- Tells the company's clients that a reference list changed (one shared topic, company:<companyId>:reference).
   -- Statement-level (attach_statement_handler): one message per company per
   -- statement, whatever the row count. No row data leaves the database: a client

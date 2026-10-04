@@ -66,8 +66,8 @@ const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
   realtime: [
-    "purchaseOrder",
-    "purchaseOrderLine",
+    { table: "purchaseOrder", column: "id", param: "orderId" },
+    { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },
     "receipt",
     "purchaseInvoice"
   ],

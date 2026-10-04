@@ -17,7 +17,7 @@ Conformance checking, clobber detection, invariant queries, and module structure
 
 ## Never
 
-- Ignore clobber warnings — they indicate a view/function/trigger is redefined on both your branch and main since the merge-base; rebase first
+- Ignore clobber warnings — they indicate a view or function is redefined on both your branch and main since the merge-base; rebase first
 - Suppress violations by removing checks — add to the baseline if grandfathering is appropriate
 
 ## Validation Commands

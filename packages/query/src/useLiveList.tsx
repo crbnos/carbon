@@ -157,6 +157,21 @@ export function LiveLists({
   // where the change log is asked to start next time.
   const cursors = useRef(new Map<string, Cursor | null>());
   const ready = Boolean(carbon && accessToken);
+  // One update of a list at a time. A full fetch and a broadcast's re-read
+  // overlap otherwise, and the fetch (the older read) lands last and undoes it.
+  const queues = useRef(new Map<string, Promise<unknown>>());
+  const inTurn = useCallback(
+    <T,>(list: AnyLiveList, update: () => Promise<T>): Promise<T> => {
+      const key = storageKey(companyId, list.name);
+      const turn = (queues.current.get(key) ?? Promise.resolve()).then(
+        update,
+        update
+      );
+      queues.current.set(key, turn);
+      return turn;
+    },
+    [companyId]
+  );
 
   const rowsOf = useCallback(
     (list: AnyLiveList) =>
@@ -240,33 +255,35 @@ export function LiveLists({
       const next: Cursor = { xid: log.xid, epoch: log.epoch, at: log.at };
 
       await Promise.all(
-        targets.map(async (list) => {
-          const tables = [
-            list.table,
-            ...(list.related ?? []).map((r) => r.table)
-          ];
-          const plan = planSync(
-            log,
-            tables,
-            cursorOf(list)?.epoch === since?.epoch && since !== null
-          );
-          let changes: ((rows: AnyRow[]) => AnyRow[])[];
-          if (plan === "all") {
-            const all = await list.fetchAll(carbon, companyId);
-            changes = [() => all];
-          } else {
-            changes = await Promise.all(
-              plan.map(([table, ids]) => readIds(list, table, ids))
+        targets.map((list) =>
+          inTurn(list, async () => {
+            const tables = [
+              list.table,
+              ...(list.related ?? []).map((r) => r.table)
+            ];
+            const plan = planSync(
+              log,
+              tables,
+              cursorOf(list)?.epoch === since?.epoch && since !== null
             );
-          }
-          cursors.current.set(storageKey(companyId, list.name), next);
-          await commit(list, (rows) =>
-            changes.reduce((current, change) => change(current), rows)
-          );
-        })
+            let changes: ((rows: AnyRow[]) => AnyRow[])[];
+            if (plan === "all") {
+              const all = await list.fetchAll(carbon, companyId);
+              changes = [() => all];
+            } else {
+              changes = await Promise.all(
+                plan.map(([table, ids]) => readIds(list, table, ids))
+              );
+            }
+            cursors.current.set(storageKey(companyId, list.name), next);
+            await commit(list, (rows) =>
+              changes.reduce((current, change) => change(current), rows)
+            );
+          })
+        )
       );
     },
-    [carbon, companyId, rowsOf, readIds, commit]
+    [carbon, companyId, rowsOf, readIds, commit, inTurn]
   );
 
   // Cold load: IndexedDB first so pickers have options at once, then the log.
@@ -309,14 +326,16 @@ export function LiveLists({
       const { ids } = change;
       // The cursor stays where it was: the log will name these rows again on
       // the next load, and re-reading them is harmless.
-      await commit(
-        list,
-        change.op === "DELETE" && table === list.table
-          ? (rows) => removeRows(rows, ids)
-          : await readIds(list, table, ids)
+      await inTurn(list, async () =>
+        commit(
+          list,
+          change.op === "DELETE" && table === list.table
+            ? (rows) => removeRows(rows, ids)
+            : await readIds(list, table, ids)
+        )
       );
     },
-    [sync, readIds, commit]
+    [sync, readIds, commit, inTurn]
   );
 
   if (!ready) return null;

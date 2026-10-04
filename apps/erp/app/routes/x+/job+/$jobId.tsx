@@ -80,14 +80,14 @@ export const handle: Handle = {
   // Everything the job's pages show: an operation finished on the shop floor,
   // a pick, a step record — all reach this page without a reload.
   realtime: [
-    "job",
-    "jobOperation",
-    "jobMaterial",
-    "jobMakeMethod",
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" },
+    { table: "jobMaterial", column: "jobId", param: "jobId" },
+    { table: "jobMakeMethod", column: "jobId", param: "jobId" },
     "jobOperationStep",
     "jobOperationStepRecord",
     "productionEvent",
-    "pickingListLine",
+    { table: "pickingListLine", column: "jobId", param: "jobId" },
     "modelUpload"
   ]
 };

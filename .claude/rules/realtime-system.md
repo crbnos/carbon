@@ -19,9 +19,24 @@ uses `postgres_changes`: the `supabase_realtime` publication is empty, and the
 ## The message
 
 A statement-level trigger sends ONE message per company per statement:
-`{ table, op, ids }`, with `ids: null` past 100 rows. No row data leaves the
-database — the client re-reads what it needs through PostgREST, so table RLS
-still decides what each user sees.
+`{ table, op, ids, parents }`, with `ids` and `parents` null past 100 rows.
+`parents` holds each `<name>Id` column of the changed rows and its values
+(`{ jobId: ["job_…"] }`), so a page that shows one record can ignore changes
+to another's rows; a column with more than 20 values is left out. Only ids
+leave the database — the client re-reads what it needs through PostgREST, so
+table RLS still decides what each user sees.
+
+A route scopes a table to its own record with
+`{ table: "jobOperation", column: "jobId", param: "jobId" }` in
+`handle.realtime` (`RouteRealtimeTable`; the column is checked against the
+table's row type). A plain table name follows every change in the company:
+right for a list page, wasteful on a detail page. A missing answer always
+means "it may concern me": the filter can cause an extra reload, never a
+missed one — except a row moved to another parent by an UPDATE, which names
+its new parent only.
+
+The broadcast functions return at once when `realtime.send` does not exist, so
+a database without Supabase Realtime still accepts writes.
 
 | Function (`event-system/functions/`) | Topic | For |
 |---|---|---|
@@ -72,7 +87,7 @@ starts during its action) and runs when it finishes.
 
 | For | Use |
 |---|---|
-| A component that is not a route | the app's `useRealtime(table, filter?)`. Only an `id=eq.` / `id=in.()` filter narrows it; any other filter wakes on every change to the table |
+| A component that is not a route | the app's `useRealtime(table, filter?)`. An `id=eq.` / `id=in.()` filter narrows it, and so does the same on a `<name>Id` column (`quoteLineId=eq.…`); a filter on any other column wakes on every change to the table |
 | A component that keeps rows in its own state (a chat, running events) | `useChangedRows({ table, columns, onChange, onResync })` — it re-reads the changed rows and hands them over |
 | Raw access to a topic | `useTableChanges` / `useTopic` |
 
@@ -122,6 +137,9 @@ company) is the only reader, and the backup engine skips the table.
 - **No foreign key to `company`.** Deleting a company cascades to its items,
   whose log trigger inserts a row for a company already gone in that
   transaction; a key would abort the delete. The purge removes those rows.
+- **One update of a list at a time** (`inTurn` in `useLiveList.tsx`): a full
+  fetch and a broadcast's re-read would otherwise overlap, and the older read
+  could land last.
 - **A cursor belongs to one company.** `LiveLists` stays mounted across a
   company switch, so it keys cursors by company as well as list.
 - **A patch is a function of the current rows** (`commit` in `useLiveList.tsx`),

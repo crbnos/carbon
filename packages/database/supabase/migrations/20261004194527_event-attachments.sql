@@ -9,6 +9,8 @@ AS $function$
 DECLARE
   existing TEXT;
   fn_args TEXT;
+  live TEXT[];
+  wanted TEXT[];
 BEGIN
   -- Makes a table's event triggers exactly what one entry of
   -- packages/database/src/event-system/attachments.ts says: the interceptors
@@ -18,6 +20,40 @@ BEGIN
 
   -- A table dropped since its entry was shipped has nothing to attach to.
   IF to_regclass(format('public.%I', table_name_text)) IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- Already as declared: touch nothing. Creating a trigger locks the table
+  -- against writes until the transaction ends, so a migration that restates
+  -- every table's entry must not re-create the ones that have not changed.
+  SELECT coalesce(array_agg(t.tgname || ':' || encode(t.tgargs, 'escape') ORDER BY t.tgname), '{}')
+    INTO live
+    FROM pg_trigger t
+   WHERE t.tgrelid = format('public.%I', table_name_text)::regclass
+     AND NOT t.tgisinternal
+     AND t.tgname LIKE 'trg\_event\_%';
+
+  SELECT coalesce(array_agg(w.name ORDER BY w.name), '{}')
+    INTO wanted
+    FROM (
+      -- A trigger's arguments are stored NUL-terminated; a name is cut at 63 bytes.
+      SELECT left('trg_event_sync_' || table_name_text, 63) || ':'
+             || array_to_string(before_functions, '\000') || '\000'
+       WHERE cardinality(before_functions) > 0
+      UNION ALL
+      SELECT left('trg_event_after_sync_' || table_name_text, 63) || ':'
+             || array_to_string(after_functions, '\000') || '\000'
+       WHERE cardinality(after_functions) > 0
+      UNION ALL
+      SELECT left('trg_event_async_' || op || '_' || table_name_text, 63) || ':'
+        FROM unnest(ARRAY['ins', 'del', 'upd']) op
+       WHERE queue_events
+      UNION ALL
+      SELECT left('trg_event_statement_' || fn || '_' || op, 63) || ':'
+        FROM unnest(statement_functions) fn, unnest(ARRAY['ins', 'upd', 'del']) op
+    ) w(name);
+
+  IF live = wanted THEN
     RETURN;
   END IF;
 
@@ -1969,6 +2005,7 @@ END;
 $function$;
 
 -- event triggers (packages/database/src/event-system/attachments.ts)
+SET lock_timeout = '5s';
 SELECT set_event_triggers('ability', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['broadcast_reference_changes']::text[]);
 SELECT set_event_triggers('address', ARRAY['sync_address_to_parent']::text[], ARRAY[]::text[], true, ARRAY[]::text[]);
 SELECT set_event_triggers('assemblyPlanJob', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['broadcast_table_changes']::text[]);
@@ -2110,3 +2147,4 @@ SELECT set_event_triggers('workCenter', ARRAY[]::text[], ARRAY[]::text[], true, 
 SELECT set_event_triggers('workCenterProcess', ARRAY[]::text[], ARRAY[]::text[], true, ARRAY[]::text[]);
 SELECT set_event_triggers('workflowRun', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('workflowStepRun', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['broadcast_table_changes']::text[]);
+RESET lock_timeout;

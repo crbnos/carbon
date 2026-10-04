@@ -19,7 +19,10 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  realtime: ["job", "jobOperation"]
+  realtime: [
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" }
+  ]
 };
 
 const logger = getLogger("mes", "job-dag");

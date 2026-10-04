@@ -48,9 +48,9 @@ import { path } from "~/utils/path";
 export const handle: Handle = {
   realtime: [
     "job",
-    "jobOperation",
+    { table: "jobOperation", column: "id", param: "operationId" },
     "jobMaterial",
-    "jobOperationStep",
+    { table: "jobOperationStep", column: "operationId", param: "operationId" },
     "jobOperationStepRecord",
     "pickingListLine"
   ]

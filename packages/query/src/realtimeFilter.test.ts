@@ -3,28 +3,42 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { matchesIdFilter } from "./realtimeFilter";
+import { matchesFilter } from "./realtimeFilter";
 
-describe("matchesIdFilter", () => {
+describe("matchesFilter", () => {
   it("matches every change without a filter", () => {
-    expect(matchesIdFilter(undefined, ["a"])).toBe(true);
+    expect(matchesFilter(undefined, { ids: ["a"] })).toBe(true);
   });
 
   it("matches an id=eq filter only for that id", () => {
-    expect(matchesIdFilter("id=eq.a", ["a", "b"])).toBe(true);
-    expect(matchesIdFilter("id=eq.c", ["a", "b"])).toBe(false);
+    expect(matchesFilter("id=eq.a", { ids: ["a", "b"] })).toBe(true);
+    expect(matchesFilter("id=eq.c", { ids: ["a", "b"] })).toBe(false);
   });
 
   it("matches an id=in filter when any id is in it", () => {
-    expect(matchesIdFilter("id=in.(a,b)", ["b"])).toBe(true);
-    expect(matchesIdFilter("id=in.(a,b)", ["c"])).toBe(false);
+    expect(matchesFilter("id=in.(a,b)", { ids: ["b"] })).toBe(true);
+    expect(matchesFilter("id=in.(a,b)", { ids: ["c"] })).toBe(false);
   });
 
-  it("matches every change for a filter on another column", () => {
-    expect(matchesIdFilter("jobId=eq.j1", ["a"])).toBe(true);
+  it("matches a filter on a parent column by the parents the change names", () => {
+    const change = { ids: ["a"], parents: { jobId: ["j1"] } };
+    expect(matchesFilter("jobId=eq.j1", change)).toBe(true);
+    expect(matchesFilter("jobId=eq.j2", change)).toBe(false);
+    expect(matchesFilter("jobId=in.(j2,j1)", change)).toBe(true);
   });
 
-  it("matches a change that carries no ids", () => {
-    expect(matchesIdFilter("id=eq.a", null)).toBe(true);
+  it("matches every change when the change does not name that column", () => {
+    expect(matchesFilter("jobId=eq.j1", { ids: ["a"] })).toBe(true);
+    expect(matchesFilter("jobId=eq.j1", { ids: ["a"], parents: {} })).toBe(
+      true
+    );
+    expect(matchesFilter("status=eq.Done", { ids: ["a"] })).toBe(true);
+  });
+
+  it("matches a bulk change, which carries neither ids nor parents", () => {
+    expect(matchesFilter("id=eq.a", { ids: null, parents: null })).toBe(true);
+    expect(matchesFilter("jobId=eq.j1", { ids: null, parents: null })).toBe(
+      true
+    );
   });
 });

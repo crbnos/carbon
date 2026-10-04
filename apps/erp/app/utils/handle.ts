@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { RealtimeTable } from "@carbon/database/realtime-tables";
+import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
 import type { MessageDescriptor } from "@lingui/core";
 import type { ComponentType, ReactNode } from "react";
 
@@ -12,7 +12,7 @@ export type Handle = {
   module?: string;
   // The tables this route shows. The shell (`RouteRealtime`) reloads the page
   // when one of them changes; each must be in REALTIME_TABLES.
-  realtime?: RealtimeTable[];
+  realtime?: RouteRealtimeTable[];
   // A module layout's sub-navigation. The shell renders it in the one module
   // sidebar (`ModuleSidebarLayout`), so it stays in place across modules.
   sidebar?: ComponentType;

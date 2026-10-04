@@ -138,13 +138,18 @@ customer: {
 A migration never calls `attach_event_trigger`, `attach_statement_handler` or
 `set_event_triggers` (`no-authz-ddl-in-migrations` rejects it from `20261004194527`). Each of
 those replaces a table's WHOLE list, so a call that left a function out silently detached
-it — the reason the `clobbers` check existed.
+it. The `clobbers` check used to watch for that; it now covers views and
+functions only.
 
 - **Sync**: `authz sync` compares each table's live triggers with its entry and calls
   `set_event_triggers(table, before, after, events, statement)` where they differ. A table
-  with event triggers and no entry is detached.
+  with event triggers and no entry is detached. `set_event_triggers` itself returns
+  without touching a table whose triggers are already as declared: creating a trigger
+  locks the table against writes, and a migration restates every table.
 - **Shipping**: `authz migration <name>` writes one `SELECT set_event_triggers(...)` per
-  changed table, after the functions and policies. `unshipped()` compares each table's last
+  changed table, after the functions and policies, between `SET lock_timeout = '5s'`
+  and `RESET lock_timeout`: behind a long transaction the migration fails and is run
+  again, instead of queueing every writer of that table behind it. `unshipped()` compares each table's last
   shipped statement with what the manifest renders, and reports a table that was shipped
   and later removed (it is shipped again, detached). There is no baseline: the takeover
   migration `20261004194527_event-attachments.sql` ships all 141 tables.

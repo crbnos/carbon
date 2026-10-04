@@ -4,6 +4,7 @@
 
 import type { Attachment } from "./event-system/attachments";
 import { attachments } from "./event-system/attachments";
+import type { Database } from "./types";
 
 // The tables that broadcast their changes over Realtime. Derived from the
 // attachments manifest, so a table is realtime exactly when a broadcast handler
@@ -45,3 +46,23 @@ export const REALTIME_REFERENCE_TABLES = tablesWith(
 export const REALTIME_USER_TABLES = tablesWith("broadcast_user_changes");
 
 export type RealtimeTable = TablesWith<"broadcast_table_changes">;
+
+type Tables = Database["public"]["Tables"];
+
+type ScopedTo<T extends RealtimeTable> = T extends keyof Tables
+  ? {
+      table: T;
+      /** `id`, or a `<name>Id` column: the only columns a broadcast names. */
+      column: Extract<keyof Tables[T]["Row"], "id" | `${string}Id`>;
+      /** The route param that holds the value. */
+      param: string;
+    }
+  : never;
+
+/**
+ * A `handle.realtime` entry: a whole table, or only the rows that belong to the
+ * record the route shows (`{ table: "jobOperation", column: "jobId", param: "jobId" }`).
+ */
+export type RouteRealtimeTable =
+  | RealtimeTable
+  | { [T in RealtimeTable]: ScopedTo<T> }[RealtimeTable];

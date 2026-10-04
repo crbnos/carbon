@@ -45,11 +45,11 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: [
-    "quote",
-    "quoteLine",
-    "quoteMaterial",
-    "quoteOperation",
-    "quoteMakeMethod"
+    { table: "quote", column: "id", param: "quoteId" },
+    { table: "quoteLine", column: "quoteId", param: "quoteId" },
+    { table: "quoteMaterial", column: "quoteId", param: "quoteId" },
+    { table: "quoteOperation", column: "quoteId", param: "quoteId" },
+    { table: "quoteMakeMethod", column: "quoteId", param: "quoteId" }
   ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Quotes`, to: path.to.quotes },
