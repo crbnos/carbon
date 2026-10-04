@@ -246,6 +246,21 @@ again.
   otherwise and DISCARDS alpha silently, which is why the model endpoint
   marks materials blendable. Only parts a LATER step fits are ghosted; one
   moved aside for access this step simply goes.
+- **The camera is per step, and only the camera remounts.** A planner-baked
+  view is applied as the orbit manipulator's home — it is fixed at
+  construction and has no setter, so a changed view keys a small `CameraRig`
+  and nothing else. Keying the whole scene also remounts `ModelRenderer`,
+  which re-adds the asset and resets its materials. The Filament hooks mount
+  only once the model is LOADED, or the manipulator is built from a
+  placeholder frame (radius 1 at the origin) and the model renders off in a
+  corner.
+- **Scene membership is re-asserted on the next frame.** `ModelRenderer` adds
+  the asset through its own effect, and on a tab switched away from and back
+  — the model already in memory — that can land after ours and undo it: every
+  part returns, opaque. A first visit looks perfect, so this only shows up on
+  the second. Cleanups are also skipped on unmount via an `alive` ref: there
+  is nothing to restore, and the asset is already released, so touching it
+  throws "Pointer FilamentAssetWrapper has already been manually released".
 - **No step in the demo data animates, and web does not animate it either.**
   Every authored motion is `none`, and the fallback refuses to fabricate a
   path through a mate. Motion appears with planner-baked instructions.

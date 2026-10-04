@@ -9,12 +9,15 @@ import {
   expandToLeaves,
   motionDurationMs,
   motionOffsetAt,
+  motionSpinAt,
   motionTravel
 } from "./stepMotion";
 
 const near = (v: readonly number[], expected: number[]) => {
   expect(v.length).toBe(3);
-  v.forEach((n, i) => expect(n).toBeCloseTo(expected[i] as number, 5));
+  for (const [i, n] of v.entries()) {
+    expect(n).toBeCloseTo(expected[i] as number, 5);
+  }
 };
 
 const linear: Motion = { type: "linear", direction: [0, 1, 0], distance: 100 };
@@ -207,5 +210,36 @@ describe("expandToLeaves", () => {
 
   it("drops an id the graph does not know", () => {
     expect(expandToLeaves(["ghost"], subtrees, leaves)).toEqual(new Set());
+  });
+});
+
+describe("motionSpinAt", () => {
+  const helix: Motion = {
+    type: "helix",
+    axis: [0, 0, 1],
+    origin: [1, 2, 3],
+    pitch: 2,
+    turns: 3,
+    approach: 10
+  };
+
+  it("has nothing left to turn once seated", () => {
+    expect(motionSpinAt(helix, 1)?.radians).toBeCloseTo(0, 10);
+  });
+
+  it("unwinds every turn at the start of the approach", () => {
+    expect(motionSpinAt(helix, 0)?.radians).toBeCloseTo(-3 * 2 * Math.PI, 5);
+  });
+
+  it("carries the axis and the origin it turns about", () => {
+    const spin = motionSpinAt(helix, 0);
+    expect(spin?.axis).toEqual([0, 0, 1]);
+    expect(spin?.origin).toEqual([1, 2, 3]);
+  });
+
+  it("is null for a motion that does not thread", () => {
+    expect(motionSpinAt(linear, 0)).toBeNull();
+    expect(motionSpinAt({ type: "none" }, 0)).toBeNull();
+    expect(motionSpinAt(null, 0)).toBeNull();
   });
 });

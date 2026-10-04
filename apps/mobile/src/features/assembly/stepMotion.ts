@@ -235,3 +235,34 @@ export function expandToLeaves(
   }
   return out;
 }
+
+/** A rotation to apply to a component part-way through its insertion. */
+export type Spin = { axis: Vec3; origin: Vec3; radians: number };
+
+/**
+ * The remaining rotation of a threaded fastener at normalized time `t`.
+ *
+ * A helix is a linear approach and then `turns` rotations about `axis`
+ * through `origin`, advancing `pitch` per turn until seated. The translation
+ * part is `motionOffsetAt`; this is the part that makes a bolt look threaded
+ * rather than pushed.
+ *
+ * Like the offset it is measured BACKWARDS from seated — at `t = 1` there is
+ * nothing left to turn, so a dropped frame cannot leave a fastener rotated.
+ * Null for every other kind of motion, so the caller applies no rotation
+ * rather than an identity one it has to reason about.
+ */
+export function motionSpinAt(
+  motion: Motion | null | undefined,
+  t: number
+): Spin | null {
+  if (!motion || motion.type !== "helix") return null;
+  const remaining = 1 - Math.min(Math.max(t, 0), 1);
+  return {
+    axis: motion.axis,
+    origin: motion.origin,
+    // Unwinding, so the sign is negative for the same reason the offset is:
+    // this is how far the fastener still has to turn to seat.
+    radians: -motion.turns * 2 * Math.PI * remaining
+  };
+}
