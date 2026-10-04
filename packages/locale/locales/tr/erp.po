@@ -2021,6 +2021,9 @@ msgstr "Her zaman alındı"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "Tutar"
 
@@ -4904,6 +4907,9 @@ msgstr "Sarf malzemesi numarasını kopyala"
 msgid "Copy consumable unique identifier"
 msgstr "Sarf malzemesi benzersiz tanıtıcısını kopyala"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "Müşteri benzersiz tanıtıcısını kopyala"
 
@@ -4945,6 +4951,9 @@ msgstr "Değişiklik bildirisi bağlantısını kopyala"
 
 msgid "Copy link to consumable"
 msgstr "Sarf malzemeye bağlantı kopyala"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "Bakım emirine bağlantı kopyala"
@@ -18796,6 +18805,9 @@ msgstr "Öneri Bildirimleri"
 msgid "Suggestions"
 msgstr "Öneriler"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Pazar"
 
@@ -19250,6 +19262,9 @@ msgstr "Şablonlar"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçlandırılan ve faturalama sırasında net defter değeri için alacaklandırılan, satış döngüsü boyunca sıfıra netleşen geçici elden çıkarma mahsup hesabı."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Dönem, bir birim'in ekonomik ömrünün en az {threshold}'i"

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1543,
+  "totalTools": 1544,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1343,6 +1343,7 @@
     {"name":"sales_shortCloseSalesReturnOrderLine","classification":"WRITE","paramCount":3,"schema":"a3098b18fc68","response":"none","injectAuth":"companyId+userId","permission":"sales:update","paginates":false},
     {"name":"sales_updateContract","classification":"WRITE","paramCount":28,"schema":"7557d2f66389","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateContractInvoiceAutomation","classification":"WRITE","paramCount":2,"schema":"321dd5c5e689","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
+    {"name":"sales_updateContractNotes","classification":"WRITE","paramCount":2,"schema":"2ab51d0b91d5","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateContractType","classification":"WRITE","paramCount":2,"schema":"9a1390515c73","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerContact","classification":"WRITE","paramCount":4,"schema":"f0fc7be0eef2","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerLocation","classification":"WRITE","paramCount":4,"schema":"9d205b68ee4f","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},

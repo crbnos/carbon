@@ -2021,6 +2021,9 @@ msgstr "हमेशा लिया जाता है"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "रकम"
 
@@ -4904,6 +4907,9 @@ msgstr "उपभोग्य सामग्री संख्या की �
 msgid "Copy consumable unique identifier"
 msgstr "उपभोग्य सामग्री की विशिष्ट पहचान नकल करें"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "ग्राहक की विशिष्ट पहचान नकल करें"
 
@@ -4945,6 +4951,9 @@ msgstr "परिवर्तन सूचना के लिंक की प�
 
 msgid "Copy link to consumable"
 msgstr "उपभोग्य सामग्री के लिए लिंक की नकल करें"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "रखरखाव कार्य के लिए लिंक की नकल करें"
@@ -18796,6 +18805,9 @@ msgstr "सुझाव सूचनाएं"
 msgid "Suggestions"
 msgstr "सुझाव"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "रविवार"
 
@@ -19250,6 +19262,9 @@ msgstr "टेम्पलेट्स"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "अस्थायी निपटान-समाशोधन खाता जिसे शिपमेंट पर एक संपत्ति के शुद्ध बही मूल्य के लिए डेबिट किया जाता है और बिलिंग पर इसके शुद्ध बही मूल्य के लिए क्रेडिट किया जाता है, बिक्रय चक्र पर शून्य तक नेट किया जाता है।"
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "अवधि एक इकाई के आर्थिक जीवन की कम से कम {threshold} है"

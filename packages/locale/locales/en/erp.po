@@ -2021,6 +2021,9 @@ msgstr "Always taken"
 msgid "Amend"
 msgstr "Amend"
 
+msgid "Amendments"
+msgstr "Amendments"
+
 msgid "Amount"
 msgstr "Amount"
 
@@ -4904,6 +4907,9 @@ msgstr "Copy consumable number"
 msgid "Copy consumable unique identifier"
 msgstr "Copy consumable unique identifier"
 
+msgid "Copy contract number"
+msgstr "Copy contract number"
+
 msgid "Copy customer unique identifier"
 msgstr "Copy customer unique identifier"
 
@@ -4945,6 +4951,9 @@ msgstr "Copy link to change notice"
 
 msgid "Copy link to consumable"
 msgstr "Copy link to consumable"
+
+msgid "Copy link to contract"
+msgstr "Copy link to contract"
 
 msgid "Copy link to dispatch"
 msgstr "Copy link to dispatch"
@@ -18796,6 +18805,9 @@ msgstr "Suggestion Notifications"
 msgid "Suggestions"
 msgstr "Suggestions"
 
+msgid "Summary"
+msgstr "Summary"
+
 msgid "Sunday"
 msgstr "Sunday"
 
@@ -19250,6 +19262,9 @@ msgstr "Templates"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
+
+msgid "Term"
+msgstr "Term"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Term is at least {threshold} of a unit's economic life"

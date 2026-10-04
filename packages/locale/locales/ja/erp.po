@@ -2021,6 +2021,9 @@ msgstr "常に取得"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "金額"
 
@@ -4904,6 +4907,9 @@ msgstr "消耗品番号をコピー"
 msgid "Copy consumable unique identifier"
 msgstr "消耗品の一意識別子をコピー"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "得意先の一意識別子をコピー"
 
@@ -4945,6 +4951,9 @@ msgstr "変更通知へのリンクをコピー"
 
 msgid "Copy link to consumable"
 msgstr "消耗品へのリンクをコピー"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "保全指示へのリンクをコピー"
@@ -18796,6 +18805,9 @@ msgstr "提案通知"
 msgid "Suggestions"
 msgstr "提案"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "日曜日"
 
@@ -19250,6 +19262,9 @@ msgstr "テンプレート"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "一時的な除却クリアリング勘定は、出荷時に資産の未償却残高で借記され、請求時に未償却残高でクレジットされ、販売サイクル全体でネットゼロになります。"
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "契約期間は単位の経済的寿命の少なくとも{threshold}である"

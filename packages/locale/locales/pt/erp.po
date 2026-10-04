@@ -2021,6 +2021,9 @@ msgstr "Sempre adotado"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "Valor"
 
@@ -4904,6 +4907,9 @@ msgstr "Copiar número do consumível"
 msgid "Copy consumable unique identifier"
 msgstr "Copiar identificador único do consumível"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "Copiar identificador único do cliente"
 
@@ -4945,6 +4951,9 @@ msgstr "Copiar link para aviso de alteração"
 
 msgid "Copy link to consumable"
 msgstr "Copiar link para consumível"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "Copiar link para ordem de manutenção"
@@ -18796,6 +18805,9 @@ msgstr "Notificações de Sugestões"
 msgid "Suggestions"
 msgstr "Sugestões"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Domingo"
 
@@ -19250,6 +19262,9 @@ msgstr "Modelos"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Conta temporária de compensação de venda debitada pelo valor contábil líquido do ativo na remessa e creditada pelo seu valor contábil líquido no faturamento, compensando para zero ao longo do ciclo de venda."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "O termo é pelo menos {threshold} da vida econômica de uma unidade"

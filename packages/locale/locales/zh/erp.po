@@ -2021,6 +2021,9 @@ msgstr "始终采取"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "金额"
 
@@ -4904,6 +4907,9 @@ msgstr "复制耗材编号"
 msgid "Copy consumable unique identifier"
 msgstr "复制耗材唯一标识符"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "复制客户唯一标识符"
 
@@ -4945,6 +4951,9 @@ msgstr "复制变更通知链接"
 
 msgid "Copy link to consumable"
 msgstr "复制耗材链接"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "复制维护工单链接"
@@ -18796,6 +18805,9 @@ msgstr "建议通知"
 msgid "Suggestions"
 msgstr "建议"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "星期日"
 
@@ -19250,6 +19262,9 @@ msgstr "模板"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "临时处置清算账户，在发货时按资产账面净值做借方记录，在开票时按其账面净值做贷方记录，在销售周期内结余为零。"
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "期限至少为该单位经济寿命的 {threshold}"

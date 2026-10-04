@@ -2021,6 +2021,9 @@ msgstr "Zawsze podjęty"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "Kwota"
 
@@ -4904,6 +4907,9 @@ msgstr "Skopiuj numer materiału eksploatacyjnego"
 msgid "Copy consumable unique identifier"
 msgstr "Skopiuj unikalny identyfikator materiału eksploatacyjnego"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "Skopiuj unikalny identyfikator klienta"
 
@@ -4945,6 +4951,9 @@ msgstr "Skopiuj link do zawiadomienia o zmianie"
 
 msgid "Copy link to consumable"
 msgstr "Skopiuj link do materiału eksploatacyjnego"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "Skopiuj link do zlecenia utrzymania ruchu"
@@ -18796,6 +18805,9 @@ msgstr "Powiadomienia propozycji"
 msgid "Suggestions"
 msgstr "Propozycje"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Niedziela"
 
@@ -19250,6 +19262,9 @@ msgstr "Szablony"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Tymczasowe konto rozliczeniowe zbycia, obciążane wartością księgową netto środka trwałego w momencie wysyłki i uznawane wartością księgową netto w momencie fakturowania, zerujące się w toku cyklu sprzedaży."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Okres wynosi co najmniej {threshold} ekonomicznego życia jednostki"

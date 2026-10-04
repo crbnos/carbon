@@ -2021,6 +2021,9 @@ msgstr "항상 사용됨"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "금액"
 
@@ -4904,6 +4907,9 @@ msgstr "소모품 번호 복사"
 msgid "Copy consumable unique identifier"
 msgstr "소모품 고유 식별자 복사"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "고객 고유 식별자 복사"
 
@@ -4945,6 +4951,9 @@ msgstr "변경 통지 링크 복사"
 
 msgid "Copy link to consumable"
 msgstr "소모품 링크 복사"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "유지보수 지시 링크 복사"
@@ -18796,6 +18805,9 @@ msgstr "제안 알림"
 msgid "Suggestions"
 msgstr "제안"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "일요일"
 
@@ -19250,6 +19262,9 @@ msgstr "템플릿"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "일시적 처분-정산 계정은 출하 시 자산의 순장부가액으로 차변에 기입하고 송장 발행 시 순장부가액으로 대변에 기입하여 판매 사이클 동안 영(0)으로 상계됩니다."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "약관은 자산의 경제적 수명의 최소 {threshold} 이상이어야 합니다"

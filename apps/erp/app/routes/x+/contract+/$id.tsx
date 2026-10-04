@@ -1,0 +1,193 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { VStack } from "@carbon/react";
+import {
+  contractPositionPreview,
+  datetime,
+  horizon,
+  lineRevenueDates,
+  lineTotals,
+  planInvoiceSchedule,
+  redirect,
+  revenuePreview,
+  round,
+  validateScheduleEdit
+} from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
+import type { LoaderFunctionArgs } from "react-router";
+import { Outlet, useLoaderData, useParams } from "react-router";
+import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import {
+  getContract,
+  getContractAmendments,
+  getContractInvoiceSchedule,
+  getContractLines
+} from "~/modules/sales";
+import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
+import {
+  ContractExplorer,
+  ContractHeader,
+  ContractProperties,
+  scheduleRows,
+  toContractLineTerms,
+  toContractTerms
+} from "~/modules/sales/ui/Contracts";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  breadcrumb: detailBreadcrumb(
+    { breadcrumb: msg`Contracts`, to: path.to.contracts },
+    (data) => data?.contract?.customerContractId
+  ),
+  module: "sales"
+};
+
+export async function loader({
+  request,
+  params
+}: LoaderFunctionArgs): Promise<ContractRouteData> {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "sales"
+  });
+
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  const [contract, lines, schedule, amendments, timeZone] = await Promise.all([
+    getContract(client, id),
+    getContractLines(client, id),
+    getContractInvoiceSchedule(client, id),
+    getContractAmendments(client, id),
+    getCompanyTimeZone(client, companyId)
+  ]);
+
+  if (contract.error || !contract.data) {
+    throw redirect(
+      path.to.contracts,
+      await flash(request, error(contract.error, "Failed to load contract"))
+    );
+  }
+  if (contract.data.companyId !== companyId) {
+    throw redirect(path.to.contracts);
+  }
+  if (lines.error || schedule.error || amendments.error) {
+    throw redirect(
+      path.to.contracts,
+      await flash(
+        request,
+        error(
+          lines.error ?? schedule.error ?? amendments.error,
+          "Failed to load contract"
+        )
+      )
+    );
+  }
+
+  const contractLines = lines.data ?? [];
+  const invoices = schedule.data?.invoices ?? [];
+  const credits = schedule.data?.credits ?? [];
+  const isDraft = contract.data.status === "Draft";
+  const today = datetime.today(timeZone).toString();
+
+  // Plan decision 2: an unedited Draft's schedule is never stored — it is
+  // planned live from the lines, so a line edited anywhere (MCP included)
+  // can never leave a stale schedule behind. The first edit, or Confirm,
+  // persists it.
+  const terms = toContractTerms(contract.data);
+  const lineTerms = contractLines.map(toContractLineTerms);
+  const canPlan = !!terms.startDate;
+  const planned =
+    isDraft && canPlan
+      ? planInvoiceSchedule(terms, lineTerms, horizon(terms, today))
+      : null;
+  const computedSchedule = isDraft && invoices.length === 0 ? planned : null;
+
+  // An edited Draft whose lines changed since: what each line is short (or
+  // over) against what the lines now compute. Non-zero offers Reset schedule.
+  const residuals: Record<string, number> = {};
+  if (isDraft && invoices.length > 0 && planned) {
+    const check = validateScheduleEdit(
+      lineTotals(planned),
+      invoices.flatMap((invoice) =>
+        invoice.customerContractInvoiceLine.map((row) => ({
+          lineId: row.customerContractLineId,
+          amount: Number(row.amount),
+          isAdjustment: row.isAdjustment
+        }))
+      )
+    );
+    for (const [lineId, residual] of check.residuals) {
+      residuals[lineId] = residual;
+    }
+  }
+
+  // Revenue preview (plan decision 1): each line's scheduled total spread
+  // over its revenue dates, and the month-by-month position that follows.
+  const rows = scheduleRows({ computedSchedule, schedule: invoices, credits });
+  const netByLine = new Map<string, number>();
+  for (const row of rows) {
+    netByLine.set(row.lineId, (netByLine.get(row.lineId) ?? 0) + row.amount);
+  }
+  const revenueLines = contractLines.flatMap((line) => {
+    const dates = lineRevenueDates(line);
+    return revenuePreview({
+      id: line.id,
+      kind: line.kind,
+      method: line.revenueMethod,
+      revenueStart: dates.start,
+      revenueEnd: dates.end,
+      netAmount: round(netByLine.get(line.id) ?? 0)
+    });
+  });
+  const position = contractPositionPreview(
+    rows.map((row) => ({ invoiceDate: row.invoiceDate, amount: row.amount })),
+    revenueLines
+  );
+
+  return {
+    contract: contract.data,
+    lines: contractLines,
+    schedule: invoices,
+    credits,
+    amendments: amendments.data ?? [],
+    computedSchedule,
+    residuals,
+    revenue: { lines: revenueLines, position }
+  };
+}
+
+export default function ContractRoute() {
+  const { contract, lines } = useLoaderData<typeof loader>();
+  const { id } = useParams();
+  if (!id) throw new Error("Could not find id");
+
+  return (
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
+        <ContractHeader contract={contract} lines={lines} />
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorer={<ContractExplorer key={id} />}
+              content={
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={<ContractProperties key={id} />}
+            />
+          </div>
+        </div>
+      </div>
+    </PanelProvider>
+  );
+}

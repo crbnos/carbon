@@ -2021,6 +2021,9 @@ msgstr "Всегда выбирается"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "Сумма"
 
@@ -4904,6 +4907,9 @@ msgstr "Скопировать номер расходного материал�
 msgid "Copy consumable unique identifier"
 msgstr "Скопировать уникальный идентификатор расходного материала"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "Скопировать уникальный идентификатор покупателя"
 
@@ -4945,6 +4951,9 @@ msgstr "Скопировать ссылку на извещение об изм�
 
 msgid "Copy link to consumable"
 msgstr "Скопировать ссылку на расходный материал"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "Скопировать ссылку на заявку на техобслуживание"
@@ -18796,6 +18805,9 @@ msgstr "Уведомления о предложениях"
 msgid "Suggestions"
 msgstr "Предложения"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Воскресенье"
 
@@ -19250,6 +19262,9 @@ msgstr "Шаблоны"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Временный счет для списания активов, дебетуемый на остаточную стоимость активов при отгрузке и кредитуемый на остаточную стоимость при выставлении счетов, взаимозачитываемый до нуля в течение цикла продажи."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Срок должен быть не менее {threshold} экономического срока единицы"

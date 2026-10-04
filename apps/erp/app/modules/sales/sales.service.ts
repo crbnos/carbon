@@ -9772,6 +9772,33 @@ export async function updateContractType(
 }
 
 /**
+ * Sets a contract's notes in any status: notes are not a term, so they stay
+ * editable after Confirm.
+ * @mcp update
+ */
+export async function updateContractNotes(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    notes: Json | null;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("customerContract")
+    .update({
+      notes: args.notes,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+/**
  * Sets how the daily run handles one contract's invoices, in any status; null falls back to the company's setting.
  * Sending needs an email to send to, so `Post and Email` is refused when the
  * invoice contact has none. `Post and Send via Stripe` is accepted here;

@@ -2021,6 +2021,9 @@ msgstr "Sempre preso"
 msgid "Amend"
 msgstr ""
 
+msgid "Amendments"
+msgstr ""
+
 msgid "Amount"
 msgstr "Importo"
 
@@ -4904,6 +4907,9 @@ msgstr "Copia il numero del materiale di consumo"
 msgid "Copy consumable unique identifier"
 msgstr "Copia identificatore univoco materiale di consumo"
 
+msgid "Copy contract number"
+msgstr ""
+
 msgid "Copy customer unique identifier"
 msgstr "Copia identificatore univoco cliente"
 
@@ -4945,6 +4951,9 @@ msgstr "Copia il collegamento all'avviso di modifica"
 
 msgid "Copy link to consumable"
 msgstr "Copia il collegamento al materiale di consumo"
+
+msgid "Copy link to contract"
+msgstr ""
 
 msgid "Copy link to dispatch"
 msgstr "Copia il collegamento all'intervento di manutenzione"
@@ -18796,6 +18805,9 @@ msgstr "Notifiche proposte"
 msgid "Suggestions"
 msgstr "Proposte"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Domenica"
 
@@ -19250,6 +19262,9 @@ msgstr "Modelli"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Conto GL temporaneo di compensazione dismissioni, addebitato per il valore netto contabile del cespite alla spedizione e accreditato per il valore netto contabile alla fatturazione, azzerandosi nel corso del ciclo di vendita."
+
+msgid "Term"
+msgstr ""
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Il termine è almeno {threshold} della vita economica di un'unità"

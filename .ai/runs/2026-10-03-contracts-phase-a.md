@@ -57,3 +57,9 @@
 - `post-customer-contract`: confirm, edit-schedule, reset-schedule, amend (+preview), cancel (+preview), revert-cancellation; `{ update: "sales" }`.
 - Choices beyond the plan: a One-time line is changed/ended as a whole (old line ends the day before it starts); a future-dated line changes from its own start; amendment percents are points ÷ 100; discount-ends applies to Recurring lines only; confirming an edited open-ended contract compares totals up to the last persisted period; the credit memo amount rounds to the currency's decimals.
 - Found and fixed (separate commit): reconcile re-cut split installments one by one to the full line amount.
+
+## Tasks 21 + 22 (one commit)
+- Notes on an Active contract go through the new `updateContractNotes` service (`@mcp update`); the agent's direct table update in the route was moved into it.
+- Header Amend/Cancel are disabled until Tasks 28/29; Confirm/Invoice Now/Revert post to routes built in Tasks 27/29.
+- `ContractProject` loads active projects client-side into a Combobox (no Project selector exists in `~/components/Form`).
+- Notes are edited as plain text in the properties panel (`tiptapToText` / `textToTiptap`), as rentals do.
