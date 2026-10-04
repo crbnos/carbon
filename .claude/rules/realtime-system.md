@@ -32,7 +32,7 @@ A route scopes a table to its own record with
 table's row type). `{ table, filter: ({ params, data }) => string | undefined }`
 builds the filter from the route's loader data, for a record the URL does not
 name (the MES operation page follows its job, or everything when it runs in a
-batch). A plain table name follows every change in the company: right for a
+batch); it returns `false` to follow nothing (a job with no model). A plain table name follows every change in the company: right for a
 list page, wasteful on a detail page. A missing answer always means "it may
 concern me": the filter can cause an extra reload, never a missed one. An
 UPDATE names the values a row had as well as the ones it has, so a row moved
@@ -43,7 +43,12 @@ added: a production event carries `jobId`, read from its operation. The hops
 are the `ancestors` constant in `broadcast_table_changes.sql`;
 `REALTIME_ANCESTOR_COLUMNS` (`realtime-tables.ts`) types the same columns and
 a test keeps the two equal. Add a hop there when a detail page must follow a
-grandchild table.
+grandchild table. A hop with a fourth element looks the other way: a payment
+has no invoice column, so its message names the invoices its
+`invoiceSettlement` rows apply it to (`targetSalesInvoiceId`,
+`targetPurchaseInvoiceId`; an empty list when it is applied to none). An
+invoice page follows `invoiceSettlement` and `payment` on that column: voiding
+a payment changes the payment row only.
 
 The broadcast functions return at once when `realtime.send` does not exist, so
 a database without Supabase Realtime still accepts writes.

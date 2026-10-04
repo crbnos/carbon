@@ -40,8 +40,24 @@ export const handle: Handle = {
   realtime: [
     { table: "salesOrder", column: "id", param: "orderId" },
     { table: "salesOrderLine", column: "salesOrderId", param: "orderId" },
-    "shipment",
-    "salesInvoice"
+    {
+      // Shipments and invoices made from this order carry its opportunity
+      // (`getSalesOrderRelatedItems`, the convert function).
+      table: "shipment",
+      filter: ({ data }) =>
+        data?.opportunity?.id
+          ? `opportunityId=eq.${data.opportunity.id}`
+          : undefined
+    },
+    {
+      // Shipments and invoices made from this order carry its opportunity
+      // (`getSalesOrderRelatedItems`, the convert function).
+      table: "salesInvoice",
+      filter: ({ data }) =>
+        data?.opportunity?.id
+          ? `opportunityId=eq.${data.opportunity.id}`
+          : undefined
+    }
   ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.salesOrders },

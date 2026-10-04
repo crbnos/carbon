@@ -581,7 +581,7 @@ export function AssemblyView({
   // job, or tracked entities change (incl. edits from the operation view).
   useRealtime("productionEvent", `jobOperationId=eq.${operationId}`);
   useRealtime("jobOperationStepRecord", `operationId=eq.${operationId}`);
-  useRealtime("trackedActivity");
+  useRealtime("trackedActivity", `jobOperationId=eq.${operationId}`);
   useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).

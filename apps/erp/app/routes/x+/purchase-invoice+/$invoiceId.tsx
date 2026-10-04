@@ -37,7 +37,14 @@ export const handle: Handle = {
   realtime: [
     { table: "purchaseInvoice", column: "id", param: "invoiceId" },
     { table: "purchaseInvoiceLine", column: "invoiceId", param: "invoiceId" },
-    "payment"
+    // What is applied to this invoice, and the payments behind it: voiding a
+    // payment changes the payment row only.
+    {
+      table: "invoiceSettlement",
+      column: "targetPurchaseInvoiceId",
+      param: "invoiceId"
+    },
+    { table: "payment", column: "targetPurchaseInvoiceId", param: "invoiceId" }
   ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },

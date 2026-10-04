@@ -97,6 +97,7 @@ export const attachments = {
   inventoryCount: { events: true, statement: ["broadcast_table_changes"] },
   inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
+  invoiceSettlement: { statement: ["broadcast_table_changes"] },
   itarCertification: { events: true },
   item: {
     after: [

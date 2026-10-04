@@ -274,7 +274,7 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
           followed.set(entry, { table: entry });
           continue;
         }
-        let filter: string | undefined;
+        let filter: string | undefined | false;
         if ("filter" in entry) {
           filter = entry.filter({
             params: match.params,
@@ -284,6 +284,7 @@ export function RouteRealtime({ companyId }: { companyId: string }) {
           const value = match.params[entry.param];
           filter = value ? `${entry.column}=eq.${value}` : undefined;
         }
+        if (filter === false) continue;
         followed.set(`${entry.table}:${filter ?? ""}`, {
           table: entry.table,
           filter

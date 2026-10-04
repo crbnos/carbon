@@ -88,7 +88,13 @@ export const handle: Handle = {
     { table: "jobOperationStepRecord", column: "jobId", param: "jobId" },
     { table: "productionEvent", column: "jobId", param: "jobId" },
     { table: "pickingListLine", column: "jobId", param: "jobId" },
-    "modelUpload"
+    {
+      // The job's own model. A job without one follows none: attaching a model
+      // changes the job row, which is followed above.
+      table: "modelUpload",
+      filter: ({ data }) =>
+        data?.job?.modelUploadId ? `id=eq.${data.job.modelUploadId}` : false
+    }
   ]
 };
 

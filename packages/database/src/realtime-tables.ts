@@ -58,7 +58,9 @@ type Tables = Database["public"]["Tables"];
 export const REALTIME_ANCESTOR_COLUMNS = {
   productionEvent: ["jobId"],
   jobOperationStep: ["jobId"],
-  jobOperationStepRecord: ["operationId", "jobId"]
+  jobOperationStepRecord: ["operationId", "jobId"],
+  trackedActivity: ["jobOperationId"],
+  payment: ["targetSalesInvoiceId", "targetPurchaseInvoiceId"]
 } as const satisfies Partial<Record<RealtimeTable, readonly string[]>>;
 
 type AncestorColumn<T> = T extends keyof typeof REALTIME_ANCESTOR_COLUMNS
@@ -84,7 +86,7 @@ type ScopedTo<T extends RealtimeTable> = T extends keyof Tables
  *   (`{ table: "jobOperation", column: "jobId", param: "jobId" }`);
  * - `{ table, filter }`: the filter is built from the route's params and loader
  *   data, for a record the URL does not name. Return `undefined` to follow
- *   every change.
+ *   every change, `false` to follow none (the record has no such row yet).
  */
 export type RouteRealtimeTable =
   | RealtimeTable
@@ -95,5 +97,5 @@ export type RouteRealtimeTable =
         params: Record<string, string | undefined>;
         // biome-ignore lint/suspicious/noExplicitAny: each route knows its own loader data
         data: any;
-      }) => string | undefined;
+      }) => string | undefined | false;
     };

@@ -68,9 +68,16 @@ export const handle: Handle = {
   realtime: [
     { table: "purchaseOrder", column: "id", param: "orderId" },
     { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },
-    "receipt",
     {
-      // The invoices of this order's supplier interaction (`getSupplierInteraction`).
+      // Receipts and invoices of this order share its supplier interaction
+      // (`usePurchaseOrder`, `getSupplierInteraction`).
+      table: "receipt",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    },
+    {
       table: "purchaseInvoice",
       filter: ({ data }) =>
         data?.purchaseOrder?.supplierInteractionId

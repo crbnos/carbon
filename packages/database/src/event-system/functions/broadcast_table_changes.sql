@@ -10,12 +10,17 @@ DECLARE
   -- [column of the row, table it points at, column to read there]: its value is
   -- added to the message under that column's name, so a job page can follow
   -- "jobId" on a table that only knows its operation.
+  -- A hop with a fourth element looks the other way: the rows of that table
+  -- whose fourth column holds this row's value ("id" is the row's own id). A
+  -- payment has no invoice column; its settlements name the invoices it pays.
   -- packages/database/src/realtime-tables.ts lists the same columns
   -- (REALTIME_ANCESTOR_COLUMNS; realtime-tables.test.ts keeps them equal).
   ancestors CONSTANT JSONB := '{
     "productionEvent": [["jobOperationId", "jobOperation", "jobId"]],
     "jobOperationStep": [["operationId", "jobOperation", "jobId"]],
-    "jobOperationStepRecord": [["jobOperationStepId", "jobOperationStep", "operationId"], ["operationId", "jobOperation", "jobId"]]
+    "jobOperationStepRecord": [["jobOperationStepId", "jobOperationStep", "operationId"], ["operationId", "jobOperation", "jobId"]],
+    "trackedActivity": [["sourceDocumentId", "productionEvent", "jobOperationId"]],
+    "payment": [["id", "invoiceSettlement", "targetSalesInvoiceId", "paymentId"], ["id", "invoiceSettlement", "targetPurchaseInvoiceId", "paymentId"]]
   }';
   changed_rows TEXT;
   parent_rows TEXT;
@@ -101,16 +106,22 @@ BEGIN
     parents := rec.parents;
     IF parents IS NOT NULL AND ancestors ? TG_TABLE_NAME THEN
       FOR hop IN SELECT value FROM jsonb_array_elements(ancestors->TG_TABLE_NAME) LOOP
+        found := CASE WHEN hop->>0 = 'id' THEN rec.ids ELSE parents->(hop->>0) END;
         -- A column that was left out (no value, or too many) leaves its
         -- ancestor out as well: the client then takes the change as its own.
-        EXIT WHEN NOT parents ? (hop->>0);
+        CONTINUE WHEN found IS NULL;
         EXECUTE format(
-          'SELECT jsonb_agg(DISTINCT %I) FROM public.%I
-            WHERE "companyId" = $1 AND id IN (SELECT jsonb_array_elements_text($2))',
-          hop->>2, hop->>1
-        ) INTO found USING rec.company_id, parents->(hop->>0);
-        EXIT WHEN found IS NULL;
-        parents := parents || jsonb_build_object(hop->>2, found);
+          'SELECT jsonb_agg(DISTINCT %1$I) FROM public.%2$I
+            WHERE "companyId" = $1 AND %1$I IS NOT NULL
+              AND %3$I IN (SELECT jsonb_array_elements_text($2))',
+          hop->>2, hop->>1, coalesce(hop->>3, 'id')
+        ) INTO found USING rec.company_id, found;
+        IF found IS NOT NULL THEN
+          parents := parents || jsonb_build_object(hop->>2, found);
+        ELSIF jsonb_array_length(hop) = 4 THEN
+          -- Looked for and not there: no such record has this row.
+          parents := parents || jsonb_build_object(hop->>2, '[]'::jsonb);
+        END IF;
       END LOOP;
     END IF;
     PERFORM realtime.send(
