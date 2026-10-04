@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RealtimeTable } from "@carbon/database/realtime-tables";
 import { useRealtime } from "./useRealtime";
 
 /**
@@ -14,7 +15,7 @@ import { useRealtime } from "./useRealtime";
  * rows) trigger a refetch.
  */
 export function useDebouncedRealtime(
-  table: string,
+  table: RealtimeTable,
   filter: string | undefined,
   debounceMs = 1500
 ) {

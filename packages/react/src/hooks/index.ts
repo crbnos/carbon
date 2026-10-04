@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { matchesIdFilter } from "./realtimeFilter";
 import { useCloseRoute } from "./useCloseRoute";
 import useDebounce from "./useDebounce";
 import useDisclosure from "./useDisclosure";
@@ -27,6 +28,14 @@ import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
 import { usePlan } from "./usePlan";
+import type { BroadcastChange } from "./useRealtime";
+import {
+  companyTopic,
+  RouteRealtime,
+  useRealtimeRevalidator,
+  useRealtimeTable,
+  useTableChanges
+} from "./useRealtime";
 import { useRealtimeChannel } from "./useRealtimeChannel";
 import { useRouteData } from "./useRouteData";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
@@ -60,6 +69,12 @@ export {
   useOutsideClick,
   usePlan,
   useRealtimeChannel,
+  useRealtimeRevalidator,
+  useRealtimeTable,
+  useTableChanges,
+  companyTopic,
+  matchesIdFilter,
+  RouteRealtime,
   useRouteData,
   useShortcutKeyMap,
   useShortcutKeys,
@@ -68,4 +83,4 @@ export {
   useUrlParams
 };
 
-export type { Shortcut, ShortcutDefinition };
+export type { BroadcastChange, Shortcut, ShortcutDefinition };

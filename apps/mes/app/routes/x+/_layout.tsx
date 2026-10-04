@@ -33,6 +33,7 @@ import {
   Heading,
   ItarEntityPendingBlock,
   ItarUserCertification,
+  RouteRealtime,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
@@ -505,6 +506,7 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
+              {company?.id && <RouteRealtime companyId={company.id} />}
               <SidebarProvider defaultOpen={false}>
                 <TooltipProvider delayDuration={0}>
                   <AppSidebar
