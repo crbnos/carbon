@@ -558,6 +558,9 @@ msgstr "1 件"
 msgid "1 unposted document"
 msgstr "1个未过账的文件"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12个月度期间"
 
@@ -567,11 +570,17 @@ msgstr "13周以上"
 msgid "1Y"
 msgstr "1年"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 天"
 
 msgid "2h"
 msgstr "2小时"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30天"
@@ -596,6 +605,9 @@ msgstr "52周需求"
 
 msgid "5MB file limit"
 msgstr "5MB 文件大小限制"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7天"
@@ -656,6 +668,9 @@ msgstr "已完成工单的产出，按工单实际累计在制品成本收入库
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "耗材是用来制造零件的物理物料，可以在多个工单中使用。"
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "外协人员是具有特定技能和可用工时的供应商联系人。"
@@ -2173,6 +2188,9 @@ msgstr "以及{hidden}个更多"
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "注释已添加"
 
@@ -3036,6 +3054,9 @@ msgstr "至少一个条件必须匹配"
 msgid "At operation completion"
 msgstr "在操作完成时"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "关联"
 
@@ -3398,6 +3419,9 @@ msgstr "工序清单"
 msgid "Bill To"
 msgstr "账单收款人"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "已计费:"
 
@@ -3410,11 +3434,17 @@ msgstr "按固定周期对租赁进行计费，可以是日历月或连续28天�
 msgid "Billing Address"
 msgstr "账单地址"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "计费周期"
 
 msgid "Billing Cycle"
 msgstr "计费 周期"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "计费 期间"
@@ -3633,6 +3663,9 @@ msgstr "正在计算最佳情况…"
 
 msgid "Calculation Method"
 msgstr "计算方法"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "日历 月"
@@ -4753,6 +4786,9 @@ msgstr "合同资产"
 
 msgid "Contract Assets (default)"
 msgstr "合同资产（默认）"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "在报价行、销售订单行和销售发票行上触发。"
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "天明时刻，{name}。"
 
@@ -12044,6 +12083,9 @@ msgstr "新建变更通知类型"
 
 msgid "New Consumable"
 msgstr "新建耗材"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "新建外协人员"
@@ -15607,6 +15649,9 @@ msgstr "最近使用"
 msgid "Recertify Every (Days)"
 msgstr "每(天)重新认证"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "已确认收入"
 
@@ -15949,6 +15994,12 @@ msgstr "重命名工作流"
 
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "租赁"
@@ -18729,6 +18780,9 @@ msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"

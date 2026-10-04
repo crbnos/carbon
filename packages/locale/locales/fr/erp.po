@@ -558,6 +558,9 @@ msgstr "1 unité"
 msgid "1 unposted document"
 msgstr "1 document non comptabilisé"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 périodes mensuelles"
 
@@ -567,11 +570,17 @@ msgstr "13+ semaines"
 msgid "1Y"
 msgstr "1 an"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Jours"
 
 msgid "2h"
 msgstr "2h"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30 jours"
@@ -596,6 +605,9 @@ msgstr "Besoins sur 52 semaines"
 
 msgid "5MB file limit"
 msgstr "Limite de fichier 5MB"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7 jours"
@@ -656,6 +668,9 @@ msgstr "La production d'un ordre de fabrication terminé, reçue en stocks au co
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un consommable est un article physique utilisé pour fabriquer une pièce qui peut être utilisé dans plusieurs ordres de fabrication."
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Un prestataire est un contact fournisseur ayant des compétences particulières et des heures disponibles."
@@ -2173,6 +2188,9 @@ msgstr "et {hidden} plus"
 msgid "and {remaining} more"
 msgstr "et {remaining} autres"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "Annotation ajoutée"
 
@@ -3036,6 +3054,9 @@ msgstr "Au moins une condition doit correspondre"
 msgid "At operation completion"
 msgstr "À la fin de l'opération"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "Rattacher"
 
@@ -3398,6 +3419,9 @@ msgstr "Liste des opérations"
 msgid "Bill To"
 msgstr "Facturer à"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "Facturé :"
 
@@ -3410,11 +3434,17 @@ msgstr "Facturation d'une location en périodes fixes, soit des mois civils, soi
 msgid "Billing Address"
 msgstr "Adresse de facturation"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "Cycle de facturation"
 
 msgid "Billing Cycle"
 msgstr "Cycle de Facturation"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Périodes de Facturation"
@@ -3633,6 +3663,9 @@ msgstr "Calcul du meilleur cas…"
 
 msgid "Calculation Method"
 msgstr "Méthode de calcul"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "Mois Calendaire"
@@ -4753,6 +4786,9 @@ msgstr "Actifs de contrats"
 
 msgid "Contract Assets (default)"
 msgstr "Actifs de contrats (par défaut)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "La fermeture est refusée jusqu'à ce que chaque ligne soit prélevée o
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Déclencher sur les lignes de devis, les lignes de commande client et les lignes de facture de vente."
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "Aux premières lueurs, {name}."
 
@@ -12044,6 +12083,9 @@ msgstr "Nouveau type d'avis de modification"
 
 msgid "New Consumable"
 msgstr "Nouveau consommable"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "Nouveau prestataire"
@@ -15607,6 +15649,9 @@ msgstr "Utilisé récemment"
 msgid "Recertify Every (Days)"
 msgstr "Recertifier tous les (jours)"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Produits comptabilisés"
 
@@ -15949,6 +15994,12 @@ msgstr "Renommer le flux de travail"
 
 msgid "Rendering label preview..."
 msgstr "Rendu de l'aperçu de l'étiquette..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "Loyer"
@@ -18729,6 +18780,9 @@ msgstr "Suggérer une correspondance"
 
 msgid "Suggest with AI"
 msgstr "Suggérer avec l'IA"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Commandes suggérées que vous n'avez pas encore passées."

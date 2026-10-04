@@ -558,6 +558,9 @@ msgstr "1 единица"
 msgid "1 unposted document"
 msgstr "1 неопубликованный документ"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 ежемесячных периодов"
 
@@ -567,11 +570,17 @@ msgstr "13+ недель"
 msgid "1Y"
 msgstr "1 год"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 дней"
 
 msgid "2h"
 msgstr "2ч"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30 дней"
@@ -596,6 +605,9 @@ msgstr "Потребность на 52 недели"
 
 msgid "5MB file limit"
 msgstr "Лимит файла 5МБ"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7 дней"
@@ -656,6 +668,9 @@ msgstr "Продукция завершенного производственн
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Расходный материал — это физическая номенклатура, используемая для производства детали, которая может быть использована в нескольких производственных заказах."
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Подрядчик — контактное лицо поставщика с определенными навыками и доступными часами."
@@ -2173,6 +2188,9 @@ msgstr "и {hidden} еще"
 msgid "and {remaining} more"
 msgstr "и ещё {remaining}"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "Аннотация добавлена"
 
@@ -3036,6 +3054,9 @@ msgstr "По крайней мере одно условие должно сов
 msgid "At operation completion"
 msgstr "При завершении операции"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "Прикрепить"
 
@@ -3398,6 +3419,9 @@ msgstr "Перечень операций"
 msgid "Bill To"
 msgstr "Счет для"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "Счет выставлен:"
 
@@ -3410,11 +3434,17 @@ msgstr "Выставление счетов за аренду в фиксиро�
 msgid "Billing Address"
 msgstr "Адрес выставления счета"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "Цикл выставления счета"
 
 msgid "Billing Cycle"
 msgstr "Цикл выставления счетов"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Периоды выставления счетов"
@@ -3633,6 +3663,9 @@ msgstr "Расчет лучшего случая…"
 
 msgid "Calculation Method"
 msgstr "Метод расчета"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "Календарный месяц"
@@ -4753,6 +4786,9 @@ msgstr "Активы по контрактам"
 
 msgid "Contract Assets (default)"
 msgstr "Активы по контрактам (по умолчанию)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "Завершение отклоняется до тех пор, пока
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Срабатывает на строках предложения, строках заказа покупателя и строках счета-фактуры выданной."
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "Первый свет, {name}."
 
@@ -12044,6 +12083,9 @@ msgstr "Новый тип извещения об изменении"
 
 msgid "New Consumable"
 msgstr "Новый расходный материал"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "Новый подрядчик"
@@ -15607,6 +15649,9 @@ msgstr "Недавно используемые"
 msgid "Recertify Every (Days)"
 msgstr "Пересертификация каждые (дни)"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Признанные доходы"
 
@@ -15949,6 +15994,12 @@ msgstr "Переименовать рабочий процесс"
 
 msgid "Rendering label preview..."
 msgstr "Отрисовка предпросмотра этикетки..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "Аренда"
@@ -18729,6 +18780,9 @@ msgstr "Предложить совпадение"
 
 msgid "Suggest with AI"
 msgstr "Предложить с помощью ИИ"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Предложенные заказы, которые вы еще не разместили."

@@ -558,6 +558,9 @@ msgstr "1 個"
 msgid "1 unposted document"
 msgstr "1 件の未転記文書"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12ヶ月間の期間"
 
@@ -567,11 +570,17 @@ msgstr "13週間以上"
 msgid "1Y"
 msgstr "1年"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28日"
 
 msgid "2h"
 msgstr "2時間"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30日"
@@ -596,6 +605,9 @@ msgstr "52 週間の所要量"
 
 msgid "5MB file limit"
 msgstr "5MBファイル制限"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7日"
@@ -656,6 +668,9 @@ msgstr "完了した製造指図の出力で、その製造指図の実績累積
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "消耗品は、部品を製造するために使用される物理的な品目で、複数の製造指図で使用できます。"
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "外部作業者は、特定のスキルと利用可能な時間を持つ仕入先の担当者です。"
@@ -2173,6 +2188,9 @@ msgstr "そして{hidden}個以上"
 msgid "and {remaining} more"
 msgstr "そして{remaining}件以上"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "注釈が追加されました"
 
@@ -3036,6 +3054,9 @@ msgstr "少なくとも1つの条件が一致する必要があります"
 msgid "At operation completion"
 msgstr "操作完了時"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "添付"
 
@@ -3398,6 +3419,9 @@ msgstr "工程表"
 msgid "Bill To"
 msgstr "請求先"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "請求済み："
 
@@ -3410,11 +3434,17 @@ msgstr "固定期間でのレンタル請求。カレンダー月または連続
 msgid "Billing Address"
 msgstr "請求先住所"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "請求周期"
 
 msgid "Billing Cycle"
 msgstr "請求サイクル"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "請求期間"
@@ -3633,6 +3663,9 @@ msgstr "最良ケースを計算中…"
 
 msgid "Calculation Method"
 msgstr "計算方法"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "暦月"
@@ -4753,6 +4786,9 @@ msgstr "契約資産"
 
 msgid "Contract Assets (default)"
 msgstr "契約資産（デフォルト）"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "夜明け、{name}さん。"
 
@@ -12044,6 +12083,9 @@ msgstr "新規変更通知タイプ"
 
 msgid "New Consumable"
 msgstr "新しい消耗品"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "新規外部作業者"
@@ -15607,6 +15649,9 @@ msgstr "最近使用した"
 msgid "Recertify Every (Days)"
 msgstr "再認定 (日)"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "認識済収益"
 
@@ -15949,6 +15994,12 @@ msgstr "ワークフロー名を変更"
 
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "賃料"
@@ -18729,6 +18780,9 @@ msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"

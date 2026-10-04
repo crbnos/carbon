@@ -558,6 +558,9 @@ msgstr "1 unit"
 msgid "1 unposted document"
 msgstr "1 unposted document"
 
+msgid "1 year"
+msgstr "1 year"
+
 msgid "12 monthly periods"
 msgstr "12 monthly periods"
 
@@ -567,11 +570,17 @@ msgstr "13+ weeks"
 msgid "1Y"
 msgstr "1Y"
 
+msgid "2 years"
+msgstr "2 years"
+
 msgid "28 Days"
 msgstr "28 Days"
 
 msgid "2h"
 msgstr "2h"
+
+msgid "3 years"
+msgstr "3 years"
 
 msgid "30D"
 msgstr "30D"
@@ -596,6 +605,9 @@ msgstr "52-week demand"
 
 msgid "5MB file limit"
 msgstr "5MB file limit"
+
+msgid "6 months"
+msgstr "6 months"
 
 msgid "7D"
 msgstr "7D"
@@ -656,6 +668,9 @@ msgstr "A completed job's output, received into inventory at the job's actual ac
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A consumable is a physical item used to make a part that can be used across multiple jobs"
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "A contractor is a supplier contact with particular abilities and available hours"
@@ -2173,6 +2188,9 @@ msgstr "and {hidden} more"
 msgid "and {remaining} more"
 msgstr "and {remaining} more"
 
+msgid "Anniversary"
+msgstr "Anniversary"
+
 msgid "Annotation added"
 msgstr "Annotation added"
 
@@ -3036,6 +3054,9 @@ msgstr "At least one condition must match"
 msgid "At operation completion"
 msgstr "At operation completion"
 
+msgid "At the End"
+msgstr "At the End"
+
 msgid "Attach"
 msgstr "Attach"
 
@@ -3398,6 +3419,9 @@ msgstr "Bill of Process"
 msgid "Bill To"
 msgstr "Bill To"
 
+msgid "Billed Through"
+msgstr "Billed Through"
+
 msgid "Billed:"
 msgstr "Billed:"
 
@@ -3410,11 +3434,17 @@ msgstr "Billing a rental in fixed periods, either calendar months or consecutive
 msgid "Billing Address"
 msgstr "Billing Address"
 
+msgid "Billing Alignment"
+msgstr "Billing Alignment"
+
 msgid "Billing cycle"
 msgstr "Billing cycle"
 
 msgid "Billing Cycle"
 msgstr "Billing Cycle"
+
+msgid "Billing Frequency"
+msgstr "Billing Frequency"
 
 msgid "Billing Periods"
 msgstr "Billing Periods"
@@ -3633,6 +3663,9 @@ msgstr "Calculating best case…"
 
 msgid "Calculation Method"
 msgstr "Calculation Method"
+
+msgid "Calendar"
+msgstr "Calendar"
 
 msgid "Calendar Month"
 msgstr "Calendar Month"
@@ -4753,6 +4786,9 @@ msgstr "Contract Assets"
 
 msgid "Contract Assets (default)"
 msgstr "Contract Assets (default)"
+
+msgid "Contract Type"
+msgstr "Contract Type"
 
 msgid "Contract Value"
 msgstr "Contract Value"
@@ -8811,6 +8847,9 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Fire on quote lines, sales order lines and sales invoice lines."
 
+msgid "First Invoice"
+msgstr "First Invoice"
+
 msgid "First light, {name}."
 msgstr "First light, {name}."
 
@@ -12044,6 +12083,9 @@ msgstr "New Change Notice Type"
 
 msgid "New Consumable"
 msgstr "New Consumable"
+
+msgid "New Contract"
+msgstr "New Contract"
 
 msgid "New Contractor"
 msgstr "New Contractor"
@@ -15607,6 +15649,9 @@ msgstr "Recently used"
 msgid "Recertify Every (Days)"
 msgstr "Recertify Every (Days)"
 
+msgid "Recognize Revenue From"
+msgstr "Recognize Revenue From"
+
 msgid "Recognized Income"
 msgstr "Recognized Income"
 
@@ -15949,6 +15994,12 @@ msgstr "Rename Workflow"
 
 msgid "Rendering label preview..."
 msgstr "Rendering label preview..."
+
+msgid "Renew"
+msgstr "Renew"
+
+msgid "Renewal Uplift (%)"
+msgstr "Renewal Uplift (%)"
 
 msgid "Rent"
 msgstr "Rent"
@@ -18729,6 +18780,9 @@ msgstr "Suggest Match"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
+
+msgid "Suggested from the customer's contracts"
+msgstr "Suggested from the customer's contracts"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."

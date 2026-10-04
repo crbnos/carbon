@@ -558,6 +558,9 @@ msgstr "1 adet"
 msgid "1 unposted document"
 msgstr "1 deftere geçmemiş belge"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 aylık dönem"
 
@@ -567,11 +570,17 @@ msgstr "13+ hafta"
 msgid "1Y"
 msgstr "1Y"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Gün"
 
 msgid "2h"
 msgstr "2s"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30G"
@@ -596,6 +605,9 @@ msgstr "52 haftalık talep"
 
 msgid "5MB file limit"
 msgstr "5 MB dosya sınırı"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7G"
@@ -656,6 +668,9 @@ msgstr "Tamamlanan iş emrinin çıktısı, iş emrinin gerçek birikmiş yarı 
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Sarf malzemesi, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Taşeron, belirli yetkinliklere ve kullanılabilir saatlere sahip bir tedarikçi ilgili kişisidir."
@@ -2173,6 +2188,9 @@ msgstr "ve {hidden} tane daha"
 msgid "and {remaining} more"
 msgstr "ve daha fazla"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "Açıklama eklendi"
 
@@ -3036,6 +3054,9 @@ msgstr "En az bir koşul eşleşmelidir"
 msgid "At operation completion"
 msgstr "İşlem tamamlandığında"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "Bağla"
 
@@ -3398,6 +3419,9 @@ msgstr "Operasyon listesi"
 msgid "Bill To"
 msgstr "Fatura Adresi"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "Faturalandı:"
 
@@ -3410,11 +3434,17 @@ msgstr "Kiralamayı sabit dönemlerde, takvim ayları veya ardışık 28 günlü
 msgid "Billing Address"
 msgstr "Faturalama Adresi"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "Faturalandırma döngüsü"
 
 msgid "Billing Cycle"
 msgstr "Faturalandırma Döngüsü"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Faturalandırma Dönemleri"
@@ -3633,6 +3663,9 @@ msgstr "En iyi durum hesaplanıyor…"
 
 msgid "Calculation Method"
 msgstr "Hesaplama Yöntemi"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "Takvim Ayı"
@@ -4753,6 +4786,9 @@ msgstr "Sözleşme Varlıkları"
 
 msgid "Contract Assets (default)"
 msgstr "Sözleşme Varlıkları (varsayılan)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırlarında, satış siparişi satırlarında ve satış faturası satırlarında etkinleşir."
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "İlk ışık, {name}."
 
@@ -12044,6 +12083,9 @@ msgstr "Yeni Değişiklik Bildirisi Türü"
 
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "Yeni taşeron"
@@ -15607,6 +15649,9 @@ msgstr "Son kullanılan"
 msgid "Recertify Every (Days)"
 msgstr "Her (Gün) Yeniden Sertifikalandır"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Muhasebeleştirilen Gelir"
 
@@ -15949,6 +15994,12 @@ msgstr "İş Akışını Yeniden Adlandır"
 
 msgid "Rendering label preview..."
 msgstr "Etiket önizlemesi oluşturuluyor..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "Kira"
@@ -18729,6 +18780,9 @@ msgstr "Eşleştirme Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."

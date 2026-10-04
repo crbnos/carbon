@@ -558,6 +558,9 @@ msgstr "1 unità"
 msgid "1 unposted document"
 msgstr "1 documento non registrato"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 periodi mensili"
 
@@ -567,11 +570,17 @@ msgstr "13+ settimane"
 msgid "1Y"
 msgstr "1 anno"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 Giorni"
 
 msgid "2h"
 msgstr "2h"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30 giorni"
@@ -596,6 +605,9 @@ msgstr "Fabbisogno di 52 settimane"
 
 msgid "5MB file limit"
 msgstr "Limite di file 5MB"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7 giorni"
@@ -656,6 +668,9 @@ msgstr "L'output di un lavoro completato, ricevuto in inventario al costo WIP ac
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un materiale di consumo è un articolo fisico utilizzato per realizzare un componente che può essere utilizzato su più ordini di produzione"
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Un collaboratore esterno è un contatto fornitore con competenze particolari e ore disponibili"
@@ -2173,6 +2188,9 @@ msgstr "e {hidden} altri"
 msgid "and {remaining} more"
 msgstr "e {remaining} altri"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "Annotazione aggiunta"
 
@@ -3036,6 +3054,9 @@ msgstr "Almeno una condizione deve corrispondere"
 msgid "At operation completion"
 msgstr "Al completamento dell'operazione"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "Allega"
 
@@ -3398,6 +3419,9 @@ msgstr "Lista delle operazioni"
 msgid "Bill To"
 msgstr "Fattura a"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "Fatturato:"
 
@@ -3410,11 +3434,17 @@ msgstr "Fatturazione di un noleggio in periodi fissi, mesi di calendario o perio
 msgid "Billing Address"
 msgstr "Indirizzo di Fatturazione"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "Ciclo di fatturazione"
 
 msgid "Billing Cycle"
 msgstr "Ciclo di Fatturazione"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Periodi di Fatturazione"
@@ -3633,6 +3663,9 @@ msgstr "Calcolo caso migliore…"
 
 msgid "Calculation Method"
 msgstr "Metodo di Calcolo"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "Mese Calendario"
@@ -4753,6 +4786,9 @@ msgstr "Cespiti contrattuali"
 
 msgid "Contract Assets (default)"
 msgstr "Cespiti contrattuali (predefinito)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marca
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Attiva su righe di offerta, righe di ordine di vendita e righe di fattura di vendita."
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "Prima luce, {name}."
 
@@ -12044,6 +12083,9 @@ msgstr "Nuovo tipo di avviso di modifica"
 
 msgid "New Consumable"
 msgstr "Nuovo materiale di consumo"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "Nuovo collaboratore esterno"
@@ -15607,6 +15649,9 @@ msgstr "Usato di recente"
 msgid "Recertify Every (Days)"
 msgstr "Ricertifica ogni (giorni)"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "Ricavi riconosciuti"
 
@@ -15949,6 +15994,12 @@ msgstr "Rinomina Workflow"
 
 msgid "Rendering label preview..."
 msgstr "Rendering dell'anteprima dell'etichetta..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "Noleggio"
@@ -18729,6 +18780,9 @@ msgstr "Suggerisci Corrispondenza"
 
 msgid "Suggest with AI"
 msgstr "Suggerisci con l'IA"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Ordini suggeriti che non hai ancora effettuato."

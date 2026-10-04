@@ -509,10 +509,12 @@ export type ContractScheduleReconciliation = {
  *     planned invoice date ≥ `from` in `create`, or `from` when there is none
  *     (the caller attaches it to that invoice, or to a memo).
  *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`.
- *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`: the
- *     ideal row with the same key and a different `periodEnd` or `amount` →
- *     `recut`; no ideal row → `deleteRowIds`. A kept invoice left with no rows
- *     → `deleteInvoiceIds`.
+ *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`, grouped
+ *     by key (a split leaves several installments on one key): when the group's
+ *     `periodEnd` or total differs from the ideal row → `recut` (one row takes
+ *     the ideal row; installments keep their shares, the last taking the
+ *     remainder so the total is exact); no ideal row → `deleteRowIds`. A kept
+ *     invoice left with no rows → `deleteInvoiceIds`.
  *  5. `create` = the ideal rows whose key matches no kept row and no
  *     `Invoiced` / `Billed Externally` row, invoiced on
  *     `nextInvoiceDate(max(row.invoiceDate, from))`, grouped into invoices. */
@@ -551,11 +553,14 @@ export function reconcileContractSchedule({
     if (isReplaced(row)) deleteInvoiceIds.add(row.invoiceId!);
   }
 
-  // 4. Planned rows on invoices before `from` are re-cut or removed.
+  // 4. Planned rows on invoices before `from` are re-cut or removed. A split
+  //    (several installments sharing one key) is compared and re-cut as a
+  //    group: its rows together must equal the ideal row.
   const recut: ContractScheduleRecut[] = [];
   const deleteRowIds: string[] = [];
   const blockedKeys = new Set<string>();
   const remainingByInvoice = new Map<string, number>();
+  const keptByKey = new Map<string, ExistingRow[]>();
   for (const row of existing) {
     if (
       row.invoiceStatus === "Invoiced" ||
@@ -580,18 +585,48 @@ export function reconcileContractSchedule({
     }
     blockedKeys.add(key(row));
     remainingByInvoice.set(invoiceId, remainingByInvoice.get(invoiceId)! + 1);
-    if (
-      ideal.periodEnd !== row.periodEnd ||
-      !equals(ideal.amount, row.amount)
-    ) {
+    const group = keptByKey.get(key(row));
+    if (group) group.push(row);
+    else keptByKey.set(key(row), [row]);
+  }
+  for (const [rowKey, group] of keptByKey) {
+    const ideal = idealByKey.get(rowKey)!;
+    const total = group.reduce((sum, row) => sum + row.amount, 0);
+    const unchanged =
+      group.every((row) => row.periodEnd === ideal.periodEnd) &&
+      equals(total, ideal.amount);
+    if (unchanged) continue;
+    if (group.length === 1 || equals(total, 0)) {
+      // One row (or a group with nothing to scale by): the ideal row, once.
+      group.forEach((row, index) =>
+        recut.push({
+          id: row.id,
+          periodEnd: ideal.periodEnd,
+          units: index === 0 ? ideal.units : 0,
+          unitPrice: ideal.unitPrice,
+          amount: index === 0 ? ideal.amount : 0
+        })
+      );
+      continue;
+    }
+    // Installments keep their shares of the ideal row; the last takes the
+    // remainder so the line total is conserved exactly.
+    let placed = 0;
+    group.forEach((row, index) => {
+      const share = row.amount / total;
+      const amount =
+        index === group.length - 1
+          ? round(ideal.amount - placed)
+          : round(ideal.amount * share);
+      placed += amount;
       recut.push({
         id: row.id,
         periodEnd: ideal.periodEnd,
-        units: ideal.units,
+        units: ideal.units * share,
         unitPrice: ideal.unitPrice,
-        amount: ideal.amount
+        amount
       });
-    }
+    });
   }
   for (const [invoiceId, remaining] of remainingByInvoice) {
     if (remaining === 0) deleteInvoiceIds.add(invoiceId);

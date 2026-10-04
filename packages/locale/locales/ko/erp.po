@@ -558,6 +558,9 @@ msgstr "1개"
 msgid "1 unposted document"
 msgstr "1건의 미전기 문서"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12개월 기간"
 
@@ -567,11 +570,17 @@ msgstr "13주 이상"
 msgid "1Y"
 msgstr "1년"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28일"
 
 msgid "2h"
 msgstr "2시간"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30일"
@@ -596,6 +605,9 @@ msgstr "52주 소요량"
 
 msgid "5MB file limit"
 msgstr "5MB 파일 제한"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7일"
@@ -656,6 +668,9 @@ msgstr "완료된 작업의 산출물로, 해당 작업에 누적된 실제 재�
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "소모품은 여러 작업 지시에 걸쳐 사용할 수 있는 부품을 만드는 데 사용되는 물리적 항목입니다."
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "외주 인력은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다."
@@ -2173,6 +2188,9 @@ msgstr "및 {hidden}개 더"
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "주석이 추가됨"
 
@@ -3036,6 +3054,9 @@ msgstr "하나 이상의 조건이 일치해야 합니다"
 msgid "At operation completion"
 msgstr "작업 완료 시"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "첨부"
 
@@ -3398,6 +3419,9 @@ msgstr "공정 목록"
 msgid "Bill To"
 msgstr "청구 대상"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "청구됨:"
 
@@ -3410,11 +3434,17 @@ msgstr "임차를 역월 또는 연속 28일 기간과 같은 고정 기간으�
 msgid "Billing Address"
 msgstr "청구지 주소"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "청구 주기"
 
 msgid "Billing Cycle"
 msgstr "청구 주기"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "청구 기간"
@@ -3633,6 +3663,9 @@ msgstr "최선의 경우 계산 중…"
 
 msgid "Calculation Method"
 msgstr "계산 방법"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "달력 월"
@@ -4753,6 +4786,9 @@ msgstr "계약 자산"
 
 msgid "Contract Assets (default)"
 msgstr "계약 자산 (기본값)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행합니다."
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "{name}님, 새벽빛이군요."
 
@@ -12044,6 +12083,9 @@ msgstr "신규 변경 통지 유형"
 
 msgid "New Consumable"
 msgstr "신규 소모품"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "신규 외주 인력"
@@ -15607,6 +15649,9 @@ msgstr "최근 사용"
 msgid "Recertify Every (Days)"
 msgstr "매 (Days)마다 재인증"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "인식된 수익"
 
@@ -15949,6 +15994,12 @@ msgstr "워크플로우 이름 바꾸기"
 
 msgid "Rendering label preview..."
 msgstr "라벨 미리보기 생성 중..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "임차료"
@@ -18729,6 +18780,9 @@ msgstr "일치 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."

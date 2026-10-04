@@ -558,6 +558,9 @@ msgstr "1 इकाई"
 msgid "1 unposted document"
 msgstr "1 अपोस्ट किया गया दस्तावेज़"
 
+msgid "1 year"
+msgstr ""
+
 msgid "12 monthly periods"
 msgstr "12 मासिक अवधियाँ"
 
@@ -567,11 +570,17 @@ msgstr "13+ सप्ताह"
 msgid "1Y"
 msgstr "1 वर्ष"
 
+msgid "2 years"
+msgstr ""
+
 msgid "28 Days"
 msgstr "28 दिन"
 
 msgid "2h"
 msgstr "2 घंटा"
+
+msgid "3 years"
+msgstr ""
 
 msgid "30D"
 msgstr "30 दिन"
@@ -596,6 +605,9 @@ msgstr "52-सप्ताह की मांग"
 
 msgid "5MB file limit"
 msgstr "5MB फ़ाइल सीमा"
+
+msgid "6 months"
+msgstr ""
 
 msgid "7D"
 msgstr "7 दिन"
@@ -656,6 +668,9 @@ msgstr "एक पूर्ण नौकरी का आउटपुट, नौ
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक उपभोग्य सामग्री एक भौतिक आइटम है जो एक पार्ट बनाने के लिए उपयोग की जाती है जिसे कई जॉब में उपयोग किया जा सकता है"
+
+msgid "A contract bills a customer for services on a schedule — one-time fees and recurring charges — and spreads the revenue over the service period."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष कौशल और उपलब्ध घंटे हैं"
@@ -2173,6 +2188,9 @@ msgstr "और {hidden} अधिक"
 msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
 
+msgid "Anniversary"
+msgstr ""
+
 msgid "Annotation added"
 msgstr "एनोटेशन जोड़ा गया"
 
@@ -3036,6 +3054,9 @@ msgstr "कम से कम एक शर्त मेल खानी चा�
 msgid "At operation completion"
 msgstr "ऑपरेशन पूरी होने पर"
 
+msgid "At the End"
+msgstr ""
+
 msgid "Attach"
 msgstr "संलग्न करें"
 
@@ -3398,6 +3419,9 @@ msgstr "प्रक्रिया सूची"
 msgid "Bill To"
 msgstr "बिल प्राप्तकर्ता"
 
+msgid "Billed Through"
+msgstr ""
+
 msgid "Billed:"
 msgstr "बिल भेजा गया:"
 
@@ -3410,11 +3434,17 @@ msgstr "किराये को निश्चित अवधियों �
 msgid "Billing Address"
 msgstr "बिलिंग पता"
 
+msgid "Billing Alignment"
+msgstr ""
+
 msgid "Billing cycle"
 msgstr "बिलिंग चक्र"
 
 msgid "Billing Cycle"
 msgstr "बिलिंग चक्र"
+
+msgid "Billing Frequency"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "बिलिंग अवधि"
@@ -3633,6 +3663,9 @@ msgstr "सर्वश्रेष्ठ स्थिति की गणना
 
 msgid "Calculation Method"
 msgstr "गणना विधि"
+
+msgid "Calendar"
+msgstr ""
 
 msgid "Calendar Month"
 msgstr "कैलेंडर माह"
@@ -4753,6 +4786,9 @@ msgstr "अनुबंध संपत्तियाँ"
 
 msgid "Contract Assets (default)"
 msgstr "अनुबंध संपत्तियाँ (डिफ़ॉल्ट)"
+
+msgid "Contract Type"
+msgstr ""
 
 msgid "Contract Value"
 msgstr ""
@@ -8811,6 +8847,9 @@ msgstr "जब तक हर पंक्ति को चुना नहीं
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "कोटेशन पंक्तियों, विक्रय आदेश पंक्तियों और विक्रय चालान पंक्तियों पर सक्रिय होता है।"
 
+msgid "First Invoice"
+msgstr ""
+
 msgid "First light, {name}."
 msgstr "पहली रोशनी, {name}।"
 
@@ -12044,6 +12083,9 @@ msgstr "नई परिवर्तन सूचना प्रकार"
 
 msgid "New Consumable"
 msgstr "नई उपभोग्य सामग्री"
+
+msgid "New Contract"
+msgstr ""
 
 msgid "New Contractor"
 msgstr "नया ठेकेदार"
@@ -15607,6 +15649,9 @@ msgstr "हाल ही में उपयोग किया गया"
 msgid "Recertify Every (Days)"
 msgstr "हर (दिन) को पुनः प्रमाणित करें"
 
+msgid "Recognize Revenue From"
+msgstr ""
+
 msgid "Recognized Income"
 msgstr "मान्यता प्राप्त आय"
 
@@ -15949,6 +15994,12 @@ msgstr "वर्कफ़्लो का नाम बदलें"
 
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
+
+msgid "Renew"
+msgstr ""
+
+msgid "Renewal Uplift (%)"
+msgstr ""
 
 msgid "Rent"
 msgstr "किराया"
@@ -18729,6 +18780,9 @@ msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
+
+msgid "Suggested from the customer's contracts"
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"

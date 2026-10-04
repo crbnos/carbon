@@ -325,6 +325,65 @@ describe("reconcileContractSchedule", () => {
     ).toBe(false);
   });
 
+  describe("a split one-time line on Planned invoices before `from`", () => {
+    const splitTerms = calendarMonthly();
+    const implementation = (rate: number) =>
+      line({
+        id: "implementation",
+        kind: "One-time",
+        rateUnit: null,
+        rate,
+        startDate: "2026-11-01",
+        endDate: "2027-04-30"
+      });
+    const installments = ["2026-11-01", "2026-12-01", "2027-01-01"].map(
+      (invoiceDate, index) =>
+        existingRow({
+          id: `inst-${index}`,
+          lineId: "implementation",
+          invoiceId: `inv-${index}`,
+          invoiceDate,
+          invoiceStatus: "Planned",
+          invoiceIsEdited: true,
+          periodStart: "2026-11-01",
+          periodEnd: "2027-04-30",
+          units: 1 / 3,
+          unitPrice: 60000,
+          amount: 20000
+        })
+    );
+
+    it("keeps the installments when the line total is unchanged", () => {
+      const result = reconcileContractSchedule({
+        terms: splitTerms,
+        lines: [implementation(60000)],
+        existing: installments,
+        from: "2027-03-12",
+        through: "2027-10-31"
+      });
+      expect(result.recut).toEqual([]);
+      expect(result.deleteRowIds).toEqual([]);
+      expect(
+        result.create
+          .flatMap((i) => i.rows)
+          .some((r) => r.lineId === "implementation")
+      ).toBe(false);
+    });
+
+    it("re-cuts the installments by share and conserves the new total", () => {
+      const result = reconcileContractSchedule({
+        terms: splitTerms,
+        lines: [implementation(66000)],
+        existing: installments,
+        from: "2027-03-12",
+        through: "2027-10-31"
+      });
+      expect(result.recut).toHaveLength(3);
+      expect(result.recut.map((r) => r.amount)).toEqual([22000, 22000, 22000]);
+      expect(invoiceTotal(result.recut)).toBe(66000);
+    });
+  });
+
   it("does not add a second adjustment when one already exists", () => {
     const result = reconcileContractSchedule({
       terms,
