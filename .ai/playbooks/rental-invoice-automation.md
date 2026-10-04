@@ -34,29 +34,29 @@ form containing `input[name=rate]`. Header "Activate" → dialog button
 "Activate MOD+ENTER".
 
 ### 3. Verify agreement UI
-Secondary "Invoice Now" button; summary line "Next invoice <date> is created
+Secondary "Invoice" button; summary line "Next invoice <date> is created
 automatically, then posted." (Draft: "…once the agreement is active.";
 Closed: nothing). Invoicing property: click the text "Company default (…)" to
 reveal its combobox; "Post and email" is offered only when the contact has an
 email; with no contact the note "Invoices will be posted but not emailed — the
 contact has no email" shows when the effective mode is Post and email.
 
-### 4. Invoice Now → automation
-"Invoice Now" → dialog button "Invoice Now MOD+ENTER". Flash: "Generated N
+### 4. Invoice → automation
+"Invoice" → dialog button "Invoice MOD+ENTER". Flash: "Generated N
 invoice(s); posting M automatically". Wait ~10 s for the Inngest
 `invoice-automate` run; the rent invoice becomes Submitted (Dr AR / Cr Deferred
 Revenue for Rental lines).
 
 ### 5. Holds
 - "Add Charge" (description, amount, blur, requestSubmit the form containing
-  `input[name=amount]`) → Invoice Now → a separate Draft with "Charges are
+  `input[name=amount]`) → Invoice → a separate Draft with "Charges are
   reviewed before posting"; Charges card shows HELD; invoice header DRAFT + HELD.
 - Void the posted rent invoice (⋯ → Void → "Void Invoice") → period back to
-  Pending with `voidedSalesInvoiceId` → Invoice Now → Draft held "Re-billing
+  Pending with `voidedSalesInvoiceId` → Invoice → Draft held "Re-billing
   AR…, which was voided"; delete that draft (⋯ → Delete) and generate again →
   still held.
 - Return a delivered unit early (Unit actions → Deliver, then → Return → "Return
-  Unit MOD+ENTER") → a negative adjustment period → Invoice Now → held
+  Unit MOD+ENTER") → a negative adjustment period → Invoice → held
   "Includes an early-return credit".
 
 ### 6. Manual post
@@ -65,7 +65,7 @@ Invoice "Post" → dialog "Post Invoice" (requestSubmit). The PDF is stored unde
 returns application/pdf.
 
 ### 7. Not sent
-Agreement with NO contact, effective mode Post and email → Invoice Now →
+Agreement with NO contact, effective mode Post and email → Invoice →
 Submitted + NOT SENT + "Send" button; listed under Receivables → Needs Review.
 Set the company default back to Post afterwards.
 

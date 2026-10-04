@@ -379,7 +379,7 @@ export async function insertRentalPurchaseOptionCharge(
     .single();
 }
 
-/** The agreement page's "Invoice Now" (and Sell to Customer): drafts the
+/** The agreement page's "Invoice" (and Sell to Customer): drafts the
  *  invoices for whatever the agreement has due, exactly as the daily job
  *  would — the `create-rental-invoices` server function. */
 export async function generateRentalInvoicesNow(

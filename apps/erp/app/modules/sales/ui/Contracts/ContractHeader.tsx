@@ -83,7 +83,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
       action: path.to.contractInvoice(id),
       title: t`Invoice ${readableId} now`,
       text: t`Invoices are drafted automatically on their invoice dates. Use this to draft whatever is due right away. Invoices then follow this contract's invoicing setting.`,
-      confirmText: t`Invoice Now`
+      confirmText: t`Invoice`
     },
     revert: {
       action: path.to.contractRevertCancellation(id),
@@ -181,7 +181,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
                   isDisabled={!canUpdate}
                   onClick={() => open("invoice")}
                 >
-                  <Trans>Invoice Now</Trans>
+                  <Trans>Invoice</Trans>
                 </Button>
               </>
             )}

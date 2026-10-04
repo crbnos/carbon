@@ -14,7 +14,7 @@ import { inngest } from "../../client";
 
 /**
  * Posts (and emails, or sends via Stripe) one drafted recurring invoice per
- * its source's invoice automation. Fired by Invoice Now / Sell to Customer for the invoices they
+ * its source's invoice automation. Fired by Invoice / Sell to Customer for the invoices they
  * drafted, and by the invoice's Send action with `mode: "Post and Email"` to
  * retry a failed email. The daily recurring-billing job runs the same two
  * steps inline. One run per invoice at a time; both steps are idempotent.

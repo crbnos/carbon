@@ -117,7 +117,7 @@ const RentalAgreementHeader = ({
       action: path.to.rentalAgreementInvoice(id),
       title: t`Invoice ${readableId} now`,
       text: t`Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting.`,
-      confirmText: t`Invoice Now`
+      confirmText: t`Invoice`
     },
     close: {
       action: path.to.rentalAgreementStatus(id),
@@ -190,7 +190,7 @@ const RentalAgreementHeader = ({
                 isDisabled={!canUpdate}
                 onClick={() => open("invoice")}
               >
-                <Trans>Invoice Now</Trans>
+                <Trans>Invoice</Trans>
               </Button>
             )}
             {(isDraft || isActive) &&

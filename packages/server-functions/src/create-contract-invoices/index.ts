@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Contract invoice generation — shared by the contract page's "Invoice Now"
+// Contract invoice generation — shared by the contract page's "Invoice"
 // and the daily recurring-billing job, so a person and the scheduler draft
 // exactly the same invoices. Per Active contract, in one transaction: renew a
 // contract whose term ran out, roll an open-ended schedule forward to the

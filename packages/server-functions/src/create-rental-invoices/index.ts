@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Rental invoice generation — shared by the ERP "Invoice Now" / "Sell to
+// Rental invoice generation — shared by the ERP "Invoice" / "Sell to
 // Customer" actions and the daily recurring-billing job, so a human and the
 // scheduler bill exactly the same periods. Posting stays with
 // post-sales-invoice (and invoice automation): this only drafts invoices.
