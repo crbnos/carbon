@@ -321,6 +321,11 @@ export const manifest = {
       portal.customer("customerId", "sales_delete")
     )
   }),
+  customerContract: company("sales", { read: "sales_view" }),
+  customerContractAmendment: company("sales", { read: "sales_view" }),
+  customerContractInvoice: company("sales", { read: "sales_view" }),
+  customerContractInvoiceLine: company("sales", { read: "sales_view" }),
+  customerContractLine: company("sales", { read: "sales_view" }),
   customerItemPriceOverride: company("sales"),
   customerItemPriceOverrideBreak: company("sales"),
   customerItemRentalRate: company("sales", { read: "sales_view" }),

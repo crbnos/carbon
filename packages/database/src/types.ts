@@ -10495,6 +10495,1197 @@ export type Database = {
           }
         ]
       }
+      customerContract: {
+        Row: {
+          billedThrough: string | null
+          billingAlignment: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingFrequency: Database["public"]["Enums"]["contractBillingFrequency"]
+          billingTiming: Database["public"]["Enums"]["contractBillingTiming"]
+          cancellationReason: string | null
+          cancelledAt: string | null
+          closeDate: string
+          companyId: string
+          confirmedAt: string | null
+          confirmedBy: string | null
+          contractType: Database["public"]["Enums"]["customerContractType"]
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          customerContractId: string
+          customerId: string
+          customerReference: string | null
+          customFields: Json | null
+          endDate: string | null
+          endedAt: string | null
+          exchangeRate: number
+          firstInvoiceDate: string | null
+          id: string
+          invoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
+          invoiceCustomerContactId: string | null
+          invoiceCustomerId: string | null
+          invoiceCustomerLocationId: string | null
+          name: string
+          notes: Json | null
+          paymentTermId: string | null
+          projectId: string | null
+          recognizeRevenueFrom: string | null
+          renewal: Database["public"]["Enums"]["contractRenewal"]
+          renewalUplift: number
+          salesOrderId: string | null
+          salesPersonId: string | null
+          startDate: string
+          status: Database["public"]["Enums"]["customerContractStatus"]
+          termMonths: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          billedThrough?: string | null
+          billingAlignment?: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingFrequency?: Database["public"]["Enums"]["contractBillingFrequency"]
+          billingTiming?: Database["public"]["Enums"]["contractBillingTiming"]
+          cancellationReason?: string | null
+          cancelledAt?: string | null
+          closeDate: string
+          companyId: string
+          confirmedAt?: string | null
+          confirmedBy?: string | null
+          contractType?: Database["public"]["Enums"]["customerContractType"]
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          customerContractId: string
+          customerId: string
+          customerReference?: string | null
+          customFields?: Json | null
+          endDate?: string | null
+          endedAt?: string | null
+          exchangeRate?: number
+          firstInvoiceDate?: string | null
+          id?: string
+          invoiceAutomation?:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
+          invoiceCustomerContactId?: string | null
+          invoiceCustomerId?: string | null
+          invoiceCustomerLocationId?: string | null
+          name: string
+          notes?: Json | null
+          paymentTermId?: string | null
+          projectId?: string | null
+          recognizeRevenueFrom?: string | null
+          renewal?: Database["public"]["Enums"]["contractRenewal"]
+          renewalUplift?: number
+          salesOrderId?: string | null
+          salesPersonId?: string | null
+          startDate: string
+          status?: Database["public"]["Enums"]["customerContractStatus"]
+          termMonths?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          billedThrough?: string | null
+          billingAlignment?: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingFrequency?: Database["public"]["Enums"]["contractBillingFrequency"]
+          billingTiming?: Database["public"]["Enums"]["contractBillingTiming"]
+          cancellationReason?: string | null
+          cancelledAt?: string | null
+          closeDate?: string
+          companyId?: string
+          confirmedAt?: string | null
+          confirmedBy?: string | null
+          contractType?: Database["public"]["Enums"]["customerContractType"]
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          customerContractId?: string
+          customerId?: string
+          customerReference?: string | null
+          customFields?: Json | null
+          endDate?: string | null
+          endedAt?: string | null
+          exchangeRate?: number
+          firstInvoiceDate?: string | null
+          id?: string
+          invoiceAutomation?:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
+          invoiceCustomerContactId?: string | null
+          invoiceCustomerId?: string | null
+          invoiceCustomerLocationId?: string | null
+          name?: string
+          notes?: Json | null
+          paymentTermId?: string | null
+          projectId?: string | null
+          recognizeRevenueFrom?: string | null
+          renewal?: Database["public"]["Enums"]["contractRenewal"]
+          renewalUplift?: number
+          salesOrderId?: string | null
+          salesPersonId?: string | null
+          startDate?: string
+          status?: Database["public"]["Enums"]["customerContractStatus"]
+          termMonths?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerContactId_fkey"
+            columns: ["invoiceCustomerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerLocationId_fkey"
+            columns: ["invoiceCustomerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_paymentTermId_fkey"
+            columns: ["paymentTermId"]
+            isOneToOne: false
+            referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractAmendment: {
+        Row: {
+          amendmentDate: string
+          companyId: string
+          contractType: Database["public"]["Enums"]["customerContractType"]
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          effect: Database["public"]["Enums"]["contractAmendmentEffect"]
+          id: string
+          previousState: Json | null
+          reason: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amendmentDate: string
+          companyId: string
+          contractType: Database["public"]["Enums"]["customerContractType"]
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          effect?: Database["public"]["Enums"]["contractAmendmentEffect"]
+          id?: string
+          previousState?: Json | null
+          reason: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amendmentDate?: string
+          companyId?: string
+          contractType?: Database["public"]["Enums"]["customerContractType"]
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          effect?: Database["public"]["Enums"]["contractAmendmentEffect"]
+          id?: string
+          previousState?: Json | null
+          reason?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractAmendment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractInvoice: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          id: string
+          invoiceDate: string
+          isEdited: boolean
+          salesInvoiceId: string | null
+          status: Database["public"]["Enums"]["contractInvoiceStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          id?: string
+          invoiceDate: string
+          isEdited?: boolean
+          salesInvoiceId?: string | null
+          status?: Database["public"]["Enums"]["contractInvoiceStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          id?: string
+          invoiceDate?: string
+          isEdited?: boolean
+          salesInvoiceId?: string | null
+          status?: Database["public"]["Enums"]["contractInvoiceStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoice_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractInvoiceLine: {
+        Row: {
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          customerContractInvoiceId: string | null
+          customerContractLineId: string
+          id: string
+          isAdjustment: boolean
+          memoId: string | null
+          periodEnd: string
+          periodStart: string
+          salesInvoiceLineId: string | null
+          unitPrice: number
+          units: number
+          updatedAt: string | null
+          updatedBy: string | null
+          voidedSalesInvoiceId: string | null
+        }
+        Insert: {
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          customerContractInvoiceId?: string | null
+          customerContractLineId: string
+          id?: string
+          isAdjustment?: boolean
+          memoId?: string | null
+          periodEnd: string
+          periodStart: string
+          salesInvoiceLineId?: string | null
+          unitPrice: number
+          units: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
+        }
+        Update: {
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          customerContractInvoiceId?: string | null
+          customerContractLineId?: string
+          id?: string
+          isAdjustment?: boolean
+          memoId?: string | null
+          periodEnd?: string
+          periodStart?: string
+          salesInvoiceLineId?: string | null
+          unitPrice?: number
+          units?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+          voidedSalesInvoiceId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractInvoiceLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_invoice_fkey"
+            columns: ["customerContractInvoiceId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractInvoice"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractInvoiceLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractLine: {
+        Row: {
+          amendmentId: string | null
+          amendsLineId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          customFields: Json | null
+          description: string | null
+          discountEndsOn: string | null
+          discountPercent: number
+          endDate: string | null
+          goLiveDate: string | null
+          id: string
+          itemId: string
+          kind: Database["public"]["Enums"]["customerContractLineKind"]
+          projectId: string | null
+          quantity: number
+          rate: number
+          rateUnit: Database["public"]["Enums"]["contractRateUnit"] | null
+          revenueEndDate: string | null
+          revenueMethod: Database["public"]["Enums"]["contractRevenueMethod"]
+          revenueStartDate: string | null
+          salesOrderLineId: string | null
+          sortOrder: number | null
+          startDate: string
+          taxPercent: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amendmentId?: string | null
+          amendsLineId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          customFields?: Json | null
+          description?: string | null
+          discountEndsOn?: string | null
+          discountPercent?: number
+          endDate?: string | null
+          goLiveDate?: string | null
+          id?: string
+          itemId: string
+          kind: Database["public"]["Enums"]["customerContractLineKind"]
+          projectId?: string | null
+          quantity?: number
+          rate: number
+          rateUnit?: Database["public"]["Enums"]["contractRateUnit"] | null
+          revenueEndDate?: string | null
+          revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"]
+          revenueStartDate?: string | null
+          salesOrderLineId?: string | null
+          sortOrder?: number | null
+          startDate: string
+          taxPercent?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amendmentId?: string | null
+          amendsLineId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          customFields?: Json | null
+          description?: string | null
+          discountEndsOn?: string | null
+          discountPercent?: number
+          endDate?: string | null
+          goLiveDate?: string | null
+          id?: string
+          itemId?: string
+          kind?: Database["public"]["Enums"]["customerContractLineKind"]
+          projectId?: string | null
+          quantity?: number
+          rate?: number
+          rateUnit?: Database["public"]["Enums"]["contractRateUnit"] | null
+          revenueEndDate?: string | null
+          revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"]
+          revenueStartDate?: string | null
+          salesOrderLineId?: string | null
+          sortOrder?: number | null
+          startDate?: string
+          taxPercent?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractLine_amendment_fkey"
+            columns: ["amendmentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractAmendment"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_amendsLine_fkey"
+            columns: ["amendsLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLine_salesOrderLineId_fkey"
+            columns: ["salesOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "openSalesOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_salesOrderLineId_fkey"
+            columns: ["salesOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_salesOrderLineId_fkey"
+            columns: ["salesOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       customerItemPriceOverride: {
         Row: {
           active: boolean
@@ -31945,6 +33136,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           currencyCode: string
+          customerContractId: string | null
           customerId: string | null
           customFields: Json | null
           direction: Database["public"]["Enums"]["memoDirection"]
@@ -31974,6 +33166,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           currencyCode: string
+          customerContractId?: string | null
           customerId?: string | null
           customFields?: Json | null
           direction: Database["public"]["Enums"]["memoDirection"]
@@ -32003,6 +33196,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           currencyCode?: string
+          customerContractId?: string | null
           customerId?: string | null
           customFields?: Json | null
           direction?: Database["public"]["Enums"]["memoDirection"]
@@ -32096,6 +33290,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "memo_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "memo_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "memo_customerId_fkey"
@@ -53764,6 +54972,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           currencyCode: string
+          customerContractId: string | null
           customerId: string
           customerReference: string | null
           customFields: Json
@@ -53803,6 +55012,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           currencyCode: string
+          customerContractId?: string | null
           customerId: string
           customerReference?: string | null
           customFields?: Json
@@ -53842,6 +55052,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           currencyCode?: string
+          customerContractId?: string | null
           customerId?: string
           customerReference?: string | null
           customFields?: Json
@@ -53944,6 +55155,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "salesInvoice_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoice_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoice_customerId_fkey"
@@ -54073,14 +55298,19 @@ export type Database = {
           assetId: string | null
           companyId: string
           convertedAddOnCost: number | null
+          convertedNetUnitPrice: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedSetupPrice: number | null
           convertedShippingCost: number | null
           convertedUnitPrice: number | null
           createdAt: string
           createdBy: string
+          customerContractId: string | null
+          customerContractInvoiceLineId: string | null
+          customerContractLineId: string | null
           customFields: Json
           description: string | null
+          discountPercent: number
           exchangeRate: number
           externalNotes: Json
           id: string
@@ -54091,8 +55321,10 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
+          netUnitPrice: number | null
           nonTaxableAddOnCost: number
           opportunityId: string | null
+          projectId: string | null
           quantity: number
           rentalAgreementChargeId: string | null
           rentalAgreementId: string | null
@@ -54121,14 +55353,19 @@ export type Database = {
           assetId?: string | null
           companyId: string
           convertedAddOnCost?: number | null
+          convertedNetUnitPrice?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedSetupPrice?: number | null
           convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy: string
+          customerContractId?: string | null
+          customerContractInvoiceLineId?: string | null
+          customerContractLineId?: string | null
           customFields?: Json
           description?: string | null
+          discountPercent?: number
           exchangeRate?: number
           externalNotes?: Json
           id?: string
@@ -54139,8 +55376,10 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          netUnitPrice?: number | null
           nonTaxableAddOnCost?: number
           opportunityId?: string | null
+          projectId?: string | null
           quantity?: number
           rentalAgreementChargeId?: string | null
           rentalAgreementId?: string | null
@@ -54169,14 +55408,19 @@ export type Database = {
           assetId?: string | null
           companyId?: string
           convertedAddOnCost?: number | null
+          convertedNetUnitPrice?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedSetupPrice?: number | null
           convertedShippingCost?: number | null
           convertedUnitPrice?: number | null
           createdAt?: string
           createdBy?: string
+          customerContractId?: string | null
+          customerContractInvoiceLineId?: string | null
+          customerContractLineId?: string | null
           customFields?: Json
           description?: string | null
+          discountPercent?: number
           exchangeRate?: number
           externalNotes?: Json
           id?: string
@@ -54187,8 +55431,10 @@ export type Database = {
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
+          netUnitPrice?: number | null
           nonTaxableAddOnCost?: number
           opportunityId?: string | null
+          projectId?: string | null
           quantity?: number
           rentalAgreementChargeId?: string | null
           rentalAgreementId?: string | null
@@ -54304,6 +55550,34 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "salesInvoiceLine_customerContractInvoiceLine_fkey"
+            columns: ["customerContractInvoiceLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractInvoiceLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContractLine_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
             columns: ["invoiceId"]
             isOneToOne: false
@@ -54400,6 +55674,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "opportunity"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_salesOrderId_fkey"
@@ -70594,6 +71875,330 @@ export type Database = {
           }
         ]
       }
+      customerContracts: {
+        Row: {
+          billedThrough: string | null
+          billingAlignment:
+            | Database["public"]["Enums"]["contractBillingAlignment"]
+            | null
+          billingFrequency:
+            | Database["public"]["Enums"]["contractBillingFrequency"]
+            | null
+          billingTiming:
+            | Database["public"]["Enums"]["contractBillingTiming"]
+            | null
+          cancellationReason: string | null
+          cancelledAt: string | null
+          closeDate: string | null
+          companyId: string | null
+          confirmedAt: string | null
+          confirmedBy: string | null
+          contractType:
+            | Database["public"]["Enums"]["customerContractType"]
+            | null
+          contractValue: number | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          customerContractId: string | null
+          customerId: string | null
+          customerName: string | null
+          customerReference: string | null
+          customFields: Json | null
+          effectiveInvoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
+          endDate: string | null
+          endedAt: string | null
+          exchangeRate: number | null
+          firstInvoiceDate: string | null
+          id: string | null
+          invoiceAutomation:
+            | Database["public"]["Enums"]["invoiceAutomation"]
+            | null
+          invoiceCustomerContactId: string | null
+          invoiceCustomerId: string | null
+          invoiceCustomerLocationId: string | null
+          invoicedToDate: number | null
+          lineCount: number | null
+          name: string | null
+          nextInvoiceDate: string | null
+          notes: Json | null
+          paymentTermId: string | null
+          projectId: string | null
+          recognizeRevenueFrom: string | null
+          renewal: Database["public"]["Enums"]["contractRenewal"] | null
+          renewalUplift: number | null
+          salesOrderId: string | null
+          salesPersonId: string | null
+          startDate: string | null
+          status: Database["public"]["Enums"]["customerContractStatus"] | null
+          termMonths: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_confirmedBy_fkey"
+            columns: ["confirmedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerContactId_fkey"
+            columns: ["invoiceCustomerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerId_fkey"
+            columns: ["invoiceCustomerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_invoiceCustomerLocationId_fkey"
+            columns: ["invoiceCustomerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_paymentTermId_fkey"
+            columns: ["paymentTermId"]
+            isOneToOne: false
+            referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContract_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       customers: {
         Row: {
           accountManagerId: string | null
@@ -81719,15 +83324,20 @@ export type Database = {
           assetReadableId: string | null
           companyId: string | null
           convertedAddOnCost: number | null
+          convertedNetUnitPrice: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedSetupPrice: number | null
           convertedShippingCost: number | null
           convertedUnitPrice: number | null
           createdAt: string | null
           createdBy: string | null
+          customerContractId: string | null
+          customerContractInvoiceLineId: string | null
+          customerContractLineId: string | null
           customerPartId: string | null
           customFields: Json | null
           description: string | null
+          discountPercent: number | null
           exchangeRate: number | null
           externalNotes: Json | null
           id: string | null
@@ -81743,8 +83353,10 @@ export type Database = {
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           modelUploadId: string | null
+          netUnitPrice: number | null
           nonTaxableAddOnCost: number | null
           opportunityId: string | null
+          projectId: string | null
           quantity: number | null
           rentalAgreementChargeId: string | null
           rentalAgreementId: string | null
@@ -81862,6 +83474,34 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "salesInvoiceLine_customerContractInvoiceLine_fkey"
+            columns: ["customerContractInvoiceLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractInvoiceLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContractLine_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
             columns: ["invoiceId"]
             isOneToOne: false
@@ -81958,6 +83598,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "opportunity"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_project_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_salesOrderId_fkey"
@@ -89213,6 +90860,14 @@ export type Database = {
         | "list"
         | "date"
         | "material"
+      contractAmendmentEffect: "Change Date" | "Next Period"
+      contractBillingAlignment: "Anniversary" | "Calendar"
+      contractBillingFrequency: "Week" | "Month" | "Quarter" | "Year"
+      contractBillingTiming: "Advance" | "Arrears"
+      contractInvoiceStatus: "Planned" | "Invoiced" | "Billed Externally"
+      contractRateUnit: "Day" | "Week" | "Month" | "Quarter" | "Year"
+      contractRenewal: "Renew" | "End"
+      contractRevenueMethod: "Daily" | "Even Period"
       costLedgerType:
         | "Direct Cost"
         | "Revaluation"
@@ -89220,6 +90875,14 @@ export type Database = {
         | "Indirect Cost"
         | "Variance"
         | "Total"
+      customerContractLineKind: "One-time" | "Recurring"
+      customerContractStatus: "Draft" | "Active" | "Ended"
+      customerContractType:
+        | "New Sales"
+        | "Existing"
+        | "Expansion"
+        | "Reactivation"
+        | "Contraction"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
       demandForecastSourceType:
         | "Job Material"
@@ -89420,7 +91083,11 @@ export type Database = {
         | "COGS"
         | "Capitalization"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
-      invoiceAutomation: "Draft Only" | "Post" | "Post and Email"
+      invoiceAutomation:
+        | "Draft Only"
+        | "Post"
+        | "Post and Email"
+        | "Post and Send via Stripe"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
       itemLedgerDocumentType:
         | "Sales Shipment"
@@ -90650,6 +92317,14 @@ export const Constants = {
         "date",
         "material",
       ],
+      contractAmendmentEffect: ["Change Date", "Next Period"],
+      contractBillingAlignment: ["Anniversary", "Calendar"],
+      contractBillingFrequency: ["Week", "Month", "Quarter", "Year"],
+      contractBillingTiming: ["Advance", "Arrears"],
+      contractInvoiceStatus: ["Planned", "Invoiced", "Billed Externally"],
+      contractRateUnit: ["Day", "Week", "Month", "Quarter", "Year"],
+      contractRenewal: ["Renew", "End"],
+      contractRevenueMethod: ["Daily", "Even Period"],
       costLedgerType: [
         "Direct Cost",
         "Revaluation",
@@ -90657,6 +92332,15 @@ export const Constants = {
         "Indirect Cost",
         "Variance",
         "Total",
+      ],
+      customerContractLineKind: ["One-time", "Recurring"],
+      customerContractStatus: ["Draft", "Active", "Ended"],
+      customerContractType: [
+        "New Sales",
+        "Existing",
+        "Expansion",
+        "Reactivation",
+        "Contraction",
       ],
       deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
       demandForecastSourceType: [
@@ -90878,7 +92562,12 @@ export const Constants = {
         "Capitalization",
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
-      invoiceAutomation: ["Draft Only", "Post", "Post and Email"],
+      invoiceAutomation: [
+        "Draft Only",
+        "Post",
+        "Post and Email",
+        "Post and Send via Stripe",
+      ],
       itemCostingMethod: ["Standard", "Average", "LIFO", "FIFO"],
       itemLedgerDocumentType: [
         "Sales Shipment",

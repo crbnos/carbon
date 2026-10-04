@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261003224019",
+  "schemaVersion": "20261004015235",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-04T01:41:02.480Z",
+  "exportedAt": "2026-10-04T01:56:36.559Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4414,6 +4414,88 @@
       ]
     },
     {
+      "name": "customerContract",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "name",
+        "status",
+        "contractType",
+        "customerId",
+        "invoiceCustomerId",
+        "invoiceCustomerContactId",
+        "invoiceCustomerLocationId",
+        "salesPersonId",
+        "salesOrderId",
+        "projectId",
+        "customerReference",
+        "closeDate",
+        "startDate",
+        "endDate",
+        "termMonths",
+        "renewal",
+        "renewalUplift",
+        "billingFrequency",
+        "billingAlignment",
+        "billingTiming",
+        "firstInvoiceDate",
+        "billedThrough",
+        "recognizeRevenueFrom",
+        "invoiceAutomation",
+        "paymentTermId",
+        "currencyCode",
+        "exchangeRate",
+        "notes",
+        "confirmedAt",
+        "confirmedBy",
+        "cancelledAt",
+        "cancellationReason",
+        "endedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "customerContractAmendment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "amendmentDate",
+        "effect",
+        "contractType",
+        "reason",
+        "previousState",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "invoiceDate",
+        "status",
+        "salesInvoiceId",
+        "isEdited",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "salesOrderFavorite",
       "rows": 0,
       "columns": ["salesOrderId", "userId"]
@@ -4463,6 +4545,64 @@
         "serviceStartDate",
         "serviceEndDate",
         "configuration"
+      ]
+    },
+    {
+      "name": "customerContractLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "kind",
+        "itemId",
+        "description",
+        "quantity",
+        "rate",
+        "rateUnit",
+        "discountPercent",
+        "discountEndsOn",
+        "taxPercent",
+        "startDate",
+        "endDate",
+        "goLiveDate",
+        "revenueMethod",
+        "revenueStartDate",
+        "revenueEndDate",
+        "amendmentId",
+        "amendsLineId",
+        "salesOrderLineId",
+        "projectId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "customerContractInvoiceLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractInvoiceId",
+        "customerContractLineId",
+        "periodStart",
+        "periodEnd",
+        "units",
+        "unitPrice",
+        "amount",
+        "isAdjustment",
+        "salesInvoiceLineId",
+        "voidedSalesInvoiceId",
+        "memoId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6271,7 +6411,8 @@
         "automationHoldReason",
         "sentAt",
         "sentTo",
-        "sendError"
+        "sendError",
+        "customerContractId"
       ]
     },
     {
@@ -6316,7 +6457,12 @@
         "rentalAgreementLineId",
         "rentalBillingPeriodId",
         "rentalAgreementChargeId",
-        "rentalInvoiceLineKind"
+        "rentalInvoiceLineKind",
+        "customerContractId",
+        "customerContractLineId",
+        "customerContractInvoiceLineId",
+        "projectId",
+        "discountPercent"
       ]
     },
     {
@@ -6828,7 +6974,8 @@
         "updatedAt",
         "customFields",
         "salesReturnOrderId",
-        "purchaseReturnOrderId"
+        "purchaseReturnOrderId",
+        "customerContractId"
       ]
     },
     {

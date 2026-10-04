@@ -39,6 +39,12 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   approvalRule: ["approverGroupIds"],
   changeOrder: ["requiredActionIds", "sourceId"],
   costLedger: ["appliesToCostLedgerId", "documentId"],
+  customerContractInvoice: ["salesInvoiceId"],
+  customerContractInvoiceLine: [
+    "salesInvoiceLineId",
+    "voidedSalesInvoiceId",
+    "memoId"
+  ],
   document: ["sourceDocumentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],
