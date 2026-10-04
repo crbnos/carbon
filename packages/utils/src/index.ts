@@ -4,6 +4,7 @@
 
 export * from "@carbon/database/accounting-currency";
 export * from "@carbon/database/accounting-posting";
+export * from "@carbon/database/contract-schedule";
 export * from "@carbon/database/precision";
 export * from "@carbon/database/sales-posting-amounts";
 export * from "./accounting";
@@ -23,6 +24,8 @@ export * from "./bom";
 export * from "./calculate-due-date";
 export * from "./color";
 export * from "./const";
+export * from "./contract-invoice-plan";
+export * from "./contract-revenue";
 export * from "./country";
 export * from "./date";
 export * from "./datetime";
