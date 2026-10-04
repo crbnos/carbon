@@ -17588,6 +17588,7 @@ msgstr "设置数量"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "设置协议的开始日期以查看会计处理。"
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 

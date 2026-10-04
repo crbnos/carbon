@@ -17588,6 +17588,7 @@ msgstr "मात्रा निर्धारित करें"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "लेखांकन उपचार देखने के लिए समझौते की प्रारंभ तिथि निर्धारित करें।"
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 

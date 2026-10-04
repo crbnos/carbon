@@ -17588,6 +17588,7 @@ msgstr "数量を設定"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "契約の開始日を設定して会計処理を表示してください。"
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 

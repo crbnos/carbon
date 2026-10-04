@@ -17588,6 +17588,7 @@ msgstr "수량 설정"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "회계 처리를 확인하려면 계약의 시작일을 설정하세요."
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 

@@ -17588,6 +17588,7 @@ msgstr "Establecer Cantidad"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Establece la fecha de inicio del acuerdo para ver el tratamiento contable."
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 

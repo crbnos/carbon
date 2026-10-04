@@ -17588,6 +17588,7 @@ msgstr "Miktarı Ayarla"
 
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "Muhasebe işlemini görmek için sözleşmenin başlangıç tarihini ayarlayın."
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr ""
 
