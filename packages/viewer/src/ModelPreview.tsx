@@ -6,6 +6,7 @@ import { Button, cn, IconButton } from "@carbon/react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBox,
+  LuCamera,
   LuChevronDown,
   LuDownload,
   LuMaximize,
@@ -14,7 +15,7 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import type { ModelMetrics } from "./ModelCanvas";
+import type { ModelMetrics, ViewDirection } from "./ModelCanvas";
 import { isRawRenderable } from "./raw/formats";
 
 // The three.js renderer is code-split: a page with a model ships only this tier
@@ -76,6 +77,9 @@ export type ModelPreviewProps = {
    *  the in-flight optimise (job + run) so the row doesn't stay stuck. */
   onCancelWait?: () => void;
   mode?: "dark" | "light";
+  /** Shows a camera button that hands over where the viewer's camera stands
+   *  right now, for the host to redraw the model's thumbnail from there. */
+  onCaptureThumbnail?: (direction: ViewDirection) => void;
   onDelete?: () => void;
   className?: string;
 };
@@ -105,10 +109,12 @@ export function ModelPreview({
   retryLabel = "Retry",
   onCancelWait,
   mode = "dark",
+  onCaptureThumbnail,
   onDelete,
   className
 }: ModelPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewDirectionRef = useRef<(() => ViewDirection) | null>(null);
   const inView = useInView(containerRef);
   const [fullLoaded, setFullLoaded] = useState(false);
   const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
@@ -197,6 +203,7 @@ export function ModelPreview({
                     mode={mode}
                     interactive={interactive}
                     resetSignal={resetSignal}
+                    viewDirectionRef={viewDirectionRef}
                     onLoaded={() => setFullLoaded(true)}
                     onMetrics={setMetrics}
                   />
@@ -282,7 +289,7 @@ export function ModelPreview({
             </button>
           )}
 
-          {/* Toolbar: download + reset view + delete. */}
+          {/* Toolbar: download + reset view + thumbnail + delete. */}
           <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1">
             {mainUrl && (
               <IconButton
@@ -300,6 +307,20 @@ export function ModelPreview({
                 icon={<LuMaximize />}
                 variant="ghost"
                 onClick={() => setResetSignal((n) => n + 1)}
+              />
+            )}
+            {/* Only over a server GLB: that is what the thumbnail is drawn from. */}
+            {fullLoaded && hasServerModel && onCaptureThumbnail && (
+              <IconButton
+                aria-label="Use this view as the thumbnail"
+                title="Use this view as the thumbnail"
+                className="text-muted-foreground"
+                icon={<LuCamera />}
+                variant="ghost"
+                onClick={() => {
+                  const direction = viewDirectionRef.current?.();
+                  if (direction) onCaptureThumbnail(direction);
+                }}
               />
             )}
             {onDelete && (

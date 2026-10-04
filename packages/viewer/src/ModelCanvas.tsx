@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useThree } from "@react-three/fiber";
+import type { MutableRefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuRotateCw } from "react-icons/lu";
 import {
@@ -16,6 +17,9 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { AssemblyViewer } from "./AssemblyViewer";
 import { useAssembly } from "./useAssembly";
 import { cn } from "./utils";
+
+/** From the model towards the camera, in the model's axes (Z up). */
+export type ViewDirection = [number, number, number];
 
 /** Model measurements in model-space units (CAD tessellations are mm). */
 export type ModelMetrics = {
@@ -43,6 +47,9 @@ export type ModelCanvasProps = {
   interactive?: boolean;
   /** Bump this to re-frame the camera (the "reset view" action). */
   resetSignal?: number;
+  /** Filled with a function that reads where the camera stands right now, as a
+   *  direction from the model towards it. `null` until a model is on screen. */
+  viewDirectionRef?: MutableRefObject<(() => ViewDirection) | null>;
   /** Fired once the GLB has loaded and framed — the cross-fade trigger. */
   onLoaded?: () => void;
   /** Fired once with the loaded model's measurements (bbox always; area/volume
@@ -72,6 +79,7 @@ export function ModelCanvas({
   autoFrame = true,
   interactive = true,
   resetSignal = 0,
+  viewDirectionRef,
   onLoaded,
   onMetrics,
   className
@@ -105,6 +113,7 @@ export function ModelCanvas({
             scene={scene}
             autoFrame={autoFrame}
             resetSignal={resetSignal}
+            viewDirectionRef={viewDirectionRef}
           />
         )}
       </AssemblyViewer>
@@ -196,11 +205,13 @@ function useLoadedObject(
 function ModelScene({
   scene,
   autoFrame,
-  resetSignal
+  resetSignal,
+  viewDirectionRef
 }: {
   scene: Object3D;
   autoFrame: boolean;
   resetSignal: number;
+  viewDirectionRef?: MutableRefObject<(() => ViewDirection) | null>;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -267,6 +278,20 @@ function ModelScene({
     resetSeenRef.current = resetSignal;
     frameBox(new Box3().setFromObject(scene));
   }, [resetSignal, scene, frameBox]);
+
+  useEffect(() => {
+    if (!viewDirectionRef || !controls) return;
+    viewDirectionRef.current = () => {
+      const direction = camera.position
+        .clone()
+        .sub(controls.target)
+        .normalize();
+      return [direction.x, direction.y, direction.z];
+    };
+    return () => {
+      viewDirectionRef.current = null;
+    };
+  }, [viewDirectionRef, camera, controls]);
 
   return <primitive object={scene} />;
 }

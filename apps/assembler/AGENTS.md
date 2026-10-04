@@ -29,7 +29,8 @@ crates/
 │                # write_test_step generates hermetic multi-solid STEP fixtures for tests.
 ├── converter/   # STEP → graph.json + GLB. nodeid (sha1), graph (tree/bbox/source-unit), convert, glb.
 ├── thumbnail/   # GLB → PNG preview, on the CPU: reads plain or EXT_meshopt_compression GLBs,
-│                # z-buffer rasteriser from the viewer's default isometric direction (Z up),
+│                # z-buffer rasteriser through the viewer's camera (45° perspective, Z up; home
+│                # direction unless the caller names one),
 │                # material base colours, transparent background, hand-written PNG encoder.
 │                # `cargo run --release -p thumbnail --example render -- in.glb out.png` to eyeball one.
 └── planner/     # assembly-by-disassembly motion planner: greedy/geom/fasteners/collide/steps.
@@ -237,9 +238,20 @@ Built to sit as a small always-on pod beside other workloads.
 
 ## Thumbnails
 
-`POST /v1/thumbnail` `{ source: { url }, output: { path?, size? } }` renders the
-GLB at `source.url` to a square PNG (300 px unless `size` says otherwise) and
-late-mint uploads it as the `thumbnail` output. The caller is `@carbon/jobs`
+`POST /v1/thumbnail` `{ source: { url }, output: { path?, size?, direction? } }`
+renders the GLB at `source.url` to a square PNG (300 px unless `size` says
+otherwise) and late-mint uploads it as the `thumbnail` output.
+
+The camera is the viewer's: a 45° perspective looking at the centre of the
+bounding box, standing back far enough to fit the bounding sphere (`FOV_DEGREES`
+/ `FIT_MARGIN` in `crates/thumbnail`, mirroring `AssemblyViewer`'s camera and
+`frameBox` in `packages/viewer/src/ModelCanvas.tsx` — change one and change the
+other). `direction` is `[x, y, z]` from the model towards the camera, Z up;
+absent or unusable, it is the viewer's home view `[1, -1, 1]`. The viewer's
+camera button (`ModelPreview` `onCaptureThumbnail`) sends the direction its
+camera stands at, through `api+/model.thumbnail.ts` and the
+`carbon/model-thumbnail` event. Only the direction travels: the image is always
+re-framed to fit the whole model, whatever the viewer's zoom or pan. The caller is `@carbon/jobs`
 `tasks/model-thumbnail.ts`, which hands it the model's optimised GLB (else the
 lossless `convert` GLB). It replaced a headless-browser screenshot of the viewer
 page. A Draco-compressed GLB is refused (`thumbnail_failed`); textures and vertex

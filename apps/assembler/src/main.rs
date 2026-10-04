@@ -796,7 +796,8 @@ async fn create_thumbnail(
     respond(&state, &headers, &job_id, "thumbnail", sync).await
 }
 
-/// `output: { path?, size? }` — shared by the HTTP body and the run-job spec.
+/// `output: { path?, size?, direction? }` — shared by the HTTP body and the
+/// run-job spec. `direction` is `[x, y, z]`, model towards camera.
 pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::ThumbnailReq {
     actions::thumbnail::ThumbnailReq {
         source_url: source_url.to_string(),
@@ -804,6 +805,21 @@ pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::Th
             .as_u64()
             .map_or(thumbnail::DEFAULT_SIZE, |s| s.min(u32::MAX as u64) as u32),
         path: output["path"].as_str().map(str::to_string),
+        direction: view_direction(&output["direction"]),
+    }
+}
+
+/// Three finite numbers that are not all zero, else the viewer's home direction.
+fn view_direction(value: &Value) -> [f32; 3] {
+    let parsed: Option<Vec<f32>> = value
+        .as_array()
+        .filter(|a| a.len() == 3)
+        .and_then(|a| a.iter().map(|n| n.as_f64().map(|n| n as f32)).collect());
+    match parsed.as_deref() {
+        Some(&[x, y, z]) if [x, y, z].iter().all(|c| c.is_finite()) && (x, y, z) != (0.0, 0.0, 0.0) => {
+            [x, y, z]
+        }
+        _ => thumbnail::DEFAULT_DIRECTION,
     }
 }
 

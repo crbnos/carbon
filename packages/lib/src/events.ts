@@ -122,6 +122,8 @@ export type Events = {
     data: {
       modelId: string;
       companyId: string;
+      /** Model towards camera (Z up). Absent = the viewer's home view. */
+      direction?: [number, number, number];
     };
   };
 
