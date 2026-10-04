@@ -10,6 +10,7 @@ import { redirect, suggestContractType } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
+import { getExchangeRate } from "~/modules/accounting";
 import {
   customerContractValidator,
   getCustomerContractStatuses,
@@ -86,8 +87,26 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // The rate is looked up, never assumed 1 — the properties panel does the
+  // same when the currency changes (`update.tsx`).
+  const exchangeRate = await getExchangeRate(
+    client,
+    companyId,
+    data.currencyCode
+  );
+  if (exchangeRate.error || !exchangeRate.data) {
+    throw redirect(
+      path.to.contracts,
+      await flash(
+        request,
+        error(exchangeRate.error, "Failed to get the exchange rate")
+      )
+    );
+  }
+
   const contract = await insertContract(client, {
     ...data,
+    exchangeRate: Number(exchangeRate.data),
     contractType,
     customerContractId: sequence.data,
     companyId,

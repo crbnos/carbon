@@ -13,6 +13,7 @@
 // .ai/plans/2026-10-03-contracts-phase-a.md Task 12.
 
 import type { Database } from "@carbon/database";
+import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   horizon,
@@ -643,7 +644,13 @@ function invoiceLineValues(
     itemId: line.itemId,
     description,
     quantity: pricing.quantity,
-    unitPrice: pricing.unitPrice,
+    // The schedule prices in the contract's currency; `salesInvoiceLine.
+    // unitPrice` is base currency (`convertedUnitPrice` = unitPrice ×
+    // exchangeRate is what the customer sees), as on every sales document.
+    unitPrice: toBaseAmount(
+      pricing.unitPrice,
+      Number(context.contract.exchangeRate)
+    ),
     discountPercent: pricing.discountPercent,
     taxPercent: Number(line.taxPercent),
     serviceStartDate,

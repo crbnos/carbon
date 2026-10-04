@@ -686,3 +686,52 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a foreign-currency contract drafts its invoice lines in base currency at the contract's rate",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId } = await f.addRecurringContract({
+        key: "eur",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      // EUR per 1 base unit, as `exchangeRate` is stored everywhere.
+      await db
+        .updateTable("customerContract")
+        .set({ currencyCode: "EUR", exchangeRate: 0.9215 })
+        .where("id", "=", contractId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-01-01",
+        customerContractId: contractId
+      });
+      expect(run.error).toBeNull();
+      const invoiceId = run.data!.invoiceIds[0]!;
+
+      const line = await db
+        .selectFrom("salesInvoiceLine")
+        .select(["unitPrice", "convertedUnitPrice", "exchangeRate"])
+        .where("invoiceId", "=", invoiceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      // The contract bills €100 a month: base = 100 / 0.9215, and the
+      // customer-facing converted price is back to €100.
+      expect(Number(line.unitPrice)).toBeCloseTo(100 / 0.9215, 4);
+      expect(Number(line.convertedUnitPrice)).toBeCloseTo(100, 2);
+      expect(Number(line.exchangeRate)).toBeCloseTo(0.9215, 5);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
