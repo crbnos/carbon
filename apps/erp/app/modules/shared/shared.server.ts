@@ -4,16 +4,22 @@
 
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
+import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
+import { actionTaskEntities } from "@carbon/ee/action-task-entity";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import type { Signals } from "@carbon/onboarding";
+import { detectImplementationSignals } from "@carbon/onboarding/server";
+import type { PrinterRoute } from "@carbon/printing";
 import { unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
+import { createCookieSessionStorage } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getCustomerContact,
@@ -21,7 +27,7 @@ import {
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales";
-import { getCompany } from "~/modules/settings";
+import { getCompany, withLogoUrls } from "~/modules/settings";
 import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
 // Created concurrently with the returns module; see routes/file+/purchase-return-order+/
@@ -34,6 +40,9 @@ import { upsertDocument } from "../documents/documents.service";
 import type { CustomFieldsTableType } from "../settings";
 
 const logger = getLogger("erp", "shared");
+
+type Tables = Database["public"]["Tables"];
+type Views = Database["public"]["Views"];
 
 export async function assign(
   client: SupabaseClient<Database>,
@@ -597,8 +606,6 @@ function toPlainPeriod(p: {
   };
 }
 
-type Tables = Database["public"]["Tables"];
-
 /**
  * Every table with a string `id` and a `companyId` column. A nullable
  * `companyId` (e.g. `item`) is fine: global rows never match `.eq("companyId")`.
@@ -651,4 +658,221 @@ export async function requireCompanyRecord(
     logger.error("{table} not found for company", { table, companyId, match });
     throw new Response("Not found", { status: 404 });
   }
+}
+
+// What `get_app_shell` returns: the rows the shell used to read with nine
+// requests. Each key holds what `select("*")` on that table returned.
+type AppShellRows = {
+  companies: Views["companies"]["Row"][];
+  companyIntegrations: Tables["companyIntegration"]["Row"][];
+  companySettings: Tables["companySettings"]["Row"] | null;
+  savedViews: Tables["tableView"]["Row"][];
+  user: Tables["user"]["Row"] | null;
+  groups: string[];
+  defaults: Views["userDefaults"]["Row"] | null;
+  modulePreferences: Pick<
+    Tables["userModulePreference"]["Row"],
+    "module" | "position" | "hidden"
+  >[];
+  printerRoutes: PrinterRoute[];
+  implementationHub: Tables["implementationHub"]["Row"] | null;
+};
+
+/**
+ * Everything the app shell reads about the user and the company, in one round
+ * trip. `client` is the user's own client: the function runs as them, so each
+ * table's RLS applies as it did when these were separate requests.
+ */
+export async function getAppShell(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+) {
+  const result = await client.rpc("get_app_shell", {
+    company_id: companyId,
+    user_id: userId
+  });
+  if (result.error || !result.data) {
+    return { data: null, error: result.error ?? new Error("Empty app shell") };
+  }
+  const rows = result.data as unknown as AppShellRows;
+  return {
+    data: { ...rows, companies: rows.companies.map(withLogoUrls) },
+    error: null
+  };
+}
+
+const signalsLogger = getLogger("erp", "implementation-signals");
+
+// A day, not forever: wiping a company's data (a demo template revert, a
+// restore) can make a signal false again, and this bounds how long the hub
+// would keep showing that step as done.
+const IMPLEMENTATION_SIGNALS_TTL_SECONDS = 60 * 60 * 24;
+
+const implementationSignalsKey = (companyId: string) =>
+  `implementation:signals:${companyId}`;
+
+/**
+ * The hub's product signals, probing only the ones not already seen true.
+ *
+ * The app shell loads these on every page for an enrolled company — five
+ * existence queries each time. A signal that is true stays true, so it is
+ * remembered per company and its probe is skipped; a company that has done
+ * all five steps costs one Redis read instead.
+ */
+export async function getImplementationSignals(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<Signals> {
+  let known: Partial<Signals> = {};
+  try {
+    const cached = await redis.get(implementationSignalsKey(companyId));
+    if (cached) known = JSON.parse(cached) as Partial<Signals>;
+  } catch (error) {
+    // Redis is an optimisation here; without it, probe everything.
+    signalsLogger.warn("Could not read cached implementation signals", {
+      companyId,
+      error
+    });
+  }
+
+  const signals = await detectImplementationSignals(client, companyId, known);
+
+  const seen = Object.fromEntries(
+    Object.entries(signals).filter(([, value]) => value)
+  ) as Partial<Signals>;
+  if (Object.keys(seen).length > Object.keys(known).length) {
+    try {
+      await redis.set(
+        implementationSignalsKey(companyId),
+        JSON.stringify(seen),
+        "EX",
+        IMPLEMENTATION_SIGNALS_TTL_SECONDS
+      );
+    } catch (error) {
+      signalsLogger.warn("Could not cache implementation signals", {
+        companyId,
+        error
+      });
+    }
+  }
+  return signals;
+}
+
+// The readable identifier on each action task's parent, used for the Linear
+// attachment / Jira remote-link title.
+const actionTaskParents: Record<
+  ActionTaskEntityType,
+  { parentTable: string; readableColumn: string }
+> = {
+  nonConformanceActionTask: {
+    parentTable: "nonConformance",
+    readableColumn: "nonConformanceId"
+  },
+  changeOrderActionTask: {
+    parentTable: "changeOrder",
+    readableColumn: "changeOrderId"
+  }
+};
+
+export type ActionTaskWithParent = {
+  id: string | null;
+  notes: unknown;
+  parentId: string | null;
+  parentReadableId: string | null;
+};
+
+// Entity-aware action-task read: resolves the task plus its parent (NCR or change notice) — reads an action
+// task and its parent's readable id from whichever table the entity type names.
+export async function getActionTaskWithParent(
+  client: SupabaseClient<Database>,
+  entityType: ActionTaskEntityType,
+  taskId: string,
+  companyId: string
+): Promise<ActionTaskWithParent> {
+  const { table, parentColumn } = actionTaskEntities[entityType];
+  const { parentTable, readableColumn } = actionTaskParents[entityType];
+
+  const result = await client
+    .from(table)
+    .select(`id, notes, ${parentColumn}, ${parentTable}(${readableColumn})`)
+    .eq("id", taskId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // The select string is built from the entity map, which erases Supabase's row typing
+  const row = result.data as Record<string, any> | null;
+
+  return {
+    id: row?.id ?? null,
+    notes: row?.notes ?? null,
+    parentId: row?.[parentColumn] ?? null,
+    parentReadableId: row?.[parentTable]?.[readableColumn] ?? null
+  };
+}
+
+const ONBOARDING_DRAFT_KEY = "onboarding-draft";
+
+const onboardingDraftStorage = createCookieSessionStorage({
+  cookie: {
+    name: ONBOARDING_DRAFT_KEY,
+    path: "/",
+    secure: false,
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 // 24 hours
+  }
+});
+
+export type OnboardingDraft = {
+  industry?: {
+    industryId: string;
+    customIndustryDescription?: string;
+  };
+  company?: {
+    name?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    stateProvince?: string;
+    postalCode?: string;
+    countryCode?: string;
+    baseCurrencyCode?: string;
+    timezone?: string;
+    website?: string;
+  };
+};
+
+export async function getOnboardingDraft(
+  request: Request
+): Promise<OnboardingDraft | null> {
+  const session = await onboardingDraftStorage.getSession(
+    request.headers.get("Cookie")
+  );
+  const draft = session.get(ONBOARDING_DRAFT_KEY) as
+    | OnboardingDraft
+    | undefined;
+  return draft ?? null;
+}
+
+export async function setOnboardingDraft(
+  request: Request,
+  draft: Partial<OnboardingDraft>
+): Promise<string> {
+  const session = await onboardingDraftStorage.getSession(
+    request.headers.get("Cookie")
+  );
+  const existingDraft =
+    (session.get(ONBOARDING_DRAFT_KEY) as OnboardingDraft | undefined) ?? {};
+  const updatedDraft = { ...existingDraft, ...draft };
+  session.set(ONBOARDING_DRAFT_KEY, updatedDraft);
+  return onboardingDraftStorage.commitSession(session);
+}
+
+export async function clearOnboardingDraft(request: Request): Promise<string> {
+  const session = await onboardingDraftStorage.getSession(
+    request.headers.get("Cookie")
+  );
+  session.set(ONBOARDING_DRAFT_KEY, undefined);
+  return onboardingDraftStorage.commitSession(session);
 }

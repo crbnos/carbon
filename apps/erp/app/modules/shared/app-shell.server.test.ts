@@ -4,6 +4,18 @@
 
 import { describe, expect, it, vi } from "vitest";
 
+// shared.server.ts also holds the sales-order/return PDF and email helpers;
+// stub their imports so this test loads only what it exercises.
+vi.mock("@carbon/documents/email", () => ({}));
+vi.mock("@carbon/jobs", () => ({}));
+vi.mock("~/modules/accounting", () => ({}));
+vi.mock("~/modules/sales", () => ({}));
+vi.mock("~/modules/users/users.server", () => ({}));
+vi.mock("~/routes/file+/purchase-return-order+/$id[.]pdf", () => ({}));
+vi.mock("~/routes/file+/sales-return-order+/$id[.]pdf", () => ({}));
+vi.mock("../documents/documents.service", () => ({}));
+vi.mock("~/modules/shared/shared.service", () => ({}));
+vi.mock("@carbon/onboarding/server", () => ({}));
 vi.mock("~/modules/settings", () => ({
   withLogoUrls: (company: { logoLight: string | null }) => ({
     ...company,
@@ -11,7 +23,7 @@ vi.mock("~/modules/settings", () => ({
   })
 }));
 
-const { getAppShell } = await import("./app-shell.server");
+const { getAppShell } = await import("./shared.server");
 
 type Client = Parameters<typeof getAppShell>[0];
 const clientReturning = (result: unknown) => {

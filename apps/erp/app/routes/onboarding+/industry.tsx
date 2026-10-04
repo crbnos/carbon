@@ -52,12 +52,12 @@ import {
   getIndustries,
   onboardingCompanyValidator
 } from "~/modules/settings";
-import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import {
   clearOnboardingDraft,
   getOnboardingDraft,
   type OnboardingDraft
-} from "~/services/onboarding-draft.server";
+} from "~/modules/shared/shared.server";
+import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 

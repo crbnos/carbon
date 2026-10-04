@@ -35,7 +35,7 @@ import { addressValidator, getCompany } from "~/modules/settings";
 import {
   getOnboardingDraft,
   setOnboardingDraft
-} from "~/services/onboarding-draft.server";
+} from "~/modules/shared/shared.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
