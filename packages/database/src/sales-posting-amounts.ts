@@ -9,6 +9,9 @@ import { assertBalanced, EPSILON, round, SCALE } from "./precision.ts";
 export type SalesPostingAmountsInput = {
   quantity: number;
   unitPrice?: number | null;
+  /** Line discount, a fraction 0..1. Discounts merchandise only
+   *  (`quantity × unitPrice`); add-ons and shipping are never discounted. */
+  discountPercent?: number | null;
   shippingCost?: number | null;
   addOnCost?: number | null;
   nonTaxableAddOnCost?: number | null;
@@ -38,6 +41,10 @@ export type SalesPostingMetadata = {
   locationId: string | null;
   costCenterId: string | null;
   fixedAssetClassId: string | null;
+  /** The line's project. `buildSalesPostingLines` keeps it on the revenue-side
+   *  legs only (Sales, Deferred Revenue, the Rental revenue legs); AR, tax,
+   *  shipping and disposal legs carry no project. */
+  projectId?: string | null;
 };
 
 /** A rental revenue leg references the agreement it earns under; every other
@@ -129,13 +136,23 @@ function finite(amount: number, label: string): number {
   return amount;
 }
 
+/** `quantity × unitPrice × (1 − discountPercent)`: the discounted merchandise
+ *  every revenue, tax, shipping-weight and intercompany amount is built on. */
+function netMerchandise(line: SalesPostingAmountsInput): number {
+  const discountPercent = finite(line.discountPercent ?? 0, "Discount");
+  return finite(
+    finite(line.quantity, "Quantity") *
+      finite(line.unitPrice ?? 0, "Unit price") *
+      (1 - discountPercent),
+    "Merchandise"
+  );
+}
+
 /** Raw arithmetic shared by ledger and provider boundaries; prices are already base. */
 export function calculateSalesPostingAmounts(
   input: SalesPostingAmountsInput
 ): SalesPostingAmounts {
-  const merchandise =
-    finite(input.quantity, "Quantity") *
-    finite(input.unitPrice ?? 0, "Unit price");
+  const merchandise = netMerchandise(input);
   const shipping = finite(input.shippingCost ?? 0, "Line shipping");
   const addOn = finite(input.addOnCost ?? 0, "Taxable add-on");
   const nonTaxableAddOn = finite(
@@ -181,8 +198,7 @@ export function allocateSalesHeaderShipping(
   }
   const weights = eligible.map((line) =>
     finite(
-      finite(line.quantity, "Quantity") *
-        finite(line.unitPrice ?? 0, "Unit price") +
+      netMerchandise(line) +
         finite(line.shippingCost ?? 0, "Line shipping") +
         finite(line.addOnCost ?? 0, "Taxable add-on"),
       "Header shipping weight"
@@ -216,13 +232,14 @@ export function calculateSalesIntercompanyAmount(
   exchangeRate: number
 ): number {
   // Preserve the buyer-compatible matching basis: exclude add-ons, tax and header shipping.
+  // Merchandise is net of the line discount: the buyer keys the price it is
+  // charged (post-purchase-invoice matches on quantity × supplierUnitPrice).
   const base = lines.reduce(
     (sum, line) =>
       line.invoiceLineType === "Comment"
         ? sum
         : sum +
-          finite(line.quantity, "Quantity") *
-            finite(line.unitPrice ?? 0, "Unit price") +
+          netMerchandise(line) +
           finite(line.shippingCost ?? 0, "Line shipping"),
     0
   );
@@ -359,7 +376,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     description: string,
     isControl = false,
     quantity = line.quantity,
-    document?: { documentType: SalesPostingDocumentType; documentId: string }
+    document?: { documentType: SalesPostingDocumentType; documentId: string },
+    isRevenueSide = false
   ) => {
     const baseAmount = toBaseAmount(amount, 1);
     if (baseAmount === 0) return;
@@ -397,7 +415,12 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         : {}),
       companyId: context.companyId
     });
-    metadata.push({ ...input.metadata });
+    // The project dimensions the revenue side only, never AR, tax or shipping.
+    metadata.push(
+      isRevenueSide || !input.metadata.projectId
+        ? { ...input.metadata }
+        : { ...input.metadata, projectId: null }
+    );
     signedDebitTotal += side === "debit" ? baseAmount : -baseAmount;
   };
   const revenueLegAmounts: number[] = [];
@@ -437,7 +460,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
               documentType: leg.documentType,
               documentId: leg.documentId ?? context.documentId
             }
-          : undefined
+          : undefined,
+        true
       );
       revenueLegAmounts.push(legAmounts[index]!);
     });
@@ -449,7 +473,11 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         "Liability",
         "credit",
         amounts.salesRevenueBase,
-        "Deferred Revenue"
+        "Deferred Revenue",
+        false,
+        line.quantity,
+        undefined,
+        true
       );
     } else {
       push(
@@ -457,7 +485,11 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         "Revenue",
         "credit",
         amounts.salesRevenueBase,
-        "Sales Account"
+        "Sales Account",
+        false,
+        line.quantity,
+        undefined,
+        true
       );
     }
   }

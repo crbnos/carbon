@@ -17,3 +17,10 @@
 - Tests (with the URL exported): utils 555 ✓, database 314 ✓, server-functions 326 ✓, jobs 888 ✓ (30 skipped), documents 53 ✓.
 - No pre-existing failures.
 - Task 3b: `unitPrice` left unchanged in the salesInvoices view only as the `lines` JSON output field (no arithmetic).
+
+## Tasks 13 + 13b (one commit: same files)
+
+- Project dimension: `buildSalesPostingLines` marks revenue-side legs (Sales, Deferred Revenue, Rental revenue legs); AR, tax, shipping and disposal legs carry no project. The purchase invoice puts its project on AP too, so it was not copied.
+- `SalesPostingMetadata.projectId` is optional (a required field would break `datasets/helpers/posting-journals.ts:170`); every `post-sales-invoice` call site sets it.
+- Escape hatch 13b step 2 reviewed, not triggered in intent: the buyer's purchase invoice is typed by hand at the price it is charged (no mirror code exists), so the seller's intercompany amount uses net merchandise.
+- Shipment line `unitPrice` uses the generated `netUnitPrice`.

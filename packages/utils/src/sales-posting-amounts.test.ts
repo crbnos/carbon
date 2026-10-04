@@ -557,7 +557,8 @@ it("nonfinite component arithmetic is refused before any charge rows can be post
     "addOnCost",
     "nonTaxableAddOnCost",
     "taxPercent",
-    "allocatedHeaderShipping"
+    "allocatedHeaderShipping",
+    "discountPercent"
   ] as const) {
     expect(() =>
       calculateSalesPostingAmounts({ ...fixture().line, [key]: Number.NaN })
@@ -569,4 +570,130 @@ it("nonfinite component arithmetic is refused before any charge rows can be post
       unitPrice: Number.MAX_VALUE
     })
   ).toThrow();
+});
+
+it("a line discount nets merchandise only: 10 × 40 at 20% off and 10% tax", () => {
+  const line = {
+    invoiceLineType: "Service",
+    quantity: 10,
+    unitPrice: 40,
+    discountPercent: 0.2,
+    taxPercent: 0.1
+  };
+  expect(calculateSalesPostingAmounts(line)).toEqual({
+    salesRevenueBase: 320,
+    shippingRevenueBase: 0,
+    salesTaxBase: 32,
+    grossReceivableBase: 352
+  });
+  // Add-ons and shipping are never discounted; tax is charged on the net.
+  expect(
+    calculateSalesPostingAmounts({
+      ...line,
+      addOnCost: 20,
+      nonTaxableAddOnCost: 3,
+      shippingCost: 10
+    })
+  ).toEqual({
+    salesRevenueBase: 343,
+    shippingRevenueBase: 10,
+    salesTaxBase: 35,
+    grossReceivableBase: 388
+  });
+  const input = fixture();
+  input.line = line;
+  expect(byAccount(buildSalesPostingLines(input))).toEqual({
+    sales: 320,
+    tax: 32,
+    ar: 352
+  });
+});
+
+it("header shipping weights a discounted line by its net merchandise", () => {
+  const allocations = allocateSalesHeaderShipping(
+    [
+      // 100 × 1 at 75% off weighs 25.
+      {
+        id: "a",
+        invoiceLineType: "Part",
+        quantity: 1,
+        unitPrice: 100,
+        discountPercent: 0.75
+      },
+      // 75 undiscounted weighs 75.
+      { id: "b", invoiceLineType: "Part", quantity: 1, unitPrice: 75 }
+    ],
+    100
+  );
+  expect([...allocations]).toEqual([
+    ["a", 25],
+    ["b", 75]
+  ]);
+});
+
+it("the seller's intercompany matching basis is net of the line discount", () => {
+  expect(
+    calculateSalesIntercompanyAmount(
+      [
+        {
+          invoiceLineType: "Part",
+          quantity: 10,
+          unitPrice: 40,
+          discountPercent: 0.2,
+          shippingCost: 5
+        }
+      ],
+      1
+    )
+  ).toEqual(325);
+});
+
+it("the project dimensions only the revenue-side legs", () => {
+  const input = fixture();
+  input.metadata.projectId = "project";
+  const result = buildSalesPostingLines(input);
+  const projectByAccount = Object.fromEntries(
+    result.lines.map((line, index) => [
+      line.accountId,
+      result.metadata[index]!.projectId
+    ])
+  );
+  expect(projectByAccount).toEqual({
+    sales: "project",
+    shipping: null,
+    tax: null,
+    ar: null
+  });
+
+  const deferred = fixture();
+  deferred.metadata.projectId = "project";
+  deferred.deferredRevenueAccount = account("deferred", "Liability");
+  const deferredResult = buildSalesPostingLines(deferred);
+  expect(
+    deferredResult.lines
+      .filter((_, index) => deferredResult.metadata[index]!.projectId)
+      .map((line) => line.accountId)
+  ).toEqual(["deferred"]);
+
+  const rental = rentalFixture(1500);
+  rental.metadata.projectId = "project";
+  rental.revenueLegs = [
+    {
+      account: account("contract", "Asset"),
+      accountClass: "Asset",
+      description: "Contract Assets",
+      amount: 600
+    },
+    {
+      account: account("rental-income", "Revenue"),
+      accountClass: "Revenue",
+      description: "Rental Income"
+    }
+  ];
+  const rentalResult = buildSalesPostingLines(rental);
+  expect(
+    rentalResult.lines
+      .filter((_, index) => rentalResult.metadata[index]!.projectId)
+      .map((line) => line.accountId)
+  ).toEqual(["contract", "rental-income"]);
 });

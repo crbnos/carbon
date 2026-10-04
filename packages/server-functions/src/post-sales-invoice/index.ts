@@ -337,7 +337,8 @@ const postSalesInvoice = defineServerFn({
                     "CostCenter",
                     "FixedAssetClass",
                     "Customer",
-                    "Item"
+                    "Item",
+                    "Project"
                   ]
                 },
                 { columns: ["id", "entityType"] }
@@ -1035,7 +1036,8 @@ const postSalesInvoice = defineServerFn({
                         itemId: invoiceLine.itemId ?? null,
                         locationId: invoiceLine.locationId ?? null,
                         costCenterId: null,
-                        fixedAssetClassId: null
+                        fixedAssetClassId: null,
+                        projectId: invoiceLine.projectId ?? null
                       }
                     });
                     journalLineInserts.push(...charges.lines);
@@ -1085,7 +1087,8 @@ const postSalesInvoice = defineServerFn({
                         locationId: invoiceLine.locationId,
                         storageUnitId: invoiceLine.storageUnitId,
                         unitOfMeasure: invoiceLine.unitOfMeasureCode ?? "EA",
-                        unitPrice: invoiceLine.unitPrice ?? 0,
+                        // Net of the line discount: what the line sold for.
+                        unitPrice: invoiceLine.netUnitPrice ?? 0,
                         createdBy: invoiceLine.createdBy,
                         companyId
                       });
@@ -1157,7 +1160,8 @@ const postSalesInvoice = defineServerFn({
                             itemId: invoiceLine.itemId ?? null,
                             locationId: invoiceLine.locationId ?? null,
                             costCenterId: null,
-                            fixedAssetClassId: null
+                            fixedAssetClassId: null,
+                            projectId: null
                           });
                         }
                       }
@@ -1214,7 +1218,8 @@ const postSalesInvoice = defineServerFn({
                       asset.locationId ??
                       null,
                     costCenterId: null,
-                    fixedAssetClassId: assetClass.id
+                    fixedAssetClassId: assetClass.id,
+                    projectId: invoiceLine.projectId ?? null
                   },
                   disposal:
                     wasShipped && disposal
@@ -1328,7 +1333,8 @@ const postSalesInvoice = defineServerFn({
                   itemId: agreementLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
-                  fixedAssetClassId: null
+                  fixedAssetClassId: null,
+                  projectId: invoiceLine.projectId ?? null
                 };
                 const charges = buildSalesPostingLines({
                   line: postingLine,
@@ -1383,7 +1389,12 @@ const postSalesInvoice = defineServerFn({
                   );
                   journalLineInserts.push(...settlementLines);
                   for (let i = 0; i < settlementLines.length; i++) {
-                    journalLineDimensionsMeta.push({ ...rentalMetadata });
+                    // Derecognition (COGS / Lease Revenue) is not the line's
+                    // revenue side, so it carries no project.
+                    journalLineDimensionsMeta.push({
+                      ...rentalMetadata,
+                      projectId: null
+                    });
                   }
                 }
                 for (const accrualId of plan.billedAccrualIds) {
@@ -1740,6 +1751,15 @@ const postSalesInvoice = defineServerFn({
                       journalLineId: jl.id,
                       dimensionId: dimensionMap.get("Item")!,
                       valueId: meta.itemId,
+                      companyId
+                    });
+                  }
+                  // Set on the revenue-side legs only (buildSalesPostingLines).
+                  if (meta.projectId && dimensionMap.has("Project")) {
+                    journalLineDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dimensionMap.get("Project")!,
+                      valueId: meta.projectId,
                       companyId
                     });
                   }
@@ -2377,6 +2397,36 @@ const postSalesInvoice = defineServerFn({
                   .execute();
               }
             }
+
+            // Undo what drafting a contract invoice stamped: its schedule rows
+            // are billable again (remembering the voided invoice, so the
+            // automated re-bill is held for review) and the planned invoice is
+            // Planned again.
+            if (invoiceLineIds.length > 0) {
+              const updatedAt = datetime.timestamp();
+              await trx
+                .updateTable("customerContractInvoiceLine")
+                .set({
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .execute();
+            }
+            await trx
+              .updateTable("customerContractInvoice")
+              .set({
+                status: "Planned",
+                salesInvoiceId: null,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceId", "=", invoiceId)
+              .execute();
 
             // Update sales order lines to reverse invoiced quantities
             for await (const [salesOrderLineId, update] of Object.entries(
