@@ -1,0 +1,184 @@
+---
+title: Contracts
+description: "Billing a customer for services under an agreement: one-time and recurring lines, an invoice schedule you can edit, amendments, cancellation, and renewal."
+---
+
+A **<Term>contract</Term>** bills a customer for services on a schedule: one-time fees such as implementation, and recurring charges such as a subscription or a support plan. Carbon plans the invoices from the contract's lines and drafts each one on its invoice date.
+
+Contracts live under **Sales → Contracts**. Start one with **"Add Contract"** on the list, or with **"Create Contract"** in a sales order's menu ([from a sales order](#from-a-sales-order)).
+
+## Lifecycle
+
+<StatusFlow entity="customerContract">
+  <Status name="Draft">Terms, lines and the invoice schedule are all editable. Nothing is invoiced.</Status>
+  <Status name="Active" accent>Confirmed: the invoice schedule is fixed and invoices are drafted as they fall due. Changes go through Amend and Cancel.</Status>
+  <Status name="Ended">The end date has passed and every planned invoice has been drafted. Read-only.</Status>
+</StatusFlow>
+
+**"Confirm"** checks that the contract has lines, that each is a Service item, and that each recurring line has a rate unit. An edited <Term>invoice schedule</Term> must still bill each line's full amount. After that, terms and lines change only through [Amend](#amendments); only **"Contract Type"**, **"Invoicing"** and **"Notes"** stay editable. **"Delete Contract"** is for drafts only.
+
+The daily billing job sets a contract to Ended once its end date has passed and nothing is left to draft. An open-ended contract runs until you cancel it.
+
+## Lines
+
+Each line is a **Service** item, **One-time** or **Recurring**, with a **"Quantity"**, **"Rate"**, **"Discount (%)"**, **"Tax (%)"**, and its own **"Start Date"** and **"End Date"** (empty runs to the contract's end).
+
+- **One-time** lines bill their whole amount on the first invoice dated on or after their start date.
+- **Recurring** lines bill every billing period at the rate **"Per"** Day, Week, Month, Quarter or Year. The rate unit is independent of how often you invoice: a rate per Day can be invoiced monthly.
+- **"Discount Ends On"** ends a recurring line's discount, such as 20% off for the first year. Confirming turns it into an amendment that starts a full-price copy of the line the next day.
+- **"Project"** defaults from the contract. It is written as the Project [dimension](/docs/reference/dimensions) on the line's revenue when its invoices post.
+
+## The invoice schedule
+
+The contract's invoicing terms cut every recurring line into billing periods:
+
+- **"Billing Frequency"**: Weekly, Monthly, Quarterly or Yearly.
+- **"Billing Alignment"**: *Anniversary* counts periods from the start date. *Calendar* aligns them to the week (from Monday), month, quarter or year, with a shorter first period.
+- **"Billing Timing"**: *Advance* invoices a period on its first day, *Arrears* on its last.
+- **"First Invoice"**: any invoice that would fall before this date moves onto it.
+
+A period is priced in whole rate units, prorated by day. Months count from the period's start, so an Anniversary period from 15 March to 14 April is exactly one month, and a Calendar period from 15 to 30 November is 16 of 30 days. A rate of $10 per Day bills $310 for a 31-day month.
+
+Take a contract starting 1 November, invoiced Monthly in Advance: implementation $60,000 one-time, 10 seats at $40 per Month with 20% off, and support at $1,200 per Year. The 1 November invoice is $60,420 (60,000 + 320 + 100), and every later month is $420.
+
+<Callout type="note" title="Editing never changes what a line bills in total">
+While the contract is a draft, the **Invoices** section lets you **"Move Date"**, **"Merge Into…"** another invoice, **"Split"** a line into installments, or **"Move To…"** another date. Each line's total must hold: three $20,000 installments of the $60,000 are accepted, installments totaling $50,000 are refused.
+</Callout>
+
+If you change a line after editing the schedule, the section warns **"The schedule no longer matches the lines"**. **"Reset Schedule"** plans it again from the lines, discarding your edits.
+
+A fixed-term contract is planned to its end date, an open-ended one through the next billing period, rolled forward daily. **<Term id="billed-through">"Billed Through"</Term>** is for a contract moved into Carbon mid-term: periods ending on or before it read **Billed Externally** and are never invoiced.
+
+<Screenshot label="Draft contract page showing the Summary, the Invoices section with an edited schedule, and the Revenue preview" caption="A draft contract: the first invoice carries the one-time fee, the rest bill monthly." />
+
+## Invoicing
+
+A daily job drafts every planned invoice dated on or before today as one sales invoice per contract, and **"Invoice"** on an active contract does the same on demand. Each line shows its billing period and the contract line's quantity, list price and discount.
+
+What happens next follows the contract's **"Invoicing"** property, or the company default on **Settings → Invoicing** (**"Recurring Invoices"**):
+
+- **Draft only**: the invoice waits for a person to post it.
+- **Post**: posted automatically.
+- **Post and email**: posted and emailed to the **"Invoice Contact"** with the PDF attached.
+- **Post and send via Stripe**: posted and sent through your connected Stripe account with a payment link. Confirm requires the billing customer to be linked to a Stripe customer.
+
+An invoice that credits a contract change or re-bills a voided invoice is held for review instead, and so is one with a sales-rule violation or a posting error. Held invoices are listed under **Receivables → Needs Review**, and the contract's salesperson (or its creator) gets a daily summary.
+
+Voiding a posted contract invoice returns its periods to the schedule, and the next run bills them again on a held invoice. Deleting a draft contract invoice releases its periods too.
+
+## Revenue
+
+The **Revenue** section previews each line's revenue by month, and the contract's invoiced, recognized and deferred amounts. A line's revenue runs from its **"Go-Live Date"** (else **"Revenue Start"**, else its start) to its **"Revenue End"** (else its end), by one of two <Term id="revenue-method">revenue methods</Term>: **Daily**, the same amount every day, or **Even Period**, the same amount every full calendar month with partial months prorated by days.
+
+<Callout type="warn" title="In this release, revenue follows each invoice line's service period">
+The Revenue section is a preview. Posted revenue comes from each invoice line: <Term id="deferred-revenue">Deferred Revenue</Term> at posting, released by day across the line's service period by the monthly **Revenue Recognition** run. A recurring line's service period is its billing period; a one-time line's is its revenue dates, and one with no end date posts straight to revenue. **"Even Period"** and **"Recognize Revenue From"** are saved but do not change what posts yet.
+</Callout>
+
+## Amendments
+
+**"Amend"** on an active contract changes, adds, or ends lines from a **"Change Date"**, with a **"Reason"**. **"Takes Effect"** decides how:
+
+- **From the change date**: the old line ends the day before and its replacement starts on the date, prorated by day.
+- **From the next billing period**: the change starts with the next billing period, so nothing is prorated.
+
+Each change is an <Term>amendment</Term>. A period already invoiced past the change gets an **adjustment** on the next invoice: the billed amount times the days after the change, divided by the days billed. Raising the example's 10 seats to 15 on 12 March puts a credit of $206.45 and a charge of $309.68 on the 1 April invoice, for March's last 20 days.
+
+The modal previews the adjustments and next invoices before you save. It suggests the **"Contract Type"** from the change in recurring value: up is *Expansion*, down is *Contraction*. The **Amendments** section lists every change, newest first.
+
+## Cancellation
+
+**"Cancel"** picks an **"End Date"**, by default the end of the current billing period, so nothing already invoiced is credited. Open lines end on that date, later planned invoices are removed, and the contract no longer renews.
+
+When the date falls inside a period invoiced in advance, **"Credit unused time"** drafts a credit memo for the days after it. Posting it releases the Deferred Revenue it credits, and it cannot be voided. **"Revert Cancellation"** restores the previous end dates and renewal, until the end date passes and while that credit memo is still a draft.
+
+## Renewal
+
+**"Duration"** sets the term: 6 months, 1, 2 or 3 years, a custom end date, or open-ended. With **"At the End"** set to **Renew**, the daily job extends the contract by one term on its end date, raising each continuing recurring line's rate by **"Renewal Uplift (%)"**, and records an *Existing* amendment.
+
+## Contract types
+
+Every contract and amendment carries a <Term>contract type</Term>: **New Sales**, **Existing**, **Expansion**, **Reactivation** or **Contraction**. A new contract is suggested as *Reactivation* when all the customer's earlier contracts have ended, otherwise *New Sales*.
+
+## From a sales order
+
+**"Create Contract"** moves chosen **Service** lines that are not yet invoiced into a new draft contract, copying the customer, bill-to, payment terms, currency and PO number. Each line starts as One-time; switch it to Recurring and choose its rate unit. It is unavailable on a cancelled or closed order.
+
+The order counts those lines as invoiced, so invoicing the order bills only the rest. Deleting the draft contract, or one of its lines, hands them back.
+
+## Related
+
+<Cards>
+  <Card title="Sales orders" href="/docs/reference/sales-orders">
+    Where a contract can start, and where its lines count as invoiced.
+  </Card>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    The drafted contract invoices: posting, line discounts, and voiding.
+  </Card>
+  <Card title="Rental agreements" href="/docs/reference/rental-agreements">
+    The other recurring document, sharing the same daily billing and invoicing setting.
+  </Card>
+  <Card title="Dimensions" href="/docs/reference/dimensions">
+    The Project dimension each contract line writes on its revenue.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Add at least one line before confirming" / "LINE: only Service items can be on a contract" / "LINE: a recurring line needs a rate unit"
+Confirm (`post-customer-contract` `confirm`) refuses a contract with no lines, a line whose item is not a Service item, or a Recurring line without a rate unit. Several problems are reported in one message, joined with "; ".
+
+### "The edited invoice schedule no longer bills each line's total (LINE: AMOUNT not on any invoice). Fix the edits or reset the schedule."
+A line changed after the schedule was edited. The Invoices section shows the same residuals under "The schedule no longer matches the lines"; **Reset Schedule** plans it again from the lines.
+
+### "The billing customer is not linked to a Stripe customer. Link them before confirming a contract that sends its invoices via Stripe."
+Confirm with the effective invoicing mode *Post and Send via Stripe* needs an `externalIntegrationMapping` row (`customer`, `stripe-connect`) for the bill-to customer (`invoiceCustomerId`, else `customerId`). The contract page does not create that link.
+
+### "Contract CON… is STATUS; only a Draft contract can be confirmed|edited|reset" / "… only an Active contract can be amended|cancelled|reverted"
+The action does not apply in the contract's status. Draft: Confirm and schedule edits. Active: Amend, Cancel, Revert Cancellation, Invoice.
+
+### "Only a Draft contract can be edited — use Amend" / "Lines can only be added or changed on a Draft contract — use Amend" / "Lines can only be removed from a Draft contract — use Amend" / "Only a Draft contract's terms can be edited — use Amend"
+Service-level guards (code `CONTRACT_NOT_DRAFT`; these writers are also MCP tools). On an Active contract only Contract Type, Invoicing and Notes can change directly.
+
+### "A contract line must be a Service item" / "This line does not belong to this contract"
+`upsertContractLine` guards (`CONTRACT_LINE_NOT_SERVICE`, `CONTRACT_LINE_WRONG_CONTRACT`).
+
+### "Add an invoice contact with an email to send invoices"
+Setting Invoicing to *Post and Email* in the properties panel needs an invoice contact with an email (`CONTRACT_INVOICE_EMAIL_NO_CONTACT`).
+
+### "Only a Draft contract can be deleted. Cancel it instead."
+Delete is Draft-only.
+
+### "The DATE invoice is STATUS; only a Planned invoice can be edited" / "A credited row cannot be edited" / "Installments total X; the line must still total Y" / "Choose a different invoice to merge into"
+Schedule edits apply to Planned invoices of a Draft only, and a split must add up to the row's amount.
+
+### "LINE is changed twice" / "LINE already ended on DATE" / "LINE is a one-time line that has been invoiced; it cannot be changed"
+Amend refusals. A one-time line is changed or ended as a whole, so once invoiced it cannot change.
+
+### "The contract already ends on DATE; choose an earlier end date" / "The end date can be at most one day before the contract starts (DATE)" / "Invoices exist — cancel on or after DATE"
+Cancel refusals. An end date the day before the start cancels the contract back to nothing and sets it to Ended at once; that needs no invoiced period.
+
+### "The cancellation has taken effect; it can no longer be reverted" / "The credit memo has been posted" / "Contract CON… is not cancelled"
+Revert Cancellation works only while today is on or before the cancelled end date and the cancellation's credit memo is still Draft.
+
+### "A contract cancellation credit cannot be voided"
+`post-memo` refuses to void any memo with `customerContractId`.
+
+### "Includes a credit for a contract change" / "Re-billing INV…, which was voided"
+Automation hold reasons on a drafted contract invoice (`automationHoldReason`). Review and post it by hand. Under *Draft Only* nothing is held, since nothing is automated.
+
+### "Stripe is not connected" / "No Stripe customer is linked"
+`sendError` stamped by the *Post and Send via Stripe* send; the invoice stays posted and shows under Needs Review.
+
+### "Deferred Revenue account is not mapped; map it in the accounting defaults before posting lines with service dates"
+A contract invoice's Service lines carry service dates, so posting defers them. Map the Deferred Revenue account default.
+
+### "Invoice has recognized revenue; reverse the recognition journal first"
+Voiding a contract invoice whose Deferral rows a recognition run already posted.
+
+### "Cannot create a contract from a cancelled|closed sales order" / "Only Service lines can move to a contract" / "A line that is already invoiced cannot move to a contract"
+Create Contract from a sales order refusals. Eligible lines are Service lines with nothing invoiced.
+
+## Internals
+Tables: `customerContract` (sequence `CON`; `status` Draft / Active / Ended; `contractType`; `billingFrequency` Week / Month / Quarter / Year; `billingAlignment`; `billingTiming`; `termMonths`; `renewal` Renew / End; `renewalUplift` and every percent stored as a 0–1 fraction; `firstInvoiceDate`; `billedThrough`; `recognizeRevenueFrom`; `invoiceAutomation`, null = company default), `customerContractLine` (`kind` One-time / Recurring; `rateUnit` Day–Year, required for Recurring only; `discountEndsOn`; `revenueMethod` Daily / Even Period; `goLiveDate`, `revenueStartDate`, `revenueEndDate`; `amendmentId` / `amendsLineId`; `salesOrderLineId`; `projectId`), `customerContractAmendment` (`effect` Change Date / Next Period; `previousState` set by a cancellation), `customerContractInvoice` (planned invoices: `status` Planned / Invoiced / Billed Externally, `isEdited`, `salesInvoiceId`), `customerContractInvoiceLine` (schedule rows: `periodStart`/`periodEnd`, `units`, list `unitPrice`, `amount`, `isAdjustment`, `salesInvoiceLineId`, `voidedSalesInvoiceId`, `memoId`). View `customerContracts` adds `customerName`, `effectiveInvoiceAutomation`, `lineCount`, `contractValue`, `invoicedToDate`, `nextInvoiceDate`. Provenance: `salesInvoice.customerContractId`, `salesInvoiceLine.customerContractId` / `customerContractLineId` / `customerContractInvoiceLineId` / `projectId`, `memo.customerContractId`. An unedited Draft has no schedule rows: the page plans them live and the first edit (or Confirm) saves them. Schedule math: `@carbon/database/contract-schedule` (`planInvoiceSchedule`, `periodUnits`, `rowPricing`, `reconcileContractSchedule`, `amendmentEffectiveDate`, `suggestContractType`, `suggestAmendmentType`, `horizon`); revenue preview: `contract-revenue` in `@carbon/utils`. Server functions: `post-customer-contract` (`confirm`, `edit-schedule`, `reset-schedule`, `amend`, `cancel`, `revert-cancellation`; update sales) and `create-contract-invoices` (renew, roll the horizon, draft, end; update sales + create invoicing). Drafted line: `invoiceLineType` Service, description "NAME · Nov 1, 2026–Nov 30, 2026", quantity / list unit price / `discountPercent` from the contract line, or quantity 1 at the row amount with "N% off" in the description for a split installment or an adjustment. Daily job: Inngest `recurring-billing` (05:00 UTC), contracts after rentals, same as-of date. Routes: `/x/sales/contracts`, `/x/contract/:id`, `/x/sales-order/:orderId/contract`. Not in this release: the per-line revenue ledger, Contract Assets for revenue earned before it is billed, and the effect of Even Period and Recognize Revenue From on posting.
+</AgentContext>

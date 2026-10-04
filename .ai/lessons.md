@@ -2328,7 +2328,12 @@ believing a Deno/DB test failure is yours, run a NEIGHBOURING suite you did not
 touch — `post-charge` next to `post-reimbursement`. Identical failure counts in
 untouched code means the environment, not the diff.
 
-**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures); any `pnpm db:check:*` or psql work inside
+Vitest reads `SUPABASE_DB_URL` from the root `.env` too, so DB-backed vitest suites
+(`databaseTest` in `packages/server-functions`) connect to the stale port: they do not skip, because the host is still local. Export the
+worktree's URL before you run them:
+`export SUPABASE_DB_URL="$(grep -h '^SUPABASE_DB_URL' .env.local | cut -d= -f2- | tr -d '"')"`.
+
+**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
 a Conductor worktree.
 
 ## The `@carbon/ee` barrel boots the server env — four places that breaks
@@ -2998,3 +3003,24 @@ mean optional in the app.
 
 **Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
 of `salesInvoice`; backfilled by `20261002194333_sales-invoice-opportunity-backfill.sql`.
+
+## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
+
+**Context:** The contracts migration (`20261004014555_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
+
+**Problem:** After `generate:types`, the ERP typecheck failed with TS2589 ("type instantiation is excessively deep") in four files that the change did not touch. Each did a bare embed such as `.select("salesInvoice(id, invoiceId)")` from `salesInvoiceLine`. More relationships on the table make the inference of a bare embed too deep. A `@ts-ignore` would hide it, but the next new FK moves the error to another file.
+
+**Rule:** When you add a FK to a table that other code embeds from, name the FK in every embed of its parent: `salesInvoice!salesInvoiceLine_invoiceId_fkey(...)`. Run the scoped `erp` typecheck after `generate:types`, before you commit the migration. Fix the cause at the embed by naming the FK (fix commit `5b26a095dd`). Use `@ts-ignore` (the TS2589 lesson above) only for an embed that already names its FK.
+
+**Applies to:** any migration that adds a FK column to `salesInvoiceLine`, `salesOrderLine`, `jobMaterial` or another widely embedded table; the PostgREST selects in `apps/erp` that embed from it.
+
+## A schedule computed live has no row ids until the first edit writes it
+
+**Context:** An unedited Draft contract has no `customerContractInvoice` rows. The loader computes the invoice schedule from the lines with the pure planner (`@carbon/database/contract-schedule`). The first edit writes the rows (plan decision 2).
+
+**Problem:** The page sent the edit with the ids of computed rows that were not in the database. The server function wrote the schedule, then looked up those ids, found nothing, and refused the edit. So the first edit of every Draft failed. No test covered an edit from the computed state.
+
+**Rule:** When a page shows rows that the server computes and does not store, give each row a reference by position, not an id. Contracts use `planned:<invoiceDate>` for an invoice and `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]` for a row. The server writes the rows first, then resolves each reference against them. Test the first edit from the computed state with a database test, not from stored rows (`contract-lifecycle.test.ts`, fix commit `56fa0f7b8e`).
+
+**Applies to:** `post-customer-contract` `edit-schedule`, `ContractInvoices` / `ContractInvoiceSplitModal`, and any future editable preview that persists on first edit.
+

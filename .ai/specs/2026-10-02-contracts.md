@@ -1,6 +1,6 @@
 # Contracts — AR contracts with independent billing and revenue schedules
 
-> Status: draft
+> Status: Phase A implemented (2026-10-04, plan `.ai/plans/2026-10-03-contracts-phase-a.md`); Phase B not started
 > Author: Brad (with Claude)
 > Date: 2026-10-02
 > Research: `.ai/research/subscription-recurring-invoicing.md` (SAP, NetSuite, Business Central, D365 F&O, Acumatica, Odoo, Xero, QuickBooks, Stripe, Chargebee, Maxio; Rillet and Stripe API data models; Rillet's Contract screens)
@@ -411,7 +411,7 @@ Worked example (Acme, accounting enabled):
 
 Two plans, in order, each shippable (decided 2026-10-02; the rental invoice automation plan, which builds the shared layer, executes first):
 
-- **Phase A — contracts, invoice schedule, invoicing.** Everything except the line-level revenue engine: tables, contract page, lines, editable invoice schedule, amendments, cancellation + credit memo, renewal, contract types, discounts, migration *Billed through*, Create Contract from sales orders, the contract source in `recurring-billing`, contract holds, and the *Post and Send via Stripe* mode. Interim revenue: contract invoice lines post through the existing **Service-line deferral** — each line's service dates are its billing period, and a one-time line's service dates are its revenue dates — so revenue is right whenever billing is at or ahead of delivery (the common case). The revenue section shows the preview and summary computed from the schedule; *Recognize revenue from* and Even Period are accepted but only take effect in Phase B.
+- **Phase A — contracts, invoice schedule, invoicing.** *Implemented 2026-10-04* (`.ai/plans/2026-10-03-contracts-phase-a.md`; see the 2026-10-04 Changelog entry for the decisions that refine this spec). Everything except the line-level revenue engine: tables, contract page, lines, editable invoice schedule, amendments, cancellation + credit memo, renewal, contract types, discounts, migration *Billed through*, Create Contract from sales orders, the contract source in `recurring-billing`, contract holds, and the *Post and Send via Stripe* mode. Interim revenue: contract invoice lines post through the existing **Service-line deferral** — each line's service dates are its billing period, and a one-time line's service dates are its revenue dates — so revenue is right whenever billing is at or ahead of delivery (the common case). The revenue section shows the preview and summary computed from the schedule; *Recognize revenue from* and Even Period are accepted but only take effect in Phase B.
 - **Phase B — revenue follows the line.** `customerContractRevenue`, the contract branch of `post-sales-invoice` / `post-memo` (relieve Contract Assets, defer the rest), `synthesizeContractRevenue` in the recognition run, Even Period, migrated deferred-balance release, the contract position view. Contract lines switch from the Service deferral branch to the contract branch; invoices already posted in Phase A keep their Service deferral rows (no restatement).
 
 ## Out of scope (v1)
@@ -446,3 +446,31 @@ Usage-based / metered lines; physical goods on contracts; SSP allocation across 
 - 2026-10-02: Created as "Subscriptions" after research and a 14-question interview.
 - 2026-10-02: Re-scoped to **Contracts** after reviewing Rillet's Contract (G1–G9) and unifying with rental invoice automation into one recurring-invoicing layer (U1–U4): independent invoice and revenue schedules, editable invoice schedule, per-line revenue patterns and the line-level revenue engine, one-time lines, contract types, discounts, migration revenue; delivery, sender and the daily job now come from the shared layer.
 - 2026-10-03: Two one-way doors taken for the Projects spec (`2026-10-03-projects.md`): an optional **project** on the contract and line, written as the Project dimension on revenue-side journal lines (amends decision 24); **revenue pattern renamed revenue method** (`revenueMethod` / `contractRevenueMethod`) and `customerContractRevenue` framed as the per-line revenue ledger, so *As Invoiced* and *Percent Complete* are later enum values rather than a post-data rename.
+- 2026-10-04: **Phase A implemented** (`.ai/plans/2026-10-03-contracts-phase-a.md`, run log `.ai/runs/2026-10-03-contracts-phase-a.md`). The plan refined this spec with 15 decisions. Brad reviewed them on 2026-10-03. He changed decision 3 to a real invoice line discount and confirmed decision 5.
+  1. **No `customerContractRevenue` table in Phase A.** The Revenue section is a preview that `contract-revenue.ts` computes from the lines. The Service deferral of each invoice line posts the revenue.
+  2. **The invoice schedule persists only after the first edit, or at Confirm.** While a Draft is unedited, the loader computes the schedule from the lines. The first edit writes the `customerContractInvoice` rows with `isEdited = true`. Confirm refuses an edited schedule that no longer conserves the total of each line.
+  3. **Sales invoice lines get a real discount.** `salesInvoiceLine.discountPercent` is a fraction from 0 to 1, with generated `netUnitPrice` / `convertedNetUnitPrice`. It discounts the merchandise (`quantity × unitPrice`) only. Tax applies to the discounted merchandise. Every amount calculation applies it: the `salesInvoices` view, posting, documents, the ERP invoice UI, Stripe, the accounting providers and rental utilization. A contract invoice line carries the list `unitPrice` and the `discountPercent` of its contract line.
+  4. **A contract credit memo posts to Deferred Revenue, not to Sales Discount.** `post-memo` debits Deferred Revenue up to the Planned deferral that it releases, and debits Sales for the remainder. It deletes or trims those Planned rows. `post-memo` refuses to void a contract memo.
+  5. **The project is on `salesInvoiceLine.projectId`.** `post-sales-invoice` writes it as the Project dimension on the revenue-side journal lines. AR keeps the customer.
+  6. **Rental reconciliation is not extracted.** Contracts have their own `reconcileContractSchedule` with the same adjustment rule. The rental files did not change.
+  7. **A sales-order line that a contract takes gets `invoicedComplete = true`** when the contract is created. `deleteContractReleasingSalesOrderLines` and `deleteContractLineReleasingSalesOrderLine` release it when the user deletes the Draft contract or that contract line. `convert` did not change.
+  8. **A row from reconciliation, or a line that starts mid-period, lands on the next regular invoice date.**
+  9. **Recurring units count whole months from the period start, then days.** An Anniversary period such as 15 Mar–14 Apr is exactly 1 month. A partial Calendar period is its days ÷ the days of that month.
+  10. **`rowPricing` prices a schedule row with two roundings at internal scale:** `unitPrice = round(rate × units)` and `amount = round(quantity × unitPrice × (1 − discountPercent))`. A row whose amount is not that product (a split installment, an adjustment) drafts as quantity 1 at its amount, with the discount in the description (`invoiceLinePricing`).
+  11. **A cancellation stores what it changed** in `customerContractAmendment.previousState`, so *Revert cancellation* can restore it. `customerContractInvoiceLine.customerContractInvoiceId` is nullable for memo rows, with a CHECK that the row has an invoice or a memo.
+  12. **Carbon suggests the contract type at creation, and the user can change it.** Confirm does not change it. The amendment preview suggests the amendment type from the change in recurring value per billing period.
+  13. **The list shows contract value, invoiced to date and next invoice date from the `customerContracts` view.** The contract page computes the recurring value per period in TypeScript. Recognized and deferred amounts are Phase B.
+  14. **The Stripe send moved into `@carbon/stripe`** as `sendPostedSalesInvoiceViaStripe` (`send-sales-invoice.server.ts`). The caller injects the mapping write, so `@carbon/stripe` has no commercial dependency.
+  15. **Each demo dataset has one Active contract.**
+
+  This spec predates the move from edge functions to Node server functions. The table maps the names in this spec to the code:
+
+  | Spec says | Code |
+  |---|---|
+  | `packages/database/supabase/functions/shared/contract-schedule.ts` | `packages/database/src/contract-schedule.ts` (`@carbon/database/contract-schedule`, re-exported from `@carbon/utils`) |
+  | Revenue preview math (`revenueSchedule`, `contractPosition`) | `packages/utils/src/contract-revenue.ts` |
+  | `@carbon/database/contract-billing` (`confirmContract`, `applyContractAmendment`, `cancelContract`) | Server function `post-customer-contract`: confirm, schedule edits, amend, cancel, revert cancellation |
+  | `@carbon/database/contract-billing` (`renewDueContracts`, `createContractInvoicesForDuePlannedInvoices`) | Server function `create-contract-invoices`: renewal, horizon roll, end of contract, drafting |
+  | Edge functions `post-sales-invoice` / `post-memo` / `convert` | `packages/server-functions/src/<name>/` |
+  | `automateSalesInvoice` | `postSalesInvoiceUnattended` + `emailPostedInvoice` + `sendPostedInvoiceViaStripe` (`packages/jobs/src/invoicing/automate-invoice.ts`) |
+  | `releaseRecurringInvoiceStamps` | `releaseRecurringInvoiceStamps` in `apps/erp/app/modules/sales/sales.server.ts` (generalized from `releaseRentalInvoiceStamps`) |

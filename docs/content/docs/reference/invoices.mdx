@@ -7,7 +7,7 @@ An **invoice** records an amount owed. A **sales invoice** bills a customer; a *
 
 ## Where they come from
 
-A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
+A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills. A [contract](/docs/reference/contracts) or a [rental agreement](/docs/reference/rental-agreements) also drafts sales invoices as its billing falls due.
 
 <Callout type="note">
 A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term>. There's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
@@ -39,6 +39,8 @@ Most invoice line types populate details from an item. Sales and purchase invoic
 | Fixed Asset | Yes | Yes |
 | Rental (drafted from a rental agreement, read-only) | Yes | — |
 | G/L Account (charge straight to an account) | — | Yes |
+
+A sales invoice line can carry a **"Discount (%)"**. It discounts the line's quantity times unit price only: add-ons and shipping are charged in full, and tax is charged on the discounted amount. The line keeps its list unit price, and the invoice and its PDF show the discount beside it.
 
 A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description: freight, a fee, anything without an item behind it. Sales invoices don't offer it.
 

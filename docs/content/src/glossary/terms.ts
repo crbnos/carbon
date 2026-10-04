@@ -559,6 +559,36 @@ export const terms = {
     definition: msg`A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer.`,
     href: "/docs/reference/rental-agreements#end-of-the-term"
   },
+  contract: {
+    term: msg`Contract`,
+    definition: msg`A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled.`,
+    href: "/docs/reference/contracts"
+  },
+  "contract-type": {
+    term: msg`Contract type`,
+    definition: msg`How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it.`,
+    href: "/docs/reference/contracts#contract-types"
+  },
+  "invoice-schedule": {
+    term: msg`Invoice schedule`,
+    definition: msg`The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "revenue-method": {
+    term: msg`Revenue method`,
+    definition: msg`How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days.`,
+    href: "/docs/reference/contracts#revenue"
+  },
+  "billed-through": {
+    term: msg`Billed through`,
+    definition: msg`A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  amendment: {
+    term: msg`Amendment`,
+    definition: msg`A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period.`,
+    href: "/docs/reference/contracts#amendments"
+  },
 
   // ── Inventory ledger ────────────────────────────────────────────────────
   "item-ledger": {

@@ -347,6 +347,17 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     sweep include mapped voided documents/payments, and mapping tombstones stop
     repeated deletes. Compare independent remote GL, including recognition
     and reversal, instead of treating create HTTP200 as accounting parity.
+- **Sales invoice line discount reaches providers at NET.** `salesInvoiceLine.discountPercent`
+  (a 0–1 fraction, merchandise only; add-ons and shipping are never discounted) is loaded by
+  `loadSalesInvoices` (`sales-invoice-source.ts`, `lineAmount = quantity × unitPrice × (1 −
+  discountPercent)`, the expression the `salesInvoices` view and `calculateSalesPostingAmounts`
+  use) and carried on `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line
+  pulled back from a provider carries its net price). `buildSalesDocumentComponents` sends every
+  provider the NET unit price: `unitPrice` and `convertedUnitPrice` are both LIST prices, the
+  discount is applied to each before they are reconciled, and a discounted converted price is
+  rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
+  Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
+  `Service` lines with a `discountPercent`, so they need nothing else here.
 - **Rental invoice lines — provider behavior is a spike pending, not a
   decision.** A rental agreement drafts sales invoices whose lines are
   `invoiceLineType 'Rental'` with **no item** (`itemId` null;
