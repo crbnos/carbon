@@ -78,6 +78,10 @@ export function cachedClientLoader<L>(options?: { staleTime?: number }) {
 const fetchJson = async <T>(url: string): Promise<T> => {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+  // An expired session redirects to the login page, which is HTML.
+  if (!res.headers.get("content-type")?.includes("json")) {
+    throw new Error(`Expected JSON from ${url} (is the session still valid?)`);
+  }
   return res.json();
 };
 

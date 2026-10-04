@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { RealtimeTable } from "@carbon/database/realtime-tables";
 import { getLogger } from "@carbon/logger";
 import { useCarbon } from "@carbon/react";
+import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
@@ -21,6 +22,8 @@ import type { BroadcastChange } from "./useRealtime";
 import { useTableChanges } from "./useRealtime";
 
 const logger = getLogger("query", "live-list");
+
+const IDS_PER_REQUEST = 100;
 
 type Carbon = SupabaseClient<Database>;
 
@@ -150,7 +153,8 @@ export function LiveLists({
   // after a company switch belongs to the old company and is dropped.
   const active = useRef(companyId);
   active.current = companyId;
-  // Each list's cursor: where the change log is asked to start next time.
+  // Each list's cursor, per company (a company switch keeps this mounted):
+  // where the change log is asked to start next time.
   const cursors = useRef(new Map<string, Cursor | null>());
   const ready = Boolean(carbon && accessToken);
 
@@ -160,40 +164,58 @@ export function LiveLists({
     [queryClient, companyId]
   );
 
-  /** Put rows in the cache and in IndexedDB, with the list's cursor. */
+  /**
+   * Change a list's rows in the cache, then store them with the list's cursor.
+   * The change is a function of the rows as they are NOW: two re-reads that
+   * finish in either order both land, where a value computed before the read
+   * would overwrite the other's rows.
+   */
   const commit = useCallback(
-    async (list: AnyLiveList, rows: AnyRow[]) => {
+    async (list: AnyLiveList, change: (rows: AnyRow[]) => AnyRow[]) => {
       if (active.current !== companyId) return;
-      queryClient.setQueryData(liveListKey(companyId, list.name), rows);
+      const rows = queryClient.setQueryData<AnyRow[]>(
+        liveListKey(companyId, list.name),
+        (current) => change(current ?? [])
+      );
       const stored: Stored = {
-        rows,
-        cursor: cursors.current.get(list.name) ?? null
+        rows: rows ?? [],
+        cursor: cursors.current.get(storageKey(companyId, list.name)) ?? null
       };
       await (await storage()).setItem(storageKey(companyId, list.name), stored);
     },
     [queryClient, storage, companyId]
   );
 
-  /** The rows of `table` with these ids changed: bring the list up to date. */
-  const applyIds = useCallback(
-    async (list: AnyLiveList, table: string, ids: string[]) => {
-      if (!carbon || ids.length === 0) return rowsOf(list) ?? [];
-      const current = rowsOf(list) ?? [];
-      if (table === list.table) {
-        // Re-read replaces what came back and drops what did not (deleted, or
-        // no longer visible to this user).
-        const fetched = await list.fetchByIds(carbon, companyId, ids);
-        return upsertRows(removeRows(current, ids), fetched, list.sort);
-      }
-      const feeder = list.related?.find((r) => r.table === table);
-      if (!feeder) return current;
-      return upsertRows(
-        current,
-        await feeder.fetch(carbon, companyId, ids),
-        list.sort
-      );
+  /** The rows of `table` with these ids changed: how the list changes. */
+  const readIds = useCallback(
+    async (
+      list: AnyLiveList,
+      table: string,
+      ids: string[]
+    ): Promise<(rows: AnyRow[]) => AnyRow[]> => {
+      const read =
+        table === list.table
+          ? list.fetchByIds
+          : list.related?.find((r) => r.table === table)?.fetch;
+      if (!carbon || !read || ids.length === 0) return (rows) => rows;
+      // `.in()` goes in the URL: a few hundred ids exceed the gateway's limit.
+      const fetched = (
+        await Promise.all(
+          chunkArray(ids, IDS_PER_REQUEST).map((chunk) =>
+            read(carbon, companyId, chunk)
+          )
+        )
+      ).flat();
+      return (rows) =>
+        upsertRows(
+          // A row of the list's own table that did not come back is gone
+          // (deleted, or no longer visible to this user).
+          table === list.table ? removeRows(rows, ids) : rows,
+          fetched,
+          list.sort
+        );
     },
-    [carbon, companyId, rowsOf]
+    [carbon, companyId]
   );
 
   /** Ask the change log what changed since the lists' cursors, and apply it. */
@@ -202,7 +224,9 @@ export function LiveLists({
       if (!carbon) return;
       // A list's cursor only counts if the list still has its rows.
       const cursorOf = (list: AnyLiveList) =>
-        rowsOf(list) ? (cursors.current.get(list.name) ?? null) : null;
+        rowsOf(list)
+          ? (cursors.current.get(storageKey(companyId, list.name)) ?? null)
+          : null;
       const since = oldestCursor(targets.map(cursorOf));
       const { data, error } = await carbon.rpc("table_changes_since", {
         p_company_id: companyId,
@@ -226,22 +250,23 @@ export function LiveLists({
             tables,
             cursorOf(list)?.epoch === since?.epoch && since !== null
           );
-          let rows: AnyRow[];
+          let changes: ((rows: AnyRow[]) => AnyRow[])[];
           if (plan === "all") {
-            rows = await list.fetchAll(carbon, companyId);
+            const all = await list.fetchAll(carbon, companyId);
+            changes = [() => all];
           } else {
-            rows = rowsOf(list) ?? [];
-            for (const [table, ids] of plan) {
-              queryClient.setQueryData(liveListKey(companyId, list.name), rows);
-              rows = await applyIds(list, table, ids);
-            }
+            changes = await Promise.all(
+              plan.map(([table, ids]) => readIds(list, table, ids))
+            );
           }
-          cursors.current.set(list.name, next);
-          await commit(list, rows);
+          cursors.current.set(storageKey(companyId, list.name), next);
+          await commit(list, (rows) =>
+            changes.reduce((current, change) => change(current), rows)
+          );
         })
       );
     },
-    [carbon, companyId, queryClient, rowsOf, applyIds, commit]
+    [carbon, companyId, rowsOf, readIds, commit]
   );
 
   // Cold load: IndexedDB first so pickers have options at once, then the log.
@@ -255,7 +280,7 @@ export function LiveLists({
             await idb.getItem(storageKey(companyId, list.name))
           );
           if (!stored || cancelled || rowsOf(list)) return;
-          cursors.current.set(list.name, stored.cursor);
+          cursors.current.set(storageKey(companyId, list.name), stored.cursor);
           queryClient.setQueryData(
             liveListKey(companyId, list.name),
             stored.rows
@@ -281,15 +306,17 @@ export function LiveLists({
         await sync([list]);
         return;
       }
-      const rows =
-        change.op === "DELETE" && table === list.table
-          ? removeRows(rowsOf(list) ?? [], change.ids)
-          : await applyIds(list, table, change.ids);
+      const { ids } = change;
       // The cursor stays where it was: the log will name these rows again on
       // the next load, and re-reading them is harmless.
-      await commit(list, rows);
+      await commit(
+        list,
+        change.op === "DELETE" && table === list.table
+          ? (rows) => removeRows(rows, ids)
+          : await readIds(list, table, ids)
+      );
     },
-    [sync, rowsOf, applyIds, commit]
+    [sync, readIds, commit]
   );
 
   if (!ready) return null;

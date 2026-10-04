@@ -23,8 +23,8 @@ CREATE UNLOGGED TABLE IF NOT EXISTS "tableChange" (
   -- committed late. A snapshot's xmin has no such gap.
   "xid" XID8 NOT NULL DEFAULT pg_current_xact_id(),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  CONSTRAINT "tableChange_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "tableChange_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  -- No foreign key to "company": see 20261004213812_table-change-drop-company-fk.sql.
+  CONSTRAINT "tableChange_pkey" PRIMARY KEY ("id", "companyId")
 );
 
 CREATE INDEX IF NOT EXISTS "tableChange_companyId_xid_idx" ON "tableChange" ("companyId", "xid");
@@ -50,6 +50,10 @@ AS $$ SELECT interval '7 days' $$;
 --            changed too much to list: read it again". A row may be listed
 --            again on a later call; re-reading it is harmless.
 --   xid, epoch, at   the cursor for the next call.
+--
+-- STABLE is load-bearing: the read of the log and pg_current_snapshot() then
+-- share the calling statement's snapshot. As VOLATILE each would take its own,
+-- and a change committed between the two would be skipped for good.
 --
 -- SECURITY DEFINER because the table has no API access; it checks the caller's
 -- company itself. What it reveals is row ids, the same as a realtime broadcast.

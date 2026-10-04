@@ -19,6 +19,7 @@
     "@carbon/env": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
+    "@carbon/utils": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "@tanstack/react-query": "catalog:"
   },

@@ -77,7 +77,7 @@ middleware wraps fetcher submissions too, so a modal's save is covered.
 |---|---|
 | `useLoaderQuery<T>(url \| null)` | Render with an `api+` URL's data. One request per URL however many components read it; refetches when invalidated. `T` is the data, or `typeof loader`. `null` waits |
 | `cachedApiQuery<T>(url)` | The same read from an event handler or an effect |
-| `useAction<T>({ onSuccess, onError, onSettled })` | A mutation fetcher whose result goes to a callback instead of an effect watching `fetcher.data`. Submit with `.submit()` or `<action.Form>` as with `useFetcher` |
+| `useAction<T>({ onSuccess, onError, onSettled })` | A mutation fetcher whose result goes to a callback instead of an effect watching `fetcher.data`. Submit with `.submit()` or `<action.Form>` as with `useFetcher`. `onSettled` runs whenever a submission finishes; `onSuccess` / `onError` only when the action returned data (an action that redirects returns none) |
 
 Do not write `useFetcher()` + `fetcher.load(url)` in a mount effect for an
 `api+` list: it is one request per component, shows no cached value, and never

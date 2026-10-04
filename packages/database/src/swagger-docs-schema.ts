@@ -142899,8 +142899,7 @@ export default {
           type: "integer"
         },
         companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
         },

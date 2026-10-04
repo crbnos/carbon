@@ -37,6 +37,7 @@ pnpm --filter @carbon/query test
 | `cachedClientLoader`, `loaderQueryKey`, `LOADER`, `RefreshRate` | Cache an `api+` loader; build the same key for a component read |
 | `useLoaderQuery(url)` | Read an `api+` URL in a component: one shared request per URL, refetched when invalidated. Replaces `useFetcher` + `fetcher.load` in a mount effect |
 | `cachedApiQuery(url)` | The same read from an event handler or an effect |
+| `useAction({ onSuccess, onError, onSettled })` | A mutation fetcher with callbacks. `onSettled` runs whenever a submission finishes, also when the action redirects and returns no data; `onSuccess` / `onError` need data |
 | `setClientCompanyId` / `getCompanyId` | The shell layout sets the company during render; the `companyId` cookie is httpOnly and unreadable in the browser |
 | `createInvalidationMiddleware({ getCache, skipPaths })` | Root `clientMiddleware`; skip POSTs that change no data (`/refresh-session`) |
 | `RouteRealtime`, `useRealtimeTable`, `useTableChanges`, `useRealtimeRevalidator` | Realtime over private broadcast topics. Revalidation waits for a submitting fetcher |

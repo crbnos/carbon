@@ -22,10 +22,11 @@ type ActionData<T> = NonNullable<ReturnType<typeof useFetcher<T>>["data"]>;
  * an effect that watches `fetcher.data`. The mutation is still a router action:
  * submit it with `.submit(...)` or `<action.Form>`, exactly as with `useFetcher`.
  *
- * `onSuccess` / `onError` / `onSettled` run once each time a submission
- * settles with data.
- * `onError` is for a result with `success: false` or an `error`; everything
- * else is a success. A 422 with field errors has no data here, so neither runs.
+ * `onSettled` runs once each time a submission finishes, with or without data:
+ * an action that redirects (most deletes) returns none. `onSuccess` /
+ * `onError` run only when there is data. `onError` is for a result with
+ * `success: false` or an `error`; everything else is a success. A 422 with
+ * field errors has no data here, so neither runs.
  *
  * The cache needs nothing from the caller: the root middleware marks every
  * loader entry stale after the action.
@@ -36,8 +37,8 @@ export function useAction<T = any>(
     key?: string;
     onSuccess?: (data: ActionData<T>) => void;
     onError?: (data: ActionData<T>) => void;
-    /** Runs for either outcome, before `onSuccess` / `onError`. */
-    onSettled?: (data: ActionData<T>) => void;
+    /** Runs whenever a submission finishes, before `onSuccess` / `onError`. */
+    onSettled?: (data: ActionData<T> | undefined) => void;
   } = {}
 ) {
   const fetcher = useFetcher<T>(options.key ? { key: options.key } : undefined);
@@ -55,7 +56,7 @@ export function useAction<T = any>(
     if (!submitted.current) return;
     submitted.current = false;
     const outcome = actionOutcome(data);
-    if (outcome) callbacks.current.onSettled?.(data as ActionData<T>);
+    callbacks.current.onSettled?.((data ?? undefined) as ActionData<T>);
     if (outcome === "success") {
       callbacks.current.onSuccess?.(data as ActionData<T>);
     } else if (outcome === "error") {

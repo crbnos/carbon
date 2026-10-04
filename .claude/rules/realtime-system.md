@@ -95,7 +95,9 @@ query cache under `["live", companyId, <name>]`; the hooks keep their
 2. One `table_changes_since(cursor)` call.
 3. Only the rows it names are re-read; a named row that does not come back is
    removed. The whole list is fetched once per device, and again only when the
-   log answers `reset` or names more than 500 rows.
+   log answers `reset` or names more than 500 rows. Ids are re-read 100 per
+   request: `.in()` goes in the URL, and a few hundred ids exceed the gateway's
+   limit.
 4. While the tab is open, broadcasts patch the list row by row. After a
    reconnect, step 2 runs again.
 
@@ -114,6 +116,17 @@ company) is the only reader, and the backup engine skips the table.
 - **`reset`** when there is no cursor, the server restarted since it was issued
   (the epoch is the postmaster start time: a crash empties an unlogged table),
   or the cursor is older than the retention less a day.
+- **`table_changes_since` must stay `STABLE`**: the read of the log and
+  `pg_current_snapshot()` then share one snapshot. As `VOLATILE`, a change
+  committed between the two is skipped for good.
+- **No foreign key to `company`.** Deleting a company cascades to its items,
+  whose log trigger inserts a row for a company already gone in that
+  transaction; a key would abort the delete. The purge removes those rows.
+- **A cursor belongs to one company.** `LiveLists` stays mounted across a
+  company switch, so it keys cursors by company as well as list.
+- **A patch is a function of the current rows** (`commit` in `useLiveList.tsx`),
+  never a value computed before an awaited read: two broadcasts inside one
+  round-trip would otherwise overwrite each other.
 - A renamed `user` has no company; `log_user_changes` records it as an
   `employee` change for each company the user belongs to.
 - To give another list a delta: add `log_table_changes` to its tables' entries
