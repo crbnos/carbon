@@ -15,6 +15,7 @@ import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   jobStatus,
+  makeToAssetItemError,
   recalculateJobRequirements,
   returnPickedRemaindersForJob,
   runMRP,
@@ -76,24 +77,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     // Make to Asset gate, checked here so every path to Ready (the release
-    // dialog and the plain status post) refuses before releaseJobs runs. One
-    // job completes to one asset: a serialised item numbers each unit, so any
-    // quantity is fine; an unserialised item can only be a single unit. And a
-    // job on a sales order line is a sale, not a capitalisation.
+    // dialog and the plain status post) refuses before releaseJobs runs. The
+    // item rule is `makeToAssetItemError`; a job on a sales order line is a
+    // sale, not a capitalisation.
     if (data?.fixedAssetClassId || data?.fixedAssetId) {
-      if (
-        data.item?.itemTrackingType !== "Serial" &&
-        Number(data.quantity) > 1
-      ) {
+      const itemError = makeToAssetItemError({
+        fixedAssetClassId: data.fixedAssetClassId,
+        fixedAssetId: data.fixedAssetId,
+        itemTrackingType: data.item?.itemTrackingType,
+        quantity: data.quantity
+      });
+      if (itemError) {
         throw redirect(
           requestReferrer(request) ?? path.to.job(id),
-          await flash(
-            request,
-            error(
-              null,
-              "Make to Asset needs a serialized item or a quantity of one"
-            )
-          )
+          await flash(request, error(null, itemError))
         );
       }
       if (data.salesOrderLineId) {

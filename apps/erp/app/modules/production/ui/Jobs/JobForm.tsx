@@ -172,6 +172,15 @@ const JobForm = ({
   const [fixedAssetId, setFixedAssetId] = useState<string>(
     initialValues.fixedAssetId ?? ""
   );
+  // The two Complete To selects are form fields the validator does not know,
+  // so they are seeded here. Unseeded, each mounts with no value, and the
+  // select's switch to controlled emits an empty change that reset a
+  // preselected target (Build for Fleet, or a saved job) to Inventory.
+  const formDefaults = {
+    ...initialValues,
+    completeTo,
+    fixedAssetClassSelect: fixedAssetClassId
+  };
   const canEditCompleteTo =
     initialValues.status === "Draft" || initialValues.status === "Planned";
 
@@ -284,7 +293,7 @@ const JobForm = ({
               <ValidatedForm
                 method="post"
                 validator={jobValidator}
-                defaultValues={initialValues}
+                defaultValues={formDefaults}
                 isDisabled={isEditing && isLocked}
               >
                 <CardHeader>

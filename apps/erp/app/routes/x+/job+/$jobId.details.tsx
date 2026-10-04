@@ -45,6 +45,7 @@ import {
   getRootMakeMethod,
   isJobLocked,
   jobValidator,
+  makeToAssetItemError,
   recalculateJobRequirements,
   updateJob
 } from "~/modules/production";
@@ -179,6 +180,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // The same Make to Asset item rule the job form, release and completion
+  // apply, so a saved target or item is refused with the field it is about.
+  if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
+    const item = await client
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", validation.data.itemId)
+      .eq("companyId", companyId)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...validation.data,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) {
+      return validationError({ fieldErrors: { itemId: itemError } });
+    }
   }
 
   const result = await updateJob(client, {

@@ -270,12 +270,18 @@ completion path (ERP route, API/MCP, the `sync_finish_job_operation` trigger)
 gets it. `v_asset_target` is `'asset'` when `job.fixedAssetId` is set, `'class'`
 when `job.fixedAssetClassId` is, else null (the ordinary receipt). Guards, all
 raised before anything moves: a job with a `salesOrderLineId` ("A job linked to
-a sales order line cannot complete to a fixed asset"); a non-serial item
-completing anything but exactly 1 ("Make to Asset needs a serialized item or a
-quantity of one"); a `fixedAssetId` whose class is not CIP ("Job … targets fixed
+a sales order line cannot complete to a fixed asset"); a class target with a
+non-serial item at any quantity ("A job that completes to a fixed asset class
+needs a serialized item", `20261004190626` — every asset it makes is a fleet unit,
+and Return to Inventory / capitalization follow the serial); an asset target
+with a non-serial item completing anything but exactly 1 ("Make to Asset needs a
+serialized item or a quantity of one"); a `fixedAssetId` whose class is not CIP ("Job … targets fixed
 asset … which is not in a Construction in Progress class"); fewer unconsumed
-serial units than the quantity being completed. `$jobId.status.tsx` runs the
-first two gates when a job goes `Ready`, so a bad target is refused at release.
+serial units than the quantity being completed. The item rule is
+`makeToAssetItemError` (`production.models.ts`): `x+/job+/new.tsx` and
+`$jobId.details.tsx` return it as a field error on the item when the job is
+saved, `x+/job+/update.tsx` refuses a property-panel item change with it, and `$jobId.status.tsx` runs it with the sales order line gate when a
+job goes `Ready`.
 - `'class'`: one `fixedAsset` per unit (`fixedAssetId` from
   `get_next_sequence('fixedAsset')`, name `<item name> <serial | jobId>`,
   `itemId`, `trackedEntityId`, `serialNumber`, the class's method / life /
@@ -553,7 +559,10 @@ two-step (ship → invoice) flow.
 - `fixedAssetTransfer.status` is always `Posted` in practice; do not build a
   Draft-review UI on the column without adding the poster.
 - A fleet asset's unit must be serialized: `fixedAsset.quantity` is CHECKed to 1
-  and `complete_job_to_inventory` refuses a non-serial job of more than one.
+  and `complete_job_to_inventory` refuses a non-serial item for any class job.
+  Assets made before `20261004190626` by a single-unit untracked job have no
+  `trackedEntityId`, and `post-asset-transfer` needs one to return a unit to
+  inventory.
 - Any Disposed asset that was not returned to stock reads `Sold` (a scrapped
   fleet unit too).
 - `Reserved` means "named on a live Pending line", which includes every line of

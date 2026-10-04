@@ -14,7 +14,11 @@ import { useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import { getFixedAssets } from "~/modules/accounting";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
-import { insertJob, jobValidator } from "~/modules/production";
+import {
+  insertJob,
+  jobValidator,
+  makeToAssetItemError
+} from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -128,6 +132,24 @@ export async function action({ request }: ActionFunctionArgs) {
           itemId: `${unreleasedIssue} A job cannot be made for it.`
         }
       });
+    }
+  }
+
+  // A Make to Asset job is refused here, not only at release, so the form
+  // says why while the item is still being chosen.
+  if (data.fixedAssetClassId || data.fixedAssetId) {
+    const item = await serviceRole
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", data.itemId)
+      .eq("companyId", companyId)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...data,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) {
+      return validationError({ fieldErrors: { itemId: itemError } });
     }
   }
 

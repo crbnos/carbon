@@ -318,6 +318,30 @@ export const jobValidator = baseJobValidator
     path: ["fixedAssetId"]
   });
 
+/**
+ * The Make to Asset item rule, the same one `complete_job_to_inventory`
+ * enforces at completion. A job that targets a class makes new assets, each a
+ * fleet unit that rental, return to inventory and capitalization follow by its
+ * serial, so the item must be serialized. A job attached to an asset under
+ * construction makes no new unit, so an unserialized item is fine there as a
+ * single unit. Returns the refusal, or null when the job may go ahead.
+ */
+export function makeToAssetItemError(job: {
+  fixedAssetClassId?: string | null;
+  fixedAssetId?: string | null;
+  itemTrackingType?: string | null;
+  quantity?: number | null;
+}): string | null {
+  if (job.itemTrackingType === "Serial") return null;
+  if (job.fixedAssetClassId) {
+    return "A job that completes to a fixed asset class needs a serialized item";
+  }
+  if (job.fixedAssetId && Number(job.quantity ?? 0) > 1) {
+    return "Make to Asset needs a serialized item or a quantity of one";
+  }
+  return null;
+}
+
 export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
 export type LeftoverAction = (typeof leftoverAction)[number];
 

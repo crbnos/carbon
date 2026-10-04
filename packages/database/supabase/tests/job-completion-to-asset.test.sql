@@ -226,23 +226,30 @@ BEGIN
   ASSERT (SELECT count(*) FROM "trackedActivity" WHERE "companyId" = v_company_id) = v_activities, 'Re-completion must not log activities';
   ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id AND "acquisitionCost" = 42000) = 2, 'Re-completion must not reprice';
 
-  -- (b) An untracked job of 3 with a class target is refused before anything moves.
+  -- (b) An untracked job with a class target is refused before anything moves,
+  -- at any quantity: every asset a class job makes is a fleet unit and needs a serial.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'UJ', 3);
   UPDATE job SET "fixedAssetClassId" = v_fleet_class WHERE id = v_job;
   v_error := pg_temp.try_complete(v_job, 3);
-  ASSERT v_error LIKE 'Make to Asset needs a serialized item or a quantity of one%', 'An untracked job of 3 must be refused, got: ' || COALESCE(v_error, 'success');
+  ASSERT v_error LIKE 'A job that completes to a fixed asset class needs a serialized item%', 'An untracked job of 3 must be refused, got: ' || COALESCE(v_error, 'success');
   ASSERT (SELECT status FROM job WHERE id = v_job) <> 'Completed', 'A refused asset completion must not complete the job';
   ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id) = v_assets, 'A refused asset completion must not create assets';
 
-  -- A single untracked unit is fine: one asset named after the job.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'OJ', 1);
   UPDATE job SET "fixedAssetClassId" = v_fleet_class WHERE id = v_job;
   v_error := pg_temp.try_complete(v_job, 1);
-  ASSERT v_error IS NULL, 'Untracked job at 1 failed: ' || COALESCE(v_error, '');
-  ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id AND name = 'Stocked assembly OJ' AND "trackedEntityId" IS NULL
-            AND "itemId" = v_stocked_item AND status = 'Active' AND "acquisitionCost" = 0) = 1,
-    'A single untracked unit becomes one asset at cost 0 when the job carried no WIP';
-  ASSERT (SELECT count(*) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 0, 'The untracked asset unit must not enter stock';
+  ASSERT v_error LIKE 'A job that completes to a fixed asset class needs a serialized item%', 'A single untracked unit must be refused, got: ' || COALESCE(v_error, 'success');
+  ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id) = v_assets, 'A refused single unit must not create an asset';
+  ASSERT (SELECT count(*) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 0, 'A refused single unit must not enter stock';
+
+  -- An untracked job of 2 attached to an asset under construction is refused:
+  -- a sweep makes no new unit, but only a single unit can be told apart.
+  INSERT INTO "fixedAsset" ("fixedAssetId", "fixedAssetClassId", name, "companyId", "createdBy")
+    VALUES ('FA-CIP-2', v_cip_class, 'Second rig', v_company_id, 'system');
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'QJ', 2);
+  UPDATE job SET "fixedAssetId" = (SELECT id FROM "fixedAsset" WHERE "companyId" = v_company_id AND "fixedAssetId" = 'FA-CIP-2') WHERE id = v_job;
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error LIKE 'Make to Asset needs a serialized item or a quantity of one%', 'An untracked CIP job of 2 must be refused, got: ' || COALESCE(v_error, 'success');
 
   -- (c) Construction in Progress: a job attached to a CIP asset sweeps 1,500 of
   -- WIP onto it as one CIP cost row; the asset is Under Construction.
@@ -262,7 +269,7 @@ BEGIN
   ASSERT (SELECT count(*) FROM "fixedAssetTransfer" WHERE "companyId" = v_company_id AND "fixedAssetId" = v_cip_asset
             AND type = 'Capitalization' AND "sourceType" = 'Job' AND "jobId" = v_job AND amount = 1500 AND "journalId" IS NOT NULL) = 1,
     'The sweep must be recorded as one Job transfer';
-  ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id) = v_assets + 2, 'A CIP sweep must not create a new asset';
+  ASSERT (SELECT count(*) FROM "fixedAsset" WHERE "companyId" = v_company_id) = v_assets + 2, 'A CIP sweep must not create a new asset (the two CIP assets are the only additions)';
   ASSERT (SELECT count(*) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 0, 'A CIP job must not receive stock';
   ASSERT (SELECT count(*) FROM "costLedger" WHERE "documentId" = v_job) = 0, 'A CIP job must not create a cost layer';
   ASSERT (SELECT count(*) FROM "journalLine" jl JOIN journal j ON j.id = jl."journalId"
@@ -279,7 +286,7 @@ BEGIN
   ASSERT v_error LIKE 'Job LJ targets fixed asset % which is not in a Construction in Progress class%', 'A live asset target must be refused, got: ' || COALESCE(v_error, 'success');
   ASSERT (SELECT "acquisitionCost" FROM "fixedAsset" WHERE "companyId" = v_company_id AND "serialNumber" = 'FJ-01') = 42000, 'A refused sweep must not touch the asset';
 
-  RAISE NOTICE 'ALL JOB COMPLETION TO ASSET CASES PASSED (serial fleet job priced from WIP, no stock/cost layer, Asset Transfer journal, units consumed, re-completion no-op, untracked qty>1 refused, single untracked unit, CIP sweep, live asset refused)';
+  RAISE NOTICE 'ALL JOB COMPLETION TO ASSET CASES PASSED (serial fleet job priced from WIP, no stock/cost layer, Asset Transfer journal, units consumed, re-completion no-op, untracked class job refused at any quantity, untracked CIP job of 2 refused, CIP sweep, live asset refused)';
 END;
 $cases$;
 ROLLBACK;

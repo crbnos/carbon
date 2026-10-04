@@ -25,7 +25,7 @@ An asset comes onto the books four ways. Registering and buying start from a **D
 - **Capitalize** a unit already in stock: on the item's inventory page, the storage-unit row action **"Capitalize as Fixed Asset"** moves one <Term id="serial">serialized</Term> unit out of stock at its carrying cost and creates the asset, or fills a Draft one, as **Active**. The serial number travels with it.
 
 <Callout type="note" title="A job that builds assets has two rules">
-It needs a serialized item, or a quantity of one, so that every finished unit maps to exactly one asset. And it cannot be linked to a sales order line, because that job is a sale. Carbon refuses to release a job that breaks either rule, so you find out at release rather than at completion.
+A job that completes to a fixed asset class needs a serialized item, so every finished unit maps to one numbered asset that the fleet can rent, return and capitalize. A job attached to an asset under construction may use an unserialized item, but only at a quantity of one. Neither job can be linked to a sales order line, because that job is a sale. Carbon refuses the job when you save it, and again at release.
 </Callout>
 
 <Callout type="note">
@@ -124,8 +124,11 @@ A purchase invoice line of type *Fixed Asset* has no asset record linked. Open t
 ### "Asset is no longer in Draft status"
 The register action (or a capitalization into a Draft asset) found the asset already activated — usually someone else registered it between page load and save. Reload the asset; if it's Active, the registration already happened.
 
+### "A job that completes to a fixed asset class needs a serialized item"
+Raised when the job is saved, when it goes Ready (`$jobId.status.tsx`) and again by `complete_job_to_inventory`: the job's Complete To is a fixed asset class and its item is not serial-tracked, whatever the quantity. Use a serial-tracked item, or set Complete To back to Inventory.
+
 ### "Make to Asset needs a serialized item or a quantity of one"
-Raised when a job goes Ready (`$jobId.status.tsx`) and again by `complete_job_to_inventory`: the job's Complete To is a fixed asset class or an asset under construction, its item is not serial-tracked, and its quantity is not exactly 1. Set the quantity to 1, use a serial-tracked item, or set Complete To back to Inventory.
+Raised at the same three points for a job attached to an asset under construction: its item is not serial-tracked and its quantity is not exactly 1. Set the quantity to 1, use a serial-tracked item, or set Complete To back to Inventory.
 
 ### "A job linked to a sales order line cannot complete to a fixed asset"
 Same gate: the job has a `salesOrderLineId`. A make-to-order job is a sale; create a separate job for the asset.
