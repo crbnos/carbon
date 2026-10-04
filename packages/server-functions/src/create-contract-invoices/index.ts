@@ -18,6 +18,7 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   horizon,
   invoiceLinePricing,
+  lastRecurringPeriodEnd,
   reconcileContractSchedule,
   renewedEndDate
 } from "@carbon/database/contract-schedule";
@@ -37,6 +38,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import {
+  applyDiscountEnds,
   applyReconciliation,
   type ContractLineRow,
   type ContractRow,
@@ -219,6 +221,9 @@ async function processContract(
  * first day. A Recurring line that runs to the old end (a null end, or an end
  * equal to it) carries into the new term — as a copy at the uplifted rate when
  * `renewalUplift > 0`; a null-ended line otherwise just follows the contract.
+ * A discount that ended in the old term is dropped from a copy; one that ends
+ * inside the new term is split off (`applyDiscountEnds`), whether the line was
+ * copied or followed the contract.
  */
 async function renewDueTerms(
   trx: KyselyTx,
@@ -319,6 +324,10 @@ async function renewDueTerms(
       .where("companyId", "=", companyId)
       .execute();
 
+    // Every split starts after `newStart`, so the reconciliation below
+    // covers it.
+    await applyDiscountEnds(trx, scope, { ...contract, endDate: newEnd });
+
     const next = await loadContractForUpdate(trx, companyId, contract.id);
     const terms = toTerms(next.contract);
     await applyReconciliation(
@@ -330,7 +339,11 @@ async function renewDueTerms(
         lines: toLineTerms(next.lines),
         existing: next.existing,
         from: newStart,
-        through: reconcileThrough(horizon(terms, asOf), next.existing)
+        through: reconcileThrough(
+          horizon(terms, asOf),
+          next.existing,
+          next.lines
+        )
       })
     );
     loaded = await loadContractForUpdate(trx, companyId, contract.id);
@@ -339,8 +352,10 @@ async function renewDueTerms(
 
 /**
  * Plans an open-ended contract's periods up to `horizon(terms, asOf)`, from
- * the day after the last persisted row. Creates only: rows already planned
- * (and the invoices they sit on) are never touched.
+ * the day after the last persisted Recurring period (`lastRecurringPeriodEnd`
+ * — a One-time row's service window can run far past it). Creates only: rows
+ * already planned (and the invoices they sit on) are never touched, and no
+ * row is created for a key that already has one.
  */
 async function rollHorizon(
   trx: KyselyTx,
@@ -351,11 +366,7 @@ async function rollHorizon(
   const { contract, lines, existing } = loaded;
   const terms = toTerms(contract);
   const through = horizon(terms, asOf);
-  const lastEnd = existing.reduce<string | null>(
-    (latest, row) =>
-      latest === null || row.periodEnd > latest ? row.periodEnd : latest,
-    null
-  );
+  const lastEnd = lastRecurringPeriodEnd(existing, lines);
   const from = lastEnd === null ? contract.startDate : addDays(lastEnd, 1);
   if (from > through) return loaded;
 
@@ -368,11 +379,21 @@ async function rollHorizon(
   });
   // Only the periods past the persisted schedule: reconciling from `from`
   // would otherwise replace a Planned invoice dated on or after it (an
-  // Arrears invoice for the last planned period), re-creating its rows.
+  // Arrears invoice for the last planned period, a One-time row invoiced
+  // later), re-creating its rows.
+  const persisted = new Set(
+    existing
+      .filter((row) => !row.isAdjustment)
+      .map((row) => `${row.lineId}|${row.periodStart}`)
+  );
   const create = result.create
     .map((invoice) => ({
       ...invoice,
-      rows: invoice.rows.filter((row) => row.periodStart >= from)
+      rows: invoice.rows.filter(
+        (row) =>
+          row.periodStart >= from &&
+          !persisted.has(`${row.lineId}|${row.periodStart}`)
+      )
     }))
     .filter((invoice) => invoice.rows.length > 0);
   if (create.length === 0) return loaded;

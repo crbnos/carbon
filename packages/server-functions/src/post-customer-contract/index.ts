@@ -27,7 +27,9 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   amendmentEffectiveDate,
   horizon,
+  lastRecurringPeriodEnd,
   lineTotals,
+  periodEndContaining,
   planInvoiceSchedule,
   reconcileContractSchedule,
   recurringValuePerPeriod,
@@ -39,11 +41,11 @@ import { equals, round } from "@carbon/database/precision";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, effectiveInvoiceAutomation } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 import {
+  applyDiscountEnds,
   applyReconciliation,
   type ContractLineRow,
   type ContractRow,
@@ -60,6 +62,7 @@ import {
   resolveInvoiceIds,
   type Scope,
   scheduleRowValues,
+  setLineEndDates,
   toLineTerms,
   toTerms
 } from "./schedule-writes";
@@ -119,7 +122,12 @@ const scheduleEdit = z.discriminatedUnion("intent", [
     intent: z.literal("split"),
     customerContractInvoiceLineId: z.string().min(1),
     installments: z
-      .array(z.object({ invoiceDate: isoDate, amount: z.number() }))
+      .array(
+        z.object({
+          invoiceDate: isoDate,
+          amount: z.number().positive("Each installment must be more than 0")
+        })
+      )
       .min(2)
   }),
   z.object({
@@ -135,8 +143,14 @@ const scheduleEdit = z.discriminatedUnion("intent", [
 ]);
 
 /** Percentages are percent points (0–100), as the ERP's
- *  `contractAmendmentChangeValidator` parses them; divided by 100 here. */
+ *  `contractAmendmentChangeValidator` parses them; stored as a fraction by
+ *  `fraction`. */
 const percentPoints = z.number().min(0).max(100);
+
+/** Percent points as the stored fraction, at internal scale — the same
+ *  conversion as the ERP's `percentToFraction`. A bare `/ 100` stores float
+ *  noise (14.3 / 100 = 0.14300000000000002). */
+const fraction = (points: number) => round(points / 100);
 
 const amendmentLine = z
   .object({
@@ -233,29 +247,6 @@ function refuseUnless(
   }
 }
 
-/** Sets each line's `endDate` in one statement. */
-async function setLineEndDates(
-  trx: KyselyTx,
-  scope: Scope,
-  contractId: string,
-  ends: { id: string; endDate: string | null }[]
-): Promise<void> {
-  if (ends.length === 0) return;
-  const values = ends.map(
-    (end) => sql`(${end.id}::text, ${end.endDate}::date)`
-  );
-  await sql`
-    UPDATE "customerContractLine" AS l
-    SET "endDate" = v."endDate",
-        "updatedBy" = ${scope.userId},
-        "updatedAt" = now()
-    FROM (VALUES ${sql.join(values)}) AS v("id", "endDate")
-    WHERE l."id" = v."id"
-      AND l."companyId" = ${scope.companyId}
-      AND l."customerContractId" = ${contractId}
-  `.execute(trx);
-}
-
 // ---------------------------------------------------------------------------
 // confirm
 
@@ -300,19 +291,34 @@ async function confirm(
     const terms = toTerms(contract);
     const through = horizon(terms, payload.asOf);
 
+    // Billed through must fall on a period end (spec decision 8): a period
+    // is billed elsewhere or here, never half of each. The day before the
+    // start means nothing was billed elsewhere.
+    if (
+      contract.billedThrough !== null &&
+      contract.billedThrough !== addDays(contract.startDate, -1)
+    ) {
+      const periodEnd = periodEndContaining(terms, contract.billedThrough);
+      if (periodEnd !== contract.billedThrough) {
+        throw new InvalidInputError(
+          periodEnd
+            ? `Billed through (${contract.billedThrough}) must fall on the end of a billing period; that period ends on ${periodEnd}`
+            : `Billed through (${contract.billedThrough}) is before the contract starts`
+        );
+      }
+    }
+
     // 2. Materialize an unedited schedule, or check an edited one still
     // bills every line's total. An open-ended contract's persisted schedule
-    // was planned to an earlier horizon, so it is compared over the span it
-    // covers.
+    // was planned to an earlier horizon, so it is compared over the
+    // Recurring periods it covers (a One-time row's service window can run
+    // far past them).
     if (existing.length === 0) {
       await materializeSchedule(trx, scope, contract, lines, through);
     } else {
       const compareThrough = terms.endDate
         ? through
-        : existing.reduce(
-            (latest, row) => (row.periodEnd > latest ? row.periodEnd : latest),
-            existing[0]!.periodEnd
-          );
+        : (lastRecurringPeriodEnd(existing, lines) ?? through);
       const { ok, residuals } = validateScheduleEdit(
         lineTotals(
           planInvoiceSchedule(terms, toLineTerms(lines), compareThrough)
@@ -373,82 +379,11 @@ async function confirm(
     }
 
     // 4. A discount that ends becomes an amendment: the line ends that day
-    // and a full-price copy starts the next.
-    const discounted = lines.filter(
-      (line) =>
-        line.kind === "Recurring" &&
-        line.discountEndsOn !== null &&
-        addDays(line.discountEndsOn, 1) <=
-          (line.endDate ?? contract.endDate ?? "9999-12-31")
-    );
-    if (discounted.length > 0) {
-      const lineTerms = toLineTerms(lines);
-      const amendments = await trx
-        .insertInto("customerContractAmendment")
-        .values(
-          discounted.map((line) => {
-            const amendmentDate = addDays(line.discountEndsOn!, 1);
-            const before = recurringValuePerPeriod(
-              lineTerms,
-              contract.billingFrequency,
-              amendmentDate
-            );
-            const after = recurringValuePerPeriod(
-              [
-                ...lineTerms.filter((l) => l.id !== line.id),
-                {
-                  ...lineTerms.find((l) => l.id === line.id)!,
-                  discountPercent: 0,
-                  startDate: amendmentDate
-                }
-              ],
-              contract.billingFrequency,
-              amendmentDate
-            );
-            return {
-              customerContractId: contract.id,
-              amendmentDate,
-              effect: "Change Date" as const,
-              contractType: suggestAmendmentType(before, after),
-              reason: "Discount ends",
-              previousState: null,
-              companyId,
-              createdBy: userId
-            };
-          })
-        )
-        .returning(["id"])
-        .execute();
-
-      await setLineEndDates(
-        trx,
-        scope,
-        contract.id,
-        discounted.map((line) => ({
-          id: line.id,
-          endDate: line.discountEndsOn
-        }))
-      );
-      await trx
-        .insertInto("customerContractLine")
-        .values(
-          discounted.map((line, index) =>
-            copyLineValues(scope, line, {
-              startDate: addDays(line.discountEndsOn!, 1),
-              discountPercent: 0,
-              discountEndsOn: null,
-              amendmentId: amendments[index]!.id,
-              amendsLineId: line.id
-            })
-          )
-        )
-        .execute();
-
-      // One reconciliation from the earliest change: Planned invoices from
-      // that date on are re-planned against every new line at once.
-      const from = discounted
-        .map((line) => addDays(line.discountEndsOn!, 1))
-        .sort()[0]!;
+    // and a full-price copy starts the next. One reconciliation from the
+    // earliest change re-plans Planned invoices from that date on against
+    // every new line at once.
+    const discountFrom = await applyDiscountEnds(trx, scope, contract);
+    if (discountFrom !== null) {
       const reloaded = await loadContractForUpdate(trx, companyId, contract.id);
       contract = reloaded.contract;
       lines = reloaded.lines;
@@ -461,8 +396,8 @@ async function confirm(
           terms: toTerms(contract),
           lines: toLineTerms(lines),
           existing,
-          from,
-          through: reconcileThrough(through, existing)
+          from: discountFrom,
+          through: reconcileThrough(through, existing, lines)
         })
       );
     }
@@ -840,7 +775,11 @@ async function amend(
       refuseUnless(contract, "Active", "amended");
 
       const terms = toTerms(contract);
-      const through = reconcileThrough(horizon(terms, payload.asOf), existing);
+      const through = reconcileThrough(
+        horizon(terms, payload.asOf),
+        existing,
+        lines
+      );
       const effective = amendmentEffectiveDate(
         terms,
         payload.effect,
@@ -909,6 +848,11 @@ async function amend(
       for (const change of payload.changes) {
         if (change.op === "change") {
           const line = openLine(change.lineId);
+          if (line.kind === "One-time" && change.rateUnit !== undefined) {
+            throw new InvalidInputError(
+              `${label(line)} is a one-time line; it has no rate unit`
+            );
+          }
           const { oldEnd, newStart } = lineCutover(line, effective);
           ends.push({ id: line.id, endDate: oldEnd });
           inserts.push({
@@ -922,10 +866,10 @@ async function amend(
                 rateUnit: change.rateUnit
               }),
               ...(change.discountPercent !== undefined && {
-                discountPercent: change.discountPercent / 100
+                discountPercent: fraction(change.discountPercent)
               }),
               ...(change.taxPercent !== undefined && {
-                taxPercent: change.taxPercent / 100
+                taxPercent: fraction(change.taxPercent)
               }),
               ...(change.description !== undefined && {
                 description: change.description || null
@@ -952,6 +896,21 @@ async function amend(
           });
         } else {
           const line = change.line;
+          const startDate = maxDate(line.startDate, effective);
+          const name = line.description || "The added line";
+          if (line.endDate !== undefined && line.endDate < startDate) {
+            throw new InvalidInputError(
+              `${name} ends on ${line.endDate}, before it starts on ${startDate}`
+            );
+          }
+          if (
+            line.discountEndsOn !== undefined &&
+            line.discountEndsOn < startDate
+          ) {
+            throw new InvalidInputError(
+              `${name}'s discount ends on ${line.discountEndsOn}, before the line starts on ${startDate}`
+            );
+          }
           inserts.push({
             fields: {
               customerContractId: contract.id,
@@ -961,10 +920,10 @@ async function amend(
               quantity: line.quantity,
               rate: line.rate,
               rateUnit: line.rateUnit ?? null,
-              discountPercent: line.discountPercent / 100,
+              discountPercent: fraction(line.discountPercent),
               discountEndsOn: line.discountEndsOn ?? null,
-              taxPercent: line.taxPercent / 100,
-              startDate: maxDate(line.startDate, effective),
+              taxPercent: fraction(line.taxPercent),
+              startDate,
               endDate: line.endDate ?? null,
               goLiveDate: line.goLiveDate ?? null,
               revenueMethod: line.revenueMethod,
@@ -1038,6 +997,11 @@ async function amend(
           )
           .execute();
       }
+
+      // A discount on a new line that ends inside it is split off now, as at
+      // confirm — nothing else would ever end it. Each split starts after
+      // the effective date, so the one reconciliation below covers it.
+      await applyDiscountEnds(trx, scope, contract);
 
       // Reconcile the schedule from the effective date.
       const next = await loadContractForUpdate(trx, companyId, contract.id);
@@ -1224,7 +1188,8 @@ async function cancel(
         from: addDays(endDate, 1),
         through: reconcileThrough(
           horizon(toTerms(next.contract), payload.asOf),
-          next.existing
+          next.existing,
+          next.lines
         )
       });
       const credit = round(
@@ -1337,12 +1302,14 @@ async function revertCancellation(
       }
     }
 
+    // The cancellation is the amendment that recorded what it changed —
+    // only a cancellation writes `previousState` (a reason is free text).
     const amendment = await trx
       .selectFrom("customerContractAmendment")
       .select(["id", "previousState"])
       .where("customerContractId", "=", contract.id)
       .where("companyId", "=", companyId)
-      .where("reason", "like", `${CANCELLATION_REASON_PREFIX}%`)
+      .where("previousState", "is not", null)
       .orderBy("createdAt", "desc")
       .orderBy("id", "desc")
       .executeTakeFirst();
@@ -1354,15 +1321,49 @@ async function revertCancellation(
     }
     const previous = parsed.data;
 
-    // 1. Restore the line end dates, the contract's end and renewal.
+    // Restoring the recorded end dates is only right while nothing has
+    // changed the lines since. An amendment after the cancellation ended a
+    // line and started its replacement inside the cancelled term: restoring
+    // the old line's end would bill both. Ordered by `createdAt` (when the
+    // action ran), not `amendmentDate`: a later amendment is effective on or
+    // before the cancelled end, so it always dates EARLIER than the
+    // cancellation (end + 1) and an effective-date order would miss it.
+    // Compared in SQL: a JS `Date` would cut the timestamp to milliseconds.
+    const newer = await trx
+      .selectFrom("customerContractAmendment")
+      .select("id")
+      .where("customerContractId", "=", contract.id)
+      .where("companyId", "=", companyId)
+      .where("id", "!=", amendment.id)
+      .where("createdAt", ">", (eb) =>
+        eb
+          .selectFrom("customerContractAmendment as cancellation")
+          .select("cancellation.createdAt")
+          .where("cancellation.id", "=", amendment.id)
+          .where("cancellation.companyId", "=", companyId)
+      )
+      .executeTakeFirst();
+    if (newer) {
+      throw new InvalidInputError(
+        "The contract was amended after it was cancelled; the cancellation can no longer be reverted"
+      );
+    }
     const lineIds = new Set(lines.map((line) => line.id));
+    if (Object.keys(previous.lineEndDates).some((id) => !lineIds.has(id))) {
+      throw new InvalidInputError(
+        "A line the cancellation ended no longer exists; the cancellation can no longer be reverted"
+      );
+    }
+
+    // 1. Restore the line end dates, the contract's end and renewal.
     await setLineEndDates(
       trx,
       scope,
       contract.id,
-      Object.entries(previous.lineEndDates)
-        .filter(([id]) => lineIds.has(id))
-        .map(([id, endDate]) => ({ id, endDate }))
+      Object.entries(previous.lineEndDates).map(([id, endDate]) => ({
+        id,
+        endDate
+      }))
     );
     // 2. Clear the cancellation.
     const now = datetime.timestamp();
@@ -1414,7 +1415,8 @@ async function revertCancellation(
         from: addDays(cancelledEndDate, 1),
         through: reconcileThrough(
           horizon(toTerms(next.contract), payload.asOf),
-          next.existing
+          next.existing,
+          next.lines
         )
       })
     );

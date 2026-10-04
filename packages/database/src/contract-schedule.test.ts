@@ -8,9 +8,12 @@ import {
   billingGrid,
   type ContractLineTerms,
   type ContractTerms,
+  discountEndSplits,
   type ExistingRow,
   invoiceLinePricing,
+  lastRecurringPeriodEnd,
   lineTotals,
+  periodEndContaining,
   periodUnits,
   planInvoiceSchedule,
   reconcileContractSchedule,
@@ -560,5 +563,259 @@ describe("suggestions and renewal", () => {
 
   it("renews 31 Oct 2027 by 12 months to 31 Oct 2028", () => {
     expect(renewedEndDate("2027-10-31", 12)).toBe("2028-10-31");
+  });
+});
+
+describe("lastRecurringPeriodEnd", () => {
+  it("ignores a one-time line's long service window", () => {
+    expect(
+      lastRecurringPeriodEnd(
+        [
+          existingRow({
+            id: "impl",
+            lineId: "implementation",
+            periodStart: "2026-01-01",
+            periodEnd: "2026-12-31"
+          }),
+          existingRow({
+            id: "jan",
+            lineId: "seats",
+            periodStart: "2026-01-01",
+            periodEnd: "2026-01-31"
+          }),
+          existingRow({
+            id: "feb",
+            lineId: "seats",
+            periodStart: "2026-02-01",
+            periodEnd: "2026-02-28"
+          })
+        ],
+        [
+          { id: "implementation", kind: "One-time" },
+          { id: "seats", kind: "Recurring" }
+        ]
+      )
+    ).toBe("2026-02-28");
+  });
+
+  it("is null when no recurring line has a persisted row", () => {
+    expect(
+      lastRecurringPeriodEnd(
+        [existingRow({ id: "impl", lineId: "implementation" })],
+        [{ id: "implementation", kind: "One-time" }]
+      )
+    ).toBeNull();
+  });
+});
+
+describe("reconcileContractSchedule — split and repeated adjustments", () => {
+  const terms = calendarMonthly({ startDate: "2027-03-01" });
+  const service = (endDate: string | null) =>
+    line({ id: "svc", rate: 300, startDate: "2027-03-01", endDate });
+  const installment = (
+    id: string,
+    invoiceDate: string,
+    invoiceStatus: ExistingRow["invoiceStatus"]
+  ) =>
+    existingRow({
+      id,
+      lineId: "svc",
+      invoiceId: `inv-${id}`,
+      invoiceDate,
+      invoiceStatus,
+      invoiceIsEdited: true,
+      periodStart: "2027-03-01",
+      periodEnd: "2027-03-31",
+      units: 0.5,
+      unitPrice: 300,
+      amount: 150
+    });
+  // 1–10 Mar at 300 a month: round(300 × 10/31).
+  const firstTenDays = 96.77419;
+  // 1–20 Mar: round(300 × 20/31).
+  const firstTwentyDays = 193.54839;
+
+  it("credits every invoiced installment of a split period, not only the first", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [service("2027-03-10")],
+      existing: [
+        installment("a", "2027-03-01", "Invoiced"),
+        installment("b", "2027-03-15", "Invoiced")
+      ],
+      from: "2027-03-11",
+      through: "2027-10-31"
+    });
+    expect(result.adjustments).toHaveLength(1);
+    expect(result.adjustments[0]!.amount).toBeCloseTo(firstTenDays - 300, 5);
+    expect(result.adjustments[0]!.periodStart).toBe("2027-03-11");
+    expect(result.adjustments[0]!.periodEnd).toBe("2027-03-31");
+  });
+
+  it("re-cuts a kept Planned installment to what the invoiced one left", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [service("2027-03-20")],
+      existing: [
+        installment("a", "2027-03-01", "Invoiced"),
+        installment("b", "2027-03-15", "Planned")
+      ],
+      from: "2027-03-21",
+      through: "2027-10-31"
+    });
+    expect(result.adjustments).toEqual([]);
+    expect(result.recut).toHaveLength(1);
+    expect(result.recut[0]!.id).toBe("b");
+    expect(result.recut[0]!.amount).toBeCloseTo(firstTwentyDays - 150, 5);
+    expect(
+      result.create
+        .flatMap((i) => i.rows)
+        .some((r) => r.lineId === "svc" && r.periodStart === "2027-03-01")
+    ).toBe(false);
+  });
+
+  it("re-creates the remainder of a split whose Planned installment is replaced", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [service(null)],
+      existing: [
+        installment("a", "2027-03-01", "Invoiced"),
+        installment("b", "2027-03-15", "Planned")
+      ],
+      from: "2027-03-12",
+      through: "2027-10-31"
+    });
+    expect(result.deleteInvoiceIds).toEqual(["inv-b"]);
+    const march = result.create
+      .flatMap((i) => i.rows)
+      .filter((r) => r.lineId === "svc" && r.periodStart === "2027-03-01");
+    expect(march).toHaveLength(1);
+    expect(march[0]!.amount).toBeCloseTo(150, 5);
+    expect(march[0]!.periodEnd).toBe("2027-03-31");
+  });
+
+  it("credits the extra days when a line's end moves earlier a second time", () => {
+    const march = existingRow({
+      id: "march",
+      lineId: "svc",
+      invoiceId: "inv-march",
+      invoiceDate: "2027-03-01",
+      periodStart: "2027-03-01",
+      periodEnd: "2027-03-31",
+      unitPrice: 300,
+      amount: 300
+    });
+    const firstCredit = existingRow({
+      id: "credit-1",
+      lineId: "svc",
+      invoiceId: null,
+      invoiceDate: null,
+      invoiceStatus: null,
+      periodStart: "2027-03-21",
+      periodEnd: "2027-03-31",
+      units: -(11 / 31),
+      unitPrice: 300,
+      amount: firstTwentyDays - 300,
+      isAdjustment: true,
+      memoId: "memo-1"
+    });
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [service("2027-03-10")],
+      existing: [march, firstCredit],
+      from: "2027-03-11",
+      through: "2027-10-31"
+    });
+    expect(result.adjustments).toHaveLength(1);
+    const extra = result.adjustments[0]!;
+    expect(extra.amount).toBeCloseTo(firstTenDays - firstTwentyDays, 5);
+    expect(extra.periodStart).toBe("2027-03-11");
+    expect(extra.periodEnd).toBe("2027-03-31");
+    // The two credits together leave exactly 1–10 Mar billed.
+    expect(300 + firstCredit.amount + extra.amount).toBeCloseTo(
+      firstTenDays,
+      5
+    );
+  });
+});
+
+describe("discountEndSplits", () => {
+  it("splits a recurring line whose discount ends before the line does", () => {
+    expect(
+      discountEndSplits(
+        [
+          {
+            id: "seats",
+            kind: "Recurring",
+            startDate: "2026-11-01",
+            endDate: null,
+            discountEndsOn: "2027-04-30"
+          }
+        ],
+        "2027-10-31"
+      )
+    ).toEqual([
+      { lineId: "seats", discountEndsOn: "2027-04-30", resumesOn: "2027-05-01" }
+    ]);
+  });
+
+  it("leaves a line already split, a discount past the end and a one-time line alone", () => {
+    expect(
+      discountEndSplits(
+        [
+          // Already split: ends the day its discount does.
+          {
+            id: "split",
+            kind: "Recurring",
+            startDate: "2026-11-01",
+            endDate: "2027-04-30",
+            discountEndsOn: "2027-04-30"
+          },
+          // Runs with the contract; the discount outlasts it.
+          {
+            id: "beyond",
+            kind: "Recurring",
+            startDate: "2026-11-01",
+            endDate: null,
+            discountEndsOn: "2028-04-30"
+          },
+          {
+            id: "once",
+            kind: "One-time",
+            startDate: "2026-11-01",
+            endDate: "2027-10-31",
+            discountEndsOn: "2027-04-30"
+          }
+        ],
+        "2027-10-31"
+      )
+    ).toEqual([]);
+  });
+
+  it("splits an open-ended contract's line", () => {
+    expect(
+      discountEndSplits(
+        [
+          {
+            id: "seats",
+            kind: "Recurring",
+            startDate: "2026-11-01",
+            endDate: null,
+            discountEndsOn: "2028-04-30"
+          }
+        ],
+        null
+      )
+    ).toHaveLength(1);
+  });
+});
+
+describe("periodEndContaining", () => {
+  it("names the end of the billing period a date falls in", () => {
+    const terms = calendarMonthly();
+    expect(periodEndContaining(terms, "2027-01-31")).toBe("2027-01-31");
+    expect(periodEndContaining(terms, "2027-01-15")).toBe("2027-01-31");
+    // Clipped at the contract's end.
+    expect(periodEndContaining(terms, "2027-12-15")).toBe("2027-10-31");
   });
 });

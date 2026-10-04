@@ -589,10 +589,13 @@ type ContractDeferralRelease = {
 
 /**
  * What a contract cancellation credit releases. Each memo-borne adjustment
- * row credits one contract line for one billed period; the invoiced row for
- * the same line and period names the sales invoice line whose Service
- * deferral holds that period's unearned revenue. The release is capped at the
- * memo's own base amount, so the journal always balances against it.
+ * row credits one contract line for one billed period; the invoiced rows for
+ * the same line and period name the sales invoice lines whose Service
+ * deferrals hold that period's unearned revenue. A split period was billed in
+ * several installments, each on its own invoice line, so the credit is shared
+ * across them in proportion to what each billed (the last takes the rest).
+ * The release is capped at the memo's own base amount, so the journal always
+ * balances against it.
  */
 async function releaseContractDeferral(
   trx: Transaction<KyselyDatabase>,
@@ -630,7 +633,12 @@ async function releaseContractDeferral(
         .onRef("i.id", "=", "l.customerContractInvoiceId")
         .onRef("i.companyId", "=", "l.companyId")
     )
-    .select(["l.customerContractLineId", "l.periodEnd", "l.salesInvoiceLineId"])
+    .select([
+      "l.customerContractLineId",
+      "l.periodEnd",
+      "l.salesInvoiceLineId",
+      "l.amount"
+    ])
     .where("l.companyId", "=", companyId)
     .where("l.customerContractId", "=", customerContractId)
     .where("l.isAdjustment", "=", false)
@@ -642,13 +650,23 @@ async function releaseContractDeferral(
     .execute();
   const periodKey = (lineId: string, periodEnd: string) =>
     `${lineId}|${periodEnd}`;
-  const invoiceLineByPeriod = new Map(
-    invoiced.map((row) => [
-      periodKey(row.customerContractLineId, String(row.periodEnd)),
-      row.salesInvoiceLineId!
-    ])
-  );
-  const salesInvoiceLineIds = [...new Set(invoiceLineByPeriod.values())];
+  // Every installment that billed a period: its invoice line and amount.
+  const installmentsByPeriod = new Map<
+    string,
+    { salesInvoiceLineId: string; amount: number }[]
+  >();
+  for (const row of invoiced) {
+    const key = periodKey(row.customerContractLineId, String(row.periodEnd));
+    const installments = installmentsByPeriod.get(key) ?? [];
+    installments.push({
+      salesInvoiceLineId: row.salesInvoiceLineId!,
+      amount: Number(row.amount)
+    });
+    installmentsByPeriod.set(key, installments);
+  }
+  const salesInvoiceLineIds = [
+    ...new Set(invoiced.map((row) => row.salesInvoiceLineId!))
+  ];
   if (!salesInvoiceLineIds.length) return nothing;
 
   const schedule = await trx
@@ -683,21 +701,39 @@ async function releaseContractDeferral(
     );
     if (want <= 0) continue;
     budget = round(budget - want);
-    const salesInvoiceLineId = invoiceLineByPeriod.get(
-      periodKey(adjustment.customerContractLineId, String(adjustment.periodEnd))
-    );
-    const rows = salesInvoiceLineId ? working.get(salesInvoiceLineId) : null;
-    if (!salesInvoiceLineId || !rows) continue;
-    const release = releaseDeferral(rows, want);
-    released = round(released + want - release.fromRevenue);
-    const deleted = new Set(release.deleteIds);
-    const reduced = new Map(release.reduce.map((r) => [r.id, r.amount]));
-    working.set(
-      salesInvoiceLineId,
-      rows
-        .filter((row) => !deleted.has(row.id))
-        .map((row) => ({ ...row, amount: reduced.get(row.id) ?? row.amount }))
-    );
+    const installments =
+      installmentsByPeriod.get(
+        periodKey(
+          adjustment.customerContractLineId,
+          String(adjustment.periodEnd)
+        )
+      ) ?? [];
+    const billed = installments.reduce((sum, i) => sum + i.amount, 0);
+    let placed = 0;
+    installments.forEach((installment, index) => {
+      const share =
+        index === installments.length - 1
+          ? round(want - placed)
+          : billed > 0
+            ? round((want * installment.amount) / billed)
+            : round(want / installments.length);
+      placed = round(placed + share);
+      const rows = working.get(installment.salesInvoiceLineId);
+      if (!rows || share <= 0) return;
+      const release = releaseDeferral(rows, share);
+      released = round(released + share - release.fromRevenue);
+      const deleted = new Set(release.deleteIds);
+      const reduced = new Map(release.reduce.map((r) => [r.id, r.amount]));
+      working.set(
+        installment.salesInvoiceLineId,
+        rows
+          .filter((row) => !deleted.has(row.id))
+          .map((row) => ({
+            ...row,
+            amount: reduced.get(row.id) ?? row.amount
+          }))
+      );
+    });
   }
 
   const remaining = new Map(

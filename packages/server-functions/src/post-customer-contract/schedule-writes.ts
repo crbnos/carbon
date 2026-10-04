@@ -15,9 +15,13 @@ import {
   type ContractPlannedInvoice,
   type ContractScheduleReconciliation,
   type ContractTerms,
+  discountEndSplits,
   type ExistingRow,
+  lastRecurringPeriodEnd,
   type PlannedRow,
-  planInvoiceSchedule
+  planInvoiceSchedule,
+  recurringValuePerPeriod,
+  suggestAmendmentType
 } from "@carbon/database/contract-schedule";
 import { toJson } from "@carbon/database/json";
 import { round } from "@carbon/database/precision";
@@ -286,18 +290,121 @@ export function toLineTerms(
 }
 
 /** How far a reconciliation plans: the horizon, or further when the persisted
- *  schedule already reaches past it — so a reconciliation never deletes rows
- *  an earlier horizon roll planned. `planInvoiceSchedule` still clips at the
- *  contract's end date. */
+ *  Recurring periods already reach past it — so a reconciliation never deletes
+ *  rows an earlier horizon roll planned. A One-time row's service window is
+ *  not a planned period (`lastRecurringPeriodEnd`): counting it would plan an
+ *  open-ended contract's months out to the end of that window.
+ *  `planInvoiceSchedule` still clips at the contract's end date. */
 export function reconcileThrough(
   horizonDate: string,
-  existing: Pick<ExistingRow, "periodEnd">[]
+  existing: Pick<ExistingRow, "lineId" | "periodEnd" | "isAdjustment">[],
+  lines: Pick<ContractLineRow, "id" | "kind">[]
 ): string {
-  let through = horizonDate;
-  for (const row of existing) {
-    if (row.periodEnd > through) through = row.periodEnd;
-  }
-  return through;
+  const planned = lastRecurringPeriodEnd(existing, lines);
+  return planned !== null && planned > horizonDate ? planned : horizonDate;
+}
+
+/** Sets each line's `endDate` in one statement. */
+export async function setLineEndDates(
+  trx: KyselyTx,
+  scope: Scope,
+  contractId: string,
+  ends: { id: string; endDate: string | null }[]
+): Promise<void> {
+  if (ends.length === 0) return;
+  const values = ends.map(
+    (end) => sql`(${end.id}::text, ${end.endDate}::date)`
+  );
+  await sql`
+    UPDATE "customerContractLine" AS l
+    SET "endDate" = v."endDate",
+        "updatedBy" = ${scope.userId},
+        "updatedAt" = now()
+    FROM (VALUES ${sql.join(values)}) AS v("id", "endDate")
+    WHERE l."id" = v."id"
+      AND l."companyId" = ${scope.companyId}
+      AND l."customerContractId" = ${contractId}
+  `.execute(trx);
+}
+
+/** Turns every "discount ends" date that now falls inside its line into an
+ *  amendment: the line ends that day and a full-price copy starts the next
+ *  (`discountEndSplits`, idempotent). Shared by confirm, amendments and
+ *  renewal, so a discount ends however the line came to be. Reads the lines
+ *  itself (after the caller's own writes); returns the earliest date a copy
+ *  starts — the caller reconciles from there, or from earlier — or null when
+ *  nothing was split. */
+export async function applyDiscountEnds(
+  trx: KyselyTx,
+  scope: Scope,
+  contract: Pick<ContractRow, "id" | "endDate" | "billingFrequency">
+): Promise<string | null> {
+  const lines = await loadLines(trx, scope.companyId, contract.id);
+  const splits = discountEndSplits(lines, contract.endDate);
+  if (splits.length === 0) return null;
+
+  const lineTerms = toLineTerms(lines);
+  const lineById = new Map(lines.map((line) => [line.id, line]));
+  const amendments = await trx
+    .insertInto("customerContractAmendment")
+    .values(
+      splits.map((split) => {
+        const before = recurringValuePerPeriod(
+          lineTerms,
+          contract.billingFrequency,
+          split.resumesOn
+        );
+        const after = recurringValuePerPeriod(
+          [
+            ...lineTerms.filter((l) => l.id !== split.lineId),
+            {
+              ...lineTerms.find((l) => l.id === split.lineId)!,
+              discountPercent: 0,
+              startDate: split.resumesOn
+            }
+          ],
+          contract.billingFrequency,
+          split.resumesOn
+        );
+        return {
+          customerContractId: contract.id,
+          amendmentDate: split.resumesOn,
+          effect: "Change Date" as const,
+          contractType: suggestAmendmentType(before, after),
+          reason: "Discount ends",
+          previousState: null,
+          companyId: scope.companyId,
+          createdBy: scope.userId
+        };
+      })
+    )
+    .returning(["id"])
+    .execute();
+
+  await setLineEndDates(
+    trx,
+    scope,
+    contract.id,
+    splits.map((split) => ({ id: split.lineId, endDate: split.discountEndsOn }))
+  );
+  await trx
+    .insertInto("customerContractLine")
+    .values(
+      splits.map((split, index) =>
+        copyLineValues(scope, lineById.get(split.lineId)!, {
+          startDate: split.resumesOn,
+          discountPercent: 0,
+          discountEndsOn: null,
+          amendmentId: amendments[index]!.id,
+          amendsLineId: split.lineId
+        })
+      )
+    )
+    .execute();
+
+  return splits
+    .map((split) => split.resumesOn)
+    .reduce((earliest, date) => (date < earliest ? date : earliest));
 }
 
 type RowValues = {

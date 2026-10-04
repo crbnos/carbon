@@ -496,28 +496,36 @@ export type ContractScheduleReconciliation = {
  *  rewrite — billed rows are never touched. `lines` are ALL lines after the
  *  change; `existing` is every persisted schedule row.
  *
- *  1. `ideal = planInvoiceSchedule(terms, lines, through)`, rows keyed
- *     `lineId|periodStart`.
- *  2. Every existing non-adjustment row on an `Invoiced` invoice whose
- *     Recurring line now ends before the row's `periodEnd` gets ONE adjustment
- *     over `[max(lineEnd + 1, periodStart), periodEnd]`: units `−(units ×
- *     daysAfter ÷ daysBilled)`, the row's unit price, amount `−round(amount ×
- *     daysAfter ÷ daysBilled)` — unless an adjustment with the same `lineId`
- *     and `periodEnd` already exists and survives this reconciliation (one on
- *     a memo, a billed invoice or a kept Planned invoice; one on a Planned
- *     invoice deleted in step 3 is re-created). Its `invoiceDate` is the first
- *     planned invoice date ≥ `from` in `create`, or `from` when there is none
- *     (the caller attaches it to that invoice, or to a memo).
+ *  Rows are keyed `lineId|periodStart`. A key can hold several rows: a split
+ *  leaves one installment per invoice, and some installments may be billed
+ *  (`Invoiced` / `Billed Externally`) while others are still Planned. A key
+ *  is always reconciled as a whole: its rows together must equal its ideal
+ *  row (0 when the line no longer covers the period).
+ *
+ *  1. `ideal = planInvoiceSchedule(terms, lines, through)`.
+ *  2. Adjustments. For a key with `Invoiced` rows whose Recurring line now
+ *     ends before the period's end, the credit the key needs is
+ *     `ideal − Σ billed` (never more than what was invoiced). Adjustments
+ *     already on that period (same `lineId` and `periodEnd`) that survive
+ *     this reconciliation — on a memo, a billed invoice or a kept Planned
+ *     invoice — count towards it; ONE new adjustment takes the difference,
+ *     over `[max(lineEnd + 1, periodStart), periodEnd]`, priced at the billed
+ *     unit price. So a second, earlier end credits only the extra days, and a
+ *     split period is credited for every installment. Its `invoiceDate` is
+ *     the first planned invoice date ≥ `from` in `create`, or `from` when
+ *     there is none (the caller attaches it to that invoice, or to a memo).
  *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`.
- *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`, grouped
- *     by key (a split leaves several installments on one key): when the group's
- *     `periodEnd` or total differs from the ideal row → `recut` (one row takes
- *     the ideal row; installments keep their shares, the last taking the
- *     remainder so the total is exact); no ideal row → `deleteRowIds`. A kept
- *     invoice left with no rows → `deleteInvoiceIds`.
- *  5. `create` = the ideal rows whose key matches no kept row and no
- *     `Invoiced` / `Billed Externally` row, invoiced on
- *     `nextInvoiceDate(max(row.invoiceDate, from))`, grouped into invoices. */
+ *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`,
+ *     grouped by key, must total `ideal − Σ billed`: when the group's
+ *     `periodEnd` or total differs → `recut` (one row takes it all;
+ *     installments keep their shares, the last taking the remainder so the
+ *     total is exact); no ideal row, or nothing left to bill →
+ *     `deleteRowIds`. A kept invoice left with no rows → `deleteInvoiceIds`.
+ *  5. `create` = the ideal rows whose key has no billed and no kept row,
+ *     plus, for a key whose billed rows fall short of its ideal row and that
+ *     has no kept row, the shortfall (a split installment whose invoice step
+ *     3 replaced). Invoiced on `nextInvoiceDate(max(row.invoiceDate, from))`,
+ *     grouped into invoices. */
 export function reconcileContractSchedule({
   terms,
   lines,
@@ -535,6 +543,8 @@ export function reconcileContractSchedule({
   const lineById = new Map(lines.map((line) => [line.id, line]));
   const key = (row: { lineId: string; periodStart: string }) =>
     `${row.lineId}|${row.periodStart}`;
+  const periodKey = (row: { lineId: string; periodEnd: string }) =>
+    `${row.lineId}|${row.periodEnd}`;
 
   // 1. The ideal schedule.
   const idealRows = planInvoiceSchedule(terms, lines, through).flatMap(
@@ -553,88 +563,117 @@ export function reconcileContractSchedule({
     if (isReplaced(row)) deleteInvoiceIds.add(row.invoiceId!);
   }
 
-  // 4. Planned rows on invoices before `from` are re-cut or removed. A split
-  //    (several installments sharing one key) is compared and re-cut as a
-  //    group: its rows together must equal the ideal row.
-  const recut: ContractScheduleRecut[] = [];
-  const deleteRowIds: string[] = [];
-  const blockedKeys = new Set<string>();
-  const remainingByInvoice = new Map<string, number>();
-  const keptByKey = new Map<string, ExistingRow[]>();
+  // What each key has already billed: its non-adjustment rows on Invoiced
+  // and Billed Externally invoices.
+  type Billed = { amount: number; units: number; invoiced: ExistingRow[] };
+  const billedByKey = new Map<string, Billed>();
   for (const row of existing) {
+    if (row.isAdjustment) continue;
     if (
-      row.invoiceStatus === "Invoiced" ||
-      row.invoiceStatus === "Billed Externally"
+      row.invoiceStatus !== "Invoiced" &&
+      row.invoiceStatus !== "Billed Externally"
     ) {
-      if (!row.isAdjustment) blockedKeys.add(key(row));
       continue;
     }
+    let billed = billedByKey.get(key(row));
+    if (!billed) {
+      billed = { amount: 0, units: 0, invoiced: [] };
+      billedByKey.set(key(row), billed);
+    }
+    billed.amount += row.amount;
+    billed.units += row.units;
+    if (row.invoiceStatus === "Invoiced") billed.invoiced.push(row);
+  }
+  /** What the Planned rows of a key must still bill: its ideal row less what
+   *  is billed. Null when nothing is left. */
+  const outstanding = (rowKey: string) => {
+    const ideal = idealByKey.get(rowKey);
+    if (!ideal) return null;
+    const billed = billedByKey.get(rowKey);
+    if (!billed) return ideal;
+    const amount = round(ideal.amount - billed.amount);
+    if (amount <= 0 || equals(amount, 0)) return null;
+    return { ...ideal, units: ideal.units - billed.units, amount };
+  };
+
+  // 4. Planned rows on invoices before `from` are re-cut or removed. A split
+  //    (several installments sharing one key) is compared and re-cut as a
+  //    group.
+  const recut: ContractScheduleRecut[] = [];
+  const deleteRowIds = new Set<string>();
+  const keptInvoiceIds = new Set<string>();
+  const keptByKey = new Map<string, ExistingRow[]>();
+  for (const row of existing) {
     if (row.invoiceStatus !== "Planned" || !row.invoiceId || isReplaced(row)) {
       continue;
     }
-    const invoiceId = row.invoiceId;
-    remainingByInvoice.set(invoiceId, remainingByInvoice.get(invoiceId) ?? 0);
-    if (row.isAdjustment) {
-      remainingByInvoice.set(invoiceId, remainingByInvoice.get(invoiceId)! + 1);
-      continue;
-    }
-    const ideal = idealByKey.get(key(row));
-    if (!ideal) {
-      deleteRowIds.push(row.id);
-      continue;
-    }
-    blockedKeys.add(key(row));
-    remainingByInvoice.set(invoiceId, remainingByInvoice.get(invoiceId)! + 1);
+    keptInvoiceIds.add(row.invoiceId);
+    if (row.isAdjustment) continue;
     const group = keptByKey.get(key(row));
     if (group) group.push(row);
     else keptByKey.set(key(row), [row]);
   }
   for (const [rowKey, group] of keptByKey) {
-    const ideal = idealByKey.get(rowKey)!;
-    const total = group.reduce((sum, row) => sum + row.amount, 0);
-    const unchanged =
-      group.every((row) => row.periodEnd === ideal.periodEnd) &&
-      equals(total, ideal.amount);
-    if (unchanged) continue;
-    if (group.length === 1 || equals(total, 0)) {
-      // One row (or a group with nothing to scale by): the ideal row, once.
-      group.forEach((row, index) =>
-        recut.push({
-          id: row.id,
-          periodEnd: ideal.periodEnd,
-          units: index === 0 ? ideal.units : 0,
-          unitPrice: ideal.unitPrice,
-          amount: index === 0 ? ideal.amount : 0
-        })
-      );
+    const target = outstanding(rowKey);
+    if (!target) {
+      for (const row of group) deleteRowIds.add(row.id);
       continue;
     }
-    // Installments keep their shares of the ideal row; the last takes the
+    const total = group.reduce((sum, row) => sum + row.amount, 0);
+    const unchanged =
+      group.every((row) => row.periodEnd === target.periodEnd) &&
+      equals(total, target.amount);
+    if (unchanged) continue;
+    if (group.length === 1 || equals(total, 0)) {
+      // One row (or a group with nothing to scale by): the target, once.
+      group.forEach((row, index) => {
+        recut.push({
+          id: row.id,
+          periodEnd: target.periodEnd,
+          units: index === 0 ? target.units : 0,
+          unitPrice: target.unitPrice,
+          amount: index === 0 ? target.amount : 0
+        });
+      });
+      continue;
+    }
+    // Installments keep their shares of the target; the last takes the
     // remainder so the line total is conserved exactly.
     let placed = 0;
     group.forEach((row, index) => {
       const share = row.amount / total;
       const amount =
         index === group.length - 1
-          ? round(ideal.amount - placed)
-          : round(ideal.amount * share);
+          ? round(target.amount - placed)
+          : round(target.amount * share);
       placed += amount;
       recut.push({
         id: row.id,
-        periodEnd: ideal.periodEnd,
-        units: ideal.units * share,
-        unitPrice: ideal.unitPrice,
+        periodEnd: target.periodEnd,
+        units: target.units * share,
+        unitPrice: target.unitPrice,
         amount
       });
     });
   }
-  for (const [invoiceId, remaining] of remainingByInvoice) {
-    if (remaining === 0) deleteInvoiceIds.add(invoiceId);
+  for (const invoiceId of keptInvoiceIds) {
+    const remaining = existing.some(
+      (row) =>
+        row.invoiceId === invoiceId &&
+        row.invoiceStatus === "Planned" &&
+        !deleteRowIds.has(row.id)
+    );
+    if (!remaining) deleteInvoiceIds.add(invoiceId);
   }
 
-  // 5. What the ideal schedule still needs.
+  // 5. What the ideal schedule still needs: whole rows for keys nothing
+  //    holds, the shortfall for a billed key with no kept row.
   const created = idealRows
-    .filter((row) => !blockedKeys.has(key(row)))
+    .filter((row) => !keptByKey.has(key(row)))
+    .flatMap((row) => {
+      const target = outstanding(key(row));
+      return target ? [target] : [];
+    })
     .map((row) => ({
       ...row,
       invoiceDate: nextInvoiceDate(dues, maxDate(row.invoiceDate, from))
@@ -644,36 +683,60 @@ export function reconcileContractSchedule({
     new Map(lines.map((line, index) => [line.id, index]))
   );
 
-  // 2. One adjustment per billed period that now runs past its line's end.
+  // 2. Credits for billed periods that now run past their line's end.
   const adjustmentInvoiceDate =
     create.find((i) => i.status === "Planned" && i.invoiceDate >= from)
       ?.invoiceDate ?? from;
-  const adjusted = new Set(
-    existing
-      .filter((row) => row.isAdjustment && !isReplaced(row))
-      .map((row) => `${row.lineId}|${row.periodEnd}`)
-  );
-  const adjustments: PlannedRow[] = [];
+  const adjustedByPeriod = new Map<string, { amount: number; units: number }>();
   for (const row of existing) {
-    if (row.isAdjustment || row.invoiceStatus !== "Invoiced") continue;
-    const line = lineById.get(row.lineId);
+    if (!row.isAdjustment || isReplaced(row)) continue;
+    const adjusted = adjustedByPeriod.get(periodKey(row)) ?? {
+      amount: 0,
+      units: 0
+    };
+    adjusted.amount += row.amount;
+    adjusted.units += row.units;
+    adjustedByPeriod.set(periodKey(row), adjusted);
+  }
+  const adjustments: PlannedRow[] = [];
+  for (const [rowKey, billed] of billedByKey) {
+    const first = billed.invoiced[0];
+    if (!first) continue;
+    // A remainder billed after the period grew (a renewal un-clipping it)
+    // reaches further than the first installment.
+    const periodEnd = billed.invoiced.reduce(
+      (latest, row) => maxDate(latest, row.periodEnd),
+      first.periodEnd
+    );
+    const line = lineById.get(first.lineId);
     if (!line || line.kind !== "Recurring" || !line.endDate) continue;
-    if (line.endDate >= row.periodEnd) continue;
-    const adjustedKey = `${row.lineId}|${row.periodEnd}`;
-    if (adjusted.has(adjustedKey)) continue;
-    adjusted.add(adjustedKey);
+    if (line.endDate >= periodEnd) continue;
 
-    const periodStart = maxDate(addDays(line.endDate, 1), row.periodStart);
-    const daysBilled = daysInclusive(row.periodStart, row.periodEnd);
-    const daysAfter = daysInclusive(periodStart, row.periodEnd);
-    const share = daysAfter / daysBilled;
+    const ideal = idealByKey.get(rowKey);
+    const invoicedAmount = billed.invoiced.reduce((s, r) => s + r.amount, 0);
+    const invoicedUnits = billed.invoiced.reduce((s, r) => s + r.units, 0);
+    const excess = (ideal?.amount ?? 0) - billed.amount;
+    if (excess >= 0 || equals(excess, 0)) continue;
+    // Never credit more than was invoiced (a Billed Externally share is not
+    // Carbon's to credit).
+    const capped = excess < -invoicedAmount;
+    const required = capped ? -invoicedAmount : excess;
+    const requiredUnits = capped
+      ? -invoicedUnits
+      : (ideal?.units ?? 0) - billed.units;
+
+    const already = adjustedByPeriod.get(
+      periodKey({ lineId: first.lineId, periodEnd })
+    ) ?? { amount: 0, units: 0 };
+    const amount = round(required - already.amount);
+    if (amount >= 0 || equals(amount, 0)) continue;
     adjustments.push({
-      lineId: row.lineId,
-      periodStart,
-      periodEnd: row.periodEnd,
-      units: -(row.units * share),
-      unitPrice: row.unitPrice,
-      amount: -round(row.amount * share),
+      lineId: first.lineId,
+      periodStart: maxDate(addDays(line.endDate, 1), first.periodStart),
+      periodEnd,
+      units: requiredUnits - already.units,
+      unitPrice: first.unitPrice,
+      amount,
       isAdjustment: true,
       invoiceDate: adjustmentInvoiceDate,
       status: "Planned"
@@ -682,11 +745,78 @@ export function reconcileContractSchedule({
 
   return {
     deleteInvoiceIds: [...deleteInvoiceIds],
-    deleteRowIds,
+    deleteRowIds: [...deleteRowIds],
     recut,
     create,
     adjustments
   };
+}
+
+/** The last period end of a Recurring line's persisted (non-adjustment) row —
+ *  how far an open-ended schedule has been planned. A One-time line's row
+ *  spans its service window, which can run far past the planned periods, so
+ *  it never counts. Null when no Recurring line has a row. */
+export function lastRecurringPeriodEnd(
+  existing: Pick<ExistingRow, "lineId" | "periodEnd" | "isAdjustment">[],
+  lines: Pick<ContractLineTerms, "id" | "kind">[]
+): string | null {
+  const recurring = new Set(
+    lines.filter((line) => line.kind === "Recurring").map((line) => line.id)
+  );
+  let last: string | null = null;
+  for (const row of existing) {
+    if (row.isAdjustment || !recurring.has(row.lineId)) continue;
+    if (last === null || row.periodEnd > last) last = row.periodEnd;
+  }
+  return last;
+}
+
+/** The end of the billing period `date` falls in (clipped at the contract's
+ *  end), or null when it is before the contract starts. "Billed through" must
+ *  equal it. */
+export function periodEndContaining(
+  terms: ContractTerms,
+  date: string
+): string | null {
+  const periods = billingGrid(terms, date);
+  return periods[periods.length - 1]?.end ?? null;
+}
+
+export type ContractDiscountEndSplit = {
+  lineId: string;
+  /** The last discounted day: the line ends here. */
+  discountEndsOn: string;
+  /** The full-price copy starts here. */
+  resumesOn: string;
+};
+
+/** The Recurring lines whose "discount ends" date falls inside the line, so
+ *  the line must end that day and a full-price copy start the next. A line
+ *  already split ends on its `discountEndsOn` (and its copy has none), so
+ *  this is idempotent: it can run after any change to the lines (confirm, an
+ *  amendment, a renewal) and only picks up what is new. A line runs to
+ *  `contractEndDate` when it has no end of its own; an open-ended contract
+ *  never ends. */
+export function discountEndSplits(
+  lines: (Pick<ContractLineTerms, "id" | "kind" | "startDate" | "endDate"> & {
+    discountEndsOn: string | null;
+  })[],
+  contractEndDate: string | null
+): ContractDiscountEndSplit[] {
+  const splits: ContractDiscountEndSplit[] = [];
+  for (const line of lines) {
+    if (line.kind !== "Recurring" || line.discountEndsOn === null) continue;
+    if (line.discountEndsOn < line.startDate) continue;
+    const resumesOn = addDays(line.discountEndsOn, 1);
+    const lineEnd = line.endDate ?? contractEndDate;
+    if (lineEnd !== null && resumesOn > lineEnd) continue;
+    splits.push({
+      lineId: line.id,
+      discountEndsOn: line.discountEndsOn,
+      resumesOn
+    });
+  }
+  return splits;
 }
 
 // ---------------------------------------------------------------------------

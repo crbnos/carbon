@@ -735,3 +735,482 @@ databaseTest(
     }
   }
 );
+
+/** Contract lines, oldest first, with their dates as text. */
+async function contractLines(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  contractId: string
+) {
+  return db
+    .selectFrom("customerContractLine")
+    .select([
+      "id",
+      "kind",
+      "rate",
+      "discountPercent",
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string | null>`"endDate"::text`.as("endDate"),
+      sql<string | null>`"discountEndsOn"::text`.as("discountEndsOn"),
+      "amendsLineId"
+    ])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", companyId)
+    .orderBy("startDate")
+    .orderBy("createdAt")
+    .execute();
+}
+
+async function addOneTimeLine(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    contractId: string;
+    itemId: string;
+    rate: number;
+    startDate: string;
+    endDate: string;
+  }
+) {
+  const id = `${input.contractId}-one-time`;
+  await db
+    .insertInto("customerContractLine")
+    .values({
+      id,
+      customerContractId: input.contractId,
+      kind: "One-time",
+      itemId: input.itemId,
+      quantity: 1,
+      rate: input.rate,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      companyId: input.companyId,
+      createdBy: USER
+    })
+    .execute();
+  return id;
+}
+
+async function contractItemId(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  lineId: string
+) {
+  const line = await db
+    .selectFrom("customerContractLine")
+    .select("itemId")
+    .where("id", "=", lineId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return line.itemId;
+}
+
+databaseTest(
+  "an open-ended contract with a year-long one-time line confirms its edited schedule and rolls its months forward",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "long-one-time",
+        startDate: "2026-01-01",
+        endDate: null
+      });
+      const oneTimeId = await addOneTimeLine(db, {
+        companyId,
+        contractId,
+        itemId: await contractItemId(db, companyId, lineId),
+        rate: 5000,
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+
+      // Edit the Draft (materializes through the horizon, end of February).
+      const split = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "split",
+          customerContractInvoiceLineId: `planned:2026-01-01:${oneTimeId}:2026-01-01`,
+          installments: [
+            { invoiceDate: "2026-01-01", amount: 3000 },
+            { invoiceDate: "2026-02-01", amount: 2000 }
+          ]
+        }
+      });
+      expect(split.error).toBeNull();
+
+      // The one-time line's service window runs to December; the edited
+      // schedule is still compared over the months it plans.
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-04-01",
+        customerContractId: contractId
+      });
+      expect(run.error).toBeNull();
+      expect(run.data!.failures).toEqual([]);
+
+      const schedule = await plannedInvoices(db, companyId, contractId);
+      const monthly = schedule
+        .flatMap((invoice) => invoice.rows)
+        .filter((row) => row.customerContractLineId === lineId)
+        .map((row) => row.periodStart);
+      expect(monthly).toEqual([
+        "2026-01-01",
+        "2026-02-01",
+        "2026-03-01",
+        "2026-04-01",
+        "2026-05-01"
+      ]);
+      expect(schedule.map((i) => [i.invoiceDate, i.status])).toEqual([
+        ["2026-01-01", "Invoiced"],
+        ["2026-02-01", "Invoiced"],
+        ["2026-03-01", "Invoiced"],
+        ["2026-04-01", "Invoiced"],
+        ["2026-05-01", "Planned"]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a cancellation cannot be reverted once the contract was amended after it",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      const amended = await f.addRecurringContract({
+        key: "revert-amended",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      const plain = await f.addRecurringContract({
+        key: "revert-plain",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      for (const { contractId } of [amended, plain]) {
+        expect(
+          (
+            await postCustomerContract(ctx, {
+              type: "confirm",
+              customerContractId: contractId,
+              asOf: "2026-01-01"
+            })
+          ).error
+        ).toBeNull();
+        expect(
+          (
+            await postCustomerContract(ctx, {
+              type: "cancel",
+              customerContractId: contractId,
+              asOf: "2026-03-10",
+              endDate: "2026-03-31",
+              reason: "Budget cut",
+              creditUnusedTime: false
+            })
+          ).error
+        ).toBeNull();
+      }
+
+      // An amendment after the cancellation (its reason even reads like one).
+      const change = await postCustomerContract(ctx, {
+        type: "amend",
+        customerContractId: amended.contractId,
+        asOf: "2026-03-10",
+        amendmentDate: "2026-03-15",
+        effect: "Change Date",
+        contractType: "Expansion",
+        reason: "Cancellation of the discount",
+        changes: [{ op: "change", lineId: amended.lineId, quantity: 2 }]
+      });
+      expect(change.error).toBeNull();
+
+      const refused = await postCustomerContract(ctx, {
+        type: "revert-cancellation",
+        customerContractId: amended.contractId,
+        asOf: "2026-03-12"
+      });
+      expect(refused.error?.message).toContain("amended after");
+      const stillCancelled = await db
+        .selectFrom("customerContract")
+        .select(sql<string>`"endDate"::text`.as("endDate"))
+        .where("id", "=", amended.contractId)
+        .executeTakeFirstOrThrow();
+      expect(stillCancelled.endDate).toEqual("2026-03-31");
+
+      // With no later amendment the revert restores the line and the end.
+      const reverted = await postCustomerContract(ctx, {
+        type: "revert-cancellation",
+        customerContractId: plain.contractId,
+        asOf: "2026-03-12"
+      });
+      expect(reverted.error).toBeNull();
+      const lines = await contractLines(db, companyId, plain.contractId);
+      expect(lines.map((l) => l.endDate)).toEqual([null]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a discount that ends is split off a line added by an amendment and off a renewed line",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      // --- Amend: add a half-price line whose discount ends 30 June ---------
+      const added = await f.addRecurringContract({
+        key: "discount-add",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: added.contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+      const amendment = await postCustomerContract(ctx, {
+        type: "amend",
+        customerContractId: added.contractId,
+        asOf: "2026-03-15",
+        amendmentDate: "2026-04-01",
+        effect: "Change Date",
+        contractType: "Expansion",
+        reason: "Add support",
+        changes: [
+          {
+            op: "add",
+            line: {
+              kind: "Recurring",
+              itemId: await contractItemId(db, companyId, added.lineId),
+              quantity: 1,
+              rate: 100,
+              rateUnit: "Month",
+              discountPercent: 50,
+              discountEndsOn: "2026-06-30",
+              taxPercent: 0,
+              startDate: "2026-04-01",
+              revenueMethod: "Daily"
+            }
+          }
+        ]
+      });
+      expect(amendment.error).toBeNull();
+      const addedLines = (
+        await contractLines(db, companyId, added.contractId)
+      ).filter((line) => line.id !== added.lineId);
+      expect(
+        addedLines.map((l) => [
+          l.startDate,
+          l.endDate,
+          Number(l.discountPercent)
+        ])
+      ).toEqual([
+        ["2026-04-01", "2026-06-30", 0.5],
+        ["2026-07-01", null, 0]
+      ]);
+      const addedSchedule = await plannedInvoices(
+        db,
+        companyId,
+        added.contractId
+      );
+      const total = (date: string) =>
+        addedSchedule.find((i) => i.invoiceDate === date)?.total;
+      expect(total("2026-06-01")).toBeCloseTo(150, 5);
+      expect(total("2026-07-01")).toBeCloseTo(200, 5);
+
+      // --- Renewal: a discount running past the term ends in the next one ---
+      const renewing = await f.addRecurringContract({
+        key: "discount-renew",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31",
+        termMonths: 3,
+        renewal: "Renew"
+      });
+      await db
+        .updateTable("customerContractLine")
+        .set({ discountPercent: 0.5, discountEndsOn: "2026-04-30" })
+        .where("id", "=", renewing.lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: renewing.contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+      const run = await createContractInvoices(ctx, {
+        asOf: "2026-04-01",
+        customerContractId: renewing.contractId
+      });
+      expect(run.error).toBeNull();
+      expect(run.data!.failures).toEqual([]);
+      const renewed = await plannedInvoices(db, companyId, renewing.contractId);
+      expect(renewed.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 50],
+        ["2026-02-01", 50],
+        ["2026-03-01", 50],
+        ["2026-04-01", 50],
+        ["2026-05-01", 100],
+        ["2026-06-01", 100]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "amend and confirm refuse what the database would, with a message",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    try {
+      // --- A split installment of nothing is refused ----------------------
+      const draft = await f.addRecurringContract({
+        key: "zero-split",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31"
+      });
+      const zero = await postCustomerContract(ctx, {
+        type: "edit-schedule",
+        customerContractId: draft.contractId,
+        asOf: "2026-01-01",
+        edit: {
+          intent: "split",
+          customerContractInvoiceLineId: `planned:2026-01-01:${draft.lineId}:2026-01-01`,
+          installments: [
+            { invoiceDate: "2026-01-01", amount: 100 },
+            { invoiceDate: "2026-01-15", amount: 0 }
+          ]
+        }
+      });
+      expect(zero.error).not.toBeNull();
+
+      // --- Billed through must fall on a period end ------------------------
+      await db
+        .updateTable("customerContract")
+        .set({ billedThrough: "2026-02-15" })
+        .where("id", "=", draft.contractId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const offGrid = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: draft.contractId,
+        asOf: "2026-01-01"
+      });
+      expect(offGrid.error?.message).toContain("2026-02-28");
+      await db
+        .updateTable("customerContract")
+        .set({ billedThrough: "2026-01-31" })
+        .where("id", "=", draft.contractId)
+        .where("companyId", "=", companyId)
+        .execute();
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: draft.contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+
+      // --- Amend: percent points, a rate unit on a one-time line, an end
+      // before the effective date ------------------------------------------
+      const active = await f.addRecurringContract({
+        key: "amend-checks",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      const itemId = await contractItemId(db, companyId, active.lineId);
+      const oneTimeId = await addOneTimeLine(db, {
+        companyId,
+        contractId: active.contractId,
+        itemId,
+        rate: 500,
+        startDate: "2026-06-01",
+        endDate: "2026-06-30"
+      });
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: active.contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+      const amend = (
+        changes: Parameters<typeof postCustomerContract>[1] extends infer I
+          ? I extends { type: "amend"; changes: infer C }
+            ? C
+            : never
+          : never
+      ) =>
+        postCustomerContract(ctx, {
+          type: "amend",
+          customerContractId: active.contractId,
+          asOf: "2026-03-10",
+          amendmentDate: "2026-04-01",
+          effect: "Change Date",
+          contractType: "Existing",
+          reason: "Checks",
+          changes
+        });
+
+      const rateUnit = await amend([
+        { op: "change", lineId: oneTimeId, rateUnit: "Month" }
+      ]);
+      expect(rateUnit.error?.message).toContain("one-time");
+
+      const endsEarly = await amend([
+        {
+          op: "add",
+          line: {
+            kind: "Recurring",
+            itemId,
+            quantity: 1,
+            rate: 10,
+            rateUnit: "Month",
+            discountPercent: 0,
+            taxPercent: 0,
+            startDate: "2026-02-01",
+            endDate: "2026-03-15",
+            revenueMethod: "Daily"
+          }
+        }
+      ]);
+      expect(endsEarly.error?.message).toContain("2026-03-15");
+
+      const percent = await amend([
+        { op: "change", lineId: active.lineId, discountPercent: 14.3 }
+      ]);
+      expect(percent.error).toBeNull();
+      const replacement = (
+        await contractLines(db, companyId, active.contractId)
+      ).find((line) => line.amendsLineId === active.lineId)!;
+      expect(Number(replacement.discountPercent)).toBe(0.143);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
