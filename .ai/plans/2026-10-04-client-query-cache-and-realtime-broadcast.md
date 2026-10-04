@@ -5,12 +5,12 @@
 **Branch:** claude/tanstack-query-caching-realtime-54567c
 
 ## Progress
-- [ ] Task 1: Install dependencies and prove broadcast on the local stack
+- [x] Task 1: Install dependencies and prove broadcast on the local stack
 - [x] Task 2: Add the realtime table lists
 - [x] Task 3: Add the three broadcast functions and the `realtime.messages` policies (authz manifest)
 - [x] Task 4: Write the attach migration
-- [ ] Task 5: Apply the migrations and regenerate types
-- [ ] Task 6: Add the database tests
+- [x] Task 5: Apply the migrations and regenerate types
+- [x] Task 6: Add the database tests
 - [ ] Task 7: Add the `realtime-table-has-trigger` check
 - [x] Task 8: Add the private option to `useRealtimeChannel`
 - [x] Task 9: Add `cachedClientLoader` and the company id value

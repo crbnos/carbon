@@ -85033,6 +85033,13 @@ export type Database = {
         }[]
       }
       jsonb_to_text_array: { Args: { "": Json }; Returns: string[] }
+      list_checksums: {
+        Args: { p_company_id: string }
+        Returns: {
+          checksum: string
+          list: string
+        }[]
+      }
       location_today: {
         Args: { p_company_id: string; p_location_id: string }
         Returns: string
