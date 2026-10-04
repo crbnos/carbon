@@ -16,3 +16,4 @@
 - Typecheck `erp, @carbon/jobs, server-functions, database, utils, stripe, ee, documents`: 9/9 successful.
 - Tests (with the URL exported): utils 555 ✓, database 314 ✓, server-functions 326 ✓, jobs 888 ✓ (30 skipped), documents 53 ✓.
 - No pre-existing failures.
+- Task 3b: `unitPrice` left unchanged in the salesInvoices view only as the `lines` JSON output field (no arithmetic).
