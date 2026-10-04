@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { AssemblyGraphNode } from "./modelVisibility";
 import {
   buildSubtreeIndex,
+  futureNodeIds,
   hiddenIdsFor,
   instanceNamesFor,
   MAX_INSTANCES,
@@ -173,5 +174,29 @@ describe("hiddenIdsFor", () => {
 
   it("falls back to the id alone when the graph does not know it", () => {
     expect(hiddenIdsFor("x", new Map())).toEqual(["x"]);
+  });
+});
+
+describe("futureNodeIds", () => {
+  it("ghosts what later steps install", () => {
+    expect(futureNodeIds(STEPS, 0)).toEqual(
+      new Set(["rod", "piston", "cover"])
+    );
+  });
+
+  it("ghosts nothing on the last step", () => {
+    expect(futureNodeIds(STEPS, 2)).toEqual(new Set());
+  });
+
+  it("does not ghost a part moved aside for access", () => {
+    // Step 3 hides the rod so the cover can go on. The rod is already
+    // fitted — ghosting it would say it is still to come.
+    expect(visibleNodeIds(STEPS, 2).has("rod")).toBe(false);
+    expect(futureNodeIds(STEPS, 2).has("rod")).toBe(false);
+  });
+
+  it("does not ghost something an earlier step already fitted", () => {
+    const steps = [step("s1", ["a"]), step("s2", ["b"]), step("s3", ["a"])];
+    expect(futureNodeIds(steps, 0).has("a")).toBe(false);
   });
 });

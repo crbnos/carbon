@@ -145,3 +145,27 @@ export function buildSubtreeIndex(root: AssemblyGraphNode | null | undefined) {
 export function hiddenIdsFor(nodeId: string, subtrees: Map<string, string[]>) {
   return subtrees.get(nodeId) ?? [nodeId];
 }
+
+/**
+ * The components a LATER step installs — the ones to ghost.
+ *
+ * Deliberately not "everything not visible". A step's
+ * `hiddenComponentNodeIds` are parts moved out of the way so the operator can
+ * see the work (a cover, a cowling); they are already fitted and will be
+ * fitted again, so showing them as a ghost would say the opposite of what is
+ * true. Those simply disappear for the step, as they do on web. Only parts
+ * genuinely still to come are ghosted.
+ */
+export function futureNodeIds(
+  steps: AssemblyPlaybackStep[],
+  activeStepIndex: number
+) {
+  const visible = visibleNodeIds(steps, activeStepIndex);
+  const future = new Set<string>();
+  for (let i = activeStepIndex + 1; i < steps.length; i++) {
+    for (const id of steps[i]?.componentNodeIds ?? []) {
+      if (!visible.has(id)) future.add(id);
+    }
+  }
+  return future;
+}

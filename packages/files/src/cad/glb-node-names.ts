@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 /**
- * Rewrites a GLB's node NAMES to the assembler's `extras.nodeId`.
+ * Prepares a GLB for the native viewer: node NAMES become the assembler's
+ * `extras.nodeId`, and every material is marked blendable.
  *
  * **Why this exists.** A step of an assembly instruction addresses the parts
  * it installs by `componentNodeIds`, and the assembler writes that id into
@@ -67,6 +68,8 @@ type GlbNode = {
   extras?: Record<string, unknown> | null;
 };
 
+type GlbMaterial = { alphaMode?: string };
+
 /**
  * Returns the GLB with every node that carries an `extras.nodeId` renamed to
  * that id. Nodes without one keep the name they had, so a model from an older
@@ -99,7 +102,7 @@ export function renameGlbNodesToNodeIds(bytes: Uint8Array): Uint8Array {
 
   const gltf = JSON.parse(
     new TextDecoder().decode(bytes.subarray(jsonStart, jsonEnd))
-  ) as { nodes?: GlbNode[] };
+  ) as { nodes?: GlbNode[]; materials?: GlbMaterial[] };
 
   let renamed = 0;
   // A nodeId is NOT unique on its own: identical geometry placed twice is two
@@ -126,9 +129,23 @@ export function renameGlbNodesToNodeIds(bytes: Uint8Array): Uint8Array {
     renamed++;
   }
 
+  // Every material is marked blendable, so the viewer can SHOW a part
+  // faintly. Filament compiles blending into the material, and gltfio builds
+  // an opaque shader for `alphaMode: OPAQUE` — which every assembler output
+  // is — so alpha is simply discarded at render time and an opacity call does
+  // nothing at all, silently. Marking them BLEND is what makes the ghosted
+  // not-yet-installed parts possible; it costs the renderer depth sorting it
+  // would otherwise skip, and nothing visible while alpha stays 1.
+  let blended = 0;
+  for (const material of gltf.materials ?? []) {
+    if (material.alphaMode === "BLEND") continue;
+    material.alphaMode = "BLEND";
+    blended++;
+  }
+
   // Nothing to do — hand back the original bytes rather than re-encoding a
   // JSON chunk identically but not byte-identically.
-  if (renamed === 0) return bytes;
+  if (renamed === 0 && blended === 0) return bytes;
 
   const json = new TextEncoder().encode(JSON.stringify(gltf));
   const jsonPad = padTo(json.byteLength);

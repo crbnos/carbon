@@ -225,3 +225,41 @@ describe("renameGlbNodesToNodeIds", () => {
     expect(() => renameGlbNodesToNodeIds(glb)).toThrow(NotAGlbError);
   });
 });
+
+describe("material blending", () => {
+  const withMaterial = (alphaMode: string) =>
+    makeGlb(
+      {
+        asset: { version: "2.0" },
+        nodes: [{ name: "a", extras: { nodeId: "i" } }],
+        materials: [{ alphaMode, pbrMetallicRoughness: {} }]
+      },
+      BIN
+    );
+
+  it("marks an opaque material blendable, or alpha is discarded silently", () => {
+    const out = readGltf(renameGlbNodesToNodeIds(withMaterial("OPAQUE")));
+    expect(out.materials[0].alphaMode).toBe("BLEND");
+  });
+
+  it("leaves an already-blending material alone", () => {
+    const out = readGltf(renameGlbNodesToNodeIds(withMaterial("BLEND")));
+    expect(out.materials[0].alphaMode).toBe("BLEND");
+  });
+
+  it("rewrites a GLB whose only change is the alpha mode", () => {
+    // No node carries a nodeId, so the rename alone would short-circuit and
+    // return the original bytes — with the materials still opaque.
+    const glb = makeGlb(
+      {
+        asset: { version: "2.0" },
+        nodes: [{ name: "unconverted" }],
+        materials: [{ alphaMode: "OPAQUE" }]
+      },
+      BIN
+    );
+    const out = renameGlbNodesToNodeIds(glb);
+    expect(out).not.toBe(glb);
+    expect(readGltf(out).materials[0].alphaMode).toBe("BLEND");
+  });
+});

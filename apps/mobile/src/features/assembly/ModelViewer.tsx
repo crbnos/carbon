@@ -21,6 +21,7 @@ import {
 import type { AssemblyGraphNode } from "./modelVisibility";
 import {
   buildSubtreeIndex,
+  futureNodeIds,
   hiddenIdsFor,
   instanceNamesFor,
   mentionedNodeIds,
@@ -59,6 +60,23 @@ import {
  * active step, ghost the parts still to come, and frame the camera per step.
  * The model, the step's parts and free orbit are the first pass.
  */
+/** The opacity web ghosts a not-yet-installed part at. */
+const GHOST_OPACITY = 0.3;
+
+/**
+ * Every entity one component id names in a copy of the model: the id itself,
+ * then its `#1`, `#2`… instances, stopping at the first that is absent.
+ */
+function entitiesFor(nodeId: string, byName: Map<string, Entity>) {
+  const out: Entity[] = [];
+  for (const name of instanceNamesFor(nodeId)) {
+    const entity = byName.get(name);
+    if (entity == null) break;
+    out.push(entity);
+  }
+  return out;
+}
+
 export function ModelViewer({
   glbUri,
   graphRoot,
@@ -99,8 +117,13 @@ function Scene({
   activeStepIndex: number;
 }) {
   const { t } = useLingui();
-  const model = useModel({ uri: glbUri });
-  const { scene, transformManager } = useFilamentContext();
+  // TWO instances of one asset: a solid one and a ghost one. Filament can
+  // set opacity per ASSET or per INSTANCE, never per entity, so this is how a
+  // SUBSET of the model is shown faintly. Instancing shares the geometry, so
+  // the second copy costs transforms and draw calls, not meshes.
+  const model = useModel({ uri: glbUri }, { instanceCount: 2 });
+  const { scene, transformManager, renderableManager, nameComponentManager } =
+    useFilamentContext();
 
   // Framed from the model's own bounding box, never a fixed distance. CAD
   // arrives in whatever units it was drawn in — the radial engine and a
@@ -129,6 +152,10 @@ function Scene({
     [steps, activeStepIndex]
   );
   const mentioned = useMemo(() => mentionedNodeIds(steps), [steps]);
+  const future = useMemo(
+    () => futureNodeIds(steps, activeStepIndex),
+    [steps, activeStepIndex]
+  );
   const subtrees = useMemo(() => buildSubtreeIndex(graphRoot), [graphRoot]);
   // The viewer's own graph index, for the fallback motion synthesis. Built
   // from the same graph.json the subtree index uses.
@@ -177,37 +204,75 @@ function Scene({
 
   const asset = model.state === "loaded" ? model.asset : null;
 
+  // name -> entity, per instance. `getFirstEntityByName` searches the asset
+  // and so cannot tell the two copies apart; these can.
+  const copies = useMemo(() => {
+    if (!asset) return null;
+    const instances = asset.getAssetInstances();
+    const solid = instances[0];
+    const ghost = instances[1];
+    if (!solid || !ghost) return null;
+    const index = (instance: typeof solid) => {
+      const byName = new Map<string, Entity>();
+      for (const entity of instance.getEntities()) {
+        const name = nameComponentManager.getEntityName(entity);
+        if (name) byName.set(name, entity);
+      }
+      return { instance, byName };
+    };
+    return { solid: index(solid), ghost: index(ghost) };
+  }, [asset, nameComponentManager]);
+
+  // Faint, and the same 0.3 web ghosts with.
   useEffect(() => {
-    if (!asset) return;
+    if (!copies) return;
+    renderableManager.setInstanceEntitiesOpacity(
+      copies.ghost.instance,
+      GHOST_OPACITY
+    );
+  }, [copies, renderableManager]);
+
+  useEffect(() => {
+    if (!copies) return;
+    const { solid, ghost } = copies;
+
+    // The ghost copy is entirely out of the scene to begin with: it is a
+    // second full model, and leaving it in would draw every part twice.
+    const ghostEntities = ghost.instance.getEntities();
+    for (const entity of ghostEntities) scene.removeEntity(entity);
+
+    const restoreSolid: Entity[] = [];
+    const addedGhosts: Entity[] = [];
+
     // Nothing to hide when the instruction names no components — showing the
     // whole model is the honest answer, not an empty scene.
-    if (visible.size === 0) return;
-
-    // An entity is removed from the SCENE rather than scaled away: Filament
-    // then skips it entirely, which is what keeps a 300-part engine
-    // interactive on a tablet.
-    const hidden: Entity[] = [];
-    for (const nodeId of mentioned) {
-      if (visible.has(nodeId)) continue;
-      // One id can name several entities — identical geometry placed more
-      // than once — so walk the instance names until one is absent. Stopping
-      // at the first miss is what makes this bounded in practice.
-      // The step names an assembly node, whose geometry is in its children,
-      // so the whole subtree goes.
-      for (const id of hiddenIdsFor(nodeId, subtrees)) {
-        for (const name of instanceNamesFor(id)) {
-          const entity = asset.getFirstEntityByName(name);
-          if (entity == null) break;
-          hidden.push(entity);
+    if (visible.size > 0) {
+      for (const nodeId of mentioned) {
+        if (visible.has(nodeId)) continue;
+        // The step names an assembly node, whose geometry is in its
+        // children, so the whole subtree goes. (Scene membership is per
+        // entity; unlike a transform it is not inherited.)
+        for (const id of hiddenIdsFor(nodeId, subtrees)) {
+          for (const entity of entitiesFor(id, solid.byName)) {
+            scene.removeEntity(entity);
+            restoreSolid.push(entity);
+          }
+          // Only a part a LATER step fits is ghosted; one moved aside for
+          // access this step simply goes.
+          if (!future.has(nodeId)) continue;
+          for (const entity of entitiesFor(id, ghost.byName)) {
+            scene.addEntity(entity);
+            addedGhosts.push(entity);
+          }
         }
       }
     }
-    for (const entity of hidden) scene.removeEntity(entity);
 
     return () => {
-      for (const entity of hidden) scene.addEntity(entity);
+      for (const entity of restoreSolid) scene.addEntity(entity);
+      for (const entity of addedGhosts) scene.removeEntity(entity);
     };
-  }, [asset, scene, visible, mentioned, subtrees]);
+  }, [copies, scene, visible, mentioned, future, subtrees]);
 
   // The insertion: the step's components start back along the motion and
   // travel to the pose the model already has them in.
@@ -221,15 +286,14 @@ function Scene({
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the step
   useEffect(() => {
     const duration = motionDurationMs(motion);
-    if (!asset || !step || duration === 0) return;
+    if (!copies || !step || duration === 0) return;
 
     const moving: { entity: Entity; seated: Mat4 }[] = [];
     for (const nodeId of step.componentNodeIds) {
       // The assembly node itself, NOT its subtree: a transform IS inherited
       // (unlike scene membership), so moving the parent carries its children.
-      for (const name of instanceNamesFor(nodeId)) {
-        const entity = asset.getFirstEntityByName(name);
-        if (entity == null) break;
+      // The SOLID copy only — the ghost is a preview and does not travel.
+      for (const entity of entitiesFor(nodeId, copies.solid.byName)) {
         moving.push({
           entity,
           seated: transformManager.getTransform(entity)
@@ -268,7 +332,7 @@ function Scene({
       // Whatever happened, the part ends up seated.
       apply(1);
     };
-  }, [asset, motion, step, transformManager]);
+  }, [copies, motion, step, transformManager]);
 
   if (model.state !== "loaded") {
     return (

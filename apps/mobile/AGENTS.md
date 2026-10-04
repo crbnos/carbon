@@ -237,6 +237,15 @@ again.
   alias is deep-path only — the barrel and `motion.ts` pull in three.js. Only
   the per-frame offset is written here, and `direction` is the way a part
   travels to SEAT, so the offset is negative.
+- **Ghosting needs TWO instances and a BLEND material.** Filament sets
+  opacity per asset or per INSTANCE, never per entity, so the model is loaded
+  with `instanceCount: 2`: a solid copy and a ghost copy at 0.3, each showing
+  a disjoint set of parts (every ghost entity starts out of the scene, or
+  everything draws twice). Instancing shares the geometry. It also needs the
+  material to declare `alphaMode: BLEND` — gltfio compiles an opaque shader
+  otherwise and DISCARDS alpha silently, which is why the model endpoint
+  marks materials blendable. Only parts a LATER step fits are ghosted; one
+  moved aside for access this step simply goes.
 - **No step in the demo data animates, and web does not animate it either.**
   Every authored motion is `none`, and the fallback refuses to fabricate a
   path through a mate. Motion appears with planner-baked instructions.
