@@ -91,6 +91,7 @@
     "zod-form-data": "catalog:"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "catalog:",
     "@lingui/conf": "catalog:",
     "@react-aria/optimize-locales-plugin": "catalog:",
     "@carbon/config": "workspace:*",

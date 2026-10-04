@@ -35,6 +35,7 @@ import {
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
 import { useContext, useState } from "react";
@@ -335,6 +336,8 @@ export default function App() {
                   env={env}
                 >
                   <Outlet />
+                  {/* Renders nothing outside development; the package strips itself. */}
+                  <ReactQueryDevtools buttonPosition="bottom-left" />
                 </Document>
               </MotionConfig>
             </TooltipProvider>
