@@ -172,7 +172,13 @@ Cold load does these steps:
 6. Remove a named row that the read does not return.
 7. Write each list and the new cursor to IndexedDB.
 
-The answer is `reset` in 4 cases: the client sent no cursor, the server restarted, the cursor is older than 6 days, or a list has more than 500 changed rows.
+The reader answers `reset` in 3 cases:
+
+- The client sent no cursor.
+- The server restarted after it issued the cursor.
+- The cursor is older than 6 days.
+
+The client also fetches a list in full when the answer names more than 500 changed rows for it.
 
 A broadcast message does these steps:
 
