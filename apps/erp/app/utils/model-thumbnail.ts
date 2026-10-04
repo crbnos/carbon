@@ -14,7 +14,8 @@ export type ViewDirection = [number, number, number];
  * path appearing on the model is the signal that it landed.
  *
  * Resolves to the new path, or `null` when it has not landed within the wait
- * (it may still arrive). Throws when the request itself is refused. `isActive`
+ * (it may still arrive). Throws when the request is refused or the model
+ * cannot be read. `isActive`
  * lets a caller that has unmounted stop the wait.
  */
 export async function regenerateModelThumbnail({
@@ -30,11 +31,14 @@ export async function regenerateModelThumbnail({
   isActive?: () => boolean;
 }): Promise<string | null> {
   const currentPath = async () => {
-    const { data } = await carbon
+    const { data, error } = await carbon
       .from("modelUpload")
       .select("thumbnailPath")
       .eq("id", modelId)
       .maybeSingle();
+    // A failed read is not "no thumbnail": treated as one, the old path would
+    // later look like a new one.
+    if (error) throw error;
     return data?.thumbnailPath ?? null;
   };
   const before = await currentPath();

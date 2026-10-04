@@ -110,8 +110,12 @@ const CadModel = ({
   // The thumbnail is drawn from where the viewer's camera stands. The item
   // panel reads the model's thumbnail from the loader, so revalidate once the
   // new one lands.
+  // One at a time: two in flight both wait for "a new path", so the first to
+  // land would be reported as the second's view.
+  const [isCapturing, setIsCapturing] = useState(false);
   const onCaptureThumbnail = async (direction: ViewDirection) => {
-    if (!modelUploadId || !carbon) return;
+    if (!modelUploadId || !carbon || isCapturing) return;
+    setIsCapturing(true);
     toast.info(t`Regenerating thumbnail…`);
     try {
       const thumbnailPath = await regenerateModelThumbnail({
@@ -127,6 +131,8 @@ const CadModel = ({
       }
     } catch {
       toast.error(t`Failed to regenerate thumbnail`);
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -304,8 +310,9 @@ const CadModel = ({
                 retryLabel={retryLabel}
                 onCancelWait={modelPath ? onCancelWait : undefined}
                 onCaptureThumbnail={
-                  modelUploadId ? onCaptureThumbnail : undefined
+                  !isReadOnly && modelUploadId ? onCaptureThumbnail : undefined
                 }
+                isCapturingThumbnail={isCapturing}
                 onDelete={canDelete ? deleteModal.onOpen : undefined}
               />
               {upload !== null && (

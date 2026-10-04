@@ -188,10 +188,16 @@ pub async fn http_span(request: Request, next: Next) -> Response {
     response
 }
 
+/// How long a Lambda response waits for its spans to be exported. A job poll
+/// can already hold for the long-poll cap (25 s), and API Gateway gives the
+/// whole request 30 s, so a slow collector must cost a trace, not the response.
+const LAMBDA_FLUSH_WAIT: std::time::Duration = std::time::Duration::from_secs(3);
+
 async fn flush() {
     if let Some(provider) = PROVIDER.get() {
         // force_flush blocks until the export thread answers.
-        let _ = tokio::task::spawn_blocking(move || provider.force_flush()).await;
+        let flushed = tokio::task::spawn_blocking(move || provider.force_flush());
+        let _ = tokio::time::timeout(LAMBDA_FLUSH_WAIT, flushed).await;
     }
 }
 

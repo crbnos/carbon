@@ -569,8 +569,15 @@ fn rasterize(
     size: usize,
     direction: [f32; 3],
 ) -> Result<Vec<u8>, ThumbnailError> {
-    let usable = direction.iter().all(|c| c.is_finite()) && dot(direction, direction) > 0.0;
-    let toward = normalize(if usable { direction } else { DEFAULT_DIRECTION });
+    // Scaled by its largest component first: squaring a large but finite
+    // direction overflows, and its length would come out infinite.
+    let largest = direction.iter().fold(0.0f32, |m, c| m.max(c.abs()));
+    let usable = direction.iter().all(|c| c.is_finite()) && largest > 0.0;
+    let toward = normalize(if usable {
+        direction.map(|c| c / largest)
+    } else {
+        DEFAULT_DIRECTION
+    });
     // Straight down (or up) the Z axis there is no "right" to derive from Z.
     let right = match cross([0.0, 0.0, 1.0], toward) {
         r if dot(r, r) > 1e-12 => normalize(r),
@@ -900,6 +907,8 @@ mod tests {
         let home = from(DEFAULT_DIRECTION);
         // Any length names the same direction.
         assert!(from([40.0, -40.0, 40.0]) == home);
+        assert!(from([1e30, -1e30, 1e30]) == home);
+        assert!(from([1e-30, -1e-30, 1e-30]) == home);
         // A lower camera sees less of the top face. (A cube looks the same from
         // each of its corners, so the test cannot just mirror the direction.)
         assert!(from([1.0, -1.0, 0.2]) != home);

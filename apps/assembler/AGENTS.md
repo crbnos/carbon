@@ -130,7 +130,9 @@ One trace per job: the caller's `traceparent` → the request span
   stack (aws-lc) beside ours (ring).
 - **On Lambda every request flushes before it responds** — the process freezes
   once the response is sent. That adds one export round trip to each response
-  there; ECS and local runs export on the batch timer.
+  there, capped at 3 s (`LAMBDA_FLUSH_WAIT`) so a slow collector cannot push a
+  25 s job poll past API Gateway's 30 s; ECS and local runs export on the batch
+  timer.
 - **Every exit path calls `telemetry::shutdown()`** — `process::exit` runs no
   destructors, so a path that skips it drops the last batch.
 

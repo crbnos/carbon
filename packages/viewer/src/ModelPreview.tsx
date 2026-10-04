@@ -80,6 +80,8 @@ export type ModelPreviewProps = {
   /** Shows a camera button that hands over where the viewer's camera stands
    *  right now, for the host to redraw the model's thumbnail from there. */
   onCaptureThumbnail?: (direction: ViewDirection) => void;
+  /** A capture is in flight: the camera button is disabled until it lands. */
+  isCapturingThumbnail?: boolean;
   onDelete?: () => void;
   className?: string;
 };
@@ -110,6 +112,7 @@ export function ModelPreview({
   onCancelWait,
   mode = "dark",
   onCaptureThumbnail,
+  isCapturingThumbnail = false,
   onDelete,
   className
 }: ModelPreviewProps) {
@@ -317,6 +320,7 @@ export function ModelPreview({
                 className="text-muted-foreground"
                 icon={<LuCamera />}
                 variant="ghost"
+                isDisabled={isCapturingThumbnail}
                 onClick={() => {
                   const direction = viewDirectionRef.current?.();
                   if (direction) onCaptureThumbnail(direction);
