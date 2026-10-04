@@ -6,7 +6,9 @@ import ContractAmendments from "./ContractAmendments";
 import ContractExplorer from "./ContractExplorer";
 import ContractForm from "./ContractForm";
 import ContractHeader from "./ContractHeader";
+import ContractInvoiceSplitModal from "./ContractInvoiceSplitModal";
 import ContractInvoices from "./ContractInvoices";
+import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
 import ContractProject from "./ContractProject";
 import ContractProperties from "./ContractProperties";
@@ -21,6 +23,7 @@ import {
 } from "./contractTerms";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
 
+export type { ContractSplitRow } from "./ContractInvoiceSplitModal";
 export type { ContractScheduleRow } from "./contractTerms";
 export type * from "./types";
 
@@ -29,7 +32,9 @@ export {
   ContractExplorer,
   ContractForm,
   ContractHeader,
+  ContractInvoiceSplitModal,
   ContractInvoices,
+  ContractLineForm,
   ContractMoney,
   ContractProject,
   ContractProperties,

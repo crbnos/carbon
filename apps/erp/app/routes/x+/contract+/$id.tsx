@@ -28,7 +28,11 @@ import {
   getContractInvoiceSchedule,
   getContractLines
 } from "~/modules/sales";
-import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
+import type {
+  ContractCreditMemoLinks,
+  ContractInvoiceLinks,
+  ContractRouteData
+} from "~/modules/sales/ui/Contracts";
 import {
   ContractExplorer,
   ContractHeader,
@@ -128,6 +132,43 @@ export async function loader({
     }
   }
 
+  // The drafted sales invoices (links, Held badges) and the credit memos of
+  // the schedule — one `.in()` each, through the stamped ids.
+  const salesInvoiceIds = [
+    ...new Set(
+      invoices.flatMap((invoice) =>
+        invoice.salesInvoiceId ? [invoice.salesInvoiceId] : []
+      )
+    )
+  ];
+  const memoIds = [
+    ...new Set(credits.flatMap((row) => (row.memoId ? [row.memoId] : [])))
+  ];
+  const [salesInvoices, memos] = await Promise.all([
+    salesInvoiceIds.length > 0
+      ? client
+          .from("salesInvoice")
+          .select("id, invoiceId, status, automationHoldReason")
+          .eq("companyId", companyId)
+          .in("id", salesInvoiceIds)
+      : Promise.resolve({ data: [], error: null }),
+    memoIds.length > 0
+      ? client
+          .from("memo")
+          .select("id, memoId, status")
+          .eq("companyId", companyId)
+          .in("id", memoIds)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  const invoiceLinks: ContractInvoiceLinks = {};
+  for (const invoice of salesInvoices.data ?? []) {
+    invoiceLinks[invoice.id] = invoice;
+  }
+  const creditMemoLinks: ContractCreditMemoLinks = {};
+  for (const memo of memos.data ?? []) {
+    creditMemoLinks[memo.id] = memo;
+  }
+
   // Revenue preview (plan decision 1): each line's scheduled total spread
   // over its revenue dates, and the month-by-month position that follows.
   const rows = scheduleRows({ computedSchedule, schedule: invoices, credits });
@@ -159,6 +200,8 @@ export async function loader({
     amendments: amendments.data ?? [],
     computedSchedule,
     residuals,
+    invoiceLinks,
+    creditMemoLinks,
     revenue: { lines: revenueLines, position }
   };
 }

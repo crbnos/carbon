@@ -43,6 +43,24 @@ export type ContractAmendment = NonNullable<
   Awaited<ReturnType<typeof getContractAmendments>>["data"]
 >[number];
 
+/** The sales invoice drafted from a planned invoice, keyed by its id (the
+ *  planned invoice's stamped `salesInvoiceId`). */
+export type ContractInvoiceLinks = Record<
+  string,
+  {
+    id: string;
+    invoiceId: string;
+    status: Enums["salesInvoiceStatus"];
+    automationHoldReason: string | null;
+  }
+>;
+
+/** The credit memo a cancellation credit row sits on, keyed by memo id. */
+export type ContractCreditMemoLinks = Record<
+  string,
+  { id: string; memoId: string; status: Enums["memoStatus"] }
+>;
+
 /** The Revenue section's preview (Phase A): each line's monthly revenue and
  *  the month-by-month invoiced / recognized / deferred position. */
 export type ContractRevenue = {
@@ -65,5 +83,9 @@ export type ContractRouteData = {
   /** Per line: computed total − Σ its scheduled amounts, for an edited Draft.
    *  A non-zero value offers Reset schedule. */
   residuals: Record<string, number>;
+  /** The drafted sales invoices of the schedule, for links and Held badges. */
+  invoiceLinks: ContractInvoiceLinks;
+  /** The memos of `credits`, for "Credited on {memoId}". */
+  creditMemoLinks: ContractCreditMemoLinks;
   revenue: ContractRevenue;
 };

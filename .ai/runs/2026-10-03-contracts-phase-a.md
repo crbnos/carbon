@@ -72,3 +72,8 @@
 - `sendPostedInvoiceViaStripe({ client, db, companyId, invoiceId })` (needs `db` for the mapping write); guards a double send by checking for an existing Stripe invoice link before sending.
 - Owner lookup failure no longer fails the email (logged, returns null). A failed rental step no longer skips the company's contract step.
 - FOLLOW-UP for Task 34: `packages/jobs/AGENTS.md` still describes `recurring-billing` / `invoice-automate` as rentals-only.
+
+## Tasks 23–26 (one commit: shared index.ts / types.ts / loader)
+- Line form: Item picker `type="Service"`; One-time hides the rate unit; Revenue fields collapsed but still submitted; read-only on Active ("Change lines with Amend"). New line defaults: Recurring, rate unit = billing frequency, start/project from the contract.
+- Invoices: unedited Drafts send `planned:` refs; the server function resolves them (fix commit 56fa0f7b8e, live-DB test). Loader adds held reasons and credit memo numbers (one `.in()` each). Installment inputs use the rate format (5 dp) so installments can sum exactly.
+- Revenue: project names fetched client-side (embedding `project(name)` in `getContractLines` would remove that).
