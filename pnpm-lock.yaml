@@ -3383,6 +3383,9 @@ importers:
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.19(tailwindcss@4.3.0)
+      '@tanstack/react-query':
+        specifier: 5.97.0
+        version: 5.97.0(react@18.3.1)
       '@tanstack/react-table':
         specifier: 8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

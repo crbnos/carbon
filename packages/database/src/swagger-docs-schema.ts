@@ -106301,6 +106301,66 @@ export default {
         tags: ["(rpc) get_purchasing_planning"]
       }
     },
+    "/rpc/set_event_triggers": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                after_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                before_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                queue_events: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                statement_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                table_name_text: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["table_name_text"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_event_triggers"]
+      }
+    },
     "/rpc/create_event_system_subscription": {
       post: {
         parameters: [

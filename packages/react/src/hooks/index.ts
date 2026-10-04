@@ -15,6 +15,8 @@ import { useInterval } from "./useInterval";
 import useIsMobile from "./useIsMobile";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import { useKeyboardWedge } from "./useKeyboardWedge";
+import type { LiveList, LiveListStorage } from "./useLiveList";
+import { LiveLists, liveListKey, useLiveList } from "./useLiveList";
 import useLocalStorage from "./useLocalStorage";
 import {
   getSystemMode,
@@ -68,6 +70,9 @@ export {
   useOptimisticMode,
   useOutsideClick,
   usePlan,
+  useLiveList,
+  LiveLists,
+  liveListKey,
   useRealtimeChannel,
   useRealtimeRevalidator,
   useRealtimeTable,
@@ -83,4 +88,10 @@ export {
   useUrlParams
 };
 
-export type { BroadcastChange, Shortcut, ShortcutDefinition };
+export type {
+  BroadcastChange,
+  LiveList,
+  LiveListStorage,
+  Shortcut,
+  ShortcutDefinition
+};

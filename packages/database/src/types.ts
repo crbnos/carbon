@@ -85189,6 +85189,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_event_triggers: {
+        Args: {
+          after_functions?: string[]
+          before_functions?: string[]
+          queue_events?: boolean
+          statement_functions?: string[]
+          table_name_text: string
+        }
+        Returns: undefined
+      }
       set_inngest_event_config: {
         Args: { p_base_url: string; p_key: string }
         Returns: undefined
@@ -85346,20 +85356,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
-      sync_finish_job_operation:
-        | {
-            Args: { p_new: Json; p_old: Json; p_operation: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_new: Json
-              p_old: Json
-              p_operation: string
-              p_table: string
-            }
-            Returns: undefined
-          }
+      sync_finish_job_operation: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_insert_company_related_records: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
