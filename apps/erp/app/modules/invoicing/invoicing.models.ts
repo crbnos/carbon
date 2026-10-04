@@ -321,6 +321,9 @@ export const salesInvoiceLineValidator = z
     quantity: zfd.numeric(z.number().optional()),
     unitOfMeasureCode: zfd.text(z.string().default("EA")),
     unitPrice: zfd.numeric(z.number().optional()),
+    // Percent points (0–100), as the form types it; the route stores the 0–1
+    // fraction the column holds. It discounts the merchandise only.
+    discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
     locationId: zfd.text(z.string().optional()),

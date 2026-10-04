@@ -89,6 +89,15 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 
+/** The unit price after a percent-points discount. An emptied discount field
+ *  commits NaN, which reads as no discount rather than poisoning the tax base. */
+function netUnitPrice(unitPrice: number, discountPoints: number) {
+  const discount = globalThis.Number.isFinite(discountPoints)
+    ? discountPoints
+    : 0;
+  return unitPrice * (1 - discount / 100);
+}
+
 type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
     taxPercent?: number;
@@ -184,7 +193,11 @@ function RentalInvoiceLineSummary({
     };
   }, [carbon, rentalAgreementId]);
 
-  const amount = (line?.unitPrice ?? 0) * (line?.quantity ?? 1);
+  // The discount applies to the merchandise only, as the view's totals do.
+  const amount =
+    (line?.unitPrice ?? 0) *
+    (line?.quantity ?? 1) *
+    (1 - (line?.discountPercent ?? 0));
   const period =
     line?.serviceStartDate && line?.serviceEndDate
       ? `${formatDate(line.serviceStartDate, undefined, locale)} – ${formatDate(
@@ -335,6 +348,8 @@ const SalesInvoiceItemLineForm = ({
     description: string;
     quantity: number;
     unitPrice: number;
+    /** Percent points (0–100), as the field types it. */
+    discountPercent: number;
     shippingCost: number;
     unitOfMeasureCode: string;
     storageUnitId: string | null;
@@ -346,6 +361,7 @@ const SalesInvoiceItemLineForm = ({
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
     unitPrice: initialValues.unitPrice ?? 0,
+    discountPercent: initialValues.discountPercent ?? 0,
     shippingCost: initialValues.shippingCost ?? 0,
     unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "",
     storageUnitId: initialValues.storageUnitId ?? "",
@@ -353,7 +369,10 @@ const SalesInvoiceItemLineForm = ({
     // amount is rounded to the currency's decimals rather than a raw product.
     taxAmount: taxPairFromPercent(
       taxableBase(
-        initialValues.unitPrice ?? 0,
+        netUnitPrice(
+          initialValues.unitPrice ?? 0,
+          initialValues.discountPercent ?? 0
+        ),
         initialValues.quantity ?? 1,
         initialValues.shippingCost ?? 0
       ),
@@ -363,8 +382,10 @@ const SalesInvoiceItemLineForm = ({
     taxPercent: initialValues.taxPercent ?? 0
   });
 
+  // Tax is charged on the discounted merchandise, so the pair's base takes the
+  // NET unit price.
   const itemTax = useTaxPair({
-    unitPrice: itemData.unitPrice,
+    unitPrice: netUnitPrice(itemData.unitPrice, itemData.discountPercent),
     quantity: itemData.quantity,
     shippingCost: itemData.shippingCost,
     percent: itemData.taxPercent,
@@ -464,6 +485,7 @@ const SalesInvoiceItemLineForm = ({
       description: "",
       quantity: 1,
       unitPrice: 0,
+      discountPercent: 0,
       shippingCost: 0,
       unitOfMeasureCode: "",
       storageUnitId: "",
@@ -518,6 +540,7 @@ const SalesInvoiceItemLineForm = ({
             description: "",
             quantity: 1,
             unitPrice: 0,
+            discountPercent: 0,
             shippingCost: 0,
             unitOfMeasureCode: "",
             storageUnitId: "",
@@ -828,6 +851,21 @@ const SalesInvoiceItemLineForm = ({
                               setItemData((d) => ({
                                 ...d,
                                 unitPrice: value
+                              }))
+                            }
+                          />
+                          <NumberControlled
+                            name="discountPercent"
+                            label={t`Discount (%)`}
+                            value={itemData.discountPercent}
+                            minValue={0}
+                            maxValue={100}
+                            step={INPUT_STEP.percent}
+                            formatOptions={INPUT_FORMAT.percentPoints}
+                            onChange={(value) =>
+                              setItemData((d) => ({
+                                ...d,
+                                discountPercent: value
                               }))
                             }
                           />

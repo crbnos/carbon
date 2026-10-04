@@ -14,7 +14,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { getItemReadableId, redirect } from "@carbon/utils";
+import { getItemReadableId, redirect, round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -100,6 +100,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
+
+  // The form types percent points; the column holds the 0–1 fraction.
+  if (d.discountPercent !== undefined) {
+    d.discountPercent = round(d.discountPercent / 100);
+  }
 
   if (d.invoiceLineType === "Fixed Asset") {
     d.accountId = undefined;
@@ -236,6 +241,7 @@ export default function EditSalesInvoiceLineRoute() {
     description: salesInvoiceLine?.description ?? "",
     quantity: salesInvoiceLine?.quantity ?? 1,
     unitPrice: salesInvoiceLine?.unitPrice ?? 0,
+    discountPercent: round((salesInvoiceLine?.discountPercent ?? 0) * 100),
     shippingCost: salesInvoiceLine?.shippingCost ?? 0,
     taxPercent: salesInvoiceLine?.taxPercent ?? 0,
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,

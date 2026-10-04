@@ -7424,12 +7424,13 @@ export async function getRentalUtilization(
       rentalAgreementLineId: string;
       quantity: number;
       unitPrice: number;
+      discountPercent: number;
       addOnCost: number;
       nonTaxableAddOnCost: number;
     }>(
       client,
       "salesInvoiceLine",
-      "rentalAgreementLineId, quantity, unitPrice, addOnCost, nonTaxableAddOnCost, salesInvoice!inner(status, postingDate)",
+      "rentalAgreementLineId, quantity, unitPrice, discountPercent, addOnCost, nonTaxableAddOnCost, salesInvoice!inner(status, postingDate)",
       (query: any) =>
         query
           .eq("companyId", companyId)
@@ -7474,11 +7475,12 @@ export async function getRentalUtilization(
       addIncome(row.rentalAgreementLineId, row.amount);
     }
   }
-  // The same base the posting's revenue leg uses (sales-posting-amounts.ts).
+  // The same base the posting's revenue leg uses (sales-posting-amounts.ts):
+  // merchandise net of the line discount, add-ons undiscounted.
   for (const line of charges.data ?? []) {
     addIncome(
       line.rentalAgreementLineId,
-      line.quantity * line.unitPrice +
+      line.quantity * line.unitPrice * (1 - (line.discountPercent ?? 0)) +
         (line.addOnCost ?? 0) +
         (line.nonTaxableAddOnCost ?? 0)
     );

@@ -54,31 +54,31 @@ Every acceptance criterion in the spec is covered except these, which belong to 
 
 ## Progress
 
-- [ ] Task 1: Baseline green
-- [ ] Task 2: Migration — enum values
-- [ ] Task 3: Migration — contract tables, provenance columns, view, sequence
-- [ ] Task 3b: Migration — sales invoice line discount
-- [ ] Task 4: Authz rules, apply, generated RLS migration, types, DB gates
-- [ ] Task 5: Pure schedule math (`@carbon/database/contract-schedule`) + tests
-- [ ] Task 6: Pure revenue preview + contract invoice holds (`@carbon/utils`) + tests
-- [ ] Task 7: Contract validators (`sales.models.ts`)
-- [ ] Task 8: Contract services (`sales.service.ts`) with Draft guards and MCP tags
+- [x] Task 1: Baseline green
+- [x] Task 2: Migration — enum values
+- [x] Task 3: Migration — contract tables, provenance columns, view, sequence
+- [x] Task 3b: Migration — sales invoice line discount
+- [x] Task 4: Authz rules, apply, generated RLS migration, types, DB gates
+- [x] Task 5: Pure schedule math (`@carbon/database/contract-schedule`) + tests
+- [x] Task 6: Pure revenue preview + contract invoice holds (`@carbon/utils`) + tests
+- [x] Task 7: Contract validators (`sales.models.ts`)
+- [x] Task 8: Contract services (`sales.service.ts`) with Draft guards and MCP tags
 - [ ] Task 9: Server function `post-customer-contract` — confirm, schedule edits, reset
 - [ ] Task 10: `post-customer-contract` — amend
 - [ ] Task 11: `post-customer-contract` — cancel and revert cancellation
 - [ ] Task 12: Server function `create-contract-invoices`
-- [ ] Task 13: `post-sales-invoice` — VOID releases contract rows; Project dimension
-- [ ] Task 13b: Line discount — posting amounts
-- [ ] Task 13c: Line discount — documents (PDF, email)
+- [x] Task 13: `post-sales-invoice` — VOID releases contract rows; Project dimension
+- [x] Task 13b: Line discount — posting amounts
+- [x] Task 13c: Line discount — documents (PDF, email)
 - [ ] Task 13d: Line discount — ERP invoice UI and rental utilization
-- [ ] Task 13e: Line discount — Stripe and accounting providers
-- [ ] Task 14: `post-memo` — contract credit memo releases deferral
+- [x] Task 13e: Line discount — Stripe and accounting providers
+- [x] Task 14: `post-memo` — contract credit memo releases deferral
 - [ ] Task 15: `sales.server.ts` — release stamps on delete, create from sales order, wrappers
-- [ ] Task 16: `@carbon/stripe` — shared send of a posted invoice; the post route uses it
+- [x] Task 16: `@carbon/stripe` — shared send of a posted invoice; the post route uses it
 - [ ] Task 17: Automation — contract source, Stripe mode
 - [ ] Task 18: `recurring-billing` — the contract source
-- [ ] Task 19: Settings and rental override offer *Post and Send via Stripe*
-- [ ] Task 20: Paths, navigation, status colors, route types
+- [x] Task 19: Settings and rental override offer *Post and Send via Stripe*
+- [x] Task 20: Paths, navigation, status colors, route types
 - [ ] Task 21: Contracts list
 - [ ] Task 22: Contract page shell — new, header, explorer, properties, update, delete
 - [ ] Task 23: Line form and line routes

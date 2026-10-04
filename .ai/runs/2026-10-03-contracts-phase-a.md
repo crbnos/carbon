@@ -38,3 +38,17 @@
 - `contractType` optional in `customerContractValidator` (Task 22 suggests it when unset).
 - `getContractInvoiceSchedule` returns `{ invoices, credits }` (credits = memo-borne rows).
 - The rental label map gained the Stripe mode here (Task 19's one-liner) so erp compiles after the enum array grew.
+
+## Tasks 19 + 20
+- `@carbon/form` `Select` has no per-option disabled state, so the Stripe mode stays selectable when Stripe is not connected; the option label says "Connect Stripe in Integrations first" and the action refuses the save.
+- Nav icon `LuFileText` (`LuFileSignature` not in react-icons 5.6.0). Ended status uses gray (no "muted" in the palette).
+
+## Task 13e
+- `unitPrice` is base currency, `convertedUnitPrice` document currency; the discount factor applies to whichever each site already used.
+- Model field `discountPercent` is `.optional()` (a `.default(0)` breaks provider pull code outside the task).
+- FOLLOW-UP (pre-existing, out of scope): the Stripe send uses `salesInvoiceLine.unitPrice` (base currency) under the invoice's currency code, so a foreign-currency invoice sent via Stripe bills base amounts.
+
+## Task 13d
+- Invoice line discount is entered in percent points (`INPUT_FORMAT.percentPoints`) and the route divides by 100. (The plan's "as quote pricing does" was inaccurate: quotes store the fraction directly.)
+- `nonTaxableAddOnCost` in `SalesInvoiceSummary` is NOT missing: it is added after tax, matching the view. No change.
+- FOLLOW-UP: `upsertSalesInvoiceLine` (`@mcp upsert`) takes its type from the points validator but writes the value as given; an MCP caller passing 20 is rejected by the 0–1 CHECK rather than stored wrongly. Convert in the service in a later change.

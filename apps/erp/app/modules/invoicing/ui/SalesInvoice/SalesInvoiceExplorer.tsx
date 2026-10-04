@@ -83,6 +83,7 @@ export default function SalesInvoiceExplorer() {
     unitOfMeasureCode: "",
     taxPercent: 0,
     unitPrice: 0,
+    discountPercent: 0,
     shippingCost: 0,
     addOnCost: 0,
     nonTaxableAddOnCost: 0,

@@ -85,9 +85,13 @@ const LineItems = ({
               ? (line as any).assetReadableId || "Fixed Asset"
               : getItemReadableId(items, line.itemId);
         const description = distinctItemText(itemReadableId, line.description);
-        const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
+        // The discount reduces the merchandise only (the generated net
+        // prices); add-ons and shipping are not discounted.
+        const discountPercent = line.discountPercent ?? 0;
+        const discount = percentFormatter.format(discountPercent);
+        const lineSubtotal = (line.netUnitPrice ?? 0) * (line.quantity ?? 0);
         const customerSubtotal =
-          (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
+          (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
         const total =
           (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
             (1 + (line.taxPercent ?? 0)) +
@@ -213,6 +217,11 @@ const LineItems = ({
                             )?.label
                           }
                         </Badge>
+                        {discountPercent > 0 ? (
+                          <Badge variant="secondary">
+                            <Trans>{discount} off</Trans>
+                          </Badge>
+                        ) : null}
                         {(line.taxPercent ?? 0) > 0 ? (
                           <Badge variant="red">
                             {percentFormatter.format(line.taxPercent ?? 0)} Tax
@@ -267,6 +276,11 @@ const LineItems = ({
                               {presentationCurrencyFormatter.format(
                                 line.convertedUnitPrice ?? 0
                               )}
+                            </span>
+                          )}
+                          {discountPercent > 0 && (
+                            <span className="text-muted-foreground text-xs">
+                              <Trans>{discount} off</Trans>
                             </span>
                           )}
                         </VStack>
@@ -383,11 +397,12 @@ const SalesInvoiceSummary = ({
 
   const isEditable = !isSalesInvoiceLocked(routeData?.salesInvoice?.status);
 
-  // Calculate totals
+  // Calculate totals. Merchandise is NET of the line discount, as in the
+  // `salesInvoices` view.
   const subtotal =
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineSubtotal =
-        (line.unitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
         (line.shippingCost ?? 0) +
         (line.addOnCost ?? 0) +
         (line.nonTaxableAddOnCost ?? 0);
@@ -397,7 +412,7 @@ const SalesInvoiceSummary = ({
   const customerSubtotal =
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineSubtotal =
-        (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
         (line.convertedShippingCost ?? 0) +
         (line.convertedAddOnCost ?? 0) +
         (line.convertedNonTaxableAddOnCost ?? 0);
@@ -409,7 +424,7 @@ const SalesInvoiceSummary = ({
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineTaxAmount =
         (line.taxPercent ?? 0) *
-        ((line.unitPrice ?? 0) * (line.quantity ?? 0) +
+        ((line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
           (line.shippingCost ?? 0) +
           (line.addOnCost ?? 0));
       return acc + lineTaxAmount;
@@ -419,7 +434,7 @@ const SalesInvoiceSummary = ({
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineTaxAmount =
         (line.taxPercent ?? 0) *
-        ((line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+        ((line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
           (line.convertedShippingCost ?? 0) +
           (line.convertedAddOnCost ?? 0));
       return acc + lineTaxAmount;
