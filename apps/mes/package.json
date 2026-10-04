@@ -29,9 +29,7 @@
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
-    "@lingui/conf": "catalog:",
     "@lingui/vite-plugin": "catalog:",
-    "@react-aria/optimize-locales-plugin": "catalog:",
     "@nanostores/react": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-pdf/renderer": "catalog:",
@@ -94,6 +92,8 @@
     "zod-form-data": "catalog:"
   },
   "devDependencies": {
+    "@lingui/conf": "catalog:",
+    "@react-aria/optimize-locales-plugin": "catalog:",
     "@carbon/config": "workspace:*",
     "@carbon/dev": "workspace:*",
     "@types/react": "catalog:",

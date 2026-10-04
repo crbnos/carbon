@@ -1234,9 +1234,6 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
-      '@lingui/conf':
-        specifier: 'catalog:'
-        version: 6.9.0
       '@lingui/core':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.0)(babel-plugin-macros@3.1.0)
@@ -1252,9 +1249,6 @@ importers:
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@react-aria/optimize-locales-plugin':
-        specifier: 'catalog:'
-        version: 2.0.2
       '@react-pdf/renderer':
         specifier: 'catalog:'
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
@@ -1436,6 +1430,12 @@ importers:
       '@carbon/dev':
         specifier: workspace:*
         version: link:../../packages/dev
+      '@lingui/conf':
+        specifier: 'catalog:'
+        version: 6.9.0
+      '@react-aria/optimize-locales-plugin':
+        specifier: 'catalog:'
+        version: 2.0.2
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28

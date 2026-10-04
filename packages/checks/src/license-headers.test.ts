@@ -56,7 +56,8 @@ describe("classifyPath", () => {
       "packages/database/src/types.ts",
       "packages/database/src/swagger-docs-schema.ts",
       "packages/ee/src/workflows/catalog/events.generated.ts",
-      "packages/ee/src/paperless-parts/lib/client.ts"
+      "packages/ee/src/paperless-parts/lib/client.ts",
+      "packages/database/supabase/edge-runtime/main/index.ts"
     ]) {
       const result = classifyPath(path);
       expect(result, path).toMatchObject({ excluded: true });

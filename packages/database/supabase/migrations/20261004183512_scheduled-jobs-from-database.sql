@@ -112,8 +112,8 @@ END;
 $$;
 
 -- 3. Workflow run retention. True when any of the function's four passes has a
--- run to work on. Age is COALESCE("completedAt", "createdAt"): Blocked and
--- Skipped runs are inserted terminal and never get a completedAt.
+-- run to work on. Age is COALESCE("completedAt", "createdAt"): Blocked runs and
+-- the scheduler's Skipped runs are inserted terminal and never get a completedAt.
 CREATE OR REPLACE FUNCTION util.workflow_run_retention_has_work()
 RETURNS boolean
 LANGUAGE sql

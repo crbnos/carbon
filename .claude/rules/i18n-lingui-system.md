@@ -9,13 +9,20 @@ paths:
 
 # i18n / Lingui System
 
-Lingui **v5.9.4** (versions in `pnpm-workspace.yaml` catalog). The macro transform
-runs via `@lingui/vite-plugin` (`lingui()` plugin in `apps/erp/vite.config.ts` and
-`apps/mes/vite.config.ts`) — no Babel macro config.
+Lingui **v6.9.0** (versions in `pnpm-workspace.yaml` catalog). The macro transform
+is the plugin's own native one: `lingui({ macroTransform: true })` from
+`@lingui/vite-plugin` in each app's `vite.config.ts` — no Babel, no
+`vite-plugin-babel-macros`. It only touches files that import a macro.
+
+Every app wraps the plugin in `linguiWithoutIdQuery` (`@carbon/dev/vite`). Lingui
+6.9.0 picks its parser from `path.basename(id)`, so a React Router route module
+(`route.tsx?__react-router-build-client-route`) is parsed as plain JS and the build
+fails on its first `import type`. The wrapper hands the transform the id without
+its query; delete it once Lingui strips the query itself.
 
 ## Config & catalogs
 
-- Root `lingui.config.js`: `sourceLocale: "en"`, format `po`, `fallbackLocales.default: "en"`.
+- Root `lingui.config.js`: `sourceLocale: "en"`, format `po` (the default; v6 removed the `format: "po"` string form), `fallbackLocales.default: "en"`.
 - Locales: `en, es, de, it, ja, zh, fr, pl, pt, ru, hi, tr, ko` (13). The runtime
   list in `packages/locale/src/config.ts` (`supportedLanguages`) matches this set.
 - Two catalogs, each extracted from app + shared package sources:

@@ -2890,3 +2890,36 @@ tag until proven otherwise.
 **Rule:** A default is filled or it is not published (`defaultsPolicy` / `publishDefaults`): always for a read, a create or an action, on create only for an upsert, never for an update. Before publishing or filling one, read what the service does when the field is absent, and compare with the column's own database default.
 
 **Applies to:** `scripts/lib/service-metadata.ts`, `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`, any validator default that reaches an API schema.
+
+
+## A `prepare` script that edits git config reaches every worktree
+
+**Context:** Replacing husky with simple-git-hooks, `prepare` unset `core.hooksPath` and installed hooks. It ran on every `pnpm install` in a worktree.
+
+**Problem:** Worktrees share one `.git`. The unset removed the main checkout's `core.hooksPath` and simple-git-hooks wrote into the shared `.git/hooks`, so checkouts still on husky skipped their hooks without a word. The desktop app also sets `core.hooksPath` at WORKTREE scope, which a plain `git config --unset` does not touch. simple-git-hooks additionally deletes every hook it does not manage unless `preserveUnused` is set.
+
+**Rule:** Treat a lifecycle script that touches git config or `.git/hooks` as a change to every checkout of the repository. Use `pnpm install --ignore-scripts` while such a branch is unmerged, clear both the local and the worktree scope, and set `preserveUnused: true`.
+
+**Applies to:** root `package.json` (`prepare`, `simple-git-hooks`), `scripts/git-hooks/`.
+
+
+## `scripts/one-off/` is a registry, not a folder of leftovers
+
+**Context:** A cleanup pass listed `scripts/one-off/recopy-private-buckets.ts` as dead because nothing referenced it by name.
+
+**Problem:** `ci/src/one-off-scripts.ts` runs every `.ts` file in that folder once per database on deploy; the folder IS the reference. Deleting a file there changes what the next deploy does.
+
+**Rule:** "No grep hits" does not mean dead. Before deleting a script, check whether its directory is enumerated (`readdirSync`, a glob in a workflow or `turbo.json`).
+
+**Applies to:** `scripts/one-off/`, `ci/src/one-off-scripts.ts`, any repo cleanup.
+
+
+## A Vite plugin that reads the file name must drop the query first
+
+**Context:** Lingui 6.9.0's native macro transform chooses its parser from `path.basename(id)`.
+
+**Problem:** React Router loads route modules as `route.tsx?__react-router-build-client-route`. The extension no longer ends the name, the file is parsed as plain JS, and the build fails with hundreds of "Expected ','" errors on `import type`. vitest and non-route files never show it.
+
+**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest.
+
+**Applies to:** `packages/dev/vite.js` (`linguiWithoutIdQuery`), `apps/*/vite.config.ts`.

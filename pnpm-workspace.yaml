@@ -9,7 +9,6 @@ packages:
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - '@carbon/*'
-  - '@lingui/*'
 
 overrides:
   react: 18.3.1

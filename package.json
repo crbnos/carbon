@@ -32,6 +32,7 @@
     ]
   },
   "simple-git-hooks": {
+    "preserveUnused": true,
     "pre-commit": "if [ -f scripts/git-hooks/pre-commit ]; then sh scripts/git-hooks/pre-commit; elif [ -f .husky/pre-commit ]; then sh .husky/pre-commit; fi",
     "post-merge": "if [ -f scripts/git-hooks/post-merge ]; then sh scripts/git-hooks/post-merge; elif [ -f .husky/post-merge ]; then sh .husky/post-merge; fi"
   },

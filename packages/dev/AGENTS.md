@@ -37,6 +37,7 @@ pnpm --filter @carbon/dev typecheck   # tsgo --noEmit
 - **Worktree** (`worktree.ts`): `resolveSlug()`, `canonicalSlug()` (branch-derived `<repoBase>-<branch>`), `getWorktreeRoot()`, `projectName()`, `ensureSlugAvailable()`
 - **Services**: `compose.ts` (Docker), `migrations.ts` (Postgres/Supabase), `portless.ts` (`.dev` URLs), `apps.ts` (dev servers)
 - **Aux spawners** (`services/apps.ts`): `spawnAssembler` (cargo) and `spawnEmailPreview` (`@carbon/documents` `email:previews` on `PORT_EMAIL` — the react-email server over `src/email/previews`, one fixture per email) — opt-in picker apps with their own spawners, not react-router dev servers
+- **Vite helpers** (`vite.js`, exported as `@carbon/dev/vite`, typed by `vite.d.ts`): `applyDotenvToProcessEnv`, `clientOnlyAlias` (stub a module in the browser build only), `linguiWithoutIdQuery` (works around Lingui 6.9.0 parsing React Router's `?query`-suffixed route ids as plain JS)
 - **Env**: `env.ts` — `renderEnv()`, `writeEnv()`, `syncAppPortlessConfigs()`
 - **`--run` flag**: scopes stack lifetime to a command (for headless/CI builds); `--volumes` cleans up Docker volumes on teardown
 
