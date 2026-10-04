@@ -35,8 +35,13 @@ import {
 } from "~/services/quality.service";
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["inspection", "inspectionSample", "jobOperation"]
+};
 
 const logger = getLogger("mes", "inspection");
 

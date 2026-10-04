@@ -12,7 +12,7 @@
 - [x] Task 5: Apply the migrations and regenerate types
 - [x] Task 6: Add the database tests
 - [x] Task 6b: Move event triggers and interceptor bodies out of migrations (user, 2026-10-05)
-- [ ] Task 7: Add the `realtime-table-has-trigger` check
+- [x] Task 7: Add the `realtime-table-has-trigger` check
 - [x] Task 8: Add the private option to `useRealtimeChannel`
 - [x] Task 9: Add `cachedClientLoader` and the company id value
 - [x] Task 10: Add the invalidation middleware to both roots
@@ -22,7 +22,7 @@
 - [x] Task 14: Move the ERP lists to `useLiveList`
 - [x] Task 15: Move the MES lists and remove nanostores
 - [x] Task 16: Move notifications and the implementation hub
-- [ ] Task 17: Declare `handle.realtime` on the routes and convert the subscribers
+- [x] Task 17: Declare `handle.realtime` on the routes and convert the subscribers
 - [ ] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites
 - [ ] Task 19: Add `useAction` and migrate the submit call sites
 - [ ] Task 20: Update the rules, the lessons and the `AGENTS.md` files

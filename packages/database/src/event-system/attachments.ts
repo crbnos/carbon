@@ -93,8 +93,9 @@ export const attachments = {
   implementationHub: { statement: ["broadcast_table_changes"] },
   implementationRow: { statement: ["broadcast_table_changes"] },
   inspection: { statement: ["broadcast_table_changes"] },
+  inspectionSample: { statement: ["broadcast_table_changes"] },
   inventoryCount: { events: true, statement: ["broadcast_table_changes"] },
-  inventoryCountLine: { events: true },
+  inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
   itarCertification: { events: true },
   item: {
@@ -191,7 +192,7 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   nonConformanceApprovalTask: { events: true },
-  nonConformanceItem: { events: true },
+  nonConformanceItem: { events: true, statement: ["broadcast_table_changes"] },
   nonConformanceRequiredAction: {
     before: ["sync_protect_system_required_actions"],
     events: true
@@ -203,7 +204,7 @@ export const attachments = {
   nonConformanceType: { statement: ["broadcast_reference_changes"] },
   notification: { statement: ["broadcast_user_changes"] },
   part: { statement: ["broadcast_table_changes"] },
-  payment: { events: true },
+  payment: { events: true, statement: ["broadcast_table_changes"] },
   paymentTerm: { statement: ["broadcast_reference_changes"] },
   pickingList: { statement: ["broadcast_table_changes"] },
   pickingListLine: { statement: ["broadcast_table_changes"] },
@@ -239,7 +240,9 @@ export const attachments = {
   purchaseOrderLine: { events: true, statement: ["broadcast_table_changes"] },
   purchaseOrderPayment: { events: true },
   purchaseReturnOrder: { statement: ["broadcast_table_changes"] },
+  purchaseReturnOrderLine: { statement: ["broadcast_table_changes"] },
   purchasingRfq: { statement: ["broadcast_table_changes"] },
+  purchasingRfqLine: { statement: ["broadcast_table_changes"] },
   qualityDocument: {
     before: ["sync_archive_other_quality_documents"],
     events: true,
@@ -256,6 +259,7 @@ export const attachments = {
     events: true,
     statement: ["broadcast_table_changes"]
   },
+  quoteMakeMethod: { statement: ["broadcast_table_changes"] },
   quoteMaterial: {
     before: ["sync_update_quote_material_make_method_item_id"],
     after: ["sync_insert_quote_material_make_method"],
@@ -282,6 +286,7 @@ export const attachments = {
   salesOrderPayment: { events: true },
   salesOrderShipment: { events: true },
   salesReturnOrder: { statement: ["broadcast_table_changes"] },
+  salesReturnOrderLine: { statement: ["broadcast_table_changes"] },
   salesRfq: { events: true, statement: ["broadcast_table_changes"] },
   salesRfqLine: { statement: ["broadcast_table_changes"] },
   shipment: { events: true, statement: ["broadcast_table_changes"] },
@@ -290,7 +295,8 @@ export const attachments = {
   stockTransfer: { events: true, statement: ["broadcast_table_changes"] },
   stockTransferLine: {
     after: ["sync_update_stock_transfer_status"],
-    events: true
+    events: true,
+    statement: ["broadcast_table_changes"]
   },
   storageUnit: {
     before: [
@@ -317,7 +323,7 @@ export const attachments = {
   supplierPayment: { events: true },
   supplierProcess: { statement: ["broadcast_reference_changes"] },
   supplierQuote: { events: true, statement: ["broadcast_table_changes"] },
-  supplierQuoteLine: { events: true },
+  supplierQuoteLine: { events: true, statement: ["broadcast_table_changes"] },
   supplierShipping: { events: true },
   supplierTax: { events: true },
   supplierType: {
@@ -338,7 +344,10 @@ export const attachments = {
     statement: ["log_user_changes"]
   },
   warehouseTransfer: { events: true, statement: ["broadcast_table_changes"] },
-  warehouseTransferLine: { events: true },
+  warehouseTransferLine: {
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   webhook: { after: ["sync_webhook_subscription"], events: true },
   workCenter: { events: true, statement: ["broadcast_reference_changes"] },
   workCenterProcess: { events: true },

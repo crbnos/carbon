@@ -19,6 +19,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["purchaseInvoice"],
   breadcrumb: msg`Purchasing Invoices`,
   to: path.to.invoicingPurchasing,
   module: "invoicing"

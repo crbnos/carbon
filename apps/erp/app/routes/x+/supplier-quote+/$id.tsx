@@ -35,6 +35,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["supplierQuote", "supplierQuoteLine"],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Supplier Quotes`, to: path.to.supplierQuotes },
     (data) => data?.quote?.supplierQuoteId

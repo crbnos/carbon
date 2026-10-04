@@ -39,6 +39,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["salesInvoice", "salesInvoiceLine", "payment"],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Sales Invoices`, to: path.to.invoicingSales },
     (data) => data?.salesInvoice?.invoiceId

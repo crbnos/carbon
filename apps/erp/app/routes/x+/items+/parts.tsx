@@ -19,6 +19,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 import { useRealtime } from "../../../hooks";
 
 export const handle: Handle = {
+  realtime: ["item"],
   breadcrumb: msg`Parts`,
   to: path.to.parts
 };

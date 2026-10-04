@@ -15,6 +15,7 @@ export const meta: MetaFunction = () => {
 };
 
 export const handle: Handle = {
+  realtime: ["job", "jobOperation"],
   breadcrumb: msg`Production`,
   to: path.to.production,
   module: "production"

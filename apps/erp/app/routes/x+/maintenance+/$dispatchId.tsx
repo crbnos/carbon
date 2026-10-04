@@ -35,6 +35,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["maintenanceDispatch"],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
     (data) => data?.dispatch?.maintenanceDispatchId

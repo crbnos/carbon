@@ -54,7 +54,12 @@ import type {
   maintenanceSeverity
 } from "~/services/models";
 import { useItems } from "~/stores";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["maintenanceDispatch"]
+};
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
   isUnaffectedByNavigation(args, { params: ["dispatchId"] })

@@ -23,6 +23,7 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: ["pickingList", "pickingListLine"],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId

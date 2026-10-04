@@ -15,7 +15,12 @@ import {
   getJobOperationDependencies,
   getJobOperations
 } from "~/services/operations.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["job", "jobOperation"]
+};
 
 const logger = getLogger("mes", "job-dag");
 

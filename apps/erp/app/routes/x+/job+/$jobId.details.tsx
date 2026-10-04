@@ -32,7 +32,7 @@ import {
   SupplierAvatar
 } from "~/components";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
@@ -254,8 +254,6 @@ export default function JobDetailsRoute() {
   }>(path.to.job(jobId));
 
   if (!jobData) throw new Error("Could not find job data");
-
-  useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   const methodId = makeMethod?.id;
 

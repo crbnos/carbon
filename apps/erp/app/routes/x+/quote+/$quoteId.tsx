@@ -44,6 +44,13 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    "quote",
+    "quoteLine",
+    "quoteMaterial",
+    "quoteOperation",
+    "quoteMakeMethod"
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Quotes`, to: path.to.quotes },
     (data) => data?.quote?.quoteId

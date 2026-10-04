@@ -35,6 +35,7 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchasing-rfq");
 
 export const handle: Handle = {
+  realtime: ["purchasingRfq", "purchasingRfqLine"],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.purchasingRfqs },
     (data) => data?.rfqSummary?.rfqId

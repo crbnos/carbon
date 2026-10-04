@@ -42,6 +42,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
+  realtime: [
+    "nonConformance",
+    "nonConformanceActionTask",
+    "nonConformanceItem"
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issues`, to: path.to.issues },
     (data) => data?.nonConformance?.nonConformanceId

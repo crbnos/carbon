@@ -59,7 +59,12 @@ import {
 import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["job", "jobOperation"]
+};
 
 const log = getLogger("mes");
 

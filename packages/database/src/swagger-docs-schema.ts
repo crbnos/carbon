@@ -75213,6 +75213,150 @@ export default {
         tags: ["paymentTerm"]
       }
     },
+    "/tableChange": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/tableChange"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.tableChange"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["tableChange"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.table"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.rowId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.xid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.tableChange"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["tableChange"]
+      }
+    },
     "/rework": {
       get: {
         parameters: [
@@ -142746,6 +142890,41 @@ export default {
       },
       type: "object"
     },
+    tableChange: {
+      required: ["id", "companyId", "table", "xid", "createdAt"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "bigint",
+          type: "integer"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        table: {
+          format: "text",
+          type: "string"
+        },
+        rowId: {
+          format: "text",
+          type: "string"
+        },
+        xid: {
+          default: "pg_current_xact_id()",
+          format: "xid8",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     rework: {
       required: [
         "id",
@@ -191722,6 +191901,51 @@ export default {
     },
     "rowFilter.paymentTerm.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.tableChange": {
+      name: "tableChange",
+      description: "tableChange",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/tableChange"
+      }
+    },
+    "rowFilter.tableChange.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.table": {
+      name: "table",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.rowId": {
+      name: "rowId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.xid": {
+      name: "xid",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tableChange.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"

@@ -22,6 +22,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "stock-transfers");
 
 export const handle: Handle = {
+  realtime: ["stockTransfer"],
   breadcrumb: msg`Stock Transfers`,
   to: path.to.stockTransfers
 };

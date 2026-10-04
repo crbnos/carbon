@@ -65,6 +65,12 @@ import { stripSpecialCharacters } from "~/utils/string";
 const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
+  realtime: [
+    "purchaseOrder",
+    "purchaseOrderLine",
+    "receipt",
+    "purchaseInvoice"
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
     (data) => data?.purchaseOrder?.purchaseOrderId

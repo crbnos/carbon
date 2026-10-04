@@ -20,6 +20,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["inventoryCount"],
   breadcrumb: msg`Inventory Count`,
   to: path.to.inventoryCounts
 };

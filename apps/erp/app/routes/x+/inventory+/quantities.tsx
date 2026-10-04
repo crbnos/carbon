@@ -27,8 +27,13 @@ import {
 import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+export const handle: Handle = {
+  realtime: ["itemStockQuantities"]
+};
 
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
   isUnaffectedByNavigation(args, { search: "all" })

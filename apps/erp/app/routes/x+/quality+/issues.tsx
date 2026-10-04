@@ -20,6 +20,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "issues");
 
 export const handle: Handle = {
+  realtime: ["nonConformance"],
   breadcrumb: msg`Issues`,
   to: path.to.issues
 };

@@ -41,8 +41,20 @@ type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 import { redirect } from "@carbon/utils";
 import { makeDurations } from "~/utils/durations";
+import type { Handle } from "~/utils/handle";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    "job",
+    "jobOperation",
+    "jobMaterial",
+    "jobOperationStep",
+    "jobOperationStepRecord",
+    "pickingListLine"
+  ]
+};
 
 const logger = getLogger("mes", "operation");
 

@@ -4,7 +4,12 @@
 
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: ["salesInvoice"]
+};
 
 // Sales invoices now live solely in the invoicing module. This legacy Sales-module
 // URL redirects there, preserving any filter query string (e.g. ?filter=customerId:eq:...).

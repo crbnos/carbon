@@ -87,8 +87,13 @@ import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersListWithBlockingStatus } from "~/modules/resources";
 
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
+
+export const handle: Handle = {
+  realtime: ["job", "jobOperation"]
+};
 
 const chartConfig = {
   value: {

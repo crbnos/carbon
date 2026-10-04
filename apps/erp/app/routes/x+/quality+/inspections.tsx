@@ -17,6 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: ["inspection"],
   breadcrumb: msg`Inspections`,
   to: path.to.inspections
 };

@@ -126,6 +126,18 @@ function TopicChannels() {
   );
 }
 
+// A route and a component on it may both follow one table, and one write often
+// touches several tables a page follows. Their timers fire together; the page
+// is reloaded once.
+let revalidation: ReturnType<typeof setTimeout> | null = null;
+const requestRevalidation = (revalidate: () => void) => {
+  if (revalidation) clearTimeout(revalidation);
+  revalidation = setTimeout(() => {
+    revalidation = null;
+    revalidate();
+  }, 50);
+};
+
 /**
  * `revalidate()` that waits for submitting fetchers. React Router drops a
  * fetcher's redirect when a revalidation starts during its action, so a change
@@ -141,7 +153,7 @@ export function useRealtimeRevalidator() {
   useEffect(() => {
     if (!submitting && held.current) {
       held.current = false;
-      revalidator.revalidate();
+      requestRevalidation(revalidator.revalidate);
     }
   }, [submitting, revalidator]);
 
@@ -150,7 +162,7 @@ export function useRealtimeRevalidator() {
       held.current = true;
       return;
     }
-    revalidator.revalidate();
+    requestRevalidation(revalidator.revalidate);
   }, [revalidator]);
 }
 
