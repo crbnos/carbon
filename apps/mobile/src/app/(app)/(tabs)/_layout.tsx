@@ -13,9 +13,11 @@ import {
 } from "lucide-react-native";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TabSideRail } from "~/components/TabSideRail";
 import { useLayout } from "~/components/useLayout";
 import { useThemeColors } from "~/components/useThemeColor";
 import { OperatorHeader } from "~/features/console/OperatorHeader";
+import { useAuth } from "~/lib/auth/AuthProvider";
 
 /**
  * Operations · Picking · Scan · Timecard · More.
@@ -45,48 +47,54 @@ import { OperatorHeader } from "~/features/console/OperatorHeader";
  */
 export default function TabsLayout() {
   const { t } = useLingui();
-  // A landscape tablet puts the bar down the LEFT, which is web MES's sidebar;
-  // a phone keeps it at the bottom, where a thumb is. `tabBarPosition` is the
-  // navigator's own prop, so routing, state and deep links are untouched — the
-  // bar simply renders on a different edge.
+  // A landscape tablet puts the bar down the LEFT, which is web MES's nav
+  // rail; a phone keeps it at the bottom, where a thumb is. `tabBarPosition`
+  // is the navigator's own prop, so routing, state and deep links are
+  // untouched — the bar simply renders on a different edge.
+  //
+  // On that edge the bar is OURS (`TabSideRail`), because the library's
+  // sidebar branch forces a 360pt minimum width and merges `tabBarStyle` in an
+  // order that makes both the width and the status-bar inset unfixable from
+  // here. See the note in that file. The phone keeps the library's bar.
   const { isSplit } = useLayout();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  // The operator header renders above the rail in shared-terminal mode and
+  // already covers the top of the screen, so the rail must not inset again.
+  const { terminalToken } = useAuth();
 
   return (
     <View className="flex-1">
       <OperatorHeader />
       <Tabs
+        tabBar={
+          isSplit
+            ? (props) => (
+                <TabSideRail
+                  {...props}
+                  topInset={terminalToken ? 0 : props.insets.top}
+                />
+              )
+            : undefined
+        }
         screenOptions={{
           headerShown: false,
           tabBarPosition: isSplit ? "left" : "bottom",
           tabBarActiveTintColor: colors.foreground,
           tabBarInactiveTintColor: colors.mutedForeground,
           sceneStyle: { backgroundColor: colors.background },
-          tabBarStyle: isSplit
-            ? // Sized like web's sidebar: wide enough for a label beside its
-              // icon, with the items starting at the top rather than centred.
-              {
-                width: 220,
-                paddingTop: 12,
-                backgroundColor: colors.card,
-                borderRightWidth: 1,
-                borderRightColor: colors.border
-              }
-            : {
-                // The bar itself, plus whatever the home indicator needs.
-                height: 60 + insets.bottom,
-                paddingBottom: insets.bottom,
-                paddingTop: 8,
-                backgroundColor: colors.card,
-                borderTopWidth: 1,
-                borderTopColor: colors.border
-              },
+          // Only the phone's bar reads these; the rail styles itself.
+          tabBarStyle: {
+            // The bar itself, plus whatever the home indicator needs.
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom,
+            paddingTop: 8,
+            backgroundColor: colors.card,
+            borderTopWidth: 1,
+            borderTopColor: colors.border
+          },
           tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
-          tabBarLabelPosition: isSplit ? "beside-icon" : "below-icon",
-          tabBarItemStyle: isSplit
-            ? { justifyContent: "flex-start", paddingLeft: 8, height: 48 }
-            : undefined
+          tabBarLabelPosition: "below-icon"
         }}
       >
         <Tabs.Screen
