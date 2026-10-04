@@ -209,6 +209,18 @@ export const stripeCustomerActions = [
   "create"
 ] as const;
 
+/** The fields this panel emits, plus the email its parent commits — for a
+ *  form outside the invoice post modal (the contract confirm modal) that
+ *  submits the user's Stripe customer choice. The action re-checks it with
+ *  `linkStripeCustomerForBilling`. */
+export const stripeCustomerChoiceValidator = z.object({
+  stripeCustomerAction: z.enum(stripeCustomerActions).optional(),
+  stripeCustomerId: zfd.text(z.string().optional()),
+  stripeContactEmail: zfd.text(
+    z.string().email({ message: "Email is invalid" }).optional()
+  )
+});
+
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),

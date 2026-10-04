@@ -2,10 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ValidatedForm } from "@carbon/form";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Button,
   HStack,
   Modal,
@@ -21,11 +19,15 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
-import { LuCircleAlert } from "react-icons/lu";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { DateTime, MotionMoney } from "~/components";
+import { Hidden, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { stripeCustomerChoiceValidator } from "~/modules/invoicing";
+import StripeCustomerPanel, {
+  useStripeCustomerResolution
+} from "~/modules/invoicing/ui/SalesInvoice/StripeCustomerPanel";
 import type { loader as contractConfirmLoader } from "~/routes/x+/contract+/$id.confirm";
 import { path } from "~/utils/path";
 import type { Contract, ContractRouteData } from "./types";
@@ -39,7 +41,9 @@ type ContractConfirmModalProps = {
 /** Confirm a Draft contract: what invoicing will do once it is Active — the
  *  first invoice, how many are planned, and the effective invoicing setting.
  *  A contract that sends via Stripe needs its billing customer linked to a
- *  Stripe customer first; the server function refuses without it. */
+ *  Stripe customer; when it is not, the modal asks the same question the
+ *  invoice post modal does (use a match, or create one) and the confirm
+ *  action links the answer before confirming. */
 const ContractConfirmModal = ({
   contract,
   onClose
@@ -82,14 +86,38 @@ const ContractConfirmModal = ({
   const needsInvoicing =
     mode !== "Draft Only" && !permissions.can("create", "invoicing");
 
+  // An unlinked billing customer is linked as part of confirming: resolve it
+  // against the connected account the way the invoice post modal does. The
+  // lookup needs the invoicing permission, which confirming needs anyway.
+  const billingCustomerId = contract.invoiceCustomerId ?? contract.customerId;
+  const [stripeEmail, setStripeEmail] = useState("");
+  const [committedEmail, setCommittedEmail] = useState<string | undefined>();
+  const { resolution, isLoading: isResolving } = useStripeCustomerResolution(
+    isStripeUnlinked && !needsInvoicing && billingCustomerId
+      ? {
+          customerId: billingCustomerId,
+          customerContactId: contract.invoiceCustomerContactId
+        }
+      : null,
+    committedEmail
+  );
+  // Nothing may be created on a merchant's Stripe account without a decision,
+  // so Confirm stays shut until the panel has produced one.
+  const isStripeBlocked =
+    isCheckingStripe ||
+    (isStripeUnlinked &&
+      (!billingCustomerId ||
+        isResolving ||
+        !resolution ||
+        resolution.state === "unavailable" ||
+        resolution.state === "missing-email"));
+
   const automation: Record<typeof mode, string> = {
     "Draft Only": t`Invoices are drafted for review and posted by hand.`,
     Post: t`Invoices are drafted and posted automatically.`,
     "Post and Email": t`Invoices are drafted, posted and emailed automatically.`,
     "Post and Send via Stripe": t`Invoices are drafted, posted and sent via Stripe automatically.`
   };
-
-  const isSubmitting = fetcher.state !== "idle";
 
   return (
     <Modal
@@ -99,131 +127,138 @@ const ContractConfirmModal = ({
       }}
     >
       <ModalContent size="medium">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Confirm {contract.customerContractId}</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Confirming fixes the invoice schedule and starts invoicing. The
-              terms and lines are then changed with Amend.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <VStack spacing={2} className="w-full">
-              <HStack className="justify-between text-sm w-full">
-                <span className="text-muted-foreground">
-                  <Trans>First invoice</Trans>
-                </span>
-                {first ? (
-                  <span className="flex items-center gap-2">
-                    <DateTime value={first.invoiceDate} variant="date" />
-                    <span aria-hidden>·</span>
-                    <MotionMoney
-                      value={first.total}
-                      currency={currencyCode}
-                      decimalPlaces={currencyDecimals}
-                    />
+        <ValidatedForm
+          validator={stripeCustomerChoiceValidator}
+          method="post"
+          action={path.to.contractConfirm(id)}
+          fetcher={fetcher}
+          onSubmit={() => {
+            submitted.current = true;
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Confirm {contract.customerContractId}</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>
+                Confirming fixes the invoice schedule and starts invoicing. The
+                terms and lines are then changed with Amend.
+              </Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4}>
+              <VStack spacing={2} className="w-full">
+                <HStack className="justify-between text-sm w-full">
+                  <span className="text-muted-foreground">
+                    <Trans>First invoice</Trans>
                   </span>
-                ) : (
-                  <span>—</span>
-                )}
-              </HStack>
-              <HStack className="justify-between text-sm w-full">
-                <span className="text-muted-foreground">
-                  {contract.endDate ? (
-                    <Trans>Planned invoices</Trans>
+                  {first ? (
+                    <span className="flex items-center gap-2">
+                      <DateTime value={first.invoiceDate} variant="date" />
+                      <span aria-hidden>·</span>
+                      <MotionMoney
+                        value={first.total}
+                        currency={currencyCode}
+                        decimalPlaces={currencyDecimals}
+                      />
+                    </span>
                   ) : (
-                    <Trans>Planned invoices so far</Trans>
+                    <span>—</span>
                   )}
-                </span>
-                <span>{planned.length}</span>
-              </HStack>
-              <HStack className="justify-between text-sm w-full">
-                <span className="text-muted-foreground">
-                  <Trans>Invoicing</Trans>
-                </span>
-                <span>{labels.invoiceAutomation[mode]}</span>
-              </HStack>
-              <p className="text-xs text-muted-foreground w-full">
-                {automation[mode]} <Trans>Amounts are before tax.</Trans>
-              </p>
-            </VStack>
+                </HStack>
+                <HStack className="justify-between text-sm w-full">
+                  <span className="text-muted-foreground">
+                    {contract.endDate ? (
+                      <Trans>Planned invoices</Trans>
+                    ) : (
+                      <Trans>Planned invoices so far</Trans>
+                    )}
+                  </span>
+                  <span>{planned.length}</span>
+                </HStack>
+                <HStack className="justify-between text-sm w-full">
+                  <span className="text-muted-foreground">
+                    <Trans>Invoicing</Trans>
+                  </span>
+                  <span>{labels.invoiceAutomation[mode]}</span>
+                </HStack>
+                <p className="text-xs text-muted-foreground w-full">
+                  {automation[mode]} <Trans>Amounts are before tax.</Trans>
+                </p>
+              </VStack>
 
-            {isStripe &&
-              (isCheckingStripe ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner className="size-4" />
-                  <Trans>Checking the Stripe customer link…</Trans>
-                </div>
-              ) : isStripeUnlinked ? (
-                <Alert variant="warning">
-                  <LuCircleAlert />
-                  <AlertTitle>
-                    <Trans>No Stripe customer is linked</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
+              {isStripe &&
+                (isCheckingStripe ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Spinner className="size-4" />
+                    <Trans>Checking the Stripe customer link…</Trans>
+                  </div>
+                ) : isStripeUnlinked ? (
+                  needsInvoicing ? null : (
+                    <VStack spacing={2} className="w-full">
+                      <StripeCustomerPanel
+                        subject="contract"
+                        resolution={resolution}
+                        isLoading={isResolving}
+                        email={stripeEmail}
+                        onEmailChange={setStripeEmail}
+                        onEmailCommit={(email) => {
+                          // Re-resolve once an address exists: Stripe may
+                          // already have a customer under it, and linking beats
+                          // duplicating.
+                          if (email.includes("@")) setCommittedEmail(email);
+                        }}
+                      />
+                      {committedEmail && (
+                        <Hidden
+                          name="stripeContactEmail"
+                          value={committedEmail}
+                        />
+                      )}
+                    </VStack>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">
                     <Trans>
-                      This contract sends its invoices via Stripe, so its
-                      billing customer must be linked to a Stripe customer
-                      first. Link one by posting an invoice for this customer
-                      with Send via Stripe, or change the contract's invoicing
-                      setting.
+                      Invoices are sent to the Stripe customer already linked to
+                      the billing customer.
                     </Trans>
-                  </AlertDescription>
-                </Alert>
-              ) : (
+                  </p>
+                ))}
+
+              {needsInvoicing && (
                 <p className="text-sm text-muted-foreground">
                   <Trans>
-                    Invoices are sent to the Stripe customer already linked to
-                    the billing customer.
+                    This contract's invoices post automatically, so confirming
+                    it needs permission to create invoices.
                   </Trans>
                 </p>
-              ))}
-
-            {needsInvoicing && (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  This contract's invoices post automatically, so confirming it
-                  needs permission to create invoices.
-                </Trans>
-              </p>
-            )}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            variant="secondary"
-            isDisabled={isSubmitting}
-            onClick={onClose}
-          >
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.contractConfirm(id)}
-            onSubmit={() => {
-              submitted.current = true;
-            }}
-          >
+              )}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
             <Button
-              type="submit"
-              isLoading={isSubmitting}
+              variant="secondary"
+              isDisabled={fetcher.state !== "idle"}
+              onClick={onClose}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit
+              withBlocker={false}
+              shortcut={SHORTCUTS.confirm}
               isDisabled={
-                isSubmitting ||
-                isCheckingStripe ||
-                isStripeUnlinked ||
+                isStripeBlocked ||
                 needsInvoicing ||
                 !permissions.can("update", "sales")
               }
-              shortcut={SHORTCUTS.confirm}
             >
               <Trans>Confirm</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
       </ModalContent>
     </Modal>
   );

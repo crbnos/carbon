@@ -60,7 +60,7 @@ What happens next follows the contract's **"Invoicing"** property, or the compan
 - **Draft only**: the invoice waits for a person to post it.
 - **Post**: posted automatically.
 - **Post and email**: posted and emailed to the **"Invoice Contact"** with the PDF attached.
-- **Post and send via Stripe**: posted and sent through your connected Stripe account with a payment link. Confirm requires the billing customer to be linked to a Stripe customer.
+- **Post and send via Stripe**: posted and sent through your connected Stripe account with a payment link. The billing customer must be linked to a Stripe customer. When it is not, **"Confirm"** asks how to link it, as posting an invoice with *Send via Stripe* does: use a Stripe customer that already has the customer's email, or create a new one. Confirming links it, and needs permission to create invoices.
 
 An invoice that credits a contract change or re-bills a voided invoice is held for review instead, and so is one with a sales-rule violation or a posting error. Held invoices are listed under **Receivables → Needs Review**, and the contract's salesperson (or its creator) gets a daily summary.
 
@@ -132,7 +132,7 @@ Confirm (`post-customer-contract` `confirm`) refuses a contract with no lines, a
 A line changed after the schedule was edited. The Invoices section shows the same residuals under "The schedule no longer matches the lines"; **Reset Schedule** plans it again from the lines.
 
 ### "The billing customer is not linked to a Stripe customer. Link them before confirming a contract that sends its invoices via Stripe."
-Confirm with the effective invoicing mode *Post and Send via Stripe* needs an `externalIntegrationMapping` row (`customer`, `stripe-connect`) for the bill-to customer (`invoiceCustomerId`, else `customerId`). The contract page does not create that link.
+Confirm with the effective invoicing mode *Post and Send via Stripe* needs an `externalIntegrationMapping` row (`customer`, `stripe-connect`) for the bill-to customer (`invoiceCustomerId`, else `customerId`). The confirm modal creates it: for an unlinked bill-to it loads `api/stripe-connect/customer/by-customer/:customerId` (with the contract's `invoiceCustomerContactId` as the contact) and posts the choice (`stripeCustomerAction` `use-linked` / `link-existing` / `create`, `stripeCustomerId`, `stripeContactEmail`) with Confirm. The `confirm` route runs `linkStripeCustomerForBilling` (the same step the invoice post uses) before the server function, which then re-checks the mapping. A failed link is flashed as "Contract not confirmed — REASON" and the contract stays Draft; a link that succeeded is kept even when the confirm itself then fails. When the modal cannot offer a choice (Stripe Connect is not connected, or the customer has no email and none is entered) Confirm stays disabled; any other caller without a link gets this message from the server function.
 
 ### "Contract CON… is STATUS; only a Draft contract can be confirmed|edited|reset" / "… only an Active contract can be amended|cancelled|reverted"
 The action does not apply in the contract's status. Draft: Confirm and schedule edits. Active: Amend, Cancel, Revert Cancellation, Invoice.

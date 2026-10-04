@@ -324,6 +324,21 @@ export const path = {
           `${api}/stripe-connect/customer/${invoiceId}?${params.toString()}`
         );
       },
+      stripeConnectCustomerByCustomer: (
+        customerId: string,
+        customerContactId?: string | null,
+        email?: string
+      ) => {
+        const params = new URLSearchParams();
+        if (customerContactId) params.set("contact", customerContactId);
+        if (email) params.set("email", email);
+        const query = params.toString();
+        return generatePath(
+          `${api}/stripe-connect/customer/by-customer/${customerId}${
+            query ? `?${query}` : ""
+          }`
+        );
+      },
       stripeConnectOnboard: `${api}/integrations/stripe-connect/connect`,
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),

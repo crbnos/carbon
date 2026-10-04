@@ -142,3 +142,32 @@ Run 2026-10-04 against the hot-reloaded dev server (fixes 8ba14cb914 BUG-1, c984
 1. **PASS** (BUG-1) — CON000001 (`/x/contract/con_C2EHU3BswwbhX8U8eHAiZA/details`, Active). Revenue: Website Hosting still reads "Oct 1, 2026 – No end $3,840.00" but "Show monthly revenue" now lists 12 rows Oct 2026 – Sep 2027 (Oct $326.14, Nov $315.62, Feb $294.58 …), not one October row. Position table runs Oct 2026 – Sep 2027 and ends at deferred $0.00. October reads invoiced **$60,420.00 / recognized $10,428.05 / deferred $49,991.95** — not the expected $10,420 / $50,000 because both recurring lines carry revenue method **Daily** (DB: Website Hosting and Support `revenueMethod = Daily`, Consulting Even Period): Oct = 10,000 + 3,840 × 31/365 (326.14) + 1,200 × 31/365 (101.92) = 10,428.05. A day-weighted month against flat monthly billing also leaves a few-dollar wobble (Mar deferred $6.90; Aug 2027 "$5.75 Earned, not billed", cumulative daily revenue through Aug 31 = 64,625.75 vs billed 64,620) — arithmetic of the Daily method, not the bug. `.context/contracts-retest-01-revenue-spread.png`, `contracts-retest-01-october.png`, `contracts-retest-01-position.png`.
 2. **PASS** (BUG-2) — New Contract form (UI): "EUR re-test (Task 35 BUG-2)", Apex Space Research, start Oct 4 2026, Monthly / Anniversary / Advance, Currency Euro → CON000010 (`con_DXZEiNyKPuqzUbhAJUbMzN`) stored `exchangeRate` **0.9215** (= the company's `exchangeRateOverride` EUR rate; CON000007 before the fix stored 1). Add Line (UI): Website Hosting, Recurring, 10 × €40/Month, 20% off → contract shows €320.00/month, 12 × €320.00 invoices. Confirm → Invoice → "Drafted 1 invoice(s); posting 1 automatically" → AR000031 (`si_LJjqm7ogtg2UXz6k4KgPyr`) Submitted: line $43.41 / **€40.00** each, 10, 20% off, **€320.00** ($347.26); subtotal/total €320.00 / $347.26. DB: `unitPrice` 43.40749 (base), `convertedUnitPrice` 40.000002, header `exchangeRate` 0.9215, subtotal 347.25992. Journal JE-2026-10-000071 Posted: AR 347.26 / Deferred Revenue 347.26. `.context/contracts-retest-02-new-eur-form.png`, `contracts-retest-02-eur-invoice.png`.
 3. **PASS** (BUG-3) — New SO000028 (`so_KmnY5EqG7RrqAEzDTSfUFb`, Apex, ref "BUG-3 retest"): Electrical Service 1 × $300 + Support 1 × $1,200 (Rule Violation acknowledged on save/confirm) → Confirm → To Invoice. ⋯ → Create Contract with only Support ticked → Draft contract `con_L6Ne3MMgdv5hPxFb1C1St5`, Support line `invoicedComplete`. Order Invoice → AR000032 (`si_LygNX69jDR64eh8D1UbDUB`) Draft with one line Electrical Service $300; stored `salesInvoice.subtotal` **300** / `totalAmount` **300** (AR000029 before the fix: 1500 / 1500); header $300.00, invoice list total $300.00. Left in Draft. `.context/contracts-retest-03-order-invoice.png`, `contracts-retest-03-invoice-list.png`.
+
+## Fixes after self-review (Brad, 2026-10-04: fix all must-fix items; build the Stripe link; research FX)
+
+| # | Fix | Owner |
+|---|---|---|
+| 1 | Horizon roll and edited open-ended confirm key on the last RECURRING period end, not a long One-time window | A |
+| 2 | Adjustment for an invoiced split = Σ billed on the key − ideal clipped amount; memo releases every installment's deferral | A |
+| 3 | Revert refuses when an amendment is newer than the cancellation; finds the cancellation by `previousState IS NOT NULL` | A |
+| 4 | `discountEndsOn` applied on amend change/add and dropped/applied on renewal copies | A |
+| 5 | A second earlier end credits the difference, not nothing | A |
+| 13 | Amend percent points → `round(points / 100)` | A |
+| + | Split installments must each be > 0; `billedThrough` must fall on a period end (spec); clear InvalidInputError for amend rateUnit/date conflicts | A |
+| 6 | Create Contract from an order prices from `convertedUnitPrice`; modal shows the order currency | B |
+| 9 | Cancel with credit requires `create: invoicing`; revert requires `delete: invoicing` | B |
+| 10 | Switching an Active contract to a posting mode requires `create: invoicing`; Stripe mode refused when Stripe is not connected | B |
+| 11 | `deleteContractLine` loses its `@mcp` tag (route uses the releasing function) | B |
+| + | Invoice Now / Cancel-with-credit buttons honour invoicing permission; `billing-timing` glossary term covers contracts; status-colors comment placement | B |
+| 7 | Stripe receives document-currency amounts (`converted*`) | C |
+| 8 | A zero-total invoice in Stripe mode is not sent (no error, not held) | C |
+| + | Stripe idempotency key per Carbon invoice; no per-unit rounding of the net price; pure test for `toStripeInvoiceLines`; PDF summary order Subtotal (gross) → Discount → Tax | C |
+| 12 | Confirm loader logs a swallowed Stripe lookup error | D |
+| S | Link a Stripe customer from the contract page (by-customer resolve + link) | D |
+| FX | Research: contract exchange-rate policy | E |
+
+## Fixes after self-review — results (2026-10-04)
+- A (`7ba605c5bf`): all seven items confirmed and fixed with failing-first tests (schedule 34, server-functions 337 incl. new DB tests). Behaviour notes: credits are billed − clipped period price (same pricing rule as rows); a renewal that un-clips an invoiced period now bills the remainder.
+- B (`db7cb8f504`): permissions on cancel credit / revert / posting modes; order prices in document currency; `deleteContractLine` and `updateContractInvoiceAutomation` are no longer MCP tools.
+- C (`cfe04ff7bf`): Stripe sends invoice-currency amounts (`connect-invoice.ts`, tested), skips zero totals, idempotency keys on every write; PDF Subtotal → Discount → Tax.
+- D: Task 27 escape hatch RESOLVED — `resolveStripeCustomerForBilling` / `linkStripeCustomerForBilling` (invoice preflight now calls the shared helper), by-customer API route, `StripeCustomerPanel` loads by invoice or customer, contract confirm modal links before confirming; confirm loader logs a swallowed lookup error. Browser check pending: the shared dev server returns 504 "Outdated Optimize Dep" and needs a restart.

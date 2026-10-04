@@ -24,11 +24,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
-import {
-  expectedConnectInvoiceTotal,
-  retrieveConnectCustomer,
-  upsertConnectCustomer
-} from "@carbon/stripe/connect.server";
+import { expectedConnectInvoiceTotal } from "@carbon/stripe/connect.server";
 import {
   sendPostedSalesInvoiceViaStripe,
   toStripeInvoiceLines
@@ -46,10 +42,11 @@ import {
   type stripeCustomerActions
 } from "~/modules/invoicing";
 import {
-  resolveStripeCustomer,
+  getBillingCustomerId,
+  linkStripeCustomerForBilling,
   STRIPE_CONNECT_INTEGRATION
 } from "~/modules/invoicing/stripe-customer.server";
-import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
+import { getCustomerContact } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -80,12 +77,11 @@ type StripeSendContext = {
  * never sent.
  *
  * The user's choice arrives from the post modal, but is never taken at face
- * value: `resolveStripeCustomer` is re-run here — the same function the modal
- * called — and the action is checked against what the connected account
- * actually looks like now. That closes the gap between the dialog being shown
- * and the form being submitted (a customer deleted in the Stripe dashboard, a
- * mapping written by a concurrent post, a hand-rolled form body naming someone
- * else's customer id).
+ * value: `linkStripeCustomerForBilling` re-runs the resolution the modal
+ * showed and checks the action against what the connected account actually
+ * looks like now (a customer deleted in the Stripe dashboard, a mapping
+ * written by a concurrent post, a hand-rolled form body naming someone else's
+ * customer id).
  */
 async function preflightStripeSend({
   serviceRole,
@@ -115,58 +111,6 @@ async function preflightStripeSend({
     return { ok: false, message: "the Stripe customer was not confirmed" };
   }
 
-  if (stripeContactEmail) {
-    // customerContact comes from the form and the service role bypasses RLS:
-    // scope it so another company's contact is never read or rewritten.
-    const contact = await getCustomerContact(
-      serviceRole,
-      customerContact,
-      companyId
-    );
-    if (contact.data && !contact.data.contact?.email) {
-      const update = await updateCustomerContact(serviceRole, {
-        contactId: contact.data.contactId,
-        contact: {
-          firstName: contact.data.contact?.firstName ?? "",
-          lastName: contact.data.contact?.lastName ?? "",
-          email: stripeContactEmail
-        }
-      });
-      if (update.error) {
-        return { ok: false, message: "the contact email could not be saved" };
-      }
-    }
-  }
-
-  const resolved = await resolveStripeCustomer({
-    serviceRole,
-    companyId,
-    invoiceId,
-    customerContactId: customerContact,
-    emailOverride: stripeContactEmail
-  });
-
-  if (!resolved.sources) {
-    return {
-      ok: false,
-      message:
-        resolved.resolution.state === "unavailable"
-          ? resolved.resolution.message
-          : "the Stripe customer could not be resolved"
-    };
-  }
-
-  const { stripeAccountId, billingCustomerId, sources, input } = resolved;
-
-  if (!input) {
-    return { ok: false, message: "the selected contact has no email address" };
-  }
-
-  const customerName = sources.customer.name;
-  if (!customerName) {
-    return { ok: false, message: "the customer could not be loaded" };
-  }
-
   const [lines, shipment] = await Promise.all([
     getSalesInvoiceLines(serviceRole, invoiceId),
     getSalesInvoiceShipment(serviceRole, invoiceId)
@@ -185,108 +129,36 @@ async function preflightStripeSend({
     };
   }
 
-  const mappingService = createMappingService(getDatabaseClient(), companyId);
-
-  let resolvedCustomerId: string;
-
-  switch (stripeCustomerAction) {
-    case "use-linked": {
-      // The dialog showed a linked customer; it must still be linked and live.
-      // Falling through to a create here would put a customer on the merchant's
-      // account that the user never agreed to.
-      if (resolved.resolution.state !== "linked") {
-        return {
-          ok: false,
-          message:
-            "the linked Stripe customer is no longer available — reopen the dialog"
-        };
-      }
-      resolvedCustomerId = resolved.resolution.customer.id;
-      break;
-    }
-    case "link-existing": {
-      if (!stripeCustomerId) {
-        return {
-          ok: false,
-          message: "no Stripe customer was selected to link"
-        };
-      }
-      // Confirm the id exists on THIS connected account before writing it into
-      // the mapping — an id from another account (or an invented one) would
-      // otherwise be linked and every future invoice would fail at send.
-      const existing = await retrieveConnectCustomer(
-        stripeAccountId,
-        stripeCustomerId
-      );
-      if (!existing) {
-        return {
-          ok: false,
-          message: "that Stripe customer no longer exists on this account"
-        };
-      }
-      resolvedCustomerId = existing.id;
-      break;
-    }
-    case "create": {
-      // A concurrent post (or a link made since the dialog opened) means this
-      // Carbon customer now HAS a Stripe customer. Creating a second one is
-      // exactly what this flow exists to prevent, so stop and let the user
-      // confirm the one that now exists.
-      if (resolved.resolution.state === "linked") {
-        return {
-          ok: false,
-          message:
-            "this customer was just linked to a Stripe customer — reopen the dialog to confirm it"
-        };
-      }
-      try {
-        resolvedCustomerId = await upsertConnectCustomer(
-          stripeAccountId,
-          null,
-          input
-        );
-      } catch (err) {
-        // A genuinely concurrent post for the same unlinked customer reuses
-        // the same idempotency key (upsertConnectCustomer scopes it by
-        // companyId+carbonCustomerId) — Stripe rejects the SECOND request
-        // in-flight with an idempotency_error rather than returning the
-        // first request's result. The winning request finishes and links
-        // its mapping shortly after, so re-resolve once instead of failing
-        // the whole send outright.
-        if ((err as { type?: string }).type !== "idempotency_error") {
-          throw err;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        const retried = await resolveStripeCustomer({
-          serviceRole,
-          companyId,
-          invoiceId,
-          customerContactId: customerContact,
-          emailOverride: stripeContactEmail
-        });
-        if (retried.resolution.state !== "linked") {
-          throw err;
-        }
-        resolvedCustomerId = retried.resolution.customer.id;
-      }
-      break;
-    }
+  const billingCustomerId = await getBillingCustomerId(
+    serviceRole,
+    invoiceId,
+    companyId
+  );
+  if (!billingCustomerId) {
+    return { ok: false, message: "this invoice has no customer to bill" };
   }
 
-  await mappingService.link(
-    "customer",
+  // Saves a typed email to the contact, re-resolves, checks the user's choice
+  // against the connected account as it is now, and links the result — shared
+  // with the contract confirm modal.
+  const linked = await linkStripeCustomerForBilling({
+    serviceRole,
+    companyId,
+    userId,
     billingCustomerId,
-    STRIPE_CONNECT_INTEGRATION,
-    resolvedCustomerId,
-    { createdBy: userId }
-  );
+    customerContactId: customerContact,
+    action: stripeCustomerAction,
+    stripeCustomerId,
+    contactEmail: stripeContactEmail
+  });
+  if (!linked.ok) return linked;
 
   return {
     ok: true,
     context: {
-      stripeAccountId,
-      stripeCustomerId: resolvedCustomerId,
-      customerName
+      stripeAccountId: linked.stripeAccountId,
+      stripeCustomerId: linked.stripeCustomerId,
+      customerName: linked.customerName
     }
   };
 }
