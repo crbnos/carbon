@@ -18,14 +18,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const query = currenciesQuery();
-  const data = window?.clientCache?.getQueryData<typeof loader>(query.queryKey);
+  const cache = window?.clientCache;
+  if (!cache) return serverLoader<typeof loader>();
 
-  if (!data) {
-    const serverData = await serverLoader<typeof loader>();
-    window?.clientCache?.setQueryData(query.queryKey, serverData);
-    return serverData;
-  }
-
-  return data;
+  // Every money cell mounts useCurrencies, so a grid fires dozens of these
+  // loads at once. ensureQueryData shares one in-flight request between them;
+  // a get-then-set let each concurrent load miss the cache and hit the server.
+  return cache.ensureQueryData({
+    queryKey: query.queryKey,
+    queryFn: () => serverLoader<typeof loader>(),
+    staleTime: query.staleTime
+  });
 }
 clientLoader.hydrate = true;
