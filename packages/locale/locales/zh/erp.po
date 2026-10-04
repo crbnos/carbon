@@ -10302,8 +10302,8 @@ msgstr "已邀请"
 msgid "Invoice"
 msgstr "发票"
 
-msgid "Invoice {readableId} now"
-msgstr "立即开票 {readableId}"
+msgid "Invoice {readableId} now?"
+msgstr "立即为 {readableId} 开票？"
 
 msgid "Invoice actions"
 msgstr ""

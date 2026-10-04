@@ -10302,8 +10302,8 @@ msgstr "आमंत्रित"
 msgid "Invoice"
 msgstr "चालान"
 
-msgid "Invoice {readableId} now"
-msgstr "{readableId} को अभी चालान करें"
+msgid "Invoice {readableId} now?"
+msgstr "{readableId} को अभी चालान करें?"
 
 msgid "Invoice actions"
 msgstr ""

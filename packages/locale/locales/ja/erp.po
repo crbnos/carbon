@@ -10302,8 +10302,8 @@ msgstr "招待済み"
 msgid "Invoice"
 msgstr "請求書"
 
-msgid "Invoice {readableId} now"
-msgstr "請求書 {readableId} を今すぐ作成"
+msgid "Invoice {readableId} now?"
+msgstr "{readableId} の請求書を今すぐ作成しますか？"
 
 msgid "Invoice actions"
 msgstr ""

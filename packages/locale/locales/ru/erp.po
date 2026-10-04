@@ -10302,8 +10302,8 @@ msgstr "Приглашено"
 msgid "Invoice"
 msgstr "Счет-фактура"
 
-msgid "Invoice {readableId} now"
-msgstr "Выставить счет-фактуру {readableId} сейчас"
+msgid "Invoice {readableId} now?"
+msgstr "Выставить счет-фактуру {readableId} сейчас?"
 
 msgid "Invoice actions"
 msgstr ""

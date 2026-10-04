@@ -10302,8 +10302,8 @@ msgstr "초대됨"
 msgid "Invoice"
 msgstr "송장"
 
-msgid "Invoice {readableId} now"
-msgstr "지금 {readableId} 송장을"
+msgid "Invoice {readableId} now?"
+msgstr "지금 {readableId} 송장을 발행하시겠습니까?"
 
 msgid "Invoice actions"
 msgstr ""

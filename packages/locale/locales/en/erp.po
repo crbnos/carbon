@@ -10302,8 +10302,8 @@ msgstr "Invited"
 msgid "Invoice"
 msgstr "Invoice"
 
-msgid "Invoice {readableId} now"
-msgstr "Invoice {readableId} now"
+msgid "Invoice {readableId} now?"
+msgstr "Invoice {readableId} now?"
 
 msgid "Invoice actions"
 msgstr "Invoice actions"

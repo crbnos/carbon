@@ -10302,8 +10302,8 @@ msgstr "Davetli"
 msgid "Invoice"
 msgstr "Fatura"
 
-msgid "Invoice {readableId} now"
-msgstr "Fatura {readableId} şimdi"
+msgid "Invoice {readableId} now?"
+msgstr "{readableId} şimdi faturalansın mı?"
 
 msgid "Invoice actions"
 msgstr ""

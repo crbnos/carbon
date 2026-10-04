@@ -10302,8 +10302,8 @@ msgstr "Eingeladen"
 msgid "Invoice"
 msgstr "Rechnung"
 
-msgid "Invoice {readableId} now"
-msgstr "Rechnung {readableId} jetzt"
+msgid "Invoice {readableId} now?"
+msgstr "Rechnung für {readableId} jetzt erstellen?"
 
 msgid "Invoice actions"
 msgstr ""
