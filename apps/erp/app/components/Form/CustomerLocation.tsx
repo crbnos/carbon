@@ -4,11 +4,11 @@
 
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type {
   CustomerLocation as CustomerLocationType,
   getCustomerLocations
@@ -40,19 +40,13 @@ const CustomerLocation = ({
   ...props
 }: CustomerLocationSelectProps) => {
   const { t } = useLingui();
-  const customerLocationsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getCustomerLocations>>>();
+  const customerLocationsFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCustomerLocations>>
+  >(customer ? path.to.api.customerLocations(customer) : null);
 
   const newLocationModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (customer) {
-      customerLocationsFetcher.load(path.to.api.customerLocations(customer));
-    }
-  }, [customer]);
 
   const options = useMemo(
     () =>
@@ -108,12 +102,6 @@ const CustomerLocation = ({
           onClose={() => {
             setCreated("");
             newLocationModal.onClose();
-            // Reload the per-customer fetcher so a just-created location appears.
-            if (customer) {
-              customerLocationsFetcher.load(
-                path.to.api.customerLocations(customer)
-              );
-            }
             triggerRef.current?.click();
           }}
           initialValues={{

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLoaderQuery } from "@carbon/query";
 import {
   Card,
   CardAction,
@@ -20,7 +21,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useMount,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -43,7 +43,6 @@ import {
   LuShoppingCart,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import {
   Area,
   Bar,
@@ -165,8 +164,10 @@ export const ItemPlanningChart = ({
   conversionFactor?: number;
 }) => {
   const { t } = useLingui();
-  const forecastFetcher = useFetcher<typeof forecastLoader>();
-  const isFetching = forecastFetcher.state !== "idle" || !forecastFetcher.data;
+  const forecastFetcher = useLoaderQuery<typeof forecastLoader>(
+    path.to.api.itemForecast(itemId, locationId)
+  );
+  const isFetching = forecastFetcher.isFetching || !forecastFetcher.data;
   const [searchTerm, setSearchTerm] = useState("");
   const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(
     () => new Set()
@@ -186,10 +187,6 @@ export const ItemPlanningChart = ({
   });
 
   const numberFormatter = useNumberFormatter();
-
-  useMount(() => {
-    forecastFetcher.load(path.to.api.itemForecast(itemId, locationId));
-  });
 
   const hasSafetyStock = typeof safetyStock === "number" && safetyStock > 0;
   const safetyStockValue = hasSafetyStock ? safetyStock : 0;

@@ -5,7 +5,7 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { activeJobStatuses } from "@carbon/database";
-import { useChangedRows } from "@carbon/query";
+import { useChangedRows, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -63,7 +63,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, Link, useFetcher, useLoaderData } from "react-router";
+import { Await, Link, useLoaderData } from "react-router";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
   CustomerAvatar,
@@ -145,8 +145,6 @@ export default function ProductionDashboard() {
     useLoaderData<typeof loader>();
 
   const user = useUser();
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState<
@@ -159,6 +157,13 @@ export default function ProductionDashboard() {
   });
 
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
+
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    `${path.to.api.productionKpi(
+      selectedKpiData.key
+    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+  );
+  const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
 
   const kpiLabels: Record<string, string> = useMemo(
     () => ({
@@ -182,15 +187,6 @@ export default function ProductionDashboard() {
     if (!dateRange) return 0;
     return dateRange.end.compare(dateRange.start) * 24 * 60 * 60 * 1000;
   }, [dateRange]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    kpiFetcher.load(
-      `${path.to.api.productionKpi(
-        selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
-    );
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
 
   const onIntervalChange = (value: string) => {
     const end = toCalendarDateTime(now("UTC"));
@@ -435,8 +431,7 @@ export default function ProductionDashboard() {
                 </>
               )}
             </VStack>
-            {kpiFetcher.state === "idle" &&
-            kpiFetcher.data?.data?.length === 0 ? (
+            {!kpiFetcher.isFetching && kpiFetcher.data?.data?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <Empty className="py-8">
                   <p className="text-sm text-muted-foreground">

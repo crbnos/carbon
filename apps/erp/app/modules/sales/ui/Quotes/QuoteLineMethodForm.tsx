@@ -3,10 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox, Hidden, SelectControlled } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { useMount, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useFetcher } from "react-router";
 import { RevisionSuffix } from "~/components";
 import { path } from "~/utils/path";
@@ -18,24 +19,19 @@ export function QuoteLineMethodForm() {
     useFetcher<
       PostgrestResponse<{ id: string; quoteId: string; revisionId: number }>
     >();
-  const quoteLineFetcher =
-    useFetcher<Awaited<ReturnType<typeof getQuoteLinesList>>>();
 
   // const quotesLoading = quoteFetcher.state === "loading";
-  // const quoteLinesLoading = quoteLineFetcher.state === "loading";
+  // const quoteLinesLoading = quoteLineFetcher.isFetching;
   const [quote, setQuote] = useState<string | null>(null);
+
+  const quoteLineFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getQuoteLinesList>>
+  >(quote ? path.to.api.quoteLines(quote) : null);
   const [quoteLine, setQuoteLine] = useState<string | null>(null);
 
   useMount(() => {
     quoteFetcher.load(path.to.api.quotes);
   });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (quote) {
-      quoteLineFetcher.load(path.to.api.quoteLines(quote));
-    }
-  }, [quote]);
 
   const quoteOptions = useMemo(
     () =>

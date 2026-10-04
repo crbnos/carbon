@@ -6,6 +6,26 @@ import { useQuery } from "@tanstack/react-query";
 import { loaderQuery } from "./cache";
 
 /**
+ * What a read returns. `T` is the data itself, or the route's `typeof loader`
+ * (as `useFetcher<typeof loader>` takes): then it is what that loader returns,
+ * without the `data()` wrapper.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: any loader signature
+export type LoaderData<T> = T extends (...args: any[]) => infer R
+  ? Unwrapped<Awaited<R>>
+  : T;
+
+// Distributes over a loader that returns `data(...)` on one path and a plain
+// object on another. The shape is React Router's `DataWithResponseInit`.
+type Unwrapped<R> = R extends {
+  type: string;
+  data: infer D;
+  init: ResponseInit | null;
+}
+  ? D
+  : R;
+
+/**
  * Reads an `api+` URL through the cache, as an observed query: every component
  * reading the same URL shares one request, renders the cached value at once,
  * and refetches when a mutation or a realtime change invalidates the entry.
@@ -15,8 +35,8 @@ export function useLoaderQuery<T>(
   url: string | null,
   options?: { staleTime?: number }
 ) {
-  return useQuery<T>({
-    ...loaderQuery<T>(url ?? "", options),
+  return useQuery<LoaderData<T>>({
+    ...loaderQuery<LoaderData<T>>(url ?? "", options),
     enabled: url !== null
   });
 }
