@@ -77,6 +77,7 @@ import { getUserClaims } from "~/modules/users/users.server";
 import { getAppShell } from "~/services/app-shell.server";
 import { getImplementationSignals } from "~/services/implementation-signals.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+import { setClientCompanyId } from "~/utils/react-query";
 
 const log = getLogger("erp", "auth");
 
@@ -371,6 +372,8 @@ export default function AuthenticatedRoute() {
     mfaEnrollment,
     sessionTimeout
   } = loaderData;
+  // During render, not in an effect: clientLoaders and the first child read it.
+  setClientCompanyId(company?.id ?? null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();

@@ -13,8 +13,8 @@
 - [ ] Task 6: Add the database tests
 - [ ] Task 7: Add the `realtime-table-has-trigger` check
 - [ ] Task 8: Add the private option to `useRealtimeChannel`
-- [ ] Task 9: Add `cachedClientLoader` and the company id value
-- [ ] Task 10: Add the invalidation middleware to both roots
+- [x] Task 9: Add `cachedClientLoader` and the company id value
+- [x] Task 10: Add the invalidation middleware to both roots
 - [ ] Task 11: Convert the 27 cached `clientLoader` exports
 - [ ] Task 12: Delete the invalidation-only `clientAction` exports
 - [ ] Task 13: Add `useRealtime` and `useRouteRealtime` to `@carbon/react`

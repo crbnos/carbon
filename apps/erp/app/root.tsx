@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { createInvalidationMiddleware } from "@carbon/auth/middleware/invalidate.client";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -60,6 +61,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import { path } from "~/utils/path";
 import "@carbon/lib/shims";
 import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
@@ -72,7 +74,13 @@ export const middleware = timedMiddleware({
   formBody: formBodyMiddleware,
   flash: flashMiddleware
 });
-export const clientMiddleware = [flashClientMiddleware];
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
+];
 
 export const links: LinksFunction = () => {
   return [

@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { createInvalidationMiddleware } from "@carbon/auth/middleware/invalidate.client";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -59,6 +60,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import { path } from "~/utils/path";
 import "@carbon/lib/shims";
 import { MotionConfig } from "motion/react";
 import type { Route } from "./+types/root";
@@ -71,7 +73,13 @@ export const middleware = timedMiddleware({
   formBody: formBodyMiddleware,
   flash: flashMiddleware
 });
-export const clientMiddleware = [flashClientMiddleware];
+export const clientMiddleware = [
+  flashClientMiddleware,
+  createInvalidationMiddleware({
+    getCache: () => window.clientCache,
+    skipPaths: [path.to.refreshSession]
+  })
+];
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
@@ -275,16 +283,22 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
 
-  // Backs hook-based useQuery (the viewer's useOptimizedModel); MES has no
-  // clientLoader cache convention, so this client exists only for hooks.
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: { refetchOnWindowFocus: false }
-        }
-      })
-  );
+  // One client for hook-based useQuery and for code outside React (the live
+  // lists, the invalidation middleware), which reaches it as window.clientCache.
+  const [queryClient] = useState(() => {
+    if (typeof window !== "undefined" && window.clientCache) {
+      return window.clientCache;
+    }
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { refetchOnWindowFocus: false }
+      }
+    });
+    if (typeof window !== "undefined") {
+      window.clientCache = client;
+    }
+    return client;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
