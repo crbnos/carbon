@@ -93,7 +93,7 @@ Every acceptance criterion in the spec is covered except these, which belong to 
 - [x] Task 32: Demo datasets
 - [x] Task 33: MCP digest, lint, i18n, scoped typechecks, tests
 - [x] Task 34: Docs — reference page, glossary, AGENTS.md, rules, spec changelog
-- [ ] Task 35: Browser verification (`/test`)
+- [x] Task 35: Browser verification (`/test`)
 
 ## Dependencies
 
