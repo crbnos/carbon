@@ -10,6 +10,7 @@ import {
   contractPositionPreview,
   datetime,
   horizon,
+  isUnaffectedByNavigation,
   lineRevenueDates,
   lineTotals,
   planInvoiceSchedule,
@@ -19,7 +20,10 @@ import {
   validateScheduleEdit
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
@@ -51,6 +55,15 @@ export const handle: Handle = {
     (data) => data?.contract?.customerContractId
   ),
   module: "sales"
+};
+
+// An amend / cancel preview posts but commits nothing, so it never refreshes
+// the page; every other submission does.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
+  if (args.formData?.get("intent") === "preview") return false;
+  return isUnaffectedByNavigation(args, { params: ["id"] })
+    ? false
+    : args.defaultShouldRevalidate;
 };
 
 export async function loader({

@@ -33,6 +33,8 @@ import { usePanels } from "~/components/Layout";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import ContractAmendModal from "./ContractAmendModal";
+import ContractCancelModal from "./ContractCancelModal";
 import ContractStatus from "./ContractStatus";
 import type { ContractRouteData } from "./types";
 
@@ -49,6 +51,8 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const amendDisclosure = useDisclosure();
+  const cancelDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
 
   const id = contract.id!;
@@ -157,21 +161,20 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
             )}
             {isActive && (
               <>
-                {/* TODO(Task 29): open ContractCancelModal, posting to
-                    path.to.contractCancel(id). */}
+                {/* A cancelled contract is reverted, not cancelled again. */}
                 <Button
                   variant="secondary"
                   leftIcon={<LuCircleStop />}
-                  isDisabled
+                  isDisabled={!canUpdate || isCancelled}
+                  onClick={cancelDisclosure.onOpen}
                 >
                   <Trans>Cancel</Trans>
                 </Button>
-                {/* TODO(Task 28): open ContractAmendModal, posting to
-                    path.to.contractAmend(id). */}
                 <Button
                   variant="secondary"
                   leftIcon={<LuPencilLine />}
-                  isDisabled
+                  isDisabled={!canUpdate}
+                  onClick={amendDisclosure.onOpen}
                 >
                   <Trans>Amend</Trans>
                 </Button>
@@ -207,6 +210,23 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
           confirmText={current.confirmText}
           onCancel={confirm.onClose}
           onSubmit={confirm.onClose}
+        />
+      )}
+
+      {amendDisclosure.isOpen && (
+        <ContractAmendModal
+          contract={contract}
+          lines={lines}
+          action={path.to.contractAmend(id)}
+          onClose={amendDisclosure.onClose}
+        />
+      )}
+
+      {cancelDisclosure.isOpen && (
+        <ContractCancelModal
+          contract={contract}
+          action={path.to.contractCancel(id)}
+          onClose={cancelDisclosure.onClose}
         />
       )}
 

@@ -4869,6 +4869,12 @@ msgstr "Contra-revenue GL account for discounts given on customer invoices."
 msgid "Contract"
 msgstr "Contract"
 
+msgid "Contract {contractLabel}"
+msgstr "Contract {contractLabel}"
+
+msgid "Contract {contractReadableId}"
+msgstr "Contract {contractReadableId}"
+
 msgid "Contract asset"
 msgstr "Contract asset"
 
@@ -9289,6 +9295,9 @@ msgstr "Generate Picking List"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Generated from a rental agreement. Change the agreement to change this line."
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr "Generated from contract <0>{readableId}</0>"
 
 msgid "Generated IDs are disabled"
 msgstr "Generated IDs are disabled"

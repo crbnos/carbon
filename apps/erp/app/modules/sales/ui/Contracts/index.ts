@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import ContractAmendModal from "./ContractAmendModal";
 import ContractAmendments from "./ContractAmendments";
+import ContractCancelModal from "./ContractCancelModal";
 import ContractExplorer from "./ContractExplorer";
 import ContractForm from "./ContractForm";
 import ContractHeader from "./ContractHeader";
@@ -28,7 +30,9 @@ export type { ContractScheduleRow } from "./contractTerms";
 export type * from "./types";
 
 export {
+  ContractAmendModal,
   ContractAmendments,
+  ContractCancelModal,
   ContractExplorer,
   ContractForm,
   ContractHeader,

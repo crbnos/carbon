@@ -4869,6 +4869,12 @@ msgstr "ग्राहक चालान पर दी गई छूट के
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "अनुबंध संपत्ति"
 
@@ -9289,6 +9295,9 @@ msgstr "पिकिंग सूची जेनरेट करें"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "किराये के समझौते से उत्पन्न। इस पंक्ति को बदलने के लिए समझौते को बदलें।"
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "जेनरेट की गई आईडी अक्षम हैं"

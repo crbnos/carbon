@@ -4869,6 +4869,12 @@ msgstr "Kontra-Umsatz-GL-Konto für Rabatte auf Kundenrechnungen."
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Vertragsposten"
 
@@ -9289,6 +9295,9 @@ msgstr "Kommissionierliste generieren"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Wird aus einer Mietvereinbarung generiert. Ändern Sie die Vereinbarung, um diese Position zu ändern."
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "Generierte IDs sind deaktiviert"

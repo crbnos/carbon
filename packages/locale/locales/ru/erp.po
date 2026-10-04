@@ -4869,6 +4869,12 @@ msgstr "Счет учета противоположной выручки для
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Активы договора"
 
@@ -9289,6 +9295,9 @@ msgstr "Создать лист отбора"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Создано из соглашения аренды. Измените соглашение, чтобы изменить эту строку."
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "Сгенерированные ID отключены"

@@ -83,3 +83,12 @@
 - Server refuses Cancelled/Closed orders; the status recompute runs only for To Ship and Invoice / To Ship / To Invoice / Completed; deleting a contract (line) recomputes the status of an order the rollup settled.
 - Payment term and invoice party come from `salesOrderPayment` (the order header has neither).
 - New contract lines from an order default to One-time.
+
+## Tasks 28 + 29
+- Previews POST `intent=preview`; `$id.tsx` `shouldRevalidate` skips a preview so the page loader does not re-run per keystroke.
+- Flash messages are text only, so the memo link lives on the contract page (Invoices credit rows), not in the flash.
+- Amendment history infers an ended line (end = amendment − 1 day, no replacement); cancellations are exact via `previousState`.
+- Preview rows for new lines show "New line" (their ids come from the rolled-back transaction).
+
+## Task 31
+- Contract links: invoice line form ("Generated from contract CON…"), invoice header and memo header (secondary button, `LuFileText`), readable ids read client-side scoped by `companyId`.

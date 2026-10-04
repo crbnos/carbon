@@ -4869,6 +4869,12 @@ msgstr "Cuenta GL de contra ingresos para descuentos otorgados en facturas de cl
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Activo por contrato"
 
@@ -9289,6 +9295,9 @@ msgstr "Generar Lista de Picking"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Generado a partir de un acuerdo de alquiler. Cambie el acuerdo para cambiar esta línea."
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "Los IDs generados están deshabilitados"

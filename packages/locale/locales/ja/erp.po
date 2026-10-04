@@ -4869,6 +4869,12 @@ msgstr "得意先請求書における値引に対する反売上勘定科目"
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "契約資産"
 
@@ -9289,6 +9295,9 @@ msgstr "ピッキングリストを生成"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "レンタル契約から生成されています。この明細を変更するには、契約を変更してください。"
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "生成されたIDは無効です"

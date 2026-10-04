@@ -4869,6 +4869,12 @@ msgstr "Konto GL przychodu przeciwnego dla rabatów udzielonych na fakturach kli
 msgid "Contract"
 msgstr ""
 
+msgid "Contract {contractLabel}"
+msgstr ""
+
+msgid "Contract {contractReadableId}"
+msgstr ""
+
 msgid "Contract asset"
 msgstr "Składnik aktywów z umowy"
 
@@ -9289,6 +9295,9 @@ msgstr "Generuj Listę kompletacyjną"
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Wygenerowana z umowy wynajmu. Zmień umowę, aby zmienić tę pozycję."
+
+msgid "Generated from contract <0>{readableId}</0>"
+msgstr ""
 
 msgid "Generated IDs are disabled"
 msgstr "Wygenerowane identyfikatory są wyłączone"
