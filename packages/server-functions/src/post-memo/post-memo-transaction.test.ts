@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import { paymentFixture } from "../post-payment/payment-test-fixture";
@@ -374,3 +375,241 @@ databaseTest("draft memo reservation does not prevent memo void", async () => {
     await f.cleanup();
   }
 });
+
+/**
+ * A contract cancellation credit for September, against an invoiced September
+ * period whose Service deferral is still one Planned row.
+ */
+async function contractMemoFixture(
+  f: Fixture,
+  { memoAmount, deferred }: { memoAmount: number; deferred: number }
+) {
+  const contractId = `${f.companyId}-contract`;
+  const contractLineId = `${f.companyId}-contract-line`;
+  const plannedInvoiceId = `${f.companyId}-contract-invoice`;
+  const memoId = `${f.companyId}-contract-memo`;
+  const scheduleId = `${f.companyId}-deferral`;
+  const salesInvoiceLine = await f.db
+    .selectFrom("salesInvoiceLine")
+    .select("id")
+    .where("invoiceId", "=", f.invoiceId)
+    .executeTakeFirstOrThrow();
+  await f.db.transaction().execute(async (trx) => {
+    await trx
+      .insertInto("account")
+      .values({
+        id: f.account("deferred"),
+        name: "deferred",
+        class: "Liability",
+        incomeBalance: "Balance Sheet",
+        companyGroupId: f.groupId,
+        createdBy: "system"
+      })
+      .execute();
+    await trx
+      .updateTable("accountDefault")
+      .set({ deferredRevenueAccount: f.account("deferred") })
+      .where("companyId", "=", f.companyId)
+      .execute();
+    // The contract line names an item this fixture has no reason to build;
+    // only the schedule rows matter here.
+    await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+    await trx
+      .insertInto("customerContract")
+      .values({
+        id: contractId,
+        customerContractId: "CON-TEST",
+        name: "Test contract",
+        status: "Active",
+        customerId: f.customerId,
+        closeDate: "2026-07-01",
+        startDate: "2026-07-01",
+        currencyCode: "USD",
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    await trx
+      .insertInto("customerContractLine")
+      .values({
+        id: contractLineId,
+        customerContractId: contractId,
+        kind: "Recurring",
+        rateUnit: "Month",
+        itemId: `${f.companyId}-item`,
+        rate: 420,
+        startDate: "2026-07-01",
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    await trx
+      .insertInto("revenueRecognitionSchedule")
+      .values({
+        id: scheduleId,
+        type: "Deferral",
+        status: "Planned",
+        salesInvoiceLineId: salesInvoiceLine.id,
+        periodStart: "2026-09-01",
+        periodEnd: "2026-09-30",
+        scheduledDate: "2026-09-30",
+        amount: deferred,
+        debitAccountId: f.account("deferred"),
+        creditAccountId: f.account("sales"),
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+    await trx
+      .insertInto("customerContractInvoice")
+      .values({
+        id: plannedInvoiceId,
+        customerContractId: contractId,
+        invoiceDate: "2026-09-01",
+        status: "Invoiced",
+        salesInvoiceId: f.invoiceId,
+        companyId: f.companyId,
+        createdBy: "system"
+      })
+      .execute();
+    await trx
+      .insertInto("memo")
+      .values({
+        id: memoId,
+        memoId: "CREDIT-CON",
+        companyId: f.companyId,
+        customerId: f.customerId,
+        customerContractId: contractId,
+        direction: "Credit",
+        memoDate: "2026-09-07",
+        currencyCode: "USD",
+        exchangeRate: 1,
+        amount: memoAmount,
+        createdBy: "system"
+      })
+      .execute();
+    const period = {
+      customerContractId: contractId,
+      customerContractLineId: contractLineId,
+      periodStart: "2026-09-01",
+      periodEnd: "2026-09-30",
+      units: 1,
+      companyId: f.companyId,
+      createdBy: "system"
+    };
+    await trx
+      .insertInto("customerContractInvoiceLine")
+      .values([
+        {
+          ...period,
+          customerContractInvoiceId: plannedInvoiceId,
+          unitPrice: 420,
+          amount: 420,
+          salesInvoiceLineId: salesInvoiceLine.id
+        },
+        {
+          ...period,
+          isAdjustment: true,
+          unitPrice: -memoAmount,
+          amount: -memoAmount,
+          memoId
+        }
+      ])
+      .execute();
+  });
+  return { memoId, scheduleId };
+}
+
+databaseTest(
+  "contract credit memo releases the Planned deferral into Deferred Revenue",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const { memoId, scheduleId } = await contractMemoFixture(f, {
+        memoAmount: 140,
+        deferred: 420
+      });
+      const { journalId } = await postMemoTransaction(f.db, {
+        ...f.args,
+        memoId
+      });
+      const schedule = await f.db
+        .selectFrom("revenueRecognitionSchedule")
+        .select(["amount", "status"])
+        .where("id", "=", scheduleId)
+        .executeTakeFirstOrThrow();
+      expect(schedule).toEqual({ amount: 280, status: "Planned" });
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount", "description"])
+        .where("journalId", "=", journalId!)
+        .orderBy("accountId")
+        .execute();
+      expect(lines).toEqual([
+        {
+          accountId: f.account("control"),
+          amount: -140,
+          description: "Accounts Receivable"
+        },
+        {
+          accountId: f.account("deferred"),
+          amount: -140,
+          description: "Deferred Revenue"
+        }
+      ]);
+      const memo = await f.db
+        .selectFrom("memo")
+        .select(["status", "reasonAccount"])
+        .where("id", "=", memoId)
+        .executeTakeFirstOrThrow();
+      expect(memo).toEqual({
+        status: "Posted",
+        reasonAccount: f.account("deferred")
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "contract credit memo beyond the Planned deferral reverses Sales for the rest",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const { memoId, scheduleId } = await contractMemoFixture(f, {
+        memoAmount: 500,
+        deferred: 420
+      });
+      const { journalId } = await postMemoTransaction(f.db, {
+        ...f.args,
+        memoId
+      });
+      expect(
+        await f.db
+          .selectFrom("revenueRecognitionSchedule")
+          .select("id")
+          .where("id", "=", scheduleId)
+          .executeTakeFirst()
+      ).toBeUndefined();
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", journalId!)
+        .execute();
+      const byAccount = Object.fromEntries(
+        lines.map((l) => [l.accountId, l.amount])
+      );
+      // AR credited 500; Deferred Revenue (liability) and Sales (revenue)
+      // debited 420 + 80, each stored at its natural-balance sign.
+      expect(byAccount).toEqual({
+        [f.account("control")]: -500,
+        [f.account("deferred")]: -420,
+        [f.account("sales")]: -80
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

@@ -24,3 +24,11 @@
 - `SalesPostingMetadata.projectId` is optional (a required field would break `datasets/helpers/posting-journals.ts:170`); every `post-sales-invoice` call site sets it.
 - Escape hatch 13b step 2 reviewed, not triggered in intent: the buyer's purchase invoice is typed by hand at the price it is charged (no mirror code exists), so the seller's intercompany amount uses net merchandise.
 - Shipment line `unitPrice` uses the generated `netUnitPrice`.
+
+## Task 14
+- `buildMemoJournal` books one reason line; it was NOT restructured. `post-memo-transaction.ts` replaces that line with two debits (Deferred Revenue released + Sales remainder) that sum to it. Release capped at the memo's base amount so the journal always balances.
+- Void refusal lives in `post-memo/index.ts` (not covered by a test).
+
+## Task 16
+- `@carbon/stripe` gained workspace/catalog deps `@carbon/files` and `@internationalized/date` (both already in the repo; lockfile +6 lines).
+- The ERP `upsertDocument` call became a direct `document` insert with the same fields.

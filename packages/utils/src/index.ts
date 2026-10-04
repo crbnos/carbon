@@ -29,6 +29,7 @@ export * from "./contract-revenue";
 export * from "./country";
 export * from "./date";
 export * from "./datetime";
+export * from "./deferral-release";
 export * from "./duration";
 export * from "./entity-drain";
 export * from "./errors";
