@@ -763,6 +763,12 @@ msgstr "किसी ग्राहक की स्थिति में प�
 msgid "A customer's type changes"
 msgstr "किसी ग्राहक के प्रकार में परिवर्तन"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr ""
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "एक दिनांकित रिकॉर्ड यह साबित करता है कि एक गेज को एक ट्रेसेबल मानक के विरुद्ध जांचा गया था; यह तब तक पास होता है जब तक कि कोई कार्रवाई की आवश्यकता, समायोजन, या मरम्मत का झंडा चिन्हित नहीं किया जाता है, और गेज की अगली देय तारीख को रीसेट करता है।"
 
@@ -1092,6 +1098,9 @@ msgstr "एक पुनः प्रयोग योग्य, संस्क�
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "एक जारी जॉब पर एक रूटिंग चरण, जॉब की अपनी ऑपरेशन की प्रति, एक स्थिति ले जाता है जो फ़्लोर को करने के लिए कार्य करता है।"
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr ""
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "एक दस्तावेज़ जो क्रमांकित बेड़े की इकाइयों को ग्राहक को दिन, सप्ताह और महीने की दरों पर किराए पर देता है, बिलिंग अवधि को काटता है और उनके चालान को ड्राफ्ट करता है जब तक कि हर इकाई वापस नहीं हो जाती और समझौता बंद नहीं हो जाता।"
@@ -2084,6 +2093,9 @@ msgstr ""
 
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
+msgstr ""
+
+msgid "Amendment"
 msgstr ""
 
 msgid "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "बिल प्राप्तकर्ता"
 msgid "Billed Externally"
 msgstr ""
 
+msgid "Billed through"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4889,6 +4904,9 @@ msgstr "अनुबंध संपत्तियाँ"
 
 msgid "Contract Assets (default)"
 msgstr "अनुबंध संपत्तियाँ (डिफ़ॉल्ट)"
+
+msgid "Contract type"
+msgstr ""
 
 msgid "Contract Type"
 msgstr ""
@@ -7349,9 +7367,6 @@ msgstr "उदाहरण के लिए पहले 3 से 4 सप्त
 msgid "e.g. Zebra 2x1"
 msgstr "उदाहरण के लिए Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "प्रत्येक समझौते का विक्रय प्रतिनिधि (या इसका निर्माता) उनके किराए के चालानों का दैनिक सारांश प्राप्त करता है।"
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
@@ -7381,6 +7396,9 @@ msgstr "प्रत्येक ऑपरेशन की अप्रयुक
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
@@ -9726,6 +9744,12 @@ msgstr "घंटे/टुकड़ा"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "एक बैचयोग्य प्रक्रिया अपने समूहीकृत कार्य को कैसे चलाती है: अनुक्रमिक एक मशीन (एक आरा या लेजर टेबल) पर पार्ट्स को एक के बाद एक चलाता है, जबकि समवर्ती उन्हें एक ही लोड (एक भट्टी, ओवन, या प्लेटिंग बाथ) में एक साथ चलाता है।"
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr ""
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr ""
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "एक किराया समझौता अपनी शुरुआत तिथि से बिलिंग अवधि कैसे काटता है: कैलेंडर महीना हर कैलेंडर महीने को महीने की दर पर बिल करता है, आंशिक महीने के लिए आनुपातिक, और 28 दिन दिन, सप्ताह और महीने की दरों से मूल्यवान लगातार 28-दिन की अवधि बिल करता है।"
 
@@ -10448,6 +10472,9 @@ msgstr "चालान स्थान"
 
 msgid "Invoice Number"
 msgstr "चालान संख्या"
+
+msgid "Invoice schedule"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "चालान निपटान"
@@ -14878,7 +14905,7 @@ msgstr "पोस्टिंग तारीख"
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr ""
 
 msgid "Potential Data Loss"
@@ -16839,6 +16866,9 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "राजस्व जो चालान किया गया है इससे पहले कि यह अर्जित हो, देयता के रूप में रखा गया और मान्यता चलाना द्वारा राजस्व में स्वीकृत किया गया जैसे सेवा अवधि बीत जाती है।"
 
 msgid "Revenue is previewed once the contract has lines."
+msgstr ""
+
+msgid "Revenue method"
 msgstr ""
 
 msgid "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "नकद छूट का प्रतिशत। कोई छूट 
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "अनुमति सेट जो इस प्रकार के नए कर्मचारी स्वचालित रूप से प्राप्त करते हैं; यहाँ संपादन केवल भविष्य की भर्ती के लिए टेम्पलेट को बदलता है - मौजूदा कर्मचारी जो उनके पास है वह रखते हैं जब तक कि स्पष्ट रूप से बड़े पैमाने पर अद्यतन नहीं किया जाता।"
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "वह संयंत्र, गोदाम, और साइटें जहां आपका काम और स्टॉक रहता है"
 
@@ -22664,8 +22697,8 @@ msgstr "कौन सा डेटा"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "किस चीज़ ने इन्वेंटरी को किसी भी आयाम द्वारा ऊपर या नीचे ले जाया"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "आवर्ती बिलिंग से प्रत्येक दिन स्वचालित रूप से बनाए गए चालानों के साथ क्या होता है, जैसे किराये की सहमति। शुल्क, जल्दी-वापसी जमा या नियम उल्लंघन के साथ चालान हमेशा समीक्षा की प्रतीक्षा करते हैं।"
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr ""
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"

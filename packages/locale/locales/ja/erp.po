@@ -763,6 +763,12 @@ msgstr "得意先のステータスが変わりました"
 msgid "A customer's type changes"
 msgstr "得意先のタイプが変わりました"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr ""
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "測定器が標準器に対してチェックされたことを示す日付付きレコード。「対応が必要」「調整が必要」「修理が必要」フラグがチェックされていない限り合格し、測定器の次回期限をリセットします。"
 
@@ -1092,6 +1098,9 @@ msgstr "工法に添付された再利用可能でバージョン管理された
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "リリース済の製造指図上の工順ステップ。製造指図自身の工程のコピーで、床面で駆動される「完了する」までのステータスを持つ。"
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr ""
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "得意先にシリアル化されたフリート機器を日単位、週単位、月単位のレートでレンタルする販売文書で、請求期間を区分し、すべての機器が返却されて契約がクローズ済になるまで請求書を作成します。"
@@ -2084,6 +2093,9 @@ msgstr ""
 
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
+msgstr ""
+
+msgid "Amendment"
 msgstr ""
 
 msgid "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "請求先"
 msgid "Billed Externally"
 msgstr ""
 
+msgid "Billed through"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4889,6 +4904,9 @@ msgstr "契約資産"
 
 msgid "Contract Assets (default)"
 msgstr "契約資産（デフォルト）"
+
+msgid "Contract type"
+msgstr ""
 
 msgid "Contract Type"
 msgstr ""
@@ -7349,9 +7367,6 @@ msgstr "例：最初の3～4週間"
 msgid "e.g. Zebra 2x1"
 msgstr "例：Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "各協定のセールスパーソン（またはその作成者）は、賃貸請求書の毎日のサマリーを取得します。"
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
@@ -7381,6 +7396,9 @@ msgstr "各操作の未使用材料は操作が完了するとすぐに戻され
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "各仕入先の全製造指図からの外注工程は、1つの新規発注書、または選択した既存の下書きに計上されます。"
@@ -9726,6 +9744,12 @@ msgstr "時間/個"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr ""
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr ""
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "レンタル協定が開始日からどのように請求期間を切り出すか：カレンダー月は毎月の月額料金で各暦月に請求し、一部の月に対して日割り計算され、28日間は日額、週額、月額料金から価格設定された連続する28日間の期間に請求されます。"
 
@@ -10448,6 +10472,9 @@ msgstr "請求書の場所"
 
 msgid "Invoice Number"
 msgstr "請求書番号"
+
+msgid "Invoice schedule"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "請求書決済"
@@ -14878,7 +14905,7 @@ msgstr "転記日付"
 msgid "Posting Date"
 msgstr "転記日付"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr ""
 
 msgid "Potential Data Loss"
@@ -16839,6 +16866,9 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "獲得する前に請求された売上高で、負債として保持され、サービス提供期間の経過により認識実行によって売上高に振替えられます。"
 
 msgid "Revenue is previewed once the contract has lines."
+msgstr ""
+
+msgid "Revenue method"
 msgstr ""
 
 msgid "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "現金割引の割合。割引がない場合は0を使用してくだ�
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "このタイプの新しい従業員が自動的に受け取る権限セット。ここで編集すると、将来の雇用のみがテンプレートを変更します。既存の従業員は、明示的に大量更新されない限り、持っているものを保持します。"
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
 
@@ -22664,8 +22697,8 @@ msgstr "どのデータ"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "在庫の増減を駆動した要因（ディメンション別）"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "定期請求（レンタル契約など）から毎日自動生成される請求書に何が起こるか。料金、早期返却クレジット、またはルール違反がある請求書は、常にレビューを待ちます。"
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr ""
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "仕訳をロック中の期間に付けたときの処理"

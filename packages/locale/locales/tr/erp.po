@@ -763,6 +763,12 @@ msgstr "Bir müşterinin durumu değiştirildi"
 msgid "A customer's type changes"
 msgstr "Bir müşterinin türü değiştirildi"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr ""
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "Ölçüm aletinin izlenebilir bir standarda karşı kontrol edildiğini kanıtlayan tarihli kayıt; eylem, ayarlama veya onarım gerektiren bayrak işaretlenmediği sürece uygun bulunur ve ölçüm aletinin bir sonraki kontrol tarihini sıfırlar."
 
@@ -1092,6 +1098,9 @@ msgstr "Bir işleme bağlı, yeniden kullanılabilir, sürümlendirilmiş bir i�
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "Serbest bırakıldı iş emrindeki rota adımı — iş emrinin kendi operasyon kopyası — zeminin Yapılacak'tan Bitti'ye kadar yönlendirdiği bir durum taşır."
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr ""
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "Müşteriye numaralandırılmış filo birimlerini gün, hafta ve ay oranlarında kiralayan, fatura dönemlerini kesen ve her birim iadesi ve sözleşme kapatılana kadar faturalarını hazırlayan bir satış belgesi."
@@ -2084,6 +2093,9 @@ msgstr ""
 
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
+msgstr ""
+
+msgid "Amendment"
 msgstr ""
 
 msgid "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "Fatura Adresi"
 msgid "Billed Externally"
 msgstr ""
 
+msgid "Billed through"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4889,6 +4904,9 @@ msgstr "Sözleşme Varlıkları"
 
 msgid "Contract Assets (default)"
 msgstr "Sözleşme Varlıkları (varsayılan)"
+
+msgid "Contract type"
+msgstr ""
 
 msgid "Contract Type"
 msgstr ""
@@ -7349,9 +7367,6 @@ msgstr "örn. ilk 3 ila 4 hafta"
 msgid "e.g. Zebra 2x1"
 msgstr "örneğin Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "Her anlaşmanın satış danışmanı (veya oluşturanı) kira faturalarının günlük bir özetini alır."
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
@@ -7381,6 +7396,9 @@ msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
@@ -9726,6 +9744,12 @@ msgstr "Saat/Adet"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr ""
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr ""
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "Bir kira anlaşması başlangıç tarihinden itibaren fatura dönemlerini nasıl ayırır: Takvim Ayı her takvim ayını aylık ücret ile faturalandırır, kısmi bir ay için oranlanmış şekilde, ve 28 Gün ardışık 28 günlük dönemleri gün, hafta ve aylık oranlarla faturalandırır."
 
@@ -10448,6 +10472,9 @@ msgstr "Fatura Konumu"
 
 msgid "Invoice Number"
 msgstr "Fatura Numarası"
+
+msgid "Invoice schedule"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "Fatura Ödeme"
@@ -14878,7 +14905,7 @@ msgstr "Muhasebeleştirme tarihi"
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr ""
 
 msgid "Potential Data Loss"
@@ -16839,6 +16866,9 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
 
 msgid "Revenue is previewed once the contract has lines."
+msgstr ""
+
+msgid "Revenue method"
 msgstr ""
 
 msgid "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "Peşin ödeme iskontosunun yüzdesi. İskonto yoksa 0 kullanın."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "Bu tür yeni çalışanların otomatik olarak aldığı izin kümesi; burada düzenleme, yalnızca gelecekteki işe almalar için şablonu değiştirir - mevcut çalışanlar, açıkça toplu güncellenmediği sürece sahip olduklarını tutarlar."
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Çalışmanızın ve stokunuzun bulunduğu fabrikalar, depolar ve tesisler"
 
@@ -22664,8 +22697,8 @@ msgstr "Hangi veri"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi bir boyuta göre"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "Yinelenen faturalama (örneğin kiralık anlaşmalar) aracılığıyla her gün otomatik olarak oluşturulan faturalara ne olur. Ücretleri, erken iade kredileri veya kural ihlalleri olan faturalar her zaman incelemeyi bekler."
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr ""
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Muhasebe fişi kilitli bir dönemde tarihlendirildiğinde ne olur?"

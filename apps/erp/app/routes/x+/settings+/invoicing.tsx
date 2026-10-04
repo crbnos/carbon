@@ -333,9 +333,9 @@ export default function InvoicingSettingsRoute() {
               <CardDescription>
                 <Trans>
                   What happens to invoices created automatically each day from
-                  recurring billing, such as rental agreements. Invoices with
-                  charges, early-return credits or rule violations always wait
-                  for review.
+                  rental agreements and contracts. Invoices with rental charges,
+                  credits, re-bills of voided invoices or rule violations always
+                  wait for review.
                 </Trans>
               </CardDescription>
             </CardHeader>
@@ -358,7 +358,7 @@ export default function InvoicingSettingsRoute() {
                   helperText={
                     invoiceAutomation === "Post and Send via Stripe"
                       ? isStripeConnected
-                        ? t`Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held.`
+                        ? t`Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent.`
                         : t`Connect Stripe in Integrations first`
                       : undefined
                   }
@@ -437,8 +437,8 @@ export default function InvoicingSettingsRoute() {
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Each agreement's salesperson (or its creator) gets a daily
-                  summary of their rental invoices.
+                  Each rental agreement's or contract's salesperson (or its
+                  creator) gets a daily summary of its invoices.
                 </Trans>
               </CardDescription>
             </CardHeader>

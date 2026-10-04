@@ -763,6 +763,12 @@ msgstr "A customer's status changes"
 msgid "A customer's type changes"
 msgstr "A customer's type changes"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 
@@ -1092,6 +1098,9 @@ msgstr "A reusable, versioned set of work instructions attached to a process, gi
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
@@ -2085,6 +2094,9 @@ msgstr "Amend"
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
 msgstr "Amend {0}"
+
+msgid "Amendment"
+msgstr "Amendment"
 
 msgid "Amendments"
 msgstr "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "Bill To"
 msgid "Billed Externally"
 msgstr "Billed Externally"
 
+msgid "Billed through"
+msgstr "Billed through"
+
 msgid "Billed Through"
 msgstr "Billed Through"
 
@@ -4889,6 +4904,9 @@ msgstr "Contract Assets"
 
 msgid "Contract Assets (default)"
 msgstr "Contract Assets (default)"
+
+msgid "Contract type"
+msgstr "Contract type"
 
 msgid "Contract Type"
 msgstr "Contract Type"
@@ -7349,9 +7367,6 @@ msgstr "e.g. the first 3 to 4 weeks"
 msgid "e.g. Zebra 2x1"
 msgstr "e.g. Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
@@ -7381,6 +7396,9 @@ msgstr "Each operation's unused material returns as soon as the operation is don
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
@@ -9726,6 +9744,12 @@ msgstr "Hours/Piece"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 
@@ -10448,6 +10472,9 @@ msgstr "Invoice Location"
 
 msgid "Invoice Number"
 msgstr "Invoice Number"
+
+msgid "Invoice schedule"
+msgstr "Invoice schedule"
 
 msgid "Invoice settlement"
 msgstr "Invoice settlement"
@@ -14878,8 +14905,8 @@ msgstr "Posting date"
 msgid "Posting Date"
 msgstr "Posting Date"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
-msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
+msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 
 msgid "Potential Data Loss"
 msgstr "Potential Data Loss"
@@ -16840,6 +16867,9 @@ msgstr "Revenue invoiced before it is earned, held as a liability and released t
 
 msgid "Revenue is previewed once the contract has lines."
 msgstr "Revenue is previewed once the contract has lines."
+
+msgid "Revenue method"
+msgstr "Revenue method"
 
 msgid "Revenue Method"
 msgstr "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "The percentage of the cash discount. Use 0 for no discount."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "The plants, warehouses, and sites where your work and stock live"
 
@@ -22664,8 +22697,8 @@ msgstr "What data"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "What drove inventory up or down, by any dimension"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "What happens when a journal is dated in a locked period."

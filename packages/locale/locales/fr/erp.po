@@ -763,6 +763,12 @@ msgstr "Le statut d'un client change"
 msgid "A customer's type changes"
 msgstr "Le type d'un client change"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr ""
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "Un enregistrement daté prouvant qu'un instrument de mesure a été vérifié par rapport à une norme traçable ; il réussit sauf si un drapeau nécessitant une action, un ajustement ou une réparation est coché, et réinitialise la date d'échéance suivante de l'instrument."
 
@@ -1092,6 +1098,9 @@ msgstr "Un ensemble réutilisable et versionné de modes opératoires attaché �
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "Une étape de gamme sur un travail lancé, la propre copie d'une opération du travail, portant un statut que l'atelier fait évoluer de À faire à Terminé."
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr ""
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "Un document de ventes qui loue des unités de parc sérialisées à un client aux tarifs jour, semaine et mois, en divisant les périodes de facturation et en générant leurs factures jusqu'à ce que chaque unité soit restituée et que le contrat soit clôturé."
@@ -2084,6 +2093,9 @@ msgstr ""
 
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
+msgstr ""
+
+msgid "Amendment"
 msgstr ""
 
 msgid "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "Facturer à"
 msgid "Billed Externally"
 msgstr ""
 
+msgid "Billed through"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4889,6 +4904,9 @@ msgstr "Actifs de contrats"
 
 msgid "Contract Assets (default)"
 msgstr "Actifs de contrats (par défaut)"
+
+msgid "Contract type"
+msgstr ""
 
 msgid "Contract Type"
 msgstr ""
@@ -7349,9 +7367,6 @@ msgstr "par exemple les 3 à 4 premières semaines"
 msgid "e.g. Zebra 2x1"
 msgstr "p. ex. Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "Le vendeur (ou le créateur) de chaque accord obtient un résumé quotidien de ses factures de location."
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
@@ -7381,6 +7396,9 @@ msgstr "La matière inutilisée de chaque opération est restituée dès que l'o
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Les opérations externalisées de chaque fournisseur de chaque ordre de fabrication vont sur un nouveau bon de commande, ou sur un brouillon existant que vous choisissez."
@@ -9726,6 +9744,12 @@ msgstr "Heures/Pièce"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Comment un procédé groupable exécute son travail groupé : L'exécution séquentielle lance les pièces l'une après l'autre sur une machine (une scie ou une table laser), tandis que l'exécution simultanée les lance ensemble dans une charge unique (un four, une étuve ou un bain de placage)."
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr ""
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr ""
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "Comment un accord de location découpe les périodes de facturation à partir de sa date de début : Calendrier Mois facture chaque mois civil au taux mensuel, au prorata pour un mois partiel, et 28 Jours facture des périodes consécutives de 28 jours tarifées à partir des taux journalier, hebdomadaire et mensuel."
 
@@ -10448,6 +10472,9 @@ msgstr "Lieu de facturation"
 
 msgid "Invoice Number"
 msgstr "Numéro de facture"
+
+msgid "Invoice schedule"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "Règlement de facture"
@@ -14878,7 +14905,7 @@ msgstr "Date de comptabilisation"
 msgid "Posting Date"
 msgstr "Date de comptabilisation"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr ""
 
 msgid "Potential Data Loss"
@@ -16839,6 +16866,9 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "Revenus facturés avant d'être acquis, conservés au passif et libérés vers les revenus par le traitement de reconnaissance à mesure que la période de service s'écoule."
 
 msgid "Revenue is previewed once the contract has lines."
+msgstr ""
+
+msgid "Revenue method"
 msgstr ""
 
 msgid "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "Le pourcentage de remise en trésorerie. Utilisez 0 pour aucune remise."
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "L'ensemble d'autorisations que les nouveaux employés de ce type reçoivent automatiquement; la modification ici change uniquement le modèle pour les embauches futures - les employés existants conservent ce qu'ils ont sauf s'ils sont explicitement mis à jour en masse."
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Les usines, entrepôts et sites où se trouvent votre travail et vos stocks"
 
@@ -22664,8 +22697,8 @@ msgstr "Quelles données"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "Ce qui a fait monter ou descendre les stocks, selon un quelconque axe analytique"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "Ce qui se passe aux factures créées automatiquement chaque jour à partir de la facturation récurrente, comme les accords de location. Les factures avec charges, crédits de retour anticipé ou violations de règles attendent toujours l'examen."
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr ""
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Ce qui se passe quand une écriture est datée dans une période verrouillée."

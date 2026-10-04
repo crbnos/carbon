@@ -763,6 +763,12 @@ msgstr "客户的状态已变更"
 msgid "A customer's type changes"
 msgstr "客户的类型已变更"
 
+msgid "A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced."
+msgstr ""
+
+msgid "A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period."
+msgstr ""
+
 msgid "A dated record proving a gauge was checked against a traceable standard; it passes unless a requires-action, -adjustment, or -repair flag is ticked, and resets the gauge's next-due date."
 msgstr "一份有日期的记录，证明量具已根据可追溯标准进行了检查；除非勾选需要行动、调整或维修标志，否则通过检验，并重置量具的下次到期日期。"
 
@@ -1092,6 +1098,9 @@ msgstr "一套可重用的、版本化的作业指导书，附加到一个工艺
 
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "已下达工单上的工艺路线步骤，工单对工序的自有副本，其状态由生产车间从待办推进到完成。"
+
+msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
+msgstr ""
 
 msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 msgstr "一份销售单据，按日费率、周费率和月费率向客户出租序列化的车队单位，切割计费周期并生成其发票，直到每个单位被归还且协议关闭。"
@@ -2084,6 +2093,9 @@ msgstr ""
 
 #. placeholder {0}: contract.customerContractId
 msgid "Amend {0}"
+msgstr ""
+
+msgid "Amendment"
 msgstr ""
 
 msgid "Amendments"
@@ -3503,6 +3515,9 @@ msgstr "账单收款人"
 msgid "Billed Externally"
 msgstr ""
 
+msgid "Billed through"
+msgstr ""
+
 msgid "Billed Through"
 msgstr ""
 
@@ -4889,6 +4904,9 @@ msgstr "合同资产"
 
 msgid "Contract Assets (default)"
 msgstr "合同资产（默认）"
+
+msgid "Contract type"
+msgstr ""
 
 msgid "Contract Type"
 msgstr ""
@@ -7349,9 +7367,6 @@ msgstr "例如前3到4周"
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
-msgid "Each agreement's salesperson (or its creator) gets a daily summary of their rental invoices."
-msgstr "每个协议的销售代表（或其创建者）每日获得其租赁发票的汇总。"
-
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
@@ -7381,6 +7396,9 @@ msgstr "每个工序的未使用原材料在工序完成后立即退回。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr ""
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
@@ -9726,6 +9744,12 @@ msgstr "小时/件"
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
 
+msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
+msgstr ""
+
+msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
+msgstr ""
+
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
 msgstr "租赁协议如何从开始日期开始分割计费周期：日历月按月费率对每个日历月进行计费，部分月份按比例分配；28天对连续28天周期按日、周和月费率进行计费。"
 
@@ -10448,6 +10472,9 @@ msgstr "发票地点"
 
 msgid "Invoice Number"
 msgstr "发票号码"
+
+msgid "Invoice schedule"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "发票结算"
@@ -14878,7 +14905,7 @@ msgstr "过账日期"
 msgid "Posting Date"
 msgstr "过账日期"
 
-msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. Customers without a linked Stripe customer are held."
+msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr ""
 
 msgid "Potential Data Loss"
@@ -16839,6 +16866,9 @@ msgid "Revenue invoiced before it is earned, held as a liability and released to
 msgstr "在获得前开票的收入，作为负债持有并随着服务期间推移由识别运行释放为收入。"
 
 msgid "Revenue is previewed once the contract has lines."
+msgstr ""
+
+msgid "Revenue method"
 msgstr ""
 
 msgid "Revenue Method"
@@ -20288,6 +20318,9 @@ msgstr "现金折扣的百分比。使用 0 表示无折扣。"
 msgid "The permission set new employees of this type receive automatically; editing here changes the template for future hires only — existing employees keep what they have unless explicitly bulk-updated."
 msgstr "该类型的新员工自动接收的权限集；在此处编辑仅更改模板以供将来雇用 - 现有员工保留他们拥有的内容，除非明确进行批量更新。"
 
+msgid "The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can move, split, and merge them, as long as each line still bills its full amount."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "您的工作和库存所在的工厂、仓库和场所"
 
@@ -22664,8 +22697,8 @@ msgstr "什么数据"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "什么驱动库存管理增加或减少，按任何维度"
 
-msgid "What happens to invoices created automatically each day from recurring billing, such as rental agreements. Invoices with charges, early-return credits or rule violations always wait for review."
-msgstr "每天从定期计费（如租赁协议）自动创建的发票会发生什么情况。包含费用、提前退回信用或规则违规的发票始终需要评审。"
+msgid "What happens to invoices created automatically each day from rental agreements and contracts. Invoices with rental charges, credits, re-bills of voided invoices or rule violations always wait for review."
+msgstr ""
 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "当凭证的日期在已锁定的期间时会发生什么。"
