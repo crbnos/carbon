@@ -90,6 +90,7 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.quantity",
       "salesInvoiceLine.unitPrice",
       "salesInvoiceLine.convertedUnitPrice",
+      "salesInvoiceLine.discountPercent",
       "salesInvoiceLine.shippingCost",
       "salesInvoiceLine.addOnCost",
       "salesInvoiceLine.nonTaxableAddOnCost",
@@ -264,6 +265,7 @@ export async function loadSalesInvoices(
         const quantity = Number(line.quantity) || 0;
         const unitPrice = Number(line.unitPrice) || 0;
         const taxPercent = Number(line.taxPercent) || 0;
+        const discountPercent = Number(line.discountPercent) || 0;
         const convertedUnitPrice =
           line.convertedUnitPrice === null ||
           line.convertedUnitPrice === undefined
@@ -281,8 +283,9 @@ export async function loadSalesInvoices(
           addOnCost: Number(line.addOnCost ?? 0),
           nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
           convertedUnitPrice,
+          discountPercent,
           taxPercent,
-          lineAmount: quantity * unitPrice
+          lineAmount: quantity * unitPrice * (1 - discountPercent)
         };
       }),
       updatedAt: row.updatedAt ?? datetime.timestamp(),

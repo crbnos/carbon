@@ -324,6 +324,57 @@ describe("buildSalesDocumentComponents", () => {
     });
   });
 
+  it("reconciles a discounted line against the view's net totals and sends the net unit price", () => {
+    const source = fixture();
+    // 4 × 25 base list, 20% off → 80 base merchandise (64 EUR at 0.8). The
+    // add-ons and shipping are not discounted; tax is on the discounted base.
+    // View: subtotal 80 + 20 + 3 + 10 = 113, tax 0.1 × (80 + 20 + 10) = 11,
+    // total 113 + 11 + 5 header = 129.
+    const document = buildSalesDocumentComponents({
+      ...source,
+      subtotal: 113,
+      totalTax: 11,
+      totalAmount: 129,
+      balance: 129,
+      lines: [
+        {
+          ...source.lines[0]!,
+          quantity: 4,
+          unitPrice: 25,
+          convertedUnitPrice: 20,
+          discountPercent: 0.2,
+          lineAmount: 80
+        }
+      ]
+    } as Accounting.SalesInvoice);
+    expect(document).toMatchObject({
+      subtotal: 94.4,
+      totalTax: 8.8,
+      totalAmount: 103.2
+    });
+    expect(document.components[0]).toMatchObject({
+      kind: "Merchandise",
+      quantity: 4,
+      unitAmount: 16,
+      netAmount: 64,
+      taxAmount: 6.4
+    });
+    // Add-ons stay at full price.
+    expect(
+      document.components.find((c) => c.kind === "TaxableAddOn")
+    ).toMatchObject({ netAmount: 16 });
+  });
+
+  it("refuses a discounted line when the view's subtotal is not net of the discount", () => {
+    const source = fixture();
+    expect(() =>
+      buildSalesDocumentComponents({
+        ...source,
+        lines: [{ ...source.lines[0]!, discountPercent: 0.2 }]
+      } as Accounting.SalesInvoice)
+    ).toThrow(/subtotal does not reconcile/);
+  });
+
   it("rejects a document mirror that contradicts the stored FX snapshot", () => {
     const source = fixture();
     source.lines[0]!.convertedUnitPrice = 100;

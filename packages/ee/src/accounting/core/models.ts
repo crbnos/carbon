@@ -1271,10 +1271,17 @@ export const SalesInvoiceLineSchema = z.object({
   // not every provider selects it; push this to any payload that declares a
   // currency code, since unitPrice above is base.
   convertedUnitPrice: withNullable(z.number()).optional(),
+  // Line discount, a FRACTION in [0, 1] (the column's CHECK). It discounts the
+  // merchandise (quantity × unitPrice) only — add-ons and shipping are never
+  // discounted — and applies equally to `unitPrice` and `convertedUnitPrice`,
+  // which are both LIST prices. Absent means 0: lines mapped back from a
+  // provider carry its net price already.
+  discountPercent: z.number().min(0).max(1).optional(),
   shippingCost: z.number().default(0),
   addOnCost: z.number().default(0),
   nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
+  // Merchandise net of the line discount, in base currency.
   lineAmount: z.number()
 });
 

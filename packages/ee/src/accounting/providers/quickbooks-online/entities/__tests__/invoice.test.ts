@@ -52,6 +52,29 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
     ]);
   });
 
+  it("sends a discounted line at its NET unit price, so Qty × UnitPrice = Amount", () => {
+    const [line] = buildQboInvoiceLines(
+      lineArguments(
+        [
+          makeLine({
+            quantity: 4,
+            unitPrice: 25,
+            discountPercent: 0.2,
+            lineAmount: 80
+          })
+        ],
+        "77"
+      )
+    );
+    expect(line?.Amount).toBe(80);
+    expect(line?.SalesItemLineDetail?.Qty).toBe(4);
+    expect(line?.SalesItemLineDetail?.UnitPrice).toBe(20);
+    expect(
+      (line?.SalesItemLineDetail?.Qty ?? 0) *
+        (line?.SalesItemLineDetail?.UnitPrice ?? 0)
+    ).toBe(line?.Amount);
+  });
+
   it("gives a line with no Carbon item the synthetic sales item", () => {
     const lines = buildQboInvoiceLines(
       lineArguments(
@@ -401,7 +424,8 @@ function lineArguments(
 ) {
   const source = fullInvoice();
   const subtotal = lines.reduce(
-    (sum, line) => sum + line.quantity * line.unitPrice,
+    (sum, line) =>
+      sum + line.quantity * line.unitPrice * (1 - (line.discountPercent ?? 0)),
     0
   );
   const document = buildSalesDocumentComponents({

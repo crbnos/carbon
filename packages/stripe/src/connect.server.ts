@@ -544,9 +544,14 @@ export async function upsertConnectCustomer(
  * definition of what a Carbon sales invoice is worth (migration
  * `20260702224219_fix-ar-ap-legacy-paid.sql`):
  *
- *   subtotal = Σ (quantity·unitPrice + addOnCost + nonTaxableAddOnCost + shippingCost)
- *   totalTax = Σ taxPercent·(quantity·unitPrice + addOnCost + shippingCost)
+ *   net      = unitPrice·(1 − discountPercent)
+ *   subtotal = Σ (quantity·net + addOnCost + nonTaxableAddOnCost + shippingCost)
+ *   totalTax = Σ taxPercent·(quantity·net + addOnCost + shippingCost)
  *   total    = subtotal + totalTax + salesInvoiceShipment.shippingCost
+ *
+ * The line discount is already applied by the caller: `unitPrice` here IS the
+ * net price (`toStripeInvoiceLines`), so the Stripe items and
+ * `expectedConnectInvoiceTotal` read one number and cannot disagree.
  *
  * Three consequences worth stating out loud, because each one is a way to bill
  * the customer an amount Carbon's ledger disagrees with:
@@ -560,7 +565,12 @@ export type ConnectInvoiceLineInput = {
   description: string;
   /** `salesInvoiceLine.quantity` — NUMERIC, so genuinely fractional. */
   quantity: number;
-  /** Per-unit price, in the invoice currency (never the `converted*` mirror). */
+  /**
+   * Per-unit price NET of the line discount — `unitPrice × (1 − discountPercent)`
+   * at internal scale — in the invoice currency (never the `converted*` mirror).
+   * The discount covers merchandise only; the flat components below are never
+   * discounted.
+   */
   unitPrice: number;
   /** Flat per-line surcharge, taxable. Not multiplied by quantity. */
   addOnCost?: number;
@@ -619,6 +629,10 @@ export type ConnectInvoiceInput = {
  * What Carbon says this invoice is worth, by the `salesInvoices` view's own
  * arithmetic. Exported so callers gate on the same number Stripe will be
  * reconciled against instead of an independent (and quietly different) sum.
+ *
+ * `line.unitPrice` is the NET unit price (see `ConnectInvoiceLineInput`), the
+ * same value each Stripe unit item is created with, so the drift check against
+ * Stripe's draft total holds for discounted lines too.
  */
 export function expectedConnectInvoiceTotal(params: {
   lines: ConnectInvoiceLineInput[];

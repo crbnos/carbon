@@ -6,7 +6,12 @@ import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getDocumentType, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { datetime, stripSpecialCharacters } from "@carbon/utils";
+import {
+  datetime,
+  formatPercent,
+  round,
+  stripSpecialCharacters
+} from "@carbon/utils";
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ConnectInvoiceLineInput } from "./connect.server";
@@ -231,29 +236,45 @@ export type SalesInvoiceLineRow =
  * is passed through untouched — in particular `taxPercent` stays the fraction
  * the column stores, and the `converted*` mirrors are ignored because Stripe
  * bills in the invoice's own currency, not the company's base currency.
+ *
+ * The one exception is the line discount (`discountPercent`, a fraction): the
+ * unit price sent is the NET price, `unitPrice × (1 − discountPercent)` at
+ * internal scale, and the description says "(20% off)". It discounts the
+ * merchandise only, as the `salesInvoices` view does — add-ons and shipping
+ * pass through at full price. Stripe coupons are not used: a coupon discounts
+ * the whole invoice, and per-line discounts would not round-trip.
  */
 export function toStripeInvoiceLines(
   lines: SalesInvoiceLineRow[]
 ): ConnectInvoiceLineInput[] {
   return lines
     .filter((line) => line.invoiceLineType !== "Comment")
-    .map((line) => ({
-      description: line.description ?? line.itemReadableId ?? "Item",
-      quantity: line.quantity ?? 0,
-      unitPrice: line.unitPrice ?? 0,
-      addOnCost: line.addOnCost ?? 0,
-      shippingCost: line.shippingCost ?? 0,
-      nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
-      taxPercent: line.taxPercent ?? 0,
-      unitOfMeasureCode: line.unitOfMeasureCode,
-      metadata: {
-        carbonLineId: line.id ?? "",
-        carbonItemId: line.itemId ?? "",
-        carbonLineType: line.invoiceLineType ?? "",
-        carbonSalesOrderId: line.salesOrderId ?? "",
-        carbonSalesOrderLineId: line.salesOrderLineId ?? ""
-      }
-    }));
+    .map((line) => {
+      const description = line.description ?? line.itemReadableId ?? "Item";
+      const discountPercent = line.discountPercent ?? 0;
+      const unitPrice = line.unitPrice ?? 0;
+      return {
+        description: discountPercent
+          ? `${description} (${formatPercent(discountPercent, "en-US")} off)`
+          : description,
+        quantity: line.quantity ?? 0,
+        unitPrice: discountPercent
+          ? round(unitPrice * (1 - discountPercent))
+          : unitPrice,
+        addOnCost: line.addOnCost ?? 0,
+        shippingCost: line.shippingCost ?? 0,
+        nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
+        taxPercent: line.taxPercent ?? 0,
+        unitOfMeasureCode: line.unitOfMeasureCode,
+        metadata: {
+          carbonLineId: line.id ?? "",
+          carbonItemId: line.itemId ?? "",
+          carbonLineType: line.invoiceLineType ?? "",
+          carbonSalesOrderId: line.salesOrderId ?? "",
+          carbonSalesOrderLineId: line.salesOrderLineId ?? ""
+        }
+      };
+    });
 }
 
 /**

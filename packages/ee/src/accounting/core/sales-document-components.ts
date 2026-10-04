@@ -133,6 +133,11 @@ function finite(value: number, name: string): number {
   return value;
 }
 
+/** The line discount, a fraction in [0, 1]; absent is no discount. */
+function lineDiscount(line: Accounting.SalesInvoiceLine): number {
+  return finite(line.discountPercent ?? 0, "Line discount");
+}
+
 function precision(value: number): void {
   if (!Number.isInteger(value) || value < 0 || value > SCALE) {
     throw new Error("Missing or unsupported currency decimal precision");
@@ -217,8 +222,16 @@ export function buildSalesDocumentComponents(
     const quantity = args.quantity ?? 1;
     let unitAmount = toDocumentAmount(baseNet, rate, decimals);
     if (kind === "Merchandise" && line) {
-      const convertedUnit = line.convertedUnitPrice;
-      const expectedUnit = finite(line.unitPrice * rate, "Document unit price");
+      // Both prices are LIST prices; the provider is sent the NET unit price,
+      // so the line discount is applied to each before they are compared. A
+      // discounted price is a rate, so it is rounded to storage scale; an
+      // undiscounted mirror is sent exactly as stored.
+      const discount = lineDiscount(line);
+      const net = 1 - discount;
+      const netUnit = line.unitPrice * net;
+      const convertedUnit =
+        line.convertedUnitPrice == null ? null : line.convertedUnitPrice * net;
+      const expectedUnit = finite(netUnit * rate, "Document unit price");
       if (
         convertedUnit != null &&
         Math.abs(
@@ -231,7 +244,11 @@ export function buildSalesDocumentComponents(
         );
       }
       unitAmount =
-        convertedUnit ?? toDocumentAmount(line.unitPrice, rate, SCALE);
+        convertedUnit == null
+          ? toDocumentAmount(netUnit, rate, SCALE)
+          : discount
+            ? round(convertedUnit)
+            : convertedUnit;
     }
     raw.push({
       baseNet,
@@ -256,7 +273,9 @@ export function buildSalesDocumentComponents(
     push({
       kind: "Merchandise",
       line,
-      baseNet: line.quantity * line.unitPrice,
+      // The same expression `calculateSalesPostingAmounts` and the
+      // `salesInvoices` view use, so the reconciliation above holds.
+      baseNet: line.quantity * line.unitPrice * (1 - lineDiscount(line)),
       taxPercent: line.taxPercent,
       quantity: line.quantity,
       description: line.description ?? line.itemCode ?? "Invoice line"
