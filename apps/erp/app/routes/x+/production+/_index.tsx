@@ -819,14 +819,15 @@ function WorkCenterCards({
         return (
           <Card
             key={workCenter.id}
-            className="p-0 h-[300px] col-span-6 lg:col-span-3 xl:col-span-2"
+            className={cn(
+              "p-0 h-[300px] col-span-6 lg:col-span-3 xl:col-span-2",
+              isBlocked && "bg-red-100 dark:bg-red-900/50"
+            )}
           >
             <HStack
               className={cn(
-                "justify-between w-full relative rounded-t-lg",
-                isBlocked
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400"
-                  : ""
+                "justify-between w-full relative",
+                isBlocked && "text-red-800 dark:text-red-400"
               )}
             >
               <CardHeader>
@@ -863,7 +864,14 @@ function WorkCenterCards({
                 )}
               </CardAction>
             </HStack>
-            <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
+            <CardContent
+              className={cn(
+                "flex items-start justify-start p-6 pt-3 border-t",
+                // the content's own dark background is translucent; keep the
+                // red card color from bleeding through it
+                isBlocked && "dark:bg-card"
+              )}
+            >
               {!hasEvents ? (
                 <p className="text-muted-foreground text-center w-full h-full flex flex-col gap-2 items-center justify-center text-sm">
                   <Trans>Inactive</Trans>
