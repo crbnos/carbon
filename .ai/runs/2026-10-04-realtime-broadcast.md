@@ -48,3 +48,38 @@ The cause is not confirmed. Test it again in Task 21.
 | Rename 1 customer while the tab is open | Pass. The cached list shows the new name within 3 seconds. |
 
 Not measured: the cost of the log insert on a write, and the reader on a large company.
+
+## 2026-10-05 — final verification
+
+Automated gates:
+
+| Gate | Result |
+|------|--------|
+| `pnpm run lint` | Pass. 35 tasks. |
+| `pnpm run test` with the local database | Pass. 33 tasks. |
+| Typecheck: `erp`, `mes`, `@carbon/query`, `@carbon/react`, `@carbon/auth`, `@carbon/database`, `@carbon/checks`, `@carbon/jobs`, `@carbon/viewer` | Pass. Each one ran alone. |
+| `realtime-broadcast.test.sql` | Pass. |
+| `authz check` | Pass. 0 helpers, 0 tables, 0 event triggers. |
+
+Browser checks on the local stack (ERP and MES dev servers, satellite demo company):
+
+| Check | Result |
+|-------|--------|
+| An operator finishes an operation in the MES. The ERP job page in a second tab shows status `Done` with no reload. | Pass. The ERP tab revalidated 1 time. The MES redirected to the operations list. |
+| A change to a job operation shows on the ERP bill of process within 3 seconds. | Pass. |
+| The ERP sales orders list and the MES operations page revalidate 1 time for 1 change. | Pass. |
+| Reload with no change: 1 `table_changes_since` request, 0 table requests. | Pass. |
+| Rename 1 customer while the tab is closed: 1 read of that row only. | Pass. |
+| A new notification shows in the bell with no reload. | Pass. The count went to 1 and the inbox showed the row. |
+| Another writer adds a customer type while a form is open. The picker list updates. | Pass. 4 rows became 5 with 1 refetch. |
+| Save a storage unit. The cached storage-unit list refetches with the new name. | Pass. The route has no `clientAction`. |
+| A setting saved through `useAction` shows its toast 1 time. | Pass. |
+| The 5 module dashboards load their KPI queries. | Pass. |
+
+Not checked:
+
+- Company switch. The local stack has 1 company.
+- The MES "Complete Batch" flow. The demo data has no active batch.
+- Two signed-in users at the same time. The second writer was a SQL statement.
+- `/self-review` has not run on the branch.
+- The first message after the first private join on a new Realtime server. It failed 1 time and was not reproduced.

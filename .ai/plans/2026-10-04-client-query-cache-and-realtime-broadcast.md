@@ -26,7 +26,7 @@
 - [x] Task 18: Add `useLoaderQuery` and migrate the `.load()` call sites (13 event-driven sites stay on `useFetcher`: Linear and Jira issue search, the Onshape sync steps, the Stripe customer lookup, the 2 report drill-downs, the MES issue-material modal)
 - [x] Task 19: Add `useAction` and migrate the submit call sites (98 single-condition effects; the 133 effects with several branches are a follow-up PR, user decision 2026-10-05)
 - [x] Task 20: Update the rules, the lessons and the `AGENTS.md` files
-- [ ] Task 21: Run the full verification and the browser tests
+- [x] Task 21: Run the full verification and the browser tests
 
 ## Dependencies
 
