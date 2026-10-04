@@ -28,13 +28,11 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure,
-  useMount
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -672,13 +670,9 @@ Item.displayName = "Item";
 export default Item;
 
 export const useConfigurableItems = () => {
-  const configurableItemsLoader = useFetcher<{
+  const configurableItemsLoader = useLoaderQuery<{
     data: { itemId: string }[] | null;
-  }>();
-
-  useMount(() => {
-    configurableItemsLoader.load(path.to.api.itemConfigurable);
-  });
+  }>(path.to.api.itemConfigurable);
 
   const configurableItemIds = useMemo(() => {
     return (configurableItemsLoader.data?.data ?? []).map((c) => c.itemId);

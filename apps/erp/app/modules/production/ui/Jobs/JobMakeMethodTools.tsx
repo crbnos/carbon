@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -730,13 +731,9 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
 
 function CompletedJobMethodForm({ currentJobId }: { currentJobId: string }) {
   const { t } = useLingui();
-  const jobsFetcher = useFetcher<{
+  const jobsFetcher = useLoaderQuery<{
     data: { id: string; jobId: string }[] | null;
-  }>();
-
-  useMount(() => {
-    jobsFetcher.load(`${path.to.api.jobs}?status=Completed&status=Closed`);
-  });
+  }>(`${path.to.api.jobs}?status=Completed&status=Closed`);
 
   const jobOptions = useMemo(
     () =>

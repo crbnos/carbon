@@ -4,6 +4,7 @@
 
 import type { Result } from "@carbon/auth";
 import { Hidden, Select, Submit, TextArea, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -36,16 +37,11 @@ export function QualityIssueModal({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<Result>();
-  const issueTypeFetcher =
-    useFetcher<PostgrestResponse<{ id: string; name: string }>>();
+  const issueTypeFetcher = useLoaderQuery<
+    PostgrestResponse<{ id: string; name: string }>
+  >(isOpen ? path.to.api.qualityIssueTypes : null);
 
   const issueTypes = issueTypeFetcher.data?.data ?? [];
-
-  useEffect(() => {
-    if (isOpen) {
-      issueTypeFetcher.load(path.to.api.qualityIssueTypes);
-    }
-  }, [isOpen, issueTypeFetcher.load]);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.success) {
