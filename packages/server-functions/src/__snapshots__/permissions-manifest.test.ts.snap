@@ -105,6 +105,10 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
     },
   },
+  "create-contract-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",

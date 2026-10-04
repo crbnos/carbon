@@ -2848,6 +2848,9 @@ msgstr "Czy chcesz usunąć {0} z listy dostawców dla tego artykułu? Tej czynn
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Na pewno chcesz usunąć {label} z tej umowy?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Czy chcesz usunąć {supplierName} z listy dostawców dla tego artykułu? Tej czynności nie można cofnąć."
 
@@ -3997,6 +4000,9 @@ msgstr "Zmień dokument"
 
 msgid "Change Inspection Plan"
 msgstr "Zmień plan kontroli"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Zawiadomienie o zmianie"
@@ -6188,6 +6194,12 @@ msgstr "Domyślny okres użytkowania, który jest automatycznie wypełniany dla 
 msgid "Defaults"
 msgstr "Ustawienia domyślne"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Odroczenie"
 
@@ -6814,6 +6826,9 @@ msgstr "Dni Rabatu"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Dni rabatu po {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Szacunki vs Rzeczywistość"
 
 msgid "Estimator"
 msgstr "Estymator"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Wieczór, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Uruchomienie i akceptacja"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Wdrożenie i zatwierdzenie"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "Harmonogram wdrożenia zostanie utrzymany, jeśli każdy etap zostanie ukończony zgodnie z planem"
@@ -14185,6 +14206,9 @@ msgstr "pracownicy"
 msgid "People"
 msgstr "Pracownicy"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "na dzień"
 
@@ -15320,6 +15344,9 @@ msgstr "Strefy cenowe oparte na ilości dla tego nadpisania; zastosowana cena je
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Ilość: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Kwartalnie"
@@ -16484,6 +16511,9 @@ msgstr "Przychody ze sprzedaży i wydatki za okres"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Przychody ze sprzedaży zarobione, ale jeszcze niezafakturowane, takie jak czynsz za dni, w których jednostka była już wynajmowana; przebieg rozpoznania je nalicza, a faktura za ten okres je likwiduje."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Konto księgowe przychodów ze sprzedaży do ujęcia na zawarciu leasingu finansowego za bieżącą wartość rat leasingu."
 
@@ -16495,6 +16525,9 @@ msgstr "Konto księgowe przychodów ze sprzedaży dla przychodów z wynajmu oper
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Przychody ze sprzedaży zafakturowane zanim są zarobione, przechowywane jako zobowiązanie i zwolnione do przychodów przez przebieg rozpoznania w miarę upływu okresu usługi."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Ujęcie Przychodów"
@@ -16510,6 +16543,9 @@ msgstr "Przychody ze sprzedaży ujęte równomiernie dla wynajmu operacyjnego i 
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Przychody zaplanowane do rozpoznania do tego okresu to nadal Zaplanowano: odroczone przychody z faktur i wynajem, które nie zostały zaksięgowane przez przebieg rozpoznania przychodów. Zaproponuj i uruchom przebieg dla tego okresu, aby przychody trafiły do ksiąg. Pomiń z uzasadnieniem, jeśli nic nie powinno być rozpoznane."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Pokazywanie 1000 najlepszych grup wg kwoty"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plików PDF"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Wyświetlane użytkownikowi, gdy ta reguła się nie powiedzie."
 
@@ -19166,6 +19205,9 @@ msgstr "Zadania, które muszą być ukończone zanim ten problem zostanie zamkni
 
 msgid "Tax"
 msgstr "Podatek"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Podatek i dodatkowe koszty"

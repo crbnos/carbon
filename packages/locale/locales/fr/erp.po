@@ -2848,6 +2848,9 @@ msgstr "Êtes-vous sûr de vouloir retirer {0} en tant que fournisseur pour cet 
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Êtes-vous sûr de vouloir retirer {label} de cet accord ?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir retirer {supplierName} en tant que fournisseur pour cet article ? Cette action ne peut pas être annulée."
 
@@ -3997,6 +4000,9 @@ msgstr "Modifier le document"
 
 msgid "Change Inspection Plan"
 msgstr "Modifier le plan de contrôle"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Avis de modification"
@@ -6188,6 +6194,12 @@ msgstr "Durée d'utilité par défaut qui se remplit préalablement sur les nouv
 msgid "Defaults"
 msgstr "Paramètres par défaut"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Revenu reporté"
 
@@ -6814,6 +6826,9 @@ msgstr "Jours de Remise"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Jours de remise après {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Estimations vs Réalités"
 
 msgid "Estimator"
 msgstr "Estimateur"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Bonsoir, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Mise en service et acceptation"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Mise en production et approbation de la signature"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "Le calendrier de mise en production est respecté si chaque étape est validée selon le calendrier"
@@ -14185,6 +14206,9 @@ msgstr "personnel"
 msgid "People"
 msgstr "Personnes"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "par jour"
 
@@ -15320,6 +15344,9 @@ msgstr "Niveaux de tarification basés sur la quantité pour cette substitution 
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Quantité : {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Trimestriel"
@@ -16484,6 +16511,9 @@ msgstr "Revenus et charges sur une période"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Revenus acquis mais pas encore facturés, par exemple le loyer pour les jours pendant lesquels une unité a déjà été en location ; le traitement de reconnaissance les comptabilise et la facture de cette période les efface."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Compte général de revenus crédité au début d'un contrat de location-vente pour la valeur actuelle des paiements de location."
 
@@ -16495,6 +16525,9 @@ msgstr "Compte général de revenus pour les produits de location d'exploitation
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Revenus facturés avant d'être acquis, conservés au passif et libérés vers les revenus par le traitement de reconnaissance à mesure que la période de service s'écoule."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Reconnaissance des revenus"
@@ -16510,6 +16543,9 @@ msgstr "Revenu reconnu en ligne droite pour les locations d'exploitation et pour
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Les revenus prévus pour être comptabilisés sur ou avant la fin de cette période sont toujours planifiés : les revenus de facture différés et la location qui n'ont pas été comptabilisés par une exécution de comptabilisation des revenus. Proposez et comptabilisez l'exécution pour cette période afin que les revenus atteignent le grand livre. Ignorez avec une raison si rien ne doit être comptabilisé."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Affichage des 1 000 meilleurs groupes par montant"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Affiché en arrière-plan discret sur chaque page des PDF générés"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Affiché à l'utilisateur quand cette règle échoue."
 
@@ -19166,6 +19205,9 @@ msgstr "Tâches qui doivent être complétées avant la fermeture de ce problèm
 
 msgid "Tax"
 msgstr "Taxe"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Taxe et coûts supplémentaires"

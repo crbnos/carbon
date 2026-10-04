@@ -2848,6 +2848,9 @@ msgstr "您确定要将 {0} 从此项目的供应商中移除吗？此操作无�
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "您确定要从此协议中移除 {label} 吗？"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
 
@@ -3997,6 +4000,9 @@ msgstr "变更文件"
 
 msgid "Change Inspection Plan"
 msgstr "更改检验计划"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "变更通知"
@@ -6188,6 +6194,12 @@ msgstr "新增此类资产时预填充的默认使用年限"
 msgid "Defaults"
 msgstr "默认值"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "递延"
 
@@ -6814,6 +6826,9 @@ msgstr "折扣天数"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "折扣天数（{selectedCalculationMethod}之后）"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "估计值与实际值"
 
 msgid "Estimator"
 msgstr "估价员"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "傍晚，{name}。"
@@ -9333,6 +9351,9 @@ msgstr "上线和验收"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "上线和验收签字"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "如果每个关键节点都按计划完成，上线时间是稳定的"
@@ -14185,6 +14206,9 @@ msgstr "人员"
 msgid "People"
 msgstr "人员"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "每天"
 
@@ -15320,6 +15344,9 @@ msgstr "此覆盖的基于数量的定价层；应用的单价是满足订单行
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "数量：{0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "每季度"
@@ -16484,6 +16511,9 @@ msgstr "期间的收入和费用"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "已赚取但尚未开票的收入，例如单位已租赁天数的租金；识别运行会对其进行计提，相关期间的发票会将其结转。"
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "在销售型租赁开始时贷记的收入总账科目，用于记录租赁支付现值。"
 
@@ -16495,6 +16525,9 @@ msgstr "收入总账科目，用于记录经营租赁收入（在租赁期内采
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "在获得前开票的收入，作为负债持有并随着服务期间推移由识别运行释放为收入。"
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "收入确认"
@@ -16510,6 +16543,9 @@ msgstr "对经营租赁和可变租赁费用采用直线法确认的收入"
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "应在本期末或之前确认的收入仍处于已计划状态：延期的发票收入和尚未通过收入确认运行过账的租金。为本期提出并运行，以便收入到达分类账。如果没有应确认的内容，可以跳过并说明理由。"
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "按金额显示前1,000个分组"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
@@ -19166,6 +19205,9 @@ msgstr "必须在此问题关闭前完成的任务；选择此处的操作会将
 
 msgid "Tax"
 msgstr "税"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "税 & 额外成本"

@@ -2848,6 +2848,9 @@ msgstr "Sei sicuro di voler rimuovere {0} come fornitore per questo articolo? Qu
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Sei sicuro di voler rimuovere {label} da questo accordo?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sei sicuro di voler rimuovere {supplierName} come fornitore per questo articolo? Questa azione non può essere annullata."
 
@@ -3997,6 +4000,9 @@ msgstr "Modifica Documento"
 
 msgid "Change Inspection Plan"
 msgstr "Modifica Piano di controllo"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Avviso di modifica"
@@ -6188,6 +6194,12 @@ msgstr "Vita utile predefinita che viene precompilata su nuovi beni in questa cl
 msgid "Defaults"
 msgstr "Impostazioni predefinite"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Differimento"
 
@@ -6814,6 +6826,9 @@ msgstr "Giorni di Sconto"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Giorni di sconto dopo {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Stime vs Effettivi"
 
 msgid "Estimator"
 msgstr "Stimatore"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Sera, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Go-Live e Accettazione"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Go-live e accettazione formale"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "La tempistica di go-live rimane valida se ogni gate viene superato secondo la pianificazione"
@@ -14185,6 +14206,9 @@ msgstr "personale"
 msgid "People"
 msgstr "Persone"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "al giorno"
 
@@ -15320,6 +15344,9 @@ msgstr "Scaglioni di prezzo basati sulla quantità per questa forzatura; il prez
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Quantità: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Trimestrale"
@@ -16484,6 +16511,9 @@ msgstr "Ricavi e spese in un periodo"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Ricavi guadagnati ma non ancora Fatturati, come il noleggio per i giorni in cui un'unità è già stata in noleggio; il run di riconoscimento li accantona e la Fattura per quel periodo li estingue."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Conto contabile «Ricavi» accreditato all'inizio di una locazione di tipo vendita per il valore attuale dei pagamenti di locazione."
 
@@ -16495,6 +16525,9 @@ msgstr "Conto contabile «Ricavi» per il reddito da noleggio operativo riconosc
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività e rilasciati ai Ricavi dal run di riconoscimento al passare del periodo di servizio."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Riconoscimento dei ricavi"
@@ -16510,6 +16543,9 @@ msgstr "Ricavi riconosciuti in linea retta per le locazioni operative e per i ca
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "I ricavi programmati per essere riconosciuti entro o prima della fine di questo periodo sono ancora Pianificati: ricavi fatturati differiti e noleggi che non sono stati registrati da un'esecuzione di riconoscimento dei ricavi. Proponi e registra l'esecuzione per questo periodo in modo che i ricavi raggiungano il registro. Salta con un motivo se nulla deve essere riconosciuto."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Visualizzazione dei primi 1.000 gruppi per importo"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrato all'utente quando questa regola fallisce."
 
@@ -19166,6 +19205,9 @@ msgstr "Attività che devono essere completate prima che questo problema possa e
 
 msgid "Tax"
 msgstr "Imposta"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Imposta e costi aggiuntivi"

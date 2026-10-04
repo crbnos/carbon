@@ -2848,6 +2848,9 @@ msgstr "Are you sure you want to remove {0} as a supplier for this item? This ca
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Are you sure you want to remove {label} from this agreement?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr "Are you sure you want to remove {lineName} from this contract?"
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 
@@ -3997,6 +4000,9 @@ msgstr "Change Document"
 
 msgid "Change Inspection Plan"
 msgstr "Change Inspection Plan"
+
+msgid "Change lines with Amend."
+msgstr "Change lines with Amend."
 
 msgid "Change notice"
 msgstr "Change notice"
@@ -6188,6 +6194,12 @@ msgstr "Default useful life that pre-fills on new assets in this class."
 msgid "Defaults"
 msgstr "Defaults"
 
+msgid "Defaults to the end date"
+msgstr "Defaults to the end date"
+
+msgid "Defaults to the go-live or start date"
+msgstr "Defaults to the go-live or start date"
+
 msgid "Deferral"
 msgstr "Deferral"
 
@@ -6814,6 +6826,9 @@ msgstr "Discount Days"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Discount Days after {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr "Discount Ends On"
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Estimates vs Actuals"
 
 msgid "Estimator"
 msgstr "Estimator"
+
+msgid "Even Period"
+msgstr "Even Period"
 
 msgid "Evening, {name}."
 msgstr "Evening, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Go-Live and Acceptance"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Go-live and acceptance sign-off"
+
+msgid "Go-Live Date"
+msgstr "Go-Live Date"
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "Go-live timing holds if each gate is cleared on schedule"
@@ -14185,6 +14206,9 @@ msgstr "people"
 msgid "People"
 msgstr "People"
 
+msgid "Per"
+msgstr "Per"
+
 msgid "per day"
 msgstr "per day"
 
@@ -15320,6 +15344,9 @@ msgstr "Quantity-based pricing tiers for this override; the unit price applied i
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Quantity: {0}"
+
+msgid "Quarter"
+msgstr "Quarter"
 
 msgid "Quarterly"
 msgstr "Quarterly"
@@ -16484,6 +16511,9 @@ msgstr "Revenue and expenses over a period"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 
+msgid "Revenue End"
+msgstr "Revenue End"
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 
@@ -16495,6 +16525,9 @@ msgstr "Revenue GL account for operating rental income recognized straight-line 
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
+
+msgid "Revenue Method"
+msgstr "Revenue Method"
 
 msgid "Revenue Recognition"
 msgstr "Revenue Recognition"
@@ -16510,6 +16543,9 @@ msgstr "Revenue recognized straight-line for operating rentals and for variable 
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+
+msgid "Revenue Start"
+msgstr "Revenue Start"
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Showing the top 1,000 groups by amount"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"
 
+msgid "Shown to the customer on the invoice"
+msgstr "Shown to the customer on the invoice"
+
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
@@ -19166,6 +19205,9 @@ msgstr "Tasks that must be completed before this issue can be closed; selecting 
 
 msgid "Tax"
 msgstr "Tax"
+
+msgid "Tax (%)"
+msgstr "Tax (%)"
 
 msgid "Tax & Additional Costs"
 msgstr "Tax & Additional Costs"

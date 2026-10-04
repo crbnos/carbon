@@ -2848,6 +2848,9 @@ msgstr "Sind Sie sicher, dass Sie {0} als Lieferant für diesen Artikel entferne
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Sind Sie sicher, dass Sie {label} aus dieser Vereinbarung entfernen möchten?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {supplierName} als Lieferant für diesen Artikel entfernen möchten? Dies kann nicht rückgängig gemacht werden."
 
@@ -3997,6 +4000,9 @@ msgstr "Dokument ändern"
 
 msgid "Change Inspection Plan"
 msgstr "Prüfplan ändern"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Änderungsmitteilung"
@@ -6188,6 +6194,12 @@ msgstr "Standard-Nutzungsdauer, die in dieser Klasse auf neuen Vermögenswerten 
 msgid "Defaults"
 msgstr "Standardwerte"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Stundung"
 
@@ -6814,6 +6826,9 @@ msgstr "Rabatttage"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Rabatttage nach {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Schätzungen vs. Ist-Werte"
 
 msgid "Estimator"
 msgstr "Schätzer"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Abend, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Go-Live und Akzeptanz"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Go-live und Akzeptanzfreigabe"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "Go-live-Timing hält, wenn jedes Gate planmäßig freigegeben wird"
@@ -14185,6 +14206,9 @@ msgstr "Personal"
 msgid "People"
 msgstr "Personen"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "pro Tag"
 
@@ -15320,6 +15344,9 @@ msgstr "Mengenbasierte Preisstufen für diese Übersteuerung; der angewendete Ei
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Menge: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Vierteljährlich"
@@ -16484,6 +16511,9 @@ msgstr "Umsatzerlöse und Aufwand über einen Zeitraum"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Verdiente, aber noch nicht fakturierte Umsatzerlöse, wie z. B. Miete für Tage, an denen eine Einheit bereits vermietet wurde; der Abgrenzungslauf erfasst sie und die Rechnung für diese Periode löst sie auf."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Umsatzerlöse-Sachkonto, das bei Beginn eines Finanzierungsleasingverhältnisses für den Barwert der Leasingzahlungen gutgeschrieben wird."
 
@@ -16495,6 +16525,9 @@ msgstr "Umsatzerlöse-Sachkonto für Betriebsmieterlöse, die linear über den M
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Umsatzerlöse, die fakturiert werden, bevor sie verdient werden, als Verbindlichkeit gehalten und vom Abgrenzungslauf als Umsatzerlöse freigegeben, wenn die Serviceperiode verstreicht."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Erlöserfassung"
@@ -16510,6 +16543,9 @@ msgstr "Linear erfasste Umsatzerlöse für Betriebsmietungen und variable Mietge
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Umsatzerlöse, die bis zum Ende dieses Zeitraums erkannt werden sollen, sind noch Geplant: aufgeschobene Rechnungsumsatzerlöse und Miete, die nicht durch einen Umsatzerkennungslauf gebucht wurden. Schlagen Sie den Lauf für diesen Zeitraum vor und buchen Sie ihn, damit die Umsatzerlöse das Sachkonto erreichen. Überspringen Sie mit einem Grund, wenn nichts erkannt werden sollte."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Die Top 1.000 Gruppen nach Betrag werden angezeigt"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wird als schwacher Hintergrund hinter jeder Seite generierter PDFs angezeigt"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Wird dem Benutzer angezeigt, wenn diese Regel fehlschlägt."
 
@@ -19166,6 +19205,9 @@ msgstr "Aufgaben, die abgeschlossen werden müssen, bevor dieses Problem geschlo
 
 msgid "Tax"
 msgstr "Steuern"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Steuern & Zusatzkosten"

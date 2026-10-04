@@ -63,3 +63,7 @@
 - Header Amend/Cancel are disabled until Tasks 28/29; Confirm/Invoice Now/Revert post to routes built in Tasks 27/29.
 - `ContractProject` loads active projects client-side into a Combobox (no Project selector exists in `~/components/Form`).
 - Notes are edited as plain text in the properties panel (`tiptapToText` / `textToTiptap`), as rentals do.
+
+## Task 12
+- `create-contract-invoices` + live-DB test `post-customer-contract/contract-lifecycle.test.ts` (confirm → draft → amend → cancel → end; renewal with uplift; open-ended horizon roll). Both run (not skipped) and pass.
+- Choices: a no-uplift renewal still copies a line ending on the old contract end (else it drops out of the new term); location = the origin sales order's shipping location, else the company's oldest location; the horizon roll only appends rows after the last persisted period.

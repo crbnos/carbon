@@ -2848,6 +2848,9 @@ msgstr "क्या आप इस आइटम के लिए {0} को आ�
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "क्या आप निश्चित हैं कि आप इस समझौते से {label} को निकालना चाहते हैं?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {supplierName} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
@@ -3997,6 +4000,9 @@ msgstr "परिवर्तन दस्तावेज़"
 
 msgid "Change Inspection Plan"
 msgstr "निरीक्षण योजना बदलें"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "परिवर्तन सूचना"
@@ -6188,6 +6194,12 @@ msgstr "डिफ़ॉल्ट उपयोगी जीवन जो इस �
 msgid "Defaults"
 msgstr "डिफ़ॉल्ट"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "स्थगन"
 
@@ -6814,6 +6826,9 @@ msgstr "छूट दिन"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} के बाद छूट के दिन"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "अनुमान बनाम वास्तविक"
 
 msgid "Estimator"
 msgstr "अनुमानकर्ता"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "शाम, {name}।"
@@ -9333,6 +9351,9 @@ msgstr "गो-लाइव और स्वीकृति"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Go-live और स्वीकृति sign-off"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "यदि प्रत्येक गेट समय पर क्लीयर हो जाए तो गो-लाइव टाइमिंग बनी रहती है"
@@ -14185,6 +14206,9 @@ msgstr "लोग"
 msgid "People"
 msgstr "लोग"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "प्रति दिन"
 
@@ -15320,6 +15344,9 @@ msgstr "इस ओवरराइड के लिए मात्रा-आध�
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "मात्रा: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "त्रैमासिक"
@@ -16484,6 +16511,9 @@ msgstr "एक अवधि में राजस्व और व्यय"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "राजस्व अर्जित लेकिन अभी चालान नहीं किया गया, जैसे उन दिनों के लिए किराया जब एक इकाई पहले से ही किराये पर थी; मान्यता चलाना इसे जमा करता है और उस अवधि के लिए चालान इसे स्पष्ट करता है।"
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में पट्टे की भुगतान के वर्तमान मूल्य के लिए राजस्व लेजर खाता क्रेडिट किया गया।"
 
@@ -16495,6 +16525,9 @@ msgstr "संचालन किराये की आय के लिए र
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "राजस्व जो चालान किया गया है इससे पहले कि यह अर्जित हो, देयता के रूप में रखा गया और मान्यता चलाना द्वारा राजस्व में स्वीकृत किया गया जैसे सेवा अवधि बीत जाती है।"
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "राजस्व मान्यता"
@@ -16510,6 +16543,9 @@ msgstr "संचालन किराये के लिए और परि�
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "इस अवधि के अंत तक या उससे पहले स्वीकृत होने के लिए अनुसूचित राजस्व अभी भी योजनाबद्ध है: स्थगित चालान राजस्व और किराया जो राजस्व मान्यता चलाने से पोस्ट नहीं किया गया है। इस अवधि के लिए चलाने का प्रस्ताव करें और पोस्ट करें ताकि राजस्व खाता बही तक पहुंचे। यदि कुछ भी स्वीकृत नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "राशि द्वारा शीर्ष 1,000 समूह द�
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तब उपयोगकर्ता को दिखाया जाता है।"
 
@@ -19166,6 +19205,9 @@ msgstr "इस निर्गम को बंद करने से पहल
 
 msgid "Tax"
 msgstr "कर"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "कर और अतिरिक्त लागत"

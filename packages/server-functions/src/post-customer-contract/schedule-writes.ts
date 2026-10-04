@@ -19,6 +19,7 @@ import {
   type PlannedRow,
   planInvoiceSchedule
 } from "@carbon/database/contract-schedule";
+import { toJson } from "@carbon/database/json";
 import { round } from "@carbon/database/precision";
 import { type Selectable, sql } from "kysely";
 import { NotFoundError } from "../errors";
@@ -50,6 +51,56 @@ export type LoadedContract = {
 };
 
 const DATE_TEXT = (column: string) => sql<string>`${sql.ref(column)}::text`;
+
+/** The columns a line copy (or an added line) carries over. */
+export type LineFields = Omit<
+  ContractLineRow,
+  | "id"
+  | "companyId"
+  | "createdAt"
+  | "createdBy"
+  | "updatedAt"
+  | "updatedBy"
+  | "salesOrderLineId"
+>;
+
+/** Insert values for a contract line copied from `line` with `overrides`.
+ *  Every copy sets the same keys, so copies and added lines insert in one
+ *  statement. The sales-order link never moves to a copy (it is unique per
+ *  order line). */
+export function copyLineValues(
+  scope: Scope,
+  line: LineFields,
+  overrides: Partial<LineFields>
+) {
+  const merged = { ...line, ...overrides };
+  return {
+    customerContractId: merged.customerContractId,
+    kind: merged.kind,
+    itemId: merged.itemId,
+    description: merged.description,
+    quantity: merged.quantity,
+    rate: merged.rate,
+    rateUnit: merged.rateUnit,
+    discountPercent: merged.discountPercent,
+    discountEndsOn: merged.discountEndsOn,
+    taxPercent: merged.taxPercent,
+    startDate: merged.startDate,
+    endDate: merged.endDate,
+    goLiveDate: merged.goLiveDate,
+    revenueMethod: merged.revenueMethod,
+    revenueStartDate: merged.revenueStartDate,
+    revenueEndDate: merged.revenueEndDate,
+    amendmentId: merged.amendmentId,
+    amendsLineId: merged.amendsLineId,
+    salesOrderLineId: null,
+    projectId: merged.projectId,
+    sortOrder: merged.sortOrder,
+    customFields: toJson(merged.customFields) ?? null,
+    companyId: scope.companyId,
+    createdBy: scope.userId
+  };
+}
 
 /** Lines in their display order: sort order, start date, id. */
 async function loadLines(

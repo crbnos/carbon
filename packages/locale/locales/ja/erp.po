@@ -2848,6 +2848,9 @@ msgstr "{0}をこの品目の仕入先として除去してもよろしいです
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "このアグリーメントから {label} を除去してもよろしいですか？"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "{supplierName}をこの品目の仕入先として除去してもよろしいですか？これは取り消せません。"
 
@@ -3997,6 +4000,9 @@ msgstr "変更文書"
 
 msgid "Change Inspection Plan"
 msgstr "検査計画を変更"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "変更通知"
@@ -6188,6 +6194,12 @@ msgstr "このクラスの新しい資産に事前入力されるデフォルト
 msgid "Defaults"
 msgstr "デフォルト"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "繰延"
 
@@ -6814,6 +6826,9 @@ msgstr "値引日数"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod}後の値引日数"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "見積もり対実績"
 
 msgid "Estimator"
 msgstr "見積者"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "夜間、{name}さん。"
@@ -9333,6 +9351,9 @@ msgstr "本番稼働と承認"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "本番稼働と承認サインオフ"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "各ゲートがスケジュール通りにクリアされれば、本番稼働のタイミングは維持されます"
@@ -14185,6 +14206,9 @@ msgstr "人員"
 msgid "People"
 msgstr "人員"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "1日あたり"
 
@@ -15320,6 +15344,9 @@ msgstr "この上書きの数量ベース価格設定段階。適用される単
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "数量: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "四半期ごと"
@@ -16484,6 +16511,9 @@ msgstr "期間中の売上高と費用"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "レンタル中の機器の日数分など、獲得済みだがまだ請求されていない売上高。認識実行により発生計上され、その期間の請求書で消去されます。"
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "セールスタイプリースの開始時にリース支払いの現在価値を貸方に記入する売上高勘定科目"
 
@@ -16495,6 +16525,9 @@ msgstr "レンタル期間にわたって直線法で認識する営業賃貸料
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "獲得する前に請求された売上高で、負債として保持され、サービス提供期間の経過により認識実行によって売上高に振替えられます。"
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "売上高認識"
@@ -16510,6 +16543,9 @@ msgstr "営業賃貸および変動賃貸料に対して直線法で認識され
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "この会計期間末までに認識予定の売上高がまだ計画済のままです。転記されていない繰延請求売上高と賃料があります。この期間の収益認識実行を提案して転記し、売上高を帳簿に反映させてください。認識対象がない場合は理由を付けてスキップしてください。"
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "金額別上位 1,000 グループを表示中"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
@@ -19166,6 +19205,9 @@ msgstr "この問題を閉じる前に完了する必要があるタスク。こ
 
 msgid "Tax"
 msgstr "税"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "税 & 追加原価"

@@ -2848,6 +2848,9 @@ msgstr "Bu öğe için {0} tedarikçi olarak kaldırmak istediğinizden emin mis
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "Bu anlaşmadan {label}'ı kaldırmak istediğinizden emin misiniz?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
@@ -3997,6 +4000,9 @@ msgstr "Belgeyi Değiştir"
 
 msgid "Change Inspection Plan"
 msgstr "Kontrol Planını Değiştir"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Değişiklik bildirisi"
@@ -6188,6 +6194,12 @@ msgstr "Bu sınıftaki yeni varlıklara önceden doldurulan varsayılan faydalı
 msgid "Defaults"
 msgstr "Varsayılanlar"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Erteleme"
 
@@ -6814,6 +6826,9 @@ msgstr "İskonto Günleri"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} sonrası İskonto Günleri"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Tahminler ve Gerçekleşenler"
 
 msgid "Estimator"
 msgstr "Tahminci"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Akşam, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Canlı Yayına Geçiş ve Kabul"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Canlı yayına geçiş ve kabul imzası"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "Canlı yayına geçiş zamanlaması, her kapı zamanında açılırsa geçerli kalır"
@@ -14185,6 +14206,9 @@ msgstr "personel"
 msgid "People"
 msgstr "Personel"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "günde"
 
@@ -15320,6 +15344,9 @@ msgstr "Bu geçersiz kılma için miktar tabanlı fiyatlandırma seviyeleri; uyg
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Miktar: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Üç Aylık"
@@ -16484,6 +16511,9 @@ msgstr "Bir dönem içinde hasılat ve giderler"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Kazanılmış ancak henüz faturalandırılmamış hasılat, örneğin bir birimin zaten kirada olduğu günler için kiralama; muhasebeleştirme çalıştırması bunu tahakkuk ettirir ve o dönemin faturası bunu kapatır."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Satış türü kiralamanın başlangıcında kira ödemelerinin bugünkü değeri için alacaklandırılan Hasılat muhasebe hesabı."
 
@@ -16495,6 +16525,9 @@ msgstr "Kira döneminde doğrusal olarak muhasebeleştirilen işletme kira gelir
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Hasılat Muhasebeleştirmesi"
@@ -16510,6 +16543,9 @@ msgstr "İşletme kiralamaları ve değişken kira ücretleri için doğrusal ol
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Muhasebeleştirilmesi gereken hasılat bu dönem sonuna kadar veya daha öncesinde hala Planlandı durumundadır: ertelenmiş fatura hasılası ve muhasebeleştirilmemiş kira. Bu dönem için muhasebeleştirme işlemini önerin ve muhasebeleştirin, böylece hasılat defter defterine ulaşır. Hiçbir şey muhasebeleştirilmemesi gerekiyorsa bir neden ile atla."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
@@ -19166,6 +19205,9 @@ msgstr "Bu sorun kapatılmadan önce tamamlanması gereken görevler; burada eyl
 
 msgid "Tax"
 msgstr "Vergi"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Vergi ve Ek Maliyetler"

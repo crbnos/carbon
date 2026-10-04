@@ -2848,6 +2848,9 @@ msgstr "¿Está seguro de que desea quitar {0} como proveedor para este artícul
 msgid "Are you sure you want to remove {label} from this agreement?"
 msgstr "¿Está seguro de que desea quitar {label} de este acuerdo?"
 
+msgid "Are you sure you want to remove {lineName} from this contract?"
+msgstr ""
+
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "¿Está seguro de que desea quitar {supplierName} como proveedor para este artículo? Esto no se puede deshacer."
 
@@ -3997,6 +4000,9 @@ msgstr "Cambiar Documento"
 
 msgid "Change Inspection Plan"
 msgstr "Cambiar plan de inspección"
+
+msgid "Change lines with Amend."
+msgstr ""
 
 msgid "Change notice"
 msgstr "Aviso de cambio"
@@ -6188,6 +6194,12 @@ msgstr "Vida útil predeterminada que se completa previamente en nuevos activos 
 msgid "Defaults"
 msgstr "Valores predeterminados"
 
+msgid "Defaults to the end date"
+msgstr ""
+
+msgid "Defaults to the go-live or start date"
+msgstr ""
+
 msgid "Deferral"
 msgstr "Diferimiento"
 
@@ -6814,6 +6826,9 @@ msgstr "Días de Descuento"
 
 msgid "Discount Days after {selectedCalculationMethod}"
 msgstr "Días de descuento después de {selectedCalculationMethod}"
+
+msgid "Discount Ends On"
+msgstr ""
 
 #. placeholder {0}: r.invoiceId
 msgid "Discount for {0}"
@@ -8028,6 +8043,9 @@ msgstr "Estimaciones vs Reales"
 
 msgid "Estimator"
 msgstr "Estimador"
+
+msgid "Even Period"
+msgstr ""
 
 msgid "Evening, {name}."
 msgstr "Noche, {name}."
@@ -9333,6 +9351,9 @@ msgstr "Lanzamiento y Aceptación"
 
 msgid "Go-live and acceptance sign-off"
 msgstr "Puesta en marcha y aprobación de aceptación"
+
+msgid "Go-Live Date"
+msgstr ""
 
 msgid "Go-live timing holds if each gate is cleared on schedule"
 msgstr "El cronograma de puesta en marcha se mantiene si cada puerta se despeja según lo programado"
@@ -14185,6 +14206,9 @@ msgstr "personal"
 msgid "People"
 msgstr "Personas"
 
+msgid "Per"
+msgstr ""
+
 msgid "per day"
 msgstr "por día"
 
@@ -15320,6 +15344,9 @@ msgstr "Escalas de precios basadas en cantidad para esta sobrescritura; el preci
 #. placeholder {0}: numberFormatter.format(forecastQuantity)
 msgid "Quantity: {0}"
 msgstr "Cantidad: {0}"
+
+msgid "Quarter"
+msgstr ""
 
 msgid "Quarterly"
 msgstr "Trimestral"
@@ -16484,6 +16511,9 @@ msgstr "Ingresos por ventas y gastos durante un período"
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Ingresos por ventas ganados pero aún no facturados, como alquiler por días que una unidad ya ha estado en alquiler; la ejecución del reconocimiento los acumula y la factura de ese período los liquida."
 
+msgid "Revenue End"
+msgstr ""
+
 msgid "Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments."
 msgstr "Cuenta contable de Ingresos por ventas acreditada al inicio de un arrendamiento de tipo venta por el valor presente de los pagos de arrendamiento."
 
@@ -16495,6 +16525,9 @@ msgstr "Cuenta contable de Ingresos por ventas para ingresos de alquiler operati
 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ingresos por ventas facturados antes de ser ganados, mantenidos como pasivo y reconocidos como ingresos por ventas por la ejecución del reconocimiento conforme el período de servicio transcurre."
+
+msgid "Revenue Method"
+msgstr ""
 
 msgid "Revenue Recognition"
 msgstr "Reconocimiento de Ingresos por Ventas"
@@ -16510,6 +16543,9 @@ msgstr "Ingresos por ventas reconocidos en línea recta para alquileres operativ
 
 msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Ingresos por ventas programados para ser reconocidos en o antes del cierre de este período aún están planificados: ingresos por ventas de factura diferidos y alquiler que no han sido contabilizados por una ejecución de reconocimiento de ingresos por ventas. Proponga y contabilice la ejecución para este período para que los ingresos por ventas lleguen al libro mayor. Omita con una razón si nada debería ser reconocido."
+
+msgid "Revenue Start"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 msgid "Reverse {0}"
@@ -18116,6 +18152,9 @@ msgstr "Mostrando los 1,000 grupos principales por cantidad"
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Se muestra como un fondo tenue detrás de cada página de los PDF generados"
 
+msgid "Shown to the customer on the invoice"
+msgstr ""
+
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrado al usuario cuando falla esta regla."
 
@@ -19166,6 +19205,9 @@ msgstr "Tareas que deben completarse antes de que se pueda cerrar este problema;
 
 msgid "Tax"
 msgstr "Impuesto"
+
+msgid "Tax (%)"
+msgstr ""
 
 msgid "Tax & Additional Costs"
 msgstr "Impuestos y Costos Adicionales"
