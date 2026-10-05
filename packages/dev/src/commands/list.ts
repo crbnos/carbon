@@ -9,8 +9,8 @@ import { dockerProjectStates } from "../services/compose.js";
 import { worktreesTable } from "../ui.js";
 import { listSlugs, projectName, slugForWorktreePath } from "../worktree.js";
 
-export async function listWorktrees() {
-  intro("Carbon · worktrees");
+export async function listWorktrees(opts: { json?: boolean } = {}) {
+  if (!opts.json) intro("Carbon · worktrees");
 
   const [wtsAll, registry, dockerStates] = await Promise.all([
     gitListWorktrees(),
@@ -32,6 +32,11 @@ export async function listWorktrees() {
       dockerState
     };
   });
+
+  if (opts.json) {
+    process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+    return;
+  }
 
   log.message("\n" + worktreesTable(rows), {
     symbol: pc.bold(pc.yellow("worktrees"))

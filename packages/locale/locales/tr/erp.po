@@ -17068,17 +17068,11 @@ msgstr "Çözüm Mühendisi"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF'den çıkarılan bazı satırlar stok kartlarınıza otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Bazı kayıtlar geri gelmeyecek. Devam etmek için <0>{CONFIRM_WORD}</0> yazın."
 
 msgid "Some Shifts"
 msgstr "Bazı Vardiyalar"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."
@@ -19616,6 +19610,9 @@ msgstr "İzlenen malzeme, toplama listesi olmasa bile toplama sırasına (FEFO) 
 msgid "Tracking"
 msgstr "Takip"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "İzleme yöntemi"
 
@@ -20002,9 +19999,6 @@ msgstr "Başlıksız satır"
 
 msgid "Untitled step"
 msgstr "Başlıksız Adım"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme."

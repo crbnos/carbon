@@ -17068,17 +17068,11 @@ msgstr "Lösungsingenieur"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Einige aus dem PDF extrahierte Zeilen konnten nicht automatisch Ihren Bestandsartikeln zugeordnet werden. Überprüfen und ordnen Sie jede Zeile unten zu."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Einige Datensätze werden nicht zurückkommen. Geben Sie <0>{CONFIRM_WORD}</0> ein, um fortzufahren."
 
 msgid "Some Shifts"
 msgstr "Einige Schichten"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
@@ -19616,6 +19610,9 @@ msgstr "Verfolgte Materialien werden nach Kommissionierauftrag vorabausgewählt 
 msgid "Tracking"
 msgstr "Verfolgung"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Verfolgungsmethode"
 
@@ -20002,9 +19999,6 @@ msgstr "Unbenannte Zeile"
 
 msgid "Untitled step"
 msgstr "Unbenannter Schritt"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Ungenutzte kommissionierte Materialien werden vom Arbeitsplatz zurück ins Lager geleitet."

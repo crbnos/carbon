@@ -8,9 +8,9 @@ import {
   isCancel,
   log,
   multiselect,
-  outro,
-  spinner
+  outro
 } from "@clack/prompts";
+import { resolve } from "pathe";
 import pc from "picocolors";
 import {
   deleteBranch,
@@ -19,7 +19,7 @@ import {
   mainCheckoutRoot,
   removeWorktree
 } from "../git.js";
-import { confirmRemove } from "../prompts.js";
+import { confirmRemove, requireTerminal } from "../prompts.js";
 import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { destroyProjectVolumes, flushDb } from "../services/compose.js";
 import {
@@ -27,15 +27,21 @@ import {
   pruneStaleRoutes,
   unregisterAliases
 } from "../services/portless.js";
+import { spinner } from "../ui.js";
 import {
   getSlot,
   listSlugs,
   projectName,
   removeSlot,
+  sameWorktreePath,
   slugForWorktreePath
 } from "../worktree.js";
 
-export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
+export async function removeWorktreeCmd(opts?: {
+  prune?: boolean;
+  /** Branch names or paths; skips the picker. */
+  targets?: string[];
+}) {
   const pruneBranches = opts?.prune === true;
   intro("Carbon · remove worktree");
 
@@ -50,19 +56,38 @@ export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
     return;
   }
 
-  const choices = await multiselect({
-    message: "Worktrees to remove",
-    options: wts.map((w) => ({
-      value: w.path,
-      label: `${w.branch ?? "(detached)"}  ${pc.dim(w.path)}`
-    })),
-    required: true
-  });
-  if (isCancel(choices)) {
-    cancel("aborted");
-    process.exit(0);
+  let selectedPaths: string[];
+  if (opts?.targets?.length) {
+    selectedPaths = opts.targets.map((name) => {
+      const match = wts.find(
+        (w) => w.branch === name || sameWorktreePath(w.path, resolve(name))
+      );
+      if (!match) {
+        throw new Error(
+          `No removable worktree for '${name}' (pass a branch name or a path; \`crbn list\` shows them)`
+        );
+      }
+      return match.path;
+    });
+  } else {
+    requireTerminal(
+      "Picking worktrees to remove",
+      "Name them instead: `crbn remove <branch-or-path...>`."
+    );
+    const choices = await multiselect({
+      message: "Worktrees to remove",
+      options: wts.map((w) => ({
+        value: w.path,
+        label: `${w.branch ?? "(detached)"}  ${pc.dim(w.path)}`
+      })),
+      required: true
+    });
+    if (isCancel(choices)) {
+      cancel("aborted");
+      process.exit(0);
+    }
+    selectedPaths = choices as string[];
   }
-  const selectedPaths = choices as string[];
   const targets = selectedPaths.map((p) => wts.find((w) => w.path === p)!);
 
   const registry = listSlugs();

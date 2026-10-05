@@ -17068,17 +17068,11 @@ msgstr "समाधान इंजीनियर"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
 
 msgid "Some Shifts"
 msgstr "कुछ शिफ्ट"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
@@ -19616,6 +19610,9 @@ msgstr "ट्रैक की गई सामग्री को पिकि�
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "ट्रैकिंग विधि"
 
@@ -20002,9 +19999,6 @@ msgstr "बिना शीर्षक की पंक्ति"
 
 msgid "Untitled step"
 msgstr "बिना शीर्षक वाला चरण"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"

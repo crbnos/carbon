@@ -17068,17 +17068,11 @@ msgstr "Инженер решений"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с вашими номенклатурными позициями. Проверьте и сопоставьте каждую строку ниже."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Некоторые записи не вернутся. Введите <0>{CONFIRM_WORD}</0> для продолжения."
 
 msgid "Some Shifts"
 msgstr "Некоторые смены"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
@@ -19616,6 +19610,9 @@ msgstr "Отслеживаемый материал предварительно
 msgid "Tracking"
 msgstr "Отслеживание"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Метод отслеживания"
 
@@ -20002,9 +19999,6 @@ msgstr "Безымянная строка"
 
 msgid "Untitled step"
 msgstr "Шаг без названия"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Неиспользованный отобранный материал поступает обратно из рабочего центра на склад."

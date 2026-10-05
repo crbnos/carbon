@@ -8,15 +8,19 @@ import { normalizeSwaggerSchema } from "./lib/swagger-schema";
 
 async function main(): Promise<void> {
   loadDotEnv();
-  const studioPort = process.env.PORT_STUDIO;
-  if (!studioPort)
+  // PostgREST's own OpenAPI document, through Kong with the anon key. Studio's
+  // /api/platform/.../api/rest returns these exact bytes, so reading it here
+  // keeps this script working when Studio isn't running.
+  const apiPort = process.env.PORT_API;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!apiPort || !anonKey)
     throw new Error(
-      "PORT_STUDIO not set (expected in .env.local). Run `pnpm dev:up` first."
+      "PORT_API / SUPABASE_ANON_KEY not set (expected in .env.local). Run `crbn up` first."
     );
-  const response = await fetch(
-    `http://127.0.0.1:${studioPort}/api/platform/projects/default/api/rest`,
-    { signal: AbortSignal.timeout(30_000) }
-  );
+  const response = await fetch(`http://127.0.0.1:${apiPort}/rest/v1/`, {
+    headers: { apikey: anonKey },
+    signal: AbortSignal.timeout(30_000)
+  });
   if (!response.ok)
     throw new Error(`Swagger request failed (HTTP ${response.status})`);
   const data = normalizeSwaggerSchema(await response.json());

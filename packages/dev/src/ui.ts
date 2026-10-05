@@ -2,6 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  progress as clackProgress,
+  spinner as clackSpinner,
+  type Task
+} from "@clack/prompts";
 import Table from "cli-table3";
 import pc from "picocolors";
 import { type AppId, TLD } from "./constants.js";
@@ -12,6 +17,42 @@ import {
   projectName,
   SHARED_REDIS_PORT
 } from "./worktree.js";
+
+// ---------------------------------------------------------------------------
+// Spinners
+// ---------------------------------------------------------------------------
+
+// clack redraws a spinner every 80 ms, which a pipe (an agent, a log file)
+// records as thousands of frames. Its only static mode is keyed on CI=true,
+// read when the spinner is created — so set it for that instant only, never
+// for the process: the dev servers and pnpm crbn spawns must not inherit it.
+function calm<T>(make: () => T): T {
+  if (process.stdout.isTTY) return make();
+  const prev = process.env.CI;
+  process.env.CI = "true";
+  try {
+    return make();
+  } finally {
+    if (prev === undefined) delete process.env.CI;
+    else process.env.CI = prev;
+  }
+}
+
+export const spinner: typeof clackSpinner = (opts) =>
+  calm(() => clackSpinner(opts));
+
+export const progress: typeof clackProgress = (opts) =>
+  calm(() => clackProgress(opts));
+
+export async function tasks(list: Task[]) {
+  for (const t of list) {
+    if (t.enabled === false) continue;
+    const s = spinner();
+    s.start(t.title);
+    const result = await t.task(s.message);
+    s.stop(result || t.title);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Tables (status / list)
@@ -135,7 +176,9 @@ export function summaryLines(
   ports: PortMap,
   apps: readonly AppId[],
   /** When provided, show portless hostnames; otherwise show localhost URLs. */
-  branchPrefix?: string
+  branchPrefix?: string,
+  /** False when the boot left Studio out; the row then says how to start it. */
+  studioRunning = true
 ): string[] {
   const url = branchPrefix
     ? (sub: string, _port?: number) => `https://${sub}.${branchPrefix}.${TLD}`
@@ -153,12 +196,14 @@ export function summaryLines(
       url("api", ports.PORT_API),
       branchPrefix ? ports.PORT_API : undefined
     ),
-    row(
-      pc.green,
-      "Studio",
-      url("studio", ports.PORT_STUDIO),
-      branchPrefix ? ports.PORT_STUDIO : undefined
-    ),
+    studioRunning
+      ? row(
+          pc.green,
+          "Studio",
+          url("studio", ports.PORT_STUDIO),
+          branchPrefix ? ports.PORT_STUDIO : undefined
+        )
+      : `${pc.dim("Studio".padEnd(8))}  ${pc.dim("not started — crbn reload studio")}`,
     row(
       pc.yellow,
       "Mail",

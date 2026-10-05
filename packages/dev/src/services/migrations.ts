@@ -283,6 +283,9 @@ async function repairStaleMigrations(
  * stack can't abort the run, which means a missing `storage.objects` would let
  * the restore finish "successfully" with no buckets seeded. Both services must
  * have booted.
+ *
+ * Realtime is the third: `realtime.messages` is built by the Realtime service,
+ * and Carbon's migrations put policies on it.
  */
 export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
   return withClient(dbPort, async (c) => {
@@ -290,6 +293,7 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
       `SELECT to_regclass('auth.users') IS NOT NULL
                 AND to_regclass('storage.objects') IS NOT NULL
                 AND to_regclass('storage.buckets') IS NOT NULL
+                AND to_regclass('realtime.messages') IS NOT NULL
                 AND EXISTS (
                   SELECT 1 FROM information_schema.columns
                   WHERE table_schema = 'auth' AND table_name = 'users'
@@ -298,6 +302,19 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
     );
     return r.rows[0]?.ready === true;
   });
+}
+
+// Carbon's migrations write into schemas GoTrue, Storage and Realtime build on
+// their first boot, so a fresh volume can't be migrated until all three have.
+export async function waitForServiceSchemas(port: number, timeoutMs = 90_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await serviceSchemasReady(port).catch(() => false)) return;
+    await sleep(1000);
+  }
+  throw new Error(
+    `auth / storage / realtime schemas not ready within ${timeoutMs}ms — check the gotrue, storage and realtime containers`
+  );
 }
 
 // The singleton "config" row (the API URL and anon key some database

@@ -10,6 +10,7 @@
     "./vite": "./vite.js"
   },
   "scripts": {
+    "smoke": "bash scripts/smoke.sh",
     "clean": "rimraf node_modules .turbo",
     "lint": "biome lint --write",
     "test": "vitest run",

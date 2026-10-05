@@ -17068,17 +17068,11 @@ msgstr "Engenheiro de Soluções"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algumas linhas extraídas do PDF não puderam ser mapeadas automaticamente para seus itens de inventário. Revise e mapeie cada linha abaixo."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Alguns registros não voltarão. Digite <0>{CONFIRM_WORD}</0> para continuar."
 
 msgid "Some Shifts"
 msgstr "Alguns Turnos"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo deu errado. Tente novamente."
@@ -19616,6 +19610,9 @@ msgstr "Material rastreado é pré-selecionado por ordem de separação (FEFO), 
 msgid "Tracking"
 msgstr "Rastreamento"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Método de rastreamento"
 
@@ -20002,9 +19999,6 @@ msgstr "Linha sem título"
 
 msgid "Untitled step"
 msgstr "Etapa sem título"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Material coletado não utilizado devolvido do centro de trabalho para o armazém."

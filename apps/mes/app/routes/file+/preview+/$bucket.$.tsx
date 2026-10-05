@@ -10,6 +10,7 @@ import {
   fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
+  imageTransformErrorMessage,
   isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
@@ -115,9 +116,15 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
         contentType = transformed.data.type || "image/jpeg";
         return transformed;
       }
-      // No imgproxy (stale self-host stack) — fall through to the raw bytes;
-      // Safari can still render them.
-      log.error("Failed to transform HEIC file", { error: transformed.error });
+      // No imgproxy (off by default locally, or a stale self-host stack) —
+      // fall through to the raw bytes; Safari can still render them.
+      log.error(
+        imageTransformErrorMessage(
+          transformed.error,
+          "Failed to transform HEIC file"
+        ),
+        { path, error: transformed.error }
+      );
     }
     // Use the original encoded path for the storage API call
     return source.download(path);

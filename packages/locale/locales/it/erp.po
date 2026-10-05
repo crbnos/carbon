@@ -17068,17 +17068,11 @@ msgstr "Solutions Engineer"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticamente ai tuoi articoli. Rivedi e mappa ogni riga di seguito."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Alcuni record non torneranno. Digita <0>{CONFIRM_WORD}</0> per continuare."
 
 msgid "Some Shifts"
 msgstr "Alcuni turni"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
@@ -19616,6 +19610,9 @@ msgstr "Il materiale tracciato è preselezionato per ordine di prelievo (FEFO), 
 msgid "Tracking"
 msgstr "Tracciamento"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Metodo di tracciamento"
 
@@ -20002,9 +19999,6 @@ msgstr "Riga senza titolo"
 
 msgid "Untitled step"
 msgstr "Passo senza titolo"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiale prelevato non utilizzato reso dal centro di lavoro al deposito."

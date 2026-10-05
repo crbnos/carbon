@@ -13,11 +13,24 @@ import {
   resolveSlug
 } from "../worktree.js";
 
-export async function status() {
-  intro("Carbon · dev status");
+export async function status(opts: { json?: boolean } = {}) {
   const root = await getWorktreeRoot();
   const slug = resolveSlug(root);
   const slot = getSlot(slug);
+  if (opts.json) {
+    // Ports and containers only — the slot's JWT secret stays out of stdout.
+    const out = {
+      slug,
+      project: projectName(slug),
+      ports: slot?.ports ?? null,
+      redisDb: slot?.redisDb ?? null,
+      containers: slot ? await listContainers(root, slug) : []
+    };
+    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    return;
+  }
+
+  intro("Carbon · dev status");
   log.info(
     `worktree: ${pc.cyan(slug)}  project: ${pc.cyan(projectName(slug))}`
   );

@@ -17068,17 +17068,11 @@ msgstr "Inżynier Rozwiązań"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Niektóre pozycje wyodrębnione z pliku PDF nie mogły być automatycznie zmapowane do artykułów z twoich zapasów. Przejrzyj i zamapuj każdą pozycję poniżej."
 
-msgid "Some quantities are negative."
-msgstr ""
-
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Niektóre rekordy nie wrócą. Wpisz <0>{CONFIRM_WORD}</0> aby kontynuować."
 
 msgid "Some Shifts"
 msgstr "Niektóre zmiany"
-
-msgid "Some stock has no storage unit."
-msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Coś poszło nie tak. Spróbuj ponownie."
@@ -19616,6 +19610,9 @@ msgstr "Materiał śledzony jest wstępnie wybierany według kolejności poboru 
 msgid "Tracking"
 msgstr "Śledzenie"
 
+msgid "Tracking ID"
+msgstr ""
+
 msgid "Tracking method"
 msgstr "Metoda śledzenia"
 
@@ -20002,9 +19999,6 @@ msgstr "Linia bez tytułu"
 
 msgid "Untitled step"
 msgstr "Krok bez tytułu"
-
-msgid "Untracked"
-msgstr ""
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "Materiał pobrany, ale nieużywany, zwracany ze stanowiska roboczego do magazynu."

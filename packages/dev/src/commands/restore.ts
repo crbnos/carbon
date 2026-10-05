@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { existsSync } from "node:fs";
-import { cancel, intro, log, outro, tasks } from "@clack/prompts";
+import { cancel, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
 import { isAbsolute, join, resolve } from "pathe";
@@ -14,6 +14,7 @@ import {
   serviceSchemasReady,
   syncAuthz
 } from "../services/migrations.js";
+import { tasks } from "../ui.js";
 import { getWorktreeRoot } from "../worktree.js";
 
 export type RestoreMode = "local" | "prod";

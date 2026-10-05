@@ -5,10 +5,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
-import { confirm, isCancel, log, spinner } from "@clack/prompts";
+import { confirm, isCancel, log } from "@clack/prompts";
 import { execa, execaSync } from "execa";
 import pc from "picocolors";
 import { PORTLESS_MIN_VERSION } from "../constants.js";
+import { requireTerminal } from "../prompts.js";
+import { spinner } from "../ui.js";
 import type { PortMap } from "../worktree.js";
 
 // Strip npm_* / PNPM_* so portless doesn't refuse with "should not be run via
@@ -184,6 +186,10 @@ export async function ensureProxyPrivileges() {
     ? "Will bind :443, install the local CA, and write hosts entries (requires Administrator terminal)."
     : "Set it up now? Will run sudo to bind :443, install the local CA, and write /etc/hosts entries.";
 
+  requireTerminal(
+    "Setting up the portless proxy (it runs sudo)",
+    "Run `crbn up` once in a terminal, or pass --no-portless."
+  );
   const proceed = await confirm({
     message: elevateHint,
     initialValue: true
