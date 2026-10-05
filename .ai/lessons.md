@@ -457,7 +457,7 @@ guard went missing instead. `check-clobbers` compares against the merge base and
 nothing. After merging main, list main's migrations newer than your branch's oldest and grep
 them for every function and view your migrations define; for any hit, write a NEW migration
 dated after both that carries both changes (here, since folded into
-`20261004190626_complete-job-to-asset.sql`).
+`20261005011701_complete-job-to-asset.sql`).
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -2982,11 +2982,11 @@ creates an opportunity for it in the same transaction. Nullable in the schema do
 mean optional in the app.
 
 **Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
-of `salesInvoice`; backfilled by `20261002194333_sales-invoice-opportunity-backfill.sql`.
+of `salesInvoice`; backfilled by `20261005010901_sales-invoice-opportunity-backfill.sql`.
 
 ## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
 
-**Context:** The contracts migration (`20261004014555_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
+**Context:** The contracts migration (`20261005011401_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
 
 **Problem:** After `generate:types`, the ERP typecheck failed with TS2589 ("type instantiation is excessively deep") in four files that the change did not touch. Each did a bare embed such as `.select("salesInvoice(id, invoiceId)")` from `salesInvoiceLine`. More relationships on the table make the inference of a bare embed too deep. A `@ts-ignore` would hide it, but the next new FK moves the error to another file.
 

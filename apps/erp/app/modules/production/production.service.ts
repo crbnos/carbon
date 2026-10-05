@@ -764,9 +764,10 @@ export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
-  // tsgo's limit; the cliff shifts as unrelated modules join the program.
-  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
+  // TS2589 — supabase select-string instantiation depth sits on tsgo's limit;
+  // the cliff shifts as unrelated modules join the program. ts-ignore, not
+  // ts-expect-error, so it satisfies both tsc and tsgo.
+  // @ts-ignore TS2589
   return client
     .from("productionEvent")
     .select(

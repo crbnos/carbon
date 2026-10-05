@@ -17,6 +17,7 @@ ON CONFLICT DO NOTHING;
 CREATE OR REPLACE FUNCTION prevent_each_unit_of_measure_change()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = public, extensions
 AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
@@ -41,7 +42,7 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER prevent_each_unit_of_measure_change_trigger
+CREATE OR REPLACE TRIGGER prevent_each_unit_of_measure_change_trigger
 BEFORE UPDATE OR DELETE ON "unitOfMeasure"
 FOR EACH ROW EXECUTE FUNCTION prevent_each_unit_of_measure_change();
 

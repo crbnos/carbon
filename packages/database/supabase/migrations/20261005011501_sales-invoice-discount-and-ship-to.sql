@@ -56,7 +56,7 @@ CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
 );
 
 -- salesInvoices: unchanged from 20260916143022, plus the merchandise term net of the
--- line discount, the automation columns (20261003035637_rental-invoice-automation.sql)
+-- line discount, the automation columns (20261005011201_rental-invoice-automation.sql)
 -- and needsReview: a held draft, or a posted invoice whose email failed. Only a posted
 -- invoice can be unsent (isPostedSalesInvoice in packages/jobs/src/invoicing/
 -- automate-invoice.ts), so a Voided invoice with a sendError never sits in Needs Review.

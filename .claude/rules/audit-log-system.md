@@ -98,7 +98,7 @@ child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
 (`journal` + `journalLine`), `payment` / `memo` (each with `invoiceSettlement` as a child, keyed by
 `paymentId` / `memoId`), `reimbursement` (+ `reimbursementLine`), `pickingList` (+ `pickingListLine`),
 `depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
-migration `20261002234926_audit-posting-documents.sql` attached the async triggers those tables lacked.
+migration `20261005011001_audit-posting-documents.sql` attached the async triggers those tables lacked.
 (~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
 table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
 (created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per

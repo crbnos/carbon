@@ -1,7 +1,7 @@
 -- Rental agreements: rate ladders (item, customer, customer type), agreement header +
 -- lines + charges + billing periods, the sales-type lease schedule, the Rental invoice
 -- line, deposits on payments, lease settings, the RA sequence, and the fleetAssets view.
--- The rentalAgreements view is created by 20261003035637_rental-invoice-automation.sql,
+-- The rentalAgreements view is created by 20261005011201_rental-invoice-automation.sql,
 -- which adds the columns it reads. RLS is rendered from the authz manifest.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3–§4, Data Model §5
 
@@ -156,6 +156,11 @@ CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_companyId_idx" ON "rentalAgree
 CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_line_idx" ON "rentalAgreementCharge" ("rentalAgreementLineId", "companyId");
 CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_salesInvoiceLineId_idx" ON "rentalAgreementCharge" ("salesInvoiceLineId");
 CREATE INDEX IF NOT EXISTS "rentalAgreementCharge_createdBy_idx" ON "rentalAgreementCharge" ("createdBy");
+-- A unit's purchase option is billed once: Sell to Customer checks first, and this
+-- holds when two requests pass that check together.
+CREATE UNIQUE INDEX IF NOT EXISTS "rentalAgreementCharge_purchaseOption_key"
+  ON "rentalAgreementCharge" ("companyId", "rentalAgreementLineId")
+  WHERE "chargeType" = 'Purchase Option';
 
 -- 5) Billing periods (persisted so invoice generation is idempotent) ---------------------
 CREATE TABLE IF NOT EXISTS "rentalBillingPeriod" (
@@ -211,7 +216,7 @@ CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalBillingPeriodId_idx" ON "sale
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalAgreementChargeId_idx" ON "salesInvoiceLine" ("rentalAgreementChargeId");
 
 -- salesInvoiceLines is recreated with every new line column by
--- 20261004014728_sales-invoice-discount-and-ship-to.sql.
+-- 20261005011501_sales-invoice-discount-and-ship-to.sql.
 
 -- 7) Deposits: a receipt may reference the sales order or the agreement it secures ---------
 ALTER TABLE "payment"

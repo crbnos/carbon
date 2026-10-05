@@ -2,7 +2,7 @@
 -- schedule, the per-line revenue plan, and the movement ledger behind each line's
 -- Deferred Revenue / Contract Assets position, plus contract provenance on sales
 -- invoices, memos and recognition schedule rows. The salesInvoiceLines view picks up
--- the new line columns in 20261004014728_sales-invoice-discount-and-ship-to.sql.
+-- the new line columns in 20261005011501_sales-invoice-discount-and-ship-to.sql.
 -- RLS comes from the authz manifest (packages/database/src/authz/manifest.ts).
 
 -- 1) Header -----------------------------------------------------------------------------
@@ -346,6 +346,8 @@ CREATE TABLE IF NOT EXISTS "customerContractLedgerEntry" (
   "assetBase" NUMERIC NOT NULL DEFAULT 0,
   "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
   CONSTRAINT "customerContractLedgerEntry_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "customerContractLedgerEntry_companyId_fkey" FOREIGN KEY ("companyId")
     REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,

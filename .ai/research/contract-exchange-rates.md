@@ -161,7 +161,7 @@ The recommendation for Carbon: draft each contract invoice at the rate on its in
 
 ### Contracts today
 
-- `customerContract.exchangeRate NUMERIC NOT NULL DEFAULT 1` (migration `20261004014555_contracts.sql`). `x+/contract+/new.tsx` sets it to today's rate at creation (the BUG-2 fix). `x+/contract+/update.tsx` reads today's rate again when the currency changes.
+- `customerContract.exchangeRate NUMERIC NOT NULL DEFAULT 1` (migration `20261005011401_contracts.sql`). `x+/contract+/new.tsx` sets it to today's rate at creation (the BUG-2 fix). `x+/contract+/update.tsx` reads today's rate again when the currency changes.
 - `create-contract-invoices` drafts each invoice with:
   - `unitPrice = toBaseAmount(contract price, contract.exchangeRate)`;
   - header and line `exchangeRate = contract.exchangeRate`;

@@ -36,7 +36,7 @@ Key service functions (verified):
   `post-inventory-count` books its variances through the same shared core
   (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
   **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
-  (migration `20260923223639`) stamps a layer booked for ONE serial unit — every layer
+  (migration `20261005010601`) stamps a layer booked for ONE serial unit — every layer
   `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
   sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
   optional `trackedEntityIds` and orders FIFO / LIFO layers through

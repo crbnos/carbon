@@ -138,11 +138,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (charge.error) {
+    // 23505: a concurrent request billed it first (one purchase option per unit).
+    const alreadyBilled = charge.error.code === "23505";
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
-        error(charge.error, "Failed to bill the purchase option")
+        alreadyBilled
+          ? error(null, "The purchase option has already been billed")
+          : error(charge.error, "Failed to bill the purchase option")
       )
     );
   }

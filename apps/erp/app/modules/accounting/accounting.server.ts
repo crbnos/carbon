@@ -2210,6 +2210,7 @@ export async function deleteRevenueRecognitionRun(
       .select(["runId", "status"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(

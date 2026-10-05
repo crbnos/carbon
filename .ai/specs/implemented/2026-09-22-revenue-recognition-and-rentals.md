@@ -733,7 +733,7 @@ Recorded at the Phase D close-out and still open:
 
 ## Changelog
 
-- 2026-10-04: Implemented; moved to `implemented/`. The branch's migrations were folded into one file per change: enums `20260922225541_fleet-rental-lease-enums.sql`; tables `20260922190418_revenue-recognition-core.sql`, `20260922225830_fleet-bridge.sql`, `20260923003525_rental-agreements.sql` (now also `customerItemRentalRate`, `rentalLeaseScheduleLine`, the single-rate line and the named SET NULL FKs), `20260923223639_serial-cost-layer.sql`; `complete_job_to_inventory` in `20261004190626_complete-job-to-asset.sql`; RLS in `20261004015235_revenue-recognition-rentals-contracts-rls.sql`. Migration names in the entries below are the pre-fold ones.
+- 2026-10-04: Implemented; moved to `implemented/`. The branch's migrations were folded into one file per change: enums `20261005010301_fleet-rental-lease-enums.sql`; tables `20261005010201_revenue-recognition-core.sql`, `20261005010401_fleet-bridge.sql`, `20261005010501_rental-agreements.sql` (now also `customerItemRentalRate`, `rentalLeaseScheduleLine`, the single-rate line and the named SET NULL FKs), `20261005010601_serial-cost-layer.sql`; `complete_job_to_inventory` in `20261005011701_complete-job-to-asset.sql`; RLS in `20261005011601_revenue-recognition-rentals-contracts-rls.sql`. Migration names in the entries below are the pre-fold ones.
 
 - 2026-10-04: Note added: capital projects (`2026-10-03-projects.md`) build on this spec's CIP asset, ledger, job sweep and `capitalizeCip`. Projects owns the widened CIP sources, the late-cost rule and the remaining-life depreciation change.
 - 2026-10-02: Decision 10's propose-only posture reversed for rentals by `.ai/specs/2026-10-02-rental-invoice-automation.md`.

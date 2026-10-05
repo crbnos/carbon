@@ -48,7 +48,7 @@ Shipment is the reference: `routes/x+/shipment+/$shipmentId.tsx`,
 Every page passes `activity`: its record is in `auditConfig.entities`. Journal
 entry, payment, memo, reimbursement, picking list and the two runs were added
 for this (with their line tables; `invoiceSettlement` is a child of both payment
-and memo), and migration `20261002234926_audit-posting-documents.sql` attaches
+and memo), and migration `20261005011001_audit-posting-documents.sql` attaches
 the async event triggers their tables lacked. A record that is not audited may
 omit `activity`; the panel then shows Documents alone.
 

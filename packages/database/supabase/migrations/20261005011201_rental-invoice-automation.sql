@@ -61,4 +61,4 @@ LEFT JOIN LATERAL (
 ) p ON TRUE;
 
 -- The salesInvoices view gains these columns (and needsReview) in
--- 20261004014728_sales-invoice-discount-and-ship-to.sql.
+-- 20261005011501_sales-invoice-discount-and-ship-to.sql.

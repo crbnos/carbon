@@ -650,7 +650,7 @@ is dead config for Rillet only, left in place for the capped providers.
   `'Lease'`: a new journal type never starts pushing to a customer's external
   ledger unasked (plan decision 1 of
   `.ai/plans/implemented/2026-09-22-revenue-recognition-and-rentals.md`). **`'Lease'`**
-  (migration `20260922225541_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
+  (migration `20261005010301_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
   `individual` granularity) carries only a sales-type lease's commencement
   (Dr Net Investment in Leases / Dr COGS / Dr accumulated depreciation, Cr
   Lease Revenue / Cr fleet class asset) and its end-of-term residual return

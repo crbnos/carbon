@@ -265,7 +265,15 @@ BEGIN
 
       v_asset_unit_ids := v_asset_unit_ids[1:v_quantity_received_to_inventory::INTEGER];
     ELSE
-      -- One untracked or batch unit; the guard above holds the quantity at 1.
+      -- A class target makes one asset per serial unit. A job created before
+      -- its item was serialized has no units to follow, and would otherwise
+      -- make ONE asset for the whole quantity.
+      IF v_asset_target = 'class' THEN
+        RAISE EXCEPTION 'Job % does not track serial numbers, so it cannot complete to a fixed asset class',
+          v_job_id_readable;
+      END IF;
+      -- One untracked or batch unit swept onto an asset under construction; the
+      -- guard above holds the quantity at 1.
       v_asset_unit_ids := ARRAY[NULL::TEXT];
     END IF;
 
@@ -1033,16 +1041,26 @@ BEGIN
   -- their transfers to the journal. A Construction in Progress target takes the
   -- whole cost as one CIP cost row and one transfer.
   IF v_asset_target = 'class' THEN
-    v_per_unit_cost := v_accumulated_wip_cost / v_quantity_received_to_inventory;
+    -- Rounded at persist; the last asset takes the residual so the assets add
+    -- up to exactly the WIP the journal debits to the asset account.
+    v_per_unit_cost := ROUND(v_accumulated_wip_cost / array_length(v_asset_ids, 1), 5);
 
     UPDATE "fixedAsset"
-    SET "acquisitionCost" = v_per_unit_cost,
+    SET "acquisitionCost" = CASE
+          WHEN id = v_asset_ids[array_length(v_asset_ids, 1)]
+            THEN v_accumulated_wip_cost - v_per_unit_cost * (array_length(v_asset_ids, 1) - 1)
+          ELSE v_per_unit_cost
+        END,
         "updatedAt" = NOW(),
         "updatedBy" = p_user_id
     WHERE id = ANY(v_asset_ids);
 
     UPDATE "fixedAssetTransfer"
-    SET amount = v_per_unit_cost,
+    SET amount = CASE
+          WHEN id = v_transfer_ids[array_length(v_transfer_ids, 1)]
+            THEN v_accumulated_wip_cost - v_per_unit_cost * (array_length(v_transfer_ids, 1) - 1)
+          ELSE v_per_unit_cost
+        END,
         "journalId" = v_journal_id,
         "updatedAt" = NOW(),
         "updatedBy" = p_user_id
