@@ -18,6 +18,7 @@ import {
   selectInactiveCompanies
 } from "./inactive-companies";
 import {
+  dropCompanyTables,
   purgeCompany,
   removeCompanyFiles,
   removeCompanySecrets
@@ -212,8 +213,8 @@ type CleanupTarget = Pick<CompanyCandidate, "id" | "name" | "companyGroupId">;
 
 /**
  * Delete each company with everything it owns: its storage bucket and legacy
- * files first, then its rows and Vault secrets in one transaction, then its
- * search index and audit log tables. `stillDue` is asked before the files go and
+ * files first, then its rows, Vault secrets and its search index and audit log
+ * tables in one transaction. `stillDue` is asked before the files go and
  * again inside the transaction, so a plan bought since the list was built stops
  * the delete. A company that cannot be deleted is logged and skipped; the table
  * catalog is read once for the whole list.
@@ -258,6 +259,7 @@ export async function deleteCompanies(
         if (!(await stillDue(trx, company.id))) return false;
         await purgeCompany(trx, catalog, company.id, { replica });
         await removeCompanySecrets(trx, company.id);
+        await dropCompanyTables(trx, company.id);
         return true;
       });
       if (!purged) {
@@ -271,20 +273,6 @@ export async function deleteCompanies(
       continue;
     }
 
-    // Per-company tables, named after the company and so outside the catalog.
-    for (const fn of [
-      "drop_company_search_index",
-      "drop_audit_log_table"
-    ] as const) {
-      const { error } = await serviceRole.rpc(fn, { p_company_id: company.id });
-      if (error) {
-        logger.error("Failed to run {fn} for a deleted company", {
-          fn,
-          ...company,
-          error
-        });
-      }
-    }
     logger.info("Deleted company", company);
     results.push({ id: company.id, deleted: true });
   }
