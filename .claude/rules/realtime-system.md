@@ -96,8 +96,11 @@ export const handle: Handle = {
 the matched routes and, 300 ms after the last message, invalidates the cached
 loader entries and revalidates the page. A burst is one reload; a route and a
 component following the same table reload once; a reload waits while a fetcher
-is submitting (React Router drops a fetcher's redirect when a revalidation
-starts during its action) and runs when it finishes.
+is submitting or a navigation is in flight, and runs when both are done. During
+an action React Router drops the fetcher's redirect; during the navigation that
+follows a save, a revalidation restarts it WITHOUT the submission, and every
+layout whose `shouldRevalidate` skips a plain navigation then keeps its data
+from before the save. The save's own broadcast arrives in exactly that window.
 
 - Update the list when the loader starts reading a new table. Nothing checks
   that a list is COMPLETE, only that each name can broadcast.
