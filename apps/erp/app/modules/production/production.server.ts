@@ -319,6 +319,25 @@ export async function reorderScheduleOperations(
 
   try {
     await db.transaction().execute(async (trx) => {
+      // Read again under a lock: a job completed or moved since the first read
+      // must not have its operations rescheduled.
+      const current = await trx
+        .selectFrom("job")
+        .select(["status", "locationId"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", jobIds)
+        .forShare()
+        .execute();
+      if (
+        current.length !== jobIds.length ||
+        current.some(
+          (j) =>
+            isJobLocked(j.status) || j.locationId !== destination.locationId
+        )
+      ) {
+        throw new Error("Job unavailable");
+      }
+
       const written = await sql<{ id: string }>`
         UPDATE "jobOperation" AS o
         SET "workCenterId" = ${destination.id},

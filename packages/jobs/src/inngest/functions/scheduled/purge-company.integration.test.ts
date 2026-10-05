@@ -113,7 +113,11 @@ describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
     const db = getJobDatabaseClient();
     await expect(
       db.transaction().execute(async (trx) => {
-        await sql`CREATE TABLE public."searchIndex_purge-test-orphan" (id text)`.execute(
+        await sql`CREATE TABLE public."searchIndex_purgetestorphan0000000" (id text)`.execute(
+          trx
+        );
+        // Shares the prefix, but the rest is not a company id: never dropped.
+        await sql`CREATE TABLE public."searchIndex_staging" (id text)`.execute(
           trx
         );
         const live = await sql<{ name: string }>`
@@ -121,7 +125,8 @@ describe.skipIf(!runDatabaseTests)("purgeCompany (Postgres)", () => {
 
         const dropped = await dropOrphanCompanyTables(trx, 10_000);
 
-        expect(dropped).toContain("searchIndex_purge-test-orphan");
+        expect(dropped).toContain("searchIndex_purgetestorphan0000000");
+        expect(dropped).not.toContain("searchIndex_staging");
         for (const { name } of live.rows) expect(dropped).not.toContain(name);
         const left = await sql<{ n: number }>`
           SELECT count(*)::int AS n FROM pg_class c
