@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo qu
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo que no se puede hacer backup. Omitirla permite hacer backup del resto.} other {# filas vinculan a datos fuera de esta empresa, por lo que no se pueden hacer backup. Omitirlas permite hacer backup del resto.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# semana} other {# semanas}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {El planificador trata este componente como un cuerpo rígido — un paso en las instrucciones. Vuelve a ejecutar la planificación para aplicar.} other {El planificador trata estos # componentes como un cuerpo rígido — un paso en las instrucciones. Vuelve a ejecutar la planificación para aplicar.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} más: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección, {1} omitidos."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} días"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# día} other {# días}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# línea} other {# líneas}}"

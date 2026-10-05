@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunu atlayarak diğer her şeyi yedekleyebilirsiniz.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle yedeklenemez. Bunları atlayarak diğer her şeyi yedekleyebilirsiniz.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# hafta} other {# hafta}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Planlama motoru bu bileşeni tek bir rijit gövde olarak görür — talimatların bir adımı. Uygulamak için planı yeniden çalıştırın.} other {Planlama motoru bu # bileşeni tek bir rijit gövde olarak görür — talimatların bir adımı. Uygulamak için planı yeniden çalıştırın.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} gün"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# gün} other {# gün}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"

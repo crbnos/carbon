@@ -4,7 +4,7 @@
 
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo } from "react";
 import { getNextPlannedOrder } from "~/modules/items/ui/Item/ItemReorderPolicy";
@@ -39,7 +39,6 @@ export const LatestOrderDateCell = memo(function LatestOrderDateCell({
   /** Today on the location's calendar — what "past due" is measured from. */
   todayIso: string;
 }) {
-  const { t } = useLingui();
   const { locale } = useLocale();
   const order = getNextPlannedOrder(itemPlanning, periods, todayIso);
   if (!order) return <span>-</span>;
@@ -69,7 +68,9 @@ export const LatestOrderDateCell = memo(function LatestOrderDateCell({
           <span className="text-muted-foreground">
             <Trans>Lead Time</Trans>
           </span>
-          <span className="tabular-nums text-right">{t`${leadTime} days`}</span>
+          <span className="tabular-nums text-right">
+            <Plural value={leadTime} one="# day" other="# days" />
+          </span>
           {order.isASAP && (
             <span className="col-span-2 text-red-500 font-medium">
               <Trans>Past due</Trans>

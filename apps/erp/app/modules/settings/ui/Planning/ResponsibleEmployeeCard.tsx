@@ -76,20 +76,18 @@ export function ResponsibleEmployeeCard({
     return map;
   }, [responsibilities]);
 
+  // On every finished save, as the page's other cards do. Keyed on the
+  // message, a second save answering with the same text showed nothing.
   useEffect(() => {
-    if (
-      ownershipFetcher.data?.success === true &&
-      ownershipFetcher.data?.message
-    ) {
-      toast.success(ownershipFetcher.data.message);
+    if (ownershipFetcher.state !== "idle" || !ownershipFetcher.data?.message) {
+      return;
     }
-    if (
-      ownershipFetcher.data?.success === false &&
-      ownershipFetcher.data?.message
-    ) {
+    if (ownershipFetcher.data.success) {
+      toast.success(ownershipFetcher.data.message);
+    } else {
       toast.error(ownershipFetcher.data.message);
     }
-  }, [ownershipFetcher.data?.message, ownershipFetcher.data?.success]);
+  }, [ownershipFetcher.state, ownershipFetcher.data]);
 
   const submitOwnership = useCallback(
     (update: OwnershipUpdate) => {

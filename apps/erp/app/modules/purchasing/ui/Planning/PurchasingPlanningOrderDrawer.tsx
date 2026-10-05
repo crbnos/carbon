@@ -458,17 +458,7 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     const onSubmit = useCallback(
       (id: string, orders: PlannedOrder[]) => {
-        // Skip existing PO lines that are past the Planned stage — their
-        // quantity/due-date inputs are disabled in the UI, so the user can't
-        // have edited them, and we don't want the action to issue UPDATEs
-        // against already-shipped lines.
-        const editableOrders = orders.filter(
-          (order) =>
-            !order.existingLineId ||
-            order.existingStatus === "Draft" ||
-            order.existingStatus === "Planned"
-        );
-        const ordersWithPeriods = editableOrders.map((order) => {
+        const ordersWithPeriods = orders.map((order) => {
           // Stamp the currently-selected supplier onto every order. Orders built
           // by onAddOrder/getPurchaseOrdersFromPlanning may carry a null
           // supplierId (e.g. the item has no preferredSupplierId), which the
@@ -823,7 +813,11 @@ export const PurchasingPlanningOrderDrawer = memo(
                             <Trans>Accumulation Period:</Trans>
                           </span>
                           <span>
-                            {selectedItem.demandAccumulationPeriod} weeks
+                            <Plural
+                              value={selectedItem.demandAccumulationPeriod}
+                              one="# week"
+                              other="# weeks"
+                            />
                           </span>
                         </HStack>
                         <HStack className="justify-between w-full">

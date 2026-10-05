@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# ligne se connecte à des données en dehors de cette 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# ligne se connecte à des données en dehors de cette Société, donc elle ne peut pas être sauvegardée. L'ignorer sauvegarde tout le reste.} other {# lignes se connectent à des données en dehors de cette Société, donc elles ne peuvent pas être sauvegardées. Les ignorer sauvegarde tout le reste.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# semaine} other {# semaines}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Le planificateur traite ce composant comme un corps rigide — une étape dans les instructions. Réexécutez la planification pour appliquer.} other {Le planificateur traite ces # composants comme un corps rigide — une étape dans les instructions. Réexécutez la planification pour appliquer.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} autres : {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insérés, {updated} mis à jour, {0} nécessitent correction, {1} ignorés."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} jours"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# jour} other {# jours}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# ligne} other {# lignes}}"

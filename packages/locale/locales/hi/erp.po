@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {योजनाकार इस घटक को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।} other {योजनाकार इन # घटकों को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।}}"
@@ -356,8 +361,8 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
-msgid "{leadTime} days"
-msgstr "{leadTime} दिन"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# दिन} other {# दिन}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"

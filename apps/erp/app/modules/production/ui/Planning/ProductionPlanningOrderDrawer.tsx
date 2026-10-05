@@ -452,13 +452,13 @@ export const ProductionPlanningOrderDrawer = memo(
                   <>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Reorder Point:
+                        <Trans>Reorder Point:</Trans>
                       </span>
                       <span>{row.reorderPoint}</span>
                     </HStack>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Maximum Inventory:
+                        <Trans>Maximum Inventory:</Trans>
                       </span>
                       <span>{row.maximumInventoryQuantity}</span>
                     </HStack>
@@ -469,13 +469,19 @@ export const ProductionPlanningOrderDrawer = memo(
                   <>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Accumulation Period:
+                        <Trans>Accumulation Period:</Trans>
                       </span>
-                      <span>{row.demandAccumulationPeriod} weeks</span>
+                      <span>
+                        <Plural
+                          value={row.demandAccumulationPeriod}
+                          one="# week"
+                          other="# weeks"
+                        />
+                      </span>
                     </HStack>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Safety Stock:
+                        <Trans>Safety Stock:</Trans>
                       </span>
                       <span>{row.demandAccumulationSafetyStock}</span>
                     </HStack>
@@ -486,13 +492,13 @@ export const ProductionPlanningOrderDrawer = memo(
                   <>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Reorder Point:
+                        <Trans>Reorder Point:</Trans>
                       </span>
                       <span>{row.reorderPoint}</span>
                     </HStack>
                     <HStack className="justify-between w-full">
                       <span className="text-muted-foreground">
-                        Reorder Quantity:
+                        <Trans>Reorder Quantity:</Trans>
                       </span>
                       <span>{row.reorderQuantity}</span>
                     </HStack>
@@ -509,7 +515,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 {row.minimumOrderQuantity > 0 && (
                   <HStack className="justify-between w-full">
                     <span className="text-muted-foreground">
-                      Minimum Order:
+                      <Trans>Minimum Order:</Trans>
                     </span>
                     <span>{row.minimumOrderQuantity}</span>
                   </HStack>
@@ -517,7 +523,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 {row.maximumOrderQuantity > 0 && (
                   <HStack className="justify-between w-full">
                     <span className="text-muted-foreground">
-                      Maximum Order:
+                      <Trans>Maximum Order:</Trans>
                     </span>
                     <span>{row.maximumOrderQuantity}</span>
                   </HStack>
@@ -587,7 +593,7 @@ export const ProductionPlanningOrderDrawer = memo(
           </DrawerBody>
           <DrawerFooter>
             <Button variant="secondary" onClick={onClose}>
-              Close
+              <Trans>Close</Trans>
             </Button>
             <Button
               variant="primary"
@@ -596,7 +602,7 @@ export const ProductionPlanningOrderDrawer = memo(
               isDisabled={fetcher.state !== "idle" || orders.length === 0}
               isLoading={fetcher.state !== "idle"}
             >
-              Make
+              <Trans>Make</Trans>
             </Button>
           </DrawerFooter>
         </DrawerContent>

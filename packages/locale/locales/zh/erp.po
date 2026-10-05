@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, other {#周}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。} other {计划员将这 # 个组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。}}"
@@ -356,8 +361,8 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
-msgid "{leadTime} days"
-msgstr "{leadTime} 天"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, other {#天}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"

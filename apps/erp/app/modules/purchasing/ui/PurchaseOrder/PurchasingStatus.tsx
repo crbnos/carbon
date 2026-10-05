@@ -14,51 +14,15 @@ type PurchasingStatusProps = {
 
 const PurchasingStatus = ({ status, iconOnly }: PurchasingStatusProps) => {
   if (!status) return null;
+  // Every status renders the same way; only its colour differs. An unknown
+  // status (none today) has no colour and renders nothing, as before.
   const color = PURCHASE_ORDER_STATUS_COLOR_MAP[status];
-  switch (status) {
-    case "Draft":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    case "Planned":
-    case "To Review":
-    case "Needs Approval":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    case "To Receive":
-    case "To Receive and Invoice":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    case "To Invoice":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    case "Completed":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    case "Closed":
-    case "Rejected":
-      return (
-        <Status color={color} iconOnly={iconOnly}>
-          {status}
-        </Status>
-      );
-    default:
-      return null;
-  }
+  if (!color) return null;
+  return (
+    <Status color={color} iconOnly={iconOnly}>
+      {status}
+    </Status>
+  );
 };
 
 export default PurchasingStatus;

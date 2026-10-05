@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому она не может быть зарезервирована. Пропуск позволит зарезервировать все остальное.} other {# строк связаны с данными вне этой организации, поэтому они не могут быть зарезервированы. Пропуск позволит зарезервировать все остальное.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# неделя} few {# недели} many {# недель} other {# недели}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} дней"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"

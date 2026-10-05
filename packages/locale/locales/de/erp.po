@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehme
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher können sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# Woche} other {# Wochen}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Der Planer behandelt diese Komponente als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.} other {Der Planer behandelt diese # Komponenten als einen starren Körper – einen Schritt in der Anleitung. Führen Sie den Plan erneut aus, um dies anzuwenden.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} weitere: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, {1} übersprungen."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} Tage"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# Tag} other {# Tage}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"

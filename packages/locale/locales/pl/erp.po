@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego nie można go zabezpieczyć. Pominięcie go pozwala na zabezpieczenie wszystkiego innego.} other {# wierszy łączy się z danymi spoza tej firmy, dlatego nie można ich zabezpieczyć. Pominięcie ich pozwala na zabezpieczenie wszystkiego innego.}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# tygodnia}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Planista traktuje ten składnik jako jedno sztywne ciało — jeden krok w instrukcjach. Uruchom ponownie plan, aby zastosować.} other {Planista traktuje te # składniki jako jedno sztywne ciało — jeden krok w instrukcjach. Uruchom ponownie plan, aby zastosować.}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} więcej: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} wstawiono, {updated} zaktualizowano, {0} wymagają naprawy, {1} pominięte."
 
-msgid "{leadTime} days"
-msgstr "{leadTime} dni"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linia} other {# linii}}"

@@ -79,6 +79,11 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、バックアップできません。スキップすると、他のすべてがバックアップされます。} other {# 行はこの会社の外部のデータにリンクしているため、バックアップできません。スキップすると、他のすべてがバックアップされます。}}"
 
+#. placeholder {0}: row.demandAccumulationPeriod
+#. placeholder {0}: selectedItem.demandAccumulationPeriod
+msgid "{0, plural, one {# week} other {# weeks}}"
+msgstr "{0, plural, other {#週}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。} other {プランナーはこれら # 個のコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。}}"
@@ -356,8 +361,8 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
 
-msgid "{leadTime} days"
-msgstr "{leadTime}日間"
+msgid "{leadTime, plural, one {# day} other {# days}}"
+msgstr "{leadTime, plural, other {#日}}"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
