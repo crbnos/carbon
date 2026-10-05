@@ -127,9 +127,11 @@ export function worktreesTable(
       ? pc.gray("not initialized")
       : r.dockerState === "running"
         ? pc.green(`● up · ${project}`)
-        : r.dockerState
-          ? pc.yellow(`${r.dockerState} · ${project}`)
-          : pc.dim(`registered · ${project}`);
+        : r.dockerState === "hibernated"
+          ? pc.blue(`◌ hibernated · ${project}`)
+          : r.dockerState
+            ? pc.yellow(`${r.dockerState} · ${project}`)
+            : pc.dim(`registered · ${project}`);
     t.push([
       r.current ? pc.bold(pc.cyan(r.path)) : r.path,
       r.branch ? pc.cyan(r.branch) : pc.dim("(detached)"),

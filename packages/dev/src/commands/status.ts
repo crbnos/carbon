@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync } from "node:fs";
 import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { listContainers } from "../services/compose.js";
-import { asleepFile, stackStateDir } from "../services/hibernate.js";
+import { isAsleep } from "../services/hibernate.js";
 import { portsTable, servicesTable } from "../ui.js";
 import {
   getSlot,
@@ -46,7 +45,7 @@ export async function status(opts: { json?: boolean } = {}) {
     symbol: pc.bold(pc.yellow("Portless"))
   });
 
-  if (existsSync(asleepFile(stackStateDir(slug)))) {
+  if (isAsleep(slug)) {
     log.info("hibernated — the next ERP/MES request wakes it");
   }
 

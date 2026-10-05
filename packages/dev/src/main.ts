@@ -94,7 +94,7 @@ const main = defineCommand({
           type: "boolean",
           default: true,
           description:
-            "Stop the containers after 30 min without ERP/MES traffic and start them again on the next request (--no-hibernate to keep them up; CRBN_IDLE_MINUTES changes the wait)"
+            "Stop the containers after 30 min without ERP/MES traffic, and the dev servers after 2 h; the next request starts them again (--no-hibernate to keep them up; CRBN_IDLE_MINUTES / CRBN_APPS_IDLE_MINUTES change the waits)"
         }
       },
       run: ({ args }) =>

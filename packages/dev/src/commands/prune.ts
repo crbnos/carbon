@@ -12,7 +12,11 @@ import {
   flushDb,
   listCarbonStacks
 } from "../services/compose.js";
-import { pruneStaleRoutes } from "../services/portless.js";
+import {
+  findStaleAliases,
+  pruneStaleRoutes,
+  removeAliases
+} from "../services/portless.js";
 import { listSlugs, projectName, removeSlot } from "../worktree.js";
 
 type Slots = Record<string, { worktreeRoot: string }>;
@@ -52,12 +56,26 @@ export async function prune(opts: { all?: boolean } = {}) {
   const { deadSlugs, projects } = planPrune(slots, await listCarbonStacks(), {
     all: opts.all
   });
+  // Ports of the slots that survive this prune; every other crbn route is dead.
+  const dead = new Set(deadSlugs);
+  const livePorts = new Set(
+    Object.entries(slots)
+      .filter(([slug]) => !dead.has(slug))
+      .flatMap(([, slot]) => Object.values(slot.ports))
+  );
+  const routes = findStaleAliases(livePorts);
+
   if (projects.length === 0) {
-    outro("nothing to prune");
+    if (routes.length === 0) {
+      outro("nothing to prune");
+      return;
+    }
+    // Routes are not data: the next `crbn up` registers its own again.
+    await removeAliases(routes);
+    outro(`removed ${routes.length} stale portless route(s)`);
     return;
   }
 
-  const dead = new Set(deadSlugs);
   const reasons = new Map(
     Object.keys(slots).map((slug) => [
       projectName(slug),
@@ -84,8 +102,9 @@ export async function prune(opts: { all?: boolean } = {}) {
     if (dead.has(slug)) removeSlot(slug);
   }
   await pruneStaleRoutes();
+  await removeAliases(routes);
 
   outro(
-    `removed ${projects.length} stack(s), released ${deadSlugs.length} slot(s)`
+    `removed ${projects.length} stack(s), released ${deadSlugs.length} slot(s), cleared ${routes.length} stale portless route(s)`
   );
 }

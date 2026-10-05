@@ -6,6 +6,7 @@ import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { listWorktrees as gitListWorktrees } from "../git.js";
 import { dockerProjectStates } from "../services/compose.js";
+import { isAsleep } from "../services/hibernate.js";
 import { worktreesTable } from "../ui.js";
 import { listSlugs, projectName, slugForWorktreePath } from "../worktree.js";
 
@@ -21,9 +22,11 @@ export async function listWorktrees(opts: { json?: boolean } = {}) {
 
   const rows = wts.map((w) => {
     const slug = slugForWorktreePath(w.path, registry);
-    const dockerState = slug
-      ? (dockerStates.get(projectName(slug)) ?? null)
-      : null;
+    const dockerState = !slug
+      ? null
+      : isAsleep(slug)
+        ? "hibernated"
+        : (dockerStates.get(projectName(slug)) ?? null);
     return {
       path: w.path,
       branch: w.branch,
