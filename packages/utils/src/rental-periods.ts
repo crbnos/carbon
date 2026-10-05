@@ -349,9 +349,10 @@ export function generateRentalBillingPeriods(args: {
       }
       continue;
     }
+    // Arrears too: a return recorded after its period was invoiced (a return
+    // can be dated in the past) is credited the unused days the same way.
     if (
       returnedAt === null ||
-      timing !== "Advance" ||
       row.periodEnd <= returnedAt ||
       adjustedStarts.has(row.periodStart)
     ) {

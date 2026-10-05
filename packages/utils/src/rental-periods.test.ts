@@ -260,15 +260,24 @@ it("an adjustment is never positive and never repeated", () => {
   expect(alreadyCredited.create).toEqual([]);
 });
 
-it("only advance billing is adjusted; a fully used period never is", () => {
+it("a return recorded after its period was invoiced is credited, Arrears too; a fully used period never is", () => {
+  // Back on Oct 3, recorded after the arrears invoice for the whole period:
+  // 3 of the 28 days were used, so 2,500 of the 2,800 billed comes back.
   const arrears = generate({
+    ...DAILY,
     timing: "Arrears",
     endDate: "2026-10-28",
     returnedAt: "2026-10-03",
     through: "2026-10-03",
-    existing: [invoiced("2026-10-01", "2026-10-28", 1500)]
+    existing: [invoiced("2026-10-01", "2026-10-28", 2800)]
   });
-  expect(arrears.adjustments).toEqual([]);
+  expect(arrears.adjustments).toEqual([
+    expect.objectContaining({
+      periodStart: "2026-10-01",
+      amount: -2500,
+      isAdjustment: true
+    })
+  ]);
   const twoPeriods = [
     invoiced("2026-10-01", "2026-10-28", 2800),
     invoiced("2026-10-29", "2026-11-04", 700)
