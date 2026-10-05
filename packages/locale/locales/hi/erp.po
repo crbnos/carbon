@@ -103,6 +103,10 @@ msgstr "{0} पहले से एक बैच में है"
 msgid "{0} already started"
 msgstr "{0} पहले से शुरू हो गया है"
 
+#. placeholder {0}: due.count
+msgid "{0} assets to depreciate · {amount}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} को हटाया नहीं जा सकता क्योंकि यह अभी भी {where} में उपयोग में है। पहले उन रिकॉर्ड को किसी दूसरी माप की इकाई में बदलें।"
@@ -137,6 +141,10 @@ msgstr "{0} सफलतापूर्वक हटाया गया"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
+
+#. placeholder {0}: due.count
+msgid "{0} entries to recognize · {amount}"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -554,6 +562,9 @@ msgstr "0-4 सप्ताह"
 msgid "1 Asset"
 msgstr "1 अचल संपत्ति"
 
+msgid "1 asset to depreciate · {amount}"
+msgstr ""
+
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 बैचेबल ऑपरेशन बैच में नहीं है — जब तक बैच न हो जाए, यह अलग-अलग चलता है"
 
@@ -568,6 +579,9 @@ msgstr "1 दिन"
 
 msgid "1 draft journal entry"
 msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
+
+msgid "1 entry to recognize · {amount}"
+msgstr ""
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 चालान आपकी पिछली प्रणाली में बिल किया गया था और फिर से ड्राफ्ट नहीं किया गया है।"
@@ -3033,6 +3047,12 @@ msgstr "आरोही"
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} अनुमति वाले एक व्यवस्थापक से पहले {1} जोड़ने के लिए कहें।"
+
+msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+msgstr ""
+
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "असेंबलीज"
@@ -6888,9 +6908,6 @@ msgstr "जब अचल संपत्ति निपटाई जाती �
 
 msgid "Depreciation Run"
 msgstr "मूल्यह्रास रन"
-
-msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr "इस अवधि में समाप्त होने वाले मूल्यह्रास चलान जो अभी भी ड्राफ्ट हैं, पोस्ट किए जाने चाहिए ताकि अवधि सही मूल्यह्रास व्यय और संचित मूल्यह्रास को दर्शाए। यदि इस अवधि में मूल्यह्रास लागू नहीं होता है तो एक कारण के साथ छोड़ दें।"
 
 msgid "Depreciation Start"
 msgstr "मूल्यह्रास शुरुआत"
@@ -14930,6 +14947,10 @@ msgstr "पोस्ट करें और Stripe के माध्यम स
 msgid "Post Comment"
 msgstr "टिप्पणी पोस्ट करें"
 
+#. placeholder {0}: run.readableId
+msgid "Post draft run {0}"
+msgstr ""
+
 msgid "Post Invoice"
 msgstr "चालान पोस्ट करें"
 
@@ -17000,9 +17021,6 @@ msgstr "बिक्रय-प्रकार पट्टे की शुर�
 
 msgid "Revenue recognized straight-line for operating rentals and for variable rental charges"
 msgstr "संचालन किराये के लिए और परिवर्तनशील किराये के शुल्क के लिए राजस्व सीधी रेखा में मान्य"
-
-msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "इस अवधि के अंत तक या उससे पहले स्वीकृत होने के लिए अनुसूचित राजस्व अभी भी योजनाबद्ध है: स्थगित चालान राजस्व और किराया जो राजस्व मान्यता चलाने से पोस्ट नहीं किया गया है। इस अवधि के लिए चलाने का प्रस्ताव करें और पोस्ट करें ताकि राजस्व खाता बही तक पहुंचे। यदि कुछ भी स्वीकृत नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
 
 msgid "Revenue Start"
 msgstr "राजस्व प्रारंभ"

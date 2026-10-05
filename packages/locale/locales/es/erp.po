@@ -103,6 +103,10 @@ msgstr "{0} ya en un lote"
 msgid "{0} already started"
 msgstr "{0} ya iniciado"
 
+#. placeholder {0}: due.count
+msgid "{0} assets to depreciate · {amount}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} no se puede eliminar porque todavía está en uso por {where}. Cambie primero esos registros a otra unidad de medida."
@@ -137,6 +141,10 @@ msgstr "{0} eliminado correctamente"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
+
+#. placeholder {0}: due.count
+msgid "{0} entries to recognize · {amount}"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -554,6 +562,9 @@ msgstr "0-4 semanas"
 msgid "1 Asset"
 msgstr "1 Activo"
 
+msgid "1 asset to depreciate · {amount}"
+msgstr ""
+
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operación agrupable no está en un lote de producción — se ejecuta individualmente hasta que se agrupe"
 
@@ -568,6 +579,9 @@ msgstr "1 día"
 
 msgid "1 draft journal entry"
 msgstr "1 apunte de borrador"
+
+msgid "1 entry to recognize · {amount}"
+msgstr ""
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 factura se facturó en su sistema anterior y no se vuelve a generar."
@@ -3033,6 +3047,12 @@ msgstr "Ascendente"
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Pida a un administrador con permiso {0} que agregue el primer {1}."
+
+msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+msgstr ""
+
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Asambleas"
@@ -6888,9 +6908,6 @@ msgstr "Reversión de depreciación cuando se desecha un activo fijo"
 
 msgid "Depreciation Run"
 msgstr "Ejecución de Depreciación"
-
-msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr "Las depreciaciones que terminan en este período que aún están en Borrador deben contabilizarse para que el período refleje el gasto de depreciación correcto y la depreciación acumulada. Omita con una razón si la depreciación no aplica este período."
 
 msgid "Depreciation Start"
 msgstr "Inicio de Depreciación"
@@ -14930,6 +14947,10 @@ msgstr "Contabilizar y enviar vía Stripe"
 msgid "Post Comment"
 msgstr "Publicar Comentario"
 
+#. placeholder {0}: run.readableId
+msgid "Post draft run {0}"
+msgstr ""
+
 msgid "Post Invoice"
 msgstr "Registrar Factura"
 
@@ -17000,9 +17021,6 @@ msgstr "Ingresos por ventas reconocidos al inicio de un arrendamiento de tipo ve
 
 msgid "Revenue recognized straight-line for operating rentals and for variable rental charges"
 msgstr "Ingresos por ventas reconocidos en línea recta para alquileres operativos y para cargos de alquiler variables"
-
-msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "Ingresos por ventas programados para ser reconocidos en o antes del cierre de este período aún están planificados: ingresos por ventas de factura diferidos y alquiler que no han sido contabilizados por una ejecución de reconocimiento de ingresos por ventas. Proponga y contabilice la ejecución para este período para que los ingresos por ventas lleguen al libro mayor. Omita con una razón si nada debería ser reconocido."
 
 msgid "Revenue Start"
 msgstr "Inicio de ingresos por ventas"

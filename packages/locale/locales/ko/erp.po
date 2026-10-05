@@ -103,6 +103,10 @@ msgstr "{0}은 이미 배치에 포함됨"
 msgid "{0} already started"
 msgstr "{0}은 이미 시작됨"
 
+#. placeholder {0}: due.count
+msgid "{0} assets to depreciate · {amount}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0}은(는) {where}에서 아직 사용 중이므로 삭제할 수 없습니다. 먼저 해당 레코드를 다른 단위로 변경하세요."
@@ -137,6 +141,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 전표"
+
+#. placeholder {0}: due.count
+msgid "{0} entries to recognize · {amount}"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -554,6 +562,9 @@ msgstr "0-4주"
 msgid "1 Asset"
 msgstr "자산 1개"
 
+msgid "1 asset to depreciate · {amount}"
+msgstr ""
+
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
 
@@ -568,6 +579,9 @@ msgstr "1일"
 
 msgid "1 draft journal entry"
 msgstr "1개의 초안 분개"
+
+msgid "1 entry to recognize · {amount}"
+msgstr ""
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
@@ -3033,6 +3047,12 @@ msgstr "오름차순"
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
+
+msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+msgstr ""
+
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "조립품"
@@ -6888,9 +6908,6 @@ msgstr "고정자산 처분 시 감가상각 환입"
 
 msgid "Depreciation Run"
 msgstr "감가상각 실행"
-
-msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr "이 기간에 종료되는 감가상각 실행이 아직 초안 상태인 경우 해당 기간이 올바른 감가상각 비용과 감가상각누계액을 반영하도록 전기되어야 합니다. 이 기간에 감가상각이 적용되지 않으면 사유를 기록하고 건너뜁니다."
 
 msgid "Depreciation Start"
 msgstr "감가상각 시작"
@@ -14930,6 +14947,10 @@ msgstr "Stripe를 통해 전기 및 전송"
 msgid "Post Comment"
 msgstr "댓글 게시"
 
+#. placeholder {0}: run.readableId
+msgid "Post draft run {0}"
+msgstr ""
+
 msgid "Post Invoice"
 msgstr "송장 전기"
 
@@ -17000,9 +17021,6 @@ msgstr "판매형 리스 개시 시 인식된 매출"
 
 msgid "Revenue recognized straight-line for operating rentals and for variable rental charges"
 msgstr "운영 렌탈 및 변동 렌탈료에 대해 직선법으로 인식된 매출"
-
-msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "이 기간 말일까지 인식될 예정인 수익이 아직 계획됨 상태입니다. 이는 연기된 송장 수익과 수익 인식 실행으로 전기되지 않은 임차료입니다. 이 기간에 대해 실행을 제안하고 전기하여 수익이 원장에 도달하도록 하세요. 인식할 항목이 없으면 이유를 포함하여 건너뜁니다."
 
 msgid "Revenue Start"
 msgstr "매출 시작"

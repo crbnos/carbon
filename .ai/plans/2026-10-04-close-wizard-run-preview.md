@@ -24,7 +24,7 @@ Terms:
 - [x] Task 1: Add the `preview-revenue-recognition-run` server function
 - [x] Task 2: Move `buildDepreciationRunLines` to the service and add `createDepreciationRun`, which refuses an empty run
 - [x] Task 3: Add `getPeriodRunPreview` and feed it to the readiness checks
-- [ ] Task 4: Show what is due and a Create run button on the close page
+- [x] Task 4: Show what is due and a Create run button on the close page
 - [ ] Task 5: Update AGENTS.md and the fixed-asset rule
 - [ ] Task 6: Verify in the browser
 

@@ -103,6 +103,10 @@ msgstr "{0} déjà dans un lot"
 msgid "{0} already started"
 msgstr "{0} déjà commencé"
 
+#. placeholder {0}: due.count
+msgid "{0} assets to depreciate · {amount}"
+msgstr ""
+
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
 msgstr "{0} ne peut pas être supprimé car il est encore utilisé par {where}. Modifiez d'abord ces enregistrements vers une autre unité de mesure."
@@ -137,6 +141,10 @@ msgstr "{0} supprimé avec succès"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} écritures de journal brouillon"
+
+#. placeholder {0}: due.count
+msgid "{0} entries to recognize · {amount}"
+msgstr ""
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -554,6 +562,9 @@ msgstr "0-4 semaines"
 msgid "1 Asset"
 msgstr "1 Immobilisation"
 
+msgid "1 asset to depreciate · {amount}"
+msgstr ""
+
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 opération pouvant être mise en lot n'est pas dans un lot — elle s'exécute individuellement jusqu'à être mise en lot"
 
@@ -568,6 +579,9 @@ msgstr "1 jour"
 
 msgid "1 draft journal entry"
 msgstr "1 ligne d'écriture en brouillon"
+
+msgid "1 entry to recognize · {amount}"
+msgstr ""
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 facture a été facturée dans votre système précédent et n'est pas créée à nouveau."
@@ -3033,6 +3047,12 @@ msgstr "Croissant"
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Demandez à un administrateur disposant de l'autorisation {0} d'ajouter le premier {1}."
+
+msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
+msgstr ""
+
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr ""
 
 msgid "Assemblies"
 msgstr "Assemblages"
@@ -6888,9 +6908,6 @@ msgstr "Inversion de l'amortissement lors de la cession d'une immobilisation"
 
 msgid "Depreciation Run"
 msgstr "Exécution d'amortissement"
-
-msgid "Depreciation runs ending in this period that are still Draft should be posted so the period reflects the correct depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr "Les amortissements se terminant au cours de cette période qui sont encore Brouillon doivent être comptabilisés pour que la période reflète les charges d'amortissement et l'amortissement cumulé corrects. Passez avec une raison si l'amortissement ne s'applique pas à cette période."
 
 msgid "Depreciation Start"
 msgstr "Début d'amortissement"
@@ -14930,6 +14947,10 @@ msgstr "Comptabiliser et envoyer via Stripe"
 msgid "Post Comment"
 msgstr "Publier un commentaire"
 
+#. placeholder {0}: run.readableId
+msgid "Post draft run {0}"
+msgstr ""
+
 msgid "Post Invoice"
 msgstr "Valider la facture"
 
@@ -17000,9 +17021,6 @@ msgstr "Revenu reconnu au début d'un contrat de location-vente"
 
 msgid "Revenue recognized straight-line for operating rentals and for variable rental charges"
 msgstr "Revenu reconnu en ligne droite pour les locations d'exploitation et pour les frais de location variables"
-
-msgid "Revenue scheduled to be recognized on or before this period end is still Planned: deferred invoice revenue and rent that has not been posted by a revenue recognition run. Propose and post the run for this period so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "Les revenus prévus pour être comptabilisés sur ou avant la fin de cette période sont toujours planifiés : les revenus de facture différés et la location qui n'ont pas été comptabilisés par une exécution de comptabilisation des revenus. Proposez et comptabilisez l'exécution pour cette période afin que les revenus atteignent le grand livre. Ignorez avec une raison si rien ne doit être comptabilisé."
 
 msgid "Revenue Start"
 msgstr "Début des revenus"
