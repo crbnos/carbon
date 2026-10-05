@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { homedir } from "node:os";
+import { stripVTControlCharacters } from "node:util";
 import {
   progress as clackProgress,
   spinner as clackSpinner,
@@ -115,13 +117,21 @@ export function worktreesTable(
     current: boolean;
     slug: string | null;
     dockerState: string | null;
-  }[]
+  }[],
+  // Columns the table may use; clack's gutter takes four. A pipe has no width
+  // and is never narrowed.
+  width = process.stdout.columns ? process.stdout.columns - 4 : Infinity
 ): string {
   const t = new Table({
     head: [pc.bold("Worktree"), pc.bold("Branch"), pc.bold("Stack")],
     ...BASE_STYLE
   });
+  const home = homedir();
+  const stacked: string[] = [];
   for (const r of rows) {
+    const path = r.path.startsWith(`${home}/`)
+      ? `~${r.path.slice(home.length)}`
+      : r.path;
     const project = r.slug ? projectName(r.slug) : "—";
     const stack = !r.slug
       ? pc.gray("not initialized")
@@ -132,13 +142,19 @@ export function worktreesTable(
           : r.dockerState
             ? pc.yellow(`${r.dockerState} · ${project}`)
             : pc.dim(`registered · ${project}`);
-    t.push([
-      r.current ? pc.bold(pc.cyan(r.path)) : r.path,
-      r.branch ? pc.cyan(r.branch) : pc.dim("(detached)"),
-      stack
-    ]);
+    const branch = r.branch ? pc.cyan(r.branch) : pc.dim("(detached)");
+    t.push([r.current ? pc.bold(pc.cyan(path)) : path, branch, stack]);
+    stacked.push(
+      `${r.current ? pc.bold(branch) : branch}  ${stack}\n  ${pc.dim(path)}`
+    );
   }
-  return t.toString();
+  // A table wider than the terminal wraps mid-row and is unreadable; one
+  // worktree per two lines reads at any width.
+  const table = t.toString();
+  const widest = Math.max(
+    ...table.split("\n").map((line) => stripVTControlCharacters(line).length)
+  );
+  return widest <= width ? table : stacked.join("\n");
 }
 
 function colorState(state: string, health: string | null): string {
