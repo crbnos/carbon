@@ -355,6 +355,20 @@ never offered a Cancel, Defer or Expedite.
 - `runMrp` throws when the forecast-consumption settings cannot be read; the
   window decides what is persisted as `consumedQuantity`, so defaults are not a
   safe fallback.
+- **A job order is measured in GOOD units** — `job.quantity` less
+  `quantityReceivedToInventory`, from one read of the company's open jobs
+  (the same four statuses as `openProductionOrders`), never the view's
+  `quantityToReceive`, which is `productionQuantity` (quantity + scrap) less
+  received. A change action is applied to `job.quantity`, so on the view's
+  figure every job with a scrap allowance read as over-supplied, got "Only 80
+  of 84 is required", and got it again after the Decrease was applied.
+  `updatePlanningJob` restates `scrapQuantity` for the new quantity from the
+  item's scrap rate, as `insertJob` derives it. (The projection itself still
+  books `productionQuantity` as supply — a separate, older choice.)
+- The `demandProjection.consumedQuantity` write touches only rows whose value
+  changed (`IS DISTINCT FROM`) and leaves `updatedAt` / `updatedBy` alone:
+  consumption is derived, and the audit columns name the planner who entered
+  the forecast.
 
 ## Planning UI
 
@@ -547,7 +561,9 @@ never offered a Cancel, Defer or Expedite.
   (`getPlanningActionsByIds`, `markPlanningActionsActioned`,
   `dismissPlanningActions`, `reopenDismissedPlanningActions`,
   `assignPlanningActions` take the `db` handle): the ids are bound
-  parameters, never a URL, and the claim flips the whole batch or none of it.
+  parameters, never a URL. Apply claims each action right BEFORE its own
+  change, not the batch up front: a request that dies in the loop strands at
+  most one Actioned row with nothing applied.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The

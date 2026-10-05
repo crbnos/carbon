@@ -1251,13 +1251,14 @@ export async function runMrp(
         // so a projection deleted mid-run can never be resurrected by the
         // write phase. Every loaded projection has a row here (0 included),
         // so stale consumption from a prior run is always overwritten.
+        // Consumption is derived data, not an edit: the row's updatedAt /
+        // updatedBy stay with the planner who entered the forecast, and a row
+        // whose consumption did not change is not written at all.
         for (let i = 0; i < consumptionUpdates.length; i += BATCH_SIZE) {
           const batch = consumptionUpdates.slice(i, i + BATCH_SIZE);
           await sql`
             UPDATE "demandProjection" AS dp
-            SET "consumedQuantity" = v."consumedQuantity"::numeric,
-                "updatedAt" = ${datetime.timestamp()},
-                "updatedBy" = ${userId}
+            SET "consumedQuantity" = v."consumedQuantity"::numeric
             FROM (VALUES ${sql.join(
               batch.map(
                 (r) =>
@@ -1268,6 +1269,7 @@ export async function runMrp(
               AND dp."locationId" = v."locationId"
               AND dp."periodId" = v."periodId"
               AND dp."companyId" = ${companyId}
+              AND dp."consumedQuantity" IS DISTINCT FROM v."consumedQuantity"::numeric
           `.execute(trx);
         }
       });

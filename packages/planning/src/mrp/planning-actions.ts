@@ -999,20 +999,26 @@ export async function generatePlanningActions(
   const poLineRows = openPoLines.data ?? [];
   const jobRows = openJobs.data ?? [];
 
-  // openProductionOrders does not expose job status — bulk-read it
-  const jobIds = jobRows.map((j) => j.id).filter(Boolean) as string[];
-  const jobStatusById = new Map<string, string>();
-  for (let i = 0; i < jobIds.length; i += BATCH_SIZE) {
-    const chunk = jobIds.slice(i, i + BATCH_SIZE);
-    const rows = await db
-      .selectFrom("job")
-      .select(["id", "status"])
-      .where("companyId", "=", companyId)
-      .where("id", "in", chunk)
-      .execute();
-    for (const row of rows) {
-      if (row.status) jobStatusById.set(row.id, row.status);
-    }
+  // openProductionOrders exposes neither the job's status nor its good-unit
+  // quantity. One read of the company's open jobs (the view's own statuses)
+  // gives both — no id list, whatever the number of jobs.
+  const jobById = new Map<
+    string,
+    { status: string; quantity: number; quantityReceivedToInventory: number }
+  >();
+  const openJobRows = await db
+    .selectFrom("job")
+    .select(["id", "status", "quantity", "quantityReceivedToInventory"])
+    .where("companyId", "=", companyId)
+    .where("status", "in", ["Planned", "Ready", "In Progress", "Paused"])
+    .execute();
+  for (const row of openJobRows) {
+    if (!row.status) continue;
+    jobById.set(row.id, {
+      status: row.status,
+      quantity: Number(row.quantity) || 0,
+      quantityReceivedToInventory: Number(row.quantityReceivedToInventory) || 0
+    });
   }
 
   const openOrdersByItemLocation = new Map<string, OpenSupplyOrder[]>();
@@ -1038,7 +1044,15 @@ export async function generatePlanningActions(
   }
   for (const job of jobRows) {
     if (!job.id || !job.itemId || !job.locationId) continue;
-    const quantity = Number(job.quantityToReceive) || 0;
+    const details = jobById.get(job.id);
+    // The view's quantityToReceive is productionQuantity (quantity + scrap)
+    // less received. A change action is applied to `job.quantity`, the good
+    // units, so the order is measured in those: on the view's figure every
+    // job with a scrap allowance read as over-supplied, got a Decrease to its
+    // own quantity, and got it again after it was applied.
+    const quantity = details
+      ? Math.max(details.quantity - details.quantityReceivedToInventory, 0)
+      : Number(job.quantityToReceive) || 0;
     if (quantity <= 0) continue;
     pushOrder(`${job.itemId}${KEY_SEP}${job.locationId}`, {
       jobId: job.id,
@@ -1046,9 +1060,7 @@ export async function generatePlanningActions(
       // the same date the projection buckets this job on — an undated job is
       // supply there, so it is supply here too
       dueDate: jobCompletionDate(job, todayDate),
-      requiresManualAction: isCommittedJobStatus(
-        jobStatusById.get(job.id) ?? ""
-      )
+      requiresManualAction: isCommittedJobStatus(details?.status ?? "")
     });
   }
 

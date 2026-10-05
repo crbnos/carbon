@@ -3857,10 +3857,53 @@ async function priorityForDateChange(
 }
 
 /**
+ * The scrap allowance a job needs for a new quantity, from its item's scrap
+ * rate — the same derivation `insertJob` makes. `job.quantity` is the good
+ * units; `scrapQuantity` rides on top of it (`productionQuantity` is their
+ * generated sum), so a quantity change that leaves the old allowance in place
+ * builds the wrong number of units.
+ */
+async function scrapQuantityForPlanningQuantity(
+  client: SupabaseClient<Database>,
+  job: { id: string; companyId: string },
+  quantity: number
+): Promise<{ scrapQuantity: number; error: PostgrestError | null }> {
+  const existing = await client
+    .from("job")
+    .select("itemId")
+    .eq("id", job.id)
+    .eq("companyId", job.companyId)
+    .single();
+  if (existing.error) return { scrapQuantity: 0, error: existing.error };
+
+  const replenishment = await client
+    .from("itemReplenishment")
+    .select("scrapPercentage")
+    .eq("itemId", existing.data.itemId)
+    .eq("companyId", job.companyId)
+    .maybeSingle();
+  if (replenishment.error) {
+    return { scrapQuantity: 0, error: replenishment.error };
+  }
+  return {
+    scrapQuantity: scrapAllowance(
+      quantity,
+      replenishment.data?.scrapPercentage ?? 0
+    ),
+    error: null
+  };
+}
+
+/**
  * Change a job's quantity or due date from planning (Apply, the order drawer).
  * The Draft / Planned condition is part of the UPDATE, so a job released
  * after the caller read it is left alone rather than edited: `updated` is
  * false, and the caller sends the planner to the job instead.
+ *
+ * A quantity change restates `scrapQuantity` for the new quantity. The
+ * planning Decrease / Increase quantities are good units, so the job's own
+ * scrap allowance must follow them — left alone, a Decrease to 80 kept the
+ * allowance of the old quantity and the next run offered the Decrease again.
  */
 export async function updatePlanningJob(
   client: SupabaseClient<Database>,
@@ -3875,10 +3918,22 @@ export async function updatePlanningJob(
   const { id, companyId, updatedBy, ...updates } = input;
   const priority = await priorityForDateChange(client, id, updates);
 
+  let scrap: { scrapQuantity: number } | undefined;
+  if (updates.quantity !== undefined) {
+    const derived = await scrapQuantityForPlanningQuantity(
+      client,
+      { id, companyId },
+      updates.quantity
+    );
+    if (derived.error) return { updated: false, error: derived.error };
+    scrap = { scrapQuantity: derived.scrapQuantity };
+  }
+
   const result = await client
     .from("job")
     .update({
       ...updates,
+      ...scrap,
       ...(priority !== undefined && { priority }),
       updatedBy,
       updatedAt: datetime.timestamp()

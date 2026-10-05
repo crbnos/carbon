@@ -744,10 +744,10 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       };
 
-      // Three reads and one claim for the whole batch, then one change per
+      // Two reads for the whole batch, then one claim and one change per
       // action: each job gets its own value, and a cancel has several steps.
-      // The batch used to read the action, read its job and claim it one at a
-      // time — four round trips per action before anything changed.
+      // The batch used to read the action and read its job one at a time —
+      // three round trips per action before anything changed.
       const actionRows = await getPlanningActionsByIds(db, {
         ids: parsedIds.data,
         companyId
@@ -848,40 +848,40 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Atomic claim BEFORE mutating: the conditional Open→Actioned update is
       // the lock — of two concurrent applies only one gets a row back, so a
-      // target is never changed twice. A failed change gives its claim back;
-      // a crash in between leaves an Actioned row whose unmet need the next
-      // MRP run re-emits as a fresh Open action (the natural-key index ignores
-      // Actioned rows).
-      const claimedIds = new Set<string>();
-      if (toClaim.length > 0) {
-        const claim = await markPlanningActionsActioned(db, {
-          ids: toClaim.map(({ planningActionId }) => planningActionId),
+      // target is never changed twice. A failed change gives its claim back.
+      // Each action is claimed right before its own change, not the batch up
+      // front: a request that dies in the loop (the function's time limit on
+      // a large batch) then strands at most ONE claimed row, which the next
+      // MRP run re-emits as a fresh Open action (the natural-key index
+      // ignores Actioned rows).
+      const claim = async (planningActionId: string): Promise<boolean> => {
+        const claimed = await markPlanningActionsActioned(db, {
+          ids: [planningActionId],
           companyId,
           userId
         });
-        if (claim.error) {
-          logger.error("Failed to claim planning actions", {
+        if (claimed.error) {
+          logger.error("Failed to claim a planning action", {
             companyId,
-            error: claim.error
+            planningActionId,
+            error: claimed.error
           });
-          return data(
-            {
-              success: false,
-              message: `Failed to claim planning actions: ${claim.error.message}`
-            },
-            { status: 500 }
+          errors.push(
+            `Planning action ${planningActionId} could not be claimed: ${claimed.error.message}`
           );
+          return false;
         }
-        for (const { id } of claim.data ?? []) claimedIds.add(id);
-      }
-
-      for (const { planningActionId, row } of toClaim) {
-        if (!claimedIds.has(planningActionId)) {
+        if (claimed.data.length === 0) {
           errors.push(
             `Planning action ${planningActionId} was already applied`
           );
-          continue;
+          return false;
         }
+        return true;
+      };
+
+      for (const { planningActionId, row } of toClaim) {
+        if (!(await claim(planningActionId))) continue;
         const jobId = row.jobId!;
 
         if (row.type === "Cancel") {
