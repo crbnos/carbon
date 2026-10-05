@@ -10663,7 +10663,8 @@ export async function dismissPlanningActions(
     .update({ status: "Dismissed" as const, updatedBy: args.userId })
     .in("id", args.ids)
     .eq("companyId", args.companyId)
-    .eq("status", "Open");
+    .eq("status", "Open")
+    .select("id");
 }
 
 /**
@@ -10743,13 +10744,16 @@ export async function reopenDismissedPlanningActions(
     .update({ status: "Open" as const, updatedBy: args.userId })
     .in("id", args.ids)
     .eq("companyId", args.companyId)
-    .eq("status", "Dismissed");
+    .eq("status", "Dismissed")
+    .select("id");
 }
 
 /**
  * Assigning through this function (not the generic api/assign route) both sets
  * the assignee AND marks it human-overridden so the next MRP diff-write never
- * re-resolves it from the responsibleEmployee ladder.
+ * re-resolves it from the responsibleEmployee ladder. An applied (Actioned)
+ * action is finished and keeps its owner. Like dismiss and reopen, it returns
+ * the ids it changed: the route reports those, not the ids it was sent.
  */
 export async function assignPlanningActions(
   client: SupabaseClient<Database>,
@@ -10768,19 +10772,21 @@ export async function assignPlanningActions(
       updatedBy: args.userId
     })
     .in("id", args.ids)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .in("status", ["Open", "Dismissed"])
+    .select("id");
 }
 
-export async function getPlanningAction(
+/** The actions an Apply was sent, in one read (an Apply used to read each). */
+export async function getPlanningActionsByIds(
   client: SupabaseClient<Database>,
-  args: { id: string; companyId: string }
+  args: { ids: string[]; companyId: string }
 ) {
   return client
     .from("planningAction")
     .select("*")
-    .eq("id", args.id)
-    .eq("companyId", args.companyId)
-    .single();
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
 }
 
 /**

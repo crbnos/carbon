@@ -11,7 +11,7 @@ import { z } from "zod";
 import {
   assignPlanningActions,
   dismissPlanningActions,
-  getPlanningAction,
+  getPlanningActionsByIds,
   insertJob,
   isJobEditableFromPlanning,
   markPlanningActionsActioned,
@@ -29,6 +29,10 @@ import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
+
+type PlanningActionRow = NonNullable<
+  Awaited<ReturnType<typeof getPlanningActionsByIds>>["data"]
+>[number];
 
 // Telling the scheduler is a follow-up to a write that already landed, so its
 // failure is logged and reported, never thrown: a throw here used to end an
@@ -81,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
         success: false,
         message: "Location ID is required and must be a valid string"
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 
@@ -91,7 +95,7 @@ export async function action({ request }: ActionFunctionArgs) {
         success: false,
         message: "Action parameter is required and must be a valid string"
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 
@@ -132,7 +136,7 @@ export async function action({ request }: ActionFunctionArgs) {
             message: `Validation failed: ${errorMessages.join(", ")}`,
             errors: errorMessages
           },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -143,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
             success: false,
             message: "No items were provided to create production orders"
           },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -700,7 +704,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -739,16 +743,34 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       };
 
-      for (const planningActionId of parsedIds.data) {
-        const actionRow = await getPlanningAction(client, {
-          id: planningActionId,
-          companyId
+      // Three reads and one claim for the whole batch, then one change per
+      // action: each job gets its own value, and a cancel has several steps.
+      // The batch used to read the action, read its job and claim it one at a
+      // time — four round trips per action before anything changed.
+      const actionRows = await getPlanningActionsByIds(client, {
+        ids: parsedIds.data,
+        companyId
+      });
+      if (actionRows.error) {
+        logger.error("Failed to read planning actions", {
+          companyId,
+          error: actionRows.error
         });
-        if (actionRow.error || !actionRow.data) {
+        return data(
+          { success: false, message: "Failed to read planning actions" },
+          { status: 500 }
+        );
+      }
+      const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+      const eligible: { planningActionId: string; row: PlanningActionRow }[] =
+        [];
+      for (const planningActionId of parsedIds.data) {
+        const row = rowById.get(planningActionId);
+        if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
           continue;
         }
-        const row = actionRow.data;
         if (row.status !== "Open") {
           errors.push(`Planning action ${planningActionId} is not open`);
           continue;
@@ -771,51 +793,92 @@ export async function action({ request }: ActionFunctionArgs) {
           );
           continue;
         }
+        eligible.push({ planningActionId, row });
+      }
 
-        const job = await client
-          .from("job")
-          .select("id, status")
-          .eq("id", row.jobId)
-          .eq("companyId", companyId)
-          .single();
-        if (job.error || !job.data) {
-          errors.push(`Job for planning action ${planningActionId} not found`);
+      const jobIds = [...new Set(eligible.map(({ row }) => row.jobId!))];
+      const jobs =
+        jobIds.length > 0
+          ? await client
+              .from("job")
+              .select("id, status")
+              .in("id", jobIds)
+              .eq("companyId", companyId)
+          : { data: [], error: null };
+      if (jobs.error) {
+        logger.error("Failed to read jobs for planning actions", {
+          companyId,
+          error: jobs.error
+        });
+        return data(
+          {
+            success: false,
+            message: "Failed to read the planning actions' jobs"
+          },
+          { status: 500 }
+        );
+      }
+      const jobStatusById = new Map(
+        (jobs.data ?? []).map((job) => [job.id, job.status])
+      );
+
+      const toClaim: { planningActionId: string; row: PlanningActionRow }[] =
+        [];
+      for (const target of eligible) {
+        const jobId = target.row.jobId!;
+        const status = jobStatusById.get(jobId);
+        if (status === undefined) {
+          errors.push(
+            `Job for planning action ${target.planningActionId} not found`
+          );
           continue;
         }
-
-        if (!isJobEditableFromPlanning(job.data.status)) {
+        if (!isJobEditableFromPlanning(status)) {
           // Past Planned (on the floor, finished, closed or cancelled since
           // MRP ran) — surface "Review on Job" instead of editing it
-          requiresManualAction.push({
-            id: planningActionId,
-            jobId: job.data.id
-          });
+          requiresManualAction.push({ id: target.planningActionId, jobId });
           continue;
         }
+        toClaim.push(target);
+      }
 
-        // Atomic claim BEFORE mutating: the conditional Open→Actioned update
-        // is the lock — of two concurrent applies only one sees an affected
-        // row, so the target is never double-mutated. A failed mutation
-        // reopens the claim; a crash in between leaves an Actioned row whose
-        // unmet need the next MRP run re-emits as a fresh Open action (the
-        // natural-key index ignores Actioned rows).
+      // Atomic claim BEFORE mutating: the conditional Open→Actioned update is
+      // the lock — of two concurrent applies only one gets a row back, so a
+      // target is never changed twice. A failed change gives its claim back;
+      // a crash in between leaves an Actioned row whose unmet need the next
+      // MRP run re-emits as a fresh Open action (the natural-key index ignores
+      // Actioned rows).
+      const claimedIds = new Set<string>();
+      if (toClaim.length > 0) {
         const claim = await markPlanningActionsActioned(client, {
-          ids: [planningActionId],
+          ids: toClaim.map(({ planningActionId }) => planningActionId),
           companyId,
           userId
         });
         if (claim.error) {
-          errors.push(
-            `Failed to claim planning action ${planningActionId}: ${claim.error.message}`
+          logger.error("Failed to claim planning actions", {
+            companyId,
+            error: claim.error
+          });
+          return data(
+            {
+              success: false,
+              message: `Failed to claim planning actions: ${claim.error.message}`
+            },
+            { status: 500 }
           );
-          continue;
         }
-        if ((claim.data ?? []).length === 0) {
+        for (const { id } of claim.data ?? []) claimedIds.add(id);
+      }
+
+      for (const { planningActionId, row } of toClaim) {
+        if (!claimedIds.has(planningActionId)) {
           errors.push(
             `Planning action ${planningActionId} was already applied`
           );
           continue;
         }
+        const jobId = row.jobId!;
 
         if (row.type === "Cancel") {
           // The job status route's cancel: picked material goes back and the
@@ -823,7 +886,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const failed = await cancelJob({
             client,
             db: getDatabaseClient(),
-            jobId: job.data.id,
+            jobId: jobId,
             companyId,
             userId
           });
@@ -836,7 +899,7 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         } else if (row.type === "Expedite" || row.type === "Defer") {
           const update = await updatePlanningJob(client, {
-            id: job.data.id,
+            id: jobId,
             companyId,
             updatedBy: userId,
             dueDate: row.suggestedDate
@@ -853,14 +916,14 @@ export async function action({ request }: ActionFunctionArgs) {
             await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
-              jobId: job.data.id
+              jobId: jobId
             });
             continue;
           }
           const notified = await notifyScheduleChange(
             companyId,
             "Planning action rescheduled a job",
-            job.data.id
+            jobId
           );
           if (!notified) {
             warnings.push(
@@ -869,7 +932,7 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         } else {
           const update = await updatePlanningJob(client, {
-            id: job.data.id,
+            id: jobId,
             companyId,
             updatedBy: userId,
             quantity: Number(row.suggestedQuantity)
@@ -886,14 +949,14 @@ export async function action({ request }: ActionFunctionArgs) {
             await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
-              jobId: job.data.id
+              jobId: jobId
             });
             continue;
           }
           const recalc = await recalculateJobRequirements(
             client,
             getDatabaseClient(),
-            { id: job.data.id, companyId, userId }
+            { id: jobId, companyId, userId }
           );
           if (recalc.error) {
             // The quantity change stands (and the action stays Actioned):
@@ -903,7 +966,7 @@ export async function action({ request }: ActionFunctionArgs) {
               {
                 companyId,
                 userId,
-                jobId: job.data.id,
+                jobId: jobId,
                 planningActionId,
                 error: recalc.error
               }
@@ -959,7 +1022,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const result = await dismissPlanningActions(client, {
@@ -973,9 +1036,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to dismiss — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Dismissed ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Dismissed ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
     case "reopen": {
@@ -986,7 +1063,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const result = await reopenDismissedPlanningActions(client, {
@@ -1000,9 +1077,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to reopen — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Reopened ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Reopened ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
     case "assign": {
@@ -1013,7 +1104,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const parsedAssignee = z
@@ -1023,7 +1114,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedAssignee.success) {
         return data(
           { success: false, message: "Invalid assignee" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       if (
@@ -1047,9 +1138,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to assign — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Assigned ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Assigned ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
 
@@ -1057,9 +1162,9 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected one of: 'order', 'expedite', 'defer', 'increase', 'decrease', 'cancel'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'updateJob', 'apply', 'expedite', 'defer', 'increase', 'decrease', 'cancel', 'dismiss', 'reopen', 'assign'`
         },
-        { status: 500 }
+        { status: 400 }
       );
   }
 }

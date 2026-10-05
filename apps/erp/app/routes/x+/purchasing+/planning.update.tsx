@@ -19,7 +19,7 @@ import { z } from "zod";
 import {
   assignPlanningActions,
   dismissPlanningActions,
-  getPlanningAction,
+  getPlanningActionsByIds,
   markPlanningActionsActioned,
   releasePlanningActionClaim,
   reopenDismissedPlanningActions
@@ -39,6 +39,10 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
+
+type PlanningActionRow = NonNullable<
+  Awaited<ReturnType<typeof getPlanningActionsByIds>>["data"]
+>[number];
 
 /**
  * The date the supplier promised for a PO line: the line's own, else its
@@ -95,7 +99,7 @@ export async function action({ request }: ActionFunctionArgs) {
         success: false,
         message: "Location ID is required and must be a valid string"
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 
@@ -111,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
         success: false,
         message: "Action parameter is required and must be a valid string"
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 
@@ -161,7 +165,7 @@ export async function action({ request }: ActionFunctionArgs) {
             message: `Validation failed: ${errorMessages.join(", ")}`,
             errors: errorMessages
           },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -177,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
             success: false,
             message: "No items were provided to create purchase orders"
           },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -948,7 +952,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
 
@@ -1002,16 +1006,34 @@ export async function action({ request }: ActionFunctionArgs) {
         return canDeleteLines;
       };
 
-      for (const planningActionId of parsedIds.data) {
-        const actionRow = await getPlanningAction(client, {
-          id: planningActionId,
-          companyId
+      // Three reads and one claim for the whole batch, then one change per
+      // action: each line gets its own value, and Cancel deletes the line.
+      // The batch used to read the action, read its line and claim it one at
+      // a time — four round trips per action before anything changed.
+      const actionRows = await getPlanningActionsByIds(client, {
+        ids: parsedIds.data,
+        companyId
+      });
+      if (actionRows.error) {
+        logger.error("Failed to read planning actions", {
+          companyId,
+          error: actionRows.error
         });
-        if (actionRow.error || !actionRow.data) {
+        return data(
+          { success: false, message: "Failed to read planning actions" },
+          { status: 500 }
+        );
+      }
+      const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
+
+      const eligible: { planningActionId: string; row: PlanningActionRow }[] =
+        [];
+      for (const planningActionId of parsedIds.data) {
+        const row = rowById.get(planningActionId);
+        if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
           continue;
         }
-        const row = actionRow.data;
         if (row.status !== "Open") {
           errors.push(`Planning action ${planningActionId} is not open`);
           continue;
@@ -1034,32 +1056,66 @@ export async function action({ request }: ActionFunctionArgs) {
           );
           continue;
         }
+        eligible.push({ planningActionId, row });
+      }
 
-        const line = await client
-          .from("purchaseOrderLine")
-          .select(
-            "id, purchaseOrderId, conversionFactor, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
-          )
-          .eq("id", row.purchaseOrderLineId)
-          .eq("companyId", companyId)
-          .single();
-        if (line.error || !line.data) {
+      const lineIds = [
+        ...new Set(eligible.map(({ row }) => row.purchaseOrderLineId!))
+      ];
+      const lines =
+        lineIds.length > 0
+          ? await client
+              .from("purchaseOrderLine")
+              .select(
+                "id, purchaseOrderId, conversionFactor, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+              )
+              .in("id", lineIds)
+              .eq("companyId", companyId)
+          : { data: [], error: null };
+      if (lines.error) {
+        logger.error(
+          "Failed to read purchase order lines for planning actions",
+          {
+            companyId,
+            error: lines.error
+          }
+        );
+        return data(
+          {
+            success: false,
+            message: "Failed to read the planning actions' purchase order lines"
+          },
+          { status: 500 }
+        );
+      }
+      const lineById = new Map(
+        (lines.data ?? []).map((line) => [line.id, line])
+      );
+
+      const toClaim: {
+        planningActionId: string;
+        row: PlanningActionRow;
+        line: NonNullable<ReturnType<typeof lineById.get>>;
+      }[] = [];
+      for (const { planningActionId, row } of eligible) {
+        const line = lineById.get(row.purchaseOrderLineId!);
+        if (!line) {
           errors.push(
             `Purchase order line for planning action ${planningActionId} not found`
           );
           continue;
         }
 
-        const poStatus = line.data.purchaseOrder?.status;
+        const poStatus = line.purchaseOrder?.status;
         const datePromised =
           (row.type === "Expedite" || row.type === "Defer") &&
-          promisedDateOf(line.data) !== null;
+          promisedDateOf(line) !== null;
         if (!isPurchaseOrderEditableFromPlanning(poStatus) || datePromised) {
           // In approval or sent, or a date the supplier promised (which Apply's
           // required date cannot move) — surface "Review on PO" instead.
           requiresManualAction.push({
             id: planningActionId,
-            purchaseOrderId: line.data.purchaseOrderId
+            purchaseOrderId: line.purchaseOrderId
           });
           continue;
         }
@@ -1070,25 +1126,40 @@ export async function action({ request }: ActionFunctionArgs) {
           );
           continue;
         }
+        toClaim.push({ planningActionId, row, line });
+      }
 
-        // Atomic claim BEFORE mutating: the conditional Open→Actioned update
-        // is the lock — of two concurrent applies only one sees an affected
-        // row, so the target is never double-mutated. A failed mutation
-        // reopens the claim; a crash in between leaves an Actioned row whose
-        // unmet need the next MRP run re-emits as a fresh Open action (the
-        // natural-key index ignores Actioned rows).
+      // Atomic claim BEFORE mutating: the conditional Open→Actioned update is
+      // the lock — of two concurrent applies only one gets a row back, so a
+      // target is never changed twice. A failed change gives its claim back;
+      // a crash in between leaves an Actioned row whose unmet need the next
+      // MRP run re-emits as a fresh Open action (the natural-key index ignores
+      // Actioned rows).
+      const claimedIds = new Set<string>();
+      if (toClaim.length > 0) {
         const claim = await markPlanningActionsActioned(client, {
-          ids: [planningActionId],
+          ids: toClaim.map(({ planningActionId }) => planningActionId),
           companyId,
           userId
         });
         if (claim.error) {
-          errors.push(
-            `Failed to claim planning action ${planningActionId}: ${claim.error.message}`
+          logger.error("Failed to claim planning actions", {
+            companyId,
+            error: claim.error
+          });
+          return data(
+            {
+              success: false,
+              message: `Failed to claim planning actions: ${claim.error.message}`
+            },
+            { status: 500 }
           );
-          continue;
         }
-        if ((claim.data ?? []).length === 0) {
+        for (const { id } of claim.data ?? []) claimedIds.add(id);
+      }
+
+      for (const { planningActionId, row, line } of toClaim) {
+        if (!claimedIds.has(planningActionId)) {
           errors.push(
             `Planning action ${planningActionId} was already applied`
           );
@@ -1101,8 +1172,8 @@ export async function action({ request }: ActionFunctionArgs) {
           let deleted: boolean;
           try {
             deleted = await deleteUnsentPurchaseOrderLine(db, {
-              lineId: line.data.id,
-              purchaseOrderId: line.data.purchaseOrderId,
+              lineId: line.id,
+              purchaseOrderId: line.purchaseOrderId,
               companyId
             });
           } catch (err) {
@@ -1120,13 +1191,13 @@ export async function action({ request }: ActionFunctionArgs) {
             await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
-              purchaseOrderId: line.data.purchaseOrderId
+              purchaseOrderId: line.purchaseOrderId
             });
             continue;
           }
         } else if (row.type === "Expedite" || row.type === "Defer") {
           const update = await updatePurchaseOrderLineSchedule(client, db, {
-            lineId: line.data.id,
+            lineId: line.id,
             companyId,
             companyGroupId,
             userId,
@@ -1144,14 +1215,14 @@ export async function action({ request }: ActionFunctionArgs) {
             await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
-              purchaseOrderId: line.data.purchaseOrderId
+              purchaseOrderId: line.purchaseOrderId
             });
             continue;
           }
         } else {
           // increase / decrease — suggestedQuantity is in INVENTORY units;
           // the line stores PURCHASE units
-          const conversionFactor = line.data.conversionFactor ?? 1;
+          const conversionFactor = line.conversionFactor ?? 1;
           const purchaseQuantity =
             conversionFactor > 0
               ? round(
@@ -1161,7 +1232,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 )
               : Number(row.suggestedQuantity);
           const update = await updatePurchaseOrderLineSchedule(client, db, {
-            lineId: line.data.id,
+            lineId: line.id,
             companyId,
             companyGroupId,
             userId,
@@ -1178,7 +1249,7 @@ export async function action({ request }: ActionFunctionArgs) {
             await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
-              purchaseOrderId: line.data.purchaseOrderId
+              purchaseOrderId: line.purchaseOrderId
             });
             continue;
           }
@@ -1223,7 +1294,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const result = await dismissPlanningActions(client, {
@@ -1237,9 +1308,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to dismiss — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Dismissed ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Dismissed ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
     case "reopen": {
@@ -1250,7 +1335,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const result = await reopenDismissedPlanningActions(client, {
@@ -1264,9 +1349,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to reopen — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Reopened ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Reopened ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
     case "assign": {
@@ -1277,7 +1376,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedIds.success) {
         return data(
           { success: false, message: "planningActionIds is required" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       const parsedAssignee = z
@@ -1287,7 +1386,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!parsedAssignee.success) {
         return data(
           { success: false, message: "Invalid assignee" },
-          { status: 500 }
+          { status: 400 }
         );
       }
       if (
@@ -1311,9 +1410,23 @@ export async function action({ request }: ActionFunctionArgs) {
           { status: 500 }
         );
       }
+      // The rows actually changed: an action applied or changed since the
+      // page loaded is skipped, and the count says so.
+      const changed = result.data?.length ?? 0;
+      if (changed === 0) {
+        return {
+          success: false,
+          message:
+            "Nothing to assign — these actions changed since the page loaded"
+        };
+      }
       return {
         success: true,
-        message: `Assigned ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+        message: `Assigned ${changed} planning action${changed === 1 ? "" : "s"}${
+          changed < parsedIds.data.length
+            ? `; ${parsedIds.data.length - changed} changed since the page loaded`
+            : ""
+        }`
       };
     }
 
@@ -1321,9 +1434,9 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected one of: 'order', 'expedite', 'defer', 'increase', 'decrease', 'cancel'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'updateLine', 'apply', 'expedite', 'defer', 'increase', 'decrease', 'cancel', 'dismiss', 'reopen', 'assign'`
         },
-        { status: 500 }
+        { status: 400 }
       );
   }
 }
