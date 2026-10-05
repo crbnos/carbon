@@ -5,7 +5,7 @@
 import type { OperationCard as OperationCardData } from "@carbon/mes-core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { router, useFocusEffect } from "expo-router";
-import { Factory, SlidersHorizontal, X } from "lucide-react-native";
+import { Factory, Search, SlidersHorizontal, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
@@ -13,6 +13,7 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   useWindowDimensions,
   View
 } from "react-native";
@@ -21,7 +22,6 @@ import {
   Button,
   EmptyState,
   ErrorNote,
-  Field,
   Heading,
   Muted,
   Screen,
@@ -333,22 +333,19 @@ export default function Operations() {
       */}
       <QueueSwitcher current="board" />
 
-      {/* Its own row, as on web, where search sits beside the filter button.
-          Here it gets the full width instead: the row below already carries
-          the filter button and, on a phone, the work-centre strip. */}
-      <View className="px-4">
-        <Field
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t`Search`}
-          accessibilityLabel={t`Search the board`}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-        />
-      </View>
+      {/* Filter and Search share ONE row, as they do on web. They are the
+          same two decisions about what the board shows, so they read as a
+          pair — and stacking them cost a line of board on a screen whose
+          whole job is showing cards. Same height and same pill shape, which
+          is what makes them look like one control rather than two that
+          happen to be adjacent.
 
-      <View className="flex-row items-center gap-2 pl-4">
+          Filter comes FIRST because it is the one with state: an operator
+          returning to the board needs to see what is already narrowing it
+          before they read anything else, and a chip at a fixed left-hand
+          position is somewhere the eye can go straight to. Search holds
+          nothing between visits, so it takes the remaining width. */}
+      <View className="flex-row items-center gap-2 px-4">
         <Pressable
           onPress={() => filterSheet.current?.open()}
           accessibilityRole="button"
@@ -364,8 +361,9 @@ export default function Operations() {
           }`}
         >
           <SlidersHorizontal size={16} color={colors.mutedForeground} />
-          {/* The word only where there is room for it: on a phone this row is
-              shared with every work centre on the floor. */}
+          {/* The word only where there is room for it. On a phone the search
+              field has the rest of this row, and a count is the one thing
+              the icon cannot say on its own. */}
           {isTablet || filterCount > 0 ? (
             <Text className="text-sm text-foreground">
               {filterCount === 0 ? t`Filter` : String(filterCount)}
@@ -373,30 +371,60 @@ export default function Operations() {
           ) : null}
         </Pressable>
 
-        {/* The work centres themselves, on a phone: the board shows one at a
-            time, and this row is what says there are more. */}
-        {!isTablet && columns.length > 0 ? (
-          <View className="min-w-0 flex-1">
-            <WorkCenterStrip
-              columns={columns.map((column) => ({
-                id: column.id,
-                title: column.title,
-                count: (byColumn.get(column.id) ?? []).length,
-                active: column.active ?? false,
-                isBlocked: column.isBlocked ?? false
-              }))}
-              current={shownColumn}
-              onSelect={(index) => {
-                setCurrentColumn(index);
-                board.current?.scrollTo({
-                  x: index * columnWidth,
-                  animated: true
-                });
-              }}
-            />
-          </View>
-        ) : null}
+        <View className="min-h-[44px] min-w-0 flex-1 flex-row items-center gap-2 rounded-full border border-border bg-card px-3">
+          <Search size={16} color={colors.mutedForeground} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t`Search`}
+            placeholderTextColor={colors.mutedForeground}
+            accessibilityLabel={t`Search the board`}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            className="min-w-0 flex-1 text-base text-foreground"
+          />
+          {/* Without this, clearing means selecting the text and deleting it
+              — on a tablet held at a machine that is a two-handed job. */}
+          {search ? (
+            <Pressable
+              onPress={() => setSearch("")}
+              accessibilityRole="button"
+              accessibilityLabel={t`Clear the search`}
+              hitSlop={12}
+              className="active:opacity-70"
+            >
+              <X size={16} color={colors.mutedForeground} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
+
+      {/* The work centres themselves, on a phone: the board shows one at a
+          time, and this row is what says there are more. Its own row now —
+          it used to share one with the filter button, and there is no width
+          left for seven work centres once search is on that row. */}
+      {!isTablet && columns.length > 0 ? (
+        <View className="pl-4">
+          <WorkCenterStrip
+            columns={columns.map((column) => ({
+              id: column.id,
+              title: column.title,
+              count: (byColumn.get(column.id) ?? []).length,
+              active: column.active ?? false,
+              isBlocked: column.isBlocked ?? false
+            }))}
+            current={shownColumn}
+            onSelect={(index) => {
+              setCurrentColumn(index);
+              board.current?.scrollTo({
+                x: index * columnWidth,
+                animated: true
+              });
+            }}
+          />
+        </View>
+      ) : null}
 
       {/* A TOGGLE, not a dismissal: off is the whole floor and on is just
           this operator's station. It reads as a filter chip because that is

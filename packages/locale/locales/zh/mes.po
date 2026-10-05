@@ -726,6 +726,9 @@ msgstr ""
 msgid "Clear the gauge"
 msgstr ""
 
+msgid "Clear the search"
+msgstr ""
+
 msgid "Clock In"
 msgstr "开工"
 

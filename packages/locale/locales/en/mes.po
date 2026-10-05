@@ -726,6 +726,9 @@ msgstr "Clear the filter"
 msgid "Clear the gauge"
 msgstr "Clear the gauge"
 
+msgid "Clear the search"
+msgstr "Clear the search"
+
 msgid "Clock In"
 msgstr "Clock In"
 
