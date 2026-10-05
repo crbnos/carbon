@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "राजस्व प्रकार"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "प्रतिवर्तित करें {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "रिवर्स चार्ज बिक्रय कर (डिफ�
 
 msgid "Reverse Entry"
 msgstr "प्रविष्टि को प्रतिवर्तित करें"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "संबंधित जर्नल प्रविष्टियों को उलट दें"
@@ -21209,6 +21213,10 @@ msgstr "यह अन्य रिवीजन की सभी विधि स
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "यह +{hoursInput}h अतिरिक्त समय {previewCount} लोगों के लिए सेट करेगा।"

@@ -2502,7 +2502,7 @@ const postSalesInvoice = defineServerFn({
               .executeTakeFirst();
             if (recognized) {
               throw new Error(
-                "Invoice has recognized revenue; reverse the recognition journal first"
+                "Invoice has recognized revenue; reverse its revenue recognition run first"
               );
             }
           }

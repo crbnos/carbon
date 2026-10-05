@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "Umsatzerlöstyp"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "Stornieren {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "Reverse-Charge-Verfahren Umsatzsteuer (Standard)"
 
 msgid "Reverse Entry"
 msgstr "Stornierungseintrag"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "Stornieren Sie die zugehörigen Buchungssatzeinträge"
@@ -21209,6 +21213,10 @@ msgstr "Dies ersetzt alle Methodenmaterialien anderer Revisionen durch diese Rev
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Größe."
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Dies setzt +{hoursInput}h Überzeit für {previewCount} Personen."

@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import { datetime, equals, formatDate, toStoredAmount } from "@carbon/utils";
@@ -1781,6 +1781,382 @@ export async function postRevenueRecognitionRun(
       journalId: runJournal.id,
       journalEntryId: runJournal.journalEntryId
     };
+  });
+}
+
+/** A Posted period run cannot be reversed; the message is meant for the user
+ *  (the reverse routes show it, where other failures get a generic toast). */
+export class RunReversalError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RunReversalError";
+  }
+}
+
+/**
+ * Where each journal of a run is reversed: on its own posting date when that
+ * period is not Closed, else on the company's today. Keyed by the original
+ * posting date.
+ */
+export async function resolveReversalPeriods(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; postingDates: string[] }
+): Promise<
+  | { data: RunPostingPeriods; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const { companyId } = args;
+  const dates = [...new Set(args.postingDates)].sort();
+  if (dates.length === 0) return { data: new Map(), error: null };
+
+  const [existing, companyToday] = await Promise.all([
+    client
+      .from("accountingPeriod")
+      .select("startDate, endDate, closeStatus, closedAt")
+      .eq("companyId", companyId)
+      .lte("startDate", dates[dates.length - 1])
+      .gte("endDate", dates[0]),
+    getCompanyToday(client, companyId)
+  ]);
+  if (existing.error) return { data: null, error: existing.error };
+
+  const targetOf = new Map(
+    dates.map((date) => {
+      const closed = existing.data.some(
+        (period) =>
+          period.startDate <= date &&
+          period.endDate >= date &&
+          (period.closeStatus === "Closed" || period.closedAt !== null)
+      );
+      return [date, closed ? companyToday : date] as const;
+    })
+  );
+
+  // One call per distinct target date, never one per journal line.
+  const byTarget = new Map<
+    string,
+    { accountingPeriodId: string; postingDate: string }
+  >();
+  for (const target of new Set(targetOf.values())) {
+    const period = await getOrCreateAccountingPeriod(
+      client,
+      companyId,
+      target,
+      "accounting"
+    );
+    if (period.error || !period.data) {
+      return {
+        data: null,
+        error: period.error ?? {
+          message: `No accounting period for ${target}`
+        }
+      };
+    }
+    byTarget.set(target, {
+      accountingPeriodId: period.data,
+      postingDate: target
+    });
+  }
+
+  return {
+    data: new Map(
+      dates.map((date) => [date, byTarget.get(targetOf.get(date)!)!])
+    ),
+    error: null
+  };
+}
+
+/**
+ * Reverses posted journals the way `reverseJournalEntry` does — a Posted
+ * entry with every line negated, the original marked Reversed — but keeps
+ * each line's document and dimensions, and dates each reversal by `periods`
+ * (keyed by the original's posting date). Shared by Reverse Run for revenue
+ * recognition and depreciation, inside the caller's transaction.
+ */
+export async function reverseRunJournals(
+  trx: KyselyTx,
+  args: {
+    journalIds: string[];
+    periods: RunPostingPeriods;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { journalIds, periods, companyId, userId } = args;
+  if (journalIds.length === 0) return;
+  const now = datetime.timestamp();
+
+  const [journals, lines] = await Promise.all([
+    trx
+      .selectFrom("journal")
+      .select([
+        "id",
+        "journalEntryId",
+        "status",
+        "sourceType",
+        sql<string>`"postingDate"::text`.as("postingDate")
+      ])
+      .where("id", "in", journalIds)
+      .where("companyId", "=", companyId)
+      .orderBy("postingDate")
+      .orderBy("journalEntryId")
+      .forUpdate()
+      .execute(),
+    trx
+      .selectFrom("journalLine")
+      .select([
+        "id",
+        "journalId",
+        "accountId",
+        "description",
+        "amount",
+        "documentType",
+        "documentId"
+      ])
+      .where("journalId", "in", journalIds)
+      .where("companyId", "=", companyId)
+      .orderBy("id")
+      .execute()
+  ]);
+  const notPosted = journals.find((journal) => journal.status !== "Posted");
+  if (notPosted) {
+    throw new RunReversalError(
+      `Journal ${notPosted.journalEntryId} is ${notPosted.status}, so the run cannot be reversed`
+    );
+  }
+
+  const dimensions =
+    lines.length === 0
+      ? []
+      : await trx
+          .selectFrom("journalLineDimension")
+          .select(["journalLineId", "dimensionId", "valueId"])
+          .where(
+            "journalLineId",
+            "in",
+            lines.map((line) => line.id)
+          )
+          .where("companyId", "=", companyId)
+          .execute();
+
+  const reversedLineId = new Map<string, string>();
+  for (const journal of journals) {
+    const period = periods.get(journal.postingDate);
+    if (!period) {
+      throw new Error(`No reversal period resolved for ${journal.postingDate}`);
+    }
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId: period.accountingPeriodId,
+        companyId,
+        description: `Reversal of ${journal.journalEntryId}`,
+        postingDate: period.postingDate,
+        sourceType: journal.sourceType,
+        reversalOfId: journal.id,
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    const journalLines = lines.filter((line) => line.journalId === journal.id);
+    if (journalLines.length > 0) {
+      // RETURNING follows the VALUES order, so each new line pairs with its
+      // original.
+      const inserted = await trx
+        .insertInto("journalLine")
+        .values(
+          journalLines.map((line) => ({
+            journalId: reversal.id,
+            accountId: line.accountId,
+            description: line.description,
+            amount: -Number(line.amount),
+            documentType: line.documentType,
+            documentId: line.documentId,
+            journalLineReference: crypto.randomUUID(),
+            companyId
+          }))
+        )
+        .returning(["id"])
+        .execute();
+      journalLines.forEach((line, index) => {
+        reversedLineId.set(line.id, inserted[index]!.id);
+      });
+    }
+
+    await trx
+      .updateTable("journal")
+      .set({ status: "Reversed", reversedById: reversal.id, updatedBy: userId })
+      .where("id", "=", journal.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+
+  if (dimensions.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(
+        dimensions.map((dimension) => ({
+          journalLineId: reversedLineId.get(dimension.journalLineId)!,
+          dimensionId: dimension.dimensionId,
+          valueId: dimension.valueId,
+          companyId
+        }))
+      )
+      .execute();
+  }
+}
+
+/**
+ * Reverse Run for revenue recognition (NetSuite ARM's void: the plan lines
+ * become recognizable again). Reverses every journal the run posted, puts
+ * its schedule rows back to Planned — still held by the run — clears what
+ * posting stamped (lease schedule lines, contract ledger entries, contract
+ * revenue months) and returns the run to Draft, so it can be recalculated,
+ * posted again or deleted.
+ */
+export async function reverseRevenueRecognitionRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    periods: RunPostingPeriods;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ runId: string }> {
+  const { runId, periods, companyId, userId } = args;
+  const now = datetime.timestamp();
+
+  return db.transaction().execute(async (trx) => {
+    const run = await trx
+      .selectFrom("revenueRecognitionRun")
+      .select(["id", "runId", "status", "periodEnd"])
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Posted") {
+      throw new RunReversalError(
+        `Revenue recognition run ${run.runId} is ${run.status}; only a posted run can be reversed`
+      );
+    }
+    // The reversed run becomes the period's Draft, and a period holds one.
+    const draft = await trx
+      .selectFrom("revenueRecognitionRun")
+      .select("runId")
+      .where("companyId", "=", companyId)
+      .where("periodEnd", "=", run.periodEnd)
+      .where("status", "=", "Draft")
+      .executeTakeFirst();
+    if (draft) {
+      throw new RunReversalError(
+        `${draft.runId} is a draft for this period. Post or delete it before reversing ${run.runId}.`
+      );
+    }
+
+    const rows = await trx
+      .selectFrom("revenueRecognitionRunLine as l")
+      .innerJoin("revenueRecognitionSchedule as s", (join) =>
+        join
+          .onRef("s.id", "=", "l.scheduleId")
+          .on("s.companyId", "=", companyId)
+      )
+      .select([
+        "s.id",
+        "s.journalId",
+        "s.rentalLeaseScheduleLineId",
+        "s.customerContractRevenueId"
+      ])
+      .where("l.runId", "=", runId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+    const journalIds = [
+      ...new Set(
+        rows
+          .map((row) => row.journalId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+
+    await reverseRunJournals(trx, { journalIds, periods, companyId, userId });
+
+    const scheduleIds = rows.map((row) => row.id);
+    if (scheduleIds.length > 0) {
+      await trx
+        .updateTable("revenueRecognitionSchedule")
+        .set({ status: "Planned", journalId: null, updatedBy: userId })
+        .where("id", "in", scheduleIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .updateTable("customerContractLedgerEntry")
+        .set({ journalId: null })
+        .where("revenueRecognitionScheduleId", "in", scheduleIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const leaseScheduleLineIds = [
+      ...new Set(
+        rows
+          .map((row) => row.rentalLeaseScheduleLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (leaseScheduleLineIds.length > 0) {
+      await trx
+        .updateTable("rentalLeaseScheduleLine")
+        .set({
+          journalId: null,
+          postedAt: null,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "in", leaseScheduleLineIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const contractRevenueIds = [
+      ...new Set(
+        rows
+          .map((row) => row.customerContractRevenueId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (contractRevenueIds.length > 0) {
+      await trx
+        .updateTable("customerContractRevenue")
+        .set({ status: "Planned", updatedBy: userId, updatedAt: now })
+        .where("id", "in", contractRevenueIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("revenueRecognitionRun")
+      .set({
+        status: "Draft",
+        journalId: null,
+        postedAt: null,
+        postedBy: null,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { runId: run.runId };
   });
 }
 

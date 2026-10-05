@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "Tipo di ricavo"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "Storna {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "Imposta di vendita con inversione contabile (predefinito)"
 
 msgid "Reverse Entry"
 msgstr "Voce di storno"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "Inverti le voci della prima nota correlate"
@@ -21209,6 +21213,10 @@ msgstr "Questo sostituirà tutti i materiali del metodo di altre revisioni con q
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Questo sostituirà tutti i materiali del metodo di altre dimensioni con questa dimensione."
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Questo imposterà +{hoursInput}h di straordinario per {previewCount} persone."

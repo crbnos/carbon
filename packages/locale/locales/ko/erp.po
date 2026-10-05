@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "매출 유형"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "역분개 {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "역청구 판매세 (기본값)"
 
 msgid "Reverse Entry"
 msgstr "역분개 항목"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "관련 전표를 역분개합니다."
@@ -21209,6 +21213,10 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "이것은 {previewCount} 인원에 대해 +{hoursInput}h의 초과근무를 설정합니다."

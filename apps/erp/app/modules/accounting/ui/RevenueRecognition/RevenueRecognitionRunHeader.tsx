@@ -11,7 +11,13 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuRefreshCw, LuRepeat, LuTrash } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuRefreshCw,
+  LuRepeat,
+  LuRotateCcw,
+  LuTrash
+} from "react-icons/lu";
 import { useFetcher, useNavigate, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -40,6 +46,7 @@ const RevenueRecognitionRunHeader = () => {
   const deleteModal = useDisclosure();
   const repeatModal = useDisclosure();
   const recalculateModal = useDisclosure();
+  const reverseModal = useDisclosure();
 
   const run = routeData?.run;
   if (!run) throw new Error("Could not find run in routeData");
@@ -73,7 +80,7 @@ const RevenueRecognitionRunHeader = () => {
           ) : null
         ]}
         menuItems={
-          isDraft || (isPosted && canRepeat) ? (
+          isDraft || isPosted ? (
             <>
               {isPosted && canRepeat && (
                 <DropdownMenuItem
@@ -82,6 +89,16 @@ const RevenueRecognitionRunHeader = () => {
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
                   <Trans>Repeat Run</Trans>
+                </DropdownMenuItem>
+              )}
+              {isPosted && (
+                <DropdownMenuItem
+                  disabled={!permissions.can("update", "accounting")}
+                  destructive
+                  onClick={reverseModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuRotateCcw />} />
+                  <Trans>Reverse Run</Trans>
                 </DropdownMenuItem>
               )}
               {isDraft && (
@@ -136,6 +153,19 @@ const RevenueRecognitionRunHeader = () => {
             deleteModal.onClose();
             navigate(path.to.revenueRecognitionRuns);
           }}
+        />
+      )}
+
+      {reverseModal.isOpen && (
+        <ConfirmDelete
+          action={path.to.reverseRevenueRecognitionRun(runId)}
+          isOpen={reverseModal.isOpen}
+          name={run.runId}
+          title={t`Reverse ${run.runId}`}
+          deleteText={t`Reverse Run`}
+          text={t`This will reverse the journals of ${run.runId} and return it to Draft. You can then recalculate, post or delete it.`}
+          onCancel={reverseModal.onClose}
+          onSubmit={reverseModal.onClose}
         />
       )}
 

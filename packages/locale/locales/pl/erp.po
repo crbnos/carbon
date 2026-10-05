@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "Typ przychodu"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "Wytwórz storno dla {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "Odwrotne obciążenie podatkiem od sprzedaży (domyślnie)"
 
 msgid "Reverse Entry"
 msgstr "Wpis odwrotny"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "Wycofaj powiązane wpisy w dowodach księgowych"
@@ -21209,6 +21213,10 @@ msgstr "Spowoduje to zastąpienie wszystkich materiałów metody innych rewizji 
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "To zastąpi wszystkie materiały metody innych rozmiarów tym rozmiarem."
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Spowoduje to ustawienie +{hoursInput}h nadgodzin dla {previewCount} osób."

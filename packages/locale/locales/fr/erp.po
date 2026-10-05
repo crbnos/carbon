@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "Type de Revenus"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "Extourner {0}"
 
@@ -17046,6 +17047,9 @@ msgstr "Taxe de vente d'autoliquidation (défaut)"
 
 msgid "Reverse Entry"
 msgstr "Écriture de contrepassation"
+
+msgid "Reverse Run"
+msgstr ""
 
 msgid "Reverse the related journal entries"
 msgstr "Inverser les écritures comptables associées"
@@ -21209,6 +21213,10 @@ msgstr "Cela remplacera tous les matériaux de méthode des autres révisions pa
 
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Cela remplacera tous les matériaux de méthode d'autres tailles par cette taille."
+
+#. placeholder {0}: run.runId
+msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour {previewCount} personnes."

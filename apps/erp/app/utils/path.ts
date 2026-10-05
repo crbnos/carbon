@@ -2193,8 +2193,12 @@ export const path = {
       generatePath(`${x}/revenue-recognition-run/${id}`),
     revenueRecognitionRuns: `${x}/accounting/revenue-recognition-runs`,
     revenueWaterfall: `${x}/reports/revenue-waterfall`,
+    reverseDepreciationRun: (id: string) =>
+      generatePath(`${x}/depreciation-run/${id}/reverse`),
     reverseJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/reverse`),
+    reverseRevenueRecognitionRun: (id: string) =>
+      generatePath(`${x}/revenue-recognition-run/${id}/reverse`),
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),
     revokeInvite: `${x}/users/revoke-invite`,
     risk: (id: string) => generatePath(`${x}/quality/risks/${id}`),
