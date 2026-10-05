@@ -554,6 +554,75 @@ describe("reconcileContractSchedule", () => {
       through: "2027-09-20"
     });
     expect(rerun.adjustments).toHaveLength(0);
+
+    // A memo apportions its rows to cents: 480 × 16/31 = 247.74194 is
+    // credited as 247.74. The fraction of a cent left over is the memo's
+    // rounding, not a credit for a new Planned invoice.
+    const seats = line({
+      id: "seats",
+      rate: 480,
+      startDate: "2027-12-01",
+      endDate: "2027-12-15"
+    });
+    const december = existingRow({
+      id: "row-december",
+      lineId: "seats",
+      invoiceId: "inv-december",
+      invoiceDate: "2027-12-01",
+      periodStart: "2027-12-01",
+      periodEnd: "2027-12-31",
+      unitPrice: 480,
+      amount: 480
+    });
+    const decemberTerms = calendarMonthly({
+      startDate: "2027-12-01",
+      endDate: "2027-12-15"
+    });
+    const cancelled = reconcileContractSchedule({
+      terms: decemberTerms,
+      lines: [seats],
+      existing: [december],
+      from: "2027-12-16",
+      through: "2027-12-15"
+    });
+    expect(cancelled.adjustments[0]!.amount).toBeCloseTo(-247.74194, 5);
+    const memoRow = existingRow({
+      id: "row-memo",
+      lineId: "seats",
+      invoiceId: null,
+      invoiceDate: null,
+      invoiceStatus: null,
+      periodStart: "2027-12-16",
+      periodEnd: "2027-12-31",
+      units: -16 / 31,
+      unitPrice: 480,
+      amount: -247.74,
+      isAdjustment: true,
+      memoId: "memo-2"
+    });
+    expect(
+      reconcileContractSchedule({
+        terms: decemberTerms,
+        lines: [seats],
+        existing: [december, memoRow],
+        from: "2027-12-16",
+        through: "2027-12-15"
+      }).adjustments
+    ).toHaveLength(0);
+    // An earlier end credits the extra days, rounding aside.
+    const earlier = reconcileContractSchedule({
+      terms: calendarMonthly({
+        startDate: "2027-12-01",
+        endDate: "2027-12-10"
+      }),
+      lines: [{ ...seats, endDate: "2027-12-10" }],
+      existing: [december, memoRow],
+      from: "2027-12-11",
+      through: "2027-12-10"
+    });
+    expect(earlier.adjustments).toHaveLength(1);
+    expect(earlier.adjustments[0]!.periodStart).toBe("2027-12-11");
+    expect(earlier.adjustments[0]!.amount).toBeCloseTo(-77.42129, 5);
   });
 });
 

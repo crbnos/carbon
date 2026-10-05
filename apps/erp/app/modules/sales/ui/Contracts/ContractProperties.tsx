@@ -7,8 +7,7 @@ import {
   DatePicker,
   InputControlled,
   NumberControlled,
-  Select,
-  ValidatedForm
+  Select
 } from "@carbon/form";
 import {
   Button,
@@ -25,7 +24,6 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import {
   Currency,
@@ -49,6 +47,7 @@ import {
   customerContractTypes,
   invoiceAutomations
 } from "../../sales.models";
+import { TermForm } from "./ContractBillTo";
 import ContractProject from "./ContractProject";
 import type { Contract, ContractRouteData } from "./types";
 import { contractDurationOf, useContractLabels } from "./useContractLabels";
@@ -80,24 +79,15 @@ type Term =
   | "notes";
 
 /** Each property is its own form so a field validates on its own; the save
- *  goes through the update route, which validates the terms as a whole. */
-const PropertyForm = ({
-  name,
-  value,
-  children
-}: {
+ *  goes through the update route, which validates the terms as a whole.
+ *  Keyed on its value (`TermForm`), so a term the server changed — a
+ *  customer change resets the bill-to, contact and addresses — shows the
+ *  stored value rather than the form's first one. */
+const PropertyForm = (props: {
   name: Term | "invoiceAutomation" | "contractType";
   value: unknown;
   children: ReactNode;
-}) => (
-  <ValidatedForm
-    defaultValues={{ [name]: value ?? "" }}
-    validator={z.object({ [name]: z.any() })}
-    className="w-full"
-  >
-    {children}
-  </ValidatedForm>
-);
+}) => <TermForm {...props} />;
 
 /** The Select's value for "no override": Radix refuses an empty item value. */
 const COMPANY_DEFAULT = "default";

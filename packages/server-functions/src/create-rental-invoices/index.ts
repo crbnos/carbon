@@ -9,6 +9,7 @@
 // Spec: .ai/specs/implemented/2026-09-22-revenue-recognition-and-rentals.md §3
 
 import type { Database } from "@carbon/database";
+import { toBaseAmount } from "@carbon/database/accounting-currency";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
@@ -64,7 +65,10 @@ export type RentalInvoiceGenerationResult = {
  * Pending billing period with `dueOn <= asOf` and every unbilled charge dated
  * on or before `asOf`. First it rolls every live line's periods forward to
  * `billingHorizon(asOf)` — activation only cuts periods to one cycle ahead,
- * so an open-ended or held-over line gets its next period here. Each agreement is its own transaction, so one
+ * so an open-ended or held-over line gets its next period here. A Closed
+ * agreement is billed too while it has Pending periods or unbilled charges —
+ * voiding one of its invoices returns its rows to unbilled, and closing
+ * required none — but it never rolls forward. Each agreement is its own transaction, so one
  * agreement's failure never rolls back another's invoice. The billed rows are
  * stamped with their invoice line, which is what makes a second call for the
  * same day a no-op; deleting the Draft invoice releases them
@@ -83,18 +87,22 @@ async function createRentalInvoicesForDuePeriods(
     .selectFrom("rentalAgreement as ra")
     .select("ra.id")
     .where("ra.companyId", "=", companyId)
-    .where("ra.status", "=", "Active")
+    .where("ra.status", "in", BILLABLE_STATUSES)
     .where((eb) =>
       eb.or([
-        // A live line may need its next period cut before anything is due.
-        eb.exists(
-          eb
-            .selectFrom("rentalAgreementLine as l")
-            .select("l.id")
-            .whereRef("l.rentalAgreementId", "=", "ra.id")
-            .whereRef("l.companyId", "=", "ra.companyId")
-            .where("l.status", "in", ["Pending", "On Rent"])
-        ),
+        // A live line of an Active agreement may need its next period cut
+        // before anything is due.
+        eb.and([
+          eb("ra.status", "=", "Active"),
+          eb.exists(
+            eb
+              .selectFrom("rentalAgreementLine as l")
+              .select("l.id")
+              .whereRef("l.rentalAgreementId", "=", "ra.id")
+              .whereRef("l.companyId", "=", "ra.companyId")
+              .where("l.status", "in", ["Pending", "On Rent"])
+          )
+        ]),
         eb.exists(
           eb
             .selectFrom("rentalBillingPeriod as p")
@@ -136,11 +144,30 @@ async function createRentalInvoicesForDuePeriods(
   // failures, rather than lost behind a throw.
   const invoices: DraftedRentalInvoice[] = [];
   const failures: RentalInvoiceGenerationFailure[] = [];
+  if (agreements.length === 0) {
+    return { invoices, invoiceIds: [], failures };
+  }
+
+  // The company default every agreement without its own automation follows;
+  // one read for the whole run.
+  const settings = await db
+    .selectFrom("companySettings")
+    .select("invoiceAutomation")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+
   for (const agreement of agreements) {
     try {
       const drafted = await db
         .transaction()
-        .execute((trx) => draftAgreementInvoices(trx, args, agreement.id));
+        .execute((trx) =>
+          draftAgreementInvoices(
+            trx,
+            args,
+            agreement.id,
+            settings.invoiceAutomation
+          )
+        );
       invoices.push(...drafted);
     } catch (error) {
       failures.push({
@@ -153,6 +180,11 @@ async function createRentalInvoicesForDuePeriods(
 }
 
 type AgreementRow = Selectable<KyselyDatabase["rentalAgreement"]>;
+
+/** Statuses with something left to bill: an Active agreement, and a Closed
+ *  one whose voided invoice returned rows to unbilled. */
+const BILLABLE_STATUSES: Database["public"]["Enums"]["rentalAgreementStatus"][] =
+  ["Active", "Closed"];
 
 type LineValues = {
   rentalAgreementLineId: string;
@@ -169,7 +201,8 @@ type LineValues = {
 async function draftAgreementInvoices(
   trx: KyselyTx,
   args: RentalInvoiceGenerationArgs,
-  agreementId: string
+  agreementId: string,
+  companyInvoiceAutomation: InvoiceAutomation
 ): Promise<DraftedRentalInvoice[]> {
   const { companyId, asOf, userId } = args;
 
@@ -178,29 +211,28 @@ async function draftAgreementInvoices(
     .selectAll()
     .where("id", "=", agreementId)
     .where("companyId", "=", companyId)
-    .where("status", "=", "Active")
+    .where("status", "in", BILLABLE_STATUSES)
     .forUpdate()
     .executeTakeFirst();
   if (!agreement) return [];
 
-  const company = await trx
-    .selectFrom("companySettings")
-    .select("invoiceAutomation")
-    .where("id", "=", companyId)
-    .executeTakeFirstOrThrow();
   const mode = effectiveInvoiceAutomation(
     agreement.invoiceAutomation,
-    company.invoiceAutomation
+    companyInvoiceAutomation
   );
 
-  await rollBillingPeriodsForward(trx, {
-    companyId,
-    userId,
-    asOf,
-    agreementId: agreement.id,
-    cycle: agreement.billingCycle,
-    timing: agreement.billingTiming
-  });
+  // A Closed agreement only bills what a void returned to unbilled; it has
+  // no live line to cut a new period for.
+  if (agreement.status === "Active") {
+    await rollBillingPeriodsForward(trx, {
+      companyId,
+      userId,
+      asOf,
+      agreementId: agreement.id,
+      cycle: agreement.billingCycle,
+      timing: agreement.billingTiming
+    });
+  }
 
   // Locked so a concurrent run (the daily job and a manual "Generate
   // invoices") cannot bill the same period twice.
@@ -219,10 +251,8 @@ async function draftAgreementInvoices(
     .select([
       "p.id",
       "p.rentalAgreementLineId",
-      // DATE decodes to a JS Date through pg; the text form is what the
-      // description prints and the service dates store.
-      sql<string>`p."periodStart"::text`.as("periodStart"),
-      sql<string>`p."periodEnd"::text`.as("periodEnd"),
+      "p.periodStart",
+      "p.periodEnd",
       "p.days",
       "p.amount",
       "p.rateUnitApplied",
@@ -290,6 +320,11 @@ async function draftAgreementInvoices(
   const voidedReadableId = (voidedId: string | null) =>
     voidedId ? (voidedReadableIds.get(voidedId) ?? voidedId) : null;
 
+  // Periods and charges are priced in the agreement's currency;
+  // `salesInvoiceLine.unitPrice` is base currency (`convertedUnitPrice` =
+  // unitPrice × exchangeRate is what the customer sees), as on every sales
+  // document.
+  const exchangeRate = Number(agreement.exchangeRate);
   const lines: {
     values: LineValues;
     isAdjustment: boolean;
@@ -305,7 +340,7 @@ async function draftAgreementInvoices(
           ...period,
           cycle: agreement.billingCycle
         }),
-        unitPrice: Number(period.amount),
+        unitPrice: toBaseAmount(Number(period.amount), exchangeRate),
         taxPercent: Number(agreement.taxPercent),
         serviceStartDate: period.periodStart,
         serviceEndDate: period.periodEnd
@@ -320,7 +355,7 @@ async function draftAgreementInvoices(
         rentalAgreementChargeId: charge.id,
         rentalLineType: charge.chargeType,
         description: charge.description,
-        unitPrice: Number(charge.amount),
+        unitPrice: toBaseAmount(Number(charge.amount), exchangeRate),
         taxPercent: Number(charge.taxPercent),
         serviceStartDate: null,
         serviceEndDate: null

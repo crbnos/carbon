@@ -1122,6 +1122,13 @@ export const fixedAssetOutOfServiceValidator = z.object({
 
 /** Journal source types that only their period run may reverse: a plain
  *  reversal would leave the revenue schedule or the assets behind. */
+/** Business refusal threshold for a journal's debits-vs-credits drift — looser
+ *  than EPSILON because multi-currency entries carry real cross-rate residuals.
+ *  Shared by the manual-JE validator, the period-close checklist and the
+ *  journal entry form, so none of them disagrees about which journals are
+ *  unbalanced. */
+export const JOURNAL_BALANCE_TOLERANCE = 0.001;
+
 export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Revenue Recognition": "revenue recognition",
   "Asset Depreciation": "depreciation"

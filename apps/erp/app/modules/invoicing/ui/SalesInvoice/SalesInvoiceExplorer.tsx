@@ -57,9 +57,8 @@ import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
-import SalesInvoiceLineForm, {
-  useRentalLineTypeLabel
-} from "./SalesInvoiceLineForm";
+import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
+import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 export default function SalesInvoiceExplorer() {
   const { defaults } = useUser();

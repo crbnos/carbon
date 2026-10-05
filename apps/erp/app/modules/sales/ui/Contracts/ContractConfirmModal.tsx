@@ -56,7 +56,7 @@ const ContractConfirmModal = ({
   const submitted = useRef(false);
 
   const id = contract.id!;
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const mode = contract.effectiveInvoiceAutomation ?? "Draft Only";
   const isStripe = mode === "Post and Send via Stripe";

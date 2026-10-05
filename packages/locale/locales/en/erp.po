@@ -1087,6 +1087,9 @@ msgstr "A receipt's status changes"
 msgid "A receipt's supplier changes"
 msgstr "A receipt's supplier changes"
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 
@@ -1095,9 +1098,6 @@ msgstr "A rental line is a sales-type lease when any ASC 842 test is met. These 
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
@@ -1111,8 +1111,8 @@ msgstr "A routing step on a released job, the job's own copy of an operation, ca
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
@@ -1538,8 +1538,8 @@ msgstr "Activate Process"
 msgid "Activate Work Center"
 msgstr "Activate Work Center"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 
 msgid "Activation fee · we advise"
 msgstr "Activation fee · we advise"
@@ -9849,8 +9849,8 @@ msgstr "How a contract line earns its revenue over its revenue dates: Daily, the
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -12779,6 +12779,9 @@ msgstr "Next invoice {date} is created automatically, and left as a draft for re
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "Next invoice {date} is created automatically, then posted and emailed."
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "Next invoice {date} is created automatically, then posted and sent via Stripe."
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Next invoice {date} is created automatically, then posted."
 
@@ -13661,6 +13664,9 @@ msgstr "Oldest first"
 
 msgid "On"
 msgstr "On"
+
+msgid "On {sentDate}"
+msgstr "On {sentDate}"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
@@ -18139,6 +18145,9 @@ msgstr "Sent to"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Sent to each recipient who has email notifications turned on."
 
+msgid "Sent via Stripe"
+msgstr "Sent via Stripe"
+
 msgid "Sequences"
 msgstr "Sequences"
 
@@ -19842,9 +19851,6 @@ msgstr "Term is at least {threshold} of a unit's economic life"
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Term is at least {threshold} of the economic life ({actual})"
 
-msgid "Terms"
-msgstr "Terms"
-
 msgid "Terms and Privacy"
 msgstr "Terms and Privacy"
 
@@ -20695,9 +20701,6 @@ msgstr "The system a company uses to manage its people's logins — Okta, Entra 
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "The terms are fixed once the agreement is activated."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."

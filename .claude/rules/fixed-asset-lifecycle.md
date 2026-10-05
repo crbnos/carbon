@@ -68,7 +68,7 @@ Schema lives in these migrations (newest wins):
   `isConstructionInProgress BOOLEAN NOT NULL DEFAULT false` marks a CIP class.
   Also default depreciation/tax settings. Seeded with Buildings / Machinery &
   Equipment / Vehicles, plus (`20261005010401` for existing companies,
-  `functions/lib/seed.data.ts` for new ones) **Rental Fleet** (Straight Line,
+  `packages/database/src/seed-data.ts` for new ones) **Rental Fleet** (Straight Line,
   60 months, 20 % residual, asset `1370 Rental Fleet`, accumulated
   `1380 Accumulated Depreciation – Rental Fleet`) and **Construction in
   Progress** (`isConstructionInProgress = true`, asset `1390 Construction in
@@ -181,7 +181,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   for Straight Line assets with a useful life, `monthlyDepreciation = round(cost
   × (1 − residual %) / usefulLifeMonths)`), `setFixedAssetOutOfService`,
   `returnFixedAssetToService`, `invokeAssetTransfer`
-  (`client.functions.invoke("post-asset-transfer", { body })`).
+  (`serverFns.as({ client, db, companyId, userId }).invoke("post-asset-transfer", …)`).
 - What a run should hold: `buildDepreciationRunLines()` (`accounting.service.ts`)
   — every Active asset no OTHER run of the period covers, depreciated from the
   last run posted before the period, Units of Production summing the usage
@@ -211,7 +211,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   — latest posted run only (refuses when a later period is posted, or an
   asset on it has been Disposed since): reverses every month's journal and
   deferred tax journal (`reverseRunJournals`), takes the amounts back off
-  accumulated book and tax depreciation, returns a Fully Depreciated asset
+  accumulated book and tax depreciation (tax only for lines that carry a
+  `taxAmount` — decided from the posted lines, not the current setting), returns a Fully Depreciated asset
   above its residual to Active, and returns the run to Draft. A plain
   journal reversal of an `Asset Depreciation` journal is refused.
 - Server transactions (Kysely): `accounting.server.ts` — `postDisposal()`,
@@ -243,7 +244,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,recalculate,reverse,delete}`;
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`;
   the fleet register at `routes/x+/accounting+/fleet.tsx` (nav: Accounting →
-  Fixed Assets → Assets / Fleet / Depreciation, `useAccountingSubmodules`).
+  Fixed Assets → Assets / Fleet, and Accounting → Closing → Depreciation,
+  `useAccountingSubmodules`).
 - Server functions (`packages/server-functions/src/`): `post-receipt`,
   `post-purchase-invoice` (acquisition, CIP-aware), `post-shipment`,
   `post-sales-invoice` (disposal), `post-asset-transfer` (transfers).
@@ -369,11 +371,11 @@ while Under Construction; `$fixedAssetId.attach-job` lists jobs with no
 `salesOrderLineId`, no asset target and status not in Completed / Cancelled /
 Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
 
-**post-asset-transfer** (`functions/post-asset-transfer/index.ts`,
+**post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
 `validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`
-document per call, created and Posted in ONE transaction; `requirePermissions`
-with `create: accounting` is enforced by the calling routes; business failures
-are 400 `ValidationError`s with the message the app shows, a record the
+document per call, created and Posted in ONE transaction; the function declares
+`permissions: { create: "accounting" }`; business failures are 400
+`InvalidInputError`s with the message the app shows, a record the
 caller's company does not own is a 404. With `accountingEnabled = false` every
 ledger, entity and asset write is identical and no journal is created. Journals
 are `sourceType 'Asset Transfer'`, lines `documentType 'Asset Transfer'`, with
@@ -544,11 +546,15 @@ assets, totals). Machine rates are still typed by hand.
    builds the lines with `buildDepreciationRunLines()` and inserts a
    `depreciationRun` (Draft) + one `depreciationRunLine` per asset per month.
    With no lines it creates nothing.
-2. `$depreciationRunId.post` → `postDepreciationRun()`: per asset posts
-   Debit `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
-   (`sourceType: 'Asset Depreciation'`), bumps `accumulatedDepreciation`
-   (+ tax / deferred-tax lines when enabled via company settings), sets run
-   `Posted`, flips asset to `Fully Depreciated` when NBV hits residual.
+2. `$depreciationRunId.post` → `postDepreciationRun()`: locks the run
+   `FOR UPDATE` and refuses anything but a Draft, re-reads the lines and locks
+   the assets inside the transaction (`RunOutOfDateError` when they no longer
+   match what the route checked), then per asset per month posts Debit
+   `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
+   (`sourceType: 'Asset Depreciation'`; a month with a zero book amount posts
+   no journal), adds to `accumulatedDepreciation` in SQL (+ tax / deferred-tax
+   lines when enabled via company settings), sets run `Posted`, flips asset to
+   `Fully Depreciated` when NBV hits residual.
 
 **Dispose (Active / Fully Depreciated → Disposed).** GAAP: remove cost + accum
 depreciation, recognize proceeds, and book the net **gain/(loss) = proceeds −

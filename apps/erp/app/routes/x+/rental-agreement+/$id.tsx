@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const rentalAgreement = await getRentalAgreement(client, id);
+  const rentalAgreement = await getRentalAgreement(client, id, companyId);
   if (rentalAgreement.error || !rentalAgreement.data) {
     throw redirect(
       path.to.rentalAgreements,
@@ -64,10 +64,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const customerContactId = rentalAgreement.data.customerContactId;
   const [lines, charges, periods, deposits, rentableAssets, contact] =
     await Promise.all([
-      getRentalAgreementLines(client, id),
-      getRentalAgreementCharges(client, id),
-      getRentalBillingPeriods(client, id),
-      getRentalAgreementDeposits(client, id),
+      getRentalAgreementLines(client, id, companyId),
+      getRentalAgreementCharges(client, id, companyId),
+      getRentalBillingPeriods(client, id, companyId),
+      getRentalAgreementDeposits(client, id, companyId),
       rentalAgreement.data.status === "Draft"
         ? getRentableFleetAssets(client, companyId)
         : Promise.resolve({ data: [], error: null }),

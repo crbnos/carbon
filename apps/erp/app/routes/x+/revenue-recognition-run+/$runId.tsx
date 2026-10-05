@@ -61,8 +61,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!runId) throw new Error("Could not find runId");
 
   const [run, lines, companyToday] = await Promise.all([
-    getRevenueRecognitionRun(client, runId),
-    getRevenueRecognitionRunLines(client, runId),
+    getRevenueRecognitionRun(client, runId, companyId),
+    getRevenueRecognitionRunLines(client, runId, companyId),
     getCompanyToday(client, companyId)
   ]);
 

@@ -81,7 +81,7 @@ const SalesInvoicePostModal = ({
   const canStripe = integrations.has("stripe-connect");
 
   // The invoice's own dateDue is a business date, so the "would this survive
-  // clampDueDate" check anchors on the company's calendar, not the browser's.
+  // stripeDueDate" check anchors on the company's calendar, not the browser's.
   const companyToday = parseDate(useCompanyToday());
   const minStripeDueDate = companyToday.add({ days: 1 });
   const maxStripeDueDate = companyToday.add({ years: 5 });
@@ -93,9 +93,9 @@ const SalesInvoicePostModal = ({
       return null;
     }
   })();
-  // Mirrors clampDueDate's server-side rule (missing, on/before today, or
+  // Mirrors stripeDueDate's server-side rule (missing, on/before today, or
   // more than 5 years out) — if the invoice's own date wouldn't survive that
-  // clamp, ask the user for one instead of silently sending with none.
+  // check, ask the user for one instead of silently sending with none.
   const needsStripeDueDate =
     !parsedDateDue ||
     parsedDateDue.compare(companyToday) <= 0 ||

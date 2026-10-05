@@ -214,6 +214,10 @@ const postPurchaseInvoice = defineServerFn({
                 "Asset was capitalized; reverse the capitalization first"
               );
             }
+            // Every acquisitionCost change this invoice made to a CIP asset
+            // wrote a CIP cost row (the direct line's cost, a receipt-backed
+            // line's variance), so no row means it changed nothing to undo:
+            // a receipt-backed line whose variance was within a cent.
             const cipCost = cipCostByAssetVoid.get(asset.id);
             if (cipCost !== undefined) {
               cipAssetUpdatesVoid.set(

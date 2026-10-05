@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { fetchAllRecords } from "@carbon/database";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
@@ -62,20 +63,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Each row posts in the period of the month it was scheduled for (the
   // run's own period when that month is Closed).
   const [scheduledLines, dimensionsResult] = await Promise.all([
-    client
-      .from("revenueRecognitionRunLine")
-      .select(
-        "schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(scheduledDate)"
-      )
-      .eq("runId", runId)
-      .eq("companyId", companyId),
+    // A run claims every due row of the company: past PostgREST's 1000-row
+    // cap, an unread month would have no period and fail the post.
+    fetchAllRecords(() =>
+      client
+        .from("revenueRecognitionRunLine")
+        .select(
+          "id, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(scheduledDate)"
+        )
+        .eq("runId", runId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
     client
       .from("dimension")
       .select("id, entityType")
       .eq("companyGroupId", companyGroupId)
       .eq("active", true)
   ]);
-  if (scheduledLines.error) {
+  if (scheduledLines.error || !scheduledLines.data) {
     throw redirect(
       path.to.revenueRecognitionRun(runId),
       await flash(

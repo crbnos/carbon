@@ -37,7 +37,6 @@ import {
   TextArea
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
-import { path } from "~/utils/path";
 import {
   rentalAgreementValidator,
   rentalBillingCycles,
@@ -48,37 +47,28 @@ import {
   LeaseClassificationPreview,
   type LeaseTermsDraft
 } from "./RentalLeaseClassification";
-import type { RentalAgreementLine, RentalLeaseLineInputs } from "./types";
 
 type RentalAgreementFormValues = z.infer<typeof rentalAgreementValidator>;
 
+/** The new-agreement form. An existing agreement's terms are edited one at a
+ *  time in its properties panel (`rental-agreement+/update.tsx`). */
 type RentalAgreementFormProps = {
   initialValues: RentalAgreementFormValues;
-  /** Terms are fixed once the agreement is activated: the billing periods and
-   *  the lease classification were cut from them. */
-  isLocked?: boolean;
   /** `?fixedAssetId=` from the fleet register's Rent action — the new route
    *  adds that unit as the first line. */
   fixedAssetId?: string;
   /** Classification thresholds, for the live lease classification preview. */
   leasePolicy: LeasePolicy;
-  /** The agreement's units, so the preview can run the per-unit tests. */
-  lines?: RentalAgreementLine[];
-  leaseInputs?: Record<string, RentalLeaseLineInputs>;
 };
 
 const RentalAgreementForm = ({
   initialValues,
-  isLocked = false,
   fixedAssetId,
-  leasePolicy,
-  lines,
-  leaseInputs
+  leasePolicy
 }: RentalAgreementFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
-  const isEditing = initialValues.id !== undefined;
 
   const [customer, setCustomer] = useState<{
     id: string | undefined;
@@ -173,54 +163,32 @@ const RentalAgreementForm = ({
     label: timing === "Advance" ? t`Advance` : t`Arrears`
   }));
 
-  const canSave = isEditing
-    ? permissions.can("update", "sales")
-    : permissions.can("create", "sales");
+  const canSave = permissions.can("create", "sales");
 
   return (
     <Card>
       <ValidatedForm
         method="post"
-        action={
-          isEditing
-            ? path.to.rentalAgreementDetails(initialValues.id!)
-            : undefined
-        }
         validator={rentalAgreementValidator}
         defaultValues={initialValues}
-        isDisabled={isLocked}
       >
         <CardHeader>
           <CardTitle>
-            {isEditing ? (
-              <Trans>Terms</Trans>
-            ) : (
-              <Trans>New Rental Agreement</Trans>
-            )}
+            <Trans>New Rental Agreement</Trans>
           </CardTitle>
-          {isEditing && isLocked ? (
-            <CardDescription>
-              <Trans>
-                The terms are fixed once the agreement is activated.
-              </Trans>
-            </CardDescription>
-          ) : !isEditing ? (
-            <CardDescription>
-              <Trans>
-                A rental agreement puts serialized fleet units at a customer and
-                bills them on a recurring cycle until they come back.
-              </Trans>
-            </CardDescription>
-          ) : null}
+          <CardDescription>
+            <Trans>
+              A rental agreement puts serialized fleet units at a customer and
+              bills them on a recurring cycle until they come back.
+            </Trans>
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Hidden name="id" />
-          {isEditing && <Hidden name="rentalAgreementId" />}
           {fixedAssetId && <Hidden name="fixedAssetId" value={fixedAssetId} />}
           <VStack spacing={4}>
             <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <Customer
-                autoFocus={!isEditing}
+                autoFocus
                 name="customerId"
                 label={t`Customer`}
                 onChange={onCustomerChange}
@@ -326,18 +294,14 @@ const RentalAgreementForm = ({
                   </Trans>
                 </p>
               </div>
-              {!isLocked && (
-                <LeaseClassificationPreview
-                  terms={{
-                    ...terms,
-                    purchaseOptionReasonablyCertain:
-                      hasPurchaseOption && terms.purchaseOptionReasonablyCertain
-                  }}
-                  lines={lines}
-                  leaseInputs={leaseInputs}
-                  policy={leasePolicy}
-                />
-              )}
+              <LeaseClassificationPreview
+                terms={{
+                  ...terms,
+                  purchaseOptionReasonablyCertain:
+                    hasPurchaseOption && terms.purchaseOptionReasonablyCertain
+                }}
+                policy={leasePolicy}
+              />
               {hasEndDate ? (
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                   <Number
@@ -409,13 +373,11 @@ const RentalAgreementForm = ({
             <TextArea name="notes" label={t`Notes`} />
           </VStack>
         </CardContent>
-        {!isLocked && (
-          <CardFooter>
-            <Submit isDisabled={!canSave}>
-              <Trans>Save</Trans>
-            </Submit>
-          </CardFooter>
-        )}
+        <CardFooter>
+          <Submit isDisabled={!canSave}>
+            <Trans>Save</Trans>
+          </Submit>
+        </CardFooter>
       </ValidatedForm>
     </Card>
   );

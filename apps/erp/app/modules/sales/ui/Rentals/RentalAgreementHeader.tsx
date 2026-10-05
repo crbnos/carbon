@@ -66,6 +66,8 @@ const RentalAgreementHeader = ({
   const readableId = rentalAgreement.rentalAgreementId ?? "";
   const status = rentalAgreement.status;
   const canUpdate = permissions.can("update", "sales");
+  // Invoicing drafts sales invoices, so it needs the invoicing permission too.
+  const canInvoice = canUpdate && permissions.can("create", "invoicing");
 
   const isDraft = status === "Draft";
   const isActive = status === "Active";
@@ -110,7 +112,7 @@ const RentalAgreementHeader = ({
     activate: {
       action: path.to.rentalAgreementActivate(id),
       title: t`Activate ${readableId}`,
-      text: t`Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards.`,
+      text: t`Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards.`,
       confirmText: t`Activate`
     },
     invoice: {
@@ -187,7 +189,7 @@ const RentalAgreementHeader = ({
               <Button
                 variant="secondary"
                 leftIcon={<LuCreditCard />}
-                isDisabled={!canUpdate}
+                isDisabled={!canInvoice}
                 onClick={() => open("invoice")}
               >
                 <Trans>Invoice</Trans>

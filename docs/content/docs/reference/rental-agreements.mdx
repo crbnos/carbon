@@ -60,7 +60,7 @@ A note under the rate says which one it came from while it still matches. Each f
 
 Rental rates are separate from [pricing rules](/docs/reference/pricing) and price overrides, which price what you sell.
 
-Each billing period bills the whole days, weeks, or months it covers at the unit's rate. On a **28 Days** agreement a month is 28 days, so a year on rent is thirteen periods. At 100 a day, 500 a week, or 1,500 a month:
+Each billing period bills the whole days, weeks, or months it covers at the unit's rate. On a **28 Days** agreement a month is 28 days, so a year on rent is about thirteen periods. At 100 a day, 500 a week, or 1,500 a month:
 
 | Days in the period | Daily | Weekly | Monthly |
 | --- | --- | --- | --- |
@@ -92,8 +92,9 @@ What happens next follows the invoicing setting: the company default on **Settin
 - **Draft only**: one draft invoice per agreement; a person reviews and posts it.
 - **Post**: rent is posted automatically.
 - **Post and email**: rent is posted and emailed to the agreement's contact, with the PDF attached, from the company's name, replying to the receivables email. It needs a contact with an email; without one the invoice is posted and marked **"Not sent"**.
+- **Post and send via Stripe**: rent is posted and sent through your connected Stripe account, which emails it with a payment link. It needs Stripe connected and the billing customer linked to a Stripe customer; without them the invoice is posted and marked **"Not sent"**.
 
-Under **Post** and **Post and email**, charges and purchase options go on a separate invoice that is always held for review, and so is a rent invoice with an early-return credit or one re-billing a voided invoice. Sales-rule violations, a missing required contact and posting errors also hold an invoice. Held and unsent invoices carry a yellow **Needs Review** badge in the **Sales Invoices** list, which can be filtered on **Needs Review**. Each agreement's salesperson (or its creator) gets a daily summary of what was posted, emailed and held; **"Also notify"** on the settings page adds more people.
+Under every mode except **Draft only**, charges and purchase options go on a separate invoice that is always held for review, and so is a rent invoice with an early-return credit or one re-billing a voided invoice. Sales-rule violations, a missing required contact and posting errors also hold an invoice. Held and unsent invoices carry a yellow **Needs Review** badge in the **Sales Invoices** list, which can be filtered on **Needs Review**. Each agreement's salesperson (or its creator) gets a daily summary of what was posted, emailed and held; **"Also notify"** on the settings page adds more people.
 
 Each period becomes a read-only **Rental** line, such as "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate", taxed at the agreement's **"Tax Percent"**. **"Add Charge"** records a variable charge against one unit (mileage, damage, cleaning), billed with the first invoice drafted on or after its date. Deleting a draft invoice releases its periods and charges for the next pass.
 
@@ -137,7 +138,7 @@ Activation decides each unit's accounting treatment under ASC 842. It runs five 
 
 The two percentages come from the company's [lease policy](#lease-policy). The lease payments are the rent, discounted at the agreement's **"Discount Rate (%)"** in advance or in arrears as its billing timing says, plus the unit's **"Guaranteed Residual Value"** and the <Term>purchase option</Term> when its exercise is reasonably certain.
 
-The agreement's terms sit in its **"Lease classification inputs"** section, and each unit's fair value, economic life, and residual values sit in the section of the same name on the unit form. The **"Accounting treatment"** panel shows the two treatments, *Rental* and *Sale*, with each test and the present values, marked **"Preview"** until activation stores the result.
+The agreement's terms sit in its **"Accounting Treatment"** section, and each unit's fair value, economic life, and residual values sit in the **"Accounting treatment inputs"** section of the unit form. The agreement's section shows the two treatments, *Rental* and *Sale*, with each test. The unit's section shows that unit's treatment with each test and the present values, marked **"Preview"** until activation stores the result.
 
 A third treatment, a direct financing lease, is not offered: it needs a third party to guarantee the residual value, which a rental agreement has no input for.
 
@@ -145,9 +146,9 @@ A third treatment, a direct financing lease, is not offered: it needs a third pa
 A sale needs a term to transfer the unit over, so an agreement with no **"End Date"** treats every unit as a Rental even when a test is met. For the same reason, a reasonably certain purchase option cannot be saved without an end date.
 </Callout>
 
-**"Override"** on a draft agreement's unit sets the treatment, *Rental* or *Sale*, by hand with a required **"Reason"**. It needs accounting update permission and is kept by activation in place of the tests' answer. The unit keeps the reason, and the change is also recorded in the [audit log](/docs/reference/audit-log) with the old and new values. Once the agreement is active the treatment is fixed.
+**"Override"** on a draft agreement's unit sets the treatment, *Rental* or *Sale*, by hand with a required **"Reason"**. It needs accounting update permission and is kept by activation in place of the tests' answer. The unit keeps the reason, and when the [audit log](/docs/reference/audit-log) is enabled the change is also recorded there with the old and new values. Once the agreement is active the treatment is fixed.
 
-<Screenshot label="Unit form on a draft rental agreement with the lease classification inputs expanded, showing the Sale preview, the five tests, and the present values" caption="A unit that meets the present-value test, before activation." />
+<Screenshot label="Unit form on a draft rental agreement with the accounting treatment inputs expanded, showing the Sale preview, the five tests, and the present values" caption="A unit that meets the present-value test, before activation." />
 
 ## Sales-type leases
 

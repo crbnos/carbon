@@ -41,7 +41,7 @@ import type {
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
-import { useRentalLineTypeLabel } from "./SalesInvoiceLineForm";
+import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 const LineItems = ({
   currencyCode,

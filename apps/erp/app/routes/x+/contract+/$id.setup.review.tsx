@@ -34,7 +34,7 @@ export default function ContractSetupReviewRoute() {
     revenueResiduals
   } = routeData;
 
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const nameOf = (lineId: string) => {
     const line = lines.find((l) => l.id === lineId);
     return line ? contractLineName(line) : lineId;

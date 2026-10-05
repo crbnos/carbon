@@ -105,7 +105,7 @@ msgstr "{0} già avviato"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
-msgstr ""
+msgstr "{0} immobilizzazioni da ammortizzare · {amount}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -144,7 +144,7 @@ msgstr "{0} bozze di prima nota"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
-msgstr ""
+msgstr "{0} scritture da riconoscere · {amount}"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -563,7 +563,7 @@ msgid "1 Asset"
 msgstr "1 Cespite"
 
 msgid "1 asset to depreciate · {amount}"
-msgstr ""
+msgstr "1 immobilizzazione da ammortizzare · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operazione raggruppabile non è in un lotto — viene eseguita singolarmente fino a quando non viene raggruppata"
@@ -581,7 +581,7 @@ msgid "1 draft journal entry"
 msgstr "1 riga di registrazione in bozza"
 
 msgid "1 entry to recognize · {amount}"
-msgstr ""
+msgstr "1 scrittura da riconoscere · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 fattura è stata fatturata nel vostro sistema precedente e non viene redatta di nuovo."
@@ -1087,6 +1087,9 @@ msgstr "Lo stato della ricevuta cambia"
 msgid "A receipt's supplier changes"
 msgstr "Il fornitore della ricevuta cambia"
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "Un contratto di noleggio deve essere nella valuta di base dell'azienda per essere attivato. Cambia prima la valuta del contratto."
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "Un contratto di noleggio assegna unità di flotta serializzate a un cliente e le fattura su un ciclo ricorrente fino al loro ritorno."
 
@@ -1095,9 +1098,6 @@ msgstr "Una riga di noleggio è un leasing di tipo commerciale quando è soddisf
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Un noleggio che soddisfa uno qualsiasi dei cinque test di leasing ASC 842, registrato come vendita quando il contratto si attiva: l'unità lascia la flotta, i ricavi del leasing e il costo del venduto vengono registrati, e un investimento netto nel leasing prende il loro posto."
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "Un noleggio trattato come vendita deve essere nella valuta di base dell'azienda. Modifica la valuta dell'accordo o forza il trattamento."
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Un'autorizzazione di reso merce (RMA) autorizza un cliente a restituire merce per credito, sostituzione o riparazione."
@@ -1111,8 +1111,8 @@ msgstr "Un passo di ciclo di lavorazione su un ordine di produzione rilasciato, 
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "Un documento di vendita che fattura un cliente per articoli di servizio secondo un accordo: canoni una tantum e addebiti ricorrenti, fatturati secondo un programma pianificato dalla conferma fino alla fine o all'annullamento."
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "Un documento commerciale che noleggia unità di flotta serializzate a un cliente a tariffe giornaliere, settimanali e mensili, tagliando i periodi di fatturazione e preparando le Fatture fino a quando ogni unità non è restituita e l'accordo è Chiuso."
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "Un documento di vendita che noleggia unità di una flotta serializzata a un cliente, ciascuna al suo tasso giornaliero, settimanale o mensile, dividendo i periodi di fatturazione e redigendo le relative fatture fino a quando ogni unità viene restituita e il contratto è chiuso."
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "Una fattura di vendita (emetti una fattura a un cliente) o una fattura di acquisto (un fornitore ti emette una fattura), regolate applicando pagamenti e note di credito o di addebito."
@@ -1538,8 +1538,8 @@ msgstr "Attiva Processo"
 msgid "Activate Work Center"
 msgstr "Attiva Centro di Lavoro"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "L'attivazione verifica che ogni unità sia disponibile, fissa le tariffe giornaliere, settimanali e mensili di ogni articolo sulla sua riga, classifica il noleggio e crea i primi periodi di fatturazione. I termini e le righe sono fissati in seguito."
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "L'attivazione verifica che ogni unità sia disponibile, classifica il trattamento contabile di ogni unità e divide i primi periodi di fatturazione al tasso di ogni unità. I termini e le righe sono fissi successivamente."
 
 msgid "Activation fee · we advise"
 msgstr "Commissione di attivazione · ti consigliamo"
@@ -3049,10 +3049,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Chiedi a un amministratore con autorizzazione {0} di aggiungere il primo {1}."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr ""
+msgstr "Chiede all'ammortamento cosa verrebbe ammortizzato ora per una nuova esecuzione in questo periodo, e verifica le esecuzioni in Bozza che terminano nel periodo. Crea l'esecuzione e registrala in modo che il periodo abbia le sue spese di ammortamento e l'ammortamento accumulato. Salta con una ragione se l'ammortamento non si applica in questo periodo."
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr ""
+msgstr "Chiede al riconoscimento dei ricavi cosa verrebbe riconosciuto ora per una nuova esecuzione in questo periodo — ricavi su fattura differiti, affitto da maturare e ricavi da contratto — e verifica le esecuzioni in Bozza che hanno ricavi dovuti entro la fine del periodo. Crea l'esecuzione e registrala in modo che i ricavi raggiungano il registro. Salta con una ragione se non c'è niente da riconoscere."
 
 msgid "Assemblies"
 msgstr "Assiemi"
@@ -9849,8 +9849,8 @@ msgstr "Come una riga del contratto guadagna i suoi ricavi nel corso delle sue d
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Come un contratto o un emendamento viene classificato per la rendicontazione ricorrente dei ricavi: Nuove vendite, Esistente, Espansione, Riattivazione o Contrazione. Carbon lo suggerisce e puoi cambiarlo."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "Come un accordo di noleggio divide i periodi di fatturazione dalla sua data di inizio: Mese di calendario fattura ogni mese di calendario al tasso mensile, ripartito proporzionalmente per un mese parziale, e 28 giorni fattura i periodi consecutivi di 28 giorni con prezzi dal giorno, dalla settimana e dai tassi mensili."
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "Come un contratto di noleggio divide i periodi di fatturazione dalla sua data di inizio: il mese di calendario divide i mesi di calendario, e 28 giorni divide periodi di 28 giorni consecutivi. Ogni unità fattura un tasso alla sua frequenza per i giorni, settimane o mesi interi che un periodo copre; un tasso mensile in un mese di calendario è ripartito per giorni."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Come viene rifornito complessivamente un articolo (Acquisto, Produzione, o Acquisto e produzione), impostato per articolo, diversamente dal tipo di fornitura per riga."
@@ -12779,6 +12779,9 @@ msgstr "La prossima fattura {date} viene creata automaticamente e lasciata come 
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "La prossima fattura {date} viene creata automaticamente, quindi registrata e inviata per e-mail."
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "La prossima fattura {date} viene creata automaticamente, quindi registrata e inviata tramite Stripe."
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "La prossima fattura {date} viene creata automaticamente, quindi registrata."
 
@@ -13661,6 +13664,9 @@ msgstr "Più vecchio prima"
 
 msgid "On"
 msgstr "Attivato"
+
+msgid "On {sentDate}"
+msgstr "Il {sentDate}"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Nel giorno del cutover, esegui la checklist sottostante in ordine. I test di accettazione provengono dai tuoi requisiti in ambito. I dettagli di supporto sono in fondo."
@@ -14949,7 +14955,7 @@ msgstr "Pubblica Commento"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
-msgstr ""
+msgstr "Registra l'esecuzione in bozza {0}"
 
 msgid "Post Invoice"
 msgstr "Registra Fattura"
@@ -18139,6 +18145,9 @@ msgstr "Inviato a"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Inviato a ogni destinatario che ha le notifiche email attivate."
 
+msgid "Sent via Stripe"
+msgstr "Inviato tramite Stripe"
+
 msgid "Sequences"
 msgstr "Sequenze"
 
@@ -19842,9 +19851,6 @@ msgstr "Il termine è almeno {threshold} della vita economica di un'unità"
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "La durata è almeno {threshold} della vita economica ({actual})"
 
-msgid "Terms"
-msgstr "Condizioni"
-
 msgid "Terms and Privacy"
 msgstr "Termini e Privacy"
 
@@ -20695,9 +20701,6 @@ msgstr "Il sistema che un'azienda utilizza per gestire gli accessi dei suoi dipe
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Il sistema supera ogni test di accettazione in ambito nel tuo sistema configurato, con i tuoi dati; i dati sono convalidati; e tu firmi. Quindi vai in diretta."
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "Le condizioni sono fisse una volta che l'accordo è attivato."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Il thread che collega una RFQ di vendita, il suo preventivo e l'ordine di vendita risultante - un join, non un documento con il proprio stato."

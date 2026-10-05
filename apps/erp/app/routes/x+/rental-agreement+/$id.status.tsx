@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const agreement = await getRentalAgreement(client, id);
+  const agreement = await getRentalAgreement(client, id, companyId);
   if (agreement.error || agreement.data?.companyId !== companyId) {
     throw redirect(
       path.to.rentalAgreements,

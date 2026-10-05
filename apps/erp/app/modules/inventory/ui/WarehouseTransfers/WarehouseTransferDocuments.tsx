@@ -44,7 +44,10 @@ const WarehouseTransferDocuments = () => {
         </RelatedDocumentGroup>
       }
     >
-      <Await resolve={routeData?.relatedItems}>
+      <Await
+        resolve={routeData?.relatedItems}
+        errorElement={<Empty className="py-12" />}
+      >
         {(resolved) => {
           const shipments = resolved?.shipments ?? [];
           const receipts = resolved?.receipts ?? [];

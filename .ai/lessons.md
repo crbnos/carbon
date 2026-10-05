@@ -3002,7 +3002,7 @@ of `salesInvoice`; backfilled by `20261005010901_sales-invoice-opportunity-backf
 
 **Rule:** When a page shows rows that the server computes and does not store, give each row a reference by position, not an id. Contracts use `planned:<invoiceDate>` for an invoice and `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]` for a row. The server writes the rows first, then resolves each reference against them. Test the first edit from the computed state with a database test, not from stored rows (`contract-lifecycle.test.ts`, fix commit `56fa0f7b8e`).
 
-**Applies to:** `post-customer-contract` `edit-schedule`, `ContractInvoices` / `ContractInvoiceSplitModal`, and any future editable preview that persists on first edit.
+**Applies to:** `post-customer-contract` `edit-schedule`, `ContractInvoiceGrid` / `ContractAmountsModal` (and `ContractRevenueGrid` for the revenue plan), and any future editable preview that persists on first edit.
 
 ## Two sessions in one worktree share every uncommitted file
 

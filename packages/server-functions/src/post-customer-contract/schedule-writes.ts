@@ -106,6 +106,38 @@ export function copyLineValues(
   };
 }
 
+/** The revenue dates a Recurring line's copy from `newStart` keeps. A go-live
+ *  or revenue start on or before the cutover belongs to the line it was set
+ *  on — inherited, the copy would recognize from that date again, on top of
+ *  the line it replaces. One after the cutover has not happened yet and
+ *  still applies; so does a revenue end on or after it. A One-time copy
+ *  replaces its line whole, so it keeps every date. */
+export function carriedRevenueDates(
+  line: Pick<
+    LineFields,
+    "revenueType" | "goLiveDate" | "revenueStartDate" | "revenueEndDate"
+  >,
+  newStart: string
+): Pick<LineFields, "goLiveDate" | "revenueStartDate" | "revenueEndDate"> {
+  if (line.revenueType !== "Recurring") {
+    return {
+      goLiveDate: line.goLiveDate,
+      revenueStartDate: line.revenueStartDate,
+      revenueEndDate: line.revenueEndDate
+    };
+  }
+  const after = (date: string | null) =>
+    date !== null && date > newStart ? date : null;
+  return {
+    goLiveDate: after(line.goLiveDate),
+    revenueStartDate: after(line.revenueStartDate),
+    revenueEndDate:
+      line.revenueEndDate !== null && line.revenueEndDate >= newStart
+        ? line.revenueEndDate
+        : null
+  };
+}
+
 /** Lines in their display order: sort order, start date, id. */
 async function loadLines(
   trx: KyselyTx,
@@ -304,23 +336,36 @@ export function reconcileThrough(
   return planned !== null && planned > horizonDate ? planned : horizonDate;
 }
 
-/** Sets each line's `endDate` in one statement. */
+/** Sets each line's `endDate` in one statement. A `revenueEndDate` past the
+ *  new end is clamped to it — a line recognizes nothing after it ends —
+ *  unless the entry sets `revenueEndDate` itself (a reverted cancellation
+ *  restoring what it clamped). */
 export async function setLineEndDates(
   trx: KyselyTx,
   scope: Scope,
   contractId: string,
-  ends: { id: string; endDate: string | null }[]
+  ends: {
+    id: string;
+    endDate: string | null;
+    revenueEndDate?: string | null;
+  }[]
 ): Promise<void> {
   if (ends.length === 0) return;
   const values = ends.map(
-    (end) => sql`(${end.id}::text, ${end.endDate}::date)`
+    (end) =>
+      sql`(${end.id}::text, ${end.endDate}::date, ${end.revenueEndDate !== undefined}::boolean, ${end.revenueEndDate ?? null}::date)`
   );
   await sql`
     UPDATE "customerContractLine" AS l
     SET "endDate" = v."endDate",
+        "revenueEndDate" = CASE
+          WHEN v."setsRevenueEnd" THEN v."revenueEndDate"
+          WHEN l."revenueEndDate" > v."endDate" THEN v."endDate"
+          ELSE l."revenueEndDate"
+        END,
         "updatedBy" = ${scope.userId},
         "updatedAt" = now()
-    FROM (VALUES ${sql.join(values)}) AS v("id", "endDate")
+    FROM (VALUES ${sql.join(values)}) AS v("id", "endDate", "setsRevenueEnd", "revenueEndDate")
     WHERE l."id" = v."id"
       AND l."companyId" = ${scope.companyId}
       AND l."customerContractId" = ${contractId}
@@ -392,6 +437,7 @@ export async function applyDiscountEnds(
     .values(
       splits.map((split, index) =>
         copyLineValues(scope, lineById.get(split.lineId)!, {
+          ...carriedRevenueDates(lineById.get(split.lineId)!, split.resumesOn),
           startDate: split.resumesOn,
           discountPercent: 0,
           discountEndsOn: null,

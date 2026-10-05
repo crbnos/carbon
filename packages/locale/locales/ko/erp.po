@@ -105,7 +105,7 @@ msgstr "{0}은 이미 시작됨"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
-msgstr ""
+msgstr "{0}개의 감가상각 자산 · {amount}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -144,7 +144,7 @@ msgstr "{0}개의 초안 전표"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
-msgstr ""
+msgstr "{0}개의 인식할 항목 · {amount}"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -563,7 +563,7 @@ msgid "1 Asset"
 msgstr "자산 1개"
 
 msgid "1 asset to depreciate · {amount}"
-msgstr ""
+msgstr "1개의 감가상각 자산 · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
@@ -581,7 +581,7 @@ msgid "1 draft journal entry"
 msgstr "1개의 초안 분개"
 
 msgid "1 entry to recognize · {amount}"
-msgstr ""
+msgstr "1개의 인식할 항목 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
@@ -1087,6 +1087,9 @@ msgstr "입고의 상태가 변경되었습니다"
 msgid "A receipt's supplier changes"
 msgstr "입고의 공급업체가 변경됩니다."
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "임차 계약을 활성화하려면 회사의 기본 통화여야 합니다. 먼저 계약 통화를 변경하세요."
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "렌탈 계약은 일련번호가 있는 함대 개를 고객에게 배치하고 반납될 때까지 반복 주기로 청구합니다."
 
@@ -1095,9 +1098,6 @@ msgstr "임차 라인은 ASC 842 테스트 중 하나라도 충족되면 판매-
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5개의 ASC 842 리스 테스트 중 하나라도 충족하는 임차로, 계약이 발효될 때 판매로 기록됩니다. 장비가 함대를 떠나고, 임차 매출과 매출원가가 전기되며, 리스에 대한 순투자가 그 자리를 차지합니다."
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "판매로 취급되는 임차는 회사의 기본 통화여야 합니다. 계약 통화를 변경하거나 처리를 재정의하세요."
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "반품 수권(RMA)은 고객이 교환, 교체 또는 수리를 위해 상품을 반품할 수 있도록 허가합니다."
@@ -1111,8 +1111,8 @@ msgstr "릴리스됨 작업 지시의 라우팅 단계로 공정의 작업 지�
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "계약에 따라 고객에게 서비스 품목에 대한 송장을 발행하는 영업 문서: 일회성 요금 및 반복 요금, 확정에서 끝나거나 취소될 때까지 계획된 일정에 따라 송장 발행됨."
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "고객에게 일일, 주간, 월간 요금으로 일련 번호가 있는 차량 단위를 임차하는 영업 문서로, 모든 단위가 반납되고 계약이 마감될 때까지 청구 기간을 결정하고 송장을 작성합니다."
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "고객에게 일련번호가 있는 함대 단위를 임차하는 문서로, 각 단위는 자체 일일, 주간 또는 월간 요금이 있으며, 모든 단위가 반납되고 계약이 마감될 때까지 청구 기간을 생성하고 송장을 작성합니다."
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "매출 송장(고객에게 청구) 또는 매입 송장(공급업체가 청구)으로 지불 및 대변 또는 차변 메모를 적용하여 결제됩니다."
@@ -1538,8 +1538,8 @@ msgstr "공정 활성화"
 msgid "Activate Work Center"
 msgstr "작업장 활성화"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "활성화는 모든 개가 가용한지 확인하고, 각 품목의 일일, 주간, 월간 요금을 해당 라인에 스냅샷으로 저장하며, 임차를 분류하고 첫 청구 기간을 생성합니다. 그 후 약관과 라인은 고정됩니다."
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "활성화하면 모든 단위의 가용성을 확인하고, 각 단위의 회계 처리를 분류하며, 각 단위의 요금으로 첫 번째 청구 기간을 생성합니다. 계약 조건과 라인은 이후 고정됩니다."
 
 msgid "Activation fee · we advise"
 msgstr "활성화 수수료 · 저희가 자문"
@@ -3049,10 +3049,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr ""
+msgstr "이 기간에 새로운 실행이 지금 감가상각할 항목을 요청하고, 기간에서 종료되는 초안 실행을 확인합니다. 실행을 생성하고 전기하여 기간에 감가상각 비용과 감가상각누계액을 포함하도록 합니다. 이 기간에 감가상각이 적용되지 않으면 이유와 함께 건너뜁니다."
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr ""
+msgstr "이 기간에 새로운 실행이 지금 인식할 항목을 요청합니다 — 이연 송장 매출, 발생할 임차료, 계약 매출 — 그리고 기간 말까지 인식할 매출을 보유하는 초안 실행을 확인합니다. 실행을 생성하고 전기하여 매출이 원장에 도달하도록 합니다. 인식할 항목이 없으면 이유와 함께 건너뜁니다."
 
 msgid "Assemblies"
 msgstr "조립품"
@@ -9849,8 +9849,8 @@ msgstr "계약 라인이 수익 인식 기간에 수익을 인식하는 방식: 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "계약 또는 수정안이 반복 수익 보고를 위해 어떻게 분류되는지: 신규 영업, 기존, 확대, 재활성화, 또는 축소. Carbon이 제안하며 변경할 수 있습니다."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "렌탈 계약이 시작일부터 청구 기간을 어떻게 결정하는지: 력월은 월간 요금으로 각 력월을 청구하며, 부분월은 일할 계산하고, 28일은 일, 주, 월 요금으로 책정된 연속된 28일 기간을 청구합니다."
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "임차 계약이 시작일부터 청구 기간을 생성하는 방식: Calendar Month는 달력 월을 생성하고, 28 Days는 연속 28일 기간을 생성합니다. 각 단위는 기간이 포함하는 전체 일, 주 또는 월 동안 자체 빈도로 하나의 요금을 청구합니다. 달력 월의 월간 요금은 일 단위로 비례합니다."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "품목을 전체적으로 재보충하는 방법(구매, 사내 생산 또는 구매 및 사내 생산)입니다. 라인별 공급 방식과 달리 품목별로 설정됩니다."
@@ -12779,6 +12779,9 @@ msgstr "다음 송장 {date}는 자동으로 생성되며 검토를 위해 초�
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "다음 송장 {date}는 자동으로 생성된 후 전기되고 이메일로 발송됩니다."
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "다음 송장은 {date}에 자동으로 생성되고 전기되며 Stripe를 통해 발송됩니다."
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "다음 송장 {date}는 자동으로 생성된 후 전기됩니다."
 
@@ -13661,6 +13664,9 @@ msgstr "오래된순"
 
 msgid "On"
 msgstr "켜짐"
+
+msgid "On {sentDate}"
+msgstr "{sentDate}에"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "전환일 당일에는 아래 체크리스트를 순서대로 진행하세요. 승인 테스트는 범위 내 요구사항을 기준으로 하며, 지원 관련 세부 정보는 하단에 있습니다."
@@ -14949,7 +14955,7 @@ msgstr "댓글 게시"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
-msgstr ""
+msgstr "초안 실행 {0} 전기"
 
 msgid "Post Invoice"
 msgstr "송장 전기"
@@ -18139,6 +18145,9 @@ msgstr "전송 대상"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 
+msgid "Sent via Stripe"
+msgstr "Stripe를 통해 발송됨"
+
 msgid "Sequences"
 msgstr "채번 규칙"
 
@@ -19842,9 +19851,6 @@ msgstr "약관은 자산의 경제적 수명의 최소 {threshold} 이상이어�
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "기한이 경제수명의 최소 {threshold}% 이상입니다({actual})"
 
-msgid "Terms"
-msgstr "기간"
-
 msgid "Terms and Privacy"
 msgstr "이용약관 및 개인정보처리방침"
 
@@ -20695,9 +20701,6 @@ msgstr "회사가 인원의 로그인을 관리하기 위해 사용하는 시스
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 테스트를 통과하고, 데이터가 검증되며, 귀사가 최종 승인합니다. 그다음 실제 가동을 시작합니다."
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "계약이 활성화되면 기간이 고정됩니다."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "영업 견적 요청, 그 견적서, 그리고 결과 수주를 연결하는 스레드입니다. 자체 상태가 있는 문서가 아니라 조인입니다."

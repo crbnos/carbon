@@ -37,6 +37,7 @@ import {
   getContractLines
 } from "~/modules/sales";
 import type {
+  Contract,
   ContractCreditMemoLinks,
   ContractInvoiceLinks,
   ContractRouteData
@@ -117,6 +118,16 @@ export async function loader({
   if (contract.data.companyId !== companyId) {
     throw redirect(path.to.contracts);
   }
+  // NOT NULL on the table; the view types it nullable.
+  const { currencyCode } = contract.data;
+  if (!currencyCode) {
+    logger.error("Contract has no currency", { companyId, id });
+    throw redirect(
+      path.to.contracts,
+      await flash(request, error(null, "Failed to load contract"))
+    );
+  }
+  const current: Contract = { ...contract.data, currencyCode };
   if (
     lines.error ||
     schedule.error ||
@@ -141,14 +152,14 @@ export async function loader({
   const contractLines = lines.data ?? [];
   const invoices = schedule.data?.invoices ?? [];
   const credits = schedule.data?.credits ?? [];
-  const isDraft = contract.data.status === "Draft";
+  const isDraft = current.status === "Draft";
   const today = datetime.today(timeZone).toString();
 
   // Plan decision 2: an unedited Draft's schedule is never stored — it is
   // planned live from the lines, so a line edited anywhere (MCP included)
   // can never leave a stale schedule behind. The first edit, or Confirm,
   // persists it.
-  const terms = toContractTerms(contract.data);
+  const terms = toContractTerms(current);
   const lineTerms = contractLines.map(toContractLineTerms);
   const canPlan = !!terms.startDate;
   const planned =
@@ -213,6 +224,15 @@ export async function loader({
           .in("id", memoIds)
       : Promise.resolve({ data: [], error: null })
   ]);
+  if (salesInvoices.error || memos.error) {
+    throw redirect(
+      path.to.contracts,
+      await flash(
+        request,
+        error(salesInvoices.error ?? memos.error, "Failed to load contract")
+      )
+    );
+  }
   const invoiceLinks: ContractInvoiceLinks = {};
   for (const invoice of salesInvoices.data ?? []) {
     invoiceLinks[invoice.id] = invoice;
@@ -297,7 +317,7 @@ export async function loader({
         })),
         totals: billedTotals,
         fallbackEnds: lastPeriodEndByLine,
-        recognizeRevenueFrom: contract.data.recognizeRevenueFrom
+        recognizeRevenueFrom: current.recognizeRevenueFrom
       });
   // Per line: billed − Σ revenue. Non-zero blocks Confirm.
   const revenueResiduals: Record<string, number> = {};
@@ -309,7 +329,7 @@ export async function loader({
   }
 
   return {
-    contract: contract.data,
+    contract: current,
     lines: contractLines,
     schedule: invoices,
     credits,

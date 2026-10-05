@@ -72,7 +72,7 @@ export default function ContractSetupRoute() {
   const permissions = usePermissions();
   const confirm = useDisclosure();
   const formatter = useCurrencyFormatter({
-    currency: routeData?.contract.currencyCode ?? undefined
+    currency: routeData?.contract.currencyCode
   });
 
   if (!routeData) return null;

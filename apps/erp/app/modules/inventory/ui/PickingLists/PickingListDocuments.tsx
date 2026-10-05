@@ -47,7 +47,10 @@ const PickingListDocuments = () => {
         </RelatedDocumentGroup>
       }
     >
-      <Await resolve={routeData?.relatedItems}>
+      <Await
+        resolve={routeData?.relatedItems}
+        errorElement={<Empty className="py-12" />}
+      >
         {(resolved) => {
           const jobs = resolved?.jobs ?? [];
           if (jobs.length === 0) return <Empty className="py-12" />;

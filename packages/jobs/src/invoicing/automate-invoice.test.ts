@@ -86,9 +86,11 @@ vi.mock("@carbon/files", () => ({
 import {
   companyFromAddress,
   emailPostedInvoice,
+  INVOICE_POST_INTERRUPTED,
   INVOICE_SEND_NO_EMAIL,
   INVOICE_SEND_NO_STRIPE,
   invoiceEmailCc,
+  invoiceSentStampFailed,
   postSalesInvoiceUnattended,
   resolveInvoiceAutomation,
   sendPostedInvoiceViaStripe
@@ -103,7 +105,9 @@ function fakeClient(
     error: { message: string } | null;
   } = () => ({
     error: null
-  })
+  }),
+  /** Fails an update of `table` with this message when it returns one. */
+  failUpdate: (table: string, values: Row) => string | null = () => null
 ) {
   const invoke = vi.fn(async () => ({ data: null, ...onInvoke(tables) }));
   postInvoice = invoke;
@@ -117,6 +121,8 @@ function fakeClient(
         rows().push(insert);
         return { data: insert, error: null };
       }
+      const failure = update ? failUpdate(table, update) : null;
+      if (failure) return { data: null, error: { message: failure } };
       const matched = rows().filter((row) => filters.every((f) => f(row)));
       if (update) for (const row of matched) Object.assign(row, update);
       return {
@@ -303,15 +309,16 @@ describe("postSalesInvoiceUnattended", () => {
     );
   });
 
-  it("skips when another poster already claimed it", async () => {
-    const { client, invoke } = fakeClient({
+  it("reports a claim left Pending as held, without re-claiming it", async () => {
+    const { client, invoke, tables } = fakeClient({
       salesInvoice: [draftInvoice({ status: "Pending" })]
     });
     expect(await postSalesInvoiceUnattended({ client, db, ...args })).toEqual({
-      outcome: "skipped",
-      reason: "Invoice is Pending"
+      outcome: "held",
+      reason: INVOICE_POST_INTERRUPTED
     });
     expect(invoke).not.toHaveBeenCalled();
+    expect(tables.salesInvoice![0]!.status).toBe("Pending");
   });
 
   it("puts a failed post left Pending back to Draft with the reason", async () => {
@@ -416,6 +423,26 @@ describe("emailPostedInvoice", () => {
     });
     expect(tables.salesInvoice![0]!.sentAt).toEqual(expect.any(String));
     expect(tables.document).toHaveLength(1);
+  });
+
+  it("reports a send whose sent stamp failed as a send error, not a clean send", async () => {
+    const { client, tables } = fakeClient(
+      baseTables(posted()),
+      undefined,
+      (table, values) =>
+        table === "salesInvoice" && "sentAt" in values
+          ? "connection reset"
+          : null
+    );
+    const sendError = invoiceSentStampFailed(
+      "ap@buyer.com, ops@acme.com, ar@acme.com",
+      "connection reset"
+    );
+    expect(await emailPostedInvoice({ client, ...args })).toEqual({
+      emailed: false,
+      sendError
+    });
+    expect(tables.salesInvoice![0]).toMatchObject({ sentAt: null, sendError });
   });
 
   it("stamps the send error and leaves it unsent when delivery fails", async () => {

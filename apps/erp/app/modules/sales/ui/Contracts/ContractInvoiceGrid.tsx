@@ -40,7 +40,7 @@ import type { ContractRouteData } from "./types";
 
 type ContractInvoiceGridProps = Pick<
   ContractRouteData,
-  "contract" | "lines" | "schedule" | "computedSchedule" | "lineTotals"
+  "contract" | "lines" | "schedule" | "computedSchedule" | "residuals"
 >;
 
 /** One planned invoice as a grid row: its date, one amount per line (keyed
@@ -67,7 +67,7 @@ const ContractInvoiceGrid = ({
   lines,
   schedule,
   computedSchedule,
-  lineTotals
+  residuals
 }: ContractInvoiceGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -79,7 +79,7 @@ const ContractInvoiceGrid = ({
   const [deleting, setDeleting] = useState<InvoiceRow | null>(null);
 
   const contractId = contract.id!;
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
   const canEdit = permissions.can("update", "sales");
   const action = path.to.contractSchedule(contractId);
@@ -145,24 +145,16 @@ const ContractInvoiceGrid = ({
     [planned, lines]
   );
 
-  // What each line has left to invoice: what it computes to, less every row
-  // billed for it (planned or billed externally). Adjustments are not part
-  // of the conservation rule.
-  const remaining = useMemo(() => {
-    const billed = new Map<string, number>();
-    for (const invoice of invoices) {
-      for (const row of invoice.rows) {
-        if (row.isAdjustment) continue;
-        billed.set(row.lineId, (billed.get(row.lineId) ?? 0) + row.amount);
-      }
-    }
-    return Object.fromEntries(
-      lines.map((line) => [
-        line.id,
-        round((lineTotals[line.id] ?? 0) - (billed.get(line.id) ?? 0))
-      ])
-    );
-  }, [invoices, lines, lineTotals]);
+  // What each line has left to invoice — the loader's `residuals`, from the
+  // same `validateScheduleEdit` Confirm runs. An unedited schedule is the
+  // plan itself, so nothing is left.
+  const remaining = useMemo(
+    () =>
+      Object.fromEntries(
+        lines.map((line) => [line.id, residuals[line.id] ?? 0])
+      ),
+    [lines, residuals]
+  );
   const isBalanced = Object.values(remaining).every((r) => equals(r, 0));
   const isEdited = !computedSchedule && invoices.length > 0;
 

@@ -100,7 +100,7 @@ const ContractRevenueGrid = ({
   const [deleting, setDeleting] = useState<MonthRow | null>(null);
 
   const contractId = contract.id!;
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const decimals = useCurrencyDecimals(currencyCode);
   const canEdit = permissions.can("update", "sales");
   const action = path.to.contractRevenue(contractId);

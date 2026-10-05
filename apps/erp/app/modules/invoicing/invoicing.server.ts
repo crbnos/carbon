@@ -85,3 +85,65 @@ export async function getDepositDocuments(
     )
   ];
 }
+
+/**
+ * Checks the document a customer payment names as its deposit (a Receipt) or
+ * the deposit it refunds (a Disbursement): it must be this company's and the
+ * payment's customer's, and a NEW deposit can only be taken against an open
+ * document — an open sales order, or a Draft/Active rental agreement. The
+ * payment's own saved link stays valid after its document closes, as the
+ * "Deposit for" picker keeps it listed. Returns the error for the picker's
+ * field, or null when the reference is fine (or absent).
+ */
+export async function checkDepositDocument(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  payment: {
+    paymentType: "Receipt" | "Disbursement";
+    customerId?: string | null;
+    salesOrderId?: string | null;
+    rentalAgreementId?: string | null;
+  },
+  saved: {
+    salesOrderId?: string | null;
+    rentalAgreementId?: string | null;
+  } = {}
+): Promise<string | null> {
+  const { salesOrderId, rentalAgreementId, customerId } = payment;
+  if (!salesOrderId && !rentalAgreementId) return null;
+  // The validator already requires a customer for a deposit.
+  if (!customerId) return "Only a customer payment can be a deposit";
+
+  const document = salesOrderId
+    ? await client
+        .from("salesOrder")
+        .select("customerId, status")
+        .eq("id", salesOrderId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    : await client
+        .from("rentalAgreement")
+        .select("customerId, status")
+        .eq("id", rentalAgreementId!)
+        .eq("companyId", companyId)
+        .maybeSingle();
+  if (document.error) throw new Error(document.error.message);
+  if (!document.data) return "The deposit document was not found";
+  if (document.data.customerId !== customerId) {
+    return "The deposit document belongs to a different customer";
+  }
+
+  const unchanged = salesOrderId
+    ? salesOrderId === saved.salesOrderId
+    : rentalAgreementId === saved.rentalAgreementId;
+  if (payment.paymentType !== "Receipt" || unchanged) return null;
+
+  const status = document.data.status as string;
+  const open = salesOrderId
+    ? (OPEN_SALES_ORDER_STATUSES as readonly string[]).includes(status)
+    : status === "Draft" || status === "Active";
+  if (open) return null;
+  return salesOrderId
+    ? `The sales order is ${status} and cannot take a new deposit`
+    : `The rental agreement is ${status} and cannot take a new deposit`;
+}

@@ -172,8 +172,11 @@ export async function loadSalesInvoiceDocument(args: {
       .from("salesInvoiceLines")
       .select("*")
       .eq("invoiceId", invoiceId)
+      .eq("companyId", companyId)
       .order("sortOrder", { ascending: true })
       .order("createdAt", { ascending: true }),
+    // The view has no companyId; the header read beside it is scoped, and a
+    // missing header aborts the load before this row is used.
     client
       .from("salesInvoiceLocations")
       .select("*")
@@ -183,6 +186,7 @@ export async function loadSalesInvoiceDocument(args: {
       .from("salesInvoiceShipment")
       .select("*")
       .eq("id", invoiceId)
+      .eq("companyId", companyId)
       .single(),
     client.from("terms").select("salesTerms").eq("id", companyId).single(),
     client
@@ -281,7 +285,8 @@ export async function loadSalesInvoiceDocument(args: {
     const salesOrders = await client
       .from("salesOrder")
       .select("id, salesOrderId")
-      .in("id", linkedSalesOrderIds);
+      .in("id", linkedSalesOrderIds)
+      .eq("companyId", companyId);
     if (salesOrders.error) {
       logger.error("Failed to load salesOrders", { error: salesOrders.error });
     }

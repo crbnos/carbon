@@ -46,7 +46,11 @@ import {
   validateScheduleEdit
 } from "@carbon/database/contract-schedule";
 import { toJson } from "@carbon/database/json";
-import { equals, round } from "@carbon/database/precision";
+import {
+  distributeRoundingResidual,
+  equals,
+  round
+} from "@carbon/database/precision";
 import { monthEnd } from "@carbon/database/revenue-schedule";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, effectiveInvoiceAutomation } from "@carbon/utils";
@@ -70,6 +74,7 @@ import {
   applyReconciliation,
   type ContractLineRow,
   type ContractRow,
+  carriedRevenueDates,
   copyLineValues,
   deleteEmptyPlannedInvoices,
   insertScheduleRows,
@@ -1359,6 +1364,7 @@ async function amend(
               ...(change.projectId !== undefined && {
                 projectId: change.projectId || null
               }),
+              ...carriedRevenueDates(line, newStart),
               startDate: newStart,
               discountEndsOn:
                 line.discountEndsOn !== null && line.discountEndsOn >= newStart
@@ -1555,7 +1561,10 @@ async function amend(
 const previousStateSchema = z.object({
   contractEndDate: z.string().nullable(),
   renewal: z.enum(["Renew", "End"]),
-  lineEndDates: z.record(z.string(), z.string().nullable())
+  lineEndDates: z.record(z.string(), z.string().nullable()),
+  /** The revenue end of every line whose revenue end the new end clamped
+   *  (`setLineEndDates`). Absent on cancellations recorded before it. */
+  lineRevenueEndDates: z.record(z.string(), z.string()).optional()
 });
 type PreviousState = z.infer<typeof previousStateSchema>;
 
@@ -1583,14 +1592,6 @@ async function cancel(
 ): Promise<ContractCancellationResult | ContractCancellationPreview> {
   const { companyId, userId } = scope;
   const { endDate } = payload;
-
-  // Resolved before the transaction (and only when a memo may be written).
-  const memoReadableId =
-    payload.creditUnusedTime && !payload.preview
-      ? await db
-          .transaction()
-          .execute((trx) => getNextSequence(trx, "creditMemo", companyId))
-      : null;
 
   return inTransaction<ContractCancellationResult, ContractCancellationPreview>(
     db,
@@ -1632,16 +1633,18 @@ async function cancel(
       const previousState: PreviousState = {
         contractEndDate: contract.endDate,
         renewal: contract.renewal,
-        lineEndDates: {}
+        lineEndDates: {},
+        lineRevenueEndDates: {}
       };
       const ends: { id: string; endDate: string }[] = [];
       for (const line of lines) {
         if (line.endDate !== null && line.endDate <= endDate) continue;
+        const lineEnd = maxDate(endDate, addDays(line.startDate, -1));
         previousState.lineEndDates[line.id] = line.endDate;
-        ends.push({
-          id: line.id,
-          endDate: maxDate(endDate, addDays(line.startDate, -1))
-        });
+        if (line.revenueEndDate !== null && line.revenueEndDate > lineEnd) {
+          previousState.lineRevenueEndDates![line.id] = line.revenueEndDate;
+        }
+        ends.push({ id: line.id, endDate: lineEnd });
       }
       await setLineEndDates(trx, scope, contract.id, ends);
 
@@ -1706,7 +1709,9 @@ async function cancel(
 
       // 6. The credit memo, or no credit at all.
       let memoId: string | null = null;
-      if (payload.creditUnusedTime && creditAvailable && memoReadableId) {
+      let memoReadableId: string | null = null;
+      let adjustments = result.adjustments;
+      if (payload.creditUnusedTime && creditAvailable) {
         const currency = await trx
           .selectFrom("currency")
           .innerJoin(
@@ -1718,6 +1723,26 @@ async function cancel(
           .where("company.id", "=", companyId)
           .where("currency.code", "=", contract.currencyCode)
           .executeTakeFirst();
+        if (!currency) {
+          throw new InvalidInputError(
+            `Currency ${contract.currencyCode} is not set up for this company`
+          );
+        }
+        // A memo total is a settlement value (currency decimals). Its rows
+        // are apportioned to the same decimals so they sum to it exactly —
+        // posting the memo refuses rows that credit more than its amount.
+        const amount = round(credit, currency.decimalPlaces);
+        const apportioned = distributeRoundingResidual(
+          adjustments.map((row) => row.amount),
+          -amount,
+          currency.decimalPlaces
+        );
+        adjustments = adjustments.map((row, index) => ({
+          ...row,
+          amount: apportioned[index]!
+        }));
+        // Allocated in this transaction, so a rollback leaves no gap.
+        memoReadableId = await getNextSequence(trx, "creditMemo", companyId);
         const memo = await trx
           .insertInto("memo")
           .values({
@@ -1728,9 +1753,7 @@ async function cancel(
             memoDate: payload.asOf,
             currencyCode: contract.currencyCode,
             exchangeRate: contract.exchangeRate,
-            // A memo total is a settlement value (currency decimals); the
-            // memo-borne rows keep internal precision.
-            amount: round(credit, currency?.decimalPlaces ?? 2),
+            amount,
             reference: contract.customerContractId,
             customerContractId: contract.id,
             companyId,
@@ -1744,7 +1767,7 @@ async function cancel(
         trx,
         scope,
         contract.id,
-        memoId ? result : { ...result, adjustments: [] },
+        { ...result, adjustments: memoId ? adjustments : [] },
         { adjustmentMemoId: memoId }
       );
 
@@ -1769,7 +1792,7 @@ async function cancel(
       return {
         customerContractId: contract.id,
         memoId,
-        memoReadableId: memoId ? memoReadableId : null
+        memoReadableId
       };
     }
   );
@@ -1876,14 +1899,19 @@ async function revertCancellation(
     await ensureRevenue(trx, scope, contract, lines);
     const billedBefore = await billedTotals(trx, scope, contract.id);
 
-    // 1. Restore the line end dates, the contract's end and renewal.
+    // 1. Restore the line end dates (and the revenue ends they clamped),
+    // the contract's end and renewal.
+    const revenueEnds = previous.lineRevenueEndDates ?? {};
     await setLineEndDates(
       trx,
       scope,
       contract.id,
       Object.entries(previous.lineEndDates).map(([id, endDate]) => ({
         id,
-        endDate
+        endDate,
+        ...(revenueEnds[id] !== undefined && {
+          revenueEndDate: revenueEnds[id]
+        })
       }))
     );
     // 2. Clear the cancellation.

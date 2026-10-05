@@ -1334,11 +1334,25 @@ async function returnResidual(
     .where("itemId", "=", line.itemId)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  const entity = line.trackedEntityId
+  // The serial left the line's asset at commencement when the line named
+  // only the asset (as `commenceSalesTypeLines` resolves it), so a line
+  // without its own serial takes the disposed asset's.
+  const disposedAsset =
+    !line.trackedEntityId && line.fixedAssetId
+      ? await trx
+          .selectFrom("fixedAsset")
+          .select("trackedEntityId")
+          .where("id", "=", line.fixedAssetId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+  const trackedEntityId =
+    line.trackedEntityId ?? disposedAsset?.trackedEntityId ?? null;
+  const entity = trackedEntityId
     ? await trx
         .selectFrom("trackedEntity")
         .select(["id", "readableId"])
-        .where("id", "=", line.trackedEntityId)
+        .where("id", "=", trackedEntityId)
         .where("companyId", "=", companyId)
         .executeTakeFirst()
     : undefined;
@@ -1432,7 +1446,7 @@ async function returnResidual(
         fixedAssetClassId: assetClass.id,
         name: `${item.name} ${serial}`,
         itemId: line.itemId,
-        trackedEntityId: line.trackedEntityId,
+        trackedEntityId,
         serialNumber: entity?.readableId ?? null,
         locationId: agreement.locationId,
         quantity: 1,
@@ -1464,7 +1478,7 @@ async function returnResidual(
         sourceType: "Inventory",
         fixedAssetId: asset.id,
         itemId: line.itemId,
-        trackedEntityId: line.trackedEntityId,
+        trackedEntityId,
         locationId: agreement.locationId,
         quantity: 1,
         transferDate: today,
@@ -1478,14 +1492,14 @@ async function returnResidual(
       })
       .execute();
 
-    if (line.trackedEntityId) {
+    if (trackedEntityId) {
       await trx
         .updateTable("trackedEntity")
         .set({
           status: "Consumed",
           attributes: sql<Json>`(COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer') || jsonb_build_object('Fixed Asset', ${asset.id}::text)`
         })
-        .where("id", "=", line.trackedEntityId)
+        .where("id", "=", trackedEntityId)
         .where("companyId", "=", companyId)
         .execute();
       await insertUnitActivity(trx, {
@@ -1495,7 +1509,7 @@ async function returnResidual(
         sourceDocumentId: asset.id,
         sourceDocumentReadableId: assetReadableId,
         attributes: { "Fixed Asset": asset.id },
-        trackedEntityId: line.trackedEntityId,
+        trackedEntityId,
         companyId,
         userId
       });
@@ -1512,7 +1526,7 @@ async function returnResidual(
         quantity: 1,
         locationId: agreement.locationId,
         storageUnitId: null,
-        trackedEntityId: line.trackedEntityId,
+        trackedEntityId,
         entryType: "Positive Adjmt.",
         documentType: "Rental Agreement",
         documentId: agreement.id,
@@ -1557,14 +1571,14 @@ async function returnResidual(
       });
     }
 
-    if (line.trackedEntityId) {
+    if (trackedEntityId) {
       await trx
         .updateTable("trackedEntity")
         .set({
           status: "Available",
           attributes: sql<Json>`COALESCE("attributes", '{}'::jsonb) - 'Rental Agreement' - 'Customer'`
         })
-        .where("id", "=", line.trackedEntityId)
+        .where("id", "=", trackedEntityId)
         .where("companyId", "=", companyId)
         .execute();
       await insertUnitActivity(trx, {
@@ -1574,7 +1588,7 @@ async function returnResidual(
         sourceDocumentId: agreement.id,
         sourceDocumentReadableId: agreement.rentalAgreementId,
         attributes: { "Rental Agreement": agreement.id },
-        trackedEntityId: line.trackedEntityId,
+        trackedEntityId,
         companyId,
         userId
       });

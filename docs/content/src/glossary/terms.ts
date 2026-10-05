@@ -491,7 +491,7 @@ export const terms = {
   // ── Rentals ─────────────────────────────────────────────────────────────
   "rental-agreement": {
     term: msg`Rental agreement`,
-    definition: msg`A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed.`,
+    definition: msg`A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed.`,
     href: "/docs/reference/rental-agreements"
   },
   "on-rent": {
@@ -516,7 +516,7 @@ export const terms = {
   },
   "billing-cycle": {
     term: msg`Billing cycle`,
-    definition: msg`How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates.`,
+    definition: msg`How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days.`,
     href: "/docs/reference/rental-agreements#billing"
   },
   "billing-timing": {

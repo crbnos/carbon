@@ -45,6 +45,11 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
     "voidedSalesInvoiceId",
     "memoId"
   ],
+  customerContractLedgerEntry: [
+    "customerContractRevenueId",
+    "memoId",
+    "salesInvoiceLineId"
+  ],
   document: ["sourceDocumentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],

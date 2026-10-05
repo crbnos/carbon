@@ -21,6 +21,7 @@ import {
   updateContractNotes,
   updateContractType
 } from "~/modules/sales";
+import { contractCustomerChange } from "~/modules/sales/sales.server";
 import { contractDurationOf } from "~/modules/sales/ui/Contracts";
 import { getCompanySettings } from "~/modules/settings";
 
@@ -271,17 +272,19 @@ export async function action({ request }: ActionFunctionArgs) {
       : value || null;
   // Picking an end date is choosing a custom term.
   if (field === "endDate") terms.duration = "custom";
+  // A different customer brings its own bill-to, contact, addresses and
+  // payment terms, as in setup step 1.
+  if (field === "customerId") {
+    const invoicing = await contractCustomerChange(client, companyId, {
+      from: contract.customerId,
+      to: value
+    });
+    if (invoicing) Object.assign(terms, invoicing);
+  }
   // A contact and address belong to the bill-to customer.
-  if (
-    (field === "customerId" && value !== contract.customerId) ||
-    (field === "invoiceCustomerId" && value !== contract.invoiceCustomerId)
-  ) {
+  if (field === "invoiceCustomerId" && value !== contract.invoiceCustomerId) {
     terms.invoiceCustomerContactId = null;
     terms.invoiceCustomerLocationId = null;
-  }
-  // The ship-to address is one of the customer's own locations.
-  if (field === "customerId" && value !== contract.customerId) {
-    terms.shipToCustomerLocationId = null;
   }
 
   // The same FormData the new contract form posts, so the same zfd coercion

@@ -62,7 +62,7 @@ const ContractCancelModal = ({
   const fetcher = useFetcher<{}>();
   const previewFetcher = useFetcher<PreviewResponse>();
   const currencyFormatter = useCurrencyFormatter({
-    currency: contract.currencyCode ?? undefined
+    currency: contract.currencyCode
   });
 
   const id = contract.id!;

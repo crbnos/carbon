@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 import RentalAgreementReturnForm from "./RentalAgreementReturnForm";
 import type { RentalAgreement, RentalAgreementLine } from "./types";
 
-type LineActionKind = "deliver" | "return" | "sell" | "delete";
+type RentalLineAction = "deliver" | "return" | "sell" | "delete";
 
 export type RentalLineActionState = {
   /** Shown at all: the line is in the state the action applies to. */
@@ -42,7 +42,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   const permissions = usePermissions();
   const today = useCompanyToday();
   const [pending, setPending] = useState<{
-    kind: LineActionKind;
+    action: RentalLineAction;
     line: RentalAgreementLine;
   } | null>(null);
 
@@ -66,11 +66,13 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
     return {
       canDeliver: isActive && line.status === "Pending",
       canReturn,
-      // The purchase option ends a sales-type lease by sale.
+      // The purchase option ends a sales-type lease by sale, at the end of
+      // the term (the sell route refuses it earlier).
       canSell:
         canReturn &&
         line.lessorClassification === "Sale" &&
-        purchaseOptionAmount > 0,
+        purchaseOptionAmount > 0 &&
+        (!rentalAgreement.endDate || today >= rentalAgreement.endDate),
       canDelete: isDraft,
       deliverDisabled: !canUpdate,
       returnDisabled: !canUpdate,
@@ -79,15 +81,15 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
     };
   };
 
-  const open = (kind: LineActionKind, line: RentalAgreementLine) =>
-    setPending({ kind, line });
+  const open = (action: RentalLineAction, line: RentalAgreementLine) =>
+    setPending({ action, line });
   const close = () => setPending(null);
 
   const label = pending ? rentalUnitLabel(pending.line) : "";
 
   const modals = pending ? (
     <>
-      {pending.kind === "deliver" && (
+      {pending.action === "deliver" && (
         <Confirm
           action={path.to.rentalAgreementLineDeliver(id, pending.line.id)}
           title={t`Deliver ${label}`}
@@ -98,7 +100,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
           onSubmit={close}
         />
       )}
-      {pending.kind === "sell" && (
+      {pending.action === "sell" && (
         <Confirm
           action={path.to.rentalAgreementLineSell(id, pending.line.id)}
           title={t`Sell ${label} to the customer`}
@@ -109,7 +111,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
           onSubmit={close}
         />
       )}
-      {pending.kind === "delete" && (
+      {pending.action === "delete" && (
         <ConfirmDelete
           action={path.to.deleteRentalAgreementLine(id, pending.line.id)}
           isOpen
@@ -119,7 +121,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
           onSubmit={close}
         />
       )}
-      {pending.kind === "return" && (
+      {pending.action === "return" && (
         <RentalAgreementReturnForm
           action={path.to.rentalAgreementLineReturn(id, pending.line.id)}
           initialValues={{

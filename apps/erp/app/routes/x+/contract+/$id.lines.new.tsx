@@ -100,7 +100,7 @@ export default function NewContractLineRoute() {
         revenueMethod: "Daily",
         projectId: contract.projectId ?? undefined
       }}
-      currencyCode={contract.currencyCode ?? "USD"}
+      currencyCode={contract.currencyCode}
       isLocked={contract.status !== "Draft"}
     />
   );

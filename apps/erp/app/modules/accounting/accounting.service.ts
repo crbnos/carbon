@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
@@ -59,6 +63,7 @@ import type {
 } from "./accounting.models";
 import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
+  JOURNAL_BALANCE_TOLERANCE,
   RUN_JOURNAL_SOURCES
 } from "./accounting.models";
 import {
@@ -3170,11 +3175,6 @@ export async function getPeriodExternalGlSyncReadiness(
     postingSyncEnabled: true
   };
 }
-/** Business refusal threshold for a journal's debits-vs-credits drift — looser
- *  than EPSILON because multi-currency entries carry real cross-rate residuals.
- *  Shared by the manual-JE validator and the period-close checklist so the two
- *  can never disagree about which journals are unbalanced. */
-const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 /** What a new run for the period would hold now, or why it is unknown. */
 export type RunPreview = {
@@ -6903,7 +6903,8 @@ export async function getFixedAssets(
 /** @mcp read */
 export async function getFixedAsset(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("fixedAsset")
@@ -6911,6 +6912,7 @@ export async function getFixedAsset(
       "*, fixedAssetClass:fixedAssetClassId(*), location:locationId(id, name)"
     )
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -7212,12 +7214,20 @@ export async function buildDepreciationRunLines(
 > {
   const { companyId, companyGroupId, periodEnd, runId } = args;
 
-  let covered = client
-    .from("depreciationRunLine")
-    .select("fixedAssetId, depreciationRun!inner(periodEnd)")
-    .eq("companyId", companyId)
-    .eq("depreciationRun.periodEnd", periodEnd);
-  if (runId) covered = covered.neq("depreciationRunId", runId);
+  // The line, asset and usage reads page past PostgREST's 1000-row cap: a
+  // run holds one line per asset per month.
+  const covered = fetchAllFromTable<{ fixedAssetId: string }>(
+    client,
+    "depreciationRunLine",
+    "id, fixedAssetId, depreciationRun!inner(periodEnd)",
+    (query: any) => {
+      let q = query
+        .eq("companyId", companyId)
+        .eq("depreciationRun.periodEnd", periodEnd);
+      if (runId) q = q.neq("depreciationRunId", runId);
+      return q.order("id", { ascending: true });
+    }
+  );
 
   const [settings, lastPosted, laterPosted, coveredLines, assets, decimals] =
     await Promise.all([
@@ -7245,33 +7255,47 @@ export async function buildDepreciationRunLines(
         .limit(1)
         .maybeSingle(),
       covered,
-      client
-        .from("fixedAsset")
-        .select("*")
-        .eq("companyId", companyId)
-        .eq("status", "Active"),
+      fetchAllFromTable<Database["public"]["Tables"]["fixedAsset"]["Row"]>(
+        client,
+        "fixedAsset",
+        "*",
+        (query: any) =>
+          query
+            .eq("companyId", companyId)
+            .eq("status", "Active")
+            .order("id", { ascending: true })
+      ),
       getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
     ]);
 
   if (lastPosted.error) return { data: null, error: lastPosted.error };
   if (laterPosted.error) return { data: null, error: laterPosted.error };
-  if (coveredLines.error) return { data: null, error: coveredLines.error };
-  if (assets.error) return { data: null, error: assets.error };
+  if (coveredLines.error || !coveredLines.data) {
+    return { data: null, error: coveredLines.error };
+  }
+  if (assets.error || !assets.data) return { data: null, error: assets.error };
 
   const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
 
   // A run can cover several months (a picked later period), so units of
   // production sums every usage log since the last posted run.
-  let usageQuery = client
-    .from("fixedAssetUsageLog")
-    .select("fixedAssetId, unitsProduced, periodEnd")
-    .eq("companyId", companyId)
-    .lte("periodEnd", periodEnd);
-  if (lastPostedPeriodEnd) {
-    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
+  const usageLogs = await fetchAllFromTable<{
+    fixedAssetId: string;
+    unitsProduced: number;
+    periodEnd: string;
+  }>(
+    client,
+    "fixedAssetUsageLog",
+    "id, fixedAssetId, unitsProduced, periodEnd",
+    (query: any) => {
+      let q = query.eq("companyId", companyId).lte("periodEnd", periodEnd);
+      if (lastPostedPeriodEnd) q = q.gt("periodEnd", lastPostedPeriodEnd);
+      return q.order("id", { ascending: true });
+    }
+  );
+  if (usageLogs.error || !usageLogs.data) {
+    return { data: null, error: usageLogs.error };
   }
-  const usageLogs = await usageQuery;
-  if (usageLogs.error) return { data: null, error: usageLogs.error };
 
   // Units of Production usage per asset per month: each month's line uses
   // the units logged in that month.
@@ -7333,6 +7357,17 @@ export async function createDepreciationRun(
     return {
       data: null,
       error: { message: "Failed to calculate depreciation" }
+    };
+  }
+  // A later period's posted run already holds these months: a run here
+  // would post them twice. Every caller (New Run, Repeat, the close page)
+  // gets the refusal.
+  if (proposal.data.laterPostedRunId) {
+    return {
+      data: null,
+      error: {
+        message: `${proposal.data.laterPostedRunId} is already posted for a later period and includes these months`
+      }
     };
   }
   if (proposal.data.lines.length === 0) {
@@ -7406,14 +7441,19 @@ export async function getDepreciationRunLines(
   client: SupabaseClient<Database>,
   depreciationRunId: string
 ) {
-  return client
-    .from("depreciationRunLine")
-    .select(
-      "id, fixedAssetId, periodEnd, amount, taxAmount, journalId, deferredTaxJournalId, fixedAsset:fixedAssetId(id, fixedAssetId, name, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent)"
-    )
-    .eq("depreciationRunId", depreciationRunId)
-    .order("periodEnd")
-    .order("fixedAssetId");
+  // One line per asset per month: a catch-up run passes PostgREST's
+  // 1000-row cap.
+  return fetchAllRecords(() =>
+    client
+      .from("depreciationRunLine")
+      .select(
+        "id, fixedAssetId, periodEnd, amount, taxAmount, journalId, deferredTaxJournalId, fixedAsset:fixedAssetId(id, fixedAssetId, name, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent)"
+      )
+      .eq("depreciationRunId", depreciationRunId)
+      .order("periodEnd")
+      .order("fixedAssetId")
+      .order("id")
+  );
 }
 
 // -- Revenue Recognition --
@@ -7444,15 +7484,22 @@ export async function getRevenueRecognitionRuns(
 /** @mcp read */
 export async function getRevenueRecognitionRun(
   client: SupabaseClient<Database>,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client.from("revenueRecognitionRun").select("*").eq("id", id).single();
+  return client
+    .from("revenueRecognitionRun")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
 }
 
 /** @mcp read */
 export async function getRevenueRecognitionRunLines(
   client: SupabaseClient<Database>,
-  runId: string
+  runId: string,
+  companyId: string
 ) {
   // The run line -> schedule FK is composite (scheduleId, companyId), so the
   // embed must name the target table and constraint; `schedule:scheduleId(...)`
@@ -7462,7 +7509,8 @@ export async function getRevenueRecognitionRunLines(
     .select(
       "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, journalId)"
     )
-    .eq("runId", runId);
+    .eq("runId", runId)
+    .eq("companyId", companyId);
 }
 
 /**
@@ -8142,13 +8190,17 @@ export async function getAssetDepreciationHistory(
   client: SupabaseClient<Database>,
   fixedAssetId: string
 ) {
-  return client
-    .from("depreciationRunLine")
-    .select(
-      "id, amount, taxAmount, journalId, depreciationRun:depreciationRunId(id, depreciationRunId, periodEnd, status)"
-    )
-    .eq("fixedAssetId", fixedAssetId)
-    .order("depreciationRun(periodEnd)", { ascending: false });
+  return (
+    client
+      .from("depreciationRunLine")
+      .select(
+        "id, periodEnd, amount, taxAmount, journalId, depreciationRun:depreciationRunId(id, depreciationRunId, periodEnd, status)"
+      )
+      .eq("fixedAssetId", fixedAssetId)
+      // A run holds one line per month; a line from before per-month lines has
+      // no periodEnd (it is the run's), so callers sort by the month they show.
+      .order("periodEnd", { ascending: false, nullsFirst: false })
+  );
 }
 
 // -- Disposals --
@@ -8243,12 +8295,14 @@ export async function getUnderConstructionAssets(
 /** @mcp read */
 export async function getFixedAssetTransfers(
   client: SupabaseClient<Database>,
-  fixedAssetId: string
+  fixedAssetId: string,
+  companyId: string
 ) {
   return client
     .from("fixedAssetTransfer")
     .select("*")
     .eq("fixedAssetId", fixedAssetId)
+    .eq("companyId", companyId)
     .order("transferDate", { ascending: false });
 }
 
@@ -8490,17 +8544,23 @@ export async function setFixedAssetOutOfService(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("fixedAsset")
-    .update({
-      outOfServiceSince: since,
-      outOfServiceReason: reason,
-      updatedBy
-    })
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
+  return (
+    client
+      .from("fixedAsset")
+      .update({
+        outOfServiceSince: since,
+        outOfServiceReason: reason,
+        updatedBy
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      // Never a disposed asset, and never overwrite the date an asset already
+      // out of service went out: either matches no row, and `.single()` errors.
+      .neq("status", "Disposed")
+      .is("outOfServiceSince", null)
+      .select("id")
+      .single()
+  );
 }
 
 /** @mcp update */

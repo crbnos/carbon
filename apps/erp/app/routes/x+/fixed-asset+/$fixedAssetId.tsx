@@ -71,10 +71,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [asset, depreciationHistory, disposal, transfers, cipCosts] =
     await Promise.all([
-      getFixedAsset(client, fixedAssetId),
+      getFixedAsset(client, fixedAssetId, companyId),
       getAssetDepreciationHistory(client, fixedAssetId),
       getFixedAssetDisposal(client, fixedAssetId),
-      getFixedAssetTransfers(client, fixedAssetId),
+      getFixedAssetTransfers(client, fixedAssetId, companyId),
       getFixedAssetCipCosts(client, fixedAssetId, companyId)
     ]);
 
@@ -127,7 +127,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       CONSTRUCTION_IN_PROGRESS_ENABLED &&
       Boolean(assetClass?.isConstructionInProgress),
     workCenterName: workCenter?.data?.name ?? null,
-    depreciationHistory: depreciationHistory.data ?? [],
+    // Each line is one month of a run; a line from before per-month lines
+    // has no periodEnd and is the run's.
+    depreciationHistory: (depreciationHistory.data ?? [])
+      .map((line) => ({
+        ...line,
+        periodEnd:
+          line.periodEnd ??
+          (line.depreciationRun as { periodEnd: string } | null)?.periodEnd ??
+          null
+      }))
+      .sort((a, b) => (b.periodEnd ?? "").localeCompare(a.periodEnd ?? "")),
     disposal: disposal.data,
     transfers: transfers.data ?? [],
     cipCosts: cipCosts.data ?? [],
@@ -372,16 +382,20 @@ export default function FixedAssetDetailRoute() {
                           className="border-b border-border last:border-0"
                         >
                           <td className="py-3 sm:py-2.5 tabular-nums">
-                            <Link
-                              to={path.to.depreciationRun(run?.id ?? item.id)}
-                              className="text-foreground hover:underline"
-                            >
-                              {run?.depreciationRunId ?? "—"}
-                            </Link>
+                            {run?.id ? (
+                              <Link
+                                to={path.to.depreciationRun(run.id)}
+                                className="text-foreground hover:underline"
+                              >
+                                {run.depreciationRunId}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td className="py-3 sm:py-2.5">
                             <DateTime
-                              value={run?.periodEnd}
+                              value={item.periodEnd}
                               variant="date"
                               fallback="—"
                             />

@@ -160,19 +160,25 @@ export function negatePosition(position: ContractPosition): ContractPosition {
 
 /**
  * The reclass that puts a position back in shape: Deferred Revenue holds
- * max(N, 0) and Contract Assets max(−N, 0), never a negative pool. A VOID
- * negates its invoice's entry exactly, so after a recognition the deferred
- * pool can go below zero (billed 30, recognized 10, voided 30 → −10); the
- * reclass moves that into Contract Assets (+10 on both pools, so N is
- * unchanged), carrying the pools' net base across. Returns the delta to add
- * — zeros when no pool is negative. Its deferred and asset base deltas are
- * always equal, so it posts as one Contract Assets / Deferred Revenue pair.
+ * max(N, 0) and Contract Assets max(−N, 0) — never a negative pool, and
+ * never both pools at once. A VOID negates its invoice's entry exactly, so
+ * after a recognition the deferred pool can go below zero (billed 30,
+ * recognized 10, voided 30 → −10); the reclass moves that into Contract
+ * Assets (+10 on both pools, so N is unchanged), carrying the pools' net
+ * base across. Likewise a VOID of an entry that cleared Contract Assets can
+ * leave both pools positive (deferred 30, assets 10); the reclass nets them
+ * (−10 on both). Returns the delta to add — zeros when the position is
+ * already in shape. Its deferred and asset base deltas are always equal, so
+ * it posts as one Contract Assets / Deferred Revenue pair.
  */
 export function normalizePosition(
   position: ContractPosition
 ): ContractPosition {
-  if (position.deferredAmount >= -EPSILON && position.assetAmount >= -EPSILON)
-    return { ...EMPTY_POSITION };
+  const negativePool =
+    position.deferredAmount < -EPSILON || position.assetAmount < -EPSILON;
+  const bothPositive =
+    position.deferredAmount > EPSILON && position.assetAmount > EPSILON;
+  if (!negativePool && !bothPositive) return { ...EMPTY_POSITION };
   const net = round(position.deferredAmount - position.assetAmount);
   const netBase = round(position.deferredBase - position.assetBase);
   const target: ContractPosition =

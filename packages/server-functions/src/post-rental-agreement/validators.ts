@@ -26,7 +26,8 @@ const scope = {
   rentalAgreementId: z.string().min(1)
 };
 
-/** Draft → Active: validate the units, snapshot rates, cut the first periods. */
+/** Draft → Active: check every unit is available, classify each unit's
+ *  accounting treatment, cut the first periods at each unit's rate. */
 export const activateValidator = z.object({
   type: z.literal("activate"),
   ...scope

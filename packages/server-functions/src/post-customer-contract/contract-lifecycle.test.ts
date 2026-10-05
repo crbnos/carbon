@@ -9,7 +9,7 @@
 // company that is deleted afterwards.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import { CONTRACT_HOLD_ADJUSTMENT } from "@carbon/utils";
+import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import createContractInvoices from "../create-contract-invoices";
@@ -529,6 +529,24 @@ databaseTest(
         customerContractId: contractId
       });
       expect(Number(memo.amount)).toBeCloseTo(247.74, 2);
+      // Exactly 480 × 16/31 = 247.74194: the memo-borne rows are apportioned
+      // to cents so they sum to the memo — posting the memo refuses rows that
+      // credit more than its amount.
+      const memoRows = await db
+        .selectFrom("customerContractInvoiceLine")
+        .select(["amount"])
+        .where("memoId", "=", result.memoId!)
+        .where("companyId", "=", companyId)
+        .execute();
+      expect(memoRows.length).toBeGreaterThan(0);
+      expect(
+        memoRows.reduce((sum, row) => sum + Number(row.amount), 0)
+      ).toBeCloseTo(-Number(memo.amount), 6);
+      expect(
+        memoRows.every(
+          (row) => Number(row.amount) === round(Number(row.amount), 2)
+        )
+      ).toBe(true);
       schedule = await plannedInvoices(db, companyId, contractId);
       expect(schedule.filter((i) => i.status === "Planned")).toHaveLength(0);
 
@@ -1102,6 +1120,58 @@ databaseTest(
         ["2026-04-01", 50],
         ["2026-05-01", 100],
         ["2026-06-01", 100]
+      ]);
+
+      // --- Renewal with an uplift: a discount that ended with the old term
+      // is not carried into the copy as a discount that never ends ---------
+      const uplifted = await f.addRecurringContract({
+        key: "discount-uplift",
+        startDate: "2026-01-01",
+        endDate: "2026-03-31",
+        termMonths: 3,
+        renewal: "Renew",
+        renewalUplift: 0.1
+      });
+      await db
+        .updateTable("customerContractLine")
+        .set({ discountPercent: 0.5, discountEndsOn: "2026-03-31" })
+        .where("id", "=", uplifted.lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: uplifted.contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+      const upliftRun = await createContractInvoices(ctx, {
+        asOf: "2026-04-01",
+        customerContractId: uplifted.contractId
+      });
+      expect(upliftRun.error).toBeNull();
+      expect(upliftRun.data!.failures).toEqual([]);
+      const copy = (
+        await contractLines(db, companyId, uplifted.contractId)
+      ).find((line) => line.id !== uplifted.lineId)!;
+      expect([Number(copy.discountPercent), copy.discountEndsOn]).toEqual([
+        0,
+        null
+      ]);
+      const upliftedSchedule = await plannedInvoices(
+        db,
+        companyId,
+        uplifted.contractId
+      );
+      expect(upliftedSchedule.map((i) => [i.invoiceDate, i.total])).toEqual([
+        ["2026-01-01", 50],
+        ["2026-02-01", 50],
+        ["2026-03-01", 50],
+        ["2026-04-01", 110],
+        ["2026-05-01", 110],
+        ["2026-06-01", 110]
       ]);
     } finally {
       await f.cleanup();
@@ -1757,6 +1827,111 @@ databaseTest(
         ["2026-03-01", 100],
         ["2026-04-01", 100]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a line copy does not inherit its line's go-live or revenue dates, and an end clamps the revenue end",
+  async () => {
+    const f = await contractFixture();
+    const { db, ctx, companyId } = f;
+    const revenueDates = async (contractId: string) =>
+      db
+        .selectFrom("customerContractLine")
+        .select([
+          "id",
+          sql<string>`"startDate"::text`.as("startDate"),
+          sql<string | null>`"endDate"::text`.as("endDate"),
+          sql<string | null>`"goLiveDate"::text`.as("goLiveDate"),
+          sql<string | null>`"revenueStartDate"::text`.as("revenueStartDate"),
+          sql<string | null>`"revenueEndDate"::text`.as("revenueEndDate")
+        ])
+        .where("customerContractId", "=", contractId)
+        .where("companyId", "=", companyId)
+        .orderBy("startDate")
+        .execute();
+    try {
+      const { contractId, lineId } = await f.addRecurringContract({
+        key: "revenue-dates",
+        startDate: "2026-01-01",
+        endDate: "2026-12-31"
+      });
+      await db
+        .updateTable("customerContractLine")
+        .set({ goLiveDate: "2026-01-15", revenueEndDate: "2026-11-30" })
+        .where("id", "=", lineId)
+        .where("companyId", "=", companyId)
+        .execute();
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "confirm",
+            customerContractId: contractId,
+            asOf: "2026-01-01"
+          })
+        ).error
+      ).toBeNull();
+
+      const amended = await postCustomerContract(ctx, {
+        type: "amend",
+        customerContractId: contractId,
+        asOf: "2026-03-15",
+        amendmentDate: "2026-04-01",
+        effect: "Change Date",
+        contractType: "Expansion",
+        reason: "One more seat",
+        changes: [{ op: "change", lineId, quantity: 2 }]
+      });
+      expect(amended.error).toBeNull();
+      expect(await revenueDates(contractId)).toMatchObject([
+        {
+          id: lineId,
+          endDate: "2026-03-31",
+          goLiveDate: "2026-01-15",
+          revenueEndDate: "2026-03-31"
+        },
+        {
+          startDate: "2026-04-01",
+          endDate: null,
+          goLiveDate: null,
+          revenueStartDate: null,
+          revenueEndDate: "2026-11-30"
+        }
+      ]);
+
+      // A cancellation clamps the copy's revenue end; reverting restores it.
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "cancel",
+            customerContractId: contractId,
+            asOf: "2026-05-01",
+            endDate: "2026-06-30",
+            reason: "Closing the account",
+            creditUnusedTime: false
+          })
+        ).error
+      ).toBeNull();
+      expect((await revenueDates(contractId))[1]).toMatchObject({
+        endDate: "2026-06-30",
+        revenueEndDate: "2026-06-30"
+      });
+      expect(
+        (
+          await postCustomerContract(ctx, {
+            type: "revert-cancellation",
+            customerContractId: contractId,
+            asOf: "2026-05-01"
+          })
+        ).error
+      ).toBeNull();
+      expect((await revenueDates(contractId))[1]).toMatchObject({
+        endDate: null,
+        revenueEndDate: "2026-11-30"
+      });
     } finally {
       await f.cleanup();
     }

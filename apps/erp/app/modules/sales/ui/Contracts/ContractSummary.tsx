@@ -44,7 +44,7 @@ const ContractSummary = ({
 }: ContractSummaryProps) => {
   const { t } = useLingui();
   const today = useCompanyToday();
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const frequency = contract.billingFrequency ?? "Month";
 

@@ -88,7 +88,14 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   write of the send carries an idempotency key derived from
   `ConnectInvoiceInput.idempotencyKey` (`carbon-invoice-<account>-<invoiceId>`;
   `-item-<n>`, `-finalize`, `-send`), so a retry after Stripe succeeded replays
-  the same invoice instead of creating a second one
+  the same invoice instead of creating a second one. Stripe keeps a key for 24
+  hours and refuses a reused key whose parameters changed, so the send's
+  parameters must not move with the clock: the due and issue dates are decided
+  on whole company calendar days (`stripeDueDate` / `stripeEffectiveDate` in
+  `connect-invoice.ts` — a due date on or before today, and an issue date of
+  today or later, are left unset, never replaced with "now"). A retry that
+  straddles the company's midnight can still change them; Stripe then refuses
+  it (a safe failure, never a duplicate) until the key expires
 - **Connect customers**: `upsertConnectCustomer` (create/update),
   `retrieveConnectCustomer` (null on missing OR `deleted`, so a stale mapping
   degrades instead of throwing), `findConnectCustomersByEmail` (`customers.list`,

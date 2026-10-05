@@ -48,6 +48,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw notFound("itemId not found");
   if (!rateId) throw notFound("rateId not found");
 
+  const existing = await getCustomerItemRentalRate(client, rateId, companyId);
+  if (existing.error || existing.data.itemId !== itemId) {
+    throw redirect(
+      path.to.partSales(itemId),
+      await flash(
+        request,
+        error(existing.error, "Failed to load customer rental rates")
+      )
+    );
+  }
+
   const deletion = await deleteCustomerItemRentalRate(
     client,
     rateId,

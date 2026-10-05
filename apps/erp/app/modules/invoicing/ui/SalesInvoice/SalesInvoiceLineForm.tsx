@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import type { Database } from "@carbon/database";
 import { useRuleViolations } from "@carbon/ee/rules";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
@@ -36,7 +35,6 @@ import {
 } from "@carbon/react";
 import {
   distinctItemText,
-  formatDate,
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
@@ -45,20 +43,18 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LuBox,
   LuChevronRight,
   LuCircleAlert,
-  LuKeyRound,
   LuLandmark,
   LuPlus,
   LuTruck
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
-import { Hyperlink, MethodIcon } from "~/components";
+import { MethodIcon } from "~/components";
 import {
   CustomFormFields,
   DatePicker,
@@ -82,12 +78,14 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
+import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import { type ItemType, itemType, methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
+import ContractInvoiceLineSource from "./ContractInvoiceLineSource";
+import RentalInvoiceLineSummary from "./RentalInvoiceLineSummary";
 
 /** The unit price after a percent-points discount. An emptied discount field
  *  commits NaN, which reads as no discount rather than poisoning the tax base. */
@@ -109,25 +107,6 @@ type SalesInvoiceLineFormProps = {
   onClose?: () => void;
 };
 
-type RentalInvoiceLineType =
-  Database["public"]["Enums"]["rentalInvoiceLineType"];
-
-export function useRentalLineTypeLabel() {
-  const { t } = useLingui();
-  return (lineType: RentalInvoiceLineType | null | undefined) => {
-    switch (lineType) {
-      case "Rent":
-        return t`Rent`;
-      case "Charge":
-        return t`Rental Charge`;
-      case "Purchase Option":
-        return t`Purchase Option`;
-      default:
-        return t`Rental`;
-    }
-  };
-}
-
 // A Rental line is written by rental invoice generation from its agreement's
 // billing period or charge — it has no item, and it is never edited here.
 const SalesInvoiceLineForm = (props: SalesInvoiceLineFormProps) =>
@@ -140,197 +119,6 @@ const SalesInvoiceLineForm = (props: SalesInvoiceLineFormProps) =>
   ) : (
     <SalesInvoiceItemLineForm {...props} />
   );
-
-function RentalInvoiceLineSummary({
-  lineId,
-  type,
-  onClose
-}: {
-  lineId?: string;
-  type?: "card" | "modal";
-  onClose?: () => void;
-}) {
-  const { locale } = useLocale();
-  const { carbon } = useCarbon();
-  const { company } = useUser();
-  const { invoiceId } = useParams();
-  if (!invoiceId) throw new Error("invoiceId not found");
-
-  const routeData = useRouteData<{
-    salesInvoice: SalesInvoice;
-    salesInvoiceLines: SalesInvoiceLine[];
-    currency: { decimalPlaces: number } | null;
-  }>(path.to.salesInvoice(invoiceId));
-  const line = routeData?.salesInvoiceLines?.find((l) => l.id === lineId);
-
-  const currency =
-    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
-  const configuredDecimals = useCurrencyDecimals(currency);
-  const currencyFormatter = useCurrencyFormatter({
-    currency,
-    decimalPlaces: routeData?.currency?.decimalPlaces ?? configuredDecimals
-  });
-  const percentFormatter = usePercentFormatter();
-  const lineTypeLabel = useRentalLineTypeLabel();
-
-  const rentalAgreementId = line?.rentalAgreementId ?? null;
-  const [agreementReadableId, setAgreementReadableId] = useState<string | null>(
-    null
-  );
-  useEffect(() => {
-    if (!carbon || !rentalAgreementId) return;
-    let cancelled = false;
-    carbon
-      .from("rentalAgreement")
-      .select("rentalAgreementId")
-      .eq("id", rentalAgreementId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setAgreementReadableId(data?.rentalAgreementId ?? null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [carbon, rentalAgreementId]);
-
-  // The discount applies to the merchandise only, as the view's totals do.
-  const amount =
-    (line?.unitPrice ?? 0) *
-    (line?.quantity ?? 1) *
-    (1 - (line?.discountPercent ?? 0));
-  const period =
-    line?.serviceStartDate && line?.serviceEndDate
-      ? `${formatDate(line.serviceStartDate, undefined, locale)} – ${formatDate(
-          line.serviceEndDate,
-          undefined,
-          locale
-        )}`
-      : line?.serviceStartDate
-        ? formatDate(line.serviceStartDate, undefined, locale)
-        : "—";
-
-  return (
-    <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
-        <ModalCardContent size="xxlarge">
-          <ModalCardHeader>
-            <ModalCardTitle className="flex items-center gap-2">
-              <LuKeyRound />
-              {lineTypeLabel(line?.rentalLineType)}
-            </ModalCardTitle>
-            <ModalCardDescription>
-              <Trans>
-                Generated from a rental agreement. Change the agreement to
-                change this line.
-              </Trans>
-            </ModalCardDescription>
-          </ModalCardHeader>
-          <ModalCardBody>
-            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-              <VStack spacing={1}>
-                <Label className="text-muted-foreground">
-                  <Trans>Rental Agreement</Trans>
-                </Label>
-                {rentalAgreementId ? (
-                  <Hyperlink to={path.to.rentalAgreement(rentalAgreementId)}>
-                    {agreementReadableId ?? rentalAgreementId}
-                  </Hyperlink>
-                ) : (
-                  <span>—</span>
-                )}
-              </VStack>
-              <VStack spacing={1}>
-                <Label className="text-muted-foreground">
-                  <Trans>Line Type</Trans>
-                </Label>
-                <span>{lineTypeLabel(line?.rentalLineType)}</span>
-              </VStack>
-              <VStack spacing={1}>
-                <Label className="text-muted-foreground">
-                  <Trans>Service Period</Trans>
-                </Label>
-                <span>{period}</span>
-              </VStack>
-              <VStack spacing={1} className="lg:col-span-2">
-                <Label className="text-muted-foreground">
-                  <Trans>Description</Trans>
-                </Label>
-                <span>{line?.description || "—"}</span>
-              </VStack>
-              <VStack spacing={1}>
-                <Label className="text-muted-foreground">
-                  <Trans>Amount</Trans>
-                </Label>
-                <HStack spacing={2}>
-                  <span className="font-medium tabular-nums">
-                    {currencyFormatter.format(amount)}
-                  </span>
-                  {(line?.taxPercent ?? 0) > 0 ? (
-                    <Badge variant="red">
-                      {percentFormatter.format(line?.taxPercent ?? 0)}{" "}
-                      <Trans>Tax</Trans>
-                    </Badge>
-                  ) : null}
-                </HStack>
-              </VStack>
-            </div>
-          </ModalCardBody>
-        </ModalCardContent>
-      </ModalCard>
-    </ModalCardProvider>
-  );
-}
-
-// A line drafted from a contract's invoice schedule carries the contract and
-// line it came from; the contract is where its price and period are changed.
-function ContractInvoiceLineSource({ lineId }: { lineId?: string }) {
-  const { carbon } = useCarbon();
-  const { company } = useUser();
-  const { invoiceId } = useParams();
-  if (!invoiceId) throw new Error("invoiceId not found");
-
-  const routeData = useRouteData<{
-    salesInvoiceLines: SalesInvoiceLine[];
-  }>(path.to.salesInvoice(invoiceId));
-  const line = routeData?.salesInvoiceLines?.find((l) => l.id === lineId);
-  const customerContractId = line?.customerContractLineId
-    ? line.customerContractId
-    : null;
-
-  const [contractReadableId, setContractReadableId] = useState<string | null>(
-    null
-  );
-  useEffect(() => {
-    if (!carbon || !customerContractId) return;
-    let cancelled = false;
-    carbon
-      .from("customerContract")
-      .select("customerContractId")
-      .eq("id", customerContractId)
-      .eq("companyId", company.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setContractReadableId(data?.customerContractId ?? null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [carbon, customerContractId, company.id]);
-
-  if (!customerContractId) return null;
-  const readableId = contractReadableId ?? customerContractId;
-
-  return (
-    <span className="flex items-center gap-1">
-      <Trans>
-        Generated from contract{" "}
-        <Hyperlink to={path.to.contract(customerContractId)}>
-          {readableId}
-        </Hyperlink>
-      </Trans>
-    </span>
-  );
-}
 
 const SalesInvoiceItemLineForm = ({
   initialValues,

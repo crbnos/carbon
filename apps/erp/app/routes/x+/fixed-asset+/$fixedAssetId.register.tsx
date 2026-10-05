@@ -22,14 +22,14 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
-  const asset = await getFixedAsset(client, fixedAssetId);
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -195,14 +195,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         fixedAssetId,
         fixedAssetReadableId: asset.data.fixedAssetId,
         registration,
-        locationId: asset.data.locationId,
-        fixedAssetClassId: asset.data.fixedAssetClassId,
-        assetAccountId,
-        accumulatedDepreciationAccountId,
-        offsetAccountId,
-        accountingPeriodId: accountingPeriod.data,
-        locationDimensionId,
-        assetClassDimensionId,
+        posting: {
+          locationId: asset.data.locationId,
+          fixedAssetClassId: asset.data.fixedAssetClassId,
+          assetAccountId,
+          accumulatedDepreciationAccountId,
+          offsetAccountId,
+          accountingPeriodId: accountingPeriod.data,
+          locationDimensionId,
+          assetClassDimensionId
+        },
         status: registeredStatus,
         companyId,
         userId
@@ -220,63 +222,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Accounting disabled — a plain status flip (no journal). Select the affected
-  // row back so a concurrent update that already moved the asset out of Draft
-  // (zero rows matched) is treated as a failure rather than a false success.
-  const result = await client
-    .from("fixedAsset")
-    .update({
-      ...registration,
-      status: registeredStatus,
-      updatedBy: userId
-    })
-    .eq("id", fixedAssetId)
-    .eq("companyId", companyId)
-    .eq("status", "Draft")
-    .select("id");
-
-  if (result.error) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(result.error, "Failed to register asset"))
-    );
-  }
-
-  if (!result.data || result.data.length === 0) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(null, "Only Draft assets can be registered"))
-    );
-  }
-
-  // A construction-in-progress registration keeps its cost as a CIP cost row
-  // (see postAssetRegistration). No journal with accounting off, so this is a
-  // second write; a failure is reported rather than hidden, since a missing row
-  // would drop the cost when the asset is capitalized into service.
-  if (
-    registeredStatus === "Under Construction" &&
-    registration.acquisitionCost > 0
-  ) {
-    const cipCost = await client.from("fixedAssetCipCost").insert({
+  // Accounting disabled — no journal, but the status flip and a CIP class's
+  // cost row are still one transaction, and the Draft guard inside it treats a
+  // concurrent registration as a failure rather than a false success.
+  try {
+    await postAssetRegistration(getDatabaseClient(), {
       fixedAssetId,
-      sourceType: "Manual",
-      amount: registration.acquisitionCost,
-      costDate: registration.acquisitionDate,
+      fixedAssetReadableId: asset.data.fixedAssetId,
+      registration,
+      posting: null,
+      status: registeredStatus,
       companyId,
-      createdBy: userId
+      userId
     });
-    if (cipCost.error) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(
-          request,
-          error(
-            cipCost.error,
-            "Asset registered, but its construction cost could not be recorded"
-          )
-        )
-      );
-    }
+  } catch (err) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(request, error(err, "Failed to register asset"))
+    );
   }
 
   throw redirect(

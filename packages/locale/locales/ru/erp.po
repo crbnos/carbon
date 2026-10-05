@@ -105,7 +105,7 @@ msgstr "{0} уже начата"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
-msgstr ""
+msgstr "{0} активов к амортизации · {amount}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -144,7 +144,7 @@ msgstr "{0} черновых операций"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
-msgstr ""
+msgstr "{0} записей к признанию · {amount}"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -563,7 +563,7 @@ msgid "1 Asset"
 msgstr "1 Актив"
 
 msgid "1 asset to depreciate · {amount}"
-msgstr ""
+msgstr "1 актив к амортизации · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 группируемая операция не входит в серию — она выполняется отдельно до группировки"
@@ -581,7 +581,7 @@ msgid "1 draft journal entry"
 msgstr "1 черновая проводка"
 
 msgid "1 entry to recognize · {amount}"
-msgstr ""
+msgstr "1 запись к признанию · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 счет-фактура была выставлена в вашей предыдущей системе и не создается снова."
@@ -1087,6 +1087,9 @@ msgstr "Статус квитанции меняется"
 msgid "A receipt's supplier changes"
 msgstr "Поставщик квитанции меняется"
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "Договор аренды должен быть в базовой валюте организации для активации. Сначала измените валюту договора."
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "Договор аренды размещает сериализованные единицы флота у покупателя и выставляет счета в повторяющемся цикле, пока они не вернутся."
 
@@ -1095,9 +1098,6 @@ msgstr "Строка аренды является арендой типа пр�
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Аренда, которая удовлетворяет любому из пяти тестов аренды ASC 842, учтена как продажа при активации её договора: единица покидает парк, выручка от аренды и себестоимость продаж проводятся, и чистые инвестиции в аренду занимают её место."
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "Аренда, рассматриваемая как продажа, должна быть в базовой валюте организации. Измените валюту договора или переопределите способ учета."
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Разрешение на возврат товара (RMA) разрешает покупателю возвращать товар в целях получения кредита, замены или ремонта."
@@ -1111,8 +1111,8 @@ msgstr "Шаг маршрута для запущенного производс
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "Документ продажи, который выставляет счет-фактуру покупателю за позиции услуг по договору: единовременные и повторяющиеся платежи, выставляемые по запланированному графику с момента подтверждения до завершения или отмены."
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "Документ продажи, который сдает в аренду сериализованные Единицы флота Покупателю по дневным, недельным и месячным ставкам, определяя периоды выставления счетов и выставляя Счета-фактуры до возврата каждой Единицы и закрытия договора."
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "Документ продаж, который сдает в аренду сериализованные единицы автопарка покупателю, каждую по ее собственному дневному, недельному или месячному тарифу, разбивая периоды выставления счетов и подготавливая счета-фактуры до тех пор, пока каждая единица не будет возвращена и договор не будет закрыт."
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "Счет-фактура выданный (вы выставляете счет покупателю) или счет-фактура полученный (поставщик выставляет вам счет), расчеты по которому производятся путем применения платежей и кредит- или дебет-нот."
@@ -1538,8 +1538,8 @@ msgstr "Активировать процесс"
 msgid "Activate Work Center"
 msgstr "Активировать рабочий центр"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "Активация проверяет, что каждая единица доступна, фиксирует дневные, недельные и месячные ставки каждой номенклатуры на ее строку, классифицирует аренду и создает первые периоды выставления счетов. Условия и строки фиксируются после этого."
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "Активация проверяет, доступна ли каждая единица, классифицирует бухгалтерский учет каждой единицы и устанавливает первые периоды выставления счетов по тарифу каждой единицы. Условия и строки фиксируются после этого."
 
 msgid "Activation fee · we advise"
 msgstr "Плата за активацию · мы консультируем"
@@ -3049,10 +3049,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Попросите администратора с правом доступа {0} добавить первую {1}."
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr ""
+msgstr "Запрашивает амортизацию, что новый расчет для этого периода должен амортизировать сейчас, и проверяет наличие черновых расчетов, завершающихся в периоде. Создайте расчет и проведите его, чтобы период имел расход амортизации и накопленную амортизацию. Пропустите с причиной, если амортизация не применяется в этом периоде."
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr ""
+msgstr "Запрашивает признание выручки, что новый расчет для этого периода должен признать сейчас — отложенная выручка счета-фактуры, арендная плата к начислению и выручка по контракту — и проверяет наличие черновых расчетов с выручкой, подлежащей получению к концу периода. Создайте расчет и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
 
 msgid "Assemblies"
 msgstr "Сборки"
@@ -9849,8 +9849,8 @@ msgstr "Как строка контракта генерирует выручк
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Как контракт или поправка классифицируются для отчетности по повторяющейся выручке: Новые продажи, Существующий, Расширение, Реактивация или Сокращение. Carbon предлагает это, и вы можете это изменить."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "Как договор аренды разбивает периоды выставления счетов с даты начала: Календарный месяц выставляет счета каждый календарный месяц по месячной ставке с пропорциональным расчетом для неполного месяца, а 28 дней выставляет счета за последовательные 28-дневные периоды с расценками по дню, неделе и месяцу."
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "Как договор аренды разделяет периоды выставления счетов с даты начала: календарный месяц разделяет периоды по календарным месяцам, а 28 дней разделяет последовательные 28-дневные периоды. Каждая единица выставляет счет по одной ставке с собственной периодичностью за все дни, недели или месяцы, охватываемые периодом; месячная ставка за календарный месяц рассчитывается пропорционально дням."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
@@ -12779,6 +12779,9 @@ msgstr "Следующий счет-фактура {date} создается а�
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "Следующий счет-фактура {date} создается автоматически, затем проводится и отправляется по электронной почте."
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "Следующая счет-фактура на {date} создается автоматически, затем проводится и отправляется через Stripe."
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Следующий счет-фактура {date} создается автоматически, затем проводится."
 
@@ -13661,6 +13664,9 @@ msgstr "Сначала самые старые"
 
 msgid "On"
 msgstr "Включено"
+
+msgid "On {sentDate}"
+msgstr "На {sentDate}"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "В день переключения выполняйте контрольный список ниже по порядку. Тесты приемки основаны на ваших требованиях в области действия. Детали поддержки находятся внизу."
@@ -14949,7 +14955,7 @@ msgstr "Опубликовать комментарий"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
-msgstr ""
+msgstr "Провести черновой расчет {0}"
 
 msgid "Post Invoice"
 msgstr "Провести счет-фактуру"
@@ -18139,6 +18145,9 @@ msgstr "Отправлено"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "Отправляется каждому получателю, у которого включены email-уведомления."
 
+msgid "Sent via Stripe"
+msgstr "Отправлено через Stripe"
+
 msgid "Sequences"
 msgstr "Нумерация"
 
@@ -19842,9 +19851,6 @@ msgstr "Срок должен быть не менее {threshold} эконом�
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Срок аренды составляет как минимум {threshold} от экономического срока полезного использования ({actual})"
 
-msgid "Terms"
-msgstr "Условия"
-
 msgid "Terms and Privacy"
 msgstr "Условия и конфиденциальность"
 
@@ -20695,9 +20701,6 @@ msgstr "Система, которую Организация используе
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "Условия фиксируются при активации соглашения."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепь, связывающая запрос цен продаж, его коммерческое предложение и результирующий заказ покупателя — соединение, а не документ со своим собственным статусом."

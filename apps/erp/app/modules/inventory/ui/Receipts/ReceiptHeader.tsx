@@ -48,6 +48,10 @@ const ReceiptHeader = () => {
   const isPosted = status === "Posted";
   const isVoided = status === "Voided";
   const isInvoiced = receipt.invoiced === true;
+  // post-receipt voids only these two; any other source would always error.
+  const isVoidable =
+    receipt.sourceDocument === "Purchase Order" ||
+    receipt.sourceDocument === "Sales Return Order";
 
   const receiptLines = routeData?.receiptLines ?? [];
   const hasReceivableFaLines = (routeData?.fixedAssetLines ?? []).some(
@@ -97,7 +101,7 @@ const ReceiptHeader = () => {
         ]}
         menuItems={
           <>
-            {isPosted && (
+            {isPosted && isVoidable && (
               <>
                 <DropdownMenuItem
                   disabled={

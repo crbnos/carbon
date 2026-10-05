@@ -32,9 +32,11 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 /**
- * Posting writes one journal entry per asset. Up to this many are listed
- * under Documents; past it the list would bury the accounting period, and
- * each asset is still one click away from its line.
+ * Posting writes one journal entry per asset per month (a month with no book
+ * amount has none), plus one deferred tax entry per month when tax
+ * depreciation is on. Up to this many are listed under Documents; past it the
+ * list would bury the accounting period, and each asset is still one click
+ * away from its line.
  */
 const MAX_LISTED_JOURNALS = 10;
 

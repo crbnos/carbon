@@ -1171,20 +1171,31 @@ async function attachJob(
         `Job ${job.jobId} already completes to a fixed asset`
       );
     }
-    await trx
+    // Guarded on the status read above and written relative to the row as
+    // it is now: a concurrent capitalization or another attachment must not
+    // be overwritten with a cost read before this transaction began.
+    const swept = await trx
       .updateTable("fixedAsset")
       .set({
         status: "Under Construction",
-        acquisitionCost: round(asset.acquisitionCost + balance),
+        acquisitionCost: sql<number>`COALESCE("acquisitionCost", 0) + ${balance}`,
         // A self-built asset lives where it is built (post-receipt precedent:
         // the receiving location fills an unset asset location).
-        locationId: asset.locationId ?? job.locationId,
+        locationId: sql<
+          string | null
+        >`COALESCE("locationId", ${job.locationId})`,
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
       .where("id", "=", asset.id)
       .where("companyId", "=", companyId)
-      .execute();
+      .where("status", "in", ["Draft", "Under Construction"])
+      .executeTakeFirst();
+    if (!swept.numUpdatedRows) {
+      throw new InvalidInputError(
+        `Asset ${asset.fixedAssetId} is no longer Draft or Under Construction`
+      );
+    }
 
     return {
       ...result,
@@ -1246,6 +1257,22 @@ async function capitalizeCip(
   const accounting = await loadAccounting(db, companyId, inServiceDate);
 
   return db.transaction().execute(async (trx): Promise<AssetTransferResult> => {
+    // Lock the asset before summing its cost rows: an attachment or a
+    // receipt adding a row after the sum would be left out of the
+    // capitalized cost while the asset leaves Under Construction.
+    const locked = await trx
+      .selectFrom("fixedAsset")
+      .select("status")
+      .where("id", "=", asset.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (locked?.status !== "Under Construction") {
+      throw new InvalidInputError(
+        `Asset ${asset.fixedAssetId} is no longer Under Construction`
+      );
+    }
+
     const cipCost = await trx
       .selectFrom("fixedAssetCipCost")
       .select((eb) =>

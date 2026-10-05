@@ -60,7 +60,7 @@ const ContractAmendments = ({
   amendments
 }: ContractAmendmentsProps) => {
   const labels = useContractLabels();
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
 
   return (
     <Card>

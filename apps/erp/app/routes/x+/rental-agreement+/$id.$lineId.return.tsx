@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The posted `isSalesType` only drives the form; the line decides. A
   // Sale line's closing net investment must land somewhere.
-  const line = await getRentalAgreementLine(client, lineId);
+  const line = await getRentalAgreementLine(client, lineId, companyId);
   if (line.error || line.data.rentalAgreementId !== id) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),

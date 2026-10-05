@@ -116,6 +116,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   if (formData.get("intent") === "rentalRate") {
+    // itemRentalRate is a sales table (its RLS asks for the sales
+    // permissions), and the upsert may insert or update.
+    await requirePermissions(request, { create: "sales", update: "sales" });
     const rentalValidation = await validator(itemRentalRateValidator).validate(
       formData
     );

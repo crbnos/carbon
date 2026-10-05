@@ -91,13 +91,18 @@ const RentalAgreementReturnForm = ({
                   zfd.checkbox({ trueValue: "true" }) and the form never posts. */}
               {isSalesType && <Hidden name="isSalesType" value="true" />}
               <VStack spacing={4}>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    The final billing period is re-cut to the return date. A
-                    period already billed in advance gets an adjustment for the
-                    unused days.
-                  </Trans>
-                </p>
+                {/* A sales-type term never re-cuts: its billing was fixed
+                    at activation and the unit comes back on or after the end
+                    date. */}
+                {!isSalesType && (
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      The final billing period is re-cut to the return date. A
+                      period already billed in advance gets an adjustment for
+                      the unused days.
+                    </Trans>
+                  </p>
+                )}
                 {isSalesType && (
                   <>
                     <p className="text-sm text-muted-foreground">

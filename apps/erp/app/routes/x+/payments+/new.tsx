@@ -36,7 +36,10 @@ import {
   replaceInvoiceSettlements,
   upsertPayment
 } from "~/modules/invoicing";
-import { getDepositDocuments } from "~/modules/invoicing/invoicing.server";
+import {
+  checkDepositDocument,
+  getDepositDocuments
+} from "~/modules/invoicing/invoicing.server";
 import { getCompany, getNextSequence } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -227,6 +230,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(paymentValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
+  }
+
+  // The deposit ids arrive as hidden fields: never trust them to name this
+  // company's, this customer's, open document.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    validation.data
+  );
+  if (depositError) {
+    return validationError({
+      fieldErrors: { depositDocument: depositError }
+    });
   }
 
   try {

@@ -17,7 +17,7 @@ import {
   getContract,
   updateContract
 } from "~/modules/sales";
-import { contractInvoicingDefaults } from "~/modules/sales/sales.server";
+import { contractCustomerChange } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractDetailsForm,
@@ -60,10 +60,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ...data
   } = validation.data;
 
-  const customerChanged = data.customerId !== current.data.customerId;
-  const invoicing = customerChanged
-    ? await contractInvoicingDefaults(client, companyId, data.customerId)
-    : null;
+  const invoicing = await contractCustomerChange(client, companyId, {
+    from: current.data.customerId,
+    to: data.customerId
+  });
 
   let exchangeRate: number | undefined;
   if (data.currencyCode !== current.data.currencyCode) {
@@ -152,7 +152,7 @@ export default function ContractSetupDetailsRoute() {
         recognizeRevenueFrom: contract.recognizeRevenueFrom ?? undefined,
         invoiceAutomation: contract.invoiceAutomation ?? undefined,
         paymentTermId: contract.paymentTermId ?? undefined,
-        currencyCode: contract.currencyCode ?? "USD",
+        currencyCode: contract.currencyCode,
         notes:
           tiptapToText(
             (contract.notes ?? null) as Parameters<typeof tiptapToText>[0]

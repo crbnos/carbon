@@ -105,7 +105,7 @@ msgstr "{0} 已启动"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
-msgstr ""
+msgstr "{0} 项资产待折旧 · {amount}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -144,7 +144,7 @@ msgstr "{0}个草稿凭证"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
-msgstr ""
+msgstr "{0} 项待确认分录 · {amount}"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -563,7 +563,7 @@ msgid "1 Asset"
 msgstr "1 个资产"
 
 msgid "1 asset to depreciate · {amount}"
-msgstr ""
+msgstr "1 项资产待折旧 · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 个可分组的工序不在生产批次中 — 它单独运行，直到被分组"
@@ -581,7 +581,7 @@ msgid "1 draft journal entry"
 msgstr "1个草稿分录"
 
 msgid "1 entry to recognize · {amount}"
-msgstr ""
+msgstr "1 项待确认分录 · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 张发票已在您的上一个系统中开票，不会再次起草"
@@ -1087,6 +1087,9 @@ msgstr "收据的状态已更改"
 msgid "A receipt's supplier changes"
 msgstr "收据的供应商已更改"
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "租赁协议必须使用公司的基础货币才能启用。请先更改协议的货币。"
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "租赁协议将序列号物料件配置给客户，并按照循环周期进行计费，直到它们返回。"
 
@@ -1095,9 +1098,6 @@ msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些�
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "作为销售处理的租赁必须使用公司的基础货币。更改协议货币或覆盖处理方式。"
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "退货授权（RMA）授权客户退回商品以换取贷项、替代品或维修。"
@@ -1111,8 +1111,8 @@ msgstr "已下达工单上的工艺路线步骤，工单对工序的自有副本
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "一份销售文件，根据协议向客户收取服务物料费用：包括一次性费用和循环费用，按计划排程从确认到结束或取消期间开票。"
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "一份销售单据，按日费率、周费率和月费率向客户出租序列化的车队单位，切割计费周期并生成其发票，直到每个单位被归还且协议关闭。"
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "一份销售单据，向客户出租有序号的车辆单元，每个单元按其自身的日、周或月费率计费，生成计费周期并起草其发票，直到每个单元都被退回且协议已关闭。"
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "销售发票（您向客户开票）或采购发票（供应商向您开票），通过付款、贷方或借方备忘单结清。"
@@ -1538,8 +1538,8 @@ msgstr "激活流程"
 msgid "Activate Work Center"
 msgstr "激活工作中心"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "激活检查每个件是否可用，将每个物料的日、周和月费率快照到其行，对租赁进行分类并创建第一个计费期间。激活后，条款和行将被固定。"
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "启用时检查每个单元是否可用，对每个单元的会计处理进行分类，并按每个单元的费率生成第一个计费周期。之后条款和行将被固定。"
 
 msgid "Activation fee · we advise"
 msgstr "激活费 · 我们建议"
@@ -3049,10 +3049,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "请求具有{0}权限的管理员添加第一个{1}。"
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr ""
+msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期结束的草稿运行。创建运行并过账，以便本期具有其折旧费用和累计折旧。如果本期不适用折旧，请跳过并说明理由。"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr ""
+msgstr "向收入确认查询本期的新运行现在会确认什么——递延发票收入、应计租金和合同收入——并检查本期结束前应收收入的草稿运行。创建运行并过账，以便收入进入账簿。如果不应确认任何内容，请跳过并说明理由。"
 
 msgid "Assemblies"
 msgstr "装配件"
@@ -9849,8 +9849,8 @@ msgstr "合同行如何在其收入日期内获得收入：每日，每天金额
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "合同或修订如何为经常性收入报告分类：新销售、现有、扩展、重新激活或缩减。Carbon 会建议分类，您可以更改。"
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "租赁协议如何从开始日期开始分割计费周期：日历月按月费率对每个日历月进行计费，部分月份按比例分配；28天对连续28天周期按日、周和月费率进行计费。"
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "租赁协议如何从其开始日期生成计费周期：日历月生成日历月，28 天生成连续的 28 天周期。每个单元按其自身的频率计费一个费率，用于一个周期涵盖的整个天数、周数或月数；日历月中的月费率按天数按比例分配。"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"
@@ -12779,6 +12779,9 @@ msgstr "下一份发票 {date} 将自动创建，并保留为草稿供评审。"
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "下一份发票 {date} 将自动创建，然后过账并发送邮件。"
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "下一张发票在 {date} 时自动创建，然后过账并通过 Stripe 发送。"
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "下一份发票 {date} 将自动创建，然后过账。"
 
@@ -13661,6 +13664,9 @@ msgstr "最早优先"
 
 msgid "On"
 msgstr "开"
+
+msgid "On {sentDate}"
+msgstr "于 {sentDate}"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "在转换日，按顺序完成下列检查清单。验收测试来自您范围内的要求。支持详情见下方。"
@@ -14949,7 +14955,7 @@ msgstr "发布评论"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
-msgstr ""
+msgstr "过账草稿运行 {0}"
 
 msgid "Post Invoice"
 msgstr "过账发票"
@@ -18139,6 +18145,9 @@ msgstr "发送至"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "发送给打开了电子邮件通知的每个收件人。"
 
+msgid "Sent via Stripe"
+msgstr "已通过 Stripe 发送"
+
 msgid "Sequences"
 msgstr "编号规则"
 
@@ -19842,9 +19851,6 @@ msgstr "期限至少为该单位经济寿命的 {threshold}"
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "租赁期至少为经济寿命的{threshold}({actual})"
 
-msgid "Terms"
-msgstr "条款"
-
 msgid "Terms and Privacy"
 msgstr "条款和隐私"
 
@@ -20695,9 +20701,6 @@ msgstr "公司用来管理员工登录的系统——Okta、Entra ID 或 Google 
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "系统在您配置的系统中通过了每个范围内的验收测试,使用您的数据;数据已验证;您签署确认。然后上线。"
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "协议激活后条款被固定。"
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "连接销售询价单、其报价和生成的销售订单的线索——一个关联关系，而不是具有自己状态的文件。"

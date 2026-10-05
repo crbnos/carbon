@@ -305,24 +305,25 @@ async function renewDueTerms(
       await trx
         .insertInto("customerContractLine")
         .values(
-          copied.map((line) =>
-            copyLineValues(scope, line, {
+          copied.map((line) => {
+            // A discount that ended in the old term does not come back: the
+            // copy is full price, not a discount that now never ends.
+            const discountEnded =
+              line.discountEndsOn !== null && line.discountEndsOn < newStart;
+            return copyLineValues(scope, line, {
               rate: round(line.rate * (1 + uplift)),
               startDate: newStart,
               endDate: null,
-              // A discount that ended in the old term does not come back.
-              discountEndsOn:
-                line.discountEndsOn !== null && line.discountEndsOn >= newStart
-                  ? line.discountEndsOn
-                  : null,
+              discountPercent: discountEnded ? 0 : line.discountPercent,
+              discountEndsOn: discountEnded ? null : line.discountEndsOn,
               // The old term's go-live and revenue dates do not carry over.
               goLiveDate: null,
               revenueStartDate: null,
               revenueEndDate: null,
               amendmentId: amendment.id,
               amendsLineId: line.id
-            })
-          )
+            });
+          })
         )
         .execute();
     }

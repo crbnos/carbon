@@ -14,7 +14,11 @@ import {
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAndSendConnectInvoice } from "./connect.server";
-import { toStripeInvoiceLines } from "./connect-invoice";
+import {
+  stripeDueDate,
+  stripeEffectiveDate,
+  toStripeInvoiceLines
+} from "./connect-invoice";
 
 const logger = getLogger("stripe-connect");
 
@@ -286,25 +290,6 @@ function toStripeEpochSeconds(
   );
 }
 
-const FIVE_YEARS_SECONDS = 5 * 365.25 * 24 * 60 * 60;
-
-function clampDueDate(epoch: number | undefined): number | undefined {
-  if (epoch === undefined) return undefined;
-  // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
-  const now = Math.trunc(datetime.now("UTC").toDate().getTime() / 1000);
-  if (epoch < now || epoch > now + FIVE_YEARS_SECONDS) return undefined;
-  return epoch;
-}
-
-function clampEffectiveAt(epoch: number | undefined): number | undefined {
-  if (epoch === undefined) return undefined;
-  // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
-  const now = Math.trunc(datetime.now("UTC").toDate().getTime() / 1000);
-  if (epoch > now) return now;
-  if (epoch < now - FIVE_YEARS_SECONDS) return undefined;
-  return epoch;
-}
-
 /**
  * Send an already-posted sales invoice through the company's connected Stripe
  * account, and link the Stripe invoice to it.
@@ -359,13 +344,17 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
         .from("salesInvoiceLines")
         .select("*")
         .eq("invoiceId", invoiceId)
+        .eq("companyId", companyId)
         .order("sortOrder", { ascending: true })
         .order("createdAt", { ascending: true }),
       serviceRole
         .from("salesInvoiceShipment")
         .select("*")
         .eq("id", invoiceId)
+        .eq("companyId", companyId)
         .single(),
+      // The view has no companyId; it is only read once the header above is
+      // confirmed to belong to this company (an unscoped header throws).
       serviceRole
         .from("salesInvoiceLocations")
         .select("*")
@@ -384,6 +373,9 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
   }
 
   const invoice = salesInvoice.data;
+  // The company's calendar day, which the due and issue dates are checked
+  // against — whole days, so a retry sends the same parameters.
+  const today = datetime.today(timeZone);
   const currencyCode = invoice.currencyCode ?? "USD";
 
   // `salesInvoiceShipment.shippingCost` is BASE currency, like every unprefixed
@@ -430,17 +422,16 @@ export async function sendPostedSalesInvoiceViaStripe(args: {
       invoiceNumber: invoice.invoiceId ?? undefined,
       // dueDateOverride is the user-chosen override from the post modal,
       // submitted only when the invoice's own dateDue wouldn't survive
-      // clampDueDate (missing, past, or too far out). Re-clamped here
-      // regardless of source — never trust client input for what
-      // reaches a merchant's live Stripe account.
-      dueDate: clampDueDate(
-        toStripeEpochSeconds(dueDateOverride || invoice.dateDue, timeZone)
+      // stripeDueDate (missing, on/before today, or too far out).
+      // Re-checked here regardless of source — never trust client input for
+      // what reaches a merchant's live Stripe account.
+      dueDate: toStripeEpochSeconds(
+        stripeDueDate(dueDateOverride || invoice.dateDue, today),
+        timeZone
       ),
-      effectiveAt: clampEffectiveAt(
-        toStripeEpochSeconds(
-          invoice.dateIssued ?? invoice.postingDate,
-          timeZone
-        )
+      effectiveAt: toStripeEpochSeconds(
+        stripeEffectiveDate(invoice.dateIssued ?? invoice.postingDate, today),
+        timeZone
       ),
       customFields: invoice.customerReference
         ? [

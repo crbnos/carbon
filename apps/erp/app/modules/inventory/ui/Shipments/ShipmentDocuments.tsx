@@ -221,7 +221,21 @@ const ShipmentDocuments = () => {
         </RelatedDocumentGroup>
       }
     >
-      <Await resolve={routeData?.relatedItems}>
+      <Await
+        resolve={routeData?.relatedItems}
+        errorElement={
+          // The invoices could not be read: still list what is known.
+          hasRows ? (
+            <RelatedDocumentGroup>
+              {partyRow}
+              {sourceRow}
+              {packingSlipRow}
+            </RelatedDocumentGroup>
+          ) : (
+            <Empty className="py-12" />
+          )
+        }
+      >
         {(resolved) => {
           // A shipment raised from an invoice already lists it as its source.
           const invoices = (resolved?.invoices ?? []).filter(

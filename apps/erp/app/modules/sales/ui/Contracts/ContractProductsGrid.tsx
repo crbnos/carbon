@@ -93,7 +93,7 @@ const ContractProductsGrid = ({
   const percent = usePercentFormatter();
 
   const contractId = contract.id!;
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const contractEndDate = contract.endDate;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const canEdit = permissions.can("update", "sales");

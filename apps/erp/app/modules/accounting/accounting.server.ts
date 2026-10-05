@@ -236,7 +236,7 @@ export async function postDisposal(
   } = args;
 
   const nbv = acquisitionCost - accumulatedDepreciation;
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
     const journalEntryId = await getNextSequence(
@@ -369,6 +369,13 @@ export async function postDisposal(
   });
 }
 
+/**
+ * Registers a Draft asset: Active, or Under Construction for a
+ * construction-in-progress class. With `posting` (accounting on) it posts the
+ * acquisition journal first; with `posting: null` it writes the same asset and
+ * CIP cost rows with no journal. One transaction either way, so no asset is
+ * registered without its journal or its CIP cost row.
+ */
 export async function postAssetRegistration(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -380,18 +387,20 @@ export async function postAssetRegistration(
       accumulatedDepreciation: number;
       depreciationStartDate: string;
     };
-    locationId: string | null;
-    fixedAssetClassId: string;
-    assetAccountId: string;
-    // Contra-asset account credited with any opening accumulated depreciation
-    // when the asset is capitalized mid-life (from the asset class).
-    accumulatedDepreciationAccountId: string;
-    // Equity offset for a direct (non-purchase) registration — owner equity /
-    // retained earnings. Brings the asset onto the books at NBV.
-    offsetAccountId: string;
-    accountingPeriodId: string;
-    locationDimensionId: string | undefined;
-    assetClassDimensionId: string | undefined;
+    posting: {
+      locationId: string | null;
+      fixedAssetClassId: string;
+      assetAccountId: string;
+      // Contra-asset account credited with any opening accumulated
+      // depreciation when the asset is capitalized mid-life (from the class).
+      accumulatedDepreciationAccountId: string;
+      // Equity offset for a direct (non-purchase) registration — owner equity
+      // / retained earnings. Brings the asset onto the books at NBV.
+      offsetAccountId: string;
+      accountingPeriodId: string;
+      locationDimensionId: string | undefined;
+      assetClassDimensionId: string | undefined;
+    } | null;
     // "Under Construction" for an asset registered into a construction-in-
     // progress class: it accumulates cost and is not depreciated until it is
     // capitalized into its in-service class.
@@ -404,14 +413,7 @@ export async function postAssetRegistration(
     fixedAssetId,
     fixedAssetReadableId,
     registration,
-    locationId,
-    fixedAssetClassId,
-    assetAccountId,
-    accumulatedDepreciationAccountId,
-    offsetAccountId,
-    accountingPeriodId,
-    locationDimensionId,
-    assetClassDimensionId,
+    posting,
     status = "Active",
     companyId,
     userId
@@ -419,7 +421,7 @@ export async function postAssetRegistration(
 
   const { acquisitionCost, acquisitionDate, accumulatedDepreciation } =
     registration;
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
     // Post the acquisition journal FIRST, then flip the asset to Active — so a
@@ -428,77 +430,91 @@ export async function postAssetRegistration(
     //   Dr  assetAccountId                     acquisitionCost           (capitalize at gross cost)
     //       Cr  accumulatedDepreciationAccountId   accumulatedDepreciation   (opening contra, mid-life only)
     //       Cr  offsetAccountId                    nbv                       (owner equity)
-    const journalEntryId = await getNextSequence(
-      trx,
-      "journalEntry",
-      companyId
-    );
-
-    const journal = await trx
-      .insertInto("journal")
-      .values({
-        journalEntryId,
+    let journalId: string | null = null;
+    if (posting) {
+      const {
+        locationId,
+        fixedAssetClassId,
+        assetAccountId,
+        accumulatedDepreciationAccountId,
+        offsetAccountId,
         accountingPeriodId,
-        companyId,
-        description: `Asset Registration: ${fixedAssetReadableId}`,
-        postingDate: acquisitionDate,
-        sourceType: "Manual",
-        status: "Posted",
-        postedAt: now,
-        postedBy: userId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+        locationDimensionId,
+        assetClassDimensionId
+      } = posting;
+      const journalEntryId = await getNextSequence(
+        trx,
+        "journalEntry",
+        companyId
+      );
 
-    const journalLineResults = await trx
-      .insertInto("journalLine")
-      .values(
-        acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
-          (line) => ({
-            journalId: journal.id,
-            accountId:
-              line.role === "asset"
-                ? assetAccountId
-                : line.role === "accumulatedDepreciation"
-                  ? accumulatedDepreciationAccountId
-                  : offsetAccountId,
-            description: line.description,
-            amount: line.amount,
-            journalLineReference: crypto.randomUUID(),
-            companyId
-          })
-        )
-      )
-      .returning(["id"])
-      .execute();
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId,
+          accountingPeriodId,
+          companyId,
+          description: `Asset Registration: ${fixedAssetReadableId}`,
+          postingDate: acquisitionDate,
+          sourceType: "Manual",
+          status: "Posted",
+          postedAt: now,
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      journalId = journal.id;
 
-    if (locationDimensionId && locationId) {
-      await trx
-        .insertInto("journalLineDimension")
+      const journalLineResults = await trx
+        .insertInto("journalLine")
         .values(
-          journalLineResults.map((jl) => ({
-            journalLineId: jl.id,
-            dimensionId: locationDimensionId,
-            valueId: locationId,
-            companyId
-          }))
+          acquisitionLines(acquisitionCost, accumulatedDepreciation).map(
+            (line) => ({
+              journalId: journal.id,
+              accountId:
+                line.role === "asset"
+                  ? assetAccountId
+                  : line.role === "accumulatedDepreciation"
+                    ? accumulatedDepreciationAccountId
+                    : offsetAccountId,
+              description: line.description,
+              amount: line.amount,
+              journalLineReference: crypto.randomUUID(),
+              companyId
+            })
+          )
         )
+        .returning(["id"])
         .execute();
-    }
 
-    if (assetClassDimensionId && fixedAssetClassId) {
-      await trx
-        .insertInto("journalLineDimension")
-        .values(
-          journalLineResults.map((jl) => ({
-            journalLineId: jl.id,
-            dimensionId: assetClassDimensionId,
-            valueId: fixedAssetClassId,
-            companyId
-          }))
-        )
-        .execute();
+      if (locationDimensionId && locationId) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(
+            journalLineResults.map((jl) => ({
+              journalLineId: jl.id,
+              dimensionId: locationDimensionId,
+              valueId: locationId,
+              companyId
+            }))
+          )
+          .execute();
+      }
+
+      if (assetClassDimensionId && fixedAssetClassId) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(
+            journalLineResults.map((jl) => ({
+              journalLineId: jl.id,
+              dimensionId: assetClassDimensionId,
+              valueId: fixedAssetClassId,
+              companyId
+            }))
+          )
+          .execute();
+      }
     }
 
     const updateResult = await trx
@@ -533,7 +549,7 @@ export async function postAssetRegistration(
           sourceType: "Manual",
           amount: acquisitionCost,
           costDate: acquisitionDate,
-          journalId: journal.id,
+          journalId,
           companyId,
           createdBy: userId
         })
@@ -704,33 +720,15 @@ export type RunPostingPeriods = Map<
   { accountingPeriodId: string; postingDate: string }
 >;
 
-type DepreciationRunLine = {
-  id: string;
-  fixedAssetId: string;
-  /** The month this line depreciates; its journal posts in that month. */
-  periodEnd: string;
-  amount: number;
-  taxAmount: number;
-  asset: {
-    fixedAssetId: string;
-    locationId: string | null;
-    fixedAssetClassId: string;
-    acquisitionCost: number;
-    accumulatedDepreciation: number;
-    accumulatedTaxDepreciation: number;
-    residualValuePercent: number;
-    depreciationExpenseAccountId: string;
-    accumulatedDepreciationAccountId: string;
-  };
-};
-
 export async function postDepreciationRun(
   db: Kysely<KyselyDatabase>,
   args: {
     depreciationRunId: string;
     depreciationRunReadableId: string;
     periods: RunPostingPeriods;
-    lines: DepreciationRunLine[];
+    /** The lines the route checked against the assets. Posting refuses when
+     *  the run holds any other lines by the time it is locked. */
+    lineIds: string[];
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
     taxEnabled: boolean;
@@ -745,7 +743,7 @@ export async function postDepreciationRun(
     depreciationRunId,
     depreciationRunReadableId,
     periods,
-    lines,
+    lineIds,
     locationDimensionId,
     assetClassDimensionId,
     taxEnabled,
@@ -756,7 +754,7 @@ export async function postDepreciationRun(
     userId
   } = args;
 
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   const periodOf = (monthEnd: string) => {
     const period = periods.get(monthEnd);
@@ -767,9 +765,101 @@ export async function postDepreciationRun(
   };
 
   return db.transaction().execute(async (trx) => {
+    // Lock the run first: two posts of one Draft must not both get through.
+    const run = await trx
+      .selectFrom("depreciationRun")
+      .select(["depreciationRunId", "status", "periodEnd"])
+      .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Draft") {
+      throw new RunOutOfDateError(
+        `Depreciation run ${run.depreciationRunId} is already ${run.status}`
+      );
+    }
+
+    // The lines and the assets as they are now, not as the route read them.
+    const runLines = await trx
+      .selectFrom("depreciationRunLine as l")
+      .innerJoin("fixedAsset as a", (join) =>
+        join
+          .onRef("a.id", "=", "l.fixedAssetId")
+          .on("a.companyId", "=", companyId)
+      )
+      .innerJoin("fixedAssetClass as c", (join) =>
+        join
+          .onRef("c.id", "=", "a.fixedAssetClassId")
+          .on("c.companyId", "=", companyId)
+      )
+      .select([
+        "l.id",
+        "l.fixedAssetId",
+        sql<string | null>`l."periodEnd"::text`.as("periodEnd"),
+        "l.amount",
+        "l.taxAmount",
+        "a.fixedAssetId as assetReadableId",
+        "a.locationId",
+        "a.fixedAssetClassId",
+        "c.depreciationExpenseAccountId",
+        "c.accumulatedDepreciationAccountId"
+      ])
+      .where("l.depreciationRunId", "=", depreciationRunId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+
+    const expected = new Set(lineIds);
+    if (
+      runLines.length !== expected.size ||
+      runLines.some((line) => !expected.has(line.id))
+    ) {
+      throw new RunOutOfDateError(
+        `Depreciation run ${run.depreciationRunId} changed while it was being posted; review it and post again`
+      );
+    }
+
+    const assetIds = [...new Set(runLines.map((line) => line.fixedAssetId))];
+    const assets =
+      assetIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("fixedAsset")
+            .select([
+              "id",
+              "fixedAssetId",
+              "status",
+              "acquisitionCost",
+              "accumulatedDepreciation",
+              "residualValuePercent"
+            ])
+            .where("id", "in", assetIds)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+    const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+    const notDepreciable = assets.find(
+      (asset) =>
+        asset.status !== "Active" && asset.status !== "Fully Depreciated"
+    );
+    if (notDepreciable) {
+      throw new RunOutOfDateError(
+        `${notDepreciable.fixedAssetId} is ${notDepreciable.status}; recalculate depreciation run ${run.depreciationRunId} before posting`
+      );
+    }
+
+    // A line from before per-month lines has no periodEnd: it is the run's.
+    const lines = runLines.map((line) => ({
+      ...line,
+      periodEnd: line.periodEnd ?? run.periodEnd,
+      amount: Number(line.amount),
+      taxAmount: Number(line.taxAmount ?? 0)
+    }));
+
     for (const line of lines) {
-      const { asset } = line;
-      const amount = Number(line.amount);
+      const { amount } = line;
+      // A month with no book depreciation (a tax-only line) has no journal
+      // to post; it still counts toward the deferred tax below.
+      if (equals(amount, 0)) continue;
       const { accountingPeriodId, postingDate } = periodOf(line.periodEnd);
 
       const journalEntryId = await getNextSequence(
@@ -784,7 +874,7 @@ export async function postDepreciationRun(
           journalEntryId,
           accountingPeriodId,
           companyId,
-          description: `Depreciation: ${asset.fixedAssetId}`,
+          description: `Depreciation: ${line.assetReadableId}`,
           postingDate,
           sourceType: "Asset Depreciation",
           status: "Posted",
@@ -800,7 +890,7 @@ export async function postDepreciationRun(
         .values([
           {
             journalId: journal.id,
-            accountId: asset.depreciationExpenseAccountId,
+            accountId: line.depreciationExpenseAccountId,
             description: "Depreciation Expense",
             amount: toStoredAmount(amount, 0, "Expense"),
             journalLineReference: crypto.randomUUID(),
@@ -808,7 +898,7 @@ export async function postDepreciationRun(
           },
           {
             journalId: journal.id,
-            accountId: asset.accumulatedDepreciationAccountId,
+            accountId: line.accumulatedDepreciationAccountId,
             description: "Accumulated Depreciation",
             amount: toStoredAmount(0, amount, "Asset"),
             journalLineReference: crypto.randomUUID(),
@@ -818,28 +908,28 @@ export async function postDepreciationRun(
         .returning(["id"])
         .execute();
 
-      if (locationDimensionId && asset.locationId) {
+      if (locationDimensionId && line.locationId) {
         await trx
           .insertInto("journalLineDimension")
           .values(
             journalLineResults.map((jl) => ({
               journalLineId: jl.id,
               dimensionId: locationDimensionId,
-              valueId: asset.locationId!,
+              valueId: line.locationId!,
               companyId
             }))
           )
           .execute();
       }
 
-      if (assetClassDimensionId && asset.fixedAssetClassId) {
+      if (assetClassDimensionId && line.fixedAssetClassId) {
         await trx
           .insertInto("journalLineDimension")
           .values(
             journalLineResults.map((jl) => ({
               journalLineId: jl.id,
               dimensionId: assetClassDimensionId,
-              valueId: asset.fixedAssetClassId,
+              valueId: line.fixedAssetClassId,
               companyId
             }))
           )
@@ -857,24 +947,24 @@ export async function postDepreciationRun(
     // One update per asset with every month's amount. Each line used to add
     // its own amount to the same starting value, so with several months of
     // one asset only the last month reached accumulatedDepreciation.
-    const byAsset = new Map<
-      string,
-      { asset: DepreciationRunLine["asset"]; amount: number; taxAmount: number }
-    >();
+    const byAsset = new Map<string, { amount: number; taxAmount: number }>();
     for (const line of lines) {
       const sums = byAsset.get(line.fixedAssetId) ?? {
-        asset: line.asset,
         amount: 0,
         taxAmount: 0
       };
-      sums.amount += Number(line.amount);
-      sums.taxAmount += Number(line.taxAmount ?? 0);
+      sums.amount += line.amount;
+      sums.taxAmount += line.taxAmount;
       byAsset.set(line.fixedAssetId, sums);
     }
 
-    for (const [fixedAssetId, { asset, amount, taxAmount }] of byAsset) {
+    for (const [fixedAssetId, sums] of byAsset) {
+      const asset = assetById.get(fixedAssetId)!;
       // Round at persist: a catch-up run adds many months, and float sums
-      // stored 20187.59999999999 for 30 months of 672.92.
+      // stored 20187.59999999999 for 30 months of 672.92. The increment is
+      // written in SQL against the row locked above.
+      const amount = round(sums.amount);
+      const taxAmount = round(sums.taxAmount);
       const newAccumulated = round(
         Number(asset.accumulatedDepreciation) + amount
       );
@@ -882,23 +972,20 @@ export async function postDepreciationRun(
       const residualValue = cost * (Number(asset.residualValuePercent) / 100);
       const nbv = cost - newAccumulated;
 
-      const assetUpdate: Record<string, any> = {
-        accumulatedDepreciation: newAccumulated,
-        updatedBy: userId
-      };
-
-      if (nbv <= residualValue + 0.01) {
-        assetUpdate.status = "Fully Depreciated";
-      }
-
-      if (taxEnabled && taxAmount > 0) {
-        const currentTax = Number(asset.accumulatedTaxDepreciation ?? 0);
-        assetUpdate.accumulatedTaxDepreciation = round(currentTax + taxAmount);
-      }
-
       await trx
         .updateTable("fixedAsset")
-        .set(assetUpdate)
+        .set({
+          accumulatedDepreciation: sql<number>`"accumulatedDepreciation" + ${amount}`,
+          ...(nbv <= residualValue + 0.01
+            ? { status: "Fully Depreciated" as const }
+            : {}),
+          ...(taxEnabled && taxAmount > 0
+            ? {
+                accumulatedTaxDepreciation: sql<number>`COALESCE("accumulatedTaxDepreciation", 0) + ${taxAmount}`
+              }
+            : {}),
+          updatedBy: userId
+        })
         .where("id", "=", fixedAssetId)
         .where("companyId", "=", companyId)
         .execute();
@@ -906,7 +993,7 @@ export async function postDepreciationRun(
 
     // Deferred tax liability journal entry, one per month, linked to that
     // month's lines so Reverse Run can find it.
-    const linesByMonth = new Map<string, DepreciationRunLine[]>();
+    const linesByMonth = new Map<string, typeof lines>();
     for (const line of lines) {
       const monthLines = linesByMonth.get(line.periodEnd) ?? [];
       monthLines.push(line);
@@ -922,11 +1009,11 @@ export async function postDepreciationRun(
         >();
 
         for (const line of monthLines) {
-          const bookAmount = Number(line.amount);
-          const taxAmt = Number(line.taxAmount ?? bookAmount);
+          const bookAmount = line.amount;
+          const taxAmt = line.taxAmount;
           const diff = taxAmt - bookAmount;
-          const locId = line.asset.locationId ?? null;
-          const classId = line.asset.fixedAssetClassId;
+          const locId = line.locationId ?? null;
+          const classId = line.fixedAssetClassId;
           const key = `${locId ?? ""}|${classId}`;
           const existing = diffByGroup.get(key);
           if (existing) {
@@ -1132,12 +1219,14 @@ const REVENUE_LINE_DESCRIPTIONS: Record<
 };
 
 /**
- * Posts a Draft revenue recognition run as ONE journal (`sourceType`
- * 'Revenue Recognition'): two lines per schedule row, each row's own
- * debit/credit accounts, signed by account class. Stamps `journalId` on the
- * rows and the run and flips both to Posted, all in one transaction. The route
- * resolves the accounting period (`source: "accounting"`, so a Locked period
- * accepts it) and the dimension ids before calling.
+ * Posts a Draft revenue recognition run as one journal per month its rows
+ * fall in (`sourceType` 'Revenue Recognition'), each in that month's period —
+ * the run's own when the month is Closed: two lines per schedule row, each
+ * row's own debit/credit accounts, signed by account class. Stamps each row
+ * with its month's journal, the run with the journal of its own period, and
+ * flips both to Posted, all in one transaction. The route resolves the
+ * periods (`resolveRunPostingPeriods`, `source: "accounting"`, so a Locked
+ * period accepts them) and the dimension ids before calling.
  */
 export async function postRevenueRecognitionRun(
   db: Kysely<KyselyDatabase>,
@@ -2054,12 +2143,11 @@ export async function reverseDepreciationRun(
   args: {
     depreciationRunId: string;
     periods: RunPostingPeriods;
-    taxEnabled: boolean;
     companyId: string;
     userId: string;
   }
 ): Promise<{ depreciationRunId: string }> {
-  const { depreciationRunId, periods, taxEnabled, companyId, userId } = args;
+  const { depreciationRunId, periods, companyId, userId } = args;
 
   return db.transaction().execute(async (trx) => {
     const run = await trx
@@ -2130,21 +2218,32 @@ export async function reverseDepreciationRun(
     await reverseRunJournals(trx, { journalIds, periods, companyId, userId });
 
     // One update per asset with every month's amount, as posting wrote it.
+    // Tax depreciation is taken back when the run carried it, not when the
+    // setting is on today: a line has a taxAmount exactly when tax
+    // depreciation was enabled as the run posted (Post refuses a run whose
+    // lines no longer match the setting), and posting added it then.
     const byAsset = new Map<
       string,
-      { line: (typeof lines)[number]; amount: number; taxAmount: number }
+      {
+        line: (typeof lines)[number];
+        amount: number;
+        taxAmount: number;
+        hasTax: boolean;
+      }
     >();
     for (const line of lines) {
       const sums = byAsset.get(line.fixedAssetId) ?? {
         line,
         amount: 0,
-        taxAmount: 0
+        taxAmount: 0,
+        hasTax: false
       };
       sums.amount += Number(line.amount);
       sums.taxAmount += Number(line.taxAmount ?? 0);
+      sums.hasTax ||= line.taxAmount !== null;
       byAsset.set(line.fixedAssetId, sums);
     }
-    for (const [fixedAssetId, { line, amount, taxAmount }] of byAsset) {
+    for (const [fixedAssetId, { line, amount, taxAmount, hasTax }] of byAsset) {
       const accumulated = round(Number(line.accumulatedDepreciation) - amount);
       const cost = Number(line.acquisitionCost);
       const residualValue = cost * (Number(line.residualValuePercent) / 100);
@@ -2152,7 +2251,7 @@ export async function reverseDepreciationRun(
         accumulatedDepreciation: accumulated,
         updatedBy: userId
       };
-      if (taxEnabled && taxAmount > 0) {
+      if (hasTax && taxAmount > 0) {
         assetUpdate.accumulatedTaxDepreciation = round(
           Number(line.accumulatedTaxDepreciation ?? 0) - taxAmount
         );
@@ -2196,8 +2295,9 @@ export async function reverseDepreciationRun(
 }
 
 /** Deletes a Draft run and releases its claimed schedule rows (`runLineId`
- * back to null) so a later proposal can claim them again. Posted runs are
- * immutable — reverse the journal instead. */
+ * back to null) so a later proposal can claim them again. A Posted run is
+ * never deleted: Reverse Run (`reverseRevenueRecognitionRun`) returns it to
+ * Draft first. */
 export async function deleteRevenueRecognitionRun(
   db: Kysely<KyselyDatabase>,
   args: { runId: string; companyId: string; userId: string }
@@ -2214,7 +2314,7 @@ export async function deleteRevenueRecognitionRun(
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
-        `Revenue recognition run ${run.runId} is ${run.status}; reverse its journal instead of deleting it`
+        `Revenue recognition run ${run.runId} is ${run.status}; reverse the run instead of deleting it`
       );
     }
 

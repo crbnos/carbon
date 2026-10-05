@@ -24,7 +24,7 @@ import {
   parseIsoDate,
   round
 } from "@carbon/utils";
-import { endOfMonth } from "@internationalized/date";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -88,6 +88,17 @@ export type RunRowSynthesizer = (
  * Amounts are in the agreement currency, which activation holds to the base
  * currency in Phase C (post-rental-agreement).
  */
+/** The company's proposal lock, taken by `synthesizeRentalAccruals`. A
+ *  transaction-scoped advisory lock, so taking it again is a no-op. */
+export async function lockRecognitionProposals(
+  trx: KyselyTx,
+  companyId: string
+): Promise<void> {
+  await sql`SELECT pg_advisory_xact_lock(hashtext(${`revenue-recognition-accrual:${companyId}`}))`.execute(
+    trx
+  );
+}
+
 export async function synthesizeRentalAccruals(
   trx: KyselyTx,
   ctx: RunProposalContext
@@ -98,9 +109,7 @@ export async function synthesizeRentalAccruals(
 
   // Serialize concurrent proposals for one company (the monthly job and a
   // human "New run"): the existence check below is read-then-insert.
-  await sql`SELECT pg_advisory_xact_lock(hashtext(${`revenue-recognition-accrual:${companyId}`}))`.execute(
-    trx
-  );
+  await lockRecognitionProposals(trx, companyId);
 
   const periods = await trx
     .selectFrom("rentalBillingPeriod as p")
@@ -603,9 +612,26 @@ async function createRevenueRecognitionRunProposal(
   });
 }
 
+/** Whether `date` is a real `YYYY-MM-DD` that is the last day of its month. */
+function isMonthEnd(date: string): boolean {
+  try {
+    return endOfMonth(parseDate(date)).toString() === date;
+  } catch {
+    // parseDate throws on a day or month out of range ("2026-02-30").
+    return false;
+  }
+}
+
 export const proposeRevenueRecognitionRunInput = z.object({
-  /** `YYYY-MM-DD`, the last day of the period being recognized. */
-  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  /** `YYYY-MM-DD`, the last day of the period being recognized. A mid-month
+   *  date would accrue rent only up to it and leave the rest of the month to
+   *  no run. */
+  periodEnd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine(isMonthEnd, {
+      message: "periodEnd must be the last day of a month"
+    })
 });
 
 /** Proposes ONE Draft run for the period, or null when nothing is due (see

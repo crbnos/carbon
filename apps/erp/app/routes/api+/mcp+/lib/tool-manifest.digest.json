@@ -1,5 +1,5 @@
 {
-  "totalTools": 1542,
+  "totalTools": 1540,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -46,7 +46,7 @@
     {"name":"accounting_getAccountsInScope","classification":"READ","paramCount":2,"schema":"44ea072844d3","response":"4c52cef1b6ab","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountsList","classification":"READ","paramCount":3,"schema":"7592bd05f71d","response":"05b2ffc4c3d4","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getActiveDimensionsWithValues","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"1bfc101ae1de","injectAuth":"companyId","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getAssetDepreciationHistory","classification":"READ","paramCount":1,"schema":"91f483e6fee8","response":"24eb238bd6da","injectAuth":"companyId","permission":"accounting:view","paginates":false},
+    {"name":"accounting_getAssetDepreciationHistory","classification":"READ","paramCount":1,"schema":"91f483e6fee8","response":"00c2fc9fdb8b","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getBaseCurrency","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"11af3b92d80f","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getBaseCurrencyDecimalPlaces","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"cddf8275afa1","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getChartOfAccounts","classification":"READ","paramCount":3,"schema":"b3b2e96654e5","response":"f561243f144b","injectAuth":"companyId","permission":"accounting:view","paginates":false},
@@ -308,8 +308,6 @@
     {"name":"invoicing_deletePayment","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_deletePurchaseInvoice","classification":"DESTRUCTIVE","paramCount":1,"schema":"9fcbb4e4e012","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_deletePurchaseInvoiceLine","classification":"DESTRUCTIVE","paramCount":1,"schema":"af656ed8709f","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
-    {"name":"invoicing_deleteSalesInvoice","classification":"DESTRUCTIVE","paramCount":1,"schema":"9e382a0affeb","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
-    {"name":"invoicing_deleteSalesInvoiceLine","classification":"DESTRUCTIVE","paramCount":1,"schema":"352db7d38a15","response":"bcde375ebd4c","injectAuth":"companyId","permission":"invoicing:delete","paginates":false},
     {"name":"invoicing_getApAging","classification":"READ","paramCount":2,"schema":"9db366ef805c","response":"eca97da3238d","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApOpenBySupplier","classification":"READ","paramCount":1,"schema":"00e9099a963a","response":"cfaa2af435c0","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getApTieOut","classification":"READ","paramCount":1,"schema":"00e9099a963a","response":"194f80599d96","injectAuth":"companyId","permission":"invoicing:view","paginates":false},

@@ -744,15 +744,27 @@ export function buildDepreciationLines(
 
   for (const asset of assets) {
     const start = asset.depreciationStartDate ?? asset.acquisitionDate;
-    const firstMonth = lastPostedPeriodEnd
+    const afterLastPosted = lastPostedPeriodEnd
       ? endOfMonth(parseDate(lastPostedPeriodEnd).add({ months: 1 }))
-      : start
-        ? endOfMonth(parseDate(start.slice(0, 10)))
-        : endOfMonth(parseDate(periodEnd));
+      : null;
+    const startMonth = start ? endOfMonth(parseDate(start.slice(0, 10))) : null;
+    // The later of the month after the last posted run and the asset's
+    // in-service month: an asset placed in service after that run gets no
+    // line (and no bonus depreciation) for the months before it.
+    const firstMonth =
+      afterLastPosted && startMonth
+        ? afterLastPosted.compare(startMonth) >= 0
+          ? afterLastPosted
+          : startMonth
+        : (afterLastPosted ?? startMonth ?? endOfMonth(parseDate(periodEnd)));
 
     let accumulated = Number(asset.accumulatedDepreciation);
     let accumulatedTax = Number(asset.accumulatedTaxDepreciation ?? 0);
-    let previous = lastPostedPeriodEnd;
+    // The month before the first one, as the calculators expect it.
+    let previous =
+      afterLastPosted && firstMonth !== afterLastPosted
+        ? endOfMonth(firstMonth.subtract({ months: 1 })).toString()
+        : lastPostedPeriodEnd;
 
     for (
       let month = firstMonth;

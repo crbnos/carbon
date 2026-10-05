@@ -16,7 +16,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -24,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { runId } = params;
   if (!runId) throw notFound("runId not found");
 
-  const run = await getRevenueRecognitionRun(client, runId);
+  const run = await getRevenueRecognitionRun(client, runId, companyId);
   if (run.error) {
     throw redirect(
       path.to.revenueRecognitionRuns,

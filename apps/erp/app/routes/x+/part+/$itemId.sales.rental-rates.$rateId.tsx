@@ -50,6 +50,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw notFound("itemId not found");
   if (!rateId) throw notFound("rateId not found");
 
+  // The update writes the URL's item, so a rate of another item must not be
+  // reachable through this one.
+  const existing = await getCustomerItemRentalRate(client, rateId, companyId);
+  if (existing.error || existing.data.itemId !== itemId) {
+    throw redirect(
+      path.to.partSales(itemId),
+      await flash(
+        request,
+        error(existing.error, "Failed to load customer rental rates")
+      )
+    );
+  }
+
   const validation = await validator(customerItemRentalRateValidator).validate(
     await request.formData()
   );

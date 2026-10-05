@@ -8,7 +8,7 @@ import { ChoiceCardGroup } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP, suggestContractType } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LuCircleStop, LuRefreshCw } from "react-icons/lu";
 import type { z } from "zod";
 import {
@@ -91,6 +91,7 @@ const ContractDetailsForm = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const [customerId, setCustomerId] = useState(initialValues.customerId);
+  const latestCustomerId = useRef(initialValues.customerId);
   const [name, setName] = useState(initialValues.name);
   // A name the user typed is never replaced; an empty one follows the
   // customer and the start month.
@@ -121,6 +122,7 @@ const ContractDetailsForm = ({
   ) => {
     const next = option?.value ?? "";
     setCustomerId(next);
+    latestCustomerId.current = next;
     if (!isNameTyped) setName(suggestedName(next, startDate));
     if (!next || !carbon) return;
 
@@ -130,6 +132,9 @@ const ContractDetailsForm = ({
       carbon.from("customer").select("currencyCode").eq("id", next).single(),
       carbon.from("customerContract").select("status").eq("customerId", next)
     ]);
+    // The customer was changed again while this read was in flight: its
+    // answer is for a customer no longer picked.
+    if (latestCustomerId.current !== next) return;
     if (customer.data?.currencyCode) {
       setCurrencyCode(customer.data.currencyCode);
     }

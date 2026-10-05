@@ -59,7 +59,7 @@ const COMPANY_DEFAULT = "default";
 /** One field in its own form, so it validates and saves on its own. Keyed by
  *  its stored value: when a save changes it (or clears it, as a new bill-to
  *  clears the contact), the field shows what was stored. */
-const TermForm = ({
+export const TermForm = ({
   name,
   value,
   children

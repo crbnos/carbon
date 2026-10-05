@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { fetchAllRecords } from "@carbon/database";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
@@ -30,21 +31,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Every journal the run posted: each month's, and each month's deferred tax.
-  const [lines, settings] = await Promise.all([
+  // One line per asset per month: past PostgREST's 1000-row cap.
+  const lines = await fetchAllRecords(() =>
     client
       .from("depreciationRunLine")
       .select(
-        "journal:journalId(postingDate), deferredTaxJournal:deferredTaxJournalId(postingDate)"
+        "id, journal:journalId(postingDate), deferredTaxJournal:deferredTaxJournalId(postingDate)"
       )
       .eq("depreciationRunId", depreciationRunId)
-      .eq("companyId", companyId),
-    client
-      .from("companySettings")
-      .select("assetTaxDepreciationEnabled")
-      .eq("id", companyId)
-      .single()
-  ]);
-  if (lines.error) {
+      .eq("companyId", companyId)
+      .order("id")
+  );
+  if (lines.error || !lines.data) {
     throw redirect(
       path.to.depreciationRun(depreciationRunId),
       await flash(
@@ -78,7 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     reversed = await reverseDepreciationRun(getDatabaseClient(), {
       depreciationRunId,
       periods: periods.data,
-      taxEnabled: settings.data?.assetTaxDepreciationEnabled ?? false,
       companyId,
       userId
     });

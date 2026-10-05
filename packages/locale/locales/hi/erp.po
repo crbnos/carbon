@@ -105,7 +105,7 @@ msgstr "{0} पहले से शुरू हो गया है"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
-msgstr ""
+msgstr "{0} संपत्तियों का मूल्यह्रास करने के लिए · {amount}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -144,7 +144,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
-msgstr ""
+msgstr "{0} प्रविष्टियों को पहचानने के लिए · {amount}"
 
 #. placeholder {0}: nameOf(lineId)
 msgid "{0} has <0/> left to invoice."
@@ -563,7 +563,7 @@ msgid "1 Asset"
 msgstr "1 अचल संपत्ति"
 
 msgid "1 asset to depreciate · {amount}"
-msgstr ""
+msgstr "1 संपत्ति का मूल्यह्रास करने के लिए · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 बैचेबल ऑपरेशन बैच में नहीं है — जब तक बैच न हो जाए, यह अलग-अलग चलता है"
@@ -581,7 +581,7 @@ msgid "1 draft journal entry"
 msgstr "1 ड्राफ्ट जर्नल प्रविष्टि"
 
 msgid "1 entry to recognize · {amount}"
-msgstr ""
+msgstr "1 प्रविष्टि को पहचानने के लिए · {amount}"
 
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 चालान आपकी पिछली प्रणाली में बिल किया गया था और फिर से ड्राफ्ट नहीं किया गया है।"
@@ -1087,6 +1087,9 @@ msgstr "किसी रसीद की स्थिति में परि�
 msgid "A receipt's supplier changes"
 msgstr "किसी रसीद के आपूर्तिकर्ता में परिवर्तन होता है"
 
+msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
+msgstr "एक किराया समझौता सक्रिय होने के लिए कंपनी की मूल मुद्रा में होना चाहिए। पहले समझौते की मुद्रा बदलें।"
+
 msgid "A rental agreement puts serialized fleet units at a customer and bills them on a recurring cycle until they come back."
 msgstr "एक किराये की समझौता क्रमबद्ध फ्लीट इकाइयों को ग्राहक के पास रखता है और उन्हें एक आवर्ती चक्र पर बिल करता है जब तक कि वे वापस न आ जाएं।"
 
@@ -1095,9 +1098,6 @@ msgstr "एक किराये की पंक्ति एक बिक्�
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "एक किराया जो किसी भी पाँच ASC 842 लीज परीक्षण को पूरा करता है, बिक्रय के रूप में बुक किया जाता है जब इसका समझौता सक्रिय होता है: इकाई बेड़े को छोड़ देती है, लीज राजस्व और बेचे गए माल की लागत पोस्ट होती है, और लीज में शुद्ध निवेश इसकी जगह लेता है।"
-
-msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
-msgstr "एक किराया जिसे बिक्री के रूप में माना जाता है, कंपनी की आधार मुद्रा में होना चाहिए। समझौते की मुद्रा बदलें या व्यवहार को ओवरराइड करें।"
 
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "एक रिटर्न मर्चेंडाइज ऑथराइजेशन (RMA) एक ग्राहक को क्रेडिट, प्रतिस्थापन या मरम्मत के लिए सामान वापस करने का अधिकार देता है।"
@@ -1111,8 +1111,8 @@ msgstr "एक जारी जॉब पर एक रूटिंग चरण
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "बिक्री दस्तावेज़ जो ग्राहक को सेवा आइटमों के लिए एक समझौते के तहत बिल करता है: एकल शुल्क और आवर्ती शुल्क, पुष्टि से इसके समाप्त होने या रद्द होने तक एक निर्धारित शेड्यूल पर चालान किया गया।"
 
-msgid "A sales document that rents serialized fleet units to a customer at day, week, and month rates, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
-msgstr "एक दस्तावेज़ जो क्रमांकित बेड़े की इकाइयों को ग्राहक को दिन, सप्ताह और महीने की दरों पर किराए पर देता है, बिलिंग अवधि को काटता है और उनके चालान को ड्राफ्ट करता है जब तक कि हर इकाई वापस नहीं हो जाती और समझौता बंद नहीं हो जाता।"
+msgid "A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed."
+msgstr "एक बिक्री दस्तावेज़ जो एक ग्राहक को क्रमबद्ध बेड़े की इकाइयों को किराए पर देता है, प्रत्येक अपनी दैनिक, साप्ताहिक, या मासिक दर पर, बिलिंग अवधि को काटता है और उनके चालान का मसौदा तैयार करता है जब तक कि हर इकाई वापस नहीं होती और समझौता बंद नहीं हो जाता।"
 
 msgid "A sales invoice (you bill a customer) or purchase invoice (a supplier bills you), settled by applying payments and credit or debit memos."
 msgstr "एक विक्रय चालान (आप ग्राहक को बिल करते हैं) या क्रय चालान (एक आपूर्तिकर्ता आपको बिल करता है), भुगतान और जमा या नामे मेमो लागू करके निपटाया गया।"
@@ -1538,8 +1538,8 @@ msgstr "प्रक्रिया सक्रिय करें"
 msgid "Activate Work Center"
 msgstr "वर्क सेंटर सक्रिय करें"
 
-msgid "Activating checks every unit is available, snapshots each item's day, week and month rates onto its line, classifies the lease and cuts the first billing periods. The terms and lines are fixed afterwards."
-msgstr "सक्रिय करना हर इकाई की जांच करता है कि वह उपलब्ध है, प्रत्येक आइटम की दिन, सप्ताह और माह की दरों को अपनी पंक्ति पर स्नैपशॉट करता है, पट्टे को वर्गीकृत करता है और पहली बिलिंग अवधि को काटता है। शर्तें और पंक्तियां बाद में तय की जाती हैं।"
+msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
+msgstr "सक्रिय करना प्रत्येक इकाई की उपलब्धता की जांच करता है, प्रत्येक इकाई के लेखांकन उपचार को वर्गीकृत करता है और प्रत्येक इकाई की दर पर पहली बिलिंग अवधि को काटता है। शर्तें और पंक्तियां बाद में निश्चित होती हैं।"
 
 msgid "Activation fee · we advise"
 msgstr "सक्रियण शुल्क · हम सलाह देते हैं"
@@ -3049,10 +3049,10 @@ msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} अनुमति वाले एक व्यवस्थापक से पहले {1} जोड़ने के लिए कहें।"
 
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
-msgstr ""
+msgstr "मूल्यह्रास से पूछता है कि इस अवधि के लिए एक नया रन अब क्या मूल्यह्रास करेगा, और अवधि में समाप्त होने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि अवधि में इसका मूल्यह्रास व्यय और संचित मूल्यह्रास हो। यदि इस अवधि में मूल्यह्रास लागू नहीं होता है तो कारण के साथ छोड़ दें।"
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr ""
+msgstr "राजस्व मान्यता से पूछता है कि इस अवधि के लिए एक नया रन अब क्या मान्य करेगा — आस्थगित चालान राजस्व, देय किराया, और अनुबंध राजस्व — और अवधि के अंत तक देय राजस्व धारण करने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि राजस्व बहीखाता तक पहुंचे। यदि कुछ भी मान्य नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
 
 msgid "Assemblies"
 msgstr "असेंबलीज"
@@ -9849,8 +9849,8 @@ msgstr "अनुबंध की पंक्ति अपने राजस�
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "अनुबंध या संशोधन को आवर्ती-राजस्व रिपोर्टिंग के लिए कैसे वर्गीकृत किया जाता है: नई बिक्री, मौजूदा, विस्तार, पुनः सक्रियण, या संकुचन। Carbon इसका सुझाव देता है और आप इसे बदल सकते हैं।"
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr "एक किराया समझौता अपनी शुरुआत तिथि से बिलिंग अवधि कैसे काटता है: कैलेंडर महीना हर कैलेंडर महीने को महीने की दर पर बिल करता है, आंशिक महीने के लिए आनुपातिक, और 28 दिन दिन, सप्ताह और महीने की दरों से मूल्यवान लगातार 28-दिन की अवधि बिल करता है।"
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
+msgstr "एक किराया समझौता अपनी प्रारंभ तिथि से बिलिंग अवधि को कैसे काटता है: कैलेंडर माह कैलेंडर महीनों को काटता है, और 28 दिन लगातार 28-दिन की अवधि को काटते हैं। प्रत्येक इकाई एक दर पर अपनी आवृत्ति पर बिल करती है जो एक अवधि द्वारा कवर किए जाने वाले पूरे दिन, सप्ताह, या महीने के लिए है; कैलेंडर माह में एक मासिक दर दिनों द्वारा आनुपातिक है।"
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "किसी आइटम को समग्र रूप से कैसे आपूर्ति किया जाता है (खरीद, निर्माण, या खरीद और निर्माण), प्रति आइटम सेट किया जाता है, प्रति-पंक्ति आपूर्ति प्रकार के विपरीत।"
@@ -12779,6 +12779,9 @@ msgstr "अगला चालान {date} स्वचालित रूप �
 msgid "Next invoice {date} is created automatically, then posted and emailed."
 msgstr "अगला चालान {date} स्वचालित रूप से बनाया जाता है, फिर पोस्ट किया जाता है और ईमेल किया जाता है।"
 
+msgid "Next invoice {date} is created automatically, then posted and sent via Stripe."
+msgstr "अगला चालान {date} को स्वचालित रूप से बनाया जाता है, फिर पोस्ट किया जाता है और Stripe के माध्यम से भेजा जाता है।"
+
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "अगला चालान {date} स्वचालित रूप से बनाया जाता है, फिर पोस्ट किया जाता है।"
 
@@ -13661,6 +13664,9 @@ msgstr "सबसे पुराना पहले"
 
 msgid "On"
 msgstr "चालू"
+
+msgid "On {sentDate}"
+msgstr "{sentDate} को"
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "कटओवर दिन पर, नीचे दी गई चेकलिस्ट को क्रम में काम करें। स्वीकृति परीक्षण आपकी स्कोप में शामिल आवश्यकताओं से आते हैं। समर्थन विवरण नीचे हैं।"
@@ -14949,7 +14955,7 @@ msgstr "टिप्पणी पोस्ट करें"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
-msgstr ""
+msgstr "ड्राफ्ट रन {0} पोस्ट करें"
 
 msgid "Post Invoice"
 msgstr "चालान पोस्ट करें"
@@ -18139,6 +18145,9 @@ msgstr "भेजा गया:"
 msgid "Sent to each recipient who has email notifications turned on."
 msgstr "प्रत्येक प्राप्तकर्ता को भेजा जाता है जिसके पास ईमेल सूचनाएं चालू हैं।"
 
+msgid "Sent via Stripe"
+msgstr "Stripe के माध्यम से भेजा गया"
+
 msgid "Sequences"
 msgstr "अनुक्रम"
 
@@ -19842,9 +19851,6 @@ msgstr "अवधि एक इकाई के आर्थिक जीवन 
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "अवधि आर्थिक जीवन के कम से कम {threshold} है ({actual})"
 
-msgid "Terms"
-msgstr "शर्तें"
-
 msgid "Terms and Privacy"
 msgstr "शर्तें और गोपनीयता"
 
@@ -20695,9 +20701,6 @@ msgstr "वह प्रणाली जिसका उपयोग कंप�
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "सिस्टम आपके कॉन्फ़िगर किए गए सिस्टम में हर इन-स्कोप स्वीकृति परीक्षा पास करता है, आपके डेटा के साथ; डेटा सत्यापित है; और आप साइन ऑफ करते हैं। फिर लाइव जाएं।"
-
-msgid "The terms are fixed once the agreement is activated."
-msgstr "समझौता सक्रिय होने के बाद शर्तें तय हो जाती हैं।"
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "बिक्री RFQ, इसके कोटेशन, और परिणामी विक्रय आदेश को जोड़ने वाली श्रृंखला — एक संबंध, अपनी स्थिति के साथ एक दस्तावेज़ नहीं।"

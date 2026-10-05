@@ -6,8 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { datetime, redirect } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import {
@@ -59,15 +61,16 @@ async function refuseWhileOnRent(
   );
 }
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
-  });
-
-  const { fixedAssetId } = params;
-  if (!fixedAssetId) throw notFound("fixedAssetId not found");
-
-  const asset = await getFixedAsset(client, fixedAssetId);
+/** A redirect unless the asset can be taken out of service: not Disposed and
+ *  not out of service already. The loader and the action both ask — the form
+ *  can be submitted long after it was opened. */
+async function refuseUnlessInService(
+  request: Request,
+  client: SupabaseClient<Database>,
+  fixedAssetId: string,
+  companyId: string
+) {
+  const asset = await getFixedAsset(client, fixedAssetId, companyId);
   if (asset.error) {
     throw redirect(
       path.to.fixedAssets,
@@ -91,7 +94,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+}
 
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "accounting"
+  });
+
+  const { fixedAssetId } = params;
+  if (!fixedAssetId) throw notFound("fixedAssetId not found");
+
+  await refuseUnlessInService(request, client, fixedAssetId, companyId);
   await refuseWhileOnRent(request, fixedAssetId, companyId);
 
   return null;
@@ -142,6 +155,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  await refuseUnlessInService(request, client, fixedAssetId, companyId);
   await refuseWhileOnRent(request, fixedAssetId, companyId);
 
   const timeZone = await getCompanyTimeZone(client, companyId);

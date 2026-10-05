@@ -26,8 +26,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [agreement, line] = await Promise.all([
-    getRentalAgreement(client, id),
-    getRentalAgreementLine(client, lineId)
+    getRentalAgreement(client, id, companyId),
+    getRentalAgreementLine(client, lineId, companyId)
   ]);
 
   if (
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteRentalAgreementLine(client, lineId);
+  const result = await deleteRentalAgreementLine(client, lineId, companyId);
   if (result.error) {
     throw redirect(
       path.to.rentalAgreementDetails(id),

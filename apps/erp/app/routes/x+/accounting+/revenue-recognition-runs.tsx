@@ -14,7 +14,7 @@ import {
   VStack
 } from "@carbon/react";
 import { datetime, formatDate } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -90,7 +90,9 @@ export default function RevenueRecognitionRunsRoute() {
   const navigate = useNavigate();
   const confirmModal = useDisclosure();
   // The modal proposes the next period but lets the user pick another month
-  // end: a first run made late, or a period skipped on purpose.
+  // end: a first run made late, or a period skipped on purpose. Recognition
+  // runs are monthly, so any picked date snaps to its month end — the date
+  // the confirm text names is the one the run gets.
   const [periodEnd, setPeriodEnd] = useState(nextPeriodEnd);
 
   const canCreate =
@@ -146,7 +148,7 @@ export default function RevenueRecognitionRunsRoute() {
               aria-label={t`Period end`}
               value={parseDate(periodEnd)}
               onChange={(value) => {
-                if (value) setPeriodEnd(value.toString());
+                if (value) setPeriodEnd(endOfMonth(value).toString());
               }}
             />
           </div>

@@ -179,7 +179,15 @@ const PaymentForm = ({
     initialDeposit,
     t
   ]);
-  const depositIds = parseDepositValue(showDepositPicker ? deposit : "");
+  // With no picker the saved link round-trips untouched — a customer payment
+  // keeps its deposit until its customer changes.
+  const depositIds = parseDepositValue(
+    showDepositPicker
+      ? deposit
+      : isCustomer && customerId === initialValues.customerId
+        ? initialDeposit
+        : ""
+  );
   const typeOptions = [
     { label: t`Payment from Customer`, value: "customer-payment" },
     { label: t`Payment to Supplier`, value: "supplier-payment" },

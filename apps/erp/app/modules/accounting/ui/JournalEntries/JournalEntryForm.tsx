@@ -4,6 +4,7 @@
 
 import { ValidatedForm } from "@carbon/form";
 import { LabelWithHelp, Status } from "@carbon/react";
+import { isBalanced } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useStore } from "@nanostores/react";
 import { atom } from "nanostores";
@@ -13,6 +14,7 @@ import { DatePicker, Hidden, Input, Select } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import {
+  JOURNAL_BALANCE_TOLERANCE,
   journalEntrySourceTypes,
   journalEntryValidator
 } from "../../accounting.models";
@@ -119,8 +121,13 @@ const JournalEntryForm = ({
   const totalDebits = lines.reduce((sum, line) => sum + (line.debit || 0), 0);
   const totalCredits = lines.reduce((sum, line) => sum + (line.credit || 0), 0);
   const difference = totalDebits - totalCredits;
-  const isBalanced = Math.abs(difference) < 0.01;
-  const canPost = isBalanced && totalDebits !== 0;
+  // The server's own test: an entry the form calls balanced posts.
+  const balanced = isBalanced(
+    totalDebits,
+    totalCredits,
+    JOURNAL_BALANCE_TOLERANCE
+  );
+  const canPost = balanced && totalDebits !== 0;
 
   useEffect(() => {
     $postable.set({ journalEntryId, canPost });
@@ -277,7 +284,7 @@ const JournalEntryForm = ({
             className={`${journalLineCell.details} flex flex-wrap items-center gap-2 text-sm font-medium`}
           >
             <Trans>Totals</Trans>
-            {isBalanced && totalDebits > 0 ? (
+            {balanced && totalDebits > 0 ? (
               <Status color="green">
                 <Trans>Balanced</Trans>
               </Status>

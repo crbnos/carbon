@@ -19,8 +19,10 @@ import { path } from "~/utils/path";
  *  (`createContractFromSalesOrder` owns every guard). */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
+  // Creates a contract and marks the order's lines invoiced.
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+    create: "sales",
+    update: "sales"
   });
 
   const { orderId } = params;

@@ -1151,6 +1151,33 @@ describe("buildDepreciationLines", () => {
     // Bonus 60,000 in January, then 20% of the 60,000 basis over 12 months.
     expect(lines.map((line) => line.taxAmount)).toEqual([61000, 1000, 1000]);
   });
+
+  it("never depreciates before an asset placed in service after the last posted run", () => {
+    const lines = buildDepreciationLines(
+      [
+        {
+          ...baseAsset,
+          depreciationStartDate: "2025-04-15",
+          acquisitionDate: "2025-04-15",
+          bonusDepreciationPercent: 50
+        }
+      ],
+      "2025-06-30",
+      "2025-01-31",
+      true,
+      new Map(),
+      2
+    );
+    // Nothing for February or March: the bonus lands in April, the month the
+    // asset went into service, not in the month after the last posted run.
+    expect(lines.map((line) => line.periodEnd)).toEqual([
+      "2025-04-30",
+      "2025-05-31",
+      "2025-06-30"
+    ]);
+    expect(lines[0].taxAmount).toBeGreaterThanOrEqual(60000);
+    expect(lines.slice(1).every((line) => line.taxAmount! < 60000)).toBe(true);
+  });
 });
 
 describe("diffJournalLines", () => {

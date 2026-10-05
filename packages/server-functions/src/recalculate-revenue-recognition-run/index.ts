@@ -12,8 +12,10 @@ import { datetime, equals } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { lockContractPositions } from "../lib/contract-ledger";
 import {
   claimScheduleRows,
+  lockRecognitionProposals,
   RUN_ROW_SYNTHESIZERS,
   type RunProposalContext,
   selectDueScheduleRows
@@ -58,13 +60,18 @@ const recalculateRevenueRecognitionRun = defineServerFn({
         userId
       };
 
-      // Synthesizers first: they take the company's proposal lock, so a
+      // The synthesizers' locks, in their order, before anything else: a
       // concurrent proposal cannot claim a row between the release and the
-      // claim below.
-      for (const synthesize of RUN_ROW_SYNTHESIZERS) {
-        await synthesize(trx, ctx);
-      }
+      // claim below, and an invoice void (which takes the position lock and
+      // then deletes held run lines) cannot deadlock with the release.
+      await lockRecognitionProposals(trx, companyId);
+      await lockContractPositions(trx, companyId);
 
+      // Release the run's own rows BEFORE the synthesizers. A synthesizer
+      // that drops a held row (a contract month an amendment replaced) keeps
+      // Draft runs in step and deletes a run it empties — which, with the run
+      // still holding only that row, deleted this run and failed the claim
+      // below on its foreign key.
       const before = await trx
         .selectFrom("revenueRecognitionRunLine")
         .select(["id", "scheduleId", "amount"])
@@ -87,6 +94,10 @@ const recalculateRevenueRecognitionRun = defineServerFn({
           .where("runId", "=", run.id)
           .where("companyId", "=", companyId)
           .execute();
+      }
+
+      for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+        await synthesize(trx, ctx);
       }
 
       const due = await selectDueScheduleRows(trx, ctx);

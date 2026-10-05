@@ -355,7 +355,8 @@ const InventoryStorageUnits = ({
                 <Trans>Print Label</Trans>
               </DropdownMenuItem>
             )}
-            {item.trackedEntityId && canCapitalize && (
+            {/* A fixed asset is one serialized unit; a batch row is many. */}
+            {item.trackedEntityId && isSerial && canCapitalize && (
               <DropdownMenuItem asChild>
                 <Link to={capitalizeHref(item)}>
                   <DropdownMenuIcon icon={<LuBuilding2 />} />

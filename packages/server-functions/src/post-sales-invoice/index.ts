@@ -46,7 +46,7 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { NotFoundError } from "../errors";
+import { InvalidInputError, NotFoundError } from "../errors";
 import { calculateCOGS } from "../lib/calculate-cogs";
 import {
   loadContractPositions,
@@ -79,6 +79,9 @@ export const postSalesInvoiceInput = z.object({
   type: z.enum(["post", "void"]).default("post"),
   invoiceId: z.string()
 });
+
+const RECOGNIZED_REVENUE_VOID_ERROR =
+  "Invoice has recognized revenue; reverse its revenue recognition run first";
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
 const postSalesInvoice = defineServerFn({
@@ -2501,9 +2504,7 @@ const postSalesInvoice = defineServerFn({
               .where("status", "=", "Posted")
               .executeTakeFirst();
             if (recognized) {
-              throw new Error(
-                "Invoice has recognized revenue; reverse its revenue recognition run first"
-              );
+              throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
             }
           }
 
@@ -2570,19 +2571,26 @@ const postSalesInvoice = defineServerFn({
 
           await db.transaction().execute(async (trx) => {
             if (invoiceLineIds.length > 0) {
-              // Every row left is Planned (Posted refused above); a Draft
-              // recognition run may hold some, and its lines go with them.
-              const held = await trx
+              // Re-checked under lock: a run may have posted since the check
+              // above, and its rows must never be dropped. Every row left is
+              // Planned; a Draft recognition run may hold some, and its lines
+              // go with them (a Draft is a proposal, not a commitment).
+              const rows = await trx
                 .selectFrom("revenueRecognitionSchedule")
-                .select("id")
+                .select(["id", "status", "runLineId"])
                 .where("companyId", "=", companyId)
                 .where("salesInvoiceLineId", "in", invoiceLineIds)
-                .where("runLineId", "is not", null)
+                .forUpdate()
                 .execute();
+              if (rows.some((row) => row.status === "Posted")) {
+                throw new InvalidInputError(RECOGNIZED_REVENUE_VOID_ERROR);
+              }
               await syncDraftRecognitionRuns(trx, {
                 companyId,
                 userId,
-                deletedScheduleIds: held.map((row) => row.id)
+                deletedScheduleIds: rows
+                  .filter((row) => row.runLineId !== null)
+                  .map((row) => row.id)
               });
               await trx
                 .deleteFrom("revenueRecognitionSchedule")

@@ -26,7 +26,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { DateTime, Hyperlink } from "~/components";
-import { useRouteData, useUser } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
@@ -55,7 +55,6 @@ const ContractInvoices = ({
   computedSchedule
 }: ContractInvoicesProps) => {
   const { t } = useLingui();
-  const { company } = useUser();
 
   const contractId = contract.id ?? "";
   const routeData = useRouteData<ContractRouteData>(
@@ -64,7 +63,7 @@ const ContractInvoices = ({
   const invoiceLinks = routeData?.invoiceLinks ?? {};
   const creditMemoLinks = routeData?.creditMemoLinks ?? {};
 
-  const currencyCode = contract.currencyCode ?? company.baseCurrencyCode;
+  const { currencyCode } = contract;
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -84,7 +83,7 @@ const ContractInvoices = ({
             lines={lines}
             schedule={schedule}
             computedSchedule={computedSchedule}
-            lineTotals={routeData?.lineTotals ?? {}}
+            residuals={routeData?.residuals ?? {}}
           />
         </CardContent>
       </Card>

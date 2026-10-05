@@ -49,10 +49,16 @@ const RentalAgreementSummary = ({
   const billed = periods
     .filter((period) => period.status === "Invoiced")
     .reduce((sum, period) => sum + Number(period.amount ?? 0), 0);
-  // Only a sum of like rates means anything: shown when every unit is Monthly.
+  // Only a sum of like rates means anything: shown when every unit still
+  // billing (Pending or On Rent) is Monthly. A returned or sold unit bills
+  // no more rent.
+  const billingLines = lines.filter(
+    (line) => line.status === "Pending" || line.status === "On Rent"
+  );
   const monthlyRent =
-    lines.length > 0 && lines.every((line) => line.rateUnit === "Month")
-      ? lines.reduce((sum, line) => sum + Number(line.rate), 0)
+    billingLines.length > 0 &&
+    billingLines.every((line) => line.rateUnit === "Month")
+      ? billingLines.reduce((sum, line) => sum + Number(line.rate), 0)
       : null;
   const invoicingSchedule = invoicingScheduleText(
     rentalAgreement.status,
@@ -275,6 +281,13 @@ function invoicingScheduleText(
   }
   const date = <DateTime value={nextDueOn} variant="date" />;
   switch (mode) {
+    case "Post and Send via Stripe":
+      return (
+        <Trans>
+          Next invoice {date} is created automatically, then posted and sent via
+          Stripe.
+        </Trans>
+      );
     case "Post and Email":
       return (
         <Trans>

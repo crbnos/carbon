@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const agreement = await getRentalAgreement(client, id);
+  const agreement = await getRentalAgreement(client, id, companyId);
   if (agreement.error || agreement.data?.companyId !== companyId) {
     return data(
       {},
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteRentalAgreement(client, id);
+  const result = await deleteRentalAgreement(client, id, companyId);
   if (result.error) {
     return data(
       {},

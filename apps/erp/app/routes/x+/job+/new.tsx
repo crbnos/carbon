@@ -120,6 +120,16 @@ export async function action({ request }: ActionFunctionArgs) {
       ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
           id: data.modelUploadId
         })
+      : null,
+    data.fixedAssetClassId
+      ? requireCompanyRecord(serviceRole, "fixedAssetClass", companyId, {
+          id: data.fixedAssetClassId
+        })
+      : null,
+    data.fixedAssetId
+      ? requireCompanyRecord(serviceRole, "fixedAsset", companyId, {
+          id: data.fixedAssetId
+        })
       : null
   ]);
 

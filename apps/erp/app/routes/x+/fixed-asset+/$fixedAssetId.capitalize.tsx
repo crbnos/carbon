@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!fixedAssetId) throw notFound("fixedAssetId not found");
 
   const [asset, cipCosts, assetClasses, timeZone] = await Promise.all([
-    getFixedAsset(client, fixedAssetId),
+    getFixedAsset(client, fixedAssetId, companyId),
     getFixedAssetCipCosts(client, fixedAssetId, companyId),
     // The in-service classes an asset under construction can move into.
     // `getFixedAssetClassesList` does not select `isConstructionInProgress`,

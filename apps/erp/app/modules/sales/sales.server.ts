@@ -701,6 +701,21 @@ export async function contractInvoicingDefaults(
   };
 }
 
+/** The invoicing terms a Draft takes when its customer changes: the new
+ *  customer's `contractInvoicingDefaults`, every one of them — the old
+ *  customer's bill-to, contact, addresses and payment terms would be wrong,
+ *  so a default the new customer lacks is cleared, not kept. Null when the
+ *  customer did not change. Shared by setup step 1 and the properties
+ *  panel, so both replace the same set. */
+export async function contractCustomerChange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  change: { from: string | null; to: string | null }
+): Promise<Awaited<ReturnType<typeof contractInvoicingDefaults>> | null> {
+  if (!change.to || change.to === change.from) return null;
+  return contractInvoicingDefaults(client, companyId, change.to);
+}
+
 /** Confirm, schedule edits, amend, cancel and revert — the
  *  `post-customer-contract` server function, run as the signed-in user so
  *  its permission check applies. Never throws: `{ data, error }`. */

@@ -92,6 +92,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Activation stamps `classificationInputs`, so an unstamped line is one
+  // still to be classified. The filter closes the gap between the status
+  // read above and this write: an agreement activated in between matches no
+  // row, and its commenced treatment is never overwritten.
   const update = await serviceRole
     .from("rentalAgreementLine")
     .update({
@@ -102,14 +106,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
       updatedAt: datetime.timestamp()
     })
     .eq("id", lineId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .is("classificationInputs", null)
+    .select("id")
+    .maybeSingle();
 
   if (update.error) {
+    logger.error("classification override failed", {
+      companyId,
+      lineId,
+      error: update.error
+    });
     throw redirect(
       path.to.rentalAgreementLine(id, lineId),
       await flash(
         request,
         error(update.error, "Failed to override the classification")
+      )
+    );
+  }
+
+  if (!update.data) {
+    throw redirect(
+      path.to.rentalAgreementLine(id, lineId),
+      await flash(
+        request,
+        error(
+          null,
+          "The classification is fixed once the agreement is activated"
+        )
       )
     );
   }

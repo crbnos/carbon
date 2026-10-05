@@ -182,6 +182,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The asset target ids come from the form: prove they are this company's
+  // before the job points at them. The service role, since a production user
+  // may not hold accounting view and RLS would read their own class as absent.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    validation.data.fixedAssetClassId
+      ? requireCompanyRecord(serviceRole, "fixedAssetClass", companyId, {
+          id: validation.data.fixedAssetClassId
+        })
+      : null,
+    validation.data.fixedAssetId
+      ? requireCompanyRecord(serviceRole, "fixedAsset", companyId, {
+          id: validation.data.fixedAssetId
+        })
+      : null
+  ]);
+
   // The same Make to Asset item rule the job form, release and completion
   // apply, so a saved target or item is refused with the field it is about.
   if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
@@ -202,6 +219,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await updateJob(client, {
     id,
+    companyId,
     quantity: validation.data.quantity,
     scrapQuantity: validation.data.scrapQuantity,
     itemId: validation.data.itemId,

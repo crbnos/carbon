@@ -52,6 +52,11 @@ vi.mock("~/modules/invoicing", () => ({
   getOpenPurchaseInvoicesForSupplier: h.purchase,
   getAvailableOnAccountCreditSources: h.funding,
   getStagedCreditsForPayment: h.staged,
+  getOpenReimbursementsForEmployee: vi.fn(async () => ({
+    data: [],
+    error: null
+  })),
+  getSettlementRelatedItems: vi.fn(async () => ({})),
   isPaymentLocked: vi.fn(),
   PaymentApplications: vi.fn(),
   PaymentApplyTable: vi.fn(),
@@ -61,7 +66,12 @@ vi.mock("~/modules/invoicing", () => ({
   upsertPayment: vi.fn()
 }));
 vi.mock("~/modules/invoicing/invoicing.server", () => ({
+  checkDepositDocument: vi.fn(async () => null),
   getDepositDocuments: vi.fn(async () => [])
+}));
+vi.mock("~/components/DocumentPage", () => ({
+  DocumentPage: vi.fn(),
+  DocumentSidebar: vi.fn()
 }));
 
 import { loader } from "./$paymentId";

@@ -11,6 +11,7 @@ import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
   emailPostedInvoice,
+  findInvoicesToAutomate,
   postSalesInvoiceUnattended,
   sendPostedInvoiceViaStripe
 } from "../../../invoicing/automate-invoice";
@@ -234,23 +235,46 @@ export const recurringBillingFunction = inngest.createFunction(
 
       if (companyFailed) failed.push(company.id);
 
-      // Drafts, then posts and emails (or sends via Stripe) per the source's
-      // invoice automation (spec 2026-10-02-rental-invoice-automation). Draft
-      // Only drafts wait for a person and are not reported; a draft the
-      // planner held is.
+      // Posts and emails (or sends via Stripe) per the source's invoice
+      // automation (spec 2026-10-02-rental-invoice-automation). Draft Only
+      // drafts wait for a person and are not reported; a draft the planner
+      // held this run is.
       const results: InvoiceRunResult[] = [];
       for (const invoice of invoices) {
-        if (invoice.mode === "Draft Only") continue;
+        if (invoice.mode === "Draft Only" || !invoice.holdReason) continue;
+        results.push({
+          invoiceId: invoice.invoiceId,
+          sourceId: invoice.sourceId,
+          outcome: "held"
+        });
+      }
+
+      // What to automate comes from the database, not from the drafting
+      // steps above: a drafting step that is retried drafts nothing new, and
+      // one that failed returns nothing, yet the drafts an earlier attempt
+      // committed still need posting. This picks up every unheld job-drafted
+      // Draft (and reports a Pending one left by a crashed claim as held).
+      let toAutomate: Awaited<ReturnType<typeof findInvoicesToAutomate>> = [];
+      try {
+        toAutomate = await step.run(`automation-candidates-${company.id}`, () =>
+          findInvoicesToAutomate(getJobDatabaseClient(), company.id)
+        );
+      } catch (error) {
+        logger.error("Failed to find invoices to automate for {company}", {
+          company: company.name,
+          companyId: company.id,
+          error
+        });
+        if (!companyFailed) failed.push(company.id);
+      }
+
+      for (const invoice of toAutomate) {
         const result = (outcome: InvoiceRunResult["outcome"]) =>
           results.push({
             invoiceId: invoice.invoiceId,
             sourceId: invoice.sourceId,
             outcome
           });
-        if (invoice.holdReason) {
-          result("held");
-          continue;
-        }
 
         try {
           const posted = await step.run(`post-${invoice.invoiceId}`, () =>

@@ -37,7 +37,10 @@ import {
   paymentValidator,
   upsertPayment
 } from "~/modules/invoicing";
-import { getDepositDocuments } from "~/modules/invoicing/invoicing.server";
+import {
+  checkDepositDocument,
+  getDepositDocuments
+} from "~/modules/invoicing/invoicing.server";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -261,6 +264,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.payment(paymentId),
       await flash(request, error(null, "Only draft payments can be edited"))
     );
+  }
+
+  // The deposit ids arrive as hidden fields: never trust them to name this
+  // company's, this customer's, open document. The payment's own saved link
+  // stays valid after its document closes.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    validation.data,
+    existing.data
+  );
+  if (depositError) {
+    return validationError({
+      fieldErrors: { depositDocument: depositError }
+    });
   }
 
   try {

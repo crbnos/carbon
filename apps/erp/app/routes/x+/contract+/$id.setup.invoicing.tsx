@@ -21,7 +21,7 @@ export default function ContractSetupInvoicingRoute() {
 
   const routeData = useRouteData<ContractRouteData>(path.to.contract(id));
   if (!routeData) return null;
-  const { contract, lines, schedule, computedSchedule, lineTotals } = routeData;
+  const { contract, lines, schedule, computedSchedule, residuals } = routeData;
 
   const plannedFirstInvoice = computedSchedule
     ? (computedSchedule.find((invoice) => invoice.status === "Planned")
@@ -49,7 +49,7 @@ export default function ContractSetupInvoicingRoute() {
           lines={lines}
           schedule={schedule}
           computedSchedule={computedSchedule}
-          lineTotals={lineTotals}
+          residuals={residuals}
         />
       </ContractSetupSection>
     </ContractSetupBody>

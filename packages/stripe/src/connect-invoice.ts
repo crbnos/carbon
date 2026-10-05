@@ -9,6 +9,7 @@
 
 import type { Database } from "@carbon/database";
 import { formatPercent } from "@carbon/utils";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 
 /**
  * One Carbon `salesInvoiceLine`, as the Stripe mapping needs to see it.
@@ -146,4 +147,56 @@ export function toStripeInvoiceLines(
         }
       };
     });
+}
+
+function parseBusinessDate(
+  date: string | null | undefined
+): CalendarDate | undefined {
+  if (!date) return undefined;
+  try {
+    return parseDate(date.slice(0, 10));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The due date a Stripe send carries, or undefined to let Stripe apply the
+ * account's default terms. Stripe refuses a due date in the past, so one on or
+ * before the company's `today` is dropped, as is one more than five years out
+ * — the same rule the post modal applies before asking for a due date.
+ *
+ * Decided on whole calendar days, never on the current instant: every write of
+ * the send reuses one idempotency key, and Stripe refuses a reused key whose
+ * parameters changed. A retry inside the key's 24 hours therefore sends the
+ * same due date unless it straddles the company's midnight.
+ */
+export function stripeDueDate(
+  date: string | null | undefined,
+  today: CalendarDate
+): string | undefined {
+  const day = parseBusinessDate(date);
+  if (!day) return undefined;
+  if (day.compare(today) <= 0) return undefined;
+  if (day.compare(today.add({ years: 5 })) > 0) return undefined;
+  return day.toString();
+}
+
+/**
+ * The "date of issue" a Stripe send prints, or undefined to let Stripe date
+ * the invoice when it is finalized. An issue date of today or later is left
+ * unset — Stripe refuses a future `effective_at`, and finalizing today prints
+ * today anyway — never replaced with the current instant, which would change
+ * on every retry and break the send's idempotency key. One more than five
+ * years back is dropped too.
+ */
+export function stripeEffectiveDate(
+  date: string | null | undefined,
+  today: CalendarDate
+): string | undefined {
+  const day = parseBusinessDate(date);
+  if (!day) return undefined;
+  if (day.compare(today) >= 0) return undefined;
+  if (day.compare(today.subtract({ years: 5 })) < 0) return undefined;
+  return day.toString();
 }

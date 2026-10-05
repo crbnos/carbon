@@ -3762,6 +3762,7 @@ export async function updateJob(
   client: SupabaseClient<Database>,
   input: {
     id: string;
+    companyId: string;
     updatedBy: string;
     quantity?: number;
     dueDate?: string | null;
@@ -3786,7 +3787,7 @@ export async function updateJob(
     fixedAssetId?: string | null;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
-  const { id, updatedBy, ...updates } = input;
+  const { id, companyId, updatedBy, ...updates } = input;
 
   let priority = updates.priority;
   if (
@@ -3797,6 +3798,7 @@ export async function updateJob(
       .from("job")
       .select("dueDate, deadlineType, companyId, locationId")
       .eq("id", id)
+      .eq("companyId", companyId)
       .single();
 
     if (existing.data) {
@@ -3821,6 +3823,7 @@ export async function updateJob(
       })
     )
     .eq("id", id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }

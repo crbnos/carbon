@@ -796,8 +796,12 @@ const postReceipt = defineServerFn({
                       round(Number(assetRecord.data.acquisitionCost) - cipCost)
                     )
                   );
+                  continue;
                 }
-                continue;
+                // No CIP cost row for this receipt (posted before the class
+                // was a CIP class): the cost still came in through this
+                // receipt, so back it out like any other asset below rather
+                // than leave it on the asset.
               }
 
               const newAcquisitionCost = Math.max(

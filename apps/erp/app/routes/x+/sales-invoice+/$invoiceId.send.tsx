@@ -14,8 +14,9 @@ import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "sales-invoice-send");
 
-// Re-sends a posted invoice whose automated email failed. The automate job
-// skips posting an already-posted invoice and goes straight to the email.
+// Re-sends a posted invoice whose send failed. The automate job skips posting
+// an already-posted invoice and resolves the channel itself: Stripe when the
+// invoice's recurring source sends via Stripe, else email.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
@@ -55,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (invoice.data.sentAt) {
     throw redirect(
       redirectTo,
-      await flash(request, error(null, "This invoice has already been emailed"))
+      await flash(request, error(null, "This invoice has already been sent"))
     );
   }
 
@@ -63,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await trigger("invoice-automate", {
       companyId,
       invoiceId,
-      mode: "Post and Email"
+      resend: true
     });
   } catch (err) {
     logger.error("Failed to queue invoice send", {

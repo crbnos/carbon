@@ -38,8 +38,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: _id, ...charge } = validation.data;
 
   const [agreement, line] = await Promise.all([
-    getRentalAgreement(client, id),
-    getRentalAgreementLine(client, charge.rentalAgreementLineId)
+    getRentalAgreement(client, id, companyId),
+    getRentalAgreementLine(client, charge.rentalAgreementLineId, companyId)
   ]);
   if (
     agreement.error ||

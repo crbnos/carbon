@@ -667,8 +667,9 @@ type RentalCommencementPreviewProps = {
 };
 
 /** The Activate confirmation's commencement journal preview (spec §4), one
- *  per line that would classify Sale. Nothing renders when every line
- *  is Rental. */
+ *  per line that would classify Sale, under a warning when the agreement is
+ *  not in the company's base currency (activation refuses it). Nothing
+ *  renders when every line is Rental and the currency is the base. */
 export function RentalCommencementPreview({
   rentalAgreement,
   lines,
@@ -691,27 +692,34 @@ export function RentalCommencementPreview({
     }))
     .filter(({ lease }) => lease.classification === "Sale");
 
-  if (salesType.length === 0) return null;
-
+  // Activation refuses every agreement outside the base currency, whatever
+  // its units' treatment.
   const isForeignCurrency =
     !!company.baseCurrencyCode && currencyCode !== company.baseCurrencyCode;
+  const foreignCurrencyWarning = isForeignCurrency ? (
+    <p className="text-sm text-destructive">
+      <Trans>
+        A rental agreement must be in the company's base currency to be
+        activated. Change the agreement currency first.
+      </Trans>
+    </p>
+  ) : null;
+
+  if (salesType.length === 0) {
+    return foreignCurrencyWarning ? (
+      <div className="mt-4">{foreignCurrencyWarning}</div>
+    ) : null;
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-4">
+      {foreignCurrencyWarning}
       <p className="text-sm">
         <Trans>
           These units are treated as sales. Activating derecognizes each one and
           posts its commencement journal:
         </Trans>
       </p>
-      {isForeignCurrency && (
-        <p className="text-sm text-destructive">
-          <Trans>
-            A rental treated as a sale must be in the company's base currency.
-            Change the agreement currency or override the treatment.
-          </Trans>
-        </p>
-      )}
       {salesType.map(({ line, inputs, lease }) => {
         const label =
           [line.fixedAsset?.fixedAssetId, line.fixedAsset?.name]

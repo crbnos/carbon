@@ -8654,12 +8654,14 @@ export async function getRentalAgreements(
 /** @mcp read */
 export async function getRentalAgreement(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("rentalAgreements")
     .select("*")
     .eq("id", rentalAgreementId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -8749,6 +8751,7 @@ export async function updateRentalAgreement(
     "id" | "rentalAgreementId"
   > & {
     id: string;
+    companyId: string;
     updatedBy: string;
     customFields?: Json;
   }
@@ -8757,6 +8760,7 @@ export async function updateRentalAgreement(
     .from("rentalAgreement")
     .select("status")
     .eq("id", rentalAgreement.id)
+    .eq("companyId", rentalAgreement.companyId)
     .single();
   if (current.error) return current;
   if (current.data.status !== "Draft") {
@@ -8778,6 +8782,7 @@ export async function updateRentalAgreement(
       })
     )
     .eq("id", rentalAgreement.id)
+    .eq("companyId", rentalAgreement.companyId)
     .eq("status", "Draft")
     .select("id")
     .single();
@@ -8852,12 +8857,14 @@ export async function updateRentalAgreementInvoiceAutomation(
  */
 export async function deleteRentalAgreement(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("rentalAgreement")
     .delete()
     .eq("id", rentalAgreementId)
+    .eq("companyId", companyId)
     .eq("status", "Draft")
     .select("id")
     .single();
@@ -8866,7 +8873,8 @@ export async function deleteRentalAgreement(
 /** @mcp read */
 export async function getRentalAgreementLines(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("rentalAgreementLine")
@@ -8874,13 +8882,15 @@ export async function getRentalAgreementLines(
       "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name, thumbnailPath)"
     )
     .eq("rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
 
 /** @mcp read */
 export async function getRentalAgreementLine(
   client: SupabaseClient<Database>,
-  rentalAgreementLineId: string
+  rentalAgreementLineId: string,
+  companyId: string
 ) {
   return client
     .from("rentalAgreementLine")
@@ -8888,6 +8898,7 @@ export async function getRentalAgreementLine(
       "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name, thumbnailPath)"
     )
     .eq("id", rentalAgreementLineId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -8906,15 +8917,17 @@ export async function upsertRentalAgreementLine(
       })
     | (Omit<z.infer<typeof rentalAgreementLineValidator>, "id" | "itemId"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
-  let companyId: string;
+  const { companyId } = line;
   if ("id" in line) {
     const existing = await client
       .from("rentalAgreementLine")
-      .select("companyId, rentalAgreementId")
+      .select("rentalAgreementId")
       .eq("id", line.id)
+      .eq("companyId", companyId)
       .single();
     if (existing.error) return existing;
     if (existing.data.rentalAgreementId !== line.rentalAgreementId) {
@@ -8923,9 +8936,6 @@ export async function upsertRentalAgreementLine(
         "This unit does not belong to this rental agreement"
       );
     }
-    companyId = existing.data.companyId;
-  } else {
-    companyId = line.companyId;
   }
 
   const agreement = await client
@@ -9016,12 +9026,14 @@ export async function upsertRentalAgreementLine(
  */
 export async function deleteRentalAgreementLine(
   client: SupabaseClient<Database>,
-  rentalAgreementLineId: string
+  rentalAgreementLineId: string,
+  companyId: string
 ) {
   const line = await client
     .from("rentalAgreementLine")
     .select("id, rentalAgreement!inner(status)")
     .eq("id", rentalAgreementLineId)
+    .eq("companyId", companyId)
     .single();
   if (line.error) return line;
   if (line.data.rentalAgreement.status !== "Draft") {
@@ -9034,7 +9046,8 @@ export async function deleteRentalAgreementLine(
   return client
     .from("rentalAgreementLine")
     .delete()
-    .eq("id", rentalAgreementLineId);
+    .eq("id", rentalAgreementLineId)
+    .eq("companyId", companyId);
 }
 
 /**
@@ -9043,7 +9056,8 @@ export async function deleteRentalAgreementLine(
  */
 export async function getRentalAgreementCharges(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("rentalAgreementCharge")
@@ -9051,6 +9065,7 @@ export async function getRentalAgreementCharges(
       "*, rentalAgreementLine!inner(id, rentalAgreementId, fixedAsset(fixedAssetId, name))"
     )
     .eq("rentalAgreementLine.rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
     .order("chargeDate", { ascending: true });
 }
 
@@ -9072,6 +9087,7 @@ export async function upsertRentalAgreementCharge(
       })
     | (Omit<z.infer<typeof rentalAgreementChargeValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
       })
 ) {
@@ -9083,8 +9099,44 @@ export async function upsertRentalAgreementCharge(
     taxPercent: charge.taxPercent
   };
 
+  // The agreement is the line's own, read under the caller's company.
+  const line = await client
+    .from("rentalAgreementLine")
+    .select("id, rentalAgreementId, rentalAgreement!inner(status)")
+    .eq("id", charge.rentalAgreementLineId)
+    .eq("companyId", charge.companyId)
+    .single();
+  if (line.error) return line;
+  const status = line.data.rentalAgreement.status;
+  if (status !== "Draft" && status !== "Active") {
+    return rentalRefusal(
+      "RENTAL_AGREEMENT_NOT_OPEN",
+      "Charges can only be added to or changed on an open rental agreement"
+    );
+  }
+
   if ("id" in charge) {
-    // A charge already on an invoice is fixed; the invoice line is the record.
+    // A charge moves only between units of its own agreement.
+    const existing = await client
+      .from("rentalAgreementCharge")
+      .select("rentalAgreementLine!inner(rentalAgreementId)")
+      .eq("id", charge.id)
+      .eq("companyId", charge.companyId)
+      .single();
+    if (existing.error) return existing;
+    if (
+      existing.data.rentalAgreementLine.rentalAgreementId !==
+      line.data.rentalAgreementId
+    ) {
+      return rentalRefusal(
+        "RENTAL_CHARGE_WRONG_AGREEMENT",
+        "A charge can only move to a unit on its own rental agreement"
+      );
+    }
+
+    // A charge already on an invoice is fixed; the invoice line is the
+    // record. Only a `Charge` is edited here — a Purchase Option charge is
+    // written by Sell to Customer alone.
     return client
       .from("rentalAgreementCharge")
       .update(
@@ -9095,25 +9147,11 @@ export async function upsertRentalAgreementCharge(
         })
       )
       .eq("id", charge.id)
+      .eq("companyId", charge.companyId)
+      .eq("chargeType", "Charge")
       .is("salesInvoiceLineId", null)
       .select("id")
       .single();
-  }
-
-  // The agreement is the line's own, read under the caller's company.
-  const line = await client
-    .from("rentalAgreementLine")
-    .select("id, rentalAgreement!inner(status)")
-    .eq("id", charge.rentalAgreementLineId)
-    .eq("companyId", charge.companyId)
-    .single();
-  if (line.error) return line;
-  const status = line.data.rentalAgreement.status;
-  if (status !== "Draft" && status !== "Active") {
-    return rentalRefusal(
-      "RENTAL_AGREEMENT_NOT_OPEN",
-      "Charges can only be added to an open rental agreement"
-    );
   }
 
   return client
@@ -9131,17 +9169,35 @@ export async function upsertRentalAgreementCharge(
 }
 
 /**
- * A charge that has been invoiced stays — void or delete the invoice first.
+ * A charge that has been invoiced stays — void or delete the invoice first —
+ * and only an open (Draft or Active) agreement's charges can be removed.
  * @mcp delete
  */
 export async function deleteRentalAgreementCharge(
   client: SupabaseClient<Database>,
-  rentalAgreementChargeId: string
+  rentalAgreementChargeId: string,
+  companyId: string
 ) {
+  const charge = await client
+    .from("rentalAgreementCharge")
+    .select("id, rentalAgreementLine!inner(rentalAgreement!inner(status))")
+    .eq("id", rentalAgreementChargeId)
+    .eq("companyId", companyId)
+    .single();
+  if (charge.error) return charge;
+  const status = charge.data.rentalAgreementLine.rentalAgreement.status;
+  if (status !== "Draft" && status !== "Active") {
+    return rentalRefusal(
+      "RENTAL_AGREEMENT_NOT_OPEN",
+      "Charges can only be removed from an open rental agreement"
+    );
+  }
+
   return client
     .from("rentalAgreementCharge")
     .delete()
     .eq("id", rentalAgreementChargeId)
+    .eq("companyId", companyId)
     .is("salesInvoiceLineId", null)
     .select("id")
     .single();
@@ -9153,7 +9209,8 @@ export async function deleteRentalAgreementCharge(
  */
 export async function getRentalBillingPeriods(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("rentalBillingPeriod")
@@ -9161,6 +9218,7 @@ export async function getRentalBillingPeriods(
       "*, rentalAgreementLine!inner(id, rentalAgreementId, fixedAsset(fixedAssetId, name))"
     )
     .eq("rentalAgreementLine.rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
     .order("periodStart", { ascending: true })
     .order("isAdjustment", { ascending: true });
 }
@@ -9238,9 +9296,14 @@ export async function upsertItemRentalRate(
 
 export async function deleteItemRentalRate(
   client: SupabaseClient<Database>,
-  itemRentalRateId: string
+  itemRentalRateId: string,
+  companyId: string
 ) {
-  return client.from("itemRentalRate").delete().eq("id", itemRentalRateId);
+  return client
+    .from("itemRentalRate")
+    .delete()
+    .eq("id", itemRentalRateId)
+    .eq("companyId", companyId);
 }
 
 /** Per item: the rate a rental unit starts at for each frequency. */
@@ -9440,7 +9503,8 @@ export async function getOnRentLineForAsset(
  */
 export async function getRentalAgreementDeposits(
   client: SupabaseClient<Database>,
-  rentalAgreementId: string
+  rentalAgreementId: string,
+  companyId: string
 ) {
   return client
     .from("payment")
@@ -9448,6 +9512,7 @@ export async function getRentalAgreementDeposits(
       "id, paymentId, paymentType, status, paymentDate, totalAmount, currencyCode"
     )
     .eq("rentalAgreementId", rentalAgreementId)
+    .eq("companyId", companyId)
     .order("paymentDate", { ascending: true });
 }
 
@@ -9859,22 +9924,6 @@ export async function updateContractInvoiceAutomation(
     .single();
 }
 
-/** Only a Draft contract can be deleted. Not an MCP tool: the route uses
- *  `deleteContractReleasingSalesOrderLines` (`sales.server.ts`), which also
- *  releases the sales-order lines the contract took. */
-export async function deleteContract(
-  client: SupabaseClient<Database>,
-  customerContractId: string
-) {
-  return client
-    .from("customerContract")
-    .delete()
-    .eq("id", customerContractId)
-    .eq("status", "Draft")
-    .select("id")
-    .single();
-}
-
 /**
  * Adds or changes a line on a Draft contract; the item must be a Service item.
  * Lines on an Active contract change through Amend, and a line never moves
@@ -10053,30 +10102,4 @@ export async function insertContractLines(
     }));
 
   return client.from("customerContractLine").insert(rows).select("id");
-}
-
-/** Removes a line from a Draft contract. Not an MCP tool: the route uses
- *  `deleteContractLineReleasingSalesOrderLine` (`sales.server.ts`), which
- *  also releases the sales-order line the contract line took. */
-export async function deleteContractLine(
-  client: SupabaseClient<Database>,
-  customerContractLineId: string
-) {
-  const line = await client
-    .from("customerContractLine")
-    .select("id, customerContract!inner(status)")
-    .eq("id", customerContractLineId)
-    .single();
-  if (line.error) return line;
-  if (line.data.customerContract.status !== "Draft") {
-    return contractRefusal(
-      "CONTRACT_NOT_DRAFT",
-      "Lines can only be removed from a Draft contract — use Amend"
-    );
-  }
-
-  return client
-    .from("customerContractLine")
-    .delete()
-    .eq("id", customerContractLineId);
 }

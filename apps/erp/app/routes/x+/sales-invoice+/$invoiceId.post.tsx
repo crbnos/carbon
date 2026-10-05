@@ -369,18 +369,32 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
+  // Put back OUR claim only. A failed response can still have posted (or the
+  // server function already reset it), so a bare reset to Draft could
+  // un-post a posted invoice.
+  const releasePendingClaim = async () => {
+    const released = await client
+      .from("salesInvoice")
+      .update({ status: "Draft" })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId)
+      .eq("status", "Pending");
+    if (released.error) {
+      logger.error("Failed to release a failed post", {
+        companyId,
+        invoiceId,
+        error: released.error
+      });
+    }
+  };
+
   try {
     const posted = await serverFns
       .system({ db: getDatabaseClient(), companyId, userId })
       .invoke("post-sales-invoice", { invoiceId });
 
     if (posted.error) {
-      await client
-        .from("salesInvoice")
-        .update({
-          status: "Draft"
-        })
-        .eq("id", invoiceId);
+      await releasePendingClaim();
 
       return {
         success: false,
@@ -389,12 +403,7 @@ export async function action(args: ActionFunctionArgs) {
     }
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   } catch (err) {
-    await client
-      .from("salesInvoice")
-      .update({
-        status: "Draft"
-      })
-      .eq("id", invoiceId);
+    await releasePendingClaim();
 
     return {
       success: false,
@@ -446,6 +455,40 @@ export async function action(args: ActionFunctionArgs) {
     salesInvoiceId: invoiceId
   });
 
+  // Past here the invoice is posted. A send that then fails leaves it posted
+  // but not sent: record why, so it shows "Not sent" with a Send retry — the
+  // same stamps invoice automation writes.
+  const sends = notification === "Email" || notification === "Stripe";
+  const stampSendError = async (sendError: string) => {
+    if (!sends) return;
+    const stamped = await serviceRole
+      .from("salesInvoice")
+      .update({ sendError })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Failed to stamp sales invoice send error", {
+        companyId,
+        invoiceId,
+        error: stamped.error
+      });
+    }
+  };
+  const stampSent = async (sentTo: string) => {
+    const stamped = await serviceRole
+      .from("salesInvoice")
+      .update({ sentAt: datetime.timestamp(), sentTo, sendError: null })
+      .eq("id", invoiceId)
+      .eq("companyId", companyId);
+    if (stamped.error) {
+      logger.error("Failed to stamp sales invoice as sent", {
+        companyId,
+        invoiceId,
+        error: stamped.error
+      });
+    }
+  };
+
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {
     validate: Intl.DateTimeFormat.supportedLocalesOf
@@ -480,6 +523,12 @@ export async function action(args: ActionFunctionArgs) {
       });
 
     if (documentFileUpload.error) {
+      logger.error("Failed to upload the sales invoice PDF", {
+        companyId,
+        invoiceId,
+        error: documentFileUpload.error
+      });
+      await stampSendError("Failed to upload the invoice PDF");
       return {
         success: false,
         message: "Failed to upload file"
@@ -499,13 +548,24 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (createDocument.error) {
+      logger.error("Failed to record the sales invoice PDF", {
+        companyId,
+        invoiceId,
+        error: createDocument.error
+      });
+      await stampSendError("Failed to record the invoice PDF");
       return {
         success: false,
         message: "Failed to create document"
       };
     }
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   } catch (err) {
+    logger.error("Failed to generate the sales invoice PDF", {
+      companyId,
+      invoiceId,
+      error: err
+    });
+    await stampSendError("Failed to generate the invoice PDF");
     return {
       success: false,
       message: "Failed to generate PDF"
@@ -516,6 +576,7 @@ export async function action(args: ActionFunctionArgs) {
     case "Email":
       try {
         if (!customerContact) {
+          await stampSendError("Customer contact is required");
           return {
             success: false,
             message: "Customer contact is required"
@@ -528,12 +589,14 @@ export async function action(args: ActionFunctionArgs) {
         ]);
 
         if (!customer?.data?.contact) {
+          await stampSendError("Failed to get customer contact");
           return {
             success: false,
             message: "Failed to get customer contact"
           };
         }
         if (!seller.data) {
+          await stampSendError("Failed to get user");
           return {
             success: false,
             message: "Failed to get user"
@@ -588,42 +651,18 @@ export async function action(args: ActionFunctionArgs) {
         });
 
         // trigger() only queues the email, so sentAt here means "queued".
-        const sentStamp = await serviceRole
-          .from("salesInvoice")
-          .update({
-            sentAt: datetime.timestamp(),
-            sentTo: [customer.data.contact.email, ...(ccSelections ?? [])]
-              .filter(Boolean)
-              .join(", "),
-            sendError: null
-          })
-          .eq("id", invoiceId)
-          .eq("companyId", companyId);
-        if (sentStamp.error) {
-          logger.error("Failed to stamp sales invoice as sent", {
-            companyId,
-            invoiceId,
-            error: sentStamp.error
-          });
-        }
+        await stampSent(
+          [customer.data.contact.email, ...(ccSelections ?? [])]
+            .filter(Boolean)
+            .join(", ")
+        );
       } catch (err) {
         logger.error("Failed to send sales invoice email", {
           companyId,
           invoiceId,
           error: err
         });
-        const errorStamp = await serviceRole
-          .from("salesInvoice")
-          .update({ sendError: "Failed to send email" })
-          .eq("id", invoiceId)
-          .eq("companyId", companyId);
-        if (errorStamp.error) {
-          logger.error("Failed to stamp sales invoice send error", {
-            companyId,
-            invoiceId,
-            error: errorStamp.error
-          });
-        }
+        await stampSendError("Failed to send email");
         return {
           success: false,
           message: "Failed to send email"
@@ -633,6 +672,7 @@ export async function action(args: ActionFunctionArgs) {
     case "Stripe": {
       try {
         if (!stripeSendContext) {
+          await stampSendError("The Stripe send was not prepared");
           return {
             success: false,
             message: "Invoice posted, but the Stripe send was not prepared"
@@ -665,6 +705,9 @@ export async function action(args: ActionFunctionArgs) {
           error: err,
           invoiceId
         });
+        await stampSendError(
+          err instanceof Error ? err.message : "Failed to send via Stripe"
+        );
         return {
           success: false,
           message: `Invoice posted, but failed to send via Stripe: ${
@@ -672,6 +715,10 @@ export async function action(args: ActionFunctionArgs) {
           }`
         };
       }
+
+      // Stripe emails the invoice itself; the stamp names the channel, as
+      // invoice automation's does.
+      await stampSent("Stripe");
 
       return {
         success: true,

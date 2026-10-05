@@ -67,6 +67,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+  // A later period's posted run already holds these months.
+  if (proposal.data.laterPostedRunId) {
+    throw redirect(
+      path.to.depreciationRun(depreciationRunId),
+      await flash(
+        request,
+        error(
+          null,
+          `${proposal.data.laterPostedRunId} is already posted for a later period and includes these months`
+        )
+      )
+    );
+  }
   const { lines } = proposal.data;
 
   if (lines.length === 0) {

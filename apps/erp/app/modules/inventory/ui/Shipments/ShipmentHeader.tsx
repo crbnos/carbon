@@ -197,7 +197,15 @@ function InvoiceButton({
         </Button>
       }
     >
-      <Await resolve={relatedItems}>
+      <Await
+        resolve={relatedItems}
+        errorElement={
+          // Without the invoices it is unknown whether one exists already.
+          <Button variant="secondary" isDisabled leftIcon={<LuCreditCard />}>
+            <Trans>Invoice</Trans>
+          </Button>
+        }
+      >
         {(resolved) => {
           const invoices = resolved?.invoices ?? [];
           if (

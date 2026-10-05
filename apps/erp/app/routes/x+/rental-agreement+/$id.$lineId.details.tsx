@@ -37,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [agreement, line] = await Promise.all([
-    getRentalAgreement(client, id),
-    getRentalAgreementLine(client, lineId)
+    getRentalAgreement(client, id, companyId),
+    getRentalAgreementLine(client, lineId, companyId)
   ]);
 
   if (
@@ -89,8 +89,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [agreement, existing] = await Promise.all([
-    getRentalAgreement(client, id),
-    getRentalAgreementLine(client, lineId)
+    getRentalAgreement(client, id, companyId),
+    getRentalAgreementLine(client, lineId, companyId)
   ]);
   if (
     agreement.error ||
@@ -131,6 +131,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ...line,
     rentalAgreementId: id,
     id: lineId,
+    companyId,
     updatedBy: userId
   });
 

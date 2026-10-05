@@ -717,6 +717,20 @@ export function reconcileContractSchedule({
     create.find((i) => i.status === "Planned" && i.invoiceDate >= from)
       ?.invoiceDate ?? from;
   const adjustedByPeriod = new Map<string, { amount: number; units: number }>();
+  // The spans a credit memo already credits. A memo's rows are apportioned
+  // to its currency's decimals, so they can differ from the exact credit by
+  // less than one minor unit: the same span again is that rounding, never a
+  // new credit (a later, earlier end credits a different span).
+  const spanKey = (row: {
+    lineId: string;
+    periodStart: string;
+    periodEnd: string;
+  }) => `${row.lineId}|${row.periodStart}|${row.periodEnd}`;
+  const memoCredited = new Set(
+    existing
+      .filter((row) => row.isAdjustment && row.memoId !== null)
+      .map(spanKey)
+  );
   for (const row of existing) {
     if (!row.isAdjustment || isReplaced(row)) continue;
     const adjusted = adjustedByPeriod.get(periodKey(row)) ?? {
@@ -759,9 +773,16 @@ export function reconcileContractSchedule({
     ) ?? { amount: 0, units: 0 };
     const amount = round(required - already.amount);
     if (amount >= 0 || equals(amount, 0)) continue;
+    const periodStart = maxDate(addDays(line.endDate, 1), first.periodStart);
+    if (
+      memoCredited.has(
+        spanKey({ lineId: first.lineId, periodStart, periodEnd })
+      )
+    )
+      continue;
     adjustments.push({
       lineId: first.lineId,
-      periodStart: maxDate(addDays(line.endDate, 1), first.periodStart),
+      periodStart,
       periodEnd,
       units: requiredUnits - already.units,
       unitPrice: first.unitPrice,

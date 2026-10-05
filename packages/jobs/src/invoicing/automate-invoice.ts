@@ -38,6 +38,7 @@ import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 
 const logger = getLogger("jobs", "invoice-automation");
 
@@ -48,6 +49,8 @@ export const INVOICE_SEND_NO_EMAIL = "The invoice contact has no email";
 export const INVOICE_SEND_NOT_CONFIGURED = "Email sending is not configured";
 export const INVOICE_SEND_NO_STRIPE = "No Stripe customer is linked";
 export const INVOICE_SEND_STRIPE_NOT_CONNECTED = "Stripe is not connected";
+export const INVOICE_POST_INTERRUPTED =
+  "Posting was interrupted — the invoice is still Pending";
 
 /** A posted invoice: anything past Draft/Pending that was not voided. */
 export function isPostedSalesInvoice(status: SalesInvoiceStatus | null) {
@@ -145,6 +148,95 @@ export async function resolveInvoiceAutomation(
   return agreement.data?.effectiveInvoiceAutomation ?? null;
 }
 
+/** A drafted recurring invoice that invoice automation still has to run. */
+export type InvoiceToAutomate = {
+  invoiceId: string;
+  /** The rental agreement or customer contract it was drafted from. */
+  sourceId: string;
+  mode: InvoiceAutomation;
+};
+
+/**
+ * Every invoice the daily recurring-billing job drafted that automation has
+ * not finished with: the company's Draft (or Pending — a claim left by a
+ * crashed post, reported as held) invoices created by the job (`system`),
+ * with no hold, from a recurring source whose effective mode is not Draft
+ * Only. Read from the database rather than from the drafting step's result,
+ * so drafts from an earlier attempt — a retried step drafts nothing new, a
+ * failed one returns nothing — are still automated. A posted or held invoice
+ * leaves the set, so each is automated once.
+ */
+export async function findInvoicesToAutomate(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<InvoiceToAutomate[]> {
+  const invoices = await db
+    .selectFrom("salesInvoice as si")
+    .leftJoin("customerContracts as cc", (join) =>
+      join
+        .onRef("cc.id", "=", "si.customerContractId")
+        .on("cc.companyId", "=", companyId)
+    )
+    .select((eb) => [
+      "si.id",
+      "si.customerContractId",
+      "cc.effectiveInvoiceAutomation as contractMode",
+      // An invoice bills one agreement; the contract wins when both are set,
+      // as in resolveInvoiceAutomation.
+      eb
+        .selectFrom("salesInvoiceLine as sil")
+        .select("sil.rentalAgreementId")
+        .whereRef("sil.invoiceId", "=", "si.id")
+        .where("sil.companyId", "=", companyId)
+        .where("sil.rentalAgreementId", "is not", null)
+        .orderBy("sil.rentalAgreementId")
+        .limit(1)
+        .as("rentalAgreementId")
+    ])
+    .where("si.companyId", "=", companyId)
+    .where("si.createdBy", "=", "system")
+    .where("si.status", "in", ["Draft", "Pending"])
+    .where("si.automationHoldReason", "is", null)
+    // The retry / catch-up window only. An older draft was left for review
+    // (Draft Only at the time, or a person's choice) and is not posted just
+    // because the source's mode has changed since.
+    .where("si.createdAt", ">=", sql<string>`now() - interval '3 days'`)
+    .orderBy("si.id")
+    .execute();
+
+  const agreementIds = [
+    ...new Set(
+      invoices
+        .filter((i) => !i.customerContractId && i.rentalAgreementId)
+        .map((i) => i.rentalAgreementId as string)
+    )
+  ];
+  const agreements =
+    agreementIds.length > 0
+      ? await db
+          .selectFrom("rentalAgreements")
+          .select(["id", "effectiveInvoiceAutomation"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", agreementIds)
+          .execute()
+      : [];
+  const agreementMode = new Map(
+    agreements.map((a) => [a.id, a.effectiveInvoiceAutomation])
+  );
+
+  const result: InvoiceToAutomate[] = [];
+  for (const invoice of invoices) {
+    const sourceId = invoice.customerContractId ?? invoice.rentalAgreementId;
+    if (!sourceId) continue;
+    const mode = invoice.customerContractId
+      ? invoice.contractMode
+      : agreementMode.get(sourceId);
+    if (!mode || mode === "Draft Only") continue;
+    result.push({ invoiceId: invoice.id, sourceId, mode });
+  }
+  return result;
+}
+
 async function holdInvoice(
   client: Client,
   companyId: string,
@@ -191,6 +283,12 @@ export async function postSalesInvoiceUnattended(args: {
   if (invoice.error) throw new Error(invoice.error.message);
   if (!invoice.data) return { outcome: "skipped", reason: "Invoice not found" };
   if (isPostedSalesInvoice(invoice.data.status)) return { outcome: "posted" };
+  // A claim nobody finished: a poster crashed between claiming the invoice
+  // and posting it (or is still posting it). Never re-claimed here — that
+  // could post twice — but reported, so a person looks at it.
+  if (invoice.data.status === "Pending") {
+    return { outcome: "held", reason: INVOICE_POST_INTERRUPTED };
+  }
   if (invoice.data.status !== "Draft") {
     return {
       outcome: "skipped",
@@ -337,6 +435,10 @@ function storageFileName(fileName: string) {
   return fileName.replace(/[\\/:*?"<>|]/g, "").trim();
 }
 
+/** The send error for an invoice that went out but whose sent stamp failed. */
+export const invoiceSentStampFailed = (sentTo: string, error: string) =>
+  `Sent to ${sentTo}, but recording the send failed: ${error}`;
+
 async function stampSendError(
   client: Client,
   companyId: string,
@@ -482,12 +584,15 @@ export async function emailPostedInvoice(args: {
       getInvoiceOwnerEmail(client, companyId, invoiceId)
     ]);
     if (company.error) throw new Error(company.error.message);
+    if (!company.data.companyGroupId) {
+      throw new Error("The company has no company group");
+    }
 
     // The PDF is rendered here, so its logo is fetched from the internal URL.
     const document = await loadSalesInvoiceDocument({
       client,
       companyId,
-      companyGroupId: company.data.companyGroupId ?? "",
+      companyGroupId: company.data.companyGroupId,
       invoiceId,
       locale: "en-US",
       storageUrl: SUPABASE_INTERNAL_URL ?? ""
@@ -605,11 +710,20 @@ export async function emailPostedInvoice(args: {
       .eq("id", invoiceId)
       .eq("companyId", companyId);
     if (stamped.error) {
+      // The email went out, but without `sentAt` the invoice reads as unsent
+      // and a Send would email it again: say so on the invoice instead of
+      // reporting a clean send.
       logger.error("Invoice emailed but the sent stamp failed", {
         companyId,
         invoiceId,
         error: stamped.error
       });
+      return stampSendError(
+        client,
+        companyId,
+        invoiceId,
+        invoiceSentStampFailed(sentTo, stamped.error.message)
+      );
     }
     return { emailed: true, sentTo };
   } catch (error) {
@@ -670,11 +784,19 @@ export async function sendPostedInvoiceViaStripe(args: {
       .eq("id", invoiceId)
       .eq("companyId", companyId);
     if (stamped.error) {
+      // A Send retry is safe here — the linked Stripe invoice stops a second
+      // send — but the invoice must not read as cleanly sent.
       logger.error("Invoice sent via Stripe but the sent stamp failed", {
         companyId,
         invoiceId,
         error: stamped.error
       });
+      return stampSendError(
+        client,
+        companyId,
+        invoiceId,
+        invoiceSentStampFailed("Stripe", stamped.error.message)
+      );
     }
     return { emailed: true, sentTo: "Stripe" } as const;
   };

@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteRentalAgreementCharge(client, chargeId);
+  const result = await deleteRentalAgreementCharge(client, chargeId, companyId);
   if (result.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.rentalAgreementDetails(id),

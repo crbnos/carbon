@@ -7,6 +7,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
@@ -779,12 +780,13 @@ export type Events = {
     data: {
       companyId: string;
       invoiceId: string;
-      /** Absent = the agreement's effective mode. The Send route passes "Post and Email". */
-      mode?:
-        | "Draft Only"
-        | "Post"
-        | "Post and Email"
-        | "Post and Send via Stripe";
+      /** Absent = the invoice's recurring source's effective mode. */
+      mode?: InvoiceAutomation;
+      /**
+       * The invoice's Send action: retry a failed send of a posted invoice —
+       * via Stripe when that is the effective mode, else by email.
+       */
+      resend?: boolean;
     };
   };
 };

@@ -135,7 +135,7 @@ export default function ContractLineRoute() {
         revenueEndDate: line.revenueEndDate ?? undefined,
         projectId: line.projectId ?? undefined
       }}
-      currencyCode={contract.currencyCode ?? "USD"}
+      currencyCode={contract.currencyCode}
       isLocked={contract.status !== "Draft"}
     />
   );

@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { expect } from "vitest";
+import { sql } from "kysely";
+import { expect, test } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import { paymentFixture } from "../post-payment/payment-test-fixture";
-import proposeRevenueRecognitionRun from "../propose-revenue-recognition-run";
+import proposeRevenueRecognitionRun, {
+  proposeRevenueRecognitionRunInput
+} from "../propose-revenue-recognition-run";
 import {
   dropRecognitionRuns,
   holdInDraftRun
@@ -281,3 +284,106 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "recalculating a Draft that held only a replaced contract month keeps the run and claims what is due",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      const contractId = `${f.companyId}-contract`;
+      const contractLineId = `${f.companyId}-contract-line`;
+      const orphanId = `${f.companyId}-orphan`;
+      await f.db.transaction().execute(async (trx) => {
+        // The contract line names an item this fixture has no reason to build;
+        // only the held schedule row matters here.
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .insertInto("customerContract")
+          .values({
+            id: contractId,
+            customerContractId: "CON-TEST",
+            name: "Test contract",
+            status: "Active",
+            customerId: f.customerId,
+            closeDate: "2026-07-01",
+            startDate: "2026-07-01",
+            currencyCode: "USD",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("customerContractLine")
+          .values({
+            id: contractLineId,
+            customerContractId: contractId,
+            revenueType: "Recurring",
+            rateUnit: "Month",
+            itemId: `${f.companyId}-item`,
+            rate: 420,
+            startDate: "2026-07-01",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await sql`SET LOCAL session_replication_role = origin`.execute(trx);
+        // A contract row whose plan month an amendment replaced: its
+        // `customerContractRevenueId` is null, so the contract synthesizer
+        // drops it.
+        await trx
+          .insertInto("revenueRecognitionSchedule")
+          .values({
+            id: orphanId,
+            type: "Deferral",
+            status: "Planned",
+            customerContractLineId: contractLineId,
+            periodStart: "2026-09-01",
+            periodEnd: "2026-09-30",
+            scheduledDate: "2026-09-30",
+            amount: 420,
+            debitAccountId: f.account("control"),
+            creditAccountId: f.account("sales"),
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+      const runId = await holdInDraftRun(f.db, f.companyId, [orphanId]);
+      const later = await deferrals(f, [
+        { key: "sep-30", scheduledDate: "2026-09-30", amount: 50 }
+      ]);
+
+      expect(await recalculate(f, runId)).toEqual({
+        runId: "RR-TEST",
+        lineCount: 1,
+        changed: true,
+        deleted: false
+      });
+      expect(await runLines(f, runId)).toEqual([
+        { scheduleId: later["sep-30"], amount: 50 }
+      ]);
+      expect(
+        await f.db
+          .selectFrom("revenueRecognitionSchedule")
+          .select("id")
+          .where("id", "=", orphanId)
+          .executeTakeFirst()
+      ).toBeUndefined();
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+test("a proposal's periodEnd must be a real month end", () => {
+  const accepts = (periodEnd: string) =>
+    proposeRevenueRecognitionRunInput.safeParse({ periodEnd }).success;
+  expect(accepts("2026-09-30")).toBe(true);
+  expect(accepts("2028-02-29")).toBe(true);
+  // Mid-month, an impossible day and an impossible month are input errors,
+  // not a 500 from the database.
+  expect(accepts("2026-09-15")).toBe(false);
+  expect(accepts("2026-02-30")).toBe(false);
+  expect(accepts("2026-13-31")).toBe(false);
+});

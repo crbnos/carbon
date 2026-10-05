@@ -8,8 +8,11 @@
 import {
   expectedConnectInvoiceTotal,
   type SalesInvoiceLineRow,
+  stripeDueDate,
+  stripeEffectiveDate,
   toStripeInvoiceLines
 } from "@carbon/stripe/connect-invoice";
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 
 const line = (overrides: Partial<SalesInvoiceLineRow>): SalesInvoiceLineRow =>
@@ -123,5 +126,46 @@ describe("toStripeInvoiceLines", () => {
     ]);
     expect(mapped).toHaveLength(1);
     expect(mapped[0]).toMatchObject({ description: "Widget", unitPrice: 12 });
+  });
+});
+
+// Every write of a Stripe send reuses one idempotency key, and Stripe refuses a
+// reused key whose parameters changed: the dates a send carries must not move
+// with the clock inside a day.
+describe("stripeDueDate", () => {
+  const today = parseDate("2026-10-04");
+
+  it("keeps a due date after today", () => {
+    expect(stripeDueDate("2026-11-03", today)).toBe("2026-11-03");
+  });
+
+  it("drops a due date on or before today, which Stripe refuses", () => {
+    expect(stripeDueDate("2026-10-04", today)).toBeUndefined();
+    expect(stripeDueDate("2026-09-30", today)).toBeUndefined();
+  });
+
+  it("drops a due date more than five years out, or none at all", () => {
+    expect(stripeDueDate("2031-10-04", today)).toBe("2031-10-04");
+    expect(stripeDueDate("2031-10-05", today)).toBeUndefined();
+    expect(stripeDueDate(null, today)).toBeUndefined();
+    expect(stripeDueDate("not a date", today)).toBeUndefined();
+  });
+});
+
+describe("stripeEffectiveDate", () => {
+  const today = parseDate("2026-10-04");
+
+  it("keeps an issue date before today", () => {
+    expect(stripeEffectiveDate("2026-10-01", today)).toBe("2026-10-01");
+  });
+
+  it("leaves an issue date of today or later unset, never 'now'", () => {
+    expect(stripeEffectiveDate("2026-10-04", today)).toBeUndefined();
+    expect(stripeEffectiveDate("2026-12-01", today)).toBeUndefined();
+  });
+
+  it("drops an issue date more than five years back", () => {
+    expect(stripeEffectiveDate("2021-10-04", today)).toBe("2021-10-04");
+    expect(stripeEffectiveDate("2021-10-03", today)).toBeUndefined();
   });
 });

@@ -3,8 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import {
@@ -85,6 +87,17 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!parsed.success) {
       return { error: { message: "Invalid invoicing setting" }, data: null };
     }
+    // As the company setting: with no Stripe account connected every invoice
+    // would be held.
+    if (
+      parsed.data.invoiceAutomation === "Post and Send via Stripe" &&
+      !(await getStripeConnectAccountId(getCarbonServiceRole(), companyId))
+    ) {
+      return {
+        error: { message: "Connect Stripe in Integrations first" },
+        data: null
+      };
+    }
     const update = await updateRentalAgreementInvoiceAutomation(client, {
       id,
       companyId,
@@ -116,7 +129,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  const current = await getRentalAgreement(client, id);
+  const current = await getRentalAgreement(client, id, companyId);
   if (current.error || current.data?.companyId !== companyId) {
     logger.error("rental agreement not found for update", {
       companyId,
@@ -201,6 +214,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const update = await updateRentalAgreement(client, {
     ...data,
     id,
+    companyId,
     updatedBy: userId,
     // Not a term: carried through so saving one term keeps them.
     customFields: agreement.customFields ?? undefined

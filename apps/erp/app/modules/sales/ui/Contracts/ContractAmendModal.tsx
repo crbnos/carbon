@@ -181,7 +181,7 @@ const ContractAmendModal = ({
   const addServices = useDisclosure();
 
   const id = contract.id!;
-  const currencyCode = contract.currencyCode ?? "USD";
+  const { currencyCode } = contract;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   // A line that has already ended cannot be amended; a replaced line has.

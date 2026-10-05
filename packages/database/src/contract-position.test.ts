@@ -238,6 +238,44 @@ describe("normalizePosition", () => {
     });
   });
 
+  it("nets two positive pools into one, carrying the net base", () => {
+    const both = position({
+      deferredAmount: 30,
+      deferredBase: 33,
+      assetAmount: 10,
+      assetBase: 9
+    });
+    const reclass = normalizePosition(both);
+    expect(reclass).toEqual({
+      deferredAmount: -10,
+      deferredBase: -9,
+      assetAmount: -10,
+      assetBase: -9
+    });
+    expect(addMovement(both, reclass)).toEqual(
+      position({ deferredAmount: 20, deferredBase: 24 })
+    );
+    // More assets than deferred: the net lands in Contract Assets.
+    expect(
+      addMovement(
+        position({
+          deferredAmount: 5,
+          deferredBase: 5,
+          assetAmount: 15,
+          assetBase: 15
+        }),
+        normalizePosition(
+          position({
+            deferredAmount: 5,
+            deferredBase: 5,
+            assetAmount: 15,
+            assetBase: 15
+          })
+        )
+      )
+    ).toEqual(position({ assetAmount: 10, assetBase: 10 }));
+  });
+
   it("nets a negative pool against the other, carrying the net base", () => {
     const reclass = normalizePosition(
       position({

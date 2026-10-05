@@ -22,9 +22,16 @@ export type ContractType = Enums["customerContractType"];
 export type ContractRevenueType = Enums["contractRevenueType"];
 export type ContractInvoiceStatusType = Enums["contractInvoiceStatus"];
 
-export type Contract = Database["public"]["Views"]["customerContracts"]["Row"];
+type ContractView = Database["public"]["Views"]["customerContracts"]["Row"];
 
-export type ContractListItem = Contract;
+/** A contract as its page reads it. A view types every column nullable;
+ *  `currencyCode` is NOT NULL on the table, so the contract route narrows it
+ *  once rather than each component guessing a currency. */
+export type Contract = Omit<ContractView, "currencyCode"> & {
+  currencyCode: string;
+};
+
+export type ContractListItem = ContractView;
 
 export type ContractLine = NonNullable<
   Awaited<ReturnType<typeof getContractLines>>["data"]

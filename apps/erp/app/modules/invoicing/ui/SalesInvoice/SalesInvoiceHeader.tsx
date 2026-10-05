@@ -129,7 +129,8 @@ const SalesInvoiceHeader = () => {
   const canMarkUnpaid = canToggleManualPaid && baseStatus === "Paid";
 
   // Invoice automation outcome: a held draft waits for review; a posted
-  // invoice was either emailed or failed to send (and can be re-sent).
+  // invoice was either sent (emailed or via Stripe) or failed to send (and
+  // can be re-sent).
   const sendFetcher = useFetcher<{}>();
   const isPostedNotVoided = isPosted && !isVoided;
   const holdReason =
@@ -137,6 +138,8 @@ const SalesInvoiceHeader = () => {
   const sentTo = salesInvoice.sentTo ?? "";
   const sentDate = formatDate(salesInvoice.sentAt);
   const showEmailed = isPostedNotVoided && !!salesInvoice.sentAt;
+  // A Stripe send stamps `sentTo: "Stripe"` — Stripe emailed it, not Carbon.
+  const sentViaStripe = sentTo === "Stripe";
   const showNotSent =
     isPostedNotVoided && !!salesInvoice.sendError && !salesInvoice.sentAt;
 
@@ -373,11 +376,16 @@ const SalesInvoiceHeader = () => {
                 <Trans>Needs Review</Trans>
               </Status>
             )}
-            {showEmailed && (
-              <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
-                <Trans>Emailed</Trans>
-              </Status>
-            )}
+            {showEmailed &&
+              (sentViaStripe ? (
+                <Status color="green" tooltip={t`On ${sentDate}`}>
+                  <Trans>Sent via Stripe</Trans>
+                </Status>
+              ) : (
+                <Status color="green" tooltip={t`To ${sentTo} on ${sentDate}`}>
+                  <Trans>Emailed</Trans>
+                </Status>
+              ))}
             {showNotSent && (
               <>
                 <Status color="red" tooltip={salesInvoice.sendError}>
