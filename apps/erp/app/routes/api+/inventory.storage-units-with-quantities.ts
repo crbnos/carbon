@@ -66,4 +66,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return await getStorageUnitsListForLocation(client, companyId, locationId);
 }
 
-export const clientLoader = cachedClientLoader<typeof loader>();
+// On-hand moves with every receipt, pick and shipment, by anyone: the cached
+// value is shown at once and always read again.
+export const clientLoader = cachedClientLoader<typeof loader>({ staleTime: 0 });

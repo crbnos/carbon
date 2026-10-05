@@ -14,7 +14,8 @@ import {
   useSyncExternalStore
 } from "react";
 import { useFetchers, useMatches, useRevalidator } from "react-router";
-import { getClientCache, LOADER } from "./cache";
+import { getClientCache } from "./cache";
+import { invalidateLoaderEntries } from "./invalidation";
 import { matchesFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
 
@@ -32,15 +33,15 @@ export type BroadcastChange = {
 };
 
 const DEFAULT_DEBOUNCE_MS = 300;
+// A table that changes more often than its debounce would never reload.
+const MAX_WAIT_MS = 5000;
 
 /** The topic `broadcast_table_changes` sends a company's changes to a table on. */
 export const companyTopic = (companyId: string, table: string) =>
   `company:${companyId}:${table}`;
 
 /** Marks every cached loader entry stale (`cachedClientLoader`, `useLoaderQuery`). */
-const invalidateLoaders = () => {
-  getClientCache()?.invalidateQueries({ queryKey: [LOADER] });
-};
+const invalidateLoaders = () => invalidateLoaderEntries(getClientCache());
 
 // ─── One channel per topic ───────────────────────────────────────────────────
 //
@@ -215,6 +216,7 @@ export function useRealtimeTable({
 }) {
   const revalidate = useRealtimeRevalidator();
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waitingSince = useRef<number | null>(null);
 
   useEffect(
     () => () => {
@@ -230,10 +232,16 @@ export function useRealtimeTable({
     onChange: (change) => {
       if (change && !matchesFilter(filter, change)) return;
       if (timeout.current) clearTimeout(timeout.current);
-      timeout.current = setTimeout(() => {
-        invalidateLoaders();
-        revalidate();
-      }, debounceMs);
+      waitingSince.current ??= performance.now();
+      const waited = performance.now() - waitingSince.current;
+      timeout.current = setTimeout(
+        () => {
+          waitingSince.current = null;
+          invalidateLoaders();
+          revalidate();
+        },
+        Math.max(0, Math.min(debounceMs, MAX_WAIT_MS - waited))
+      );
     }
   });
 }

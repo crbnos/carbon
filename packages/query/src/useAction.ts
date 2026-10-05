@@ -9,7 +9,13 @@ import { useFetcher } from "react-router";
 export function actionOutcome(data: unknown): "success" | "error" | null {
   if (data == null) return null;
   if (typeof data === "object") {
-    const result = data as { success?: unknown; error?: unknown };
+    const result = data as {
+      success?: unknown;
+      error?: unknown;
+      fieldErrors?: unknown;
+    };
+    // `validationError`: the form shows the field errors itself.
+    if (result.fieldErrors) return null;
     if (result.success === false || result.error) return "error";
   }
   return "success";
@@ -26,7 +32,7 @@ type ActionData<T> = NonNullable<ReturnType<typeof useFetcher<T>>["data"]>;
  * an action that redirects (most deletes) returns none. `onSuccess` /
  * `onError` run only when there is data. `onError` is for a result with
  * `success: false` or an `error`; everything else is a success. A 422 with
- * field errors has no data here, so neither runs.
+ * field errors (`validationError`) is neither: the form shows them itself.
  *
  * The cache needs nothing from the caller: the root middleware marks every
  * loader entry stale after the action.

@@ -6,6 +6,7 @@ import { QueryClient } from "@tanstack/react-query";
 import type { ClientLoaderFunctionArgs } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  cachedApiQuery,
   cachedClientLoader,
   getClientCache,
   getCompanyId,
@@ -13,6 +14,7 @@ import {
   loaderQueryKey,
   setClientCompanyId
 } from "./cache";
+import { invalidateLoaderEntries } from "./invalidation";
 
 describe("during server rendering", () => {
   it("has no company and no client cache", () => {
@@ -74,7 +76,7 @@ describe("cachedClientLoader", () => {
 
     expect(serverLoader).toHaveBeenCalledTimes(3);
     expect(
-      cache.getQueryData(loaderQueryKey("/api/x?locationId=1", "company-a"))
+      cache.getQueryData(loaderQueryKey("/api/x?locationId=1", "company-b"))
     ).toEqual({});
   });
 
@@ -100,5 +102,72 @@ describe("cachedClientLoader", () => {
 
     expect(serverLoader).toHaveBeenCalledTimes(2);
     expect(cache.getQueryCache().getAll()).toHaveLength(0);
+  });
+});
+
+describe("who the cache belongs to", () => {
+  const install = () => {
+    const cache = new QueryClient();
+    vi.stubGlobal("window", { clientCache: cache });
+    return cache;
+  };
+  afterEach(() => {
+    setClientCompanyId(null, null);
+    vi.unstubAllGlobals();
+  });
+
+  it("is emptied when another user takes over the tab", () => {
+    const cache = install();
+    setClientCompanyId("company-a", "user-a");
+    cache.setQueryData(["live", "company-a", "customers"], [{ id: "1" }]);
+    cache.setQueryData(loaderQueryKey("/api/x"), []);
+
+    setClientCompanyId("company-a", "user-b");
+
+    expect(cache.getQueryCache().getAll()).toHaveLength(0);
+  });
+
+  it("drops a company's loader entries on leaving it, and nothing else", () => {
+    const cache = install();
+    setClientCompanyId("company-a", "user-a");
+    cache.setQueryData(loaderQueryKey("/api/x"), []);
+    cache.setQueryData(["live", "company-a", "customers"], [{ id: "1" }]);
+
+    setClientCompanyId("company-b", "user-a");
+
+    expect(
+      cache.getQueryData(loaderQueryKey("/api/x", "company-a"))
+    ).toBeUndefined();
+    expect(cache.getQueryData(["live", "company-a", "customers"])).toEqual([
+      { id: "1" }
+    ]);
+  });
+
+  it("keeps a load that finished after an invalidation stale", async () => {
+    const cache = install();
+    setClientCompanyId("company-a", "user-a");
+    let finish = (_rows: string[]): void => undefined;
+    vi.stubGlobal(
+      "fetch",
+      () =>
+        new Promise((resolve) => {
+          finish = (rows) =>
+            resolve(
+              new Response(JSON.stringify(rows), {
+                headers: { "content-type": "application/json" }
+              })
+            );
+        })
+    );
+
+    const load = cachedApiQuery<string[]>("/api/x");
+    await Promise.resolve();
+    invalidateLoaderEntries(cache);
+    finish(["before the mutation"]);
+
+    expect(await load).toEqual(["before the mutation"]);
+    expect(cache.getQueryState(loaderQueryKey("/api/x"))?.isInvalidated).toBe(
+      true
+    );
   });
 });

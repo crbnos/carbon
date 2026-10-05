@@ -15,12 +15,18 @@ const storage = async () => (await import("localforage")).default;
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   const {
+    id: userId,
     company: { id: companyId }
   } = useUser();
 
   return (
     <>
-      <LiveLists companyId={companyId} lists={LISTS} storage={storage} />
+      <LiveLists
+        companyId={companyId}
+        userId={userId}
+        lists={LISTS}
+        storage={storage}
+      />
       {children}
     </>
   );

@@ -68,7 +68,8 @@ export function useStorageUnits(locationId?: string, itemId?: string) {
   >(
     locationId && itemId
       ? path.to.api.storageUnitsWithQuantities(locationId, itemId)
-      : null
+      : null,
+    { staleTime: 0 }
   );
 
   const options = useMemo(() => {
@@ -126,7 +127,8 @@ function useStorageUnitQuantities(locationId?: string | null, itemId?: string) {
   const fetcher = useLoaderQuery<{ data: { id: string; quantity: number }[] }>(
     locationId && itemId
       ? path.to.api.storageUnitsWithQuantities(locationId, itemId)
-      : null
+      : null,
+    { staleTime: 0 }
   );
 
   return useMemo(() => {

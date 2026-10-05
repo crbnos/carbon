@@ -11,6 +11,8 @@ import { useCallback, useEffect, useRef } from "react";
 
 const log = getLogger("react", "realtime-channel");
 
+const RECONNECT_AFTER_HIDDEN_MS = 10_000;
+
 function formatSubscribeErr(err: unknown): string {
   if (err == null) return "No error details";
   if (typeof err === "string") return err.trim() || "No error details";
@@ -226,8 +228,23 @@ export const useRealtimeChannel = <TDeps extends any[]>(
       });
     };
 
+    // A tab that was hidden for long may hold a dead socket, so it reconnects.
+    // A glance at another tab does not: every reconnect reloads the page's
+    // data, since nothing is replayed.
+    let hiddenAt: number | null = null;
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") forceReconnect(true);
+      if (document.visibilityState !== "visible") {
+        hiddenAt = performance.now();
+        return;
+      }
+      const hiddenFor = hiddenAt === null ? 0 : performance.now() - hiddenAt;
+      hiddenAt = null;
+      if (
+        hiddenFor >= RECONNECT_AFTER_HIDDEN_MS ||
+        channelRef.current?.state !== "joined"
+      ) {
+        forceReconnect(true);
+      }
     };
     const handleOnline = () => forceReconnect(true);
 

@@ -9,6 +9,18 @@ type LoaderCache = {
   invalidateQueries(filters: { queryKey: unknown[] }): unknown;
 };
 
+// How many times the loader entries have been marked stale. A load that was in
+// flight across one finishes with data from before it: TanStack marks a
+// finished fetch fresh, so the loader reads this to mark it stale again.
+let invalidations = 0;
+export const loaderInvalidations = () => invalidations;
+
+/** Marks every cached loader entry stale (`cachedClientLoader`, `useLoaderQuery`). */
+export const invalidateLoaderEntries = (cache: LoaderCache | undefined) => {
+  invalidations += 1;
+  cache?.invalidateQueries({ queryKey: [LOADER_QUERY_KEY] });
+};
+
 /** First segment of every cached loader entry (`cachedClientLoader`, `useLoaderQuery`). */
 export const LOADER_QUERY_KEY = "loader";
 
@@ -30,9 +42,16 @@ export const createInvalidationMiddleware =
     skipPaths?: string[];
   }): MiddlewareFunction<unknown> =>
   async ({ request }, next) => {
-    const result = await next();
-    if (request.method === "GET") return result;
-    if (skipPaths.includes(new URL(request.url).pathname)) return result;
-    getCache()?.invalidateQueries({ queryKey: [LOADER_QUERY_KEY] });
-    return result;
+    if (
+      request.method === "GET" ||
+      skipPaths.includes(new URL(request.url).pathname)
+    ) {
+      return next();
+    }
+    try {
+      return await next();
+    } finally {
+      // An action that throws may still have written.
+      invalidateLoaderEntries(getCache());
+    }
   };

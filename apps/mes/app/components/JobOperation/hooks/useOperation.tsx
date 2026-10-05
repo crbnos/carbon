@@ -66,8 +66,6 @@ export function useOperation({
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-
   const actionsSheet = useDisclosure();
   const scrapModal = useDisclosure();
   const reworkModal = useDisclosure();
@@ -119,6 +117,9 @@ export function useOperation({
   useChangedRows<ProductionEvent>({
     companyId: user.company.id,
     table: "productionEvent",
+    filter: batchId
+      ? `jobOperationBatchId=eq.${batchId}`
+      : `jobOperationId=eq.${operation.id}`,
     onChange: ({ op, ids, rows }) => {
       if (op === "DELETE") {
         setEventState((prevEvents) =>
@@ -151,6 +152,7 @@ export function useOperation({
   }>({
     companyId: user.company.id,
     table: "jobOperation",
+    filter: `id=eq.${operation.id}`,
     onChange: ({ op, ids, rows }) => {
       if (op === "DELETE") {
         if (ids.includes(operation.id)) {

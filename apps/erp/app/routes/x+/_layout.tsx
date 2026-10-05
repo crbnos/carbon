@@ -376,7 +376,7 @@ export default function AuthenticatedRoute() {
     sessionTimeout
   } = loaderData;
   // During render, not in an effect: clientLoaders and the first child read it.
-  setClientCompanyId(company?.id ?? null);
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
   useEffect(() => {
     shellLoadedAt = Date.now();

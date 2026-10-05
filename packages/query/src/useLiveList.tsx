@@ -81,6 +81,11 @@ export const liveListKey = (companyId: string, name: string) => [
 // Every key carries the company: an unkeyed copy once hydrated one company's
 // pickers with another's rows after a company switch.
 const storageKey = (companyId: string, name: string) => `${name}:${companyId}`;
+// The stored copy also carries the user: it is that user's view of the list
+// (table RLS chose the rows), and the next person at this browser starts from
+// the server rather than from someone else's rows.
+const storedKey = (companyId: string, userId: string, name: string) =>
+  `${storageKey(companyId, name)}:${userId}`;
 
 // A copy written before lists had a cursor is a bare array (or carries a
 // checksum instead): its rows are still good to show, with no cursor.
@@ -140,10 +145,12 @@ function Subscription({
 /** Loads the lists and keeps them current. Render it once, in the shell. */
 export function LiveLists({
   companyId,
+  userId,
   lists,
   storage
 }: {
   companyId: string;
+  userId: string;
   lists: AnyLiveList[];
   storage: () => Promise<LiveListStorage>;
 }) {
@@ -186,19 +193,34 @@ export function LiveLists({
    * would overwrite the other's rows.
    */
   const commit = useCallback(
-    async (list: AnyLiveList, change: (rows: AnyRow[]) => AnyRow[]) => {
+    async (
+      list: AnyLiveList,
+      change: (rows: AnyRow[]) => AnyRow[],
+      // The cursor these rows are current as of. It moves only with the rows:
+      // a change dropped here must be asked for again.
+      cursor?: Cursor
+    ) => {
       if (active.current !== companyId) return;
       const rows = queryClient.setQueryData<AnyRow[]>(
         liveListKey(companyId, list.name),
         (current) => change(current ?? [])
       );
+      if (cursor) cursors.current.set(storageKey(companyId, list.name), cursor);
       const stored: Stored = {
         rows: rows ?? [],
         cursor: cursors.current.get(storageKey(companyId, list.name)) ?? null
       };
-      await (await storage()).setItem(storageKey(companyId, list.name), stored);
+      // The stored copy only speeds up the next load.
+      try {
+        await (await storage()).setItem(
+          storedKey(companyId, userId, list.name),
+          stored
+        );
+      } catch (error) {
+        logger.warn("live list not stored", { list: list.name, error });
+      }
     },
-    [queryClient, storage, companyId]
+    [queryClient, storage, companyId, userId]
   );
 
   /** The rows of `table` with these ids changed: how the list changes. */
@@ -275,9 +297,11 @@ export function LiveLists({
                 plan.map(([table, ids]) => readIds(list, table, ids))
               );
             }
-            cursors.current.set(storageKey(companyId, list.name), next);
-            await commit(list, (rows) =>
-              changes.reduce((current, change) => change(current), rows)
+            await commit(
+              list,
+              (rows) =>
+                changes.reduce((current, change) => change(current), rows),
+              next
             );
           })
         )
@@ -290,27 +314,40 @@ export function LiveLists({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const idb = await storage();
-      await Promise.all(
-        lists.map(async (list) => {
-          const stored = readStored(
-            await idb.getItem(storageKey(companyId, list.name))
-          );
-          if (!stored || cancelled || rowsOf(list)) return;
-          cursors.current.set(storageKey(companyId, list.name), stored.cursor);
-          queryClient.setQueryData(
-            liveListKey(companyId, list.name),
-            stored.rows
-          );
-        })
-      );
+      // Without storage (blocked, or no driver) the lists come from the server.
+      try {
+        const idb = await storage();
+        await Promise.all(
+          lists.map(async (list) => {
+            const stored = readStored(
+              await idb.getItem(storedKey(companyId, userId, list.name))
+            );
+            if (!stored || cancelled || rowsOf(list)) return;
+            cursors.current.set(
+              storageKey(companyId, list.name),
+              stored.cursor
+            );
+            queryClient.setQueryData(
+              liveListKey(companyId, list.name),
+              stored.rows
+            );
+          })
+        );
+      } catch (error) {
+        logger.warn("stored live lists not read", { error });
+      }
       if (cancelled || !ready) return;
       await sync(lists);
     })().catch((error) => logger.error("live list load failed", { error }));
     return () => {
       cancelled = true;
     };
-  }, [companyId, ready, lists, storage, queryClient, rowsOf, sync]);
+  }, [companyId, userId, ready, lists, storage, queryClient, rowsOf, sync]);
+
+  const resync = useRef<{
+    lists: Set<AnyLiveList>;
+    pending: Promise<void> | null;
+  }>({ lists: new Set(), pending: null });
 
   const onChange = useCallback(
     async (
@@ -319,8 +356,17 @@ export function LiveLists({
       change: BroadcastChange | null
     ) => {
       // A reconnect or a bulk change: the log knows exactly what was missed.
+      // Every channel reconnects together, so the lists ask the log once.
       if (!change?.ids) {
-        await sync([list]);
+        resync.current.lists.add(list);
+        resync.current.pending ??= new Promise<void>((resolve) =>
+          setTimeout(resolve, 50)
+        ).then(() => {
+          const targets = [...resync.current.lists];
+          resync.current = { lists: new Set(), pending: null };
+          return sync(targets);
+        });
+        await resync.current.pending;
         return;
       }
       const { ids } = change;
