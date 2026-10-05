@@ -7,7 +7,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type {
   getMaterialDimensionList,
   MaterialDimension as MaterialDimensionType
@@ -43,9 +43,6 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
   const newDimensionModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {}, [props.formId]);
 
   const options = useMemo(() => {
     return (materialDimensionsLoader.data?.data ?? []).map((c) => ({

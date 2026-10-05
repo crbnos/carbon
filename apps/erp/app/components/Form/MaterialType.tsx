@@ -7,7 +7,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { getMaterialTypeList } from "~/modules/items";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
@@ -111,9 +111,6 @@ export const useMaterialTypes = (substanceId?: string, formId?: string) => {
       ? path.to.api.materialTypes(substanceId, formId)
       : null
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {}, [substanceId, formId]);
 
   const options = useMemo(() => {
     return (materialTypes.data?.data ?? []).map((c) => ({
