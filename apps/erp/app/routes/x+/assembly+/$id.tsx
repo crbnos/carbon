@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   ClientOnly,
@@ -40,7 +41,6 @@ import {
   useFetcher,
   useLoaderData,
   useParams,
-  useRevalidator,
   useSearchParams
 } from "react-router";
 import { Empty } from "~/components";

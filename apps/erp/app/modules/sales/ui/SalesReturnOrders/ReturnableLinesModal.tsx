@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -27,7 +28,7 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import { useFetcher, useParams, useRevalidator } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { loader as returnableLinesLoader } from "~/routes/x+/sales-return-order+/returnable-lines";
 import { path } from "~/utils/path";
 

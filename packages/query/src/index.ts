@@ -21,3 +21,4 @@ export {
   useTopic
 } from "./useRealtime";
 export { useRealtimeChannel } from "./useRealtimeChannel";
+export { useRevalidator } from "./useRevalidator";

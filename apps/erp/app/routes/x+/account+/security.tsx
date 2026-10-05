@@ -14,6 +14,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { TotpFactor } from "@carbon/auth/mfa.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRevalidator } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -47,7 +48,7 @@ import {
   LuTrash2
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useFetcher, useLoaderData, useRevalidator } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import {
   INVALID_CODE_MESSAGE,

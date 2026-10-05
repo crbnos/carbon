@@ -13,16 +13,12 @@ import {
   useRef,
   useSyncExternalStore
 } from "react";
-import {
-  useFetchers,
-  useMatches,
-  useNavigation,
-  useRevalidator
-} from "react-router";
+import { useMatches } from "react-router";
 import { getClientCache } from "./cache";
 import { invalidateLoaderEntries } from "./invalidation";
 import { matchesFilter } from "./realtimeFilter";
 import { useRealtimeChannel } from "./useRealtimeChannel";
+import { useRevalidator } from "./useRevalidator";
 
 /** What `broadcast_table_changes` sends: no row data, only which rows changed. */
 export type BroadcastChange = {
@@ -153,46 +149,12 @@ const requestRevalidation = (revalidate: () => void) => {
 };
 
 /**
- * `revalidate()` that waits until the router is idle. A revalidation that
- * starts during a save does harm twice over:
- * - during the action, React Router drops the fetcher's redirect;
- * - during the navigation that follows the save, it restarts that navigation
- *   without the submission. The restarted one looks like a plain navigation,
- *   so every layout whose params did not change skips its reload and keeps its
- *   data from before the save (a new quote line was missing from the quote's
- *   explorer until a reload: the save's own broadcast arrived mid-redirect).
- * A change that arrives while a fetcher is submitting or a navigation is in
- * flight is held and applied once both are done.
+ * The page reload a realtime change asks for: debounced across the tables a
+ * page follows, and held while a save is in flight (see `useRevalidator`).
  */
 export function useRealtimeRevalidator() {
-  const revalidator = useRevalidator();
-  const navigating = useNavigation().state !== "idle";
-  const submitting = useFetchers().some((f) => f.state === "submitting");
-  const busy = navigating || submitting;
-  const busyRef = useRef(busy);
-  busyRef.current = busy;
-  const held = useRef(false);
-
-  // Asked again when the timer fires: a save may have started in between.
-  const revalidate = useCallback(() => {
-    if (busyRef.current) {
-      held.current = true;
-      return;
-    }
-    requestRevalidation(() => {
-      if (busyRef.current) held.current = true;
-      else revalidator.revalidate();
-    });
-  }, [revalidator]);
-
-  useEffect(() => {
-    if (!busy && held.current) {
-      held.current = false;
-      revalidate();
-    }
-  }, [busy, revalidate]);
-
-  return revalidate;
+  const { revalidate } = useRevalidator();
+  return useCallback(() => requestRevalidation(revalidate), [revalidate]);
 }
 
 /**
@@ -287,6 +249,9 @@ function TableSubscription(props: {
  * `api+` loaders rather than a matched route. Render it once, in the shell.
  */
 export function RouteRealtime({ companyId }: { companyId: string }) {
+  // Mounted for the whole session, so a held revalidation always has a caller
+  // left to run it.
+  useRevalidator();
   const matches = useMatches();
   const tables = useMemo(() => {
     const followed = new Map<
