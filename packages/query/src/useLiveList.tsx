@@ -306,11 +306,21 @@ export function LiveLists({
         // The user left this company while the page was open: nothing of its
         // lists stays in memory or on the device.
         logger.warn("live lists dropped: no longer a member", { companyId });
-        const idb = await storage();
+        // Memory first, and without storage: a blocked or failing IndexedDB
+        // must not leave the company's rows on the page.
         for (const list of lists) {
           queryClient.setQueryData(liveListKey(companyId, list.name), []);
           cursors.current.delete(storageKey(companyId, list.name));
-          await forget(idb, storedKey(companyId, userId, list.name));
+        }
+        try {
+          const idb = await storage();
+          await Promise.all(
+            lists.map((list) =>
+              forget(idb, storedKey(companyId, userId, list.name))
+            )
+          );
+        } catch (error) {
+          logger.warn("stored live lists not removed", { companyId, error });
         }
         return;
       }
@@ -443,7 +453,13 @@ export function LiveLists({
     if (!ready) return;
     const timer = setInterval(() => {
       (async () => {
-        await prune(await storage());
+        // Tidying the device is best-effort; the sync below is what notices
+        // a user who has left the company, and must run without it.
+        try {
+          await prune(await storage());
+        } catch (error) {
+          logger.warn("stored live lists not pruned", { error });
+        }
         if (document.visibilityState === "visible") await sync(lists);
       })().catch((error) =>
         logger.warn("live list background check failed", { error })
