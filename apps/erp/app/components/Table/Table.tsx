@@ -150,6 +150,12 @@ interface TableProps<T extends object> {
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
   renderExpandedRow?: (row: T) => ReactNode;
+  // Pin an expanded row's content (`sticky left-0`) to the scroll container's
+  // visible width, so on a table several viewports wide (the 48-week planning
+  // grids) it stays in view instead of sitting at the far left of the row and
+  // scrolling away with it. Off by default: it changes how every other
+  // expanded row scrolls.
+  pinExpandedRows?: boolean;
   // When `renderExpandedRow` is set, gates which rows can expand (show a chevron
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
@@ -309,25 +315,25 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
+  pinExpandedRows = false,
   canExpandRow,
   groupRowsBy
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  // Visible width of the scroll container. An expanded row's cell spans every
-  // column, so on a wide table (the 48-week planning grids) its content would
-  // sit at the far left of a row several viewports wide and scroll away with
-  // it; the content is instead pinned (`sticky left-0`) at exactly this width.
+  // Visible width of the scroll container, for `pinExpandedRows`.
   const [containerWidth, setContainerWidth] = useState(0);
   useEffect(() => {
     const el = tableContainerRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
+    if (!pinExpandedRows || !el || typeof ResizeObserver === "undefined") {
+      return;
+    }
     const update = () => setContainerWidth(el.clientWidth);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [pinExpandedRows]);
 
   const { currentView, view } = useSavedViews();
 
@@ -1446,16 +1452,20 @@ const Table = <T extends object>({
                             colSpan={visibleColumns.length}
                             className="p-0 bg-muted/20 border-b border-border"
                           >
-                            <div
-                              className="sticky left-0"
-                              style={
-                                containerWidth > 0
-                                  ? { width: containerWidth }
-                                  : undefined
-                              }
-                            >
-                              {renderExpandedRow(row.original)}
-                            </div>
+                            {pinExpandedRows ? (
+                              <div
+                                className="sticky left-0"
+                                style={
+                                  containerWidth > 0
+                                    ? { width: containerWidth }
+                                    : undefined
+                                }
+                              >
+                                {renderExpandedRow(row.original)}
+                              </div>
+                            ) : (
+                              renderExpandedRow(row.original)
+                            )}
                           </Td>
                         </Tr>
                       )}

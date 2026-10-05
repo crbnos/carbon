@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
@@ -442,6 +441,8 @@ export function PlanningActionTypeWithReason({
 
 type PlanningActionLinesProps = {
   actions: PlanningAction[];
+  /** Today on the location's calendar — an action dated before it is late. */
+  todayIso: string;
   currentUserId: string;
   canUpdate: boolean;
   isBusy: boolean;
@@ -457,6 +458,7 @@ type PlanningActionLinesProps = {
  *  same recipe as Change Notices → affected items and Batches → members. */
 export function PlanningActionLines({
   actions,
+  todayIso,
   currentUserId,
   canUpdate,
   isBusy,
@@ -467,7 +469,6 @@ export function PlanningActionLines({
   onOrder
 }: PlanningActionLinesProps) {
   const formatQuantity = useQuantityFormatter();
-  const todayIso = today(getLocalTimeZone()).toString();
 
   const sorted = useMemo(() => sortPlanningActions(actions), [actions]);
 

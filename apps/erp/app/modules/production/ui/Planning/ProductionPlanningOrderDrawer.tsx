@@ -20,13 +20,12 @@ import {
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuCalendarRange, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import { useRouteData } from "~/hooks";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
@@ -68,6 +67,12 @@ function periodIdFor(periods: Period[], date: string | null | undefined) {
 }
 
 type ProductionPlanningOrderDrawerProps = {
+  /**
+   * Today on the plant's calendar (the planning loader's `locationToday`).
+   * Planned-order defaults are business dates there, and "late" is measured
+   * from it, never from the planner's browser zone.
+   */
+  locationToday: string;
   row: ProductionPlanningItem;
   orders: ProductionOrder[];
   /** Suggested orders required AFTER the row's time fence. The drawer opens
@@ -107,7 +112,8 @@ export const ProductionPlanningOrderDrawer = memo(
     locationId,
     periods,
     isOpen,
-    onClose
+    onClose,
+    locationToday
   }: ProductionPlanningOrderDrawerProps) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { t } = useLingui();
@@ -115,13 +121,6 @@ export const ProductionPlanningOrderDrawer = memo(
     const fenceLabel = timeFenceDate
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
-    // Planned-order defaults are business dates on the plant's calendar — use
-    // the loader's location-today, not the planner's browser zone.
-    const planningData = useRouteData<{ locationToday?: string }>(
-      path.to.productionPlanning
-    );
-    const locationToday =
-      planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const { carbon } = useCarbon();
 
     // ── Open jobs: the item's existing make-to-stock jobs ───────────────────

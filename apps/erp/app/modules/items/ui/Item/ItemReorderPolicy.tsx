@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { computePlanningOrders } from "@carbon/utils";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import { z } from "zod";
 import type {
@@ -81,6 +81,12 @@ export function getReorderPolicyDescription(itemPlanning: {
 type BaseOrderParams = {
   itemPlanning: ProductionPlanningItem | PurchasingPlanningItem;
   periods: { startDate: string; id: string }[];
+  /**
+   * Today on the LOCATION's calendar (the planning loader's `locationToday`).
+   * Decides `isASAP`; the browser's day would disagree with the grid's weeks
+   * for part of every day when the planner is in another timezone.
+   */
+  todayIso: string;
 };
 
 // Cache for memoizing calculateOrders results
@@ -98,7 +104,8 @@ const ordersCache = new Map<
 // Generate cache key from itemPlanning and periods
 function getCacheKey(
   itemPlanning: ProductionPlanningItem | PurchasingPlanningItem,
-  periods: { startDate: string; id: string }[]
+  periods: { startDate: string; id: string }[],
+  todayIso: string
 ): string {
   // Include all relevant properties that affect order calculation
   const periodIds = periods.map((p) => p.id).join(",");
@@ -107,10 +114,14 @@ function getCacheKey(
     return itemPlanning[key] ?? 0;
   }).join(",");
 
-  return `${itemPlanning.id}_${itemPlanning.reorderingPolicy}_${itemPlanning.reorderPoint}_${itemPlanning.reorderQuantity}_${itemPlanning.maximumInventoryQuantity}_${itemPlanning.demandAccumulationPeriod}_${itemPlanning.demandAccumulationSafetyStock}_${itemPlanning.leadTime}_${itemPlanning.lotSize}_${itemPlanning.minimumOrderQuantity}_${itemPlanning.maximumOrderQuantity}_${itemPlanning.orderMultiple}_${itemPlanning.supersessionMode}_${itemPlanning.minimumReserveQuantity}_${itemPlanning.quantityOnHand}_${itemPlanning.quantityToOrder}_${periodIds}_${weekValues}`;
+  return `${itemPlanning.id}_${itemPlanning.reorderingPolicy}_${itemPlanning.reorderPoint}_${itemPlanning.reorderQuantity}_${itemPlanning.maximumInventoryQuantity}_${itemPlanning.demandAccumulationPeriod}_${itemPlanning.demandAccumulationSafetyStock}_${itemPlanning.leadTime}_${itemPlanning.lotSize}_${itemPlanning.minimumOrderQuantity}_${itemPlanning.maximumOrderQuantity}_${itemPlanning.orderMultiple}_${itemPlanning.supersessionMode}_${itemPlanning.minimumReserveQuantity}_${itemPlanning.quantityOnHand}_${itemPlanning.quantityToOrder}_${periodIds}_${weekValues}_${todayIso}`;
 }
 
-function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
+function calculateOrders({
+  itemPlanning,
+  periods,
+  todayIso
+}: BaseOrderParams): {
   startDate: string;
   dueDate: string;
   quantity: number;
@@ -127,7 +138,7 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
   };
 }[] {
   // Check cache first
-  const cacheKey = getCacheKey(itemPlanning, periods);
+  const cacheKey = getCacheKey(itemPlanning, periods, todayIso);
   const cached = ordersCache.get(cacheKey);
   if (cached) {
     return cached;
@@ -164,7 +175,7 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
         dueDate: dueDate.toString(),
         quantity: reserveShortfall,
         periodId: periods[0].id,
-        isASAP: startDate.compare(today(getLocalTimeZone())) < 0,
+        isASAP: startDate.compare(parseDate(todayIso)) < 0,
         policyName: "Stock Only",
         triggerValues: {
           projectedStock: itemPlanning.quantityOnHand ?? 0,
@@ -180,7 +191,7 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
   // The four-policy sizing math is shared with the MRP engine — the single
   // source of truth is computePlanningOrders in @carbon/utils (parity-tested
   // against the SQL calculate_quantity_to_order). This component only supplies
-  // the projections (weekN columns) and the local "today".
+  // the projections (weekN columns) and the location's "today".
   const projections = periods.map(
     (_, i) => (itemPlanning[`week${i + 1}` as "week1"] as number) || 0
   );
@@ -189,7 +200,7 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
     reorderingPolicy: itemPlanning.reorderingPolicy,
     periods,
     projections,
-    todayDate: today(getLocalTimeZone()).toString(),
+    todayDate: todayIso,
     params: {
       reorderPoint: itemPlanning.reorderPoint,
       reorderQuantity: itemPlanning.reorderQuantity,
@@ -222,10 +233,11 @@ export function clearOrdersCache() {
  */
 export function getNextPlannedOrder(
   itemPlanning: ProductionPlanningItem | PurchasingPlanningItem,
-  periods: { startDate: string; id: string }[]
+  periods: { startDate: string; id: string }[],
+  todayIso: string
 ) {
   let next: ReturnType<typeof calculateOrders>[number] | null = null;
-  for (const order of calculateOrders({ itemPlanning, periods })) {
+  for (const order of calculateOrders({ itemPlanning, periods, todayIso })) {
     if (order.quantity <= 0) continue;
     // ISO dates: string order is chronological
     if (!next || order.startDate < next.startDate) next = order;
@@ -235,9 +247,10 @@ export function getNextPlannedOrder(
 
 export function getProductionOrdersFromPlanning(
   itemPlanning: ProductionPlanningItem,
-  periods: { startDate: string; id: string }[]
+  periods: { startDate: string; id: string }[],
+  todayIso: string
 ): ProductionOrder[] {
-  return calculateOrders({ itemPlanning, periods });
+  return calculateOrders({ itemPlanning, periods, todayIso });
 }
 
 const supplierPartValidator = z.array(
@@ -253,6 +266,7 @@ const supplierPartValidator = z.array(
 export function getPurchaseOrdersFromPlanning(
   itemPlanning: PurchasingPlanningItem,
   periods: { startDate: string; id: string }[],
+  todayIso: string,
   items: Item[],
   supplierId?: string
 ): PlannedOrder[] {
@@ -266,7 +280,7 @@ export function getPurchaseOrdersFromPlanning(
   // Get the conversion factor from the selected supplier
   const conversionFactor = supplier?.conversionFactor ?? 1;
 
-  return calculateOrders({ itemPlanning, periods }).map((order) => ({
+  return calculateOrders({ itemPlanning, periods, todayIso }).map((order) => ({
     ...order,
     // Convert inventory quantity to purchase quantity by dividing by conversion factor
     quantity:

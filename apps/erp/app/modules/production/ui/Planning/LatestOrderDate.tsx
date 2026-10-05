@@ -17,9 +17,10 @@ type PlanningPeriod = { id: string; startDate: string };
 /** CSV value for the Latest Order Date column: the ISO date, or blank. */
 export function latestOrderDateExportValue(
   row: PlanningRow,
-  periods: PlanningPeriod[]
+  periods: PlanningPeriod[],
+  todayIso: string
 ) {
-  return getNextPlannedOrder(row, periods)?.startDate ?? null;
+  return getNextPlannedOrder(row, periods, todayIso)?.startDate ?? null;
 }
 
 /**
@@ -30,14 +31,17 @@ export function latestOrderDateExportValue(
  */
 export const LatestOrderDateCell = memo(function LatestOrderDateCell({
   itemPlanning,
-  periods
+  periods,
+  todayIso
 }: {
   itemPlanning: PlanningRow;
   periods: PlanningPeriod[];
+  /** Today on the location's calendar — what "past due" is measured from. */
+  todayIso: string;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const order = getNextPlannedOrder(itemPlanning, periods);
+  const order = getNextPlannedOrder(itemPlanning, periods, todayIso);
   if (!order) return <span>-</span>;
 
   const leadTime = itemPlanning.leadTime ?? 0;

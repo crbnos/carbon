@@ -373,6 +373,12 @@ never offered a Cancel, Defer or Expedite.
   disagree. Red once the day has passed (the order's `isASAP`); "-" when
   nothing needs ordering. The tooltip shows the required date and lead time;
   the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
+- **One "today": the location's.** Every planning surface that marks a date
+  late — the Latest Order Date cell, the expanded action lines
+  (`PlanningActionLines`), the drawers and the order sizing
+  (`calculateOrders`, part of its cache key) — takes the loader's
+  `locationToday` as a prop. None reads the browser's zone: a planner in
+  another timezone saw an action red in one column and not in the next.
 - Both have a "Recalculate" button (`mrpFetcher.Form` POST to
   `path.to.api.mrp(locationId)`) whose tooltip comes from
   `useMrpScheduleDescription` (`~/hooks`): *"MRP runs automatically every 3

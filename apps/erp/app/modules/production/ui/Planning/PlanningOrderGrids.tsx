@@ -116,7 +116,8 @@ export function DeferredDrawerSections({ children }: { children: ReactNode }) {
 }
 
 // About eight orders tall. A part can have hundreds of open orders; past this
-// the grid scrolls inside itself and renders only the rows in view.
+// the grid scrolls inside itself and renders only the rows in view. That grid
+// lays its columns out fixed, so each column's `size` IS its width.
 const ORDER_GRID_MAX_HEIGHT = 400;
 
 export function SuggestedOrdersGrid<O extends SuggestedOrder>({
@@ -148,6 +149,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
       {
         accessorKey: "quantity",
         header: quantityHeader,
+        size: 120,
         cell: ({ row }) => (
           <span className="block min-w-[72px] tabular-nums">
             {formatQuantity(row.original.quantity)}
@@ -157,6 +159,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
       {
         accessorKey: "dueDate",
         header: t`Due Date`,
+        size: 140,
         cell: ({ row }) => (
           <span className="block min-w-[104px] tabular-nums">
             {row.original.dueDate
@@ -171,6 +174,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
         // edit; red once that day has passed.
         id: "orderBy",
         header: orderByHeader,
+        size: 140,
         cell: ({ row }) => {
           const dueDate = row.original.dueDate;
           if (!dueDate) return "—";
@@ -198,7 +202,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
       cols.push({
         id: "remove",
         header: "",
-        size: 40,
+        size: 48,
         cell: ({ row }) => (
           <button
             type="button"
@@ -356,6 +360,7 @@ export function OpenOrdersGrid({
         // edited — so the icon and its colour are enough.
         id: "document",
         header: documentHeader,
+        size: 190,
         cell: ({ row }) => (
           <HStack spacing={2} className="flex-nowrap">
             {row.original.status && renderStatusIcon(row.original.status)}
@@ -377,6 +382,7 @@ export function OpenOrdersGrid({
       {
         accessorKey: "quantity",
         header: quantityHeader,
+        size: 110,
         cell: ({ row }) => (
           <span className="tabular-nums">
             {row.original.quantity === null
@@ -388,6 +394,7 @@ export function OpenOrdersGrid({
       {
         accessorKey: "dueDate",
         header: t`Due Date`,
+        size: 130,
         cell: ({ row }) => (
           <span className="whitespace-nowrap tabular-nums">
             {row.original.dueDate
@@ -402,6 +409,7 @@ export function OpenOrdersGrid({
         // one button that acts on it.
         id: "suggestion",
         header: t`Suggestion`,
+        size: 330,
         cell: ({ row }) => {
           const { action, suggestedQuantity } = row.original;
           if (!action) return null;

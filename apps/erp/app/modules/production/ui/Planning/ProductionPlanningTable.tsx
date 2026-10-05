@@ -459,10 +459,10 @@ const ProductionPlanningTable = ({
   const selectedOrders = useMemo(() => {
     if (!selectedItem?.id) return { inside: [], beyond: [] };
     return splitOrdersByFence(
-      getProductionOrdersFromPlanning(selectedItem, periods),
+      getProductionOrdersFromPlanning(selectedItem, periods, locationToday),
       timeFence.fenceDateFor(selectedItem)
     );
-  }, [selectedItem, periods, timeFence]);
+  }, [selectedItem, periods, timeFence, locationToday]);
 
   // The drawer's Open Orders table shows the selected row's change actions on existing
   // jobs (Expedite, Defer, …). Order / Make actions are left out — each one
@@ -510,7 +510,7 @@ const ProductionPlanningTable = ({
       data.forEach((item) => {
         ordersByItemId.set(
           item.id,
-          getProductionOrdersFromPlanning(item, periods)
+          getProductionOrdersFromPlanning(item, periods, locationToday)
         );
       });
       setOrdersByItemId(ordersByItemId);
@@ -762,12 +762,16 @@ const ProductionPlanningTable = ({
         accessorKey: "latestOrderDate",
         header: t`Latest Order Date`,
         cell: ({ row }) => (
-          <LatestOrderDateCell itemPlanning={row.original} periods={periods} />
+          <LatestOrderDateCell
+            itemPlanning={row.original}
+            periods={periods}
+            todayIso={locationToday}
+          />
         ),
         meta: {
           icon: <LuCalendarClock />,
           exportValue: (row: ProductionPlanningItem) =>
-            latestOrderDateExportValue(row, periods)
+            latestOrderDateExportValue(row, periods, locationToday)
         }
       },
       {
@@ -938,6 +942,7 @@ const ProductionPlanningTable = ({
     (row: ProductionPlanningItem) => (
       <PlanningActionLines
         actions={visibleActionsByItemId.get(row.id) ?? []}
+        todayIso={locationToday}
         currentUserId={user.id}
         canUpdate={canUpdateActions}
         isBusy={isActionsBusy}
@@ -966,7 +971,8 @@ const ProductionPlanningTable = ({
       canUpdateActions,
       isActionsBusy,
       submitActions,
-      openDrawer
+      openDrawer,
+      locationToday
     ]
   );
 
@@ -1021,6 +1027,7 @@ const ProductionPlanningTable = ({
         }
         renderActions={renderActions}
         renderExpandedRow={renderExpandedRow}
+        pinExpandedRows
         canExpandRow={canExpandRow}
         title={t`Material Planning`}
         table="production-planning"
@@ -1031,6 +1038,7 @@ const ProductionPlanningTable = ({
       {selectedItem && (
         <ProductionPlanningOrderDrawer
           key={drawerKey}
+          locationToday={locationToday}
           locationId={locationId}
           row={selectedItem}
           orders={

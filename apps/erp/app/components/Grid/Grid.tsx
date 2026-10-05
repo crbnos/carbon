@@ -37,7 +37,9 @@ import { getAccessorKey, updateNestedProperty } from "./utils";
 
 // Used until a row is measured: a body cell is `h-11`.
 const ESTIMATED_ROW_HEIGHT = 44;
-// The header row (`h-11`) sits above the rows inside the same scroller.
+// The header row sits above the rows inside the same scroller. Its `Tr` is
+// `h-10`, but every `Th` is `h-11`, and a table row is as tall as its tallest
+// cell.
 const HEADER_HEIGHT = 44;
 const OVERSCAN = 3;
 
@@ -428,6 +430,7 @@ const Grid = <T extends object>({
       rowIsSelected={selectedCell?.row === row.index}
       rowRef={isVirtual ? rowVirtualizer.measureElement : undefined}
       virtualIndex={virtualIndex}
+      withRowBorder={isVirtual}
       onCellClick={onCellClick}
       onCellUpdate={onCellUpdate}
       onEditRow={onEditRow}
@@ -501,7 +504,14 @@ const Grid = <T extends object>({
       >
         <Table
           full={contained || isVirtual}
-          className={cn(!contained && !isVirtual && "border w-full")}
+          className={cn(
+            !contained && !isVirtual && "border w-full",
+            // Automatic layout sizes columns from the rows that are rendered,
+            // and virtualization swaps those rows while scrolling, so every
+            // column changed width under the cursor. Fixed layout takes the
+            // widths from the header (`header.getSize()`) alone.
+            isVirtual && "table-fixed"
+          )}
         >
           <Thead
             className={cn(

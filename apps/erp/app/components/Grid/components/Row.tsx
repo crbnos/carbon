@@ -23,6 +23,13 @@ type RowProps<T> = {
   rowRef?: Ref<HTMLTableRowElement>;
   /** The row's index in a virtualized grid, read back when it is measured. */
   virtualIndex?: number;
+  /**
+   * Draw a line between body rows. A virtualized grid scrolls its rows under a
+   * pinned header, where rows with no separator read as one tall cell per
+   * column. The header row already draws the line under itself, so the first
+   * row adds none and nothing doubles up.
+   */
+  withRowBorder?: boolean;
   onCellClick: (row: number, column: number) => void;
   onCellUpdate: (row: number) => (updates: Record<string, unknown>) => void;
   onEditRow?: (row: T) => void;
@@ -38,6 +45,7 @@ const Row = <T extends object>({
   rowRef,
   selectedCell,
   virtualIndex,
+  withRowBorder = false,
   onCellClick,
   onCellUpdate
 }: RowProps<T>) => {
@@ -48,12 +56,8 @@ const Row = <T extends object>({
       key={row.id}
       ref={rowRef}
       data-index={virtualIndex}
-      // A line between body rows. The header row already draws the line under
-      // itself and the "New" row the one above it, so the first row adds none
-      // and nothing doubles up. Cells have always had their right border; the
-      // rows had no separator at all, which read as one tall cell per column.
       className={cn(
-        "border-t border-border first:border-t-0",
+        withRowBorder && "border-t border-border first:border-t-0",
         rowIsClickable && "cursor-pointer"
       )}
     >

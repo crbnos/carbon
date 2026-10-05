@@ -31,7 +31,7 @@ import {
   VStack
 } from "@carbon/react";
 import { formatDate, RoundingMode, round } from "@carbon/utils";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -44,7 +44,7 @@ import {
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter, useRouteData } from "~/hooks";
+import { useCurrencyFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -96,6 +96,12 @@ function periodIdFor(periods: Period[], date: string | null | undefined) {
 }
 
 type PurchasingPlanningOrderDrawerProps = {
+  /**
+   * Today on the plant's calendar (the planning loader's `locationToday`).
+   * Planned-order defaults are business dates there, and "late" is measured
+   * from it, never from the planner's browser zone.
+   */
+  locationToday: string;
   isOpen: boolean;
   locationId: string;
   orders: PlannedOrder[];
@@ -141,20 +147,14 @@ export const PurchasingPlanningOrderDrawer = memo(
     selectedSupplier,
     isOpen,
     onClose,
-    onSupplierChange
+    onSupplierChange,
+    locationToday
   }: PurchasingPlanningOrderDrawerProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
     const fenceLabel = timeFenceDate
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
-    // Planned-order defaults are business dates on the plant's calendar — use
-    // the loader's location-today, not the planner's browser zone.
-    const planningData = useRouteData<{ locationToday?: string }>(
-      path.to.purchasingPlanning
-    );
-    const locationToday =
-      planningData?.locationToday ?? today(getLocalTimeZone()).toString();
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
 
@@ -447,7 +447,14 @@ export const PurchasingPlanningOrderDrawer = memo(
         };
         setOrders(selectedItem, [...orders, newOrder]);
       }
-    }, [selectedItem, orders, setOrders, periods, selectedSupplier]);
+    }, [
+      selectedItem,
+      orders,
+      setOrders,
+      periods,
+      selectedSupplier,
+      locationToday
+    ]);
 
     const onSubmit = useCallback(
       (id: string, orders: PlannedOrder[]) => {

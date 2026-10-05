@@ -511,12 +511,13 @@ const PlanningTable = memo(
         getPurchaseOrdersFromPlanning(
           selectedItem,
           periods,
+          locationToday,
           items,
           suppliersMap[selectedItem.id]
         ),
         timeFence.fenceDateFor(selectedItem)
       );
-    }, [selectedItem, periods, items, suppliersMap, timeFence]);
+    }, [selectedItem, periods, items, suppliersMap, timeFence, locationToday]);
 
     // The drawer's Open Orders table shows the selected row's change actions on existing
     // orders (Expedite, Defer, …). Order / Make actions are left out — each one
@@ -567,6 +568,7 @@ const PlanningTable = memo(
             getPurchaseOrdersFromPlanning(
               item,
               periods,
+              locationToday,
               items,
               suppliersMap[item.id]
             )
@@ -864,12 +866,13 @@ const PlanningTable = memo(
             <LatestOrderDateCell
               itemPlanning={row.original}
               periods={periods}
+              todayIso={locationToday}
             />
           ),
           meta: {
             icon: <LuCalendarClock />,
             exportValue: (row: PurchasingPlanningItem) =>
-              latestOrderDateExportValue(row, periods)
+              latestOrderDateExportValue(row, periods, locationToday)
           }
         },
         {
@@ -1040,6 +1043,7 @@ const PlanningTable = memo(
       (row: PurchasingPlanningItem) => (
         <PlanningActionLines
           actions={visibleActionsByItemId.get(row.id) ?? []}
+          todayIso={locationToday}
           currentUserId={user.id}
           canUpdate={canUpdateActions}
           isBusy={isActionsBusy}
@@ -1068,7 +1072,8 @@ const PlanningTable = memo(
         canUpdateActions,
         isActionsBusy,
         submitActions,
-        openDrawer
+        openDrawer,
+        locationToday
       ]
     );
 
@@ -1126,6 +1131,7 @@ const PlanningTable = memo(
           }
           renderActions={renderActions}
           renderExpandedRow={renderExpandedRow}
+          pinExpandedRows
           canExpandRow={canExpandRow}
           title={t`Material Planning`}
           table="planning"
@@ -1136,6 +1142,7 @@ const PlanningTable = memo(
         {selectedItem && (
           <PurchasingPlanningOrderDrawer
             key={drawerKey}
+            locationToday={locationToday}
             locationId={locationId}
             selectedItem={selectedItem}
             setSelectedItem={setSelectedItem}
