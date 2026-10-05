@@ -32,6 +32,7 @@ import {
   RescheduleToleranceCard,
   ResponsibleEmployeeCard
 } from "~/modules/settings/ui/Planning";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -103,6 +104,15 @@ export async function action({ request }: ActionFunctionArgs) {
       const employeeId = employeeIdValidator.parse(
         formData.get("employeeId") ?? undefined
       );
+      if (
+        employeeId &&
+        !(await isActiveCompanyEmployee(client, companyId, employeeId))
+      ) {
+        return {
+          success: false,
+          message: "Choose an employee of this company"
+        };
+      }
       const result = await setDefaultResponsibleEmployee(client, {
         companyId,
         employeeId: employeeId || null
@@ -120,6 +130,15 @@ export async function action({ request }: ActionFunctionArgs) {
       const employeeId = employeeIdValidator.parse(
         formData.get("employeeId") ?? undefined
       );
+      if (
+        employeeId &&
+        !(await isActiveCompanyEmployee(client, companyId, employeeId))
+      ) {
+        return {
+          success: false,
+          message: "Choose an employee of this company"
+        };
+      }
       const result = await setLocationResponsibleEmployee(client, {
         companyId,
         locationId,
@@ -151,6 +170,15 @@ export async function action({ request }: ActionFunctionArgs) {
       const employeeId = employeeIdValidator.parse(
         formData.get("employeeId") ?? undefined
       );
+      if (
+        employeeId &&
+        !(await isActiveCompanyEmployee(client, companyId, employeeId))
+      ) {
+        return {
+          success: false,
+          message: "Choose an employee of this company"
+        };
+      }
       const result = await upsertItemPostingGroupResponsibility(client, {
         companyId,
         locationId,

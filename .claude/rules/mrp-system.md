@@ -373,6 +373,23 @@ unaffected.
   received or invoiced; when that guard holds the row back the action goes back to Open
   as "Review on PO". Never `shortClosePurchaseOrderLine` — it recomputes the
   header status from the lines and turned an unsent Draft into "Completed".
+  **Every Apply write carries its own Draft / Planned condition**
+  (`updatePlanningJob`, `updatePurchaseOrderLineSchedule`, the Cancel delete),
+  so a job released or a PO sent between the route's status read and the write
+  is left alone and the action goes to review — a read-then-write gate let it
+  through. A failed write gives its claim back through
+  `releasePlanningActionClaim`, which deletes the claimed row instead when an
+  MRP run has meanwhile written an Open row for the same need (the reopen hits
+  the natural-key index, 23505); a failed release is reported, not swallowed.
+  Job Cancel is the one exception: `cancelJob`'s cleanup steps run in their own
+  transactions, so a release between the read and the cancel is not caught.
+  **Permissions:** both `planning.update` routes run with the service role, so
+  their `requirePermissions` is the only check — `create` for `order`,
+  `update` for everything else, plus `purchasing_delete` (read from the claims)
+  for a Cancel that deletes a PO line. An assignee or responsible employee is
+  saved only after `isActiveCompanyEmployee` (`shared.server.ts`), and
+  `planningAction` is read-only through the API (manifest rule; MRP and these
+  routes write it with the service role).
   The Actions column filter (`filter=planningActions:eq:<type>`) and the
   Assignee column's people filter (`filter=planningAssignee:in:<userId>,…` —
   the same people list every other assignee filter uses; the column is hidden

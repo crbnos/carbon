@@ -16,14 +16,16 @@ import {
   isJobEditableFromPlanning,
   markPlanningActionsActioned,
   notifyScheduleInputsChanged,
+  PLANNING_EDITABLE_JOB_STATUSES,
   productionOrderValidator,
   recalculateJobRequirements,
+  releasePlanningActionClaim,
   reopenDismissedPlanningActions,
-  reopenPlanningActions,
-  updateJob,
+  updatePlanningJob,
   upsertJobMethod
 } from "~/modules/production";
 import { cancelJob } from "~/modules/production/production.server";
+import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
@@ -58,14 +60,20 @@ const itemsValidator = z
   .array();
 
 export async function action({ request }: ActionFunctionArgs) {
+  const { items, action, locationId, planningActionIds, assignee, job } =
+    await request.json();
+
+  // Creating planned jobs is `create`; everything else here changes jobs and
+  // actions that already exist (apply, inline edits, dismiss, reopen, assign),
+  // which the job screens gate on `update`. The client is the service role, so
+  // this check is the only one.
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production",
+    ...(action === "order"
+      ? { create: "production" }
+      : { update: "production" }),
     role: "employee",
     bypassRls: true
   });
-
-  const { items, action, locationId, planningActionIds, assignee, job } =
-    await request.json();
 
   if (typeof locationId !== "string") {
     return data(
@@ -339,12 +347,23 @@ export async function action({ request }: ActionFunctionArgs) {
                   updatedBy: userId
                 })
                 .eq("id", order.existingId)
-                .eq("companyId", companyId);
+                .eq("companyId", companyId)
+                // The drawer sends only new orders; an existing job named here
+                // may be re-planned only while it is still Draft / Planned —
+                // never pulled back from the floor (or from Completed).
+                .in("status", [...PLANNING_EDITABLE_JOB_STATUSES])
+                .select("id");
 
               if (updateJob.error) {
                 const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;
                 logger.error(errorMsg);
                 errors.push(errorMsg);
+                continue;
+              }
+              if (updateJob.data.length === 0) {
+                errors.push(
+                  `Job ${order.existingId} is no longer Draft or Planned; change it on the job`
+                );
                 continue;
               }
 
@@ -568,8 +587,9 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const saved = await updateJob(client, {
+      const saved = await updatePlanningJob(client, {
         id: target.data.id,
+        companyId,
         updatedBy: userId,
         ...(parsedJob.data.field === "quantity"
           ? { quantity: parsedJob.data.value }
@@ -586,6 +606,17 @@ export async function action({ request }: ActionFunctionArgs) {
         return data(
           { success: false, message: "Failed to update job" },
           { status: 500 }
+        );
+      }
+      if (!saved.updated) {
+        // Released (or finished) after the status check above.
+        return data(
+          {
+            success: false,
+            message:
+              "This job is no longer Draft or Planned. Change it on the job."
+          },
+          { status: 409 }
         );
       }
 
@@ -671,6 +702,26 @@ export async function action({ request }: ActionFunctionArgs) {
       const errors: string[] = [];
       // Applied, but a follow-up step failed: reported, never rolled back.
       const warnings: string[] = [];
+
+      // A claim that is not given back leaves the action Actioned with nothing
+      // applied, so a failed release is reported, never swallowed.
+      const releaseClaim = async (planningActionId: string) => {
+        const released = await releasePlanningActionClaim(client, {
+          id: planningActionId,
+          companyId,
+          userId
+        });
+        if (released.error) {
+          logger.error("Failed to release a planning action claim", {
+            companyId,
+            planningActionId,
+            error: released.error
+          });
+          errors.push(
+            `Planning action ${planningActionId} could not be reopened: ${released.error}`
+          );
+        }
+      };
 
       for (const planningActionId of parsedIds.data) {
         const actionRow = await getPlanningAction(client, {
@@ -761,31 +812,33 @@ export async function action({ request }: ActionFunctionArgs) {
             userId
           });
           if (failed) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to cancel job for planning action ${planningActionId}: ${failed.message}`
             );
             continue;
           }
         } else if (row.type === "Expedite" || row.type === "Defer") {
-          const update = await updateJob(client, {
+          const update = await updatePlanningJob(client, {
             id: job.data.id,
+            companyId,
             updatedBy: userId,
             dueDate: row.suggestedDate
           });
           if (update.error) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to reschedule job for planning action ${planningActionId}: ${update.error.message}`
             );
+            continue;
+          }
+          if (!update.updated) {
+            // Released (or finished) since it was read.
+            await releaseClaim(planningActionId);
+            requiresManualAction.push({
+              id: planningActionId,
+              jobId: job.data.id
+            });
             continue;
           }
           const notified = await notifyScheduleChange(
@@ -799,20 +852,26 @@ export async function action({ request }: ActionFunctionArgs) {
             );
           }
         } else {
-          const update = await updateJob(client, {
+          const update = await updatePlanningJob(client, {
             id: job.data.id,
+            companyId,
             updatedBy: userId,
             quantity: Number(row.suggestedQuantity)
           });
           if (update.error) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
             );
+            continue;
+          }
+          if (!update.updated) {
+            // Released (or finished) since it was read.
+            await releaseClaim(planningActionId);
+            requiresManualAction.push({
+              id: planningActionId,
+              jobId: job.data.id
+            });
             continue;
           }
           const recalc = await recalculateJobRequirements(
@@ -949,6 +1008,15 @@ export async function action({ request }: ActionFunctionArgs) {
         return data(
           { success: false, message: "Invalid assignee" },
           { status: 500 }
+        );
+      }
+      if (
+        parsedAssignee.data &&
+        !(await isActiveCompanyEmployee(client, companyId, parsedAssignee.data))
+      ) {
+        return data(
+          { success: false, message: "Choose an employee of this company" },
+          { status: 400 }
         );
       }
       const result = await assignPlanningActions(client, {

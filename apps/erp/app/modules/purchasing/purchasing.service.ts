@@ -3339,17 +3339,22 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
- * Apply a planning schedule/quantity change to a PO line the caller has gated
- * with `isPurchaseOrderEditableFromPlanning` (Draft / Planned).
+ * Apply a planning schedule/quantity change to a PO line.
  * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
  * units via the line's conversionFactor.
  *
  * A quantity change also restates the line's tax pair (`taxPairForQuantity`):
  * the extended price is generated from the quantity, the tax amount is stored,
  * so writing the quantity alone left the old amount against a new base.
+ *
+ * The Draft / Planned condition (`PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES`)
+ * is part of the UPDATE, so a PO sent or put in approval after the caller read
+ * it is left alone: `updated` is false, and the caller sends the planner to
+ * the PO instead.
  */
 export async function updatePurchaseOrderLineSchedule(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     lineId: string;
     companyId: string;
@@ -3358,7 +3363,7 @@ export async function updatePurchaseOrderLineSchedule(
     requiredDate?: string;
     purchaseQuantity?: number;
   }
-): Promise<{ error: { message: string } | null }> {
+): Promise<{ updated: boolean; error: { message: string } | null }> {
   let tax: { taxPercent: number; supplierTaxAmount: number } | undefined;
 
   if (args.purchaseQuantity !== undefined) {
@@ -3370,20 +3375,24 @@ export async function updatePurchaseOrderLineSchedule(
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
       .single();
-    if (line.error) return { error: line.error };
+    if (line.error) return { updated: false, error: line.error };
 
     const currencyCode = line.data.purchaseOrder?.currencyCode;
     if (!currencyCode) {
-      return { error: { message: "Purchase order has no currency" } };
+      return {
+        updated: false,
+        error: { message: "Purchase order has no currency" }
+      };
     }
     const currency = await getCurrencyByCode(
       client,
       args.companyGroupId,
       currencyCode
     );
-    if (currency.error) return { error: currency.error };
+    if (currency.error) return { updated: false, error: currency.error };
     if (currency.data?.decimalPlaces == null) {
       return {
+        updated: false,
         error: { message: `Currency ${currencyCode} has no precision` }
       };
     }
@@ -3396,22 +3405,40 @@ export async function updatePurchaseOrderLineSchedule(
     tax = { taxPercent: pair.percent, supplierTaxAmount: pair.amount };
   }
 
-  const update = await client
-    .from("purchaseOrderLine")
-    .update({
-      ...(args.requiredDate !== undefined
-        ? { requiredDate: args.requiredDate }
-        : {}),
-      ...(args.purchaseQuantity !== undefined
-        ? { purchaseQuantity: args.purchaseQuantity }
-        : {}),
-      ...(tax ?? {}),
-      updatedBy: args.userId
-    })
-    .eq("id", args.lineId)
-    .eq("companyId", args.companyId);
-
-  return { error: update.error };
+  try {
+    const updated = await db
+      .updateTable("purchaseOrderLine")
+      .set({
+        ...(args.requiredDate !== undefined
+          ? { requiredDate: args.requiredDate }
+          : {}),
+        ...(args.purchaseQuantity !== undefined
+          ? { purchaseQuantity: args.purchaseQuantity }
+          : {}),
+        ...(tax ?? {}),
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", args.lineId)
+      .where("companyId", "=", args.companyId)
+      .where("purchaseOrderId", "in", (eb) =>
+        eb
+          .selectFrom("purchaseOrder")
+          .select("id")
+          .where("companyId", "=", args.companyId)
+          .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
+      )
+      .returning("id")
+      .execute();
+    return { updated: updated.length > 0, error: null };
+  } catch (err) {
+    return {
+      updated: false,
+      error: {
+        message: err instanceof Error ? err.message : "Failed to update line"
+      }
+    };
+  }
 }
 
 // ─── Purchase Return Orders (Supplier Returns) ───

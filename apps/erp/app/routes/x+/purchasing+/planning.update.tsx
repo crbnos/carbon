@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
 import {
   applyRate,
@@ -19,8 +21,8 @@ import {
   dismissPlanningActions,
   getPlanningAction,
   markPlanningActionsActioned,
-  reopenDismissedPlanningActions,
-  reopenPlanningActions
+  releasePlanningActionClaim,
+  reopenDismissedPlanningActions
 } from "~/modules/production";
 import {
   deleteUnsentPurchaseOrderLine,
@@ -30,7 +32,10 @@ import {
   updatePurchaseOrderLineSchedule,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import {
+  isActiveCompanyEmployee,
+  requireCompanyRecord
+} from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
@@ -62,15 +67,21 @@ const itemsValidator = z
   .array();
 
 export async function action({ request }: ActionFunctionArgs) {
+  const { items, action, locationId, planningActionIds, assignee, line } =
+    await request.json();
+
+  // Creating planned orders is `create`; everything else here changes records
+  // that already exist (apply, inline edits, dismiss, reopen, assign), which
+  // the purchase order screens gate on `update`. The client is the service
+  // role, so this check is the only one.
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {
-      create: "purchasing",
+      ...(action === "order"
+        ? { create: "purchasing" }
+        : { update: "purchasing" }),
       role: "employee",
       bypassRls: true
     });
-
-  const { items, action, locationId, planningActionIds, assignee, line } =
-    await request.json();
 
   if (typeof locationId !== "string") {
     logger.warn("Planning update rejected: locationId missing", {
@@ -862,15 +873,19 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const saved = await updatePurchaseOrderLineSchedule(client, {
-        lineId: target.data.id,
-        companyId,
-        companyGroupId,
-        userId,
-        ...(parsedLine.data.field === "quantity"
-          ? { purchaseQuantity: parsedLine.data.value }
-          : { requiredDate: parsedLine.data.value })
-      });
+      const saved = await updatePurchaseOrderLineSchedule(
+        client,
+        getDatabaseClient(),
+        {
+          lineId: target.data.id,
+          companyId,
+          companyGroupId,
+          userId,
+          ...(parsedLine.data.field === "quantity"
+            ? { purchaseQuantity: parsedLine.data.value }
+            : { requiredDate: parsedLine.data.value })
+        }
+      );
       if (saved.error) {
         logger.error("Failed to save PO line from planning", {
           companyId,
@@ -882,6 +897,18 @@ export async function action({ request }: ActionFunctionArgs) {
         return data(
           { success: false, message: "Failed to update purchase order line" },
           { status: 500 }
+        );
+      }
+
+      if (!saved.updated) {
+        // Sent or put in approval after the status check above.
+        return data(
+          {
+            success: false,
+            message:
+              "This purchase order is in approval or has been sent to the supplier. Change it on the order."
+          },
+          { status: 409 }
         );
       }
 
@@ -929,6 +956,39 @@ export async function action({ request }: ActionFunctionArgs) {
         purchaseOrderId: string | null;
       }[] = [];
       const errors: string[] = [];
+
+      // A claim that is not given back leaves the action Actioned with nothing
+      // applied, so a failed release is reported, never swallowed.
+      const releaseClaim = async (planningActionId: string) => {
+        const released = await releasePlanningActionClaim(client, {
+          id: planningActionId,
+          companyId,
+          userId
+        });
+        if (released.error) {
+          logger.error("Failed to release a planning action claim", {
+            companyId,
+            planningActionId,
+            error: released.error
+          });
+          errors.push(
+            `Planning action ${planningActionId} could not be reopened: ${released.error}`
+          );
+        }
+      };
+
+      // Cancel DELETES the PO line, which the purchase order screen gates on
+      // `delete`. Read once, only when a Cancel is in the batch.
+      let canDeleteLines: boolean | undefined;
+      const mayDeleteLines = async () => {
+        canDeleteLines ??= hasPermission(
+          (await getUserClaims(userId, companyId))?.permissions,
+          "purchasing",
+          "delete",
+          companyId
+        );
+        return canDeleteLines;
+      };
 
       for (const planningActionId of parsedIds.data) {
         const actionRow = await getPlanningAction(client, {
@@ -992,6 +1052,13 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
+        if (row.type === "Cancel" && !(await mayDeleteLines())) {
+          errors.push(
+            `Planning action ${planningActionId} deletes a purchase order line, which needs delete permission`
+          );
+          continue;
+        }
+
         // Atomic claim BEFORE mutating: the conditional Open→Actioned update
         // is the lock — of two concurrent applies only one sees an affected
         // row, so the target is never double-mutated. A failed mutation
@@ -1027,11 +1094,7 @@ export async function action({ request }: ActionFunctionArgs) {
               companyId
             });
           } catch (err) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to delete PO line for planning action ${planningActionId}: ${
                 err instanceof Error ? err.message : "unknown error"
@@ -1042,11 +1105,7 @@ export async function action({ request }: ActionFunctionArgs) {
           if (!deleted) {
             // Since it was read, the PO was sent or the line received or
             // invoiced: not ours to delete any more.
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             requiresManualAction.push({
               id: planningActionId,
               purchaseOrderId: line.data.purchaseOrderId
@@ -1054,7 +1113,7 @@ export async function action({ request }: ActionFunctionArgs) {
             continue;
           }
         } else if (row.type === "Expedite" || row.type === "Defer") {
-          const update = await updatePurchaseOrderLineSchedule(client, {
+          const update = await updatePurchaseOrderLineSchedule(client, db, {
             lineId: line.data.id,
             companyId,
             companyGroupId,
@@ -1062,14 +1121,19 @@ export async function action({ request }: ActionFunctionArgs) {
             requiredDate: row.suggestedDate
           });
           if (update.error) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to reschedule PO line for planning action ${planningActionId}: ${update.error.message}`
             );
+            continue;
+          }
+          if (!update.updated) {
+            // Sent or put in approval since it was read.
+            await releaseClaim(planningActionId);
+            requiresManualAction.push({
+              id: planningActionId,
+              purchaseOrderId: line.data.purchaseOrderId
+            });
             continue;
           }
         } else {
@@ -1084,7 +1148,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   RoundingMode.Up
                 )
               : Number(row.suggestedQuantity);
-          const update = await updatePurchaseOrderLineSchedule(client, {
+          const update = await updatePurchaseOrderLineSchedule(client, db, {
             lineId: line.data.id,
             companyId,
             companyGroupId,
@@ -1092,14 +1156,18 @@ export async function action({ request }: ActionFunctionArgs) {
             purchaseQuantity
           });
           if (update.error) {
-            await reopenPlanningActions(client, {
-              ids: [planningActionId],
-              companyId,
-              userId
-            });
+            await releaseClaim(planningActionId);
             errors.push(
               `Failed to update PO line quantity for planning action ${planningActionId}: ${update.error.message}`
             );
+            continue;
+          }
+          if (!update.updated) {
+            await releaseClaim(planningActionId);
+            requiresManualAction.push({
+              id: planningActionId,
+              purchaseOrderId: line.data.purchaseOrderId
+            });
             continue;
           }
         }
@@ -1208,6 +1276,15 @@ export async function action({ request }: ActionFunctionArgs) {
         return data(
           { success: false, message: "Invalid assignee" },
           { status: 500 }
+        );
+      }
+      if (
+        parsedAssignee.data &&
+        !(await isActiveCompanyEmployee(client, companyId, parsedAssignee.data))
+      ) {
+        return data(
+          { success: false, message: "Choose an employee of this company" },
+          { status: 400 }
         );
       }
       const result = await assignPlanningActions(client, {

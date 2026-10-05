@@ -1054,10 +1054,14 @@ export const manifest = {
   }),
   pickMethod: company("parts", { read: "parts_view", delete: false }),
   plan: policies({ select: authenticated }),
+  // Read-only through the API. MRP writes it (Kysely) and the planning routes
+  // change it with the service role after their own checks; an API write could
+  // point an action's jobId / purchaseOrderLineId at another company's row
+  // (single-column foreign keys), which the service-role read then shows.
   planningAction: company("production", {
-    create: anyOf("purchasing_update", "production_update"),
-    update: anyOf("purchasing_update", "production_update"),
-    delete: anyOf("purchasing_update", "production_update")
+    create: false,
+    update: false,
+    delete: false
   }),
   pricingRule: company("sales"),
   printerRoute: company("printing", { read: "printing_view" }),

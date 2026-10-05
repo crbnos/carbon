@@ -28,6 +28,3 @@ END
 $authz$;
 ALTER TABLE public."planningAction" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."planningAction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."planningAction" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])));
-CREATE POLICY "UPDATE" ON "public"."planningAction" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])));
-CREATE POLICY "DELETE" ON "public"."planningAction" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])));

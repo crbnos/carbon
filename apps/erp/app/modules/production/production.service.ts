@@ -100,6 +100,7 @@ import {
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
+  PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
   stepPlanWarningsSchema,
   WEEKDAYS_MONDAY_FIRST
@@ -3796,27 +3797,7 @@ export async function updateJob(
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, updatedBy, ...updates } = input;
 
-  let priority = updates.priority;
-  if (
-    (updates.dueDate !== undefined || updates.deadlineType !== undefined) &&
-    priority === undefined
-  ) {
-    const existing = await client
-      .from("job")
-      .select("dueDate, deadlineType, companyId, locationId")
-      .eq("id", id)
-      .single();
-
-    if (existing.data) {
-      priority = await calculateJobPriority(client, {
-        jobId: id,
-        dueDate: updates.dueDate ?? existing.data.dueDate,
-        deadlineType: updates.deadlineType ?? existing.data.deadlineType,
-        companyId: existing.data.companyId,
-        locationId: existing.data.locationId
-      });
-    }
-  }
+  const priority = await priorityForDateChange(client, id, updates);
 
   return client
     .from("job")
@@ -3831,6 +3812,81 @@ export async function updateJob(
     .eq("id", id)
     .select("id")
     .single();
+}
+
+/**
+ * The job's priority when its due date or deadline type changes, so a date
+ * change re-ranks the job; undefined when neither changes or the caller sets
+ * the priority itself.
+ */
+async function priorityForDateChange(
+  client: SupabaseClient<Database>,
+  id: string,
+  updates: {
+    dueDate?: string | null;
+    deadlineType?: (typeof deadlineTypes)[number];
+    priority?: number;
+  }
+): Promise<number | undefined> {
+  if (
+    (updates.dueDate === undefined && updates.deadlineType === undefined) ||
+    updates.priority !== undefined
+  ) {
+    return updates.priority;
+  }
+
+  const existing = await client
+    .from("job")
+    .select("dueDate, deadlineType, companyId, locationId")
+    .eq("id", id)
+    .single();
+  if (!existing.data) return undefined;
+
+  return calculateJobPriority(client, {
+    jobId: id,
+    dueDate: updates.dueDate ?? existing.data.dueDate,
+    deadlineType: updates.deadlineType ?? existing.data.deadlineType,
+    companyId: existing.data.companyId,
+    locationId: existing.data.locationId
+  });
+}
+
+/**
+ * Change a job's quantity or due date from planning (Apply, the order drawer).
+ * The Draft / Planned condition is part of the UPDATE, so a job released
+ * after the caller read it is left alone rather than edited: `updated` is
+ * false, and the caller sends the planner to the job instead.
+ */
+export async function updatePlanningJob(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    quantity?: number;
+    dueDate?: string;
+  }
+): Promise<{ updated: boolean; error: PostgrestError | null }> {
+  const { id, companyId, updatedBy, ...updates } = input;
+  const priority = await priorityForDateChange(client, id, updates);
+
+  const result = await client
+    .from("job")
+    .update({
+      ...updates,
+      ...(priority !== undefined && { priority }),
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .in("status", [...PLANNING_EDITABLE_JOB_STATUSES])
+    .select("id");
+
+  return {
+    updated: (result.data ?? []).length > 0,
+    error: result.error
+  };
 }
 
 /**
@@ -10635,6 +10691,37 @@ export async function reopenPlanningActions(
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .eq("status", "Actioned");
+}
+
+/**
+ * Give up an apply's claim on one action: back to Open, so the planner can try
+ * again. If an MRP run since the claim already wrote an Open row for the same
+ * need, the reopen hits the natural-key unique index (23505); that new row
+ * replaces this one, so the claimed row is deleted instead. Returns the error
+ * the caller must report — never ignore it, or the action stays Actioned with
+ * nothing applied.
+ */
+export async function releasePlanningActionClaim(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{ error: string | null }> {
+  const reopened = await reopenPlanningActions(client, {
+    ids: [args.id],
+    companyId: args.companyId,
+    userId: args.userId
+  });
+  if (!reopened.error) return { error: null };
+  if (reopened.error.code !== "23505") {
+    return { error: reopened.error.message };
+  }
+
+  const removed = await client
+    .from("planningAction")
+    .delete()
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("status", "Actioned");
+  return { error: removed.error?.message ?? null };
 }
 
 /**

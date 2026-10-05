@@ -37,9 +37,8 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { deleteUnsentPurchaseOrderLine } = await import(
-  "../app/modules/purchasing/purchasing.service"
-);
+const { deleteUnsentPurchaseOrderLine, updatePurchaseOrderLineSchedule } =
+  await import("../app/modules/purchasing/purchasing.service");
 
 // Planning's Cancel on an unsent PO line used shortClosePurchaseOrderLine,
 // which recomputes the header status from the lines: a one-line Draft PO came
@@ -122,5 +121,48 @@ describe("deleteUnsentPurchaseOrderLine", () => {
   it("reports nothing deleted when a guard held the row back", async () => {
     const { db } = database([]);
     expect(await deleteUnsentPurchaseOrderLine(db, args)).toBe(false);
+  });
+});
+
+// Planning's Apply read the PO's status, then wrote the line in a separate
+// request: a PO sent or put in approval in between was still edited. The
+// status condition is now part of the UPDATE itself.
+describe("updatePurchaseOrderLineSchedule", () => {
+  const dateChange = {
+    lineId: "pol1",
+    companyId: "c1",
+    companyGroupId: "g1",
+    userId: "u1",
+    requiredDate: "2026-11-02"
+  };
+
+  it("updates the line only while its PO is Draft or Planned, in one statement", async () => {
+    const { db, driver } = database(["pol1"]);
+    // A date change reads nothing first, so the client is never used.
+    await updatePurchaseOrderLineSchedule({} as never, db, dateChange);
+
+    expect(driver.sent).toHaveLength(1);
+    const [{ sql, parameters }] = driver.sent;
+    expect(sql).toMatch(/^update "purchaseOrderLine" set "requiredDate" = \$1/);
+    expect(sql).toMatch(
+      /"purchaseOrderId" in \(select "id" from "purchaseOrder" where "companyId" = \$\d+ and "status" in \(\$\d+, \$\d+\)\)/
+    );
+    expect(parameters).toEqual(
+      expect.arrayContaining(["pol1", "c1", "Draft", "Planned"])
+    );
+  });
+
+  it("reports the line updated", async () => {
+    const { db } = database(["pol1"]);
+    expect(
+      await updatePurchaseOrderLineSchedule({} as never, db, dateChange)
+    ).toEqual({ updated: true, error: null });
+  });
+
+  it("reports nothing updated when the PO left Draft / Planned", async () => {
+    const { db } = database([]);
+    expect(
+      await updatePurchaseOrderLineSchedule({} as never, db, dateChange)
+    ).toEqual({ updated: false, error: null });
   });
 });
