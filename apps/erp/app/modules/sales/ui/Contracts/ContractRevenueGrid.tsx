@@ -46,6 +46,7 @@ import {
   contractGridHeight,
   contractLineName,
   lineColumnKey,
+  rowMenuColumn,
   useContractCellSave
 } from "./contractGrid";
 import type { ContractLine, ContractRouteData } from "./types";
@@ -252,6 +253,11 @@ const ContractRevenueGrid = ({
     [canEdit]
   );
 
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderContextMenu, t`Actions`)],
+    [columns, renderContextMenu, t]
+  );
+
   const lastMonth = months[months.length - 1]?.periodStart;
 
   return (
@@ -276,11 +282,10 @@ const ContractRevenueGrid = ({
         >
           <Table<MonthRow>
             compact
-            columns={columns}
+            columns={gridColumns}
             data={months}
             count={months.length}
             editableComponents={editableComponents}
-            renderContextMenu={renderContextMenu}
             withInlineEditing={canEdit}
             forceEditMode={canEdit}
             withPagination={false}

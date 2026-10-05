@@ -4,16 +4,12 @@
 
 import { useCarbon } from "@carbon/auth";
 import { InputControlled, SelectControlled, ValidatedForm } from "@carbon/form";
-import {
-  FormControl,
-  FormLabel,
-  ToggleGroup,
-  ToggleGroupItem
-} from "@carbon/react";
+import { ChoiceCardGroup } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP, suggestContractType } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuCircleStop, LuRefreshCw } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Currency,
@@ -34,7 +30,7 @@ import {
   type ContractDuration,
   contractDurations,
   contractEndDate,
-  contractRenewals,
+  type contractRenewals,
   customerContractTypes,
   customerContractValidator
 } from "../../sales.models";
@@ -46,6 +42,8 @@ import {
 } from "./ContractSetupLayout";
 import type { ContractType } from "./types";
 import { useContractLabels } from "./useContractLabels";
+
+type ContractRenewal = (typeof contractRenewals)[number];
 
 type ContractDetailsValues = z.infer<typeof customerContractValidator>;
 
@@ -101,7 +99,9 @@ const ContractDetailsForm = ({
   const [duration, setDuration] = useState<ContractDuration>(
     initialValues.duration
   );
-  const [renewal, setRenewal] = useState(initialValues.renewal);
+  const [renewal, setRenewal] = useState<ContractRenewal>(
+    initialValues.renewal
+  );
   const [contractType, setContractType] = useState<ContractType>(
     initialValues.contractType ?? "New Sales"
   );
@@ -276,27 +276,26 @@ const ContractDetailsForm = ({
 
           {!isOpenEnded && (
             <div className="grid w-full max-w-3xl grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-              <FormControl>
-                <FormLabel>
-                  <Trans>Action on Completion</Trans>
-                </FormLabel>
-                <ToggleGroup
-                  type="single"
-                  variant="outline"
-                  value={renewal}
-                  onValueChange={(value) => {
-                    const next = contractRenewals.find((v) => v === value);
-                    if (next) setRenewal(next);
-                  }}
-                  className="justify-start"
-                >
-                  {contractRenewals.map((value) => (
-                    <ToggleGroupItem key={value} value={value}>
-                      {labels.renewal[value]}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </FormControl>
+              <ChoiceCardGroup<ContractRenewal>
+                className="md:col-span-2"
+                label={t`Action on Completion`}
+                value={renewal}
+                onChange={setRenewal}
+                options={[
+                  {
+                    value: "Renew",
+                    title: labels.renewal.Renew,
+                    description: t`A new term of the same length starts when this one ends.`,
+                    icon: <LuRefreshCw />
+                  },
+                  {
+                    value: "End",
+                    title: labels.renewal.End,
+                    description: t`The contract ends on its end date and invoicing stops.`,
+                    icon: <LuCircleStop />
+                  }
+                ]}
+              />
               {renewal === "Renew" && (
                 <Number
                   name="renewalUplift"

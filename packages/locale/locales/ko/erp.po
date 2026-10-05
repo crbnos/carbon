@@ -905,6 +905,9 @@ msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
 msgid "A new Stripe customer will be created"
 msgstr "새 Stripe 고객이 생성됩니다."
 
+msgid "A new term of the same length starts when this one ends."
+msgstr "같은 기간의 새로운 약관이 이것이 끝날 때 시작됩니다."
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "비현금 문서로 송장을 이유 계정에 대해 결제합니다: 대변은 미지급액을 낮추고 차변은 높입니다."
 
@@ -1782,9 +1785,6 @@ msgstr "선행 품목 추가"
 msgid "Add Printer"
 msgstr "프린터 추가"
 
-msgid "Add Products"
-msgstr "제품 추가"
-
 msgid "Add products to plan the invoices."
 msgstr "송장 계획을 위해 제품을 추가하세요."
 
@@ -1814,6 +1814,9 @@ msgstr "샘플 추가"
 
 msgid "Add Selector"
 msgstr "선택자 추가"
+
+msgid "Add Services"
+msgstr "서비스 추가"
 
 msgid "Add Shipment"
 msgstr "출하 추가"
@@ -13235,9 +13238,6 @@ msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습�
 msgid "No production recorded yet."
 msgstr "아직 기록된 생산이 없습니다."
 
-msgid "No products yet. Add the services this contract bills."
-msgstr "아직 제품이 없습니다. 이 계약이 청구하는 서비스를 추가하세요."
-
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
 
@@ -13306,6 +13306,9 @@ msgstr "이 시간대에 스케줄된 작업이 없습니다"
 
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
+
+msgid "No services yet. Add the services this contract bills."
+msgstr "아직 서비스가 없습니다. 이 계약의 송장 관리 서비스를 추가합니다."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "구성된 교대조가 없습니다. 월–금, 8시간으로 가정합니다"
@@ -20001,6 +20004,9 @@ msgstr "국제적으로 은행을 식별하는 코드이며 8자리 또는 11자
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
+
+msgid "The contract ends on its end date and invoicing stops."
+msgstr "계약이 종료 날짜에 종료되고 송장 관리가 중지됩니다."
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이후의 계획된 송장은 제거됩니다."

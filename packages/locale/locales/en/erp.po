@@ -905,6 +905,9 @@ msgstr "A new size will be created using a copy of the current size"
 msgid "A new Stripe customer will be created"
 msgstr "A new Stripe customer will be created"
 
+msgid "A new term of the same length starts when this one ends."
+msgstr "A new term of the same length starts when this one ends."
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 
@@ -1782,9 +1785,6 @@ msgstr "Add Predecessor"
 msgid "Add Printer"
 msgstr "Add Printer"
 
-msgid "Add Products"
-msgstr "Add Products"
-
 msgid "Add products to plan the invoices."
 msgstr "Add products to plan the invoices."
 
@@ -1814,6 +1814,9 @@ msgstr "Add Sample"
 
 msgid "Add Selector"
 msgstr "Add Selector"
+
+msgid "Add Services"
+msgstr "Add Services"
 
 msgid "Add Shipment"
 msgstr "Add Shipment"
@@ -13235,9 +13238,6 @@ msgstr "No production events recorded for this operation yet"
 msgid "No production recorded yet."
 msgstr "No production recorded yet."
 
-msgid "No products yet. Add the services this contract bills."
-msgstr "No products yet. Add the services this contract bills."
-
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
 
@@ -13306,6 +13306,9 @@ msgstr "No scheduled work in this window"
 
 msgid "No serial numbers selected yet."
 msgstr "No serial numbers selected yet."
+
+msgid "No services yet. Add the services this contract bills."
+msgstr "No services yet. Add the services this contract bills."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "No shifts configured — assuming Mon–Fri, 8h days"
@@ -20001,6 +20004,9 @@ msgstr "The code that identifies a bank internationally, 8 or 11 characters. A c
 
 msgid "The contract cannot be cancelled then"
 msgstr "The contract cannot be cancelled then"
+
+msgid "The contract ends on its end date and invoicing stops."
+msgstr "The contract ends on its end date and invoicing stops."
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "The contract ends on the end date and does not renew. Planned invoices after it are removed."

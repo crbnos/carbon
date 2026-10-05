@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toast } from "@carbon/react";
+import { ActionMenu, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { useCallback } from "react";
 import { useRevalidator } from "react-router";
 import type { ContractLine } from "./types";
@@ -21,6 +23,30 @@ export function contractGridHeight(rowCount: number, rowHeight = 44) {
  *  its service item's name. */
 export function contractLineName(line: ContractLine) {
   return line.description || line.item?.name || line.itemId;
+}
+
+/**
+ * The row menu as an ordinary last column. The Table's own `renderContextMenu`
+ * pins its menu column to the right edge, so when a grid is wider than the
+ * page it sits on top of the Total column; this one scrolls with the row.
+ */
+export function rowMenuColumn<T>(
+  render: (row: T) => ReactNode,
+  label: string
+): ColumnDef<T> {
+  return {
+    id: "rowMenu",
+    header: () => <span className="sr-only">{label}</span>,
+    cell: ({ row }) => {
+      const items = render(row.original);
+      return items ? (
+        <div className="flex justify-end">
+          <ActionMenu>{items}</ActionMenu>
+        </div>
+      ) : null;
+    },
+    size: 60
+  };
 }
 
 /** The editable cells' column key for the line at `index`. Line ids are not

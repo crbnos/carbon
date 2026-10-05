@@ -905,6 +905,9 @@ msgstr "Um novo tamanho será criado usando uma cópia do tamanho atual"
 msgid "A new Stripe customer will be created"
 msgstr "Um novo cliente Stripe será criado"
 
+msgid "A new term of the same length starts when this one ends."
+msgstr "Um novo prazo do mesmo comprimento começa quando este termina."
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Um documento sem dinheiro que liquida uma fatura em relação a uma conta de motivo: um crédito reduz o que é devido, um débito aumenta."
 
@@ -1782,9 +1785,6 @@ msgstr "Adicionar Antecessor"
 msgid "Add Printer"
 msgstr "Adicionar Impressora"
 
-msgid "Add Products"
-msgstr "Adicionar Produtos"
-
 msgid "Add products to plan the invoices."
 msgstr "Adicione produtos para planejar as faturas."
 
@@ -1814,6 +1814,9 @@ msgstr "Adicionar Amostra"
 
 msgid "Add Selector"
 msgstr "Adicionar Seletor"
+
+msgid "Add Services"
+msgstr "Adicionar Serviços"
 
 msgid "Add Shipment"
 msgstr "Adicionar Remessa"
@@ -13235,9 +13238,6 @@ msgstr "Ainda não há eventos de produção registados para esta operação"
 msgid "No production recorded yet."
 msgstr "Nenhuma produção registrada ainda."
 
-msgid "No products yet. Add the services this contract bills."
-msgstr "Nenhum produto ainda. Adicione os serviços que este contrato fatura."
-
 msgid "No purchases in this period"
 msgstr "Nenhuma compra neste período"
 
@@ -13306,6 +13306,9 @@ msgstr "Nenhum trabalho programado nesta janela"
 
 msgid "No serial numbers selected yet."
 msgstr "Nenhum número de série selecionado ainda."
+
+msgid "No services yet. Add the services this contract bills."
+msgstr "Nenhum serviço ainda. Adicione os serviços que este contrato faturas."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Nenhum turno configurado — assumindo segunda–sexta, dias de 8h"
@@ -20001,6 +20004,9 @@ msgstr "O código que identifica um banco internacionalmente, com 8 ou 11 caract
 
 msgid "The contract cannot be cancelled then"
 msgstr "O contrato não pode ser cancelado então"
+
+msgid "The contract ends on its end date and invoicing stops."
+msgstr "O contrato termina na data de término e a faturação para."
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "O contrato termina na data de término e não é renovado. As faturas planejadas após ele são removidas."

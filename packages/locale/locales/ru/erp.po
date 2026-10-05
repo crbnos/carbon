@@ -905,6 +905,9 @@ msgstr "Новый размер будет создан с использова�
 msgid "A new Stripe customer will be created"
 msgstr "Будет создана новая учетная запись покупателя Stripe"
 
+msgid "A new term of the same length starts when this one ends."
+msgstr "Новый срок той же продолжительности начинается, когда этот закончится."
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
 
@@ -1782,9 +1785,6 @@ msgstr "Добавить предшественника"
 msgid "Add Printer"
 msgstr "Добавить принтер"
 
-msgid "Add Products"
-msgstr "Добавить товары"
-
 msgid "Add products to plan the invoices."
 msgstr "Добавить товары для планирования счетов-фактур."
 
@@ -1814,6 +1814,9 @@ msgstr "Добавить образец"
 
 msgid "Add Selector"
 msgstr "Добавить селектор"
+
+msgid "Add Services"
+msgstr "Добавить Услуги"
 
 msgid "Add Shipment"
 msgstr "Добавить отгрузку"
@@ -13235,9 +13238,6 @@ msgstr "Для этой операции еще не записано ни од�
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
 
-msgid "No products yet. Add the services this contract bills."
-msgstr "Продуктов нет. Добавьте услуги, которые выставляет этот контракт."
-
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
 
@@ -13306,6 +13306,9 @@ msgstr "Нет запланированной работы в этом окне"
 
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
+
+msgid "No services yet. Add the services this contract bills."
+msgstr "Услуг нет. Добавьте услуги, которые выставляет этот контракт."
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
@@ -20001,6 +20004,9 @@ msgstr "Код, идентифицирующий банк на междунар�
 
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
+
+msgid "The contract ends on its end date and invoicing stops."
+msgstr "Контракт заканчивается в дату окончания и выставление счетов прекращается."
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "Контракт завершается в дату окончания и не продлевается. Запланированные счета-фактуры после него удаляются."

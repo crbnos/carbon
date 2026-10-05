@@ -51,6 +51,7 @@ import ContractMoney from "./ContractMoney";
 import {
   contractGridHeight,
   contractLineName,
+  rowMenuColumn,
   useContractCellSave
 } from "./contractGrid";
 import type { Contract, ContractLine } from "./types";
@@ -338,13 +339,18 @@ const ContractProductsGrid = ({
     [lines, permissions]
   );
 
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderContextMenu, t`Actions`)],
+    [columns, renderContextMenu, t]
+  );
+
   return (
     <div className="flex w-full flex-col gap-4">
       {rows.length === 0 ? (
         <div className="flex w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
           <p className="text-sm text-muted-foreground">
             <Trans>
-              No products yet. Add the services this contract bills.
+              No services yet. Add the services this contract bills.
             </Trans>
           </p>
           <Button
@@ -352,7 +358,7 @@ const ContractProductsGrid = ({
             isDisabled={!permissions.can("create", "sales")}
             onClick={addProducts.onOpen}
           >
-            <Trans>Add Products</Trans>
+            <Trans>Add Services</Trans>
           </Button>
         </div>
       ) : (
@@ -372,11 +378,10 @@ const ContractProductsGrid = ({
           >
             <Table<ProductRow>
               compact
-              columns={columns}
+              columns={gridColumns}
               data={rows}
               count={rows.length}
               editableComponents={editableComponents}
-              renderContextMenu={renderContextMenu}
               withInlineEditing={canEdit}
               forceEditMode={canEdit}
               withPagination={false}
@@ -395,7 +400,7 @@ const ContractProductsGrid = ({
               isDisabled={!permissions.can("create", "sales")}
               onClick={addProducts.onOpen}
             >
-              <Trans>Add Products</Trans>
+              <Trans>Add Services</Trans>
             </Button>
           </div>
         </>
@@ -513,7 +518,7 @@ const ContractAddProductsModal = ({
         >
           <ModalHeader>
             <ModalTitle>
-              <Trans>Add Products</Trans>
+              <Trans>Add Services</Trans>
             </ModalTitle>
             <ModalDescription>
               <Trans>

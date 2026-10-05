@@ -33,6 +33,7 @@ import {
   contractGridHeight,
   contractLineName,
   lineColumnKey,
+  rowMenuColumn,
   useContractCellSave
 } from "./contractGrid";
 import type { ContractRouteData } from "./types";
@@ -287,6 +288,11 @@ const ContractInvoiceGrid = ({
     [canEdit]
   );
 
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderContextMenu, t`Actions`)],
+    [columns, renderContextMenu, t]
+  );
+
   const lastDate = planned[planned.length - 1]?.invoiceDate;
 
   return (
@@ -324,11 +330,10 @@ const ContractInvoiceGrid = ({
         >
           <Table<InvoiceRow>
             compact
-            columns={columns}
+            columns={gridColumns}
             data={rows}
             count={rows.length}
             editableComponents={editableComponents}
-            renderContextMenu={renderContextMenu}
             withInlineEditing={canEdit}
             forceEditMode={canEdit}
             withPagination={false}

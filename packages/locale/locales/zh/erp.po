@@ -905,6 +905,9 @@ msgstr "将使用当前尺寸的副本创建新尺寸"
 msgid "A new Stripe customer will be created"
 msgstr "将创建新的 Stripe 客户"
 
+msgid "A new term of the same length starts when this one ends."
+msgstr "相同期限的新合同期开始时，该期结束。"
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金文件，根据原因账户结算发票：贷方降低欠额，借方提高欠额。"
 
@@ -1782,9 +1785,6 @@ msgstr "添加前驱物料"
 msgid "Add Printer"
 msgstr "添加打印机"
 
-msgid "Add Products"
-msgstr "添加产品"
-
 msgid "Add products to plan the invoices."
 msgstr "添加产品来规划发票"
 
@@ -1814,6 +1814,9 @@ msgstr "添加样品"
 
 msgid "Add Selector"
 msgstr "添加选择器"
+
+msgid "Add Services"
+msgstr "添加服务"
 
 msgid "Add Shipment"
 msgstr "添加发货"
@@ -13235,9 +13238,6 @@ msgstr "此操作尚未记录任何生产事件"
 msgid "No production recorded yet."
 msgstr "还没有生产记录。"
 
-msgid "No products yet. Add the services this contract bills."
-msgstr "暂无产品。添加此合同计费的服务。"
-
 msgid "No purchases in this period"
 msgstr "此期间无采购"
 
@@ -13306,6 +13306,9 @@ msgstr "此时间窗内无排程工作"
 
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
+
+msgid "No services yet. Add the services this contract bills."
+msgstr "还没有服务。添加此合同开票的服务。"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
@@ -20001,6 +20004,9 @@ msgstr "用于在国际范围内识别银行的代码，包含8个或11个字符
 
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
+
+msgid "The contract ends on its end date and invoicing stops."
+msgstr "合同在结束日期结束，开票停止。"
 
 msgid "The contract ends on the end date and does not renew. Planned invoices after it are removed."
 msgstr "合同在期末日期结束，不会续期。之后的已计划发票将被移除。"
