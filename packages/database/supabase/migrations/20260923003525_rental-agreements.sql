@@ -1,8 +1,9 @@
--- Rental agreements (operating): rate ladder, agreement header + lines + charges +
--- billing periods, the Rental invoice line, deposits on payments, lease settings,
--- the RA sequence, and the fleet / agreement views.
--- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3, Data Model §5
--- Plan decisions 4 (rentalAgreement.taxPercent) and 5 (rentalAgreementCharge.kind).
+-- Rental agreements: rate ladders (item, customer, customer type), agreement header +
+-- lines + charges + billing periods, the sales-type lease schedule, the Rental invoice
+-- line, deposits on payments, lease settings, the RA sequence, and the fleetAssets view.
+-- The rentalAgreements view is created by 20261003035637_rental-invoice-automation.sql,
+-- which adds the columns it reads. RLS is rendered from the authz manifest.
+-- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §3–§4, Data Model §5
 
 -- 1) Rate ladder per item and currency ---------------------------------------------
 CREATE TABLE IF NOT EXISTS "itemRentalRate" (
@@ -86,11 +87,11 @@ CREATE TABLE IF NOT EXISTS "rentalAgreementLine" (
   "itemId" TEXT NOT NULL REFERENCES "item"("id"),
   "trackedEntityId" TEXT REFERENCES "trackedEntity"("id"),
   "quantity" NUMERIC NOT NULL DEFAULT 1 CHECK ("quantity" = 1),
-  "rateMode" "rentalRateMode" NOT NULL DEFAULT 'Best Rate',
-  "rateUnit" "rentalRateUnit",
-  "dayRate" NUMERIC,
-  "weekRate" NUMERIC,
-  "monthRate" NUMERIC,
+  -- A unit bills ONE rate: a frequency and its value. The value starts from the
+  -- customer's, customer type's or item's rate card for that frequency and is the
+  -- unit's own from then on, so it is what billing and lease classification read.
+  "rateUnit" "rentalRateUnit" NOT NULL DEFAULT 'Month',
+  "rate" NUMERIC NOT NULL,
   "fairValue" NUMERIC,
   "economicLifeMonths" INTEGER,
   "guaranteedResidualValue" NUMERIC NOT NULL DEFAULT 0,
@@ -112,7 +113,7 @@ CREATE TABLE IF NOT EXISTS "rentalAgreementLine" (
   "updatedBy" TEXT REFERENCES "user"("id"),
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   CONSTRAINT "rentalAgreementLine_pkey" PRIMARY KEY ("id", "companyId"),
-  CONSTRAINT "rentalAgreementLine_rate_check" CHECK ("rateMode" = 'Best Rate' OR "rateUnit" IS NOT NULL),
+  CONSTRAINT "rentalAgreementLine_rate_nonnegative" CHECK ("rate" >= 0),
   CONSTRAINT "rentalAgreementLine_agreement_fkey" FOREIGN KEY ("rentalAgreementId", "companyId")
     REFERENCES "rentalAgreement"("id", "companyId") ON DELETE CASCADE,
   CONSTRAINT "rentalAgreementLine_companyId_fkey" FOREIGN KEY ("companyId")
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS "rentalAgreementCharge" (
   "id" TEXT NOT NULL DEFAULT id('ragc'),
   "companyId" TEXT NOT NULL,
   "rentalAgreementLineId" TEXT NOT NULL,
-  "kind" "rentalInvoiceLineKind" NOT NULL DEFAULT 'Charge',
+  "chargeType" "rentalInvoiceLineType" NOT NULL DEFAULT 'Charge',
   "chargeDate" DATE NOT NULL,
   "description" TEXT NOT NULL,
   "amount" NUMERIC NOT NULL,
@@ -187,23 +188,20 @@ CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_due_idx" ON "rentalBillingPeriod
 CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_salesInvoiceLineId_idx" ON "rentalBillingPeriod" ("salesInvoiceLineId");
 CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_createdBy_idx" ON "rentalBillingPeriod" ("createdBy");
 
--- 6) RLS: the agreement is a sales document; the policies are rendered from
---    packages/database/src/authz/manifest.ts.
-
--- 7) The Rental invoice line ---------------------------------------------------------------
+-- 6) The Rental invoice line ---------------------------------------------------------------
 ALTER TABLE "salesInvoiceLine"
   ADD COLUMN IF NOT EXISTS "rentalAgreementId" TEXT,
   ADD COLUMN IF NOT EXISTS "rentalAgreementLineId" TEXT,
   ADD COLUMN IF NOT EXISTS "rentalBillingPeriodId" TEXT,
   ADD COLUMN IF NOT EXISTS "rentalAgreementChargeId" TEXT,
-  ADD COLUMN IF NOT EXISTS "rentalInvoiceLineKind" "rentalInvoiceLineKind";
+  ADD COLUMN IF NOT EXISTS "rentalLineType" "rentalInvoiceLineType";
 
 DO $rentcheck$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'salesInvoiceLine_rental_check') THEN
     ALTER TABLE "salesInvoiceLine" ADD CONSTRAINT "salesInvoiceLine_rental_check" CHECK (
       ("invoiceLineType" <> 'Rental' AND "rentalAgreementLineId" IS NULL) OR
-      ("invoiceLineType" = 'Rental' AND "rentalAgreementLineId" IS NOT NULL AND "rentalInvoiceLineKind" IS NOT NULL)
+      ("invoiceLineType" = 'Rental' AND "rentalAgreementLineId" IS NOT NULL AND "rentalLineType" IS NOT NULL)
     );
   END IF;
 END $rentcheck$;
@@ -212,36 +210,10 @@ CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalAgreementLineId_idx" ON "sale
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalBillingPeriodId_idx" ON "salesInvoiceLine" ("rentalBillingPeriodId");
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_rentalAgreementChargeId_idx" ON "salesInvoiceLine" ("rentalAgreementChargeId");
 
--- DROP + CREATE so sl.* picks up the new columns (CREATE OR REPLACE cannot reorder columns).
-DROP VIEW IF EXISTS "salesInvoiceLines";
-CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
-  SELECT
-    sl.*,
-    i."readableIdWithRevision" as "itemReadableId",
-    CASE
-      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
-      WHEN i."thumbnailPath" IS NULL AND imu."thumbnailPath" IS NOT NULL THEN imu."thumbnailPath"
-      ELSE i."thumbnailPath"
-    END as "thumbnailPath",
-    i.name as "itemName",
-    i.description as "itemDescription",
-    ic."unitCost" as "unitCost",
-    (SELECT cp."customerPartId"
-     FROM "customerPartToItem" cp
-     WHERE cp."customerId" = si."customerId" AND cp."itemId" = i.id
-     LIMIT 1) as "customerPartId",
-    fa."fixedAssetId" as "assetReadableId",
-    fa."name" as "assetName"
-  FROM "salesInvoiceLine" sl
-  INNER JOIN "salesInvoice" si ON si.id = sl."invoiceId"
-  LEFT JOIN "modelUpload" mu ON sl."modelUploadId" = mu."id"
-  LEFT JOIN "item" i ON i.id = sl."itemId"
-  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
-  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
-  LEFT JOIN "fixedAsset" fa ON fa.id = sl."assetId"
-);
+-- salesInvoiceLines is recreated with every new line column by
+-- 20261004014728_sales-invoice-discount-and-ship-to.sql.
 
--- 8) Deposits: a receipt may reference the sales order or the agreement it secures ---------
+-- 7) Deposits: a receipt may reference the sales order or the agreement it secures ---------
 ALTER TABLE "payment"
   ADD COLUMN IF NOT EXISTS "salesOrderId" TEXT REFERENCES "salesOrder"("id") ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS "rentalAgreementId" TEXT;
@@ -250,7 +222,7 @@ DO $paydep$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_rentalAgreementId_fkey') THEN
     ALTER TABLE "payment" ADD CONSTRAINT "payment_rentalAgreementId_fkey"
-      FOREIGN KEY ("rentalAgreementId", "companyId") REFERENCES "rentalAgreement"("id", "companyId") ON DELETE SET NULL;
+      FOREIGN KEY ("rentalAgreementId", "companyId") REFERENCES "rentalAgreement"("id", "companyId") ON DELETE SET NULL ("rentalAgreementId");
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_deposit_document_check') THEN
     ALTER TABLE "payment" ADD CONSTRAINT "payment_deposit_document_check"
@@ -261,19 +233,19 @@ END $paydep$;
 CREATE INDEX IF NOT EXISTS "payment_salesOrderId_idx" ON "payment" ("salesOrderId");
 CREATE INDEX IF NOT EXISTS "payment_rentalAgreementId_idx" ON "payment" ("rentalAgreementId", "companyId");
 
--- 9) Lease classification settings (annual %, defaults from ASC 842 practice) --------------
+-- 8) Lease classification settings (annual %, defaults from ASC 842 practice) --------------
 ALTER TABLE "companySettings"
   ADD COLUMN IF NOT EXISTS "leaseMajorPartThresholdPercent" NUMERIC NOT NULL DEFAULT 75,
   ADD COLUMN IF NOT EXISTS "leaseSubstantiallyAllThresholdPercent" NUMERIC NOT NULL DEFAULT 90,
   ADD COLUMN IF NOT EXISTS "leaseDefaultDiscountRate" NUMERIC NOT NULL DEFAULT 6;
 
--- 10) Sequence per company ------------------------------------------------------------------
+-- 9) Sequence per company ------------------------------------------------------------------
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
 SELECT 'rentalAgreement', 'Rental Agreement', 'RA', NULL, 0, 6, 1, c.id
 FROM "company" c
 WHERE NOT EXISTS (SELECT 1 FROM "sequence" s WHERE s."companyId" = c.id AND s."table" = 'rentalAgreement');
 
--- 11) Views ------------------------------------------------------------------------------------
+-- 10) Views ------------------------------------------------------------------------------------
 -- fleetAssets: the live agreement line (Pending / On Rent) drives Reserved / On Rent.
 DROP VIEW IF EXISTS "fleetAssets";
 CREATE VIEW "fleetAssets" WITH(SECURITY_INVOKER=true) AS
@@ -316,34 +288,96 @@ LEFT JOIN LATERAL (
 ) live ON TRUE
 WHERE fa."itemId" IS NOT NULL;
 
--- rentalAgreements: header with the customer name and line / period rollups.
-DROP VIEW IF EXISTS "rentalAgreements";
-CREATE VIEW "rentalAgreements" WITH(SECURITY_INVOKER=true) AS
-SELECT
-  ra.*,
-  c.name AS "customerName",
-  COALESCE(l."lineCount", 0) AS "lineCount",
-  COALESCE(l."onRentCount", 0) AS "onRentCount",
-  p."nextDueOn",
-  COALESCE(p."unbilledAmount", 0) AS "unbilledAmount"
-FROM "rentalAgreement" ra
-INNER JOIN "customer" c ON c.id = ra."customerId"
-LEFT JOIN LATERAL (
-  SELECT
-    count(*)::INTEGER AS "lineCount",
-    count(*) FILTER (WHERE ral.status = 'On Rent')::INTEGER AS "onRentCount"
-  FROM "rentalAgreementLine" ral
-  WHERE ral."rentalAgreementId" = ra.id AND ral."companyId" = ra."companyId"
-) l ON TRUE
-LEFT JOIN LATERAL (
-  SELECT
-    min(rbp."dueOn") AS "nextDueOn",
-    sum(rbp.amount) AS "unbilledAmount"
-  FROM "rentalBillingPeriod" rbp
-  JOIN "rentalAgreementLine" ral ON ral.id = rbp."rentalAgreementLineId" AND ral."companyId" = rbp."companyId"
-  WHERE ral."rentalAgreementId" = ra.id
-    AND ral."companyId" = ra."companyId"
-    AND rbp.status = 'Pending'
-) p ON TRUE;
+-- 11) Customer rental rates: a day / week / month ladder agreed with one customer or
+--     with every customer of a type, for one item in one currency. A line defaults to
+--     the customer's ladder, then the customer type's, then the item's own
+--     (itemRentalRate). One row per scope, item and currency; validFrom / validTo gate
+--     it on the agreement's start date.
+CREATE TABLE IF NOT EXISTS "customerItemRentalRate" (
+  "id" TEXT NOT NULL DEFAULT id('cirr'),
+  "companyId" TEXT NOT NULL,
+  "customerId" TEXT REFERENCES "customer"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "customerTypeId" TEXT REFERENCES "customerType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "itemId" TEXT NOT NULL REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "currencyCode" TEXT NOT NULL,
+  "dayRate" NUMERIC,
+  "weekRate" NUMERIC,
+  "monthRate" NUMERIC,
+  "validFrom" DATE,
+  "validTo" DATE,
+  "notes" TEXT,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerItemRentalRate_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerItemRentalRate_companyId_fkey" FOREIGN KEY ("companyId")
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "customerItemRentalRate_scope_check"
+    CHECK (num_nonnulls("customerId", "customerTypeId") = 1),
+  CONSTRAINT "customerItemRentalRate_tier_check"
+    CHECK (num_nonnulls("dayRate", "weekRate", "monthRate") >= 1),
+  CONSTRAINT "customerItemRentalRate_validity_check"
+    CHECK ("validFrom" IS NULL OR "validTo" IS NULL OR "validTo" >= "validFrom")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "customerItemRentalRate_customer_key"
+  ON "customerItemRentalRate" ("companyId", "customerId", "itemId", "currencyCode")
+  WHERE "customerId" IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "customerItemRentalRate_customerType_key"
+  ON "customerItemRentalRate" ("companyId", "customerTypeId", "itemId", "currencyCode")
+  WHERE "customerTypeId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "customerItemRentalRate_companyId_idx"
+  ON "customerItemRentalRate" ("companyId");
+CREATE INDEX IF NOT EXISTS "customerItemRentalRate_itemId_idx"
+  ON "customerItemRentalRate" ("itemId");
+CREATE INDEX IF NOT EXISTS "customerItemRentalRate_customerId_idx"
+  ON "customerItemRentalRate" ("customerId");
+CREATE INDEX IF NOT EXISTS "customerItemRentalRate_customerTypeId_idx"
+  ON "customerItemRentalRate" ("customerTypeId");
+CREATE INDEX IF NOT EXISTS "customerItemRentalRate_createdBy_idx"
+  ON "customerItemRentalRate" ("createdBy");
+
+-- 12) Sales-type lease schedule (§4): one effective-interest row per period of a Sale
+--     rental line; each spawns one Interest revenue recognition row.
+CREATE TABLE IF NOT EXISTS "rentalLeaseScheduleLine" (
+  "id" TEXT NOT NULL DEFAULT id('rlsl'),
+  "companyId" TEXT NOT NULL,
+  "rentalAgreementLineId" TEXT NOT NULL,
+  "periodDate" DATE NOT NULL,
+  "openingNetInvestment" NUMERIC NOT NULL,
+  "paymentAmount" NUMERIC NOT NULL,
+  "interestAmount" NUMERIC NOT NULL,
+  "principalAmount" NUMERIC NOT NULL,
+  "closingNetInvestment" NUMERIC NOT NULL,
+  "journalId" TEXT REFERENCES "journal"("id") ON DELETE SET NULL,
+  "postedAt" TIMESTAMP WITH TIME ZONE,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "rentalLeaseScheduleLine_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "rentalLeaseScheduleLine_line_fkey" FOREIGN KEY ("rentalAgreementLineId", "companyId")
+    REFERENCES "rentalAgreementLine"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "rentalLeaseScheduleLine_unique" UNIQUE ("companyId", "rentalAgreementLineId", "periodDate"),
+  CONSTRAINT "rentalLeaseScheduleLine_companyId_fkey" FOREIGN KEY ("companyId")
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_companyId_idx" ON "rentalLeaseScheduleLine" ("companyId");
+CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_line_idx" ON "rentalLeaseScheduleLine" ("rentalAgreementLineId", "companyId");
+CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_journalId_idx" ON "rentalLeaseScheduleLine" ("journalId");
+CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_createdBy_idx" ON "rentalLeaseScheduleLine" ("createdBy");
+
+-- An Interest schedule row points at the lease schedule line it recognizes.
+DO $leaseschedfk$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'revenueRecognitionSchedule_rentalLeaseScheduleLineId_fkey') THEN
+    ALTER TABLE "revenueRecognitionSchedule" ADD CONSTRAINT "revenueRecognitionSchedule_rentalLeaseScheduleLineId_fkey"
+      FOREIGN KEY ("rentalLeaseScheduleLineId", "companyId")
+      REFERENCES "rentalLeaseScheduleLine"("id", "companyId") ON DELETE SET NULL ("rentalLeaseScheduleLineId");
+  END IF;
+END $leaseschedfk$;
+CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_leaseLine_idx"
+  ON "revenueRecognitionSchedule" ("rentalLeaseScheduleLineId", "companyId");
 
 NOTIFY pgrst, 'reload schema';

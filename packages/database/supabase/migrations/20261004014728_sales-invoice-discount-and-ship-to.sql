@@ -1,5 +1,7 @@
--- Sales invoice lines carry a discount (.ai/plans/2026-10-03-contracts-phase-a.md decision 3).
--- A fraction 0..1 like quoteLinePrice.discountPercent. It discounts merchandise
+-- Sales invoices: a line discount, a customer ship-to, and the three views over them.
+--
+-- 1) Sales invoice lines carry a discount (.ai/specs/2026-10-02-contracts.md). A
+-- fraction 0..1 like quoteLinePrice.discountPercent. It discounts merchandise
 -- (quantity x unitPrice) only: add-ons and shipping are not discounted, and tax is
 -- charged on the discounted merchandise. Existing rows default to 0.
 
@@ -15,7 +17,16 @@ ALTER TABLE "salesInvoiceLine"
   ADD COLUMN IF NOT EXISTS "convertedNetUnitPrice" NUMERIC
     GENERATED ALWAYS AS ("unitPrice" * "exchangeRate" * (1 - "discountPercent")) STORED;
 
--- DROP + CREATE so sl.* picks up the new columns.
+-- 2) A sales invoice's customer ship-to, as on salesOrderShipment. A contract copies
+--    its ship-to here when it drafts an invoice; an invoice converted from an order
+--    copies the order's.
+ALTER TABLE "salesInvoiceShipment"
+  ADD COLUMN IF NOT EXISTS "customerLocationId" TEXT REFERENCES "customerLocation"("id");
+CREATE INDEX IF NOT EXISTS "salesInvoiceShipment_customerLocationId_idx"
+  ON "salesInvoiceShipment" ("customerLocationId");
+
+-- 3) Views. salesInvoiceLines: DROP + CREATE so sl.* picks up every new line column
+-- (rental, service dates, contract provenance, discount).
 DROP VIEW IF EXISTS "salesInvoiceLines";
 CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT
@@ -44,8 +55,11 @@ CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "fixedAsset" fa ON fa.id = sl."assetId"
 );
 
--- Totals: the merchandise term is net of the line discount. View otherwise unchanged
--- from 20261003053100.
+-- salesInvoices: unchanged from 20260916143022, plus the merchandise term net of the
+-- line discount, the automation columns (20261003035637_rental-invoice-automation.sql)
+-- and needsReview: a held draft, or a posted invoice whose email failed. Only a posted
+-- invoice can be unsent (isPostedSalesInvoice in packages/jobs/src/invoicing/
+-- automate-invoice.ts), so a Voided invoice with a sendError never sits in Needs Review.
 CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
   WITH settled AS (
     SELECT s."targetSalesInvoiceId", s."companyId",
@@ -186,3 +200,67 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
   ) remaining;
 
 NOTIFY pgrst, 'reload schema';
+
+-- salesInvoiceLocations: the invoice's Ship To comes from the customer ship-to
+-- (salesInvoiceShipment.customerLocationId). It joined customerLocation on
+-- salesInvoiceShipment."locationId" — a Carbon warehouse id, never a
+-- customerLocation id — so the shipment* columns were always NULL.
+CREATE OR REPLACE VIEW "salesInvoiceLocations" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    si.id,
+    c.name AS "customerName",
+    ca."addressLine1" AS "customerAddressLine1",
+    ca."addressLine2" AS "customerAddressLine2",
+    ca."city" AS "customerCity",
+    ca."stateProvince" AS "customerStateProvince",
+    ca."postalCode" AS "customerPostalCode",
+    ca."countryCode" AS "customerCountryCode",
+    cc."name" AS "customerCountryName",
+    ctx."taxId" AS "customerTaxId",
+    ctx."vatNumber" AS "customerVatNumber",
+    ctx."eori" AS "customerEori",
+    ic.name AS "invoiceCustomerName",
+    ica."addressLine1" AS "invoiceAddressLine1",
+    ica."addressLine2" AS "invoiceAddressLine2",
+    ica."city" AS "invoiceCity",
+    ica."stateProvince" AS "invoiceStateProvince",
+    ica."postalCode" AS "invoicePostalCode",
+    ica."countryCode" AS "invoiceCountryCode",
+    icc."name" AS "invoiceCountryName",
+    sc.name AS "shipmentCustomerName",
+    sa."addressLine1" AS "shipmentAddressLine1",
+    sa."addressLine2" AS "shipmentAddressLine2",
+    sa."city" AS "shipmentCity",
+    sa."stateProvince" AS "shipmentStateProvince",
+    sa."postalCode" AS "shipmentPostalCode",
+    sa."countryCode" AS "shipmentCountryCode",
+    scc."name" AS "shipmentCountryName"
+  FROM "salesInvoice" si
+  INNER JOIN "customer" c
+    ON c.id = si."customerId"
+  LEFT OUTER JOIN "customerTax" ctx
+    ON ctx."customerId" = c.id
+  LEFT OUTER JOIN "customerLocation" cl
+    ON cl.id = si."locationId"
+  LEFT OUTER JOIN "address" ca
+    ON ca.id = cl."addressId"
+  LEFT OUTER JOIN "country" cc
+    ON cc.alpha2 = ca."countryCode"
+  LEFT OUTER JOIN "customer" ic
+    ON ic.id = si."invoiceCustomerId"
+  LEFT OUTER JOIN "customerLocation" icl
+    ON icl.id = si."invoiceCustomerLocationId"
+  LEFT OUTER JOIN "address" ica
+    ON ica.id = icl."addressId"
+  LEFT OUTER JOIN "country" icc
+    ON icc.alpha2 = ica."countryCode"
+  LEFT OUTER JOIN "salesInvoiceShipment" sis
+    ON sis.id = si.id
+  LEFT OUTER JOIN "customerLocation" scl
+    ON scl.id = sis."customerLocationId"
+  LEFT OUTER JOIN "address" sa
+    ON sa.id = scl."addressId"
+  LEFT OUTER JOIN "country" scc
+    ON scc.alpha2 = sa."countryCode"
+  LEFT OUTER JOIN "customer" sc
+    ON sc.id = scl."customerId";

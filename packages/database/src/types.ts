@@ -11425,6 +11425,8 @@ export type Database = {
           postingDate: string
           revenueRecognitionScheduleId: string | null
           salesInvoiceLineId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           assetAmount?: number
@@ -11444,6 +11446,8 @@ export type Database = {
           postingDate: string
           revenueRecognitionScheduleId?: string | null
           salesInvoiceLineId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           assetAmount?: number
@@ -11463,6 +11467,8 @@ export type Database = {
           postingDate?: string
           revenueRecognitionScheduleId?: string | null
           salesInvoiceLineId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
           {
@@ -11569,6 +11575,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "revenueRecognitionSchedule"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractLedgerEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLedgerEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLedgerEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLedgerEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractLedgerEntry_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }

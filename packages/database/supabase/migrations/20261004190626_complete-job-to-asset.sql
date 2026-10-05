@@ -1,15 +1,14 @@
 -- Make to Asset: complete_job_to_inventory gains a job→asset branch.
--- A job with "fixedAssetClassId" completes into one new fixed asset per unit
--- (serialized units one at a time, otherwise exactly one unit); a job with
--- "fixedAssetId" sweeps its WIP onto that Construction in Progress asset. The
--- units never enter stock: no itemLedger, costLedger, pickMethod or itemCost
--- rows are written, the WIP discharge posts to the class's asset account as an
--- 'Asset Transfer' journal, and the assets are priced from the swept WIP.
--- Forked VERBATIM from 20260922050131_mark-complete-completes-remaining-quantities.sql;
+-- A job with "fixedAssetClassId" completes into one new fixed asset per unit,
+-- which needs a serialized item (an asset with no tracked unit cannot be returned
+-- to inventory or capitalized); a job with "fixedAssetId" sweeps its WIP onto that
+-- Construction in Progress asset. The units never enter stock: no itemLedger,
+-- costLedger, pickMethod or itemCost rows are written, the WIP discharge posts to
+-- the class's asset account as an 'Asset Transfer' journal, and the assets are
+-- priced from the swept WIP.
+-- Forked from the guarded definition in 20260925121735_rpc-function-guards.sql;
 -- every other line of the function is unchanged.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §2
-
-DROP FUNCTION IF EXISTS complete_job_to_inventory(TEXT, NUMERIC, TEXT, TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION complete_job_to_inventory(
   p_job_id TEXT,
@@ -97,6 +96,8 @@ DECLARE
   v_dimension_fixed_asset_class TEXT;
   i INTEGER;
 BEGIN
+  PERFORM assert_company_access(p_company_id);
+
   -- Never let a NULL user reach NOT NULL audit columns; fall back to the job creator
   p_user_id := COALESCE(p_user_id, (SELECT "createdBy" FROM "job" WHERE id = p_job_id));
 
@@ -137,10 +138,18 @@ BEGIN
   WHERE id = v_item_id
     AND "companyId" = p_company_id;
 
-  -- One asset per unit needs one unit per asset: a serialized item is
-  -- capitalized one numbered unit at a time; anything else must be a single
-  -- unit, since an untracked or batch quantity cannot be told apart.
-  IF v_asset_target IS NOT NULL
+  -- A job that targets a class makes new assets, and every one of them is a
+  -- fleet unit that rental, return to inventory and capitalization follow by
+  -- its serial. So the item must be serialized, whatever the quantity.
+  IF v_asset_target = 'class'
+     AND v_item_tracking_type IS DISTINCT FROM 'Serial' THEN
+    RAISE EXCEPTION 'A job that completes to a fixed asset class needs a serialized item';
+  END IF;
+
+  -- A sweep onto an asset under construction makes no new unit, so an
+  -- unserialized item is fine there, but only as a single unit: an untracked
+  -- or batch quantity cannot be told apart.
+  IF v_asset_target = 'asset'
      AND v_item_tracking_type IS DISTINCT FROM 'Serial'
      AND COALESCE(p_quantity_complete, 0) <> 1 THEN
     RAISE EXCEPTION 'Make to Asset needs a serialized item or a quantity of one';

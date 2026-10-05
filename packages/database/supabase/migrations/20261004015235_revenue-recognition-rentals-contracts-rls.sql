@@ -2,6 +2,126 @@
 
 -- Ships these rules to databases where `authz sync` does not run after migrations yet.
 
+-- customerContract
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContract' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContract');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContract" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContract" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContract" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContract" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContract" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractAmendment
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractAmendment' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractAmendment');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractAmendment" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractAmendment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractAmendment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractAmendment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractAmendment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractInvoice
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractInvoice' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractInvoice');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractInvoice" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractInvoice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractInvoice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractInvoice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractInvoiceLine
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractInvoiceLine' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractInvoiceLine');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractInvoiceLine" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractInvoiceLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractInvoiceLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractInvoiceLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractLedgerEntry
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractLedgerEntry' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractLedgerEntry');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractLedgerEntry" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractLedgerEntry" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractLedgerEntry" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractLedgerEntry" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractLedgerEntry" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractLine
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractLine' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractLine');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractLine" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerContractRevenue
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractRevenue' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractRevenue');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractRevenue" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractRevenue" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractRevenue" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractRevenue" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractRevenue" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
+-- customerItemRentalRate
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerItemRentalRate' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerItemRentalRate');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerItemRentalRate" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerItemRentalRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerItemRentalRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerItemRentalRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerItemRentalRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]));
+
 -- fixedAssetCipCost
 DO $authz$
 DECLARE p record;

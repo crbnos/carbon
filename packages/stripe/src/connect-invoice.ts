@@ -17,7 +17,7 @@ import { formatPercent } from "@carbon/utils";
  * created in — never the company's base currency. The cost components are NOT
  * interchangeable and — apart from `unitPrice` — are NOT per-unit. This mirrors
  * the `salesInvoices` view, which is the single definition of what a Carbon
- * sales invoice is worth (migration `20261004014728_sales-invoice-line-discount.sql`),
+ * sales invoice is worth (migration `20261004014728_sales-invoice-discount-and-ship-to.sql`),
  * applied to the `converted*` columns:
  *
  *   net      = unitPrice·(1 − discountPercent)

@@ -170,37 +170,10 @@ BEGIN
   END IF;
 END $svcdates$;
 
--- 7) The two "t.*" views gain columns in the middle: DROP + CREATE (never CREATE OR REPLACE).
---    Bodies copied verbatim from their newest definitions
---    (salesInvoiceLines: 20260524143827_fixed-assets.sql; salesOrderLines: 20260811123619_widen-sales-production-scale.sql).
-DROP VIEW IF EXISTS "salesInvoiceLines";
-CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
-  SELECT
-    sl.*,
-    i."readableIdWithRevision" as "itemReadableId",
-    CASE
-      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
-      WHEN i."thumbnailPath" IS NULL AND imu."thumbnailPath" IS NOT NULL THEN imu."thumbnailPath"
-      ELSE i."thumbnailPath"
-    END as "thumbnailPath",
-    i.name as "itemName",
-    i.description as "itemDescription",
-    ic."unitCost" as "unitCost",
-    (SELECT cp."customerPartId"
-     FROM "customerPartToItem" cp
-     WHERE cp."customerId" = si."customerId" AND cp."itemId" = i.id
-     LIMIT 1) as "customerPartId",
-    fa."fixedAssetId" as "assetReadableId",
-    fa."name" as "assetName"
-  FROM "salesInvoiceLine" sl
-  INNER JOIN "salesInvoice" si ON si.id = sl."invoiceId"
-  LEFT JOIN "modelUpload" mu ON sl."modelUploadId" = mu."id"
-  LEFT JOIN "item" i ON i.id = sl."itemId"
-  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
-  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
-  LEFT JOIN "fixedAsset" fa ON fa.id = sl."assetId"
-);
-
+-- 7) salesOrderLines selects sl.* before aliased columns, so the new columns need a
+--    DROP + CREATE (never CREATE OR REPLACE). Body copied verbatim from
+--    20260811123619_widen-sales-production-scale.sql. salesInvoiceLines is recreated
+--    with every new line column by 20261004014728_sales-invoice-discount-and-ship-to.sql.
 DROP VIEW IF EXISTS "salesOrderLines";
 CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS (
   SELECT

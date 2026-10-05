@@ -20,7 +20,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 
 ### Job completion
 
-`complete_job_to_inventory` (SQL, newest `20260922230906_complete-job-to-asset.sql`, forked verbatim from `20260922050131_mark-complete-completes-remaining-quantities.sql`) is the single choke point: the ERP complete route, the API/MCP `completeJob` tool and the `sync_finish_job_operation` trigger interceptor all go through it.
+`complete_job_to_inventory` (SQL, newest `20261004190626_complete-job-to-asset.sql`, forked from the guarded definition in `20260925121735_rpc-function-guards.sql`) is the single choke point: the ERP complete route, the API/MCP `completeJob` tool and the `sync_finish_job_operation` trigger interceptor all go through it.
 
 - `p_quantity_complete` is **CUMULATIVE**, not this completion's delta. The function receives `p_quantity_complete - job.quantityReceivedToInventory` and stores the cumulative value back, because `get_inventory_quantities` computes on-production supply as production + scrap − received − shipped. `backflush_job_materials` takes the same cumulative number and is idempotent, so a re-completion at the received quantity receives nothing and consumes nothing.
 - It **refuses** a quantity ≤ 0 or below what was already received (stocked items), and a fractional quantity on a serial job. Those raises reach the `jobOperation` UPDATE when they happen under the trigger — `sync_finish_job_operation` therefore clamps with `GREATEST(computed, received)` before calling.

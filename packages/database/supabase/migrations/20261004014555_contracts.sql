@@ -1,4 +1,8 @@
--- Contracts, Phase A (.ai/specs/2026-10-02-contracts.md, .ai/plans/2026-10-03-contracts-phase-a.md).
+-- Contracts (.ai/specs/2026-10-02-contracts.md): header, amendments, lines, the invoice
+-- schedule, the per-line revenue plan, and the movement ledger behind each line's
+-- Deferred Revenue / Contract Assets position, plus contract provenance on sales
+-- invoices, memos and recognition schedule rows. The salesInvoiceLines view picks up
+-- the new line columns in 20261004014728_sales-invoice-discount-and-ship-to.sql.
 -- RLS comes from the authz manifest (packages/database/src/authz/manifest.ts).
 
 -- 1) Header -----------------------------------------------------------------------------
@@ -13,6 +17,7 @@ CREATE TABLE IF NOT EXISTS "customerContract" (
   "invoiceCustomerId" TEXT REFERENCES "customer"("id"),
   "invoiceCustomerContactId" TEXT REFERENCES "customerContact"("id"),
   "invoiceCustomerLocationId" TEXT REFERENCES "customerLocation"("id"),
+  "shipToCustomerLocationId" TEXT REFERENCES "customerLocation"("id"),
   "salesPersonId" TEXT REFERENCES "user"("id"),
   "salesOrderId" TEXT REFERENCES "salesOrder"("id") ON DELETE SET NULL,
   "projectId" TEXT,
@@ -59,6 +64,7 @@ CREATE INDEX IF NOT EXISTS "customerContract_customerId_idx" ON "customerContrac
 CREATE INDEX IF NOT EXISTS "customerContract_invoiceCustomerId_idx" ON "customerContract" ("invoiceCustomerId");
 CREATE INDEX IF NOT EXISTS "customerContract_invoiceCustomerContactId_idx" ON "customerContract" ("invoiceCustomerContactId");
 CREATE INDEX IF NOT EXISTS "customerContract_invoiceCustomerLocationId_idx" ON "customerContract" ("invoiceCustomerLocationId");
+CREATE INDEX IF NOT EXISTS "customerContract_shipToCustomerLocationId_idx" ON "customerContract" ("shipToCustomerLocationId");
 CREATE INDEX IF NOT EXISTS "customerContract_salesPersonId_idx" ON "customerContract" ("salesPersonId");
 CREATE INDEX IF NOT EXISTS "customerContract_salesOrderId_idx" ON "customerContract" ("salesOrderId");
 CREATE INDEX IF NOT EXISTS "customerContract_projectId_idx" ON "customerContract" ("projectId");
@@ -97,7 +103,7 @@ CREATE TABLE IF NOT EXISTS "customerContractLine" (
   "id" TEXT NOT NULL DEFAULT id('conl'),
   "companyId" TEXT NOT NULL,
   "customerContractId" TEXT NOT NULL,
-  "kind" "customerContractLineKind" NOT NULL,
+  "revenueType" "contractRevenueType" NOT NULL,
   "itemId" TEXT NOT NULL REFERENCES "item"("id"),
   "description" TEXT,
   "quantity" NUMERIC NOT NULL DEFAULT 1 CHECK ("quantity" > 0),
@@ -133,7 +139,7 @@ CREATE TABLE IF NOT EXISTS "customerContractLine" (
     REFERENCES "customerContractLine"("id", "companyId") ON DELETE SET NULL ("amendsLineId"),
   CONSTRAINT "customerContractLine_project_fkey" FOREIGN KEY ("projectId", "companyId")
     REFERENCES "project"("id", "companyId") ON DELETE SET NULL ("projectId"),
-  CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("kind" = 'Recurring') = ("rateUnit" IS NOT NULL)),
+  CONSTRAINT "customerContractLine_rateUnit_check" CHECK (("revenueType" = 'Recurring') = ("rateUnit" IS NOT NULL)),
   CONSTRAINT "customerContractLine_amends_check" CHECK ("amendsLineId" IS NULL OR "amendmentId" IS NOT NULL),
   CONSTRAINT "customerContractLine_dates_check" CHECK ("endDate" IS NULL OR "endDate" >= "startDate" - 1)
 );
@@ -258,36 +264,109 @@ CREATE INDEX IF NOT EXISTS "salesInvoiceLine_customerContractInvoiceLineId_idx" 
 CREATE INDEX IF NOT EXISTS "salesInvoiceLine_projectId_idx" ON "salesInvoiceLine" ("projectId");
 CREATE INDEX IF NOT EXISTS "memo_customerContractId_idx" ON "memo" ("customerContractId");
 
--- 6) salesInvoiceLines: recreate so sl.* exposes the new line columns ------------------
-DROP VIEW IF EXISTS "salesInvoiceLines";
-CREATE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
-  SELECT
-    sl.*,
-    i."readableIdWithRevision" as "itemReadableId",
-    CASE
-      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
-      WHEN i."thumbnailPath" IS NULL AND imu."thumbnailPath" IS NOT NULL THEN imu."thumbnailPath"
-      ELSE i."thumbnailPath"
-    END as "thumbnailPath",
-    i.name as "itemName",
-    i.description as "itemDescription",
-    ic."unitCost" as "unitCost",
-    (SELECT cp."customerPartId"
-     FROM "customerPartToItem" cp
-     WHERE cp."customerId" = si."customerId" AND cp."itemId" = i.id
-     LIMIT 1) as "customerPartId",
-    fa."fixedAssetId" as "assetReadableId",
-    fa."name" as "assetName"
-  FROM "salesInvoiceLine" sl
-  INNER JOIN "salesInvoice" si ON si.id = sl."invoiceId"
-  LEFT JOIN "modelUpload" mu ON sl."modelUploadId" = mu."id"
-  LEFT JOIN "item" i ON i.id = sl."itemId"
-  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
-  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
-  LEFT JOIN "fixedAsset" fa ON fa.id = sl."assetId"
+-- 6) Readable-id sequence for existing companies (new companies: seed-data.ts) ----------
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 'customerContract', 'Contract', 'CON', NULL, 0, 6, 1, c."id"
+FROM "company" c
+WHERE NOT EXISTS (
+  SELECT 1 FROM "sequence" s WHERE s."companyId" = c."id" AND s."table" = 'customerContract'
 );
 
--- 7) customerContracts view -------------------------------------------------------------
+-- 7) The revenue plan: one row per contract line per calendar month ---------------------
+-- Amounts are in the contract currency. An unedited Draft has no rows (planned live);
+-- the first revenue edit or Confirm writes them.
+CREATE TABLE IF NOT EXISTS "customerContractRevenue" (
+  "id" TEXT NOT NULL DEFAULT id('conr'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,
+  "customerContractLineId" TEXT NOT NULL,
+  "periodStart" DATE NOT NULL,                  -- the 1st of the month
+  "periodEnd" DATE NOT NULL,                    -- the month's last day
+  "amount" NUMERIC NOT NULL,
+  "status" "contractRevenueStatus" NOT NULL DEFAULT 'Planned',
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "customerContractRevenue_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractRevenue_key" UNIQUE ("companyId", "customerContractLineId", "periodStart"),
+  CONSTRAINT "customerContractRevenue_companyId_fkey" FOREIGN KEY ("companyId")
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "customerContractRevenue_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
+    REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "customerContractRevenue_line_fkey" FOREIGN KEY ("customerContractLineId", "companyId")
+    REFERENCES "customerContractLine"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "customerContractRevenue_dates_check" CHECK ("periodEnd" >= "periodStart")
+);
+CREATE INDEX IF NOT EXISTS "customerContractRevenue_companyId_idx" ON "customerContractRevenue" ("companyId");
+CREATE INDEX IF NOT EXISTS "customerContractRevenue_customerContractId_idx" ON "customerContractRevenue" ("customerContractId", "companyId");
+CREATE INDEX IF NOT EXISTS "customerContractRevenue_due_idx" ON "customerContractRevenue" ("companyId", "status", "periodStart");
+CREATE INDEX IF NOT EXISTS "customerContractRevenue_createdBy_idx" ON "customerContractRevenue" ("createdBy");
+
+-- 8) Contract provenance on recognition schedule rows -----------------------------------
+ALTER TABLE "revenueRecognitionSchedule"
+  ADD COLUMN IF NOT EXISTS "customerContractLineId" TEXT,
+  ADD COLUMN IF NOT EXISTS "customerContractRevenueId" TEXT,
+  ADD COLUMN IF NOT EXISTS "contractAmount" NUMERIC;     -- the row in contract currency
+
+DO $$ BEGIN
+  ALTER TABLE "revenueRecognitionSchedule" ADD CONSTRAINT "revenueRecognitionSchedule_customerContractLine_fkey"
+    FOREIGN KEY ("customerContractLineId", "companyId") REFERENCES "customerContractLine"("id", "companyId")
+    ON DELETE SET NULL ("customerContractLineId");
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "revenueRecognitionSchedule" ADD CONSTRAINT "revenueRecognitionSchedule_customerContractRevenue_fkey"
+    FOREIGN KEY ("customerContractRevenueId", "companyId") REFERENCES "customerContractRevenue"("id", "companyId")
+    ON DELETE SET NULL ("customerContractRevenueId");
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_contractLine_idx"
+  ON "revenueRecognitionSchedule" ("companyId", "customerContractLineId");
+CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_customerContractRevenueId_idx"
+  ON "revenueRecognitionSchedule" ("customerContractRevenueId");
+
+-- 9) The movement ledger ----------------------------------------------------------------
+-- One row per movement of a line's position (invoiced − recognized). Deferred Revenue
+-- carries the positive part, Contract Assets the negative part; both pools are kept in
+-- contract currency (*Amount) and base (*Base). A line's position is the sum of its rows.
+CREATE TABLE IF NOT EXISTS "customerContractLedgerEntry" (
+  "id" TEXT NOT NULL DEFAULT id('conle'),
+  "companyId" TEXT NOT NULL,
+  "customerContractId" TEXT NOT NULL,
+  "customerContractLineId" TEXT NOT NULL,
+  "entryType" "contractLedgerEntryType" NOT NULL,
+  "postingDate" DATE NOT NULL,
+  "salesInvoiceLineId" TEXT,
+  "memoId" TEXT,
+  "revenueRecognitionScheduleId" TEXT,
+  "customerContractRevenueId" TEXT,
+  "journalId" TEXT REFERENCES "journal"("id") ON DELETE SET NULL,
+  "deferredAmount" NUMERIC NOT NULL DEFAULT 0,
+  "deferredBase" NUMERIC NOT NULL DEFAULT 0,
+  "assetAmount" NUMERIC NOT NULL DEFAULT 0,
+  "assetBase" NUMERIC NOT NULL DEFAULT 0,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT "customerContractLedgerEntry_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "customerContractLedgerEntry_companyId_fkey" FOREIGN KEY ("companyId")
+    REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "customerContractLedgerEntry_contract_fkey" FOREIGN KEY ("customerContractId", "companyId")
+    REFERENCES "customerContract"("id", "companyId") ON DELETE CASCADE,
+  CONSTRAINT "customerContractLedgerEntry_line_fkey" FOREIGN KEY ("customerContractLineId", "companyId")
+    REFERENCES "customerContractLine"("id", "companyId") ON DELETE CASCADE,
+  -- A recognition entry lives and dies with its schedule row (a recalculated Draft run).
+  CONSTRAINT "customerContractLedgerEntry_schedule_fkey" FOREIGN KEY ("revenueRecognitionScheduleId", "companyId")
+    REFERENCES "revenueRecognitionSchedule"("id", "companyId") ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_companyId_idx" ON "customerContractLedgerEntry" ("companyId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_contractId_idx" ON "customerContractLedgerEntry" ("customerContractId", "companyId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_lineId_idx" ON "customerContractLedgerEntry" ("customerContractLineId", "companyId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_salesInvoiceLineId_idx" ON "customerContractLedgerEntry" ("salesInvoiceLineId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_memoId_idx" ON "customerContractLedgerEntry" ("memoId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_scheduleId_idx" ON "customerContractLedgerEntry" ("revenueRecognitionScheduleId", "companyId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_journalId_idx" ON "customerContractLedgerEntry" ("journalId");
+CREATE INDEX IF NOT EXISTS "customerContractLedgerEntry_createdBy_idx" ON "customerContractLedgerEntry" ("createdBy");
+
+-- 10) customerContracts view -----------------------------
 DROP VIEW IF EXISTS "customerContracts";
 CREATE VIEW "customerContracts" WITH(SECURITY_INVOKER=true) AS
 SELECT
@@ -301,16 +380,10 @@ SELECT
   (SELECT COALESCE(SUM(il."amount"), 0) FROM "customerContractInvoiceLine" il
      JOIN "customerContractInvoice" ci ON ci."id" = il."customerContractInvoiceId" AND ci."companyId" = il."companyId"
      WHERE il."customerContractId" = c."id" AND il."companyId" = c."companyId" AND ci."status" = 'Invoiced') AS "invoicedToDate",
+  (SELECT COALESCE(SUM(r."amount"), 0) FROM "customerContractRevenue" r
+     WHERE r."customerContractId" = c."id" AND r."companyId" = c."companyId" AND r."status" = 'Recognized') AS "recognizedToDate",
   (SELECT MIN(ci."invoiceDate") FROM "customerContractInvoice" ci
      WHERE ci."customerContractId" = c."id" AND ci."companyId" = c."companyId" AND ci."status" = 'Planned') AS "nextInvoiceDate"
 FROM "customerContract" c
 JOIN "customer" cu ON cu."id" = c."customerId"
 LEFT JOIN "companySettings" cs ON cs."id" = c."companyId";
-
--- 8) Readable-id sequence for existing companies (new companies: seed-data.ts) ----------
-INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
-SELECT 'customerContract', 'Contract', 'CON', NULL, 0, 6, 1, c."id"
-FROM "company" c
-WHERE NOT EXISTS (
-  SELECT 1 FROM "sequence" s WHERE s."companyId" = c."id" AND s."table" = 'customerContract'
-);

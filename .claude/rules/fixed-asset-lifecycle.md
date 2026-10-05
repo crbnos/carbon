@@ -37,8 +37,9 @@ Schema lives in these migrations (newest wins):
 `20260524143826_fixed-asset-enums.sql`, `20260524143827_fixed-assets.sql`,
 `20260525084319_seed-fixed-asset-classes.sql`,
 `20260717031529_split-asset-gain-loss-disposal-accounts.sql`,
-`20260922225541_asset-transfer-enums.sql`, `20260922225830_fleet-bridge.sql`,
-`20260922230906_complete-job-to-asset.sql`, `20260923003525_rental-agreements.sql` (recreates `fleetAssets` with the rental join), and `20260923051441_lease-enum.sql` / `20260923051445_lessor-schedule.sql` (sales-type leases). Design:
+`20260922225541_fleet-rental-lease-enums.sql`, `20260922225830_fleet-bridge.sql`,
+`20260923003525_rental-agreements.sql` (rentals, the sales-type lease schedule and the
+`fleetAssets` view) and `20261004190626_complete-job-to-asset.sql`. Design:
 `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md` §2 and §4.
 
 ## Tables (current schema)
@@ -300,8 +301,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    cost; see **post-asset-transfer** below.
 
 **Make to Asset.** The branch lives inside `complete_job_to_inventory`
-(`20260922230906`, forked verbatim from
-`20260922050131_mark-complete-completes-remaining-quantities.sql`), so every
+(`20261004190626_complete-job-to-asset.sql`, forked from the guarded definition in
+`20260925121735_rpc-function-guards.sql`), so every
 completion path (ERP route, API/MCP, the `sync_finish_job_operation` trigger)
 gets it. `v_asset_target` is `'asset'` when `job.fixedAssetId` is set, `'class'`
 when `job.fixedAssetClassId` is, else null (the ordinary receipt). Guards, all

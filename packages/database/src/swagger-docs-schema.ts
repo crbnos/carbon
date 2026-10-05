@@ -56860,6 +56860,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLedgerEntry.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -56970,6 +56976,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerContractLedgerEntry.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57032,6 +57044,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContractLedgerEntry.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractLedgerEntry.updatedAt"
           },
           {
             $ref: "#/parameters/body.customerContractLedgerEntry"
@@ -140235,6 +140253,16 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -191461,6 +191489,18 @@ export default {
     },
     "rowFilter.customerContractLedgerEntry.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLedgerEntry.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractLedgerEntry.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

@@ -1,7 +1,9 @@
 -- Fleet bridge + Make to Asset: item/serial/work-center links on fixedAsset, job
 -- asset targets, the fixedAssetTransfer document and the CIP cost ledger, PP&E
--- accounts, the Rental Fleet and Construction in Progress classes, the fleetAssets
--- view. Idempotent. Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §2
+-- accounts, and the Rental Fleet and Construction in Progress classes. The
+-- fleetAssets view comes with the rental agreements it reads
+-- (20260923003525_rental-agreements.sql). Idempotent.
+-- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §2
 
 -- 1) Columns ---------------------------------------------------------------------
 ALTER TABLE "fixedAsset"
@@ -221,33 +223,5 @@ LEFT JOIN job_model jm ON j.id = jm.job_id AND j."companyId" = jm."companyId"
 LEFT JOIN "modelUpload" mu ON mu.id = jm.model_upload_id
 LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id AND j."companyId" = so."companyId"
 LEFT JOIN "quote" qo ON j."quoteId" = qo.id AND j."companyId" = qo."companyId";
-
--- 8) fleetAssets: fleet status is DERIVED, never stored. Phase C recreates this view
---    with the rental-agreement join (On Rent / Reserved).
-DROP VIEW IF EXISTS "fleetAssets";
-CREATE VIEW "fleetAssets" WITH(SECURITY_INVOKER=true) AS
-SELECT
-  fa.*,
-  i."readableIdWithRevision" AS "itemReadableId",
-  i.name AS "itemName",
-  i."thumbnailPath",
-  te."readableId" AS "trackedEntityReadableId",
-  fac.name AS "className",
-  fac."isConstructionInProgress",
-  wc.name AS "workCenterName",
-  (COALESCE(fa."acquisitionCost", 0) - COALESCE(fa."accumulatedDepreciation", 0)) AS "netBookValue",
-  CASE
-    WHEN fa.status = 'Disposed' AND fa."disposalMethod" = 'Transfer to Inventory' THEN 'Returned to Stock'
-    WHEN fa.status = 'Disposed' THEN 'Sold'
-    WHEN fa.status = 'Under Construction' THEN 'Under Construction'
-    WHEN fa."outOfServiceSince" IS NOT NULL THEN 'In Maintenance'
-    ELSE 'Available'
-  END AS "fleetStatus"
-FROM "fixedAsset" fa
-INNER JOIN "item" i ON i.id = fa."itemId"
-INNER JOIN "fixedAssetClass" fac ON fac.id = fa."fixedAssetClassId"
-LEFT JOIN "trackedEntity" te ON te.id = fa."trackedEntityId"
-LEFT JOIN "workCenter" wc ON wc.id = fa."workCenterId"
-WHERE fa."itemId" IS NOT NULL;
 
 NOTIFY pgrst, 'reload schema';
