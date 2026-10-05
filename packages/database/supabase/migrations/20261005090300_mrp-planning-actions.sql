@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS "planningAction" (
     "requiresManualAction" BOOLEAN NOT NULL DEFAULT false,
 
     -- Suggestion attribution (the "why"):
-    "supplierId" TEXT,
+    "supplierId" TEXT REFERENCES "supplier"("id") ON DELETE SET NULL,
     "policyName" TEXT,
     "reason" TEXT,
     "triggerValues" JSONB,
@@ -93,6 +93,8 @@ CREATE INDEX IF NOT EXISTS "planningAction_jobId_idx"
   ON "planningAction" ("jobId") WHERE "jobId" IS NOT NULL;
 CREATE INDEX IF NOT EXISTS "planningAction_purchaseOrderLineId_idx"
   ON "planningAction" ("purchaseOrderLineId") WHERE "purchaseOrderLineId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "planningAction_supplierId_idx"
+  ON "planningAction" ("supplierId") WHERE "supplierId" IS NOT NULL;
 CREATE INDEX IF NOT EXISTS "planningAction_itemId_idx"
   ON "planningAction" ("itemId");
 CREATE INDEX IF NOT EXISTS "planningAction_periodId_idx"

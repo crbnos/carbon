@@ -89,6 +89,7 @@ CREATE FUNCTION get_purchasing_planning_grid(
     "latestOrderDate" DATE
   )
   LANGUAGE sql
+  STABLE
   SECURITY INVOKER
 AS $$
   SELECT
@@ -101,7 +102,7 @@ AS $$
       LIMIT 1
     ) AS "itemPostingGroupId",
     h."days" AS "planningHorizonDays",
-    (COALESCE(as_of, CURRENT_DATE) + h."days") AS "timeFenceDate",
+    (COALESCE(as_of, location_today(location_id, company_id)) + h."days") AS "timeFenceDate",
     (
       -- weekN is the projection for periods[N]
       SELECT MIN(pr."startDate")
@@ -119,7 +120,10 @@ AS $$
         AND (a."type" = 'Order' OR a."purchaseOrderLineId" IS NOT NULL)
     ) AS "latestOrderDate"
   FROM get_purchasing_planning(company_id, location_id, periods) p
-  CROSS JOIN LATERAL (SELECT to_jsonb(p) AS "row") w
+  -- OFFSET 0 keeps the planner from pulling to_jsonb(p) into the weekly
+  -- firstNegativeDate subquery, where it ran 48 times per item (1.2 s against
+  -- 0.8 s on 405 items). The JSON is built once per row.
+  CROSS JOIN LATERAL (SELECT to_jsonb(p) AS "row" OFFSET 0) w
   CROSS JOIN LATERAL (
     -- 0 means "no fence", at either level. An item's 0 is how it opts OUT of a
     -- company default (empty would inherit it); NULLIF comes after the
@@ -155,7 +159,7 @@ AS $$
         AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (
           h."days" IS NULL
-          OR a."horizonDate" <= COALESCE(as_of, CURRENT_DATE) + h."days"
+          OR a."horizonDate" <= COALESCE(as_of, location_today(location_id, company_id)) + h."days"
         )
     );
 $$;
@@ -212,6 +216,7 @@ CREATE FUNCTION get_production_planning_grid(
     "latestOrderDate" DATE
   )
   LANGUAGE sql
+  STABLE
   SECURITY INVOKER
 AS $$
   SELECT
@@ -224,7 +229,7 @@ AS $$
       LIMIT 1
     ) AS "itemPostingGroupId",
     h."days" AS "planningHorizonDays",
-    (COALESCE(as_of, CURRENT_DATE) + h."days") AS "timeFenceDate",
+    (COALESCE(as_of, location_today(location_id, company_id)) + h."days") AS "timeFenceDate",
     (
       -- weekN is the projection for periods[N]
       SELECT MIN(pr."startDate")
@@ -242,7 +247,10 @@ AS $$
         AND (a."type" = 'Make' OR a."jobId" IS NOT NULL)
     ) AS "latestOrderDate"
   FROM get_production_planning(company_id, location_id, periods) p
-  CROSS JOIN LATERAL (SELECT to_jsonb(p) AS "row") w
+  -- OFFSET 0 keeps the planner from pulling to_jsonb(p) into the weekly
+  -- firstNegativeDate subquery, where it ran 48 times per item (1.2 s against
+  -- 0.8 s on 405 items). The JSON is built once per row.
+  CROSS JOIN LATERAL (SELECT to_jsonb(p) AS "row" OFFSET 0) w
   CROSS JOIN LATERAL (
     -- 0 means "no fence", at either level. An item's 0 is how it opts OUT of a
     -- company default (empty would inherit it); NULLIF comes after the
@@ -278,7 +286,7 @@ AS $$
         AND (action_assignees IS NULL OR a."assignee" = ANY(action_assignees))
         AND (
           h."days" IS NULL
-          OR a."horizonDate" <= COALESCE(as_of, CURRENT_DATE) + h."days"
+          OR a."horizonDate" <= COALESCE(as_of, location_today(location_id, company_id)) + h."days"
         )
     );
 $$;
