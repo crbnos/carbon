@@ -9,7 +9,13 @@ import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { datetime, equals, formatDate, toStoredAmount } from "@carbon/utils";
+import {
+  datetime,
+  equals,
+  formatDate,
+  round,
+  toStoredAmount
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -2157,6 +2163,160 @@ export async function reverseRevenueRecognitionRun(
       .execute();
 
     return { runId: run.runId };
+  });
+}
+
+/**
+ * Reverse Run for depreciation. Reverses every journal the run posted (each
+ * month's, and each month's deferred tax), takes the run's amounts back off
+ * each asset's accumulated book and tax depreciation, returns a Fully
+ * Depreciated asset that is above its residual value to Active, and returns
+ * the run to Draft. Only the latest posted run can be reversed: a later run
+ * was calculated from the accumulated depreciation this one wrote.
+ */
+export async function reverseDepreciationRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    depreciationRunId: string;
+    periods: RunPostingPeriods;
+    taxEnabled: boolean;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ depreciationRunId: string }> {
+  const { depreciationRunId, periods, taxEnabled, companyId, userId } = args;
+
+  return db.transaction().execute(async (trx) => {
+    const run = await trx
+      .selectFrom("depreciationRun")
+      .select(["depreciationRunId", "status", "periodEnd"])
+      .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Posted") {
+      throw new RunReversalError(
+        `Depreciation run ${run.depreciationRunId} is ${run.status}; only a posted run can be reversed`
+      );
+    }
+
+    const later = await trx
+      .selectFrom("depreciationRun")
+      .select("depreciationRunId")
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Posted")
+      .where("periodEnd", ">", run.periodEnd)
+      .orderBy("periodEnd")
+      .executeTakeFirst();
+    if (later) {
+      throw new RunReversalError(
+        `${later.depreciationRunId} is posted for a later period and builds on this run. Reverse it first.`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("depreciationRunLine as l")
+      .innerJoin("fixedAsset as a", (join) =>
+        join
+          .onRef("a.id", "=", "l.fixedAssetId")
+          .on("a.companyId", "=", companyId)
+      )
+      .select([
+        "l.fixedAssetId",
+        "l.amount",
+        "l.taxAmount",
+        "l.journalId",
+        "l.deferredTaxJournalId",
+        "a.fixedAssetId as assetReadableId",
+        "a.status",
+        "a.acquisitionCost",
+        "a.accumulatedDepreciation",
+        "a.accumulatedTaxDepreciation",
+        "a.residualValuePercent"
+      ])
+      .where("l.depreciationRunId", "=", depreciationRunId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+
+    const disposed = lines.find((line) => line.status === "Disposed");
+    if (disposed) {
+      throw new RunReversalError(
+        `${disposed.assetReadableId} was disposed after this run. Reverse the disposal first.`
+      );
+    }
+
+    const journalIds = [
+      ...new Set(
+        lines
+          .flatMap((line) => [line.journalId, line.deferredTaxJournalId])
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    await reverseRunJournals(trx, { journalIds, periods, companyId, userId });
+
+    // One update per asset with every month's amount, as posting wrote it.
+    const byAsset = new Map<
+      string,
+      { line: (typeof lines)[number]; amount: number; taxAmount: number }
+    >();
+    for (const line of lines) {
+      const sums = byAsset.get(line.fixedAssetId) ?? {
+        line,
+        amount: 0,
+        taxAmount: 0
+      };
+      sums.amount += Number(line.amount);
+      sums.taxAmount += Number(line.taxAmount ?? 0);
+      byAsset.set(line.fixedAssetId, sums);
+    }
+    for (const [fixedAssetId, { line, amount, taxAmount }] of byAsset) {
+      const accumulated = round(Number(line.accumulatedDepreciation) - amount);
+      const cost = Number(line.acquisitionCost);
+      const residualValue = cost * (Number(line.residualValuePercent) / 100);
+      const assetUpdate: Record<string, unknown> = {
+        accumulatedDepreciation: accumulated,
+        updatedBy: userId
+      };
+      if (taxEnabled && taxAmount > 0) {
+        assetUpdate.accumulatedTaxDepreciation = round(
+          Number(line.accumulatedTaxDepreciation ?? 0) - taxAmount
+        );
+      }
+      // Posting marks an asset Fully Depreciated at its residual value.
+      if (
+        line.status === "Fully Depreciated" &&
+        cost - accumulated > residualValue + 0.01
+      ) {
+        assetUpdate.status = "Active";
+      }
+      await trx
+        .updateTable("fixedAsset")
+        .set(assetUpdate)
+        .where("id", "=", fixedAssetId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("depreciationRunLine")
+      .set({ journalId: null, deferredTaxJournalId: null })
+      .where("depreciationRunId", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    await trx
+      .updateTable("depreciationRun")
+      .set({
+        status: "Draft",
+        postedAt: null,
+        postedBy: null,
+        updatedBy: userId
+      })
+      .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { depreciationRunId: run.depreciationRunId };
   });
 }
 

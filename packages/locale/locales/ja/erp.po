@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "売上種別"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "{0}を反対仕訳"
@@ -21216,6 +21217,10 @@ msgstr "これにより、他のサイズのすべてのメソッドマテリア
 
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+msgstr ""
+
+#. placeholder {0}: run.depreciationRunId
+msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr ""
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."

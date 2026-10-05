@@ -17023,6 +17023,7 @@ msgid "Revenue Type"
 msgstr "Revenue Type"
 
 #. placeholder {0}: journalEntry.journalEntryId
+#. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
 msgid "Reverse {0}"
 msgstr "Reverse {0}"
@@ -21217,6 +21218,10 @@ msgstr "This will replace all method materials of other sizes with this size."
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
+
+#. placeholder {0}: run.depreciationRunId
+msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
+msgstr "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 
 msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
 msgstr "This will set +{hoursInput}h of overtime for {previewCount} people."

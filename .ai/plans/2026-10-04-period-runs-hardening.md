@@ -39,7 +39,7 @@ Terms used in this plan:
 - [x] Task 10: Show the period on depreciation lines and every journal in the Documents panels (also: Accum. Depr. / NBV After start a later month from the earlier months of the same asset)
 - [x] Task 11: Allow more than one revenue recognition run per period
 - [x] Task 12: Add Reverse Run for revenue recognition (also refuses while another Draft holds the period; resets contract ledger entries and revenue months)
-- [ ] Task 13: Add Reverse Run for depreciation
+- [x] Task 13: Add Reverse Run for depreciation
 - [ ] Task 14: Refuse generic reversal of run journals
 - [ ] Task 15: Update AGENTS.md and the fixed-asset rule
 - [ ] Task 16: Verify in the browser

@@ -12,7 +12,13 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuRefreshCw, LuRepeat, LuTrash } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuRefreshCw,
+  LuRepeat,
+  LuRotateCcw,
+  LuTrash
+} from "react-icons/lu";
 import { useFetcher, useNavigate, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -38,6 +44,7 @@ const DepreciationRunHeader = () => {
   const deleteModal = useDisclosure();
   const repeatModal = useDisclosure();
   const recalculateModal = useDisclosure();
+  const reverseModal = useDisclosure();
 
   const run = routeData?.run;
   if (!run) throw new Error("Could not find run in routeData");
@@ -78,6 +85,16 @@ const DepreciationRunHeader = () => {
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
                   <Trans>Repeat Run</Trans>
+                </DropdownMenuItem>
+              )}
+              {isPosted && (
+                <DropdownMenuItem
+                  disabled={!permissions.can("update", "accounting")}
+                  destructive
+                  onClick={reverseModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuRotateCcw />} />
+                  <Trans>Reverse Run</Trans>
                 </DropdownMenuItem>
               )}
               {isDraft && (
@@ -130,6 +147,19 @@ const DepreciationRunHeader = () => {
             deleteModal.onClose();
             navigate(path.to.depreciationRuns);
           }}
+        />
+      )}
+
+      {reverseModal.isOpen && (
+        <ConfirmDelete
+          action={path.to.reverseDepreciationRun(depreciationRunId)}
+          isOpen={reverseModal.isOpen}
+          name={run.depreciationRunId}
+          title={t`Reverse ${run.depreciationRunId}`}
+          deleteText={t`Reverse Run`}
+          text={t`This will reverse the journals of ${run.depreciationRunId}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it.`}
+          onCancel={reverseModal.onClose}
+          onSubmit={reverseModal.onClose}
         />
       )}
 
