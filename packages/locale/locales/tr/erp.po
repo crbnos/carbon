@@ -9712,9 +9712,6 @@ msgstr "Başlıklar"
 msgid "healthy"
 msgstr "sağlıklı"
 
-msgid "Held"
-msgstr "Bekletildi"
-
 msgid "Help"
 msgstr "Yardım"
 

@@ -9712,9 +9712,6 @@ msgstr "ヘッダー"
 msgid "healthy"
 msgstr "健全"
 
-msgid "Held"
-msgstr "保留中"
-
 msgid "Help"
 msgstr "ヘルプ"
 

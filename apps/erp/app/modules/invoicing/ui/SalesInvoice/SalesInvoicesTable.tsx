@@ -147,7 +147,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
             <span className="flex items-center gap-1">
               <SalesInvoiceStatus status={invoice.status} />
               {invoice.needsReview && (
-                <Status color="yellow" tooltip={reviewReason ?? undefined}>
+                <Status color="orange" tooltip={reviewReason ?? undefined}>
                   <Trans>Needs Review</Trans>
                 </Status>
               )}

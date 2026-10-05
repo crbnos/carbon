@@ -9712,9 +9712,6 @@ msgstr "Header"
 msgid "healthy"
 msgstr "fehlerfrei"
 
-msgid "Held"
-msgstr "Angehalten"
-
 msgid "Help"
 msgstr "Hilfe"
 

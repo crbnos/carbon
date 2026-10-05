@@ -9712,9 +9712,6 @@ msgstr "Заголовки"
 msgid "healthy"
 msgstr "здорово"
 
-msgid "Held"
-msgstr "Задержано"
-
 msgid "Help"
 msgstr "Справка"
 

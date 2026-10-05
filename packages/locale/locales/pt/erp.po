@@ -9712,9 +9712,6 @@ msgstr "Cabeçalhos"
 msgid "healthy"
 msgstr "saudável"
 
-msgid "Held"
-msgstr "Retido"
-
 msgid "Help"
 msgstr "Ajuda"
 

@@ -9712,9 +9712,6 @@ msgstr "En-têtes"
 msgid "healthy"
 msgstr "sain"
 
-msgid "Held"
-msgstr "Retenu"
-
 msgid "Help"
 msgstr "Aide"
 

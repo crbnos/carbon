@@ -370,7 +370,7 @@ const SalesInvoiceHeader = () => {
             <SalesInvoiceStatus status={salesInvoice.status} />
             {holdReason && (
               <Status color="orange" tooltip={holdReason}>
-                <Trans>Held</Trans>
+                <Trans>Needs Review</Trans>
               </Status>
             )}
             {showEmailed && (

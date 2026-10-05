@@ -9712,9 +9712,6 @@ msgstr "हेडर"
 msgid "healthy"
 msgstr "स्वस्थ"
 
-msgid "Held"
-msgstr "रखा गया"
-
 msgid "Help"
 msgstr "मदद"
 

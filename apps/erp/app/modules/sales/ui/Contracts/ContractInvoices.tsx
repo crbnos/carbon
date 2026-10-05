@@ -228,7 +228,7 @@ const ContractInvoices = ({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Badge variant="orange">
-                                        <Trans>Held</Trans>
+                                        <Trans>Needs Review</Trans>
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent>

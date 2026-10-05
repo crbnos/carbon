@@ -9712,9 +9712,6 @@ msgstr "Encabezados"
 msgid "healthy"
 msgstr "saludable"
 
-msgid "Held"
-msgstr "Retenido"
-
 msgid "Help"
 msgstr "Ayuda"
 
