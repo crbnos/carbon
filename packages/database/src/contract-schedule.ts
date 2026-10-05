@@ -264,6 +264,23 @@ export function periodUnits(
   return (n + rest / restBase) / RATE_UNIT_MONTHS[rateUnit];
 }
 
+/** Units in `[periodStart, periodEnd]` (inclusive) of a WEEKLY grid at a
+ *  Month / Quarter / Year rate: the days at the yearly average day (a Month
+ *  rate is rate × 12 ÷ 365 a day). `periodUnits` would count each week against
+ *  the month it starts in, so a week is 7/28, 7/30 or 7/31 of a month and the
+ *  amount changes every month. On the average every whole week is the same
+ *  amount, and a 365-day year is exactly 12 months. Not rounded. */
+export function averageDayUnits(
+  periodStart: string,
+  periodEnd: string,
+  rateUnit: "Month" | "Quarter" | "Year"
+): number {
+  return (
+    (daysInclusive(periodStart, periodEnd) * PERIODS_PER_YEAR[rateUnit]) /
+    PERIODS_PER_YEAR.Day
+  );
+}
+
 /** Prices a schedule row: two roundings at internal scale (decision 10).
  *  `unitPrice = round(rate × units)` is the list price per contract-line unit
  *  for the period; `amount = round(quantity × unitPrice × (1 −
@@ -331,7 +348,9 @@ function groupIntoInvoices(
  *    unclipped grid period uses `wholePeriodUnits` when it is exact (so an
  *    Anniversary period is never prorated, even when a 29th–31st anchor
  *    clamps it); a clipped or partial row, a Day rate, or weeks mixed with
- *    months use `periodUnits`. `reconcileContractSchedule` prices through
+ *    months use `periodUnits` — except a Weekly grid at a Month / Quarter /
+ *    Year rate, whose rows all use `averageDayUnits` (so every whole week is
+ *    the same amount). `reconcileContractSchedule` prices through
  *    this function, so it follows the same rule.
  *  - One-time: one row over `[startDate, endDate ?? startDate]`, units 1,
  *    invoiced on the first grid due date on or after its start. A line ended
@@ -390,19 +409,29 @@ export function planInvoiceSchedule(
     const spanEnd = line.endDate ?? terms.endDate ?? through;
     if (spanEnd < spanStart) continue;
     const exact = wholePeriodUnits(terms.billingFrequency, line.rateUnit);
+    const rateUnit = line.rateUnit;
+    const weeklyAtMonthRate =
+      terms.billingFrequency === "Week" &&
+      (rateUnit === "Month" || rateUnit === "Quarter" || rateUnit === "Year")
+        ? rateUnit
+        : null;
     for (const period of grid) {
       if (period.start > spanEnd || period.end < spanStart) continue;
       const start = maxDate(period.start, spanStart);
       const end = minDate(period.end, spanEnd);
       const whole =
         period.whole && start === period.start && end === period.end;
+      const units =
+        weeklyAtMonthRate !== null
+          ? averageDayUnits(start, end, weeklyAtMonthRate)
+          : whole && exact !== null
+            ? exact
+            : periodUnits(start, end, line.rateUnit);
       push(
         line,
         start,
         end,
-        whole && exact !== null
-          ? exact
-          : periodUnits(start, end, line.rateUnit),
+        units,
         terms.billingTiming === "Advance" ? start : end
       );
     }

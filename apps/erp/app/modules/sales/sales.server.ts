@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
@@ -19,6 +21,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+import { path } from "~/utils/path";
 import {
   contractEndDate,
   type createContractFromSalesOrderValidator
@@ -1149,4 +1152,28 @@ export async function deleteContractLineReleasingSalesOrderLine(
       .where("companyId", "=", companyId)
       .execute();
   });
+}
+
+/** Where a Draft contract opens: its setup wizard, for anyone who can edit
+ *  it (the wizard needs `update: sales`). Null for a confirmed contract, or
+ *  for a viewer who cannot edit — they get the contract page. */
+export async function draftContractSetupPath(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; id: string }
+): Promise<string | null> {
+  const { companyId, userId, id } = args;
+  const [contract, claims] = await Promise.all([
+    client
+      .from("customerContract")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getUserClaims(userId, companyId)
+  ]);
+  if (contract.data?.status !== "Draft") return null;
+  if (!hasPermission(claims?.permissions, "sales", "update", companyId)) {
+    return null;
+  }
+  return path.to.contractSetup(id, "products");
 }

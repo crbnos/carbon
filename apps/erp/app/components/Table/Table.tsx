@@ -682,13 +682,13 @@ const Table = <T extends object>({
       // Don't hijack keys aimed at a portaled overlay (a cell editor's
       // combobox/date popover, a row context menu) — those own their keys.
       if (event.nativeEvent.isComposing) return;
+      // A dialog the table itself sits in (a grid in a modal) is not an
+      // overlay over it: only skip one that does not contain the table.
       const target = event.target as HTMLElement | null;
-      if (
-        target?.closest(
-          "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]"
-        )
-      )
-        return;
+      const overlay = target?.closest(
+        "[data-radix-popper-content-wrapper],[role=menu],[role=listbox],[role=dialog]"
+      );
+      if (overlay && !overlay.contains(event.currentTarget)) return;
 
       const { code, shiftKey } = event;
 

@@ -1732,6 +1732,40 @@ export function contractEndDate(
   };
 }
 
+/**
+ * The contract term that covers sales order lines' service periods: the
+ * earliest start and the latest end of the lines that have one. The term is a
+ * month preset when the end falls exactly N months on (so it can renew),
+ * else a custom end date. Null when no line has a service period.
+ */
+export function contractTermFromServicePeriods(
+  lines: { serviceStartDate: string | null; serviceEndDate: string | null }[]
+): { startDate: string; duration: ContractDuration; endDate?: string } | null {
+  let startDate: string | null = null;
+  let endDate: string | null = null;
+  for (const line of lines) {
+    if (!line.serviceStartDate || !line.serviceEndDate) continue;
+    // YYYY-MM-DD, so string order is chronological.
+    if (!startDate || line.serviceStartDate < startDate)
+      startDate = line.serviceStartDate;
+    if (!endDate || line.serviceEndDate > endDate)
+      endDate = line.serviceEndDate;
+  }
+  if (!startDate || !endDate) return null;
+
+  const start = startDate;
+  const end = endDate;
+  const preset = contractDurations.find(
+    (duration) =>
+      duration !== "open" &&
+      duration !== "custom" &&
+      contractEndDate(start, duration).endDate === end
+  );
+  return preset
+    ? { startDate: start, duration: preset }
+    : { startDate: start, duration: "custom", endDate: end };
+}
+
 /** `date` falls on or after `floor` shifted by `days`. An empty `date` passes
  *  (`zfd.text` has already turned an empty submission into undefined); a
  *  malformed one fails the check instead of throwing out of the refine. */

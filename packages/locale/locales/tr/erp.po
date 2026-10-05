@@ -4162,6 +4162,9 @@ msgstr "Tipi Değiştir"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "Bir tarihten itibaren satırları değiştirin, ekleyin veya sonlandırın. Bunun ötesinde zaten faturalandırılan dönemler bir sonraki faturada ayarlanır."
 
+msgid "Changed"
+msgstr "Değiştirildi"
+
 msgid "Changed By"
 msgstr "Değiştiren"
 
@@ -4939,9 +4942,6 @@ msgstr "Sözleşme kapatma tarihi"
 msgid "Contract Close Date"
 msgstr "Sözleşme Kapatma Tarihi"
 
-msgid "Contract end"
-msgstr "Sözleşme sonu"
-
 msgid "Contract setup"
 msgstr "Sözleşme kurulumu"
 
@@ -4968,9 +4968,6 @@ msgstr "Taşeron"
 
 msgid "Contractors"
 msgstr "Taşeronlar"
-
-msgid "Contracts"
-msgstr "Sözleşmeler"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
@@ -7436,6 +7433,9 @@ msgstr "Her tutar, satırın muhasebeleştirilecek kalanından başlar."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "Her biri değişiklik tarihinden itibaren yinelenen bir satır olarak eklenir ve tabloda fiyatlandırılır."
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "Her biri gömülüdür ve yeniden adlandırılamaz veya silinemez"
 
@@ -7459,6 +7459,12 @@ msgstr "Her satır stok kartı kimliğini ve revizyonunu gösterir."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "Her dönem, hizmet verilmeden önce ilk gününde faturalandırılır."
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "Her dönem, hizmet verildikten sonra son gününde faturalandırılır."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
@@ -8004,8 +8010,8 @@ msgstr "Son"
 msgid "End Date"
 msgstr "Bitiş Tarihi"
 
-msgid "End line"
-msgstr "Satırı Sonlandır"
+msgid "End Line"
+msgstr "Satırı sonlandır"
 
 msgid "End of Last Fiscal Year"
 msgstr "Son Mali Yılın Sonu"
@@ -10933,6 +10939,9 @@ msgstr "Düzenlemeye devam et"
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
+msgid "Keep Line"
+msgstr "Satırı koru"
+
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"
 
@@ -13135,8 +13144,8 @@ msgstr "Bu lokasyonda sonraki {horizon} gün içinde tamamlanması beklenen sat�
 msgid "No open jobs for sales orders at this location."
 msgstr "Bu lokasyonda satış siparişleri için açık iş emri yok."
 
-msgid "No open lines. Add a line to amend."
-msgstr "Açık satır yok. Değişiklik yapmak için bir satır ekleyin."
+msgid "No open lines. Add a service to amend."
+msgstr "Açık satır yok. Değişiklik için bir hizmet ekleyin."
 
 msgid "No open memos"
 msgstr "Açık muhasebe notları yok"
@@ -14569,20 +14578,11 @@ msgstr "Her"
 msgid "per day"
 msgstr "günde"
 
-msgid "Per day"
-msgstr "Gün başına"
-
 msgid "per month"
 msgstr "ayda"
 
-msgid "Per month"
-msgstr "Ay başına"
-
 msgid "per quarter"
 msgstr "çeyrek başına"
-
-msgid "Per quarter"
-msgstr "Çeyrek Başına"
 
 msgid "Per unit"
 msgstr "Birim başına"
@@ -14593,14 +14593,8 @@ msgstr "Birim Başı"
 msgid "per week"
 msgstr "haftada"
 
-msgid "Per week"
-msgstr "Hafta başına"
-
 msgid "per year"
 msgstr "yıl başına"
-
-msgid "Per year"
-msgstr "Yıl Başına"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Sipariş başlığındaki sevkiyat lokasyonunun satır başına geçersiz kılınması; bölünmüş sevkiyatlar ve doğrudan sevkiyatlar için kullanılır."
@@ -16415,6 +16409,9 @@ msgstr "Fiyat Listesinden Kaldır"
 msgid "Remove line"
 msgstr "Satırı Kaldır"
 
+msgid "Remove Line"
+msgstr "Satırı kaldır"
+
 msgid "Remove order"
 msgstr "Siparişi kaldır"
 
@@ -16520,9 +16517,6 @@ msgstr "Kiralama Alanı"
 
 msgid "Rental Utilization"
 msgstr "Kiralama Kullanım Oranı"
-
-msgid "Rentals"
-msgstr "Kiralama"
 
 msgid "Reopen"
 msgstr "Yeniden Aç"
@@ -18201,6 +18195,9 @@ msgstr "Hizmet bedelleri"
 
 msgid "Service Charges (default)"
 msgstr "Hizmet bedelleri (varsayılan)"
+
+msgid "Service Contracts"
+msgstr "Hizmet Sözleşmeleri"
 
 msgid "Service Details"
 msgstr "Hizmet Detayları"

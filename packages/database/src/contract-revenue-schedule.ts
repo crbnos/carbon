@@ -7,7 +7,12 @@
 // recognition run and the demo dataset all plan it the same way.
 // Plan: .ai/plans/2026-10-04-contracts-wizard-phase-b.md (D1, D2, D9, D11)
 
-import { distributeRoundingResidual, EPSILON, round } from "./precision.ts";
+import {
+  distributeRoundingResidual,
+  EPSILON,
+  equals,
+  round
+} from "./precision.ts";
 import {
   addDays,
   daysBetweenInclusive,
@@ -111,7 +116,16 @@ export function revenuePreview(line: RevenueLine): RevenueMonth[] {
     throw new Error(`Revenue amount must be finite, got ${netAmount}`);
   }
 
-  if (revenueEnd === null) {
+  // A line ended before it started — an amendment that replaces it from its
+  // own first day ends it the day before — covers no days. What it billed
+  // (normally nothing: its rows were adjusted away) is earned on its start
+  // date, as for a line with no end, so the total still holds.
+  if (revenueEnd !== null && revenueEnd < revenueStart) {
+    parseIsoDate(revenueEnd);
+    if (equals(netAmount, 0)) return [];
+  }
+
+  if (revenueEnd === null || revenueEnd < revenueStart) {
     parseIsoDate(revenueStart);
     return [
       {

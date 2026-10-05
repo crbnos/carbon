@@ -42,6 +42,7 @@ import {
   contractDurations,
   contractRateUnits,
   type contractRevenueTypes,
+  contractTermFromServicePeriods,
   createContractFromSalesOrderValidator
 } from "../../sales.models";
 import type { SalesOrder, SalesOrderLine } from "../../types";
@@ -107,8 +108,14 @@ const SalesOrderToContractModal = ({
       )
     )
   );
-  const [startDate, setStartDate] = useState(companyToday);
-  const [duration, setDuration] = useState<ContractDuration>("12");
+  // The order lines' service dates already say when the service runs, so the
+  // contract starts and ends with them. Every line starts selected, so the
+  // term covers them all.
+  const [term] = useState(() => contractTermFromServicePeriods(lines));
+  const [startDate, setStartDate] = useState(term?.startDate ?? companyToday);
+  const [duration, setDuration] = useState<ContractDuration>(
+    term?.duration ?? "12"
+  );
 
   const selectedCount = Object.keys(selected).length;
   const allSelected = lines.length > 0 && selectedCount === lines.length;
@@ -184,8 +191,9 @@ const SalesOrderToContractModal = ({
             name: customerName
               ? `${customerName} — ${salesOrderId}`
               : salesOrderId,
-            startDate: companyToday,
-            duration: "12",
+            startDate: term?.startDate ?? companyToday,
+            duration: term?.duration ?? "12",
+            endDate: term?.endDate,
             billingFrequency: "Month",
             billingAlignment: "Anniversary",
             billingTiming: "Advance"

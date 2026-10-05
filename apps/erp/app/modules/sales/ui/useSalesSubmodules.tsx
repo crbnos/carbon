@@ -59,13 +59,13 @@ export default function useSalesSubmodules() {
           table: "salesOrder"
         },
         {
-          name: t`Contracts`,
+          name: t`Service Contracts`,
           to: path.to.contracts,
           icon: <LuSection />,
           table: "customerContract"
         },
         {
-          name: t`Rentals`,
+          name: t`Rental Agreements`,
           to: path.to.rentalAgreements,
           icon: <LuKeyRound />,
           table: "rentalAgreement"

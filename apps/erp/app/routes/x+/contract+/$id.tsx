@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import type { ContractRevenueRow } from "@carbon/utils";
 import {
@@ -52,9 +53,11 @@ import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "contract");
+
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: msg`Contracts`, to: path.to.contracts },
+    { breadcrumb: msg`Service Contracts`, to: path.to.contracts },
     (data) => data?.contract?.customerContractId
   ),
   module: "sales"
@@ -64,10 +67,18 @@ export const handle: Handle = {
 // the page; every other submission does.
 export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
   if (args.formData?.get("intent") === "preview") return false;
+  // Entering or leaving the setup wizard is a status change (a Draft opens
+  // the wizard, a confirmed contract leaves it) reached through a redirect
+  // that no longer carries the submission, so reload rather than show the
+  // contract as it was.
+  if (isSetupPath(args.currentUrl) !== isSetupPath(args.nextUrl)) return true;
   return isUnaffectedByNavigation(args, { params: ["id"] })
     ? false
     : args.defaultShouldRevalidate;
 };
+
+const isSetupPath = (url: URL) =>
+  /\/contract\/[^/]+\/setup(\/|$)/.test(url.pathname);
 
 export async function loader({
   request,
@@ -223,25 +234,36 @@ export async function loader({
       lastPeriodEndByLine.set(row.lineId, row.periodEnd);
     }
   }
-  const revenueLines = contractLines.flatMap((line) => {
-    const dates = lineRevenueDates(line);
-    // A Recurring line with no end (open-ended, or running to the contract's
-    // end) earns over the periods the schedule bills it for — not all at once,
-    // which is what a missing end means for a One-time line.
-    const revenueEnd =
-      dates.end ??
-      (line.revenueType === "Recurring"
-        ? (lastPeriodEndByLine.get(line.id) ?? null)
-        : null);
-    return revenuePreview({
-      id: line.id,
-      revenueType: line.revenueType,
-      method: line.revenueMethod,
-      revenueStart: dates.start,
-      revenueEnd,
-      netAmount: round(netByLine.get(line.id) ?? 0)
+  // A preview is a view, not a write: a line it cannot spread is logged and
+  // left out, rather than taking the whole contract page down with a 500.
+  let revenueLines: ReturnType<typeof revenuePreview> = [];
+  try {
+    revenueLines = contractLines.flatMap((line) => {
+      const dates = lineRevenueDates(line);
+      // A Recurring line with no end (open-ended, or running to the contract's
+      // end) earns over the periods the schedule bills it for — not all at once,
+      // which is what a missing end means for a One-time line.
+      const revenueEnd =
+        dates.end ??
+        (line.revenueType === "Recurring"
+          ? (lastPeriodEndByLine.get(line.id) ?? null)
+          : null);
+      return revenuePreview({
+        id: line.id,
+        revenueType: line.revenueType,
+        method: line.revenueMethod,
+        revenueStart: dates.start,
+        revenueEnd,
+        netAmount: round(netByLine.get(line.id) ?? 0)
+      });
     });
-  });
+  } catch (err) {
+    logger.error("Failed to preview the contract's revenue", {
+      companyId,
+      customerContractId: id,
+      error: err
+    });
+  }
   const position = contractPositionPreview(
     rows.map((row) => ({ invoiceDate: row.invoiceDate, amount: row.amount })),
     revenueLines

@@ -59,7 +59,7 @@ export default function ContractSetupReviewRoute() {
           </Trans>
         }
       >
-        <div className="w-full max-w-3xl">
+        <div className="w-full">
           <ContractSummary
             contract={contract}
             lines={lines}

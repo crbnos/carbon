@@ -7,6 +7,7 @@ import {
   planRevenueSchedule,
   type RevenuePlanLine,
   reconcileRevenueSchedule,
+  revenuePreview,
   revenueTotals,
   validateRevenueEdit
 } from "./contract-revenue-schedule.ts";
@@ -198,6 +199,37 @@ describe("reconcileRevenueSchedule", () => {
     expect(result.rows.map((row) => [row.periodStart, row.amount])).toEqual([
       ["2026-12-01", 70],
       ["2027-01-01", 100]
+    ]);
+  });
+});
+
+// An amendment effective on a line's own first day ends it the day before it
+// starts. The contract page previews every line's revenue, and this one threw
+// `"2026-10-04" is before "2026-10-05"` — a 500 on the contract.
+describe("revenuePreview of a line ended before it started", () => {
+  const replaced = {
+    id: "replaced",
+    revenueType: "Recurring" as const,
+    method: "Daily" as const,
+    revenueStart: "2026-10-05",
+    revenueEnd: "2026-10-04"
+  };
+
+  it("earns nothing when it billed nothing", () => {
+    expect(revenuePreview({ ...replaced, netAmount: 0 })).toEqual([]);
+    expect(
+      revenuePreview({ ...replaced, method: "Even Period", netAmount: 0 })
+    ).toEqual([]);
+  });
+
+  it("keeps what it billed, on its start date", () => {
+    expect(revenuePreview({ ...replaced, netAmount: 120 })).toEqual([
+      {
+        lineId: "replaced",
+        periodStart: "2026-10-05",
+        periodEnd: "2026-10-05",
+        amount: 120
+      }
     ]);
   });
 });

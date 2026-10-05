@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   amendmentEffectiveDate,
+  averageDayUnits,
   billingGrid,
   type ContractLineTerms,
   type ContractTerms,
@@ -229,6 +230,58 @@ describe("whole-period units", () => {
     expect(wholePeriodUnits("Month", "Week")).toBeNull();
   });
 });
+
+// A Monthly rate billed weekly used to price each week against the month it
+// started in — 7/30 of a month in November ($560), 7/31 in December
+// ($541.94), 7/28 in February ($600) — so no two months invoiced the same.
+describe("weekly billing at a month-based rate", () => {
+  const weekly = calendarMonthly({
+    startDate: "2026-10-05",
+    endDate: "2027-10-04",
+    billingFrequency: "Week",
+    billingAlignment: "Anniversary"
+  });
+  const subscription = line({
+    id: "subscription",
+    rate: 3000,
+    discountPercent: 0.2,
+    startDate: "2026-10-05"
+  });
+
+  it("invoices every whole week the same amount", () => {
+    const rows = planInvoiceSchedule(weekly, [subscription], "2027-10-04")
+      .flatMap((i) => i.rows)
+      .filter((r) => daysOf(r) === 7);
+    expect(rows).toHaveLength(52);
+    for (const row of rows) {
+      expect(row.amount).toBeCloseTo(552.33, CENTS);
+    }
+  });
+
+  it("bills a 365-day year as exactly twelve months", () => {
+    const rows = planInvoiceSchedule(
+      weekly,
+      [subscription],
+      "2027-10-04"
+    ).flatMap((i) => i.rows);
+    // 52 whole weeks and the contract's last day, 4 Oct 2027.
+    expect(rows).toHaveLength(53);
+    expect(invoiceTotal(rows)).toBeCloseTo(12 * 2400, CENTS);
+  });
+
+  it("counts days at the yearly average for each rate unit", () => {
+    expect(averageDayUnits("2027-02-01", "2027-02-07", "Month")).toBe(
+      (7 * 12) / 365
+    );
+    expect(averageDayUnits("2027-02-01", "2027-02-07", "Quarter")).toBe(
+      (7 * 4) / 365
+    );
+    expect(averageDayUnits("2026-10-05", "2027-10-04", "Year")).toBe(1);
+  });
+});
+
+const daysOf = (row: { periodStart: string; periodEnd: string }) =>
+  periodUnits(row.periodStart, row.periodEnd, "Day");
 
 describe("validateScheduleEdit", () => {
   const computed = lineTotals([

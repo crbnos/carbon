@@ -19,6 +19,7 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const {
+  contractTermFromServicePeriods,
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
@@ -200,5 +201,47 @@ describe("quoteLineValidator.quantity", () => {
     expect(
       quoteLineValidator.shape.quantity.safeParse([10, 20, 25]).success
     ).toBe(true);
+  });
+});
+
+// Create Contract on a sales order starts the contract when the order's
+// service starts. Before this it always started today, for 12 months, and the
+// service dates typed on the order were silently dropped.
+describe("contractTermFromServicePeriods", () => {
+  const undated = { serviceStartDate: null, serviceEndDate: null };
+
+  it("is null when no line has a service period", () => {
+    expect(contractTermFromServicePeriods([undated])).toBeNull();
+    expect(contractTermFromServicePeriods([])).toBeNull();
+  });
+
+  it("uses a month preset when the period is exactly N months", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-01-01", serviceEndDate: "2027-12-31" },
+        undated
+      ])
+    ).toEqual({ startDate: "2027-01-01", duration: "12" });
+  });
+
+  it("covers every line: earliest start, latest end", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-02-01", serviceEndDate: "2027-02-14" },
+        { serviceStartDate: "2027-01-15", serviceEndDate: "2027-07-14" }
+      ])
+    ).toEqual({ startDate: "2027-01-15", duration: "6" });
+  });
+
+  it("falls back to a custom end date", () => {
+    expect(
+      contractTermFromServicePeriods([
+        { serviceStartDate: "2027-01-01", serviceEndDate: "2027-03-15" }
+      ])
+    ).toEqual({
+      startDate: "2027-01-01",
+      duration: "custom",
+      endDate: "2027-03-15"
+    });
   });
 });

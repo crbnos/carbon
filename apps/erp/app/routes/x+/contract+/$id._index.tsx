@@ -2,15 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-
+import { draftContractSetupPath } from "~/modules/sales/sales.server";
 import { path } from "~/utils/path";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+/** Opening a contract: a Draft continues its setup, anything else shows its
+ *  page. */
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    view: "sales"
+  });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  throw redirect(path.to.contractDetails(id));
+  throw redirect(
+    (await draftContractSetupPath(client, { companyId, userId, id })) ??
+      path.to.contractDetails(id)
+  );
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

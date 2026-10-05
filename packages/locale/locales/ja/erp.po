@@ -4162,6 +4162,9 @@ msgstr "タイプを変更"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "日付から明細を変更、追加、または終了します。既に請求済みの期間はその後の請求書で調整されます。"
 
+msgid "Changed"
+msgstr "変更済み"
+
 msgid "Changed By"
 msgstr "変更者"
 
@@ -4939,9 +4942,6 @@ msgstr "契約クローズ日"
 msgid "Contract Close Date"
 msgstr "契約クローズ日"
 
-msgid "Contract end"
-msgstr "コントラクト終了"
-
 msgid "Contract setup"
 msgstr "コントラクト設定"
 
@@ -4968,9 +4968,6 @@ msgstr "外部作業者"
 
 msgid "Contractors"
 msgstr "外部作業者"
-
-msgid "Contracts"
-msgstr "契約"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
@@ -7436,6 +7433,9 @@ msgstr "各金額は明細が計上待ちしている金額から始まります
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "それぞれ変更日から定期明細として追加され、グリッドで価格を設定します。"
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "各項目は組み込まれており、名前を変更または削除することはできません"
 
@@ -7459,6 +7459,12 @@ msgstr "各明細はアイテムIDとリビジョンを表示します。"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "各期間はサービス提供前の初日に請求されます。"
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "各期間はサービス提供後の最終日に請求されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
@@ -8004,8 +8010,8 @@ msgstr "終了"
 msgid "End Date"
 msgstr "終了日"
 
-msgid "End line"
-msgstr "終了明細"
+msgid "End Line"
+msgstr "明細を終了"
 
 msgid "End of Last Fiscal Year"
 msgstr "前会計年度末"
@@ -10933,6 +10939,9 @@ msgstr "編集を続ける"
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格設定を保持し、新しい品目のみを追加"
 
+msgid "Keep Line"
+msgstr "明細を維持"
+
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"
 
@@ -13135,8 +13144,8 @@ msgstr "この拠点で、次の{horizon}日間に完了予定のオープン受
 msgid "No open jobs for sales orders at this location."
 msgstr "この拠点にはオープン受注用製造指図がありません。"
 
-msgid "No open lines. Add a line to amend."
-msgstr "オープンな明細がありません。修正するために明細を追加してください。"
+msgid "No open lines. Add a service to amend."
+msgstr "未完了の明細はありません。変更するにはサービスを追加してください。"
 
 msgid "No open memos"
 msgstr "オープンなメモはありません"
@@ -14569,19 +14578,10 @@ msgstr "あたり"
 msgid "per day"
 msgstr "1日あたり"
 
-msgid "Per day"
-msgstr "1日あたり"
-
 msgid "per month"
 msgstr "1か月あたり"
 
-msgid "Per month"
-msgstr "1ヶ月あたり"
-
 msgid "per quarter"
-msgstr "四半期あたり"
-
-msgid "Per quarter"
 msgstr "四半期あたり"
 
 msgid "Per unit"
@@ -14593,13 +14593,7 @@ msgstr "単位あたり"
 msgid "per week"
 msgstr "1週間あたり"
 
-msgid "Per week"
-msgstr "1週間あたり"
-
 msgid "per year"
-msgstr "1年あたり"
-
-msgid "Per year"
 msgstr "1年あたり"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -16415,6 +16409,9 @@ msgstr "価格リストから除去"
 msgid "Remove line"
 msgstr "明細を除去"
 
+msgid "Remove Line"
+msgstr "明細を削除"
+
 msgid "Remove order"
 msgstr "注文を除去"
 
@@ -16520,9 +16517,6 @@ msgstr "レンタル拠点"
 
 msgid "Rental Utilization"
 msgstr "レンタル資産利用率"
-
-msgid "Rentals"
-msgstr "レンタル"
 
 msgid "Reopen"
 msgstr "再オープン"
@@ -18201,6 +18195,9 @@ msgstr "サービス料金"
 
 msgid "Service Charges (default)"
 msgstr "サービス料金 (既定)"
+
+msgid "Service Contracts"
+msgstr "サービス契約"
 
 msgid "Service Details"
 msgstr "サービス詳細"

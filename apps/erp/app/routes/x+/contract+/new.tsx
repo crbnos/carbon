@@ -29,7 +29,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Contracts`,
+  breadcrumb: msg`Service Contracts`,
   to: path.to.contracts
 };
 

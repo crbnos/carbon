@@ -55,14 +55,26 @@ const ContractSummary = ({
     credits: []
   }).reduce((sum, row) => sum + row.amount, 0);
 
-  // A contract that has not started yet is valued on its start date, when
-  // its lines first bill.
+  // A contract that has not started yet is valued on its start date, and
+  // one whose recurring lines all start later is valued when the first of
+  // them starts — on any earlier day nothing bills, and the value reads 0.
   const startDate = contract.startDate ?? today;
+  const valueFrom = today < startDate ? startDate : today;
+  const firstRecurringStart = lines
+    .filter(
+      (line) =>
+        line.revenueType === "Recurring" &&
+        (!line.endDate || line.endDate >= valueFrom)
+    )
+    .map((line) => line.startDate)
+    .sort()[0];
   const recurring = lines.some((line) => line.revenueType === "Recurring")
     ? recurringValuePerPeriod(
         lines.map(toContractLineTerms),
         frequency,
-        today < startDate ? startDate : today
+        firstRecurringStart && firstRecurringStart > valueFrom
+          ? firstRecurringStart
+          : valueFrom
       )
     : null;
   const recurringLabel: Record<typeof frequency, string> = {

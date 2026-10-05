@@ -94,6 +94,7 @@ const ContractProductsGrid = ({
 
   const contractId = contract.id!;
   const currencyCode = contract.currencyCode ?? "USD";
+  const contractEndDate = contract.endDate;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const canEdit = permissions.can("update", "sales");
 
@@ -225,9 +226,15 @@ const ContractProductsGrid = ({
             <span className="tabular-nums">
               {formatDate(row.original.endDate)}
             </span>
+          ) : contractEndDate ? (
+            // No end of its own: the line follows the contract's end, so a
+            // changed term or a renewal moves it too. Muted to say so.
+            <span className="tabular-nums text-muted-foreground">
+              {formatDate(contractEndDate)}
+            </span>
           ) : (
             <span className="text-muted-foreground">
-              <Trans>Contract end</Trans>
+              <Trans>Open-ended</Trans>
             </span>
           )
       },
@@ -247,6 +254,7 @@ const ContractProductsGrid = ({
     [
       t,
       currencyCode,
+      contractEndDate,
       formatDate,
       formatQuantity,
       percent,

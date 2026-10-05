@@ -17,10 +17,10 @@ import { path } from "~/utils/path";
 import ContractMoney from "./ContractMoney";
 import type { ContractLine, ContractRouteData } from "./types";
 
-/** The contract's lines, one-time first then recurring, like a sales order's
- *  line items. */
+/** The contract's lines, one-time first then recurring, as one list like a
+ *  sales order's line items. Each line's rate says which it is ("per month",
+ *  "one-time"), so the list needs no section headings. */
 export default function ContractExplorer() {
-  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -42,18 +42,10 @@ export default function ContractExplorer() {
       .map((line) => line.amendsLineId)
       .filter((lineId): lineId is string => Boolean(lineId))
   );
-  const groups = [
-    {
-      key: "One-time",
-      label: t`One-time`,
-      lines: lines.filter((line) => line.revenueType === "One-time")
-    },
-    {
-      key: "Recurring",
-      label: t`Recurring`,
-      lines: lines.filter((line) => line.revenueType === "Recurring")
-    }
-  ].filter((group) => group.lines.length > 0);
+  const ordered = [
+    ...lines.filter((line) => line.revenueType === "One-time"),
+    ...lines.filter((line) => line.revenueType === "Recurring")
+  ];
 
   const addLine = () => navigate(path.to.newContractLine(id));
 
@@ -63,22 +55,15 @@ export default function ContractExplorer() {
         className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         spacing={0}
       >
-        {groups.length > 0 ? (
-          groups.map((group) => (
-            <VStack key={group.key} spacing={0}>
-              <h3 className="w-full px-2 pt-3 pb-1 text-xxs text-foreground/70 uppercase font-light tracking-wide border-b">
-                {group.label}
-              </h3>
-              {group.lines.map((line) => (
-                <ExplorerLine
-                  key={line.id}
-                  contractId={id}
-                  line={line}
-                  currencyCode={contract.currencyCode}
-                  isReplaced={replaced.has(line.id)}
-                />
-              ))}
-            </VStack>
+        {ordered.length > 0 ? (
+          ordered.map((line) => (
+            <ExplorerLine
+              key={line.id}
+              contractId={id}
+              line={line}
+              currencyCode={contract.currencyCode}
+              isReplaced={replaced.has(line.id)}
+            />
           ))
         ) : (
           <Empty>
@@ -168,9 +153,11 @@ function ExplorerLine({
             <span className="tabular-nums">{Number(line.quantity)}</span>
             {" × "}
             <ContractMoney value={line.rate} currencyCode={currencyCode} rate />
-            {line.revenueType === "Recurring" && line.rateUnit
-              ? ` ${rateUnitLabels[line.rateUnit]}`
-              : ""}
+            {line.revenueType === "Recurring"
+              ? line.rateUnit
+                ? ` ${rateUnitLabels[line.rateUnit]}`
+                : ""
+              : ` ${t`one-time`}`}
           </span>
           {isReplaced && line.endDate && (
             <span className="text-muted-foreground text-xs truncate w-full">

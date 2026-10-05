@@ -4162,6 +4162,9 @@ msgstr "Change Type"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 
+msgid "Changed"
+msgstr "Changed"
+
 msgid "Changed By"
 msgstr "Changed By"
 
@@ -4939,9 +4942,6 @@ msgstr "Contract close date"
 msgid "Contract Close Date"
 msgstr "Contract Close Date"
 
-msgid "Contract end"
-msgstr "Contract end"
-
 msgid "Contract setup"
 msgstr "Contract setup"
 
@@ -4968,9 +4968,6 @@ msgstr "Contractor"
 
 msgid "Contractors"
 msgstr "Contractors"
-
-msgid "Contracts"
-msgstr "Contracts"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Control design changes with revisions / ECOs"
@@ -7436,6 +7433,9 @@ msgstr "Each amount starts at what the line has left to recognize."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "Each is added as a recurring line from the change date, to be priced in the grid."
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "Each is built in and can't be renamed or deleted"
 
@@ -7459,6 +7459,12 @@ msgstr "Each line shows its item ID and revision."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Each operation's unused material returns as soon as the operation is done."
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "Each period is invoiced on its first day, before the service is delivered."
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "Each period is invoiced on its last day, after the service is delivered."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
@@ -8004,8 +8010,8 @@ msgstr "End"
 msgid "End Date"
 msgstr "End Date"
 
-msgid "End line"
-msgstr "End line"
+msgid "End Line"
+msgstr "End Line"
 
 msgid "End of Last Fiscal Year"
 msgstr "End of Last Fiscal Year"
@@ -10933,6 +10939,9 @@ msgstr "Keep editing"
 msgid "Keep existing pricing, only add new items"
 msgstr "Keep existing pricing, only add new items"
 
+msgid "Keep Line"
+msgstr "Keep Line"
+
 msgid "Keep only items where…"
 msgstr "Keep only items where…"
 
@@ -13135,8 +13144,8 @@ msgstr "No open jobs for sales orders are projected to complete at this location
 msgid "No open jobs for sales orders at this location."
 msgstr "No open jobs for sales orders at this location."
 
-msgid "No open lines. Add a line to amend."
-msgstr "No open lines. Add a line to amend."
+msgid "No open lines. Add a service to amend."
+msgstr "No open lines. Add a service to amend."
 
 msgid "No open memos"
 msgstr "No open memos"
@@ -14569,20 +14578,11 @@ msgstr "Per"
 msgid "per day"
 msgstr "per day"
 
-msgid "Per day"
-msgstr "Per day"
-
 msgid "per month"
 msgstr "per month"
 
-msgid "Per month"
-msgstr "Per month"
-
 msgid "per quarter"
 msgstr "per quarter"
-
-msgid "Per quarter"
-msgstr "Per quarter"
 
 msgid "Per unit"
 msgstr "Per unit"
@@ -14593,14 +14593,8 @@ msgstr "Per Unit"
 msgid "per week"
 msgstr "per week"
 
-msgid "Per week"
-msgstr "Per week"
-
 msgid "per year"
 msgstr "per year"
-
-msgid "Per year"
-msgstr "Per year"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -16415,6 +16409,9 @@ msgstr "Remove from Price List"
 msgid "Remove line"
 msgstr "Remove line"
 
+msgid "Remove Line"
+msgstr "Remove Line"
+
 msgid "Remove order"
 msgstr "Remove order"
 
@@ -16520,9 +16517,6 @@ msgstr "Rental Site"
 
 msgid "Rental Utilization"
 msgstr "Rental Utilization"
-
-msgid "Rentals"
-msgstr "Rentals"
 
 msgid "Reopen"
 msgstr "Reopen"
@@ -18201,6 +18195,9 @@ msgstr "Service Charges"
 
 msgid "Service Charges (default)"
 msgstr "Service Charges (default)"
+
+msgid "Service Contracts"
+msgstr "Service Contracts"
 
 msgid "Service Details"
 msgstr "Service Details"

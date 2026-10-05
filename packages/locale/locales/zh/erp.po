@@ -4162,6 +4162,9 @@ msgstr "更改类型"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "从特定日期更改、添加或结束行。已在该日期之前开票的周期将在下一张发票上进行调整。"
 
+msgid "Changed"
+msgstr "已更改"
+
 msgid "Changed By"
 msgstr "更改者"
 
@@ -4939,9 +4942,6 @@ msgstr "合同关闭日期"
 msgid "Contract Close Date"
 msgstr "合同关闭日期"
 
-msgid "Contract end"
-msgstr "合同结束"
-
 msgid "Contract setup"
 msgstr "合同配置"
 
@@ -4968,9 +4968,6 @@ msgstr "外协人员"
 
 msgid "Contractors"
 msgstr "外协人员"
-
-msgid "Contracts"
-msgstr "合约"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "通过修订版/ECO控制设计变更"
@@ -7436,6 +7433,9 @@ msgstr "每个金额从该行剩余的待确认部分开始"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "每项都从变更日期起作为定期行添加，并在表格中定价。"
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "每个都是内置的，无法重命名或删除"
 
@@ -7459,6 +7459,12 @@ msgstr "每行显示其物料 ID 和修订版。"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "每个期间在第一天开具发票，即在提供服务之前。"
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "每个期间在最后一天开具发票，即在提供服务之后。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
@@ -8004,7 +8010,7 @@ msgstr "结束"
 msgid "End Date"
 msgstr "结束日期"
 
-msgid "End line"
+msgid "End Line"
 msgstr "结束行"
 
 msgid "End of Last Fiscal Year"
@@ -10933,6 +10939,9 @@ msgstr "继续编辑"
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新物料"
 
+msgid "Keep Line"
+msgstr "保留行"
+
 msgid "Keep only items where…"
 msgstr "仅保留满足以下条件的物料…"
 
@@ -13135,8 +13144,8 @@ msgstr "该地点在接下来{horizon}天内没有计划完成的销售订单相
 msgid "No open jobs for sales orders at this location."
 msgstr "此地点没有销售订单相关的未结工单。"
 
-msgid "No open lines. Add a line to amend."
-msgstr "没有未结行。添加行以进行修正。"
+msgid "No open lines. Add a service to amend."
+msgstr "没有未结行。添加服务以进行修改。"
 
 msgid "No open memos"
 msgstr "无未结单据"
@@ -14569,19 +14578,10 @@ msgstr "每"
 msgid "per day"
 msgstr "每天"
 
-msgid "Per day"
-msgstr "每天"
-
 msgid "per month"
 msgstr "每月"
 
-msgid "Per month"
-msgstr "每月"
-
 msgid "per quarter"
-msgstr "每季度"
-
-msgid "Per quarter"
 msgstr "每季度"
 
 msgid "Per unit"
@@ -14593,13 +14593,7 @@ msgstr "每单位"
 msgid "per week"
 msgstr "每周"
 
-msgid "Per week"
-msgstr "每周"
-
 msgid "per year"
-msgstr "每年"
-
-msgid "Per year"
 msgstr "每年"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -16415,6 +16409,9 @@ msgstr "从价格列表中移除"
 msgid "Remove line"
 msgstr "移除行"
 
+msgid "Remove Line"
+msgstr "移除行"
+
 msgid "Remove order"
 msgstr "移除订单"
 
@@ -16520,9 +16517,6 @@ msgstr "租赁场所"
 
 msgid "Rental Utilization"
 msgstr "租赁设备利用率"
-
-msgid "Rentals"
-msgstr "租赁"
 
 msgid "Reopen"
 msgstr "重新打开"
@@ -18201,6 +18195,9 @@ msgstr "服务费"
 
 msgid "Service Charges (default)"
 msgstr "服务费 (默认)"
+
+msgid "Service Contracts"
+msgstr "服务合约"
 
 msgid "Service Details"
 msgstr "服务详情"

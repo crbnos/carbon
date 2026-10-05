@@ -4162,6 +4162,9 @@ msgstr "Changer le type"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "Modifiez, ajoutez ou terminez les lignes à partir d'une date. Les périodes déjà facturées après cette date sont ajustées sur la prochaine facture."
 
+msgid "Changed"
+msgstr "Modifié"
+
 msgid "Changed By"
 msgstr "Modifié par"
 
@@ -4939,9 +4942,6 @@ msgstr "Date de clôture du contrat"
 msgid "Contract Close Date"
 msgstr "Date de Clôture du Contrat"
 
-msgid "Contract end"
-msgstr "Fin du contrat"
-
 msgid "Contract setup"
 msgstr "Configuration du contrat"
 
@@ -4968,9 +4968,6 @@ msgstr "Prestataire"
 
 msgid "Contractors"
 msgstr "Prestataires"
-
-msgid "Contracts"
-msgstr "Contrats"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Contrôler les modifications de conception avec des révisions / ECOs"
@@ -7436,6 +7433,9 @@ msgstr "Chaque montant part de ce que la ligne a à reconnaître."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Chaque cellule affiche les personnes assignées par rapport aux personnes que le travail du jour nécessite."
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "Chacun est ajouté comme ligne récurrente à partir de la date de modification, à tarifer dans la grille."
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "Chacun est intégré et ne peut pas être renommé ou supprimé"
 
@@ -7459,6 +7459,12 @@ msgstr "Chaque ligne affiche son ID article et sa révision."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "La matière inutilisée de chaque opération est restituée dès que l'opération est terminée."
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "Chaque période est facturée le premier jour, avant la prestation du service."
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "Chaque période est facturée le dernier jour, après la prestation du service."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
@@ -8004,7 +8010,7 @@ msgstr "Fin"
 msgid "End Date"
 msgstr "Date de fin"
 
-msgid "End line"
+msgid "End Line"
 msgstr "Terminer la ligne"
 
 msgid "End of Last Fiscal Year"
@@ -10933,6 +10939,9 @@ msgstr "Continuer l'édition"
 msgid "Keep existing pricing, only add new items"
 msgstr "Conserver la tarification existante, ajouter uniquement les nouveaux articles"
 
+msgid "Keep Line"
+msgstr "Conserver la ligne"
+
 msgid "Keep only items where…"
 msgstr "Garder uniquement les articles où…"
 
@@ -13135,8 +13144,8 @@ msgstr "Aucune ordre de fabrication ouverte pour les commandes client n'est pré
 msgid "No open jobs for sales orders at this location."
 msgstr "Aucune ordre de fabrication ouverte pour les commandes client sur ce site."
 
-msgid "No open lines. Add a line to amend."
-msgstr "Aucune ligne ouverte. Ajouter une ligne pour modifier."
+msgid "No open lines. Add a service to amend."
+msgstr "Aucune ligne ouverte. Ajoutez un service pour modifier."
 
 msgid "No open memos"
 msgstr "Aucun mémo ouvert"
@@ -14569,20 +14578,11 @@ msgstr "Par"
 msgid "per day"
 msgstr "par jour"
 
-msgid "Per day"
-msgstr "Par jour"
-
 msgid "per month"
 msgstr "par mois"
 
-msgid "Per month"
-msgstr "Par mois"
-
 msgid "per quarter"
 msgstr "par trimestre"
-
-msgid "Per quarter"
-msgstr "Par trimestre"
 
 msgid "Per unit"
 msgstr "Par unité"
@@ -14593,14 +14593,8 @@ msgstr "Par unité"
 msgid "per week"
 msgstr "par semaine"
 
-msgid "Per week"
-msgstr "Par semaine"
-
 msgid "per year"
 msgstr "par an"
-
-msgid "Per year"
-msgstr "Par an"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Substitution par ligne du site d'expédition de l'en-tête de commande ; utilisé pour les expéditions fractionnées et les livraisons directes."
@@ -16415,6 +16409,9 @@ msgstr "Retirer de la liste de prix"
 msgid "Remove line"
 msgstr "Retirer la ligne"
 
+msgid "Remove Line"
+msgstr "Supprimer la ligne"
+
 msgid "Remove order"
 msgstr "Retirer la commande"
 
@@ -16520,9 +16517,6 @@ msgstr "Site de location"
 
 msgid "Rental Utilization"
 msgstr "Utilisation de la location"
-
-msgid "Rentals"
-msgstr "Locations"
 
 msgid "Reopen"
 msgstr "Rouvrir"
@@ -18201,6 +18195,9 @@ msgstr "Frais de service"
 
 msgid "Service Charges (default)"
 msgstr "Frais de service (défaut)"
+
+msgid "Service Contracts"
+msgstr "Contrats de service"
 
 msgid "Service Details"
 msgstr "Détails du service"

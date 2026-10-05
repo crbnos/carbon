@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Contracts`,
+  breadcrumb: msg`Service Contracts`,
   to: path.to.contracts
 };
 

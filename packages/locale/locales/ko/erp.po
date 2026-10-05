@@ -4162,6 +4162,9 @@ msgstr "변경 유형"
 msgid "Change, add or end lines from a date. Periods already invoiced past it are adjusted on the next invoice."
 msgstr "날짜부터 라인을 변경, 추가 또는 종료하세요. 해당 날짜 이후의 이미 청구된 기간은 다음 송장에서 조정됩니다."
 
+msgid "Changed"
+msgstr "변경됨"
+
 msgid "Changed By"
 msgstr "변경자"
 
@@ -4939,9 +4942,6 @@ msgstr "계약 마감일"
 msgid "Contract Close Date"
 msgstr "계약 마감일"
 
-msgid "Contract end"
-msgstr "계약 종료"
-
 msgid "Contract setup"
 msgstr "계약 설정"
 
@@ -4968,9 +4968,6 @@ msgstr "외주 인력"
 
 msgid "Contractors"
 msgstr "외주 인력"
-
-msgid "Contracts"
-msgstr "계약"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
@@ -7436,6 +7433,9 @@ msgstr "각 금액은 라인이 인식할 남은 금액에서 시작됩니다."
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니다."
 
+msgid "Each is added as a recurring line from the change date, to be priced in the grid."
+msgstr "각 항목은 변경일부터 반복 라인으로 추가되며 그리드에서 가격을 설정합니다."
+
 msgid "Each is built in and can't be renamed or deleted"
 msgstr "각각은 내장되어 있으며 이름을 변경하거나 삭제할 수 없습니다."
 
@@ -7459,6 +7459,12 @@ msgstr "각 라인에 품목 ID 및 리비전이 표시됩니다."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
+
+msgid "Each period is invoiced on its first day, before the service is delivered."
+msgstr "각 기간은 서비스 제공 전 첫날에 청구됩니다."
+
+msgid "Each period is invoiced on its last day, after the service is delivered."
+msgstr "각 기간은 서비스 제공 후 마지막 날에 청구됩니다."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
@@ -8004,7 +8010,7 @@ msgstr "종료"
 msgid "End Date"
 msgstr "종료일"
 
-msgid "End line"
+msgid "End Line"
 msgstr "라인 종료"
 
 msgid "End of Last Fiscal Year"
@@ -10933,6 +10939,9 @@ msgstr "계속 편집"
 msgid "Keep existing pricing, only add new items"
 msgstr "기존 가격 책정을 유지하고 새 품목만 추가합니다."
 
+msgid "Keep Line"
+msgstr "라인 유지"
+
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"
 
@@ -13135,8 +13144,8 @@ msgstr "이 사업장에서 다음 {horizon}일 이내에 완료될 것으로 �
 msgid "No open jobs for sales orders at this location."
 msgstr "이 사업장의 수주 관련 미결 작업 지시가 없습니다."
 
-msgid "No open lines. Add a line to amend."
-msgstr "미결 라인이 없습니다. 수정할 라인을 추가하세요."
+msgid "No open lines. Add a service to amend."
+msgstr "열린 라인이 없습니다. 변경하려면 서비스를 추가하세요."
 
 msgid "No open memos"
 msgstr "미결 메모 없음"
@@ -14569,19 +14578,10 @@ msgstr "당"
 msgid "per day"
 msgstr "일당"
 
-msgid "Per day"
-msgstr "일당"
-
 msgid "per month"
 msgstr "월당"
 
-msgid "Per month"
-msgstr "월당"
-
 msgid "per quarter"
-msgstr "분기당"
-
-msgid "Per quarter"
 msgstr "분기당"
 
 msgid "Per unit"
@@ -14593,13 +14593,7 @@ msgstr "단위당"
 msgid "per week"
 msgstr "주당"
 
-msgid "Per week"
-msgstr "주당"
-
 msgid "per year"
-msgstr "연당"
-
-msgid "Per year"
 msgstr "연당"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -16415,6 +16409,9 @@ msgstr "가격표에서 제거"
 msgid "Remove line"
 msgstr "줄 제거"
 
+msgid "Remove Line"
+msgstr "라인 제거"
+
 msgid "Remove order"
 msgstr "주문 제거"
 
@@ -16520,9 +16517,6 @@ msgstr "임차 현장"
 
 msgid "Rental Utilization"
 msgstr "임차 자산 이용률"
-
-msgid "Rentals"
-msgstr "렌탈"
 
 msgid "Reopen"
 msgstr "다시 열기"
@@ -18201,6 +18195,9 @@ msgstr "서비스 요금"
 
 msgid "Service Charges (default)"
 msgstr "서비스 요금(기본값)"
+
+msgid "Service Contracts"
+msgstr "서비스 계약"
 
 msgid "Service Details"
 msgstr "서비스 상세정보"

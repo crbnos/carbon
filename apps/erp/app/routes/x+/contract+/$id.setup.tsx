@@ -127,7 +127,7 @@ export default function ContractSetupRoute() {
               {step === "review" ? (
                 <>
                   <Button variant="secondary" asChild>
-                    <Link to={path.to.contractDetails(id)}>
+                    <Link to={path.to.contracts}>
                       <Trans>Save as Draft</Trans>
                     </Link>
                   </Button>

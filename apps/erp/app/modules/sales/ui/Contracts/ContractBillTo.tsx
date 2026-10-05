@@ -6,17 +6,19 @@ import { DatePicker, Select, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Checkbox,
-  FormControl,
-  FormLabel,
+  ChoiceCardGroup,
   Switch,
-  ToggleGroup,
-  ToggleGroupItem,
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+import {
+  LuCalendarCheck,
+  LuCalendarClock,
+  LuChevronDown,
+  LuChevronRight
+} from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { z } from "zod";
 import {
@@ -29,12 +31,14 @@ import { useDateFormatter, usePermissions, useSettings } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   contractBillingFrequencies,
-  contractBillingTimings,
+  type contractBillingTimings,
   invoiceAutomations
 } from "../../sales.models";
 import { ContractSetupSection } from "./ContractSetupLayout";
 import type { Contract } from "./types";
 import { useContractLabels } from "./useContractLabels";
+
+type BillingTiming = (typeof contractBillingTimings)[number];
 
 type Term =
   | "invoiceCustomerId"
@@ -253,29 +257,29 @@ const ContractBillTo = ({
               onChange={(date) => onChange("firstInvoiceDate", date)}
             />
           </TermForm>
-          <FormControl>
-            <FormLabel>
-              <Trans>Billing Timing</Trans>
-            </FormLabel>
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              value={contract.billingTiming ?? "Advance"}
-              disabled={isDisabled}
-              onValueChange={(value) => {
-                const next = contractBillingTimings.find((v) => v === value);
-                if (next) onChange("billingTiming", next);
-              }}
-              className="justify-start"
-            >
-              {contractBillingTimings.map((value) => (
-                <ToggleGroupItem key={value} value={value}>
-                  {labels.billingTiming[value]}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </FormControl>
-          <div className="flex items-start gap-3 md:pt-7">
+          <ChoiceCardGroup<BillingTiming>
+            className="md:col-span-2"
+            label={t`Billing Timing`}
+            value={contract.billingTiming ?? "Advance"}
+            onChange={(value) => onChange("billingTiming", value)}
+            options={[
+              {
+                value: "Advance",
+                title: labels.billingTiming.Advance,
+                description: t`Each period is invoiced on its first day, before the service is delivered.`,
+                icon: <LuCalendarClock />,
+                disabled: isDisabled
+              },
+              {
+                value: "Arrears",
+                title: labels.billingTiming.Arrears,
+                description: t`Each period is invoiced on its last day, after the service is delivered.`,
+                icon: <LuCalendarCheck />,
+                disabled: isDisabled
+              }
+            ]}
+          />
+          <div className="flex items-start gap-3">
             <Checkbox
               id="billingAlignment"
               isChecked={contract.billingAlignment === "Calendar"}

@@ -186,8 +186,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Straight to the contract page, never back to the referrer: from the
+  // setup wizard that is a second redirect (the wizard sends an Active
+  // contract to its page), and the contract layout does not reload on a
+  // redirect that no longer carries the submission — the page showed Draft.
   throw redirect(
-    requestReferrer(request) ?? path.to.contractDetails(id),
+    path.to.contractDetails(id),
     await flash(request, success("Contract confirmed"))
   );
 }

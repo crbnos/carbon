@@ -59,7 +59,7 @@ The contract's invoicing terms cut every recurring line into billing periods:
 - **"Billing Timing"**: *Advance* invoices a period on its first day, *Arrears* on its last.
 - **"First Invoice"**: any invoice that would fall before this date moves onto it.
 
-A period is priced in whole rate units, prorated by day. Months count from the period's start, so a period from 15 March to 14 April is exactly one month, and a calendar period from 15 to 30 November is 16 of 30 days. A rate of $10 per Day bills $310 for a 31-day month.
+A period is priced in whole rate units, prorated by day. Months count from the period's start, so a period from 15 March to 14 April is exactly one month, and a calendar period from 15 to 30 November is 16 of 30 days. A rate of $10 per Day bills $310 for a 31-day month. Weekly invoices at a monthly, quarterly or yearly rate are the exception: each day is the yearly average, so every week bills the same amount ($3,000 per Month is $690.41 a week) and a 365-day year bills exactly twelve months.
 
 Take a contract starting 1 November, invoiced Monthly in Advance: implementation $60,000 one-time, 10 seats at $40 per Month with 20% off, and support at $1,200 per Year. The 1 November invoice is $60,420 (60,000 + 320 + 100), and every later month is $420.
 
@@ -88,7 +88,7 @@ What happens next follows the contract's **"Invoicing"** property, or the compan
 - **Post and email**: posted and emailed to the **"Invoice Contact"** with the PDF attached.
 - **Post and send via Stripe**: posted and sent through your connected Stripe account with a payment link. The billing customer must be linked to a Stripe customer; when it is not, **"Confirm"** offers an existing Stripe customer with the same email or a new one, and needs permission to create invoices.
 
-An invoice that credits a contract change or re-bills a voided invoice is held for review instead, and so is one with a sales-rule violation or a posting error. Held invoices are listed under **Receivables → Needs Review**, and the contract's salesperson (or its creator) gets a daily summary.
+An invoice that credits a contract change or re-bills a voided invoice is held for review instead, and so is one with a sales-rule violation or a posting error. Held invoices carry a yellow **Needs Review** badge in the **Sales Invoices** list, which can be filtered on **Needs Review**, and the contract's salesperson (or its creator) gets a daily summary.
 
 Voiding a posted contract invoice returns its periods to the schedule, and the next run bills them again on a held invoice. Deleting a draft contract invoice releases its periods too. Each drafted invoice carries the contract's **"Ship To"** address as its own ship-to.
 
@@ -210,7 +210,7 @@ Revert Cancellation works only while today is on or before the cancelled end dat
 Automation hold reasons on a drafted contract invoice (`automationHoldReason`). Review and post it by hand. Under *Draft Only* nothing is held, since nothing is automated.
 
 ### "Stripe is not connected" / "No Stripe customer is linked"
-`sendError` stamped by the *Post and Send via Stripe* send; the invoice stays posted and shows under Needs Review.
+`sendError` stamped by the *Post and Send via Stripe* send; the invoice stays posted and carries the Needs Review badge.
 
 ### "Contract invoices need the Deferred Revenue account mapped in the accounting defaults" / "Contract invoices need the Contract Assets account mapped in the accounting defaults" / "Contract invoices need the Sales account mapped in the accounting defaults"
 `post-sales-invoice` posts a line with `customerContractLineId` to the line's position, not to Sales or a Service deferral. The three account defaults must be active leaves of the right class ("… account is invalid; expected an active CLASS leaf in this company group" otherwise).
